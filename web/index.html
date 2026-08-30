@@ -95,6 +95,8 @@
   .npc-box button { font: inherit; font-size: 0.88rem; padding: 0.5rem 1rem; min-height: 44px; border-radius: 3px; border: 1px solid var(--card-edge); background: transparent; color: var(--ink-dim); cursor: pointer; }
   .npc-box button:hover { border-color: var(--accent); }
   .npc-box button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .npc-box.sighting { border-color: var(--accent); }
+  .npc-box.sighting .npc-line { color: var(--accent); }
 
   @keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -150,6 +152,7 @@
     <div class="phase-rail" id="town-phase" role="group" aria-label="The world's tone"></div>
     <canvas id="town-canvas" width="960" height="640"></canvas>
     <p class="note" id="near-note" aria-live="polite" hidden></p>
+    <p class="note" id="carrying" aria-live="polite"></p>
     <div class="dpad" id="dpad" aria-label="Move">
       <button type="button" data-dir="up" style="grid-area:u">&#8593;</button>
       <button type="button" data-dir="left" style="grid-area:l">&#8592;</button>
@@ -179,6 +182,7 @@
     b.addEventListener('click', function () {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
       for (var k in views) views[k].hidden = (k !== b.dataset.view);
+      if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
     });
   });
 
