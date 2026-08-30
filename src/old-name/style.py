@@ -1,52 +1,38 @@
-from pathlib import Path
+from .paths import pack_file
+from .world import load_world, phase_tone
 
-from .paths import app_home
 
-BIBLE = app_home() / "WORLD_BIBLE.md"
-LEDGER = app_home() / "WHISPERS.md"
+def sealed_voice(key: str) -> str:
+    """A world-owned voice: rules from the pack, world from the bible."""
+    voice = load_world()["voices"][key]
+    rules = pack_file(voice["file"]).read_text(encoding="utf-8")
+    bible = _bible()
+    return rules + "\n\n" + bible
 
 
 def mother_voice() -> str:
-    bible = BIBLE.read_text(encoding="utf-8") if BIBLE.exists() else ""
-    return (
-        "You are the voice of the wanderer's mother - stern, and she knew.\n"
-        "There was a form of love in the cold. She is gone. Her goodbye\n"
-        "is a chore-note, found with the tongueless bell, kept shut by\n"
-        "the ledger-clasp.\n"
-        "- It reads as a mending list: 3-6 short lines, each a chore\n"
-        "  or an instruction. Plain as bread. No signature.\n"
-        "- Head it 'For you.' - the initial is as far as the world ever\n"
-        "  let her go, and as far as the note needs to go.\n"
-        "- The knowing is never said, and never obvious. It lives in\n"
-        "  mismatched pairs: a chore for something she does not own\n"
-        "  yet, a reward deferred to a condition that sounds small\n"
-        "  ('when the house is quiet'). First read: fussiness. Second\n"
-        "  read: a map.\n"
-        "- Nothing in the note may be traced to any one truth. If a\n"
-        "  line could only mean one thing, soften it until it could\n"
-        "  also be a mother being particular.\n"
-        "- One chore sends her back to the old woman who saw true. The\n"
-        "  note does not explain that errand.\n\n" + bible
-    )
-
-PHASES = {
-    "whispers": "The world is puzzled and dismissive. It talks past her, misnames her, smalls her. The tone is sideways glances and half-heard jokes.",
-    "doubts": "The world is uneasy. It watches her now. The tone is questions asked too carefully and doors held a moment too long.",
-    "feared": "The world is wary and reverent. It no longer talks past her. The tone is old stories remembered suddenly as warnings.",
-    "awed": "The world has caught up. The tone is awe, loyalty, and the quiet shame of people who remember being wrong.",
-}
+    """Back-compat alias: the mother is the pack's sealed voice."""
+    return sealed_voice("mother")
 
 
 def system_prompt(phase: str) -> str:
-    bible = BIBLE.read_text(encoding="utf-8") if BIBLE.exists() else ""
-    ledger = LEDGER.read_text(encoding="utf-8") if LEDGER.exists() else ""
-    tone = PHASES.get(phase, PHASES["whispers"])
+    tone = phase_tone(phase)
     return (
         "You are Old Name, the whisper that flies out every day and comes home.\n"
         "Write ONE tavern rumor from the world described below, in-world,\n"
         "spoken by a named minor character. Follow the Contract strictly:\n"
         "never explain, never label, never use modern words. Show only.\n\n"
-        f"CURRENT PHASE: {tone}\n\n{bible}\n\n"
+        f"CURRENT PHASE: {tone}\n\n{_bible()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "
-        f"them:\n\n{ledger}"
+        f"them:\n\n{_ledger()}"
     )
+
+
+def _bible() -> str:
+    path = pack_file("bible.md")
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def _ledger() -> str:
+    path = pack_file("ledger.md")
+    return path.read_text(encoding="utf-8") if path.exists() else ""

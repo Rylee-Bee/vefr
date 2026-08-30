@@ -1,11 +1,3 @@
-from pathlib import Path
-
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,9 +6,11 @@ from pydantic import BaseModel
 from .bell import generate_letter
 from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
+from .npc import generate_line
 from .paths import app_home
+from .world import load_world
 
-app = FastAPI(title="Old Name", version="0.1.0")
+app = FastAPI(title="Old Name", version="2.0.0")
 WEB = app_home() / "web"
 app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
@@ -24,6 +18,11 @@ app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 class RumorRequest(BaseModel):
     phase: str = "whispers"
     theme: str | None = None
+
+
+class NpcRequest(BaseModel):
+    phase: str = "whispers"
+    speaker: str = "the ferryman"
 
 
 @app.get("/api/health")
@@ -56,6 +55,42 @@ def vault_list():
 @app.post("/api/bell")
 def bell():
     return generate_letter()
+
+
+@app.post("/api/npc")
+def npc(req: NpcRequest):
+    return generate_line(req.phase, req.speaker)
+
+
+@app.get("/api/world")
+def world():
+    """The town payload - everything the renderer needs, from the pack."""
+    w = load_world()
+    town = w["town"]
+    return {
+        "title": w["title"],
+        "gold_rule": w.get("gold_rule", ""),
+        "phases": list(w["phases"].keys()),
+        "tile": town["tile"],
+        "bg": town["bg"],
+        "map": town["map"],
+        "legend": town["legend"],
+        "pois": town["pois"],
+        "willow_start": town["willow_start"],
+        "willow_color": town.get("willow_color", "#e8e5df"),
+        "watch": town["watch"],
+        "speakers": [
+            {
+                "key": key,
+                "name": spec["name"],
+                "at": spec["at"],
+                "near": spec["near"],
+            }
+            for key, spec in w["speakers"].items()
+        ],
+        "speaker_color": town.get("speaker_color", "#8b939c"),
+        "speaker_head": town.get("speaker_head", "#d8d5cf"),
+    }
 
 
 @app.get("/")

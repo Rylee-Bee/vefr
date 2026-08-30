@@ -5,8 +5,11 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, ValidationError
 
+from .bonds import bond_keys, bond_prompt
 from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
 from .paths import app_home
+from .style import system_prompt
+from .world import load_world
 
 VAULT = Path(os.environ.get("MUNR_VAULT", str(app_home() / "data" / "vault.json")))
 
@@ -14,54 +17,50 @@ VAULT = Path(os.environ.get("MUNR_VAULT", str(app_home() / "data" / "vault.json"
 class ItemCard(BaseModel):
     name: str
     kind: str
-    bond: str  # assigned | attuned | cold
+    bond: str  # the pack's bond keys, in pack order
     enchant: str | None = None
     curse: str | None = None
     lore: str
 
 
-SCHEMA = {
-    "type": "object",
-    "properties": {
-        "name": {"type": "string"},
-        "kind": {"type": "string"},
-        "bond": {"type": "string", "enum": ["assigned", "attuned", "cold"]},
-        "enchant": {"type": "string"},
-        "curse": {"type": "string"},
-        "lore": {"type": "string"},
-    },
-    "required": ["name", "kind", "bond", "lore"],
-}
+def _schema() -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "kind": {"type": "string"},
+            "bond": {"type": "string", "enum": bond_keys()},
+            "enchant": {"type": "string"},
+            "curse": {"type": "string"},
+            "lore": {"type": "string"},
+        },
+        "required": ["name", "kind", "bond", "lore"],
+    }
 
 
 def build_payload() -> dict:
+    texture = load_world().get(
+        "forge_texture",
+        "Items carry the world's texture. Curses are quiet, never gory.",
+    )
     return {
         "model": MODEL,
-        "system": _system(),
+        "system": _system(texture),
         "prompt": (
-            "Forge ONE item from the world of the world bible - a sword, "
-            "a hammer, a ribbon, a ledger-clasp, whatever the world would "
-            "put in her hands. Decide its bond honestly: the assigned ones "
-            "are common, the attuned ones are rare, and rarity is the "
-            "point. Reply with only the JSON object."
+            "Forge ONE item from the world described below - whatever "
+            "the world would put in her hands. Decide its bond honestly: "
+            "rarity is the point. Reply with only the JSON object."
         ),
-        "format": SCHEMA,
+        "format": _schema(),
         "stream": False,
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": 0.95},
     }
 
 
-def _system() -> str:
-    from .bonds import bond_prompt
-    from .style import system_prompt
-
+def _system(texture: str) -> str:
     return system_prompt("whispers") + (
-        "\n\nYou are now the forge. Items carry the world's texture: "
-        "ledger paper, bog iron, river glass, bell-metal. Names are "
-        "kenning-flavored. Curses are quiet, never gory - and an "
-        "assigned item's curse is simply that it was never hers.\n\n"
-        + bond_prompt()
+        "\n\nYou are now the forge. " + texture + "\n\n" + bond_prompt()
     )
 
 
