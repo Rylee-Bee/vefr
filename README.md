@@ -2,6 +2,8 @@
 
 > *old-name* - memory, and longing. The raven that flies out every day
 > and comes home.
+>
+> **It gives the hellos that never happened.**
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
