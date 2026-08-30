@@ -54,6 +54,9 @@
   listens at stairs. The player assembles it; the story never says it.
 - The church conserves records as it conserves souls: what is written
   stays written; what is unwritten stays unwritten.
+- The church preaches the golden rule - do as you would be done by -
+  and beats it in, never shows it. The rule as law, not as gift. The
+  heroine spends the story learning the difference.
 
 ## Her Trade
 

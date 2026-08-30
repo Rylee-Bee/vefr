@@ -36,5 +36,7 @@ systemctl --user daemon-reload && systemctl --user start old-name.service
 ## The shape of it
 
 - `WORLD_BIBLE.md` is the style guide every whisper reads. Rylee's file.
+- `MAP.md` is Private Canon - the town's geometry, sightlines, and the
+  tower's blind spots.
 - Rumors come in phases - the world's tone toward the heroine shifts as
   the story progresses, and the engine speaks in that tone.
