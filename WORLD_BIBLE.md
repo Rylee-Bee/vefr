@@ -253,6 +253,71 @@
 - The final encounter is a meeting: the room seeing for itself,
   inside and out. Then it is just a room.
 
+## The Founding Myth (the pantheon)
+
+Three figures, and an empty chair.
+
+**The Keeper** - the church's god. Holds what is; keeps the record;
+asks one thing of the world: *stay.* The tower bell rings the
+Keeper's hours. But the throne was never occupied in living memory -
+the Keeper is gone, sleeping, or was always a story - and the church
+does not permit the question. The Conserved Word is read in the
+Keeper's name; nobody living has heard the Keeper say a word.
+
+**The Weaver** - carries the tune. Seiðr is her craft, and seiðr is
+change; so the Conserved Word names her the fracture, the seam, the
+reason things grieve. Her shrines were torn down. The whisper-stone
+in Private Canon's square is one of hers, though nobody living knows it.
+
+**The Untongued** - the singer whose voice was taken, tongue and
+name together. The church calls them a cautionary tale: the one who
+would not stay. The fen calls them the first singer. The bell in
+Blackfen is their instrument, drowned. It rings only for the truth.
+
+## The Conserved Word (the church's telling)
+
+> In the beginning the Keeper made the world complete, and asked one
+> thing of it: stay. But the Weaver grew restless and touched the
+> unfinished places, and where she touched, things changed - and
+> changing things break, and breaking things grieve. Death is her
+> seam. Grief is her thread. So the Keeper bound her craft as
+> scorn-work and gave the world its duty: keep what is; restore what
+> changes; write what is, and close the book. The Untongued sang
+> against the binding, and lost the tongue for it. Thus order; thus
+> the record; thus the throne we keep warm for a god no one has met.
+
+## The Fen Verse (what the bog keeps)
+
+> The world was not made. It was sung - and a song only lives while
+> it moves. The Weaver carried the tune; the Keeper kept the notes.
+> But the Keeper loved one note too much and closed their fist
+> around it, and where the fist closed, the world went still. The
+> singer who would not stop singing lost tongue and name for it, and
+> the bell went into the water. But here is what the Verse says that
+> the Word does not: the Keeper was never in the fist at all. The
+> fist was only hands - hands that feared the song ending, hands
+> that handed the fist down to their children like an heirloom. The
+> song is not finished. What conserves is holding one note. What
+> changes carries the tune. And **willing** hands can open.
+
+## What the myth does (design hooks)
+
+- The church's authority is a vacuum with a liturgy: questioning the
+  throne means questioning the dead, which the Conserved Word
+  forbids. The heroine's discovery - **the throne is empty** - is
+  the game's quiet heresy, and it frees everything: no god to
+  defeat, only hands to open.
+- Name-erasure is the Keeper's oldest crime in the church's telling
+  - and the church's oldest method in truth. The Untongued's name is
+  gone; "boy" is Private Canon's version of the same act.
+- The whisper-stone in the square is a Weaver shrine in disguise -
+  the perception engine sits on holy ground nobody recognizes.
+- Forge materials: bell-metal, bog iron, river glass. The forge is
+  quietly a Weaver rite.
+- The phases are seasons: the church's calendar fixes the world's
+  tone; the true year follows the song. The phases advance as the
+  song moves.
+
 ## The Monsters (enemy design)
 
 - The townsfolk fear the bog-things: fen-wights, the drowned, the
