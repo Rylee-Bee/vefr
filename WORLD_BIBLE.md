@@ -45,12 +45,56 @@
   her "boy" or avoid naming her entirely. Only awed-phase whispers may
   say "the wanderer." The generator cannot leak the reveal early.
 
+## The Church (the archive's face)
+
+- the archive is enforced locally by the church. In Private Canon, its
+  face is the priest - her uncle, who raised her.
+- His hardness is **never stated**. It is legible only in her
+  behaviors: how she checks doors, lowers her voice in his house,
+  listens at stairs. The player assembles it; the story never says it.
+- The church conserves records as it conserves souls: what is written
+  stays written; what is unwritten stays unwritten.
+
+## Her Trade
+
+- Keeper of the town's bookshop - and with it, the parish records.
+  The uncle's arrangement: intellectual work, deemed suitable, kept
+  close to his eye.
+- She is the one who writes down what is. The crueler joke of
+  the archive: the keeper of the record is the thing the record
+  must not contain.
+
 ## The Bell
 
-- She escaped. The bell is the escape - dragged up from the bog, it
-  rang without a tongue. She is too afraid to say from where.
-- A bell without a tongue rings only when someone strikes it. What it
-  means when it rings: _the story's core, to be found_.
+- The bell rang when her mother died. It is the goodbye she had to
+  say - and saying it meant facing what came before, so she sank it
+  in the bog instead.
+- She is too afraid to say from where. The escape and the death are
+  the same story told twice.
+- A bell without a tongue rings only when someone strikes it. Her
+  mother's death struck it once. What strikes it next: _the story's
+  core, to be found_.
+
+## Rumor rule for the church
+
+- The priest's household is described only by its quiet: the frayed
+  bell rope, the missing pages in a ledger, a room that stays shut.
+  Never a word about why.
+
+## The Breakdown and the Golden Light
+
+- The story's engine is a breakdown: the record she kept, the life
+  she filed away, finally exceeds what a body can hold.
+- The breakdown is not the disaster. It is the door. Everything the
+  conserving world calls collapse is, in truth, the first thing she
+  has ever let herself say at full volume.
+- The golden light comes after: one warm, patient, unearned-by-her
+  kindness that does not fix anything - it only refuses to leave.
+  Whoever carries it (a stranger, an aunt, a voice from the bog)
+  does not save her. They simply stay while she saves herself.
+- Tone rule: the breakdown is never spectacle. No screaming scene.
+  The horror of the archive is quiet, so her survival of it must
+  be quiet too - small warm things, held steadily.
 
 ## Magic and Seiðr
 
