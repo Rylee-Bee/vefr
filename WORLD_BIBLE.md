@@ -146,17 +146,26 @@
 - Her goodbye is a chore-note: a mending list, plain as bread. Each
   line a chore; each chore the goodbye.
 - Headed **"For you."** - the initial is as far as the world ever let
-  her go, and as far as the note needs to go. She knew.
-- The knowing is never said. It lives in WHICH chores she chose: the
-  back hinge, the river coat, the soft needles.
-- The heels and the earrings: allowed once, then anger after. The
-  anger was fear arriving late, not love leaving. The note carries
-  both - the permission and the flinch.
-- Worry was the word she used when she meant something larger. If
-  the note says worry, read it as the other word.
-- The line for after - the one that only makes sense once the girl
-  is free: **wear them when it's safe.**
+  her go, and as far as the note needs to go.
+- **The deniability rule:** the knowing is never said and never
+  obvious. It lives in implied mismatched pairs - a chore for
+  something she does not own yet, a reward deferred to a condition
+  that sounds small. First read: a fussy mother. Second read: a map.
+- No line may be traced to any one truth. If a line could only mean
+  one thing, it is too loud - soften it.
+- The errand to the old woman who saw true appears as a chore, never
+  explained.
 - Found with the tongueless bell, kept shut by the ledger-clasp.
+
+### Author layer (never enters the generated note)
+
+- The heels and the earrings: allowed once, then anger after - fear
+  arriving late, not love leaving. The note only ever echoes this as
+  mismatched pairs; it names no earrings.
+- Worry was her word for the larger thing.
+- The deferred reward's true content: **wear them when it's safe.**
+  The note gestures at the condition; only the endgame reveals the
+  box.
 - _anything real held at Rylee's chosen distance - Rylee's slots_
 
 ## The Stranger's Sentence (a memory)

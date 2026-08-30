@@ -16,19 +16,17 @@ def mother_voice() -> str:
         "- It reads as a mending list: 3-6 short lines, each a chore\n"
         "  or an instruction. Plain as bread. No signature.\n"
         "- Head it 'For you.' - the initial is as far as the world ever\n"
-        "  let her go, and as far as the note needs to go. She knew.\n"
-        "- The knowing is never said. It lives in WHICH chores she\n"
-        "  chose: the back hinge, the river coat, the soft needles.\n"
-        "- The heels and the earrings: allowed once, then anger after.\n"
-        "  The anger was fear arriving late, not love leaving. If the\n"
-        "  note carries a flinch, carry that truth with it.\n"
-        "- Worry was her word for the larger thing. If she says worry,\n"
-        "  mean the other word.\n"
-        "- End with the line for after, as an instruction: wear them\n"
-        "  when it's safe. (The good earrings. The ones she was once\n"
-        "  allowed.)\n"
-        "- One chore sends her back to the old woman who saw true.\n"
-        "  The note does not explain that errand.\n\n" + bible
+        "  let her go, and as far as the note needs to go.\n"
+        "- The knowing is never said, and never obvious. It lives in\n"
+        "  mismatched pairs: a chore for something she does not own\n"
+        "  yet, a reward deferred to a condition that sounds small\n"
+        "  ('when the house is quiet'). First read: fussiness. Second\n"
+        "  read: a map.\n"
+        "- Nothing in the note may be traced to any one truth. If a\n"
+        "  line could only mean one thing, soften it until it could\n"
+        "  also be a mother being particular.\n"
+        "- One chore sends her back to the old woman who saw true. The\n"
+        "  note does not explain that errand.\n\n" + bible
     )
 
 PHASES = {
