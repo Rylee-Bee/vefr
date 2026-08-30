@@ -1,55 +1,86 @@
 # Old Name
 
-*old-name* - Old Norse: memory, and longing. The root of Muninn, the raven
-that flies out every day and comes home.
+> *old-name* - memory, and longing. The raven that flies out every day
+> and comes home.
 
-A rumor engine for a personal RPG: a local LLM turns a phase and a
-theme into a whispered tavern rumor, as structured JSON, on your own
-GPU. The perception engine for an original Norse-flavored story.
+A rumor engine for playable worlds. The engine holds the rules:
+phases, whispers, the forge, the vault, a walkable town under a
+watchful tower. A **world pack** holds the story. The two only
+touch through one contract, so anyone can take the bones and grow
+their own flesh.
 
-Private until it isn't.
+## The bones and the flesh
 
-## Run (dev)
+```
+src/old-name/            the engine (MIT)
+  paths.py           where things live (OLD-NAME-HOME, MUNR_WORLD)
+  world.py           the pack loader - the only seam
+  style.py           prompts from pack voices + bible + ledger
+  generator.py       rumor cards (speaker, whisper, is_true)
+  forge.py           items; bonds come from the pack
+  bell.py            sealed voices (the goodbye)
+  npc.py             whisper NPCs; seeds keep the world alive
+  main.py            FastAPI surface incl. GET /api/world
 
-```bash
-uv sync
-OLLAMA_URL=http://192.168.2.76:11434 uv run --group test uvicorn old-name.main:app --port 8820
+worlds/<name>/       a world pack (private - this is someone's story)
+  world.json         phases, tones, voices, bonds, speakers, the town
+  bible.md           the world bible - canon + style contract
+  ledger.md          collected whispers - voice anchors, hand-curated
+  map.md             the story's geometry, source of truth
+  voices/*.md        sealed voices (rules only; knowing stays sealed)
+
+web/                 parchment UI + canvas town (world-driven)
+tests/               pytest - pack contract, schemas, fallbacks
 ```
 
-Open http://127.0.0.1:8820 - pick a phase, press Whisper.
+One env var selects the world: `MUNR_WORLD=private-canon`. Point it at
+your own pack and the same engine serves your story.
 
-The model (default `qwen3.8-27b:ctx32k`) is swappable via
-`MUNR_MODEL`; `MUNR_KEEP_ALIVE` (default 1m) keeps VRAM free for
-whatever else needs the card.
+## Quickstart (container)
 
-## Deploy (bazzite)
-
-`deploy/old-name.container` is a quadlet for rootless podman; build the
-image from `Containerfile` first:
-
-```bash
-podman build -t localhost/old-name .
-cp deploy/old-name.container ~/.config/containers/systemd/
-systemctl --user daemon-reload && systemctl --user start old-name.service
+```sh
+podman build -t localhost/old-name:latest .
+mkdir -p ~/old-name-data
+podman run -d --name old-name -p 8820:8820 \
+  -v ~/old-name-data:/app/data \
+  -e OLLAMA_URL=http://127.0.0.1:11434 \
+  localhost/old-name:latest
+curl -s http://127.0.0.1:8820/api/health
 ```
 
-## Live
+Model default: `MUNR_MODEL=qwen3.8-27b:ctx32k` (any ollama model
+works; structured output via JSON schema).
 
-Deployed on bazzite at **http://192.168.2.76:8820** - quadlet,
-rootless podman, host networking, linger on. The engine, the forge,
-and the bell are reachable from any device on the LAN.
+## Make your own world
 
-## The shape of it
+1. Copy `worlds/private-canon/` to `worlds/yours/` - or start from the
+   keys in `world.json` alone.
+2. Write your `bible.md` (canon + the rules the engine must obey)
+   and `ledger.md` (seed whispers; the cadence compounds).
+3. Define phases and their tones, your bonds, your speakers, your
+   town grid and palette.
+4. `MUNR_WORLD=yours`. The engine does the rest.
 
-- `WORLD_BIBLE.md` - the style guide every whisper reads. Rylee's file.
-- `MAP.md` - Private Canon: the town's geometry, sightlines, the tower's
-  blind spots.
-- `STYLE.md` - Bog & Bell: palette, 32x32 tiles, the Gold Rule.
-- `WHISPERS.md` - the ledger: collected whispers that teach the
-  engine's voice.
-- `ROADMAP.md` - the ladder from tool to playable story.
-- Three views: **Rumors** (the perception engine), **Vault** (items
-  with three bonds - assigned, attuned, cold), **Bell** (one ring
-  per visit).
-- Rumors come in phases - the world's tone toward the heroine shifts
-  as the story progresses, and the engine speaks in that tone.
+## The town
+
+Walk with the pad, WASD, or arrows. `E` or tap talks to whoever is
+near. The tower's watch is geometry - safe pockets exist, and the
+world's tone narrows them as the phases turn. Gold appears only
+when the world is kind.
+
+## Attribution
+
+- Dependencies: fastapi, uvicorn, httpx, pydantic (MIT/BSD-3) -
+  declared in `pyproject.toml`; their notices ship in the wheels.
+- Model: Qwen (Apache-2.0); outputs are shaped by this repo's
+  prompts and reviewed by a human before they become canon.
+- Code co-written with Kilo (AI) at the author's direction.
+- Engine license: MIT (see LICENSE). World packs are the author's
+  story and are not licensed for redistribution.
+
+## Development
+
+```sh
+uv sync --group test
+uv run --group test pytest -q
+```
