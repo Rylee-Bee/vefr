@@ -1,6 +1,8 @@
 from pathlib import Path
 
-BIBLE = Path(__file__).resolve().parents[2] / "WORLD_BIBLE.md"
+from .paths import app_home
+
+BIBLE = app_home() / "WORLD_BIBLE.md"
 
 PHASES = {
     "whispers": "The world is puzzled and dismissive. It talks past her, misnames her, smalls her. The tone is sideways glances and half-heard jokes.",
