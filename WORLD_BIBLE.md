@@ -75,6 +75,24 @@
   mother's death struck it once. What strikes it next: _the story's
   core, to be found_.
 
+## The Mother
+
+- Somewhere in the middle. Stern - and she knew. Both are true, and
+  the story does not resolve them.
+- Her hardness was shelter built wrong: it made life harder, and it
+  made her daughter tough enough to survive what the house held.
+- Her death is the bell. The goodbye is the game's first true sound.
+
+## The Golden Light
+
+- Another girl like her - never met, never seen, arriving in the
+  worst isolating season of the age, when the world was shut indoors.
+- Her gift is not rescue. It is one sentence, repeated until it is
+  believed: **soft is not a flaw.**
+- She never appears on screen. She reaches the heroine only as words
+  that arrive - carried, whispered, kept. The player never meets her
+  either. She changes everything anyway.
+
 ## Rumor rule for the church
 
 - The priest's household is described only by its quiet: the frayed
