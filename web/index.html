@@ -112,8 +112,48 @@
   .card[data-phase="awed"] .speaker { color: var(--accent); }
   .card[data-phase="feared"] { border-color: var(--church); }
 
+  .tabs { display: flex; gap: 0.4rem; margin: 1.6rem 0 0; }
+  .tabs button {
+    font: inherit;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 1.2rem;
+    min-height: 44px;
+    border-radius: 3px 3px 0 0;
+    border: 1px solid var(--card-edge);
+    border-bottom: none;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] {
+    color: var(--ink);
+    background: var(--card);
+  }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .view[hidden] { display: none; }
+
+  .card[data-bond="attuned"] { border-color: var(--accent); }
+  .card[data-bond="attuned"] .speaker { color: var(--accent); }
+  .card[data-bond="assigned"] { border-color: var(--church); }
+  .card[data-bond="cold"] { border-color: var(--card-edge); opacity: 0.85; }
+
+  .item-kind { color: var(--ink-dim); font-size: 0.85rem; font-style: italic; }
+  .item-curse { color: var(--ink-dim); margin: 0.4rem 0 0; font-size: 0.92rem; }
+  .item-curse::before { content: "the weight: "; }
+
   .empty { color: var(--ink-dim); font-style: italic; margin-top: 1.4rem; }
   .error { color: var(--danger); margin-top: 1.4rem; }
+  .vault-title {
+    font-weight: normal;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+    margin: 1.8rem 0 0;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--card-edge);
+  }
 
   @keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
@@ -127,36 +167,69 @@
   <p class="tagline">memory &amp; longing, flying out and coming home</p>
 </header>
 <main>
-  <div class="phase-rail" role="group" aria-label="Rumor phase">
-    <button type="button" data-phase="whispers" aria-pressed="true">whispers</button>
-    <button type="button" data-phase="doubts" aria-pressed="false">doubts</button>
-    <button type="button" data-phase="feared" aria-pressed="false">feared</button>
-    <button type="button" data-phase="awed" aria-pressed="false">awed</button>
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tab-rumors" aria-selected="true" aria-controls="view-rumors">Rumors</button>
+    <button type="button" role="tab" id="tab-vault" aria-selected="false" aria-controls="view-vault">Vault</button>
   </div>
 
-  <div class="controls">
-    <button type="button" id="whisper-btn">Whisper</button>
-    <span class="note" id="status">the mill is warm</span>
-  </div>
+  <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
+    <div class="phase-rail" role="group" aria-label="Rumor phase">
+      <button type="button" data-phase="whispers" aria-pressed="true">whispers</button>
+      <button type="button" data-phase="doubts" aria-pressed="false">doubts</button>
+      <button type="button" data-phase="feared" aria-pressed="false">feared</button>
+      <button type="button" data-phase="awed" aria-pressed="false">awed</button>
+    </div>
 
-  <section id="feed" aria-live="polite">
-    <p class="empty">The mill is quiet. Press Whisper.</p>
+    <div class="controls">
+      <button type="button" id="whisper-btn">Whisper</button>
+      <span class="note" id="status">the mill is warm</span>
+    </div>
+
+    <section id="feed" aria-live="polite">
+      <p class="empty">The mill is quiet. Press Whisper.</p>
+    </section>
+  </section>
+
+  <section id="view-vault" class="view" role="tabpanel" aria-labelledby="tab-vault" hidden>
+    <div class="controls">
+      <button type="button" id="forge-btn">Forge</button>
+      <span class="note" id="forge-status">most are assigned or cold. the attuned are rare.</span>
+    </div>
+    <section id="forge-out" aria-live="polite"></section>
+    <h2 class="vault-title">Kept</h2>
+    <section id="vault-list" aria-live="polite"></section>
   </section>
 </main>
 
 <script>
 (function () {
-  var phase = 'whispers';
+  var currentPhase = 'whispers';
   var rail = document.querySelector('.phase-rail');
   var btn = document.getElementById('whisper-btn');
   var status = document.getElementById('status');
   var feed = document.getElementById('feed');
   var empty = feed.querySelector('.empty');
+  var forgeBtn = document.getElementById('forge-btn');
+  var forgeStatus = document.getElementById('forge-status');
+  var forgeOut = document.getElementById('forge-out');
+  var vaultList = document.getElementById('vault-list');
+  var lastForged = null;
+
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[role="tab"]');
+    if (!b) return;
+    document.querySelectorAll('.tabs button').forEach(function (x) {
+      x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+    });
+    document.getElementById('view-rumors').hidden = b.id !== 'tab-rumors';
+    document.getElementById('view-vault').hidden = b.id !== 'tab-vault';
+    if (b.id === 'tab-vault') renderVault();
+  });
 
   rail.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-phase]');
     if (!b) return;
-    phase = b.dataset.phase;
+    currentPhase = b.dataset.phase;
     rail.querySelectorAll('button').forEach(function (x) {
       x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
     });
@@ -169,12 +242,12 @@
       var r = await fetch('/api/rumor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phase: phase }),
+        body: JSON.stringify({ phase: currentPhase }),
       });
       if (!r.ok) throw new Error('mill jammed');
       var c = await r.json();
       if (empty) empty.remove();
-      feed.insertAdjacentHTML('afterbegin', cardHTML(c, phase));
+      feed.insertAdjacentHTML('afterbegin', whisperHTML(c, currentPhase));
       status.textContent = 'the mill is warm';
     } catch (err) {
       status.textContent = 'the mill is silent. is the model loaded?';
@@ -183,13 +256,79 @@
     }
   });
 
-  function cardHTML(c, ph) {
+  forgeBtn.addEventListener('click', async function () {
+    forgeBtn.disabled = true;
+    forgeStatus.textContent = 'the forge heats\u2026';
+    forgeOut.innerHTML = '';
+    try {
+      var r = await fetch('/api/forge', { method: 'POST' });
+      if (!r.ok) throw new Error('forge cold');
+      lastForged = await r.json();
+      forgeOut.innerHTML = itemHTML(lastForged, true);
+    } catch (err) {
+      forgeStatus.textContent = 'the forge is cold. is the model loaded?';
+    } finally {
+      forgeBtn.disabled = false;
+    }
+  });
+
+  forgeOut.addEventListener('click', async function (e) {
+    var b = e.target.closest('button[data-keep]');
+    if (!b || !lastForged) return;
+    b.disabled = true;
+    try {
+      var r = await fetch('/api/vault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastForged),
+      });
+      var res = await r.json();
+      forgeStatus.textContent = res.bond === 'attuned'
+        ? 'it fits her hands. it was always going to.'
+        : res.bond === 'assigned'
+          ? 'kept. it works, mostly. it never asked what she wants.'
+          : 'kept. it does not care who holds it.';
+      b.remove();
+      renderVault();
+    } catch (err) {
+      forgeStatus.textContent = 'the vault did not answer.';
+      b.disabled = false;
+    }
+  });
+
+  function whisperHTML(c, ph) {
     var hook = c.hook ? '<p class="hook">' + esc(c.hook) + '</p>' : '';
     var truth = c.is_true ? '' : '<p class="truth">a lie, or close enough</p>';
     return '<article class="card" data-phase="' + ph + '">'
       + '<div class="speaker">' + esc(c.speaker) + '</div>'
       + '<p class="whisper">&ldquo;' + esc(c.whisper) + '&rdquo;</p>'
       + hook + truth + '</article>';
+  }
+
+  function itemHTML(item, offerable) {
+    var curse = item.curse ? '<p class="item-curse">' + esc(item.curse) + '</p>' : '';
+    var enchant = item.enchant ? '<p class="whisper">' + esc(item.enchant) + '</p>' : '';
+    var offer = offerable
+      ? '<button type="button" data-keep="1">offer your hand</button>'
+      : '';
+    return '<article class="card" data-bond="' + item.bond + '">'
+      + '<div class="speaker">' + esc(item.name) + '</div>'
+      + '<div class="item-kind">' + esc(item.bond) + ' &middot; ' + esc(item.kind) + '</div>'
+      + enchant + curse
+      + '<p class="whisper">' + esc(item.lore) + '</p>'
+      + offer + '</article>';
+  }
+
+  async function renderVault() {
+    try {
+      var r = await fetch('/api/vault');
+      var items = await r.json();
+      vaultList.innerHTML = items.length
+        ? items.slice().reverse().map(function (i) { return itemHTML(i, false); }).join('')
+        : '<p class="empty">Nothing kept yet. Forge something worth carrying.</p>';
+    } catch (err) {
+      vaultList.innerHTML = '<p class="error">the vault did not answer.</p>';
+    }
   }
 
   function esc(s) {
