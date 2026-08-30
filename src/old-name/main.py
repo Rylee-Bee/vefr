@@ -90,6 +90,7 @@ def world():
                 "name": spec["name"],
                 "at": spec["at"],
                 "near": spec["near"],
+                "seeds": spec["seeds"],
             }
             for key, spec in w["speakers"].items()
         ],

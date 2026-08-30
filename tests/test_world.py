@@ -1,5 +1,22 @@
+from old-name import maplab
 from old-name.paths import pack_dir
 from old-name.world import load_world
+
+
+def test_maplab_validates_the_pack():
+    errors = maplab.validate(load_world(), pack_dir=pack_dir())
+    assert errors == []
+
+
+def test_maplab_flags_a_broken_map():
+    import copy
+
+    w = copy.deepcopy(load_world())
+    w['town']['map'][0] = w['town']['map'][0].replace('=', 'Q')  # unknown char
+    w['town']['willow_start'] = [23, 3]  # the tower - solid
+    errors = maplab.validate(w)
+    assert any('missing from legend' in e for e in errors)
+    assert any('not walkable' in e for e in errors)
 
 
 def test_pack_loads():
