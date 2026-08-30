@@ -37,6 +37,11 @@ worlds/<name>/       a world pack (private - this is someone's story)
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
 
+  maplab.py          the map toolkit - validate / build / verify;
+                     one validator shared by tests, cli, and tidyup
+  tools/lab.py       one entry point: tidyup, deploy, backup, map,
+                     test - run from any checkout, git decides which
+
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks
 ```
