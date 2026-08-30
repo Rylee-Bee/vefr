@@ -10,8 +10,11 @@
   var phase = '';
   var phases = [];
   var watchR = 0;
-  var BLOCKED = ['~', 'B', '#', 'T', 'M'];
   var SANCT = [];
+  var BLOCKED = ['~', 'B', '#', 'T', 'M'];
+  var flooded = {};
+  var carried = null;
+  var sighted = false;
   var openSpeaker = null;
   var busy = false;
 
@@ -33,6 +36,8 @@
     phase = phases[0];
     watchR = W.watch.r_by_phase[phase] || W.watch.tower[2] || 12;
     SANCT = W.sanctuary_tiles || [];
+    applyWater();
+    fetchCarried();
     the wanderer = { x: W.willow_start[0], y: W.willow_start[1] };
     canvas.width = W.map[0].length * TILE;
     canvas.height = W.map.length * TILE;
@@ -40,6 +45,29 @@
     draw();
     hud();
   }
+
+  function applyWater() {
+    flooded = {};
+    if (W.water_by_phase && W.water_by_phase[phase] === 'high') {
+      (W.flood_tiles || []).forEach(function (t) {
+        flooded[t[0] + ',' + t[1]] = true;
+      });
+    }
+  }
+
+  function fetchCarried() {
+    fetch('/api/vault')
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        carried = list.length ? list[list.length - 1] : null;
+        hud();
+      })
+      .catch(function () { /* the vault keeps its silence */ });
+  }
+
+  window.addEventListener('old-name:town', function () {
+    fetchCarried();
+  });
 
   function rows() { return W.map.length; }
   function cols() { return W.map[0].length; }
@@ -53,6 +81,7 @@
     var t = tileAt(x, y);
     var e = W.legend[t];
     if (e && typeof e.solid === 'boolean') return e.solid;
+    if (flooded[x + ',' + y]) return true;
     return BLOCKED.indexOf(t) !== -1;
   }
 
@@ -96,6 +125,13 @@
     var t = tileAt(x, y);
     var e = W.legend[t] || W.legend['.'];
     var px = x * TILE, py = y * TILE;
+    if (flooded[x + ',' + y]) {
+      ctx.fillStyle = '#20272b';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#2c353a';
+      if ((x + y) % 3 === 0) ctx.fillRect(px + 4, py + 14, TILE - 8, 2);
+      return;
+    }
     ctx.fillStyle = e.base[(x + y) % e.base.length];
     ctx.fillRect(px, py, TILE, TILE);
     var c = e.deco_color;
@@ -174,6 +210,12 @@
     ctx.beginPath();
     ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 7, 0, Math.PI * 2);
     ctx.fill();
+    if (carried && carried.bond === 'attuned') {
+      ctx.strokeStyle = '#c9ad6b';
+      ctx.beginPath();
+      ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
 
   function hud() {
@@ -191,6 +233,11 @@
       note.textContent = near.name + ' is here. press E, or tap.';
     } else if (!openSpeaker) {
       note.hidden = true;
+    }
+    var carry = document.getElementById('carrying');
+    if (carry) {
+      carry.textContent = carried ? 'carrying: ' + carried.name + ' \u00b7 ' + carried.bond : '';
+      carry.style.color = carried && carried.bond === 'attuned' ? '#c9ad6b' : '';
     }
   }
 
@@ -211,6 +258,7 @@
   function setPhase(p) {
     phase = p;
     watchR = W.watch.r_by_phase[p] || watchR;
+    applyWater();
     var rail = document.getElementById('town-phase');
     if (rail) {
       rail.querySelectorAll('button').forEach(function (b) {
@@ -227,8 +275,28 @@
     the wanderer.x = nx;
     the wanderer.y = ny;
     if (openSpeaker) closeNpc();
+    checkSighting();
     draw();
     hud();
+  }
+
+  function checkSighting() {
+    if (sighted || phase !== 'awed') return;
+    var onCrossing = (W.flood_tiles || []).some(function (t) {
+      return t[0] === the wanderer.x && t[1] === the wanderer.y;
+    });
+    if (!onCrossing) return;
+    sighted = true;
+    var box = document.getElementById('npc-box');
+    box.classList.add('sighting');
+    document.getElementById('npc-name').textContent = '';
+    document.getElementById('npc-line').textContent = 'she is there. she was always there.';
+    box.hidden = false;
+    window.setTimeout(function () {
+      box.classList.remove('sighting');
+      if (!openSpeaker) box.hidden = true;
+      hud();
+    }, 4000);
   }
 
   function talk() {

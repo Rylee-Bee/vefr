@@ -39,6 +39,17 @@ def test_every_speaker_has_seeds_for_every_phase():
         assert set(spec["seeds"].keys()) == set(w["phases"].keys()), key
 
 
+def test_water_rises_when_the_world_grows_wary():
+    town = load_world()["town"]
+    m = town["map"]
+    levels = town["water_by_phase"]
+    assert levels["feared"] == "high"
+    for low in ("whispers", "doubts", "awed"):
+        assert levels[low] == "low"
+    for x, y in town["flood_tiles"]:
+        assert m[y][x] == "p", (x, y)
+
+
 def test_the_hearth_is_in_the_world():
     town = load_world()["town"]
     assert "23,17" in town["pois"]
