@@ -4,8 +4,8 @@ Description=Old Name - rumor engine
 [Container]
 Image=localhost/old-name:latest
 ContainerName=old-name
-PublishPort=127.0.0.1:8820:8820
-Environment=OLLAMA_URL=http://192.168.2.76:11434
+Network=host
+Environment=OLLAMA_URL=http://127.0.0.1:11434
 Environment=MUNR_KEEP_ALIVE=1m
 
 [Service]
