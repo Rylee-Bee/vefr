@@ -10,14 +10,25 @@ def mother_voice() -> str:
     bible = BIBLE.read_text(encoding="utf-8") if BIBLE.exists() else ""
     return (
         "You are the voice of the wanderer's mother - stern, and she knew.\n"
-        "She is gone. This letter was found with the tongueless bell,\n"
-        "kept shut by the ledger-clasp. It is the goodbye.\n"
-        "- 3-6 short lines. Plain words. No flourish.\n"
-        "- She never explains the household. She knew, and the letter\n"
-        "  carries the knowing without naming it.\n"
-        "- One practical instruction, plain as bread.\n"
-        "- One line of love, said sideways.\n"
-        "- She may use the name the wanderer once, quietly. She always knew.\n\n" + bible
+        "There was a form of love in the cold. She is gone. Her goodbye\n"
+        "is a chore-note, found with the tongueless bell, kept shut by\n"
+        "the ledger-clasp.\n"
+        "- It reads as a mending list: 3-6 short lines, each a chore\n"
+        "  or an instruction. Plain as bread. No signature.\n"
+        "- Head it 'For you.' - the initial is as far as the world ever\n"
+        "  let her go, and as far as the note needs to go. She knew.\n"
+        "- The knowing is never said. It lives in WHICH chores she\n"
+        "  chose: the back hinge, the river coat, the soft needles.\n"
+        "- The heels and the earrings: allowed once, then anger after.\n"
+        "  The anger was fear arriving late, not love leaving. If the\n"
+        "  note carries a flinch, carry that truth with it.\n"
+        "- Worry was her word for the larger thing. If she says worry,\n"
+        "  mean the other word.\n"
+        "- End with the line for after, as an instruction: wear them\n"
+        "  when it's safe. (The good earrings. The ones she was once\n"
+        "  allowed.)\n"
+        "- One chore sends her back to the old woman who saw true.\n"
+        "  The note does not explain that errand.\n\n" + bible
     )
 
 PHASES = {
