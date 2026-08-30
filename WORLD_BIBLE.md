@@ -28,10 +28,29 @@
 
 ## The World
 
-- Name: _the worldbuilding chat decides_
-- Era and place: Norse-flavored; the feel of a 1990s tile RPG
-- The town: _fill_
-- Geography that matters: _fill_
+- Name: **the archive** - the world that conserves. What is, stays.
+  What changes, is changed back.
+- The town: **Private Canon** - small, watchful, tucked at the edge of
+  somewhere larger.
+- Who or what enforces the conserving: _the worldbuilding chat decides_
+
+## The Heroine
+
+- The wrong name is not a name at all. The world calls her **"boy"** -
+  a category, a placeholder, never a person.
+- The right name is **the wanderer** - the tree that bends without breaking,
+  regrows from mud, and weaves. It appears as the story grows with her
+  acceptance.
+- **Rumor rule (strict):** whispers, doubts, and feared phases may call
+  her "boy" or avoid naming her entirely. Only awed-phase whispers may
+  say "the wanderer." The generator cannot leak the reveal early.
+
+## The Bell
+
+- She escaped. The bell is the escape - dragged up from the bog, it
+  rang without a tongue. She is too afraid to say from where.
+- A bell without a tongue rings only when someone strikes it. What it
+  means when it rings: _the story's core, to be found_.
 
 ## Magic and Seiðr
 
@@ -39,6 +58,15 @@
 - Attunement: charms that reject everyone else accept her instantly.
 - The last dungeon is a labyrinth of the mind. Its center holds no
   monster.
+
+## Rumor Phases (the perception engine)
+
+| Phase | The world's tone | Her name in rumor |
+|---|---|---|
+| whispers | puzzled, dismissive | "boy" / unnamed |
+| doubts | uneasy, watching | "boy" / unnamed |
+| feared | wary, reverent | unnamed, "that one" |
+| awed | awe, loyalty, quiet shame | **the wanderer** |
 
 ## Voice Seeds
 
