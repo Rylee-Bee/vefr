@@ -33,10 +33,23 @@ cp deploy/old-name.container ~/.config/containers/systemd/
 systemctl --user daemon-reload && systemctl --user start old-name.service
 ```
 
+## Live
+
+Deployed on bazzite at **http://192.168.2.76:8820** - quadlet,
+rootless podman, host networking, linger on. The engine, the forge,
+and the bell are reachable from any device on the LAN.
+
 ## The shape of it
 
-- `WORLD_BIBLE.md` is the style guide every whisper reads. Rylee's file.
-- `MAP.md` is Private Canon - the town's geometry, sightlines, and the
-  tower's blind spots.
-- Rumors come in phases - the world's tone toward the heroine shifts as
-  the story progresses, and the engine speaks in that tone.
+- `WORLD_BIBLE.md` - the style guide every whisper reads. Rylee's file.
+- `MAP.md` - Private Canon: the town's geometry, sightlines, the tower's
+  blind spots.
+- `STYLE.md` - Bog & Bell: palette, 32x32 tiles, the Gold Rule.
+- `WHISPERS.md` - the ledger: collected whispers that teach the
+  engine's voice.
+- `ROADMAP.md` - the ladder from tool to playable story.
+- Three views: **Rumors** (the perception engine), **Vault** (items
+  with three bonds - assigned, attuned, cold), **Bell** (one ring
+  per visit).
+- Rumors come in phases - the world's tone toward the heroine shifts
+  as the story progresses, and the engine speaks in that tone.
