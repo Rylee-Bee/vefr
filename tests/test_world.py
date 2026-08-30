@@ -48,3 +48,29 @@ def test_the_hearth_is_in_the_world():
         assert ch in joined
     assert town["legend"]["O"].get("solid") is True
     assert town["legend"]["D"].get("solid", False) is False
+
+
+def test_willow_can_leave_the_bookshop():
+    town = load_world()["town"]
+    m = town["map"]
+
+    def walkable(x, y):
+        if y < 0 or y >= len(m) or x < 0 or x >= len(m[0]):
+            return False
+        return not town["legend"].get(m[y][x], {}).get("solid", False)
+
+    start = tuple(town["willow_start"])
+    seen = {start}
+    stack = [start]
+    while stack:
+        x, y = stack.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (x + dx, y + dy)
+            if n not in seen and walkable(*n):
+                seen.add(n)
+                stack.append(n)
+    assert (14, 6) in seen, "the well"
+    assert (15, 7) in seen, "the whisper-stone"
+    assert (23, 17) in seen, "the hearth door"
+    assert (12, 13) in seen, "the bookshop back door"
+    assert (13, 15) in seen, "the bookshop front door"
