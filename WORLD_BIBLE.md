@@ -134,6 +134,11 @@
 - **Cold**: a tool that works for anyone, which is its own strange
   mercy.
 
+- The law beneath all three: **fitted is not the same as belonging.**
+  The clasp fits her hand perfectly - it was made to hold her, not
+  made for her. The attuned things may look humble beside it. They
+  belong.
+
 ## The Monsters (enemy design)
 
 - The townsfolk fear the bog-things: fen-wights, the drowned, the
