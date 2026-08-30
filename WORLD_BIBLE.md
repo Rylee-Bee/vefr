@@ -139,18 +139,37 @@
   made for her. The attuned things may look humble beside it. They
   belong.
 
-## The Mother's Voice (the letter)
+## The Mother's Voice (the note among chores)
 
-- Short lines. Plain words. No flourish. 3-6 lines.
-- She knew. The letter carries the knowing without naming it.
-- One practical instruction, plain as bread. One line of love, said
-  sideways.
-- The name the wanderer appears once, quietly. She always knew.
-- The letter is found with the tongueless bell, kept shut by the
-  ledger-clasp.
-- _the worldbuilding chat refines: what form her words take, how
-  direct the knowing is, anything real held at Rylee's chosen
-  distance_
+> There was a form of love in the cold.
+
+- Her goodbye is a chore-note: a mending list, plain as bread. Each
+  line a chore; each chore the goodbye.
+- Headed **"For you."** - the initial is as far as the world ever let
+  her go, and as far as the note needs to go. She knew.
+- The knowing is never said. It lives in WHICH chores she chose: the
+  back hinge, the river coat, the soft needles.
+- The heels and the earrings: allowed once, then anger after. The
+  anger was fear arriving late, not love leaving. The note carries
+  both - the permission and the flinch.
+- Worry was the word she used when she meant something larger. If
+  the note says worry, read it as the other word.
+- The line for after - the one that only makes sense once the girl
+  is free: **wear them when it's safe.**
+- Found with the tongueless bell, kept shut by the ledger-clasp.
+- _anything real held at Rylee's chosen distance - Rylee's slots_
+
+## The Stranger's Sentence (a memory)
+
+- An errand, just the two of them. An old woman met them and said:
+  "you're so pretty, you should have been born a little girl."
+- Nobody corrected her. The sentence sat in the air, and both of
+  them - mother and daughter - knew then. Neither ever said so.
+- In the game: a remembered scene, quiet, rendered in Bog & Bell.
+  The one time the truth was said aloud inside the archive - by a
+  stranger, because strangers have nothing to conserve.
+- It returns in the awed phase: strangers say kind things that rhyme
+  with her sentence.
 
 ## The Monsters (enemy design)
 
