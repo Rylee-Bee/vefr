@@ -1,6 +1,6 @@
 /* Old Name - the town of Private Canon, walkable. 32px tiles, Bog & Bell. */
 (function () {
-  var canvas = document.getElementById('town');
+  var canvas = document.getElementById('town-canvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
   var TILE = 32;
@@ -48,7 +48,7 @@
   };
 
   var COLORS = {
-    '.': ['#1a2018', '#1c221a'],
+    '.': ['#212a20', '#242d22'],
     ',': ['#26301f'],
     '~': ['#20272b'],
     '=': ['#3a352c'],
@@ -58,10 +58,10 @@
     'H': ['#2b2721'],
     'M': ['#26221a'],
     'T': ['#2a2e33'],
-    'W': ['#1a2018'],
-    'S': ['#1a2018'],
+    'W': ['#212a20'],
+    'S': ['#212a20'],
     'B': ['#15180f'],
-    'G': ['#1a2018']
+    'G': ['#212a20']
   };
 
   var the wanderer = { x: 12, y: 14 }; /* the bookshop's back room */
@@ -166,7 +166,7 @@
 
   function hud() {
     document.getElementById('poi').textContent = poiAt(the wanderer.x, the wanderer.y);
-    document.getElementById('watch').textContent = watched(the wanderer.x, the wanderer.y)
+    document.getElementById('watched').textContent = watched(the wanderer.x, the wanderer.y)
       ? 'the tower watches.'
       : 'out of the tower\u2019s sight.';
   }
