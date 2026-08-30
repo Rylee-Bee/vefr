@@ -171,6 +171,79 @@
 - It returns in the awed phase: strangers say kind things that rhyme
   with her sentence.
 
+## The Father (the laughing room)
+
+- Public cruelty with a recruited audience: the room laughed with
+  him, at her. the archive doesn't only conserve through the
+  church - it conserves through comedy everyone is invited to join.
+- **The bruises were never the worst part.** The laughter of those
+  who should have known to help - charmed by his power - was. The
+  charm deputized the helpers. That is why, in this story, the
+  abuse is never spoken: speaking never worked. The room always
+  sided with the charm. The silence is her survival strategy,
+  rendered as design.
+- The dictionary: her picture pasted under a word she hadn't learned
+  to spell. She was six. The book of definitions was used to define
+  her.
+- In the game: the whispers phase IS that room - the jokes, the
+  sideways glances, the town's comedy at her expense. The engine
+  does not skip it.
+- The arc: the room cannot be told. It can only **see for itself.**
+  The endgame has no accusation scene, no testimony, no trial - the
+  evidence was always in the objects, and the ferryman's eyes on the
+  floor is the room learning what it was, too late and exactly on
+  time.
+
+## The Dictionary (an item, assigned)
+
+- Bond: assigned. Imposed, not chosen. It defines her and permits no
+  correction.
+- Its curse: it only contains what other people decided she is.
+- Endgame echo: the missing pages walk back (the ferryman's ribbon). The
+  dictionary gains a page at last: the wanderer, defined by no one but
+  herself.
+
+## Memories (flashback system)
+
+- Memories are found by **standing where they happened** - the map is
+  the trigger. The well, the reed path, the churchyard's edge, the
+  bookshop's back step.
+- Each memory has a **phase gate**: it only surfaces when she is far
+  enough along to bear it. The game will not show her a thing she
+  cannot yet hold.
+- No flashback cutscenes. The memory plays *inside the world* - the
+  same tiles, the same square, the old woman standing where she
+  stood, tinted in Bog & Bell.
+- The mother's two scenes:
+  - **the heels and the earrings** (gate: doubts) - allowed once,
+    then the flinch. Both were love in the cold.
+  - **the stranger's sentence** (gate: feared) - the errand, the old
+    woman, the sentence in the air. It echoes in awed, from
+    strangers who never knew they were rhyming.
+  - **the dictionary** (gate: feared) - the picture pasted in, the
+    room laughing. The memory where she learns that cruelty recruits;
+    and the memory she finally rewrites in the endgame.
+- The breakdown and the golden light (gate: the labyrinth) - held
+  for the endgame, at the center of the mind's maze.
+
+## The Labyrinth (the endgame, the real fight)
+
+- He made her hate herself. That was his true victory - not the
+  dictionary, not the room: the voice he installed, which speaks in
+  her own voice so no witness can see the fight.
+- The labyrinth of the mind is that voice, given architecture. Its
+  rooms are the memories, in order: the heels, the stranger's
+  sentence, the dictionary, the letter.
+- Each room is not a battle. Each accepted thing - a whisper kept,
+  a charm attuned, a name said - takes one wall down. The game's
+  leveling IS the unbuilt-ing.
+- The center holds no monster (it was never real). It holds the
+  empty room he built, and the mother's chore-note - the labyrinth's
+  map, disguised as chores, left by the one person who knew the maze
+  because she lived beside its architect.
+- The final encounter is a meeting: the room seeing for itself,
+  inside and out. Then it is just a room.
+
 ## The Monsters (enemy design)
 
 - The townsfolk fear the bog-things: fen-wights, the drowned, the
