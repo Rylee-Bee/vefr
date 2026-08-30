@@ -5,9 +5,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from .generator import generate_rumor
+from .paths import app_home
 
 app = FastAPI(title="Old Name", version="0.1.0")
-WEB = Path(__file__).resolve().parents[2] / "web"
+WEB = app_home() / "web"
 
 
 class RumorRequest(BaseModel):
