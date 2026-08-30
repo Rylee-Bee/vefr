@@ -37,12 +37,26 @@
       edge. And one law from the sealed layer: the game never holds
       her under.
 
-## Next
+- [x] **v1.2 - items in the world**: the vault became the game's
+      inventory (carried item in the HUD); attunement on screen
+      (gold ring, gold only when the world is kind); the reed
+      crossing's water level became a choice (high in feared); the
+      the sea-figure sighting at the water's edge (awed, gold, once).
+      And the town grew 30x20 -> 40x28: the moot hall (Old the roll-keeper
+      keeps the roll), Katla's tavern (rumors are born there),
+      Sigga's store (her ledger is not the parish ledger) - all
+      with doors, verified reachable by flood-fill.
+- [x] **the storytelling layer named**: style.py is saga.py -
+      for the goddess who keeps stories at Sokkvabekk. Bragi
+      composes the prompts; Idunn keeps the ledger that renews
+      the voice.
 
 - [ ] **v1.2 - items in the world**: the vault becomes the game's
       inventory; attunement moments on screen (gold only when the
       world is kind); the reed path's water level becomes a choice;
       the the sea-figure sighting at the water's edge (awed, gold)
+## Next
+
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
