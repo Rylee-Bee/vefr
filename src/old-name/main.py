@@ -82,6 +82,8 @@ def world():
         "willow_color": town.get("willow_color", "#e8e5df"),
         "watch": town["watch"],
         "sanctuary_tiles": town.get("sanctuary_tiles", []),
+        "water_by_phase": town.get("water_by_phase", {}),
+        "flood_tiles": town.get("flood_tiles", []),
         "speakers": [
             {
                 "key": key,
