@@ -33,6 +33,10 @@ golden light's words arriving. A door held open. If gold is on
 screen, something warm is happening - so gold is almost never on
 screen. Its rarity is its voice.
 
+It is named against the church's version: the golden rule, beaten in
+and never shown. Old Name keeps the rule as it should have been kept -
+shown. Gold is kindness given, never kindness demanded.
+
 ## Tiles
 
 - **32x32** - modern pixel-art size. Room for readable faces, items,
