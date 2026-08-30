@@ -139,6 +139,19 @@
   made for her. The attuned things may look humble beside it. They
   belong.
 
+## The Mother's Voice (the letter)
+
+- Short lines. Plain words. No flourish. 3-6 lines.
+- She knew. The letter carries the knowing without naming it.
+- One practical instruction, plain as bread. One line of love, said
+  sideways.
+- The name the wanderer appears once, quietly. She always knew.
+- The letter is found with the tongueless bell, kept shut by the
+  ledger-clasp.
+- _the worldbuilding chat refines: what form her words take, how
+  direct the knowing is, anything real held at Rylee's chosen
+  distance_
+
 ## The Monsters (enemy design)
 
 - The townsfolk fear the bog-things: fen-wights, the drowned, the
