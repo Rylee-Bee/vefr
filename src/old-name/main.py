@@ -10,7 +10,9 @@ from .npc import generate_line
 from .paths import app_home
 from .world import load_world
 
-app = FastAPI(title="Old Name", version="2.0.0")
+PURPOSE = "it gives the hellos that never happened"
+
+app = FastAPI(title="Old Name", version="2.0.0", description=PURPOSE.capitalize())
 WEB = app_home() / "web"
 app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
@@ -27,7 +29,7 @@ class NpcRequest(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "service": "old-name"}
+    return {"ok": True, "service": "old-name", "purpose": PURPOSE}
 
 
 @app.post("/api/rumor")

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "old-name"
 version = "2.0.0"
-description = "Old Name - a rumor engine. Memory and longing, flying out and coming home."
+description = "Old Name - a rumor engine. Memory and longing, flying out and coming home. It gives the hellos that never happened."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
