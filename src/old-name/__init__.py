@@ -1,1 +1,4 @@
-__version__ = "0.1.0"
+"""Old Name - the Rumor engine.
+
+Items, whispers, and the bonds between them.
+"""

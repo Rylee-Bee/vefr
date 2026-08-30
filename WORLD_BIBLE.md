@@ -124,6 +124,34 @@
 - The last dungeon is a labyrinth of the mind. Its center holds no
   monster.
 
+## The Three Bonds (items)
+
+- **Assigned**: the church's sword, the hammer - given with
+  expectation, heavy in the wrong hands. Works perfectly, fits badly.
+  Never asked for.
+- **Attuned**: the ribbon, the well-stone, whatever was waiting for
+  her. Rare. The world side-eyes these.
+- **Cold**: a tool that works for anyone, which is its own strange
+  mercy.
+
+## The Monsters (enemy design)
+
+- The townsfolk fear the bog-things: fen-wights, the drowned, the
+  pale figures past the reed line. These are the early encounters -
+  exactly what she was taught to hate.
+- The slow realization, layer by layer: each feared thing she meets
+  up close is only ever another outcast. Another one the ledger
+  erased. Another somebody's daughter.
+- Layer by layer, the real monster comes into focus - not a creature
+  at all, but the hatred itself: the conserving, the enforcement, the
+  ledger that unwrites people.
+- Game rule: monster encounters are rumor-flavored. The rumors lie
+  about the monsters the same way they lie about her. The further she
+  walks from the church tower, the less the rumors match what she
+  finds.
+- The final "encounter" of each phase is never a fight. It is a
+  meeting.
+
 ## Rumor Phases (the perception engine)
 
 | Phase | The world's tone | Her name in rumor |
