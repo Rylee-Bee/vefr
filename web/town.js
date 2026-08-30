@@ -11,6 +11,7 @@
   var phases = [];
   var watchR = 0;
   var BLOCKED = ['~', 'B', '#', 'T', 'M'];
+  var SANCT = [];
   var openSpeaker = null;
   var busy = false;
 
@@ -31,6 +32,7 @@
     phases = W.phases;
     phase = phases[0];
     watchR = W.watch.r_by_phase[phase] || W.watch.tower[2] || 12;
+    SANCT = W.sanctuary_tiles || [];
     the wanderer = { x: W.willow_start[0], y: W.willow_start[1] };
     canvas.width = W.map[0].length * TILE;
     canvas.height = W.map.length * TILE;
@@ -48,7 +50,10 @@
   }
 
   function blocked(x, y) {
-    return BLOCKED.indexOf(tileAt(x, y)) !== -1;
+    var t = tileAt(x, y);
+    var e = W.legend[t];
+    if (e && typeof e.solid === 'boolean') return e.solid;
+    return BLOCKED.indexOf(t) !== -1;
   }
 
   function losBlocked(x0, y0, x1, y1) {
@@ -118,6 +123,12 @@
       ctx.fillStyle = c;
       ctx.fillRect(px + 14, py + 14, 4, 4);
     }
+    if (e.deco === 'garden') {
+      ctx.fillStyle = c;
+      ctx.fillRect(px + 6, py + 10, 2, 9);
+      ctx.fillRect(px + 18, py + 16, 2, 9);
+      ctx.fillRect(px + 25, py + 6, 2, 7);
+    }
     if (e.deco === 'cap') {
       ctx.fillStyle = c;
       ctx.fillRect(px + 4, py + 4, TILE - 8, 6);
@@ -147,8 +158,9 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (var y = 0; y < rows(); y++) {
       for (var x = 0; x < cols(); x++) {
+        var t = tileAt(x, y);
         drawTile(x, y);
-        if (watched(x, y)) {
+        if (watched(x, y) && SANCT.indexOf(t) === -1) {
           ctx.fillStyle = W.watch.overlay;
           ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
         }
@@ -166,9 +178,12 @@
 
   function hud() {
     document.getElementById('poi').textContent = poiAt(the wanderer.x, the wanderer.y);
-    document.getElementById('watched').textContent = watched(the wanderer.x, the wanderer.y)
-      ? 'the tower watches.'
-      : 'out of the tower\u2019s sight.';
+    var onSanct = SANCT.indexOf(tileAt(the wanderer.x, the wanderer.y)) !== -1;
+    document.getElementById('watched').textContent = onSanct
+      ? 'safe here.'
+      : watched(the wanderer.x, the wanderer.y)
+        ? 'the tower watches.'
+        : 'out of the tower\u2019s sight.';
     var near = speakerNear();
     var note = document.getElementById('near-note');
     if (near && !openSpeaker) {
@@ -224,7 +239,7 @@
     openSpeaker = near;
     document.getElementById('npc-box').hidden = false;
     document.getElementById('npc-name').textContent = near.name;
-    document.getElementById('npc-line').textContent = 'the ' + near.near.replace(/^the /, '') + ' is quiet...';
+    document.getElementById('npc-line').textContent = '\u2026';
     document.getElementById('near-note').hidden = true;
     busy = true;
     fetch('/api/npc', {

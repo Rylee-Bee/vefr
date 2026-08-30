@@ -59,6 +59,15 @@ shown. Gold is kindness given, never kindness demanded.
 - No flashing, no pulsing, no glow-animation. The world holds its
   breath; so does the screen.
 
+## The Water Law
+
+- The world never holds her under. Water is never forced: no
+  falls, no currents, no cutscene crossings, no deep water she did
+  not choose at the edge - and the choice can always be walked
+  away from.
+- The water's calm is the calmest thing on screen. Its peace is
+  real; the story never takes it.
+
 ## Sound (direction only, for later)
 
 Bells, water, wind, one string instrument heard through a wall.
