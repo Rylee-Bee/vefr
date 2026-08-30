@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 from .bonds import bond_keys, bond_prompt
 from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
 from .paths import app_home
-from .style import system_prompt
+from .saga import system_prompt
 from .world import load_world
 
 VAULT = Path(os.environ.get("MUNR_VAULT", str(app_home() / "data" / "vault.json")))

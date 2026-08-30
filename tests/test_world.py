@@ -18,14 +18,17 @@ def test_pack_files_exist():
         "voices/mother.md",
         "voices/the ferryman.md",
         "voices/hearth.md",
+        "voices/katla.md",
+        "voices/sigga.md",
+        "voices/the roll-keeper.md",
     ):
         assert pack_dir().joinpath(rel).exists()
 
 
 def test_town_payload_is_grid():
     m = load_world()["town"]["map"]
-    assert len(m) == 20
-    assert all(len(row) == len(m[0]) for row in m)
+    assert len(m) == 28
+    assert all(len(row) == 40 for row in m)
 
 
 def test_watch_narrows_the_safe_world_each_phase():
@@ -85,3 +88,6 @@ def test_willow_can_leave_the_bookshop():
     assert (23, 17) in seen, "the hearth door"
     assert (12, 13) in seen, "the bookshop back door"
     assert (13, 15) in seen, "the bookshop front door"
+    assert (31, 5) in seen, "the moot hall door"
+    assert (36, 6) in seen, "the tavern door"
+    assert (32, 14) in seen, "the store door"
