@@ -42,7 +42,7 @@ def build_payload(phase: str, theme: str | None) -> dict:
 
 
 def _system(phase: str) -> str:
-    from .style import system_prompt
+    from .saga import system_prompt
 
     return system_prompt(phase)
 

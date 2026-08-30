@@ -21,7 +21,9 @@ spoken must be true.
 src/old-name/            the engine (MIT)
   paths.py           where things live (OLD-NAME-HOME, MUNR_WORLD)
   world.py           the pack loader - the only seam
-  style.py           prompts from pack voices + bible + ledger
+  saga.py            the storytelling layer - Saga keeps the stories:
+                     Bragi composes (prompts, voices), Idunn keeps
+                     (the ledger that renews the voice)
   generator.py       rumor cards (speaker, whisper, is_true)
   forge.py           items; bonds come from the pack
   bell.py            sealed voices (the goodbye)
