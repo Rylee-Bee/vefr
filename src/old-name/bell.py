@@ -4,7 +4,7 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
-from .style import sealed_voice
+from .saga import sealed_voice
 from .world import load_world
 
 SCHEMA = {
