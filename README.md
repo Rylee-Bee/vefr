@@ -11,6 +11,10 @@ watchful tower. A **world pack** holds the story. The two only
 touch through one contract, so anyone can take the bones and grow
 their own flesh.
 
+It is an honesty contract rendered as a game: the world's claims
+live in the pack, the engine's rules are tested, and every name
+spoken must be true.
+
 ## The bones and the flesh
 
 ```
