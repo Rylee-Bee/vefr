@@ -29,20 +29,35 @@
       pack loader. The town renderer is world-driven (/api/world).
       MIT on the bones; the flesh stays private. Someday: hand
       someone the bones, they grow their own story.
+- [x] **the hearth**: the old soldier and the housekeeper come to Private Canon -
+      the soldier's house in the church's own shadow, one standing
+      gold window, a sanctuary threshold the watch never crosses,
+      plain speech and corn-bread. The the sea-folk join the canon: the
+      Weaver's people, the name-keepers, seen once at the water's
+      edge. And one law from the sealed layer: the game never holds
+      her under.
 
 ## Next
 
-- [ ] **v1.1 - whisper NPCs**: the engine moves into the game - Old
-      the ferryman at the well, the current phase's tone in the dialogue
-      box, seed fallback so the world never breaks
 - [ ] **v1.2 - items in the world**: the vault becomes the game's
       inventory; attunement moments on screen (gold only when the
-      world is kind); the reed path's water level becomes a choice
-- [ ] **v1.3 - the labyrinth**: the memory rooms in order - the
-      heels, the sentence, the dictionary, the letter - and
-      encounters that end in meetings, not fights
+      world is kind); the reed path's water level becomes a choice;
+      the the sea-figure sighting at the water's edge (awed, gold)
+- [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
+      order - the heels, the sentence, the dictionary, the letter -
+      one wall down per accepted thing, the empty room, the
+      chore-note as map. It feels like the ending. It is not.
+- [ ] **v1.4 - the water (act III)**: the reed crossing becomes a
+      choice; the grave in the reeds; the bell rings once,
+      warm-tuned; the the sea-figure surfaces (gold); the town says the
+      name; the golden light's words arrive. The last screen is
+      gold.
 - [ ] **shared story state**: the town's phase rail and the rumors
       rail become one state, carried across views
+- [ ] **the rpg-js spike** (VM 202): Tiled + RPG-JS as a second
+      render target against the same API; custom stays canonical
+      unless the spike wins. A lab-style wrapper (`lab deploy`,
+      `lab verify`, `lab pack check`) follows whatever wins
 
 ## The always-layer
 
