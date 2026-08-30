@@ -54,10 +54,12 @@
       gold.
 - [ ] **shared story state**: the town's phase rail and the rumors
       rail become one state, carried across views
-- [ ] **the rpg-js spike** (VM 202): Tiled + RPG-JS as a second
-      render target against the same API; custom stays canonical
-      unless the spike wins. A lab-style wrapper (`lab deploy`,
-      `lab verify`, `lab pack check`) follows whatever wins
+- [x] **the rpg-js question**: answered 2026-08-30 - the custom
+      renderer stays canonical. RPG-JS stays admired (MIT, a fine
+      tool), and the door remains open through the pack contract:
+      any future render target reads the same /api/world. A
+      lab-style wrapper (`lab deploy`, `lab verify`, `lab pack
+      check`) is still welcome whenever it earns its keep
 
 ## The always-layer
 
