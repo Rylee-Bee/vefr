@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from .bell import generate_letter
 from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .paths import app_home
@@ -42,6 +43,11 @@ def vault_keep(item: dict):
 @app.get("/api/vault")
 def vault_list():
     return list_vault()
+
+
+@app.post("/api/bell")
+def bell():
+    return generate_letter()
 
 
 @app.get("/")
