@@ -79,6 +79,7 @@ def world():
         "willow_start": town["willow_start"],
         "willow_color": town.get("willow_color", "#e8e5df"),
         "watch": town["watch"],
+        "sanctuary_tiles": town.get("sanctuary_tiles", []),
         "speakers": [
             {
                 "key": key,

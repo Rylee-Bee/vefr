@@ -42,6 +42,7 @@ def _speaker(key: str) -> dict:
 def build_payload(phase: str, key: str) -> dict:
     spec = _speaker(key)
     voice = pack_file(spec["voice_file"]).read_text(encoding="utf-8")
+    seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
     return {
         "model": MODEL,
         "system": (
@@ -50,7 +51,9 @@ def build_payload(phase: str, key: str) -> dict:
         ),
         "prompt": (
             f"{spec['name']} speaks one line at {spec['near']}, in the "
-            "current phase's tone. Reply with only the JSON object."
+            "current phase's tone. The seed line for this phase - match "
+            f"its plainness and shape, do not copy it word for word: "
+            f"\"{seed}\" Reply with only the JSON object."
         ),
         "format": SCHEMA,
         "stream": False,
