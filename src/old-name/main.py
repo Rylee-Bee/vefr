@@ -4,6 +4,13 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
 from .bell import generate_letter
 from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
@@ -11,6 +18,7 @@ from .paths import app_home
 
 app = FastAPI(title="Old Name", version="0.1.0")
 WEB = app_home() / "web"
+app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
 
 class RumorRequest(BaseModel):
