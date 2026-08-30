@@ -2,7 +2,7 @@
 
 > *old-name* - memory, and longing. The raven that flies out every day
 > and comes home. This is the ladder from a tool to her story,
-> playable.
+> playable - and then to a tool anyone can point at their own story.
 
 ## Landed
 
@@ -18,24 +18,31 @@
 - [x] **the canon**: the archive, Private Canon, the wanderer, the bell, the
       church, the dictionary, the laughing room, the labyrinth, the
       monsters, Bog & Bell style, the Gold Rule
+- [x] **the founding myth**: the Keeper's empty throne, the Weaver's
+      scorn, the Untongued - the Conserved Word vs the Fen Verse
+- [x] **v1.0 - first tiles**: MAP.md became a walkable grid; the wanderer
+      leaves the bookshop; the tower's sightlines became geometry you
+      can feel
+- [x] **v2.0 - the bones and the flesh**: engine/world split. All
+      canon moved into worlds/private-canon/ (bible, ledger, map,
+      voices, world.json); the engine reads everything through the
+      pack loader. The town renderer is world-driven (/api/world).
+      MIT on the bones; the flesh stays private. Someday: hand
+      someone the bones, they grow their own story.
 
 ## Next
 
-- [ ] **the founding myth**: the pantheon, the creation story, what
-      the archive's people actually worship - the bible's biggest
-      gap; feeds every whisper and every forge result after it
-- [ ] **v1.0 - first tiles**: MAP.md becomes a walkable 32x32 grid;
-      the wanderer leaves the bookshop; the tower's sightlines become
-      geometry you can feel
-- [ ] **v1.1 - whisper NPCs**: the engine moves into the game - talk
-      to the ferryman at the well, hear the current phase's tone in the
-      dialogue box
+- [ ] **v1.1 - whisper NPCs**: the engine moves into the game - Old
+      the ferryman at the well, the current phase's tone in the dialogue
+      box, seed fallback so the world never breaks
 - [ ] **v1.2 - items in the world**: the vault becomes the game's
       inventory; attunement moments on screen (gold only when the
-      world is kind)
+      world is kind); the reed path's water level becomes a choice
 - [ ] **v1.3 - the labyrinth**: the memory rooms in order - the
       heels, the sentence, the dictionary, the letter - and
       encounters that end in meetings, not fights
+- [ ] **shared story state**: the town's phase rail and the rumors
+      rail become one state, carried across views
 
 ## The always-layer
 

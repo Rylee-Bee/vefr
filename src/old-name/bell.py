@@ -4,6 +4,8 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
+from .style import sealed_voice
+from .world import load_world
 
 SCHEMA = {
     "type": "object",
@@ -20,11 +22,7 @@ def build_payload() -> dict:
     return {
         "model": MODEL,
         "system": _system(),
-        "prompt": (
-            "The bell has been struck. Write the goodbye: the mother's "
-            "letter, found with the tongueless bell, kept shut by the "
-            "ledger-clasp. Reply with only the JSON object."
-        ),
+        "prompt": load_world()["voices"]["mother"]["strike"],
         "format": SCHEMA,
         "stream": False,
         "keep_alive": KEEP_ALIVE,
@@ -33,9 +31,7 @@ def build_payload() -> dict:
 
 
 def _system() -> str:
-    from .style import mother_voice
-
-    return mother_voice()
+    return sealed_voice("mother")
 
 
 def generate_letter() -> Letter:
