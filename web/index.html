@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Old Name</title>
+<style>
+  :root {
+    --bg: #131311;
+    --card: #1d1b17;
+    --ink: #e8e5df;
+    --dim: #a39e92;
+    --accent: #a08b5a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  main { max-width: 40rem; margin: 0 auto; }
+  h1 { font-weight: normal; letter-spacing: 0.08em; margin-bottom: 0.2rem; }
+  .sub { color: var(--dim); font-style: italic; margin-top: 0; }
+  form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+  select, button {
+    min-height: 44px;
+    min-width: 44px;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+  }
+  button { cursor: pointer; border-color: var(--accent); color: var(--accent); }
+  button:hover { background: #262218; }
+  button[disabled] { opacity: 0.5; cursor: wait; }
+  .card {
+    background: var(--card);
+    border: 1px solid #3a352c;
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    overflow-wrap: anywhere;
+  }
+  .speaker { color: var(--accent); }
+  .hook { color: var(--dim); font-style: italic; margin-top: 0.5rem; }
+  .lie { color: var(--dim); font-size: 0.85rem; }
+  .error { color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>OLD-NAME</h1>
+  <p class="sub">memory &amp; longing, flying out and coming home</p>
+  <form id="f">
+    <label for="phase">Phase</label>
+    <select id="phase" name="phase">
+      <option value="whispers">whispers</option>
+      <option value="doubts">doubts</option>
+      <option value="feared">feared</option>
+      <option value="awed">awed</option>
+    </select>
+    <button type="submit">Whisper</button>
+  </form>
+  <section id="out" aria-live="polite"></section>
+</main>
+<script>
+  document.getElementById('f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const phase = document.getElementById('phase').value;
+    const out = document.getElementById('out');
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/rumor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase }),
+      });
+      const c = await r.json();
+      out.insertAdjacentHTML('afterbegin', `
+        <article class="card">
+          <div class="speaker">${c.speaker}</div>
+          <div>&ldquo;${c.whisper}&rdquo;</div>
+          ${c.hook ? `<div class="hook">${c.hook}</div>` : ''}
+          ${c.is_true ? '' : '<div class="lie">a lie, or close enough</div>'}
+        </article>`);
+    } catch (err) {
+      out.insertAdjacentHTML('afterbegin', '<p class="error">The mill is silent. Is the model loaded?</p>');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "old-name"
+version = "0.1.0"
+description = "Old Name - a rumor engine. Memory and longing, flying out and coming home."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "httpx>=0.28",
+    "pydantic>=2.10",
+]
+
+[dependency-groups]
+test = ["pytest>=8.3"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/old-name"]
