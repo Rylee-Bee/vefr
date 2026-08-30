@@ -9,6 +9,14 @@ Odin at Sokkvabekk where the cool waters speak. Within her:
     that renew the voice, compounding every time the raven
     comes home.
 
+The church tells those two as a god and his wife. The fen tells
+it otherwise, and the fen's telling is the one the code keeps:
+
+  - Lofn composes: praise-poetry that opens doors for unions the
+    world calls forbidden.
+  - Dagny keeps: new day - the apples that stay young by never
+    settling where they are not welcome.
+
 The world's words live in the pack (bible, ledger, voices);
 this module only ever teaches the engine how to speak.
 """
