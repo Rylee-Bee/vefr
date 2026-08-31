@@ -10,3 +10,12 @@ __pycache__/
 # build output
 /dist/
 
+# runtime state - per-session journals/vaults and fork metadata.
+# never commit: these are session data, not engine code, and the
+# live bazzite stack writes them under VEFR_HOME/data.
+/data/sessions/
+/data/vault-*.json
+/data/journal-*.json
+/data/trace.jsonl
+/data/trace.jsonl.old
+
