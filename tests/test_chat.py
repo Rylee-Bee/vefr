@@ -1,4 +1,4 @@
-"""old-name chat - the interview never produces an invalid pack.
+"""norns chat - the interview never produces an invalid pack.
 
 The model is monkeypatched out entirely: these tests prove the
 deterministic scaffolding (rename, write, validate) holds regardless

@@ -352,8 +352,38 @@ def starred_list():
 
 @app.get("/api/export", response_class=PlainTextResponse)
 def export():
-    """The whole playthrough as markdown - raw text, easy to download."""
+    """The whole playthrough as markdown - one section per dev UI
+    tab, in the order the player met them. See export.py for the
+    shape. Raw text, easy to download.
+    """
     return PlainTextResponse(export_story(), media_type="text/markdown")
+
+
+@app.get("/api/export/tabs", response_class=PlainTextResponse)
+def export_tabs_list():
+    """List of available per-tab exports, for the web UI to render
+    as 'Export this tab' buttons."""
+    return PlainTextResponse(
+        "\n".join(["town", "rumors", "vault", "bell", "voices", "journal"]),
+        media_type="text/plain",
+    )
+
+
+@app.get("/api/export/tabs/{name}", response_class=PlainTextResponse)
+def export_tab(name: str):
+    """One tab's worth of the world as markdown.
+
+    The web UI's "Export this tab" button posts here; the result
+    is a complete document (canon + that tab) ready to download.
+    """
+    from fastapi import HTTPException
+    from .export import export_tab as render_tab, _TAB_NAMES
+    if name not in _TAB_NAMES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"unknown tab {name!r}; expected one of {list(_TAB_NAMES)}",
+        )
+    return PlainTextResponse(render_tab(name), media_type="text/markdown")
 
 
 @app.get("/")

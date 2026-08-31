@@ -1,4 +1,4 @@
-"""old-name import - clone or pull a story repo into worlds/<name>/.
+"""ratatoskr ferry fetch - clone or pull a story repo into worlds/<name>/.
 
 Tests the URL resolution, the action choice (clone vs pull), the
 local-vs-ssh dispatch, and the dry-run early return. The actual

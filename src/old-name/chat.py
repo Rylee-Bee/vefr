@@ -1,4 +1,4 @@
-"""old-name chat - the conversational world-builder.
+"""norns chat - the conversational world-builder.
 
 Copies worlds/sample-world/ as a known-good scaffold, then interviews
 the author segment by segment (title, canon, theme colors, phases,
@@ -8,7 +8,7 @@ The conversation's *shape* is deterministic Python, never the model's
 choice - which question comes next, whether a rename is structurally
 safe, whether the pack validates. The model only ever fills in prose
 inside a schema it cannot escape. Geometry (the map itself) is left
-untouched in v1; grow it afterward with `old-name build --segments`.
+untouched in v1; grow it afterward with `norns build-map --segments`.
 
 Every write ends with maplab.validate() - the author never has to
 trust their own edits, the tool always checks.
@@ -163,7 +163,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     shutil.copytree(scaffold, dest)
     w = json.loads((dest / "world.json").read_text(encoding="utf-8"))
 
-    print("\nsmidr chat - let's build your world.\n")
+    print("\nnorns chat - let's build your world.\n")
     title = ask("What's your world called?", w["title"])
     premise = ask("In one or two sentences, what's the story?")
     protagonist = ask("Who is your protagonist, in a few words?")
@@ -325,7 +325,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     print(f"  NORN_WORLD={dest.name} old-name validate --pack {dest}")
     print(f"  NORN_WORLD={dest.name} raven test")
     print(
-        "  grow the map with: old-name build --segments <file> --pack "
+        "  grow the map with: norns build-map --segments <file> --pack "
         f"{dest}"
     )
     return 0
