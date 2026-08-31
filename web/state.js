@@ -1,4 +1,4 @@
-/* norn - the one client-side story state.
+/* vefr - the one client-side story state.
  *
  * The town renderer (town.js) and the tabs (the inline script in
  * index.html) are two separate script scopes. Each used to keep its

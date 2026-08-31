@@ -23,6 +23,8 @@ import sys
 import urllib.request
 from pathlib import Path
 
+from .paths import world_name as _default_world_name
+
 BLOCKED_FALLBACK = ['~', 'B', '#', 'T', 'M']
 
 
@@ -73,9 +75,9 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     if missing_legend:
         errors.append(f'map chars missing from legend: {missing_legend}')
 
-    start = tuple(town['willow_start'])
+    start = tuple(town['hero_start'])
     if not walkable(w, *start):
-        errors.append(f'willow_start {start} is not walkable')
+        errors.append(f'hero_start {start} is not walkable')
 
     seen = reach(w, start)
 
@@ -199,7 +201,7 @@ def verify_live(url: str) -> tuple[bool, list[str]]:
     with urllib.request.urlopen(f'{url.rstrip("/")}/api/world', timeout=15) as r:
         served = json.loads(r.read().decode('utf-8'))
     town_keys = ('tile', 'map', 'legend', 'pois', 'watch', 'sanctuary_tiles',
-                 'water_by_phase', 'flood_tiles', 'willow_start')
+                 'water_by_phase', 'flood_tiles', 'hero_start')
     w = {
         'phases': served['phases'],
         'speakers': {
@@ -215,16 +217,17 @@ def verify_live(url: str) -> tuple[bool, list[str]]:
 
 
 def main(argv=None) -> int:
+    default_pack = f'worlds/{_default_world_name()}'
     ap = argparse.ArgumentParser(prog='maplab', description=__doc__)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     v = sub.add_parser('validate', help='validate a world pack offline')
-    v.add_argument('--pack', default='worlds/private-canon')
+    v.add_argument('--pack', default=default_pack)
     v.set_defaults(fn=cmd_validate)
 
     b = sub.add_parser('build', help='rebuild the map from segment rows')
     b.add_argument('--segments', required=True)
-    b.add_argument('--pack', default='worlds/private-canon')
+    b.add_argument('--pack', default=default_pack)
     b.add_argument('--force', action='store_true', help='write even if validation fails')
     b.set_defaults(fn=cmd_build)
 

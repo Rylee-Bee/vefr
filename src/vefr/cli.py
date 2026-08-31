@@ -4,7 +4,7 @@ Two CLI entry points:
 
     ratatoskr - the squirrel. Ferries messages between the dev box,
                 the deploy host, Gitea, the NAS, and the World Tree
-                bundle. Subcommands: tidyup, test, weave, ferry
+                bundle. Subcommands: skipa, test, weave, ferry
                 (deploy / carry / fetch).
 
     norns     - the weavers. Craft commands for shaping the world:
@@ -54,7 +54,7 @@ def repo_root():
 
 
 def pack_root() -> Path:
-    """Where worlds/ lives: a checkout, or NORN_HOME in the container."""
+    """Where worlds/ lives: a checkout, or VEFR_HOME in the container."""
     r = repo_root()
     if r and (r / 'worlds').is_dir():
         return r
@@ -88,7 +88,7 @@ def need_repo() -> Path:
     return r
 
 
-# --------------------------------------------------------------- tidyup
+# --------------------------------------------------------------- skipa
 
 def q1_sync() -> tuple:
     if not repo_root():
@@ -129,7 +129,7 @@ def q4_world(url: str, pack: Path) -> tuple:
     try:
         served = fetch(f'{url.rstrip("/")}/api/world')
         town_keys = ('tile', 'map', 'legend', 'pois', 'watch', 'sanctuary_tiles',
-                     'water_by_phase', 'flood_tiles', 'willow_start')
+                     'water_by_phase', 'flood_tiles', 'hero_start')
         shim = {
             'phases': served['phases'],
             'speakers': {
@@ -184,8 +184,8 @@ def q7_next(pack: Path) -> tuple:
     return 'open', f'{len(items)} open: {"; ".join(short)}'
 
 
-def cmd_tidyup(args) -> int:
-    pack = pack_root() / 'worlds' / 'private-canon'
+def cmd_skipa(args) -> int:
+    pack = pack_root() / 'worlds' / world_name()
     rows = [
         ('Q1', 'git local + Gitea remote in sync', *q1_sync()),
         ('Q2', 'local files needing push', *q2_dirty()),
@@ -196,7 +196,7 @@ def cmd_tidyup(args) -> int:
         ('Q7', 'open items from the ROADMAP', *q7_next(pack)),
     ]
     now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    print(f'ratatoskr tidyup -- {now}')
+    print(f'ratatoskr skipa -- {now}')
     print()
     print('| Q  | Question | Status | Answer |')
     print('| -- | -------- | ------ | ------ |')
@@ -249,7 +249,7 @@ def cmd_import(args) -> int:
     """Clone (or pull) a story repo into worlds/<name>/.
 
     The engine and the story live in two Gitea repos on purpose - the
-    engine is public-track MIT (rylee/norn), the story is the author's
+    engine is public-track MIT (rylee/vefr), the story is the author's
     own (the private story repo or whatever the next world is). The world
     pack directory on disk is the seam; this command is how the
     latest of the story repo reaches that directory.
@@ -336,7 +336,7 @@ def cmd_import(args) -> int:
         # the live game already validates itself via /api/world on
         # the deploy host. Print the validation command instead.
         print(f'validate on the deploy host: ssh {target_host} '
-              f'"cd ~/old-name && norns craft validate --pack worlds/{name}"')
+              f'"cd ~/old-name && norns validate --pack worlds/{name}"')
         return 0
     try:
         w = load_pack(pack)
@@ -373,7 +373,7 @@ def cmd_build_web(args) -> int:
 
     The player opens the file, points it at any OpenAI-compatible LLM
     endpoint, and plays. No Python, no server, no internet: the pack's
-    bible, ledger, voices, and town are inlined as JSON inside the
+    logbok, ledger, voices, and town are inlined as JSON inside the
     HTML. Distributable: send it as a single email attachment, host
     on any static site, open from a phone's Files app.
 
@@ -394,12 +394,12 @@ def cmd_build_web(args) -> int:
             pack = pack_root() / 'worlds' / p
 
     if not (pack / 'world.json').exists():
-        print(f'pack not found at {pack}; pass --pack NAME or set NORN_WORLD')
+        print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
         return 1
 
     world = _json.loads((pack / 'world.json').read_text(encoding='utf-8'))
     title = world.get('title', pack.name)
-    bible = (pack / 'bible.md').read_text(encoding='utf-8') if (pack / 'bible.md').exists() else ''
+    logbok = (pack / 'logbok.md').read_text(encoding='utf-8') if (pack / 'logbok.md').exists() else ''
     ledger = (pack / 'ledger.md').read_text(encoding='utf-8') if (pack / 'ledger.md').exists() else ''
     voices = {}
     if (pack / 'voices').exists():
@@ -413,7 +413,7 @@ def cmd_build_web(args) -> int:
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)
     out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
-    out_html = out_html.replace('{{bible_json}}', _json.dumps(bible))
+    out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
 
@@ -589,7 +589,7 @@ RATATOSKR_HELP = """ratatoskr - the squirrel who carries messages up and down Yg
 Three subcommands for ferrying things between the engine and the
 rest of the world:
 
-  ratatoskr tidyup         the seven questions - git/deploy sync,
+  ratatoskr skipa         the seven questions - git/deploy sync,
                            local files needing push, deployment
                            health, world validation, backup
                            freshness, vault persistence, open
@@ -658,7 +658,7 @@ def ratatoskr_main() -> int:
     ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
-    sub.add_parser('tidyup', help='the seven questions').set_defaults(fn=cmd_tidyup)
+    sub.add_parser('skipa', help='the seven questions').set_defaults(fn=cmd_skipa)
 
     pt = sub.add_parser(
         'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
@@ -673,9 +673,9 @@ def ratatoskr_main() -> int:
     pw.add_argument('--with-bundle', action='store_true',
                     help='also write <name>-<date>.tree.md alongside the HTML')
     pw.add_argument('--vault', default=None,
-                    help='path to vault.json (default: $NORN_VAULT)')
+                    help='path to vault.json (default: $VEFR_VAULT)')
     pw.add_argument('--journal', default=None,
-                    help='path to journal.json (default: $NORN_JOURNAL)')
+                    help='path to journal.json (default: $VEFR_JOURNAL)')
     pw.add_argument('--from-live', default=None,
                     help='pull vault+journal from a live deployment URL')
     pw.set_defaults(fn=cmd_build_web)

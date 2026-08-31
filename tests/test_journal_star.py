@@ -11,7 +11,7 @@ import time
 
 import pytest
 
-from norn import forge, journal, starred
+from vefr import forge, journal, starred
 
 
 # ---- journal.remove + journal.undo ----
@@ -42,8 +42,8 @@ def test_remove_refuses_last_of_kind(tmp_journal):
            {'at': 'b', 'kind': 'npc_line', 'line': 'hello'}])
     with pytest.raises(ValueError, match='last entry of kind'):
         journal.remove(0)
-    # The bell_letter-style 'no entries of kind X' path:
-    _seed([{'at': 'a', 'kind': 'bell_letter', 'letter': 'For you.'}])
+    # The stefna_letter-style 'no entries of kind X' path:
+    _seed([{'at': 'a', 'kind': 'stefna_letter', 'letter': 'For you.'}])
     with pytest.raises(ValueError):
         journal.remove(0)
 
@@ -103,8 +103,8 @@ def tmp_pack(tmp_path, monkeypatch):
     pack = tmp_path / 'worlds' / 'private-canon'
     pack.mkdir(parents=True)
     (pack / 'world.json').write_text('{"title": "t", "phases": {}, "voices": {}, "bonds": {}, "town": {}}')
-    from norn.paths import pack_dir
-    monkeypatch.setattr('norn.starred.pack_dir', lambda *a, **k: pack)
+    from vefr.paths import pack_dir
+    monkeypatch.setattr('vefr.starred.pack_dir', lambda *a, **k: pack)
     return pack
 
 
@@ -144,9 +144,9 @@ def test_star_routes_item_forged_to_kept_items(tmp_pack):
     assert '## kept-items' in (tmp_pack / 'starred-whispers.md').read_text(encoding='utf-8')
 
 
-def test_star_routes_bell_letter_to_awed(tmp_pack):
+def test_star_routes_stefna_letter_to_awed(tmp_pack):
     starred.star({
-        'kind': 'bell_letter',
+        'kind': 'stefna_letter',
         'letter': 'For you.\nMend the hem.',
     })
     text = (tmp_pack / 'starred-whispers.md').read_text(encoding='utf-8')

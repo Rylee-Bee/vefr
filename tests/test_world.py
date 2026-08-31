@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from norn import maplab
-from norn.paths import pack_dir, world_name
-from norn.world import load_world
+from vefr import maplab
+from vefr.paths import pack_dir, world_name
+from vefr.world import load_world
 
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 if world_name() != 'private-canon' or not (_pack / 'world.json').exists():
@@ -24,7 +24,7 @@ def test_maplab_flags_a_broken_map():
 
     w = copy.deepcopy(load_world())
     w['town']['map'][0] = w['town']['map'][0].replace('=', 'Q')  # unknown char
-    w['town']['willow_start'] = [23, 3]  # the tower - solid
+    w['town']['hero_start'] = [23, 3]  # the tower - solid
     errors = maplab.validate(w)
     assert any('missing from legend' in e for e in errors)
     assert any('not walkable' in e for e in errors)
@@ -39,7 +39,7 @@ def test_pack_loads():
 
 def test_pack_files_exist():
     for rel in (
-        "bible.md",
+        "logbok.md",
         "ledger.md",
         "map.md",
         "world.json",
@@ -92,7 +92,7 @@ def test_the_hearth_is_in_the_world():
     assert town["legend"]["D"].get("solid", False) is False
 
 
-def test_willow_can_leave_the_bookshop():
+def test_hero_can_leave_the_bookshop():
     town = load_world()["town"]
     m = town["map"]
 
@@ -101,7 +101,7 @@ def test_willow_can_leave_the_bookshop():
             return False
         return not town["legend"].get(m[y][x], {}).get("solid", False)
 
-    start = tuple(town["willow_start"])
+    start = tuple(town["hero_start"])
     seen = {start}
     stack = [start]
     while stack:

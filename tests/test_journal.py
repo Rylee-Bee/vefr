@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from norn import journal
+from vefr import journal
 
 
 @pytest.fixture()
@@ -27,14 +27,14 @@ def test_log_appends_in_order_and_persists(log_file):
     journal.log("rumor", speaker="Katla", whisper="the mill ran dry", is_true=True)
     journal.log("npc_line", speaker="the ferryman", line="stay off the reeds")
     journal.log("item_forged", name="The Ledger-Ribbon", bond="attuned", lore="tied once")
-    journal.log("bell_letter", letter="For you.\n\nbring the pail in")
+    journal.log("stefna_letter", letter="For you.\n\nbring the pail in")
 
     entries = journal.list_entries()
     assert [e["kind"] for e in entries] == [
         "rumor",
         "npc_line",
         "item_forged",
-        "bell_letter",
+        "stefna_letter",
     ]
     assert entries[0]["speaker"] == "Katla"
     assert entries[3]["letter"].startswith("For you.")
@@ -81,5 +81,5 @@ def test_every_hooked_kind_is_a_known_kind():
         "rumor",
         "npc_line",
         "item_forged",
-        "bell_letter",
+        "stefna_letter",
     }

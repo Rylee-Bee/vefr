@@ -47,7 +47,7 @@ that is fine - the world keeps asking.
    day is the town's oldest buried thing.
 
 3. **What's the smallest thing the town has forgotten?**
-   Bigger forgets are mentioned in the bible. The smallest is
+   Bigger forgets are mentioned in the logbok. The smallest is
    what makes the protagonist ask a question she doesn't know
    she's asking.
 

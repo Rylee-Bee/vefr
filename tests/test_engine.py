@@ -6,9 +6,9 @@ sample world that ships with the framework.
 
 import copy
 
-from norn import maplab
-from norn.paths import pack_dir
-from norn.world import load_world
+from vefr import maplab
+from vefr.paths import pack_dir
+from vefr.world import load_world
 
 
 def test_sample_world_validates():
@@ -26,7 +26,7 @@ def test_maplab_flags_broken_maps():
         if town['legend'].get(ch, {}).get('solid') is True
     )
     x, y = solid_xy
-    town['willow_start'] = [x, y]              # a known-solid tile
+    town['hero_start'] = [x, y]              # a known-solid tile
     town['map'][0] = town['map'][0][:-1] + 'Q'  # an unknown char
     errors = maplab.validate(w)
     assert any('not walkable' in e for e in errors)
@@ -34,8 +34,8 @@ def test_maplab_flags_broken_maps():
 
 
 def test_bond_schema_follows_the_pack():
-    from norn.forge import build_payload
-    from norn.world import load_world
+    from vefr.forge import build_payload
+    from vefr.world import load_world
 
     p = build_payload()
     assert p['format']['properties']['bond']['enum'] == list(
@@ -45,7 +45,7 @@ def test_bond_schema_follows_the_pack():
 
 
 def test_seeds_cover_every_phase():
-    from norn.world import load_world
+    from vefr.world import load_world
 
     w = load_world()
     for key, spec in w['speakers'].items():

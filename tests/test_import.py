@@ -10,7 +10,7 @@ import subprocess
 
 import pytest
 
-from norn import cli
+from vefr import cli
 
 
 # ---- _import_url ----

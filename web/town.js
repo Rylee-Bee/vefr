@@ -9,7 +9,7 @@
 
   var W = null; /* world payload */
   var TILE = 32;
-  var the wanderer = null;
+  var hero = null;
   var watchR = 0;
   var SANCT = [];
   var BLOCKED = ['~', 'B', '#', 'T', 'M'];
@@ -40,7 +40,7 @@
     W = data;
     TILE = W.tile || 32;
     SANCT = W.sanctuary_tiles || [];
-    the wanderer = { x: W.willow_start[0], y: W.willow_start[1] };
+    hero = { x: W.hero_start[0], y: W.hero_start[1] };
     canvas.width = W.map[0].length * TILE;
     canvas.height = W.map.length * TILE;
     sync();
@@ -122,7 +122,7 @@
   function speakerNear() {
     var found = null;
     W.speakers.forEach(function (s) {
-      var d = Math.abs(the wanderer.x - s.at[0]) + Math.abs(the wanderer.y - s.at[1]);
+      var d = Math.abs(hero.x - s.at[0]) + Math.abs(hero.y - s.at[1]);
       if (d <= 1) found = s;
     });
     return found;
@@ -213,25 +213,25 @@
       drawFigure(s.at[0] * TILE, s.at[1] * TILE, W.speaker_color, W.speaker_head);
     });
     /* the wanderer - ink on the world */
-    ctx.fillStyle = W.willow_color;
+    ctx.fillStyle = W.hero_color;
     ctx.beginPath();
-    ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 7, 0, Math.PI * 2);
+    ctx.arc(hero.x * TILE + 16, hero.y * TILE + 18, 7, 0, Math.PI * 2);
     ctx.fill();
     var held = carried();
     if (held && held.bond === 'attuned') {
       ctx.strokeStyle = '#c9ad6b';
       ctx.beginPath();
-      ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 10, 0, Math.PI * 2);
+      ctx.arc(hero.x * TILE + 16, hero.y * TILE + 18, 10, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
 
   function hud() {
-    document.getElementById('poi').textContent = poiAt(the wanderer.x, the wanderer.y);
-    var onSanct = SANCT.indexOf(tileAt(the wanderer.x, the wanderer.y)) !== -1;
+    document.getElementById('poi').textContent = poiAt(hero.x, hero.y);
+    var onSanct = SANCT.indexOf(tileAt(hero.x, hero.y)) !== -1;
     document.getElementById('watched').textContent = onSanct
       ? 'safe here.'
-      : watched(the wanderer.x, the wanderer.y)
+      : watched(hero.x, hero.y)
         ? 'the tower watches.'
         : 'out of the tower\u2019s sight.';
     var near = speakerNear();
@@ -279,10 +279,10 @@
   }
 
   function move(dx, dy) {
-    var nx = the wanderer.x + dx, ny = the wanderer.y + dy;
+    var nx = hero.x + dx, ny = hero.y + dy;
     if (blocked(nx, ny)) return;
-    the wanderer.x = nx;
-    the wanderer.y = ny;
+    hero.x = nx;
+    hero.y = ny;
     if (openSpeaker) closeNpc();
     checkSighting();
     draw();
@@ -292,7 +292,7 @@
   function checkSighting() {
     if (sighted || phase() !== 'awed') return;
     var onCrossing = (W.flood_tiles || []).some(function (t) {
-      return t[0] === the wanderer.x && t[1] === the wanderer.y;
+      return t[0] === hero.x && t[1] === hero.y;
     });
     if (!onCrossing) return;
     sighted = true;

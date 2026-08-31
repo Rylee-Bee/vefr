@@ -6,16 +6,16 @@ from pydantic import BaseModel, ValidationError
 
 # Single source of truth for which inference backend the engine talks to.
 # Precedence:
-#   NORN_LLAMACPP_URL   llama.cpp's OpenAI-compatible /v1/chat/completions
+#   VEFR_LLAMACPP_URL   llama.cpp's OpenAI-compatible /v1/chat/completions
 #                       endpoint (preferred, currently ~13x faster on
 #                       Bazzite's 6900XT than ollama with broken ROCm).
 #   OLLAMA_URL          ollama's /api/generate endpoint (legacy fallback).
 #                       Empty string "" disables a backend; unset means use
 #                       the default.
-LLAMACPP_URL = os.environ.get("NORN_LLAMACPP_URL", "http://127.0.0.1:8081").rstrip("/")
+LLAMACPP_URL = os.environ.get("VEFR_LLAMACPP_URL", "http://127.0.0.1:8081").rstrip("/")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-MODEL = os.environ.get("NORN_MODEL", "gpt-oss-20b")
-KEEP_ALIVE = os.environ.get("NORN_KEEP_ALIVE", "1m")
+MODEL = os.environ.get("VEFR_MODEL", "gpt-oss-20b")
+KEEP_ALIVE = os.environ.get("VEFR_KEEP_ALIVE", "1m")
 
 
 class RumorCard(BaseModel):
@@ -69,7 +69,7 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
     Single source of truth for backend choice and wire-format translation.
     Translates the ollama-shaped dict (system/prompt/format/think) into
     the llama.cpp /v1/chat/completions shape (messages, response_format,
-    chat_template_kwargs) when NORN_LLAMACPP_URL is set. Returns the
+    chat_template_kwargs) when VEFR_LLAMACPP_URL is set. Returns the
     assistant content string; callers validate against their pydantic
     models.
 

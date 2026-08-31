@@ -1,9 +1,9 @@
 """The rune cast - the engine's one stochastic surface.
 
-The lore, the bible, the journey, the surface, the contract, the
+The lore, the logbok, the journey, the surface, the contract, the
 tree, the journal, the export, the backup - all deterministic,
 all replayable. The runes are the exception. After everything
-has been laid down (lore pack chosen, bible.md written, journey
+has been laid down (lore pack chosen, logbok.md written, journey
 mapped), the cast is the one moment where what happens is *up
 to the world*.
 

@@ -15,8 +15,8 @@ worlds/lore/<name>` and writing the four files - no PR to the
 engine. The engine reads them; the author copies the prompt.
 
 A lore pack does NOT decide the world. It seeds the world's
-mood. The actual canon (world.json, bible.md, voices/, map)
-is shaped by norns craft chat, with the lore pack's textures
+mood. The actual canon (world.json, logbok.md, voices/, map)
+is shaped by norns chat, with the lore pack's textures
 woven into the system prompt. The lore is what the world feels
 like; the chat is what the world becomes.
 """

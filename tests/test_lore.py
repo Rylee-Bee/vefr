@@ -19,8 +19,8 @@ from pathlib import Path
 
 import pytest
 
-from norn import journey, lore, world
-from norn.journey import (
+from vefr import journey, lore, world
+from vefr.journey import (
     DEFAULT_PHASES,
     PHASE_JOURNEY_RUNE,
     all_phases_with_journey,
@@ -86,7 +86,7 @@ def test_every_shipped_pack_has_all_five_files():
 def test_every_shipped_pack_license_is_cc_by_sa():
     """The license terms are the same family - CC BY-SA 4.0 - even
     though each pack has its own attributions."""
-    from norn.paths import app_home
+    from vefr.paths import app_home
     for entry in lore.list_lore():
         lic_path = app_home() / "worlds" / "lore" / entry.name / "LICENSE.md"
         text = lic_path.read_text(encoding="utf-8")
@@ -104,7 +104,7 @@ def test_every_shipped_pack_license_is_cc_by_sa():
 def test_preview_request_validates_lore_name():
     """An unknown lore name should surface as 404 from the route."""
     from fastapi.testclient import TestClient
-    from norn.main import app
+    from vefr.main import app
     c = TestClient(app)
     r = c.post("/api/builder/lore", json={"lore": "no-such-pack", "seeds": []})
     # either 404 (missing pack files) or 502 (model call fails in
@@ -116,7 +116,7 @@ def test_preview_request_validates_lore_name():
 def test_preview_response_shape():
     """The wandering-poets shape: textures + names + questions."""
     # No model call - validate the schema in isolation.
-    from norn.lore import LorePreviewResponse
+    from vefr.lore import LorePreviewResponse
     payload = {
         "lore": "norse",
         "textures": "a short prose passage",
@@ -170,7 +170,7 @@ def test_system_prompt_includes_rune_line():
     """Every whisper's system prompt carries the rune anchor for
     its current phase - the engine's bones threading through
     every generation."""
-    from norn.saga import system_prompt
+    from vefr.saga import system_prompt
     for phase in DEFAULT_PHASES:
         prompt = system_prompt(phase)
         expected_rune = PHASE_JOURNEY_RUNE[phase]["rune"]

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from norn import chat, maplab
+from vefr import chat, maplab
 
 SCAFFOLD = Path(__file__).resolve().parents[1] / 'worlds' / 'sample-world'
 
@@ -22,7 +22,7 @@ def _no_network(monkeypatch):
     monkeypatch.setattr(
         chat,
         'draft_theme',
-        lambda mood: {'bg': '#101010', 'willow_color': '#eeeeee', 'deco_color': '#c9ad6b'},
+        lambda mood: {'bg': '#101010', 'hero_color': '#eeeeee', 'deco_color': '#c9ad6b'},
     )
 
 
@@ -62,7 +62,7 @@ def test_interview_produces_a_valid_pack(tmp_path, monkeypatch):
     assert w['title'] == 'Emberholt'
     assert set(w['phases']) == {'day', 'night'}
     assert set(w['bonds']) == {'gifted', 'kept', 'spare'}
-    assert (dest / 'bible.md').exists()
+    assert (dest / 'logbok.md').exists()
     errors = maplab.validate(w, pack_dir=dest)
     assert errors == []
 
@@ -111,7 +111,7 @@ def test_theme_updates_colors_but_never_map_chars(tmp_path, monkeypatch):
     assert rc == 0
     w = maplab.load_pack(dest)
     assert w['town']['bg'] == '#101010'
-    assert w['town']['willow_color'] == '#eeeeee'
+    assert w['town']['hero_color'] == '#eeeeee'
     assert w['town']['map'] == original_map  # geometry untouched
     for entry in w['town']['legend'].values():
         if 'deco' in entry:

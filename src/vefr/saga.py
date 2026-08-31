@@ -17,7 +17,7 @@ it otherwise, and the fen's telling is the one the code keeps:
   - Dagny keeps: new day - the apples that stay young by never
     settling where they are not welcome.
 
-The world's words live in the pack (bible, ledger, voices);
+The world's words live in the pack (logbok, ledger, voices);
 this module only ever teaches the engine how to speak.
 """
 
@@ -26,11 +26,11 @@ from .world import load_world, phase_tone
 
 
 def sealed_voice(key: str) -> str:
-    """A world-owned voice: rules from the pack, world from the bible."""
+    """A world-owned voice: rules from the pack, world from the logbok."""
     voice = load_world()["voices"][key]
     rules = pack_file(voice["file"]).read_text(encoding="utf-8")
-    bible = _bible()
-    return rules + "\n\n" + bible
+    logbok = _logbok()
+    return rules + "\n\n" + logbok
 
 
 def mother_voice() -> str:
@@ -61,20 +61,20 @@ def system_prompt(phase: str) -> str:
         f"CURRENT PHASE: {tone}\n"
         f"{rune_line}\n"
         f"{cast_block}\n"
-        f"{_bible()}\n\n"
+        f"{_logbok()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "
         f"them:\n\n{_ledger()}"
     )
 
 
-def bible(name: str | None = None) -> str:
+def logbok(name: str | None = None) -> str:
     """The world's canon text, or "" when the pack keeps none."""
-    path = pack_file("bible.md", name)
+    path = pack_file("logbok.md", name)
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
-def _bible() -> str:
-    return bible()
+def _logbok() -> str:
+    return logbok()
 
 
 def _ledger() -> str:

@@ -12,7 +12,7 @@ from .paths import app_home
 from .saga import system_prompt
 from .world import load_world
 
-VAULT = Path(os.environ.get("NORN_VAULT", str(app_home() / "data" / "vault.json")))
+VAULT = Path(os.environ.get("VEFR_VAULT", str(app_home() / "data" / "vault.json")))
 
 UNDO_WINDOW_S = 60
 _LAST_REMOVED: dict | None = None
@@ -89,6 +89,15 @@ def _load_vault() -> list[dict]:
     return json.loads(VAULT.read_text(encoding="utf-8"))
 
 
+def _touch_living_tree() -> None:
+    # Local import: export.py imports FROM this module, so a
+    # module-level import here would be circular. Failures are
+    # swallowed inside refresh_living_tree() itself.
+    from .export import refresh_living_tree
+
+    refresh_living_tree()
+
+
 def keep_item(item: ItemCard) -> dict:
     vault = _load_vault()
     vault.append(item.model_dump())
@@ -96,6 +105,7 @@ def keep_item(item: ItemCard) -> dict:
     tmp = VAULT.with_suffix(".tmp")
     tmp.write_text(json.dumps(vault, indent=2), encoding="utf-8")
     tmp.replace(VAULT)
+    _touch_living_tree()
     return {"kept": True, "bond": item.bond, "count": len(vault)}
 
 
@@ -121,6 +131,7 @@ def remove(index: int) -> dict | None:
     tmp.replace(VAULT)
     _LAST_REMOVED = {"item": target, "index": index}
     _LAST_REMOVED_AT = time.monotonic()
+    _touch_living_tree()
     return target
 
 
@@ -144,4 +155,5 @@ def undo() -> dict | None:
     tmp.replace(VAULT)
     _LAST_REMOVED = None
     _LAST_REMOVED_AT = None
+    _touch_living_tree()
     return item

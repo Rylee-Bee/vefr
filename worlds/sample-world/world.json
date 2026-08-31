@@ -1,7 +1,7 @@
 {
   "name": "sample-world",
   "title": "Emberfield",
-  "description": "A demonstration world for the old-name engine. Replace everything.",
+  "description": "A demonstration world for the norn engine. Replace everything.",
   "gold_rule": "Gold appears only when the world is kind.",
   "phases": {
     "dusk": "The day settles. The tone is quiet and watchful.",
@@ -44,7 +44,7 @@
   "town": {
     "tile": 32,
     "bg": "#131311",
-    "willow_start": [3, 4],
+    "hero_start": [3, 4],
     "watch": {
       "tower": [5, 1],
       "r_by_phase": { "dusk": 3, "dawn": 4 },
@@ -60,7 +60,7 @@
       "S": { "base": ["#212a20"], "deco": "gold", "deco_color": "#c9ad6b" },
       "D": { "base": ["#332e26"] }
     },
-    "willow_color": "#e8e5df",
+    "hero_color": "#e8e5df",
     "map": [
       "############",
       "#..........#",
