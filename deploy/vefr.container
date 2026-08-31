@@ -6,6 +6,7 @@ Image=localhost/vefr:latest
 ContainerName=vefr
 Network=host
 Environment=VEFR_HOME=/app
+Environment=VEFR_WORLD=sample-world
 Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8081
 Environment=VEFR_MODEL=gpt-oss-20b
 Environment=VEFR_KEEP_ALIVE=1m
