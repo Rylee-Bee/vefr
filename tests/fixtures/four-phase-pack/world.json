@@ -1,0 +1,49 @@
+{
+  "name": "four-phase-pack",
+  "title": "Four Phase Pack",
+  "description": "A minimal fixture pack with 4 phases for journey-attachment tests.",
+  "phases": {
+    "whispers": "the test whispers phase",
+    "doubts": "the test doubts phase",
+    "feared": "the test feared phase",
+    "awed": "the test awed phase"
+  },
+  "surface": "plain",
+  "voices": {
+    "mother": {
+      "file": "voices/mother.md",
+      "strike": "write a letter"
+    }
+  },
+  "bonds": {
+    "given": {"card": "Given.", "prompt": "given."},
+    "cold": {"card": "Cold.", "prompt": "cold."}
+  },
+  "town": {
+    "tile": 32,
+    "bg": "#131311",
+    "hero_start": [1, 1],
+    "watch": {"tower": [1, 1], "r_by_phase": {"whispers": 1, "doubts": 2, "feared": 3, "awed": 4}, "overlay": "rgba(0,0,0,0.3)"},
+    "sanctuary_tiles": ["."],
+    "water_by_phase": {"whispers": "low", "doubts": "low", "feared": "low", "awed": "low"},
+    "flood_tiles": [],
+    "legend": {".": {"base": ["#212a20"]}, "#": {"base": ["#2a2e33"], "solid": true}},
+    "hero_color": "#e8e5df",
+    "map": ["###", "#.#", "###"],
+    "pois": {}
+  },
+  "speakers": {
+    "test": {
+      "name": "Test",
+      "at": [1, 1],
+      "near": "the test",
+      "voice_file": "voices/test.md",
+      "seeds": {
+        "whispers": "w",
+        "doubts": "d",
+        "feared": "f",
+        "awed": "a"
+      }
+    }
+  }
+}
