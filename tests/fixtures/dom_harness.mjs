@@ -120,7 +120,7 @@ function mkBtnWithData(id, dataKey, dataVal) {
   return e;
 }
 const tabsBox = mk('div', '', 'tabs');
-const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'trace', 'builder'];
+const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'trace', 'weave', 'builder'];
 const tabBtns = {};
 for (const v of TABVIEWS) {
   tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
@@ -170,10 +170,16 @@ mk('input', 'builder-import-repo');
 mk('input', 'builder-import-name');
 mk('button', 'builder-import-btn');
 mk('p', 'builder-import-status', 'note');
-mk('button', 'builder-validate-btn');
-mk('button', 'builder-verify-btn');
-mk('p', 'builder-validate-status', 'note');
-mk('section', 'builder-chat-log');
+ mk('button', 'builder-validate-btn');
+  mk('button', 'builder-verify-btn');
+  mk('p', 'builder-validate-status', 'note');
+  mk('button', 'builder-resolved-btn');
+  mk('button', 'builder-handoff-btn');
+  mk('p', 'builder-resolved-status', 'note');
+  mk('pre', 'builder-resolved-out');
+  mk('span', 'weave-status', 'note');
+  mk('section', 'weave-list');
+  mk('section', 'builder-chat-log');
 const bForm = mk('form', 'builder-chat-form');
 mk('textarea', 'builder-chat-input', '', bForm);
 mk('button', 'builder-chat-send', '', bForm);
@@ -323,6 +329,8 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/stefna') return ok({ letter: 'For you.' });
   if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
   if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'the ferryman' }] });
+  if (url === '/api/weave') return ok({ events: [{ event: 'pack.load.end', at: 1234567890.0, pack: 'sample-world', acts: 1, shape: 'acts', surface: 'combat' }] });
+  if (url === '/api/builder/resolved') return ok({ name: 'sample-world', title: 'Emberfield', _shape: 'acts', _current_act: 0, acts: [] });
   if (url === '/api/wiki') return ok({ characters: [{ key: 'the ferryman', name: 'the ferryman', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });

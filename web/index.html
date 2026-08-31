@@ -360,6 +360,7 @@
     <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Annall</button>
     <button type="button" role="tab" data-view="wiki" id="tab-wiki" aria-selected="false" aria-controls="view-wiki">Fræði</button>
     <button type="button" role="tab" data-view="trace" id="tab-trace" aria-selected="false" aria-controls="view-trace">Spor</button>
+    <button type="button" role="tab" data-view="weave" id="tab-weave" aria-selected="false" aria-controls="view-weave">Veft</button>
     <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Old Name</button>
   </div>
 
@@ -445,6 +446,12 @@
     <section id="trace-list" aria-live="polite"></section>
   </section>
 
+  <section id="view-weave" class="view" role="tabpanel" aria-labelledby="tab-weave" hidden>
+    <p class="note">the engine's weave log &mdash; every loader step, live. Drop a file in <code>voices/</code> or <code>sprites/</code>, refresh, and watch the loader react. Dev only.</p>
+    <p class="note" id="weave-status">&nbsp;</p>
+    <section id="weave-list" aria-live="polite"></section>
+  </section>
+
   <section id="view-builder" class="view" role="tabpanel" aria-labelledby="tab-builder" hidden>
     <p class="note">worldbuilder mode &mdash; chat with the local model, import story repos, validate geometry, verify a live deploy. For the author, not the player.</p>
 
@@ -474,6 +481,17 @@
         <button type="button" id="builder-verify-btn">Verify live deployment</button>
       </div>
       <p class="note" id="builder-validate-status">&nbsp;</p>
+    </div>
+
+    <div class="builder-section">
+      <h2 class="builder-h">What the engine sees</h2>
+      <p class="note">The merged world after convention resolution. The on-disk files are the source; this is what the engine actually loaded.</p>
+      <div class="controls">
+        <button type="button" id="builder-resolved-btn">Show resolved world</button>
+        <button type="button" id="builder-handoff-btn">Package handoff bundle</button>
+      </div>
+      <p class="note" id="builder-resolved-status">&nbsp;</p>
+      <pre id="builder-resolved-out" class="builder-chat-log" style="white-space:pre-wrap;font-size:0.78rem;max-height:320px;overflow:auto"></pre>
     </div>
 
     <div class="builder-section">
@@ -533,6 +551,7 @@
     journal: document.getElementById('view-journal'),
     wiki: document.getElementById('view-wiki'),
     trace: document.getElementById('view-trace'),
+    weave: document.getElementById('view-weave'),
     builder: document.getElementById('view-builder'),
   };
   tabs.forEach(function (b) {
@@ -544,6 +563,7 @@
       if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
       if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('old-name:wiki'));
       if (b.dataset.view === 'trace') window.dispatchEvent(new Event('old-name:trace'));
+      if (b.dataset.view === 'weave') window.dispatchEvent(new Event('old-name:weave'));
       if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
     });
   });
@@ -1030,6 +1050,36 @@
   }
   window.addEventListener('old-name:trace', renderTrace);
 
+  /* The engine's weave log - every loader step, live. */
+  var weaveList = document.getElementById('weave-list');
+  var weaveStatus = document.getElementById('weave-status');
+
+  function renderWeave() {
+    weaveStatus.textContent = 'reading\u2026';
+    fetch('/api/weave').then(function (r) { return r.json(); }).then(function (body) {
+      var evs = (body && body.events) || [];
+      weaveStatus.textContent = evs.length + ' events in memory (500 ring, JSONL on disk).';
+      weaveList.innerHTML = evs.length
+        ? evs.map(function (ev) {
+            var head = '<div class="when">' + esc(new Date((ev.at || 0) * 1000).toISOString().slice(11, 19)) + ' &middot; '
+              + '<code>' + esc(ev.event || '') + '</code></div>';
+            var detail = [];
+            Object.keys(ev).forEach(function (k) {
+              if (k === 'event' || k === 'at' || k === 'pid') return;
+              var v = ev[k];
+              if (typeof v === 'object') v = JSON.stringify(v);
+              detail.push(esc(k) + '=' + esc(String(v)));
+            });
+            var bodyEl = '<div class="kind">' + (detail.join(' &middot; ') || '(no fields)') + '</div>';
+            return '<article class="card">' + head + bodyEl + '</article>';
+          }).join('')
+        : '<p class="empty">No weave events yet. Open this tab after the server has handled a request.</p>';
+    }).catch(function () {
+      weaveStatus.textContent = 'the weave did not answer.';
+    });
+  }
+  window.addEventListener('old-name:weave', renderWeave);
+
   /* "Export this tab" - one markdown file with the canon + that tab's
      section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
      Journal views. Same download-blob pattern as the full export. */
@@ -1263,6 +1313,44 @@
       setBuilderStatus(builderValidateStatus, 'verify failed: ' + err.message, 'error');
     } finally {
       builderVerifyBtn.disabled = false;
+    }
+  });
+
+  var builderResolvedBtn = document.getElementById('builder-resolved-btn');
+  var builderHandoffBtn = document.getElementById('builder-handoff-btn');
+  var builderResolvedStatus = document.getElementById('builder-resolved-status');
+  var builderResolvedOut = document.getElementById('builder-resolved-out');
+
+  builderResolvedBtn.addEventListener('click', async function () {
+    setBuilderStatus(builderResolvedStatus, 'reading\u2026');
+    builderResolvedBtn.disabled = true;
+    try {
+      var r = await fetch('/api/builder/resolved');
+      if (!r.ok) throw new Error('engine returned ' + r.status);
+      var data = await r.json();
+      builderResolvedOut.textContent = JSON.stringify(data, null, 2);
+      setBuilderStatus(builderResolvedStatus,
+        'ok \u2014 ' + data.acts.length + ' act(s), shape ' + data._shape, 'ok');
+    } catch (err) {
+      setBuilderStatus(builderResolvedStatus, 'failed: ' + err.message, 'error');
+    } finally {
+      builderResolvedBtn.disabled = false;
+    }
+  });
+
+  builderHandoffBtn.addEventListener('click', async function () {
+    setBuilderStatus(builderResolvedStatus, 'packaging handoff\u2026');
+    builderHandoffBtn.disabled = true;
+    try {
+      var r = await fetch('/api/handoff', { method: 'POST' });
+      if (!r.ok) throw new Error('engine returned ' + r.status);
+      var data = await r.json();
+      setBuilderStatus(builderResolvedStatus,
+        'saved to ' + data.path + ' \u2014 fill in the open sections and paste to a buddy', 'ok');
+    } catch (err) {
+      setBuilderStatus(builderResolvedStatus, 'failed: ' + err.message, 'error');
+    } finally {
+      builderHandoffBtn.disabled = false;
     }
   });
 
