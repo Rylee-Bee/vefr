@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import journal
+from . import forge, journal, starred
 from .bell import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -66,7 +66,49 @@ def vault_keep(item: dict):
 
 @app.get("/api/vault")
 def vault_list():
-    return list_vault()
+    items = list_vault()
+    return {"items": items, "starred": starred.list_starred()}
+
+
+@app.post("/api/vault/star/{index}")
+def vault_star(index: int):
+    """Star a kept vault item - same shape as the journal star route."""
+    from fastapi import HTTPException
+    items = list_vault()
+    if index < 0 or index >= len(items):
+        raise HTTPException(status_code=404, detail=f"no vault item at index {index}")
+    return starred.star(
+        {
+            "kind": "item_forged",
+            "name": items[index].get("name", ""),
+            "lore": items[index].get("lore", ""),
+            "speaker": "",
+        }
+    )
+
+
+@app.post("/api/vault/remove/{index}")
+def vault_remove(index: int):
+    """Drop a kept item from the vault; undoable for 60s."""
+    from fastapi import HTTPException
+    removed = forge.remove(index)
+    if removed is None:
+        raise HTTPException(status_code=404, detail=f"no vault item at index {index}")
+    return {"removed": True, "item": removed, "undo_window_s": forge.UNDO_WINDOW_S}
+
+
+@app.post("/api/vault/undo")
+def vault_undo():
+    """Restore the most recently removed vault item."""
+    from fastapi import HTTPException
+    restored = forge.undo()
+    if restored is None:
+        raise HTTPException(
+            status_code=400,
+            detail="nothing to undo - either nothing was removed, "
+                   f"or the {forge.UNDO_WINDOW_S}s window has elapsed",
+        )
+    return {"restored": True, "item": restored}
 
 
 @app.post("/api/bell")
@@ -122,13 +164,73 @@ def world():
 
 @app.get("/api/journal")
 def journal_list():
-    return journal.list_entries()
+    entries = journal.list_entries()
+    return {
+        "entries": entries,
+        "starred": starred.list_starred(),
+    }
+
+
+@app.post("/api/journal/star/{index}")
+def journal_star(index: int):
+    """Append the entry at `index` to starred-whispers.md in the pack.
+
+    The file lands on disk in the same place as bible.md - next
+    `old-name import --pull` ships it to the deploy host. Idempotent:
+    starring the same entry twice appends a second line.
+    """
+    entries = journal.list_entries()
+    if index < 0 or index >= len(entries):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"no journal entry at index {index}")
+    return starred.star(entries[index])
+
+
+@app.post("/api/journal/remove/{index}")
+def journal_remove(index: int):
+    """Remove one journal entry. Refuses the last entry of its kind.
+
+    The removed entry is stashed server-side for one minute; call
+    /api/journal/undo within that window to bring it back.
+    """
+    from fastapi import HTTPException
+    try:
+        removed = journal.remove(index)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if removed is None:
+        raise HTTPException(status_code=404, detail=f"no journal entry at index {index}")
+    return {"removed": True, "entry": removed, "undo_window_s": journal.UNDO_WINDOW_S}
+
+
+@app.post("/api/journal/undo")
+def journal_undo():
+    """Restore the most recently removed entry, if still in the undo window."""
+    from fastapi import HTTPException
+    restored = journal.undo()
+    if restored is None:
+        raise HTTPException(
+            status_code=400,
+            detail="nothing to undo - either nothing was removed, "
+                   f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
+        )
+    return {"restored": True, "entry": restored}
 
 
 @app.post("/api/journal/clear")
 def journal_clear():
     journal.clear()
     return {"cleared": True}
+
+
+@app.get("/api/starred")
+def starred_list():
+    """Which entries are starred - mirror of the journal/starred pair.
+
+    Surfaced separately so the UI can mark already-starred entries
+    on page load without parsing the starred file itself.
+    """
+    return {"starred": starred.list_starred()}
 
 
 @app.get("/api/export", response_class=PlainTextResponse)
