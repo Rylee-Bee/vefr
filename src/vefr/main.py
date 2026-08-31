@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import json
 from pathlib import Path
 
-from . import forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
+from . import combat, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -139,6 +139,35 @@ def npc(req: NpcRequest, session: str = ""):
     return spoken
 
 
+class CombatAction(BaseModel):
+    kind: str
+    phase: str | None = None
+    target: str | None = None
+
+
+@app.post("/api/combat/action")
+def combat_action(req: CombatAction, session: str = ""):
+    """Record a combat action (attack, console, hurl, ...).
+
+    The action is just a journal entry. The HUD has whatever
+    costume it wants (HP bar, encounter prompt, verb buttons);
+    the engine doesn't change any game state. The surface is
+    a costume, the costume is the point.
+    """
+    with trace.span("/api/combat/action", kind=req.kind,
+                     phase=req.phase or "default",
+                     session=session or "default"):
+        try:
+            entry = combat.record_combat_action(
+                kind=req.kind, phase=req.phase, target=req.target,
+                session=session,
+            )
+        except ValueError as e:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=str(e))
+    return entry
+
+
 @app.get("/api/world")
 def world():
     """The town payload - everything the renderer needs, from the pack.
@@ -182,6 +211,7 @@ def world():
         "gold_rule": w.get("gold_rule", ""),
         "phases": list(w["phases"].keys()),
         "surface": w["surface"],
+        "hp": combat.hp_for_pack(w) if w["surface"] == "combat" else None,
         "act": {"id": act["id"], "title": act["title"]},
         "regions": {"town": {"map_text": town_map}},
         "tile": legacy.get("tile", 32),
