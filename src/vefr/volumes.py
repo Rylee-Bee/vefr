@@ -341,7 +341,18 @@ def export_pack(
     (dest / "README.md").write_text(readme, encoding="utf-8")
 
     if init_git:
-        _run(["git", "-C", str(dest), "init", "-b", "main"], check=True)
+        # The git init is a convenience - if the engine image
+        # doesn't have git installed (or the dev box lacks it),
+        # fall back to the bare file tree with a clear message.
+        # The author can `git init` themselves or use the export
+        # as a plain directory.
+        try:
+            _run(["git", "-C", str(dest), "init", "-b", "main"], check=True)
+        except FileNotFoundError:
+            print(f"  note: 'git' not found; wrote {dest} as a plain "
+                  "directory (no git history). Run `git init` inside "
+                  "if you want version control.")
+            return dest
         _run(["git", "-C", str(dest), "add", "-A"], check=True)
         _run([
             "git", "-C", str(dest), "commit", "-m",
@@ -380,7 +391,10 @@ def import_pack(
     # Validate the source before writing. maplab.load_pack handles
     # both flat and acts shapes; the engine's own loader is the
     # one that will run on the volume, so we mirror its behavior.
-    errors = _validate(_load_pack(src), pack_dir=src)
+    try:
+        errors = _validate(_load_pack(src), pack_dir=src)
+    except (KeyError, ValueError, RuntimeError) as e:
+        raise ValueError(f"pack at {src} fails the engine contract: {e}") from e
     if errors:
         msg = "; ".join(errors)
         raise ValueError(f"pack at {src} fails the engine contract: {msg}")
