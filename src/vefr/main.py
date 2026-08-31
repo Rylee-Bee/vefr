@@ -13,7 +13,7 @@ from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
 from .paths import app_home
-from .world import load_world, current_act, current_town
+from .world import load_world, current_act
 
 PURPOSE = "it gives the hellos that never happened"
 
@@ -394,7 +394,7 @@ class BuilderChatTurn(BaseModel):
 @app.post("/api/builder/chat")
 def builder_chat(turn: BuilderChatTurn):
     """One turn of the builder-mode chat. Stateless."""
-    from .chat import ASSISTANT_SYSTEM, draft
+    from .chat import draft
     # Replay the history briefly so the model has context. We keep it
     # short - the page holds the long view.
     context_lines = []
@@ -464,13 +464,11 @@ def runes_cast():
     same cast in its system prompt; the player sees it in the UI.
     """
     from datetime import datetime, timezone
-    from .paths import world_name as _world_name
     from .runes import cast_for, render_for_prompt, seed_for
 
     # Phase comes from the pack's `phases` ordering. The first phase
     # is the canonical "current" one if the client hasn't told us
     # otherwise; clients can pass ?phase=X to override.
-    from fastapi import Request as _Req
     # We can't read query params here without changing the signature;
     # the current phase is the first phase in the pack. Clients that
     # want a phase-specific cast can hit this endpoint with the cast
@@ -653,7 +651,6 @@ def handoff_create():
     """
     inspect_mod._ensure_data_dir()
     from .paths import app_home
-    from datetime import datetime
     out_dir = app_home() / "data" / "handoffs"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = inspect_mod.build_handoff(out_dir)

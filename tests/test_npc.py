@@ -7,7 +7,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from vefr import generator, npc
+from vefr import generator
 from vefr.npc import build_payload, generate_line
 from vefr.paths import world_name
 
