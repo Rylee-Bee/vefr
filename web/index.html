@@ -190,6 +190,138 @@
     border-color: var(--accent); color: var(--ink); outline: none;
   }
 
+  /* the rune card - the engine's one stochastic surface, visible
+     at the bottom of every tab. Three runes, three positions,
+     one cast. The cast threads through every whisper the model
+     speaks; the player sees it in the UI. */
+  .rune-card {
+    border-top: 1px solid var(--card-edge);
+    padding: 0.8rem 1.2rem 1rem;
+    background: var(--bg);
+  }
+  .rune-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .rune-card-label {
+    color: var(--ink-dim); font-size: 0.78rem;
+    letter-spacing: 0.06em; text-transform: lowercase;
+  }
+  .rune-gallery-btn {
+    font: inherit; font-size: 0.78rem; padding: 0.35rem 0.7rem;
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+    cursor: pointer;
+  }
+  .rune-gallery-btn:hover, .rune-gallery-btn:focus-visible {
+    border-color: var(--accent); color: var(--ink); outline: none;
+  }
+  .rune-card-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.6rem;
+  }
+  .rune-pos {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0.4rem;
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    background: var(--card);
+  }
+  .rune-pos-label {
+    color: var(--ink-dim); font-size: 0.7rem;
+    letter-spacing: 0.06em; margin-bottom: 0.2rem;
+  }
+  .rune-stave {
+    font-size: 2.2rem; line-height: 1;
+    color: var(--accent); font-weight: normal;
+  }
+  .rune-name {
+    color: var(--ink); font-size: 0.85rem; margin-top: 0.2rem;
+  }
+  .rune-meanings {
+    color: var(--ink-dim); font-size: 0.82rem;
+    margin: 0.6rem 0 0;
+    line-height: 1.45;
+  }
+  .rune-meanings em {
+    font-style: normal; color: var(--ink);
+  }
+
+  /* cast visibility - "hidden" means the card collapses to a
+     compact one-line summary. The cast still happens; the runes
+     still thread through every system prompt. The player just
+     isn't looking at them. */
+  .rune-card-actions { display: flex; gap: 0.4rem; }
+  .rune-card.rune-card-hidden .rune-card-row,
+  .rune-card.rune-card-hidden .rune-meanings {
+    display: none;
+  }
+  .rune-card.rune-card-hidden {
+    padding: 0.5rem 1.2rem;
+  }
+  .rune-card.rune-card-hidden .rune-card-label::after {
+    content: ' - the world is casting, but you can\u2019t see it. click show to peek.';
+    color: var(--ink-dim); font-style: italic;
+  }
+
+  /* the rune gallery - full overlay showing all 24 staves. */
+  .rune-gallery {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .rune-gallery-inner {
+    background: var(--card); color: var(--ink);
+    max-width: 720px; max-height: 88vh; overflow-y: auto;
+    border: 1px solid var(--card-edge); border-radius: 6px;
+    padding: 1.2rem 1.4rem;
+  }
+  .rune-gallery-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .rune-gallery-head h2 {
+    margin: 0; font-size: 1.05rem; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .rune-gallery-head button {
+    font: inherit; font-size: 0.82rem; padding: 0.45rem 0.8rem;
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+    cursor: pointer;
+  }
+  .rune-gallery-note {
+    color: var(--ink-dim); font-size: 0.85rem; margin: 0 0 1rem;
+    line-height: 1.5;
+  }
+  .rune-gallery-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+  }
+  .rune-gallery-cell {
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    padding: 0.6rem;
+    background: var(--bg);
+  }
+  .rune-gallery-cell .rune-cell-stave {
+    font-size: 1.8rem; line-height: 1; color: var(--accent);
+  }
+  .rune-gallery-cell .rune-cell-name {
+    font-size: 0.92rem; color: var(--ink); margin-top: 0.2rem;
+  }
+  .rune-gallery-cell .rune-cell-aettir {
+    font-size: 0.7rem; color: var(--ink-dim); letter-spacing: 0.06em;
+    margin-top: 0.1rem;
+  }
+  .rune-gallery-cell .rune-cell-short {
+    font-size: 0.82rem; color: var(--ink); margin-top: 0.4rem;
+    line-height: 1.45;
+  }
+  .rune-gallery-cell .rune-cell-phase {
+    font-size: 0.78rem; color: var(--accent); margin-top: 0.4rem;
+    font-style: italic;
+  }
+
   /* the journal - one card per entry, hierarchy by luminance only */
   .card .when { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; }
   .card blockquote { margin: 0.5rem 0 0; padding-left: 0.8rem; border-left: 1px solid var(--card-edge); color: var(--ink); white-space: pre-line; }
@@ -338,7 +470,35 @@
       </form>
     </div>
   </section>
+
+  <section id="rune-card" class="rune-card" aria-live="polite">
+    <div class="rune-card-head">
+      <span class="rune-card-label">today's cast</span>
+      <span class="rune-card-actions">
+        <button type="button" id="rune-cast-toggle" class="rune-gallery-btn" aria-label="toggle cast visibility">hide</button>
+        <button type="button" id="rune-gallery-btn" class="rune-gallery-btn" aria-label="open rune gallery">all 24</button>
+      </span>
+    </div>
+    <div class="rune-card-row">
+      <div class="rune-pos" data-pos="what_was"><span class="rune-pos-label">what was</span><span class="rune-stave" id="rune-stave-was"></span><span class="rune-name" id="rune-name-was"></span></div>
+      <div class="rune-pos" data-pos="what_is"><span class="rune-pos-label">what is</span><span class="rune-stave" id="rune-stave-is"></span><span class="rune-name" id="rune-name-is"></span></div>
+      <div class="rune-pos" data-pos="what_asks"><span class="rune-pos-label">what asks</span><span class="rune-stave" id="rune-stave-asks"></span><span class="rune-name" id="rune-name-asks"></span></div>
+    </div>
+    <p class="rune-meanings" id="rune-meanings"></p>
+  </section>
 </main>
+
+<div id="rune-gallery" class="rune-gallery" hidden role="dialog" aria-labelledby="rune-gallery-title">
+  <div class="rune-gallery-inner">
+    <div class="rune-gallery-head">
+      <h2 id="rune-gallery-title">the elder Futhark</h2>
+      <button type="button" id="rune-gallery-close" aria-label="close">close</button>
+    </div>
+    <p class="rune-gallery-note">The twenty-four runes of the elder Futhark, in three aettir. The engine anchors four of them to the journey's phases: Fehu (whispers, the call), Thurisaz (doubts, the threshold), Kenaz (feared, the tests), Sowilo (awed, the return). The rest live in the cast.</p>
+    <div id="rune-gallery-grid" class="rune-gallery-grid"></div>
+  </div>
+</div>
+
 <div id="undo-banner" class="undo-banner" hidden role="status">
   <span>Removed. <span class="undo-time">60s</span> to undo:</span>
   <button type="button" id="undo-btn">bring it back</button>
@@ -1005,6 +1165,141 @@
 
   window.addEventListener('old-name:builder', loadBuilderPacks);
   loadBuilderPacks();
+
+  /* ----- the rune card + gallery -----
+     The cast is always made (the model sees it in every system
+     prompt). Whether the *player* sees it is a preference: a small
+     toggle on the card itself, persisted in localStorage. Default
+     visible on first run; invisible for storytellers who want to
+     be inside the world without seeing the bones. */
+  var runeStave = { was: document.getElementById('rune-stave-was'),
+                   is: document.getElementById('rune-stave-is'),
+                   asks: document.getElementById('rune-stave-asks') };
+  var runeName = { was: document.getElementById('rune-name-was'),
+                  is: document.getElementById('rune-name-is'),
+                  asks: document.getElementById('rune-name-asks') };
+  var runeMeanings = document.getElementById('rune-meanings');
+  var runeCard = document.getElementById('rune-card');
+  var runeGallery = document.getElementById('rune-gallery');
+  var runeGalleryBtn = document.getElementById('rune-gallery-btn');
+  var runeGalleryClose = document.getElementById('rune-gallery-close');
+  var runeGalleryGrid = document.getElementById('rune-gallery-grid');
+  var runeRegistry = null;  // cached after first fetch
+  var CAST_VISIBLE_KEY = 'norn-cast-visible';
+  var castVisible = (function () {
+    try {
+      var v = localStorage.getItem(CAST_VISIBLE_KEY);
+      // default true on first run; explicit 'false' stored is the only
+      // way to flip off
+      return v === null ? true : v === 'true';
+    } catch (_) { return true; }
+  })();
+
+  function applyCastVisibility() {
+    if (castVisible) {
+      runeCard.classList.remove('rune-card-hidden');
+      runeCard.classList.add('rune-card-shown');
+      // make the toggle's text reflect the *next* state
+      var toggle = document.getElementById('rune-cast-toggle');
+      if (toggle) toggle.textContent = 'hide';
+    } else {
+      runeCard.classList.remove('rune-card-shown');
+      runeCard.classList.add('rune-card-hidden');
+      var toggle = document.getElementById('rune-cast-toggle');
+      if (toggle) toggle.textContent = 'show';
+    }
+  }
+
+  function posKey(posName) {
+    // 'what_was' -> 'was', 'what_is' -> 'is', 'what_asks' -> 'asks'
+    return posName.replace(/^what_/, '');
+  }
+
+  function renderCast(cast) {
+    var lines = [];
+    cast.positions.forEach(function (p) {
+      var k = posKey(p.position);
+      runeStave[k].textContent = p.stave;
+      runeName[k].textContent = p.name + ' \u2014 ' + p.short;
+      lines.push('<em>' + p.name + ' (' + p.position.replace('_', ' ') + ')</em>: ' + p.short);
+    });
+    runeMeanings.innerHTML = lines.join(' \u00b7 ');
+  }
+
+  function loadCast() {
+    // The cast is always fetched - the model sees it in every
+    // system prompt regardless of the player's preference. Only
+    // the *visibility* of the card is toggled.
+    fetch('/api/runes/cast').then(function (r) { return r.json(); })
+      .then(renderCast)
+      .catch(function () { runeMeanings.textContent = 'runes did not answer.'; });
+  }
+
+  function loadRegistryAndShowGallery() {
+    fetch('/api/runes').then(function (r) { return r.json(); })
+      .then(function (data) {
+        runeRegistry = data;
+        renderGallery(data);
+        runeGallery.hidden = false;
+      })
+      .catch(function () { runeMeanings.textContent = 'gallery did not answer.'; });
+  }
+
+  function renderGallery(data) {
+    // group by aettir (1, 2, 3) and render each rune as a cell
+    var cells = [];
+    data.runes.forEach(function (r) {
+      var phaseNote = '';
+      if (data.anchors[r.engine_phase]) {
+        phaseNote = '<div class="rune-cell-phase">anchors ' + r.engine_phase + '</div>';
+      }
+      cells.push(
+        '<div class="rune-gallery-cell">'
+        + '<div class="rune-cell-stave">' + r.stave + '</div>'
+        + '<div class="rune-cell-name">' + r.name + '</div>'
+        + '<div class="rune-cell-aettir">aettir ' + r.aettir + '</div>'
+        + '<div class="rune-cell-short">' + r.short + '</div>'
+        + phaseNote
+        + '</div>'
+      );
+    });
+    runeGalleryGrid.innerHTML = cells.join('');
+  }
+
+  runeGalleryBtn.addEventListener('click', function () {
+    if (runeRegistry) {
+      renderGallery(runeRegistry);
+      runeGallery.hidden = false;
+    } else {
+      loadRegistryAndShowGallery();
+    }
+  });
+  runeGalleryClose.addEventListener('click', function () {
+    runeGallery.hidden = true;
+  });
+  // close the gallery when clicking outside the inner panel
+  runeGallery.addEventListener('click', function (e) {
+    if (e.target === runeGallery) runeGallery.hidden = true;
+  });
+  // Esc closes the gallery
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !runeGallery.hidden) runeGallery.hidden = true;
+  });
+
+  // The cast-visibility toggle. The card stays in the DOM (we
+  // always render the cast); only its visual presentation changes.
+  // Hidden means: compact one-line summary "the runes are cast
+  // today; click to see them" - so the player knows the cast is
+  // happening, can reveal it, but isn't looking at it.
+  var runeCastToggle = document.getElementById('rune-cast-toggle');
+  runeCastToggle.addEventListener('click', function () {
+    castVisible = !castVisible;
+    try { localStorage.setItem(CAST_VISIBLE_KEY, String(castVisible)); } catch (_) {}
+    applyCastVisibility();
+  });
+  applyCastVisibility();
+
+  loadCast();
 })();
 </script>
 </body>
