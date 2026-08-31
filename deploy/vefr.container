@@ -1,0 +1,21 @@
+[Unit]
+Description=vefr - the loom-web the Norns weave fate on; worlds bind-mounted so star/import edits persist across container rebuilds
+
+[Container]
+Image=localhost/vefr:latest
+ContainerName=vefr
+Network=host
+Environment=VEFR_HOME=/app
+Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8081
+Environment=VEFR_MODEL=gpt-oss-20b
+Environment=VEFR_KEEP_ALIVE=1m
+Environment=VEFR_VAULT=/app/data/vault.json
+Environment=VEFR_JOURNAL=/app/data/journal.json
+Volume=%h/vefr-data:/app/data:Z
+Volume=%h/vefr-worlds:/app/worlds:Z
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
