@@ -27,7 +27,6 @@ __pycache__/
 /data/weave.jsonl.old
 /data/handoffs/
 
-
 # agent research surveys - local session notes, not engine docs.
 # the repo may publish one day; durable decisions live in
 # ROADMAP.md, idea credits in README.

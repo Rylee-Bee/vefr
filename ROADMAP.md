@@ -225,6 +225,19 @@
       scaffold README derives its engine link from the checkout's
       own `origin` at runtime. Runtime data, not repo data.
 
+- [x] **companion resources surveyed** (2026-08-31): a full
+      CC0/MIT tool survey (engines, renderers, map authoring,
+      narrative tools, art editors, audio, dev workflow) kept as a
+      local research note - gitignored, since the repo may publish
+      one day. Durable decisions: Kenney CC0 art ships as pack
+      data once the renderer grows sprite support; Tiled (then
+      LDtk) importers parked after the surface-UI work; rot.js
+      algorithms get borrowed for mapgen when `norns chat` v2
+      opens; frameworks skip (the custom renderer stays
+      canonical); the ebook export stays a stdlib writer; idea
+      credits for incompatible-but-borrowed sources live in
+      README's Attribution section.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
@@ -271,6 +284,15 @@
       journal entry - none of those are wired yet. The
       `<body data-surface="...">` CSS hook is in place from the
       loader work; this is a HUD-only PR now.
+- [ ] **Tiled map importer** (parked after the surface-UI work):
+      `norns import-tiled map.json --pack X` reads Tiled's JSON
+      export - visual map authoring, the storyteller-critical gap -
+      and writes `map.md` + contract points through
+      `maplab.build_map` + `maplab.validate()`. Thin and optional;
+      text authoring stays canonical, no Tiled dependency. Tiled
+      1.10's JS scripting API could later host a one-click "export
+      as vefr pack" from inside the editor. See
+      `docs/guides/companion-resources.md`.
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
