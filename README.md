@@ -29,19 +29,23 @@ src/old-name/            the engine (MIT)
   bell.py            sealed voices (the goodbye)
   npc.py             whisper NPCs; seeds keep the world alive
   main.py            FastAPI surface incl. GET /api/world
+  cli.py             two entry points, raven and smith:
+                       old-name  - memory: tidyup, deploy, backup, test
+                       old-name - craft: validate, build, verify worlds
+  maplab.py          old-name's toolkit - the one validator shared by
+                     tests and both clis
 
-worlds/<name>/       a world pack (private - this is someone's story)
+worlds/<name>/       a world pack - a story
   world.json         phases, tones, voices, bonds, speakers, the town
   bible.md           the world bible - canon + style contract
   ledger.md          collected whispers - voice anchors, hand-curated
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
 
-  cli.py             two entry points, raven and smith:
-                       old-name  - memory: tidyup, deploy, backup, test
-                       old-name - craft: validate, build, verify worlds
-  maplab.py          old-name's toolkit - the one validator shared by
-                     tests and both clis
+worlds/sample-world/ Emberfield - the teaching example (MIT, ships
+                     with the engine so it's shareable end to end)
+worlds/private-canon/   the author's own story (all rights reserved -
+                     see worlds/private-canon/LICENSE)
 
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks
@@ -89,8 +93,11 @@ when the world is kind.
 - Model: Qwen (Apache-2.0); outputs are shaped by this repo's
   prompts and reviewed by a human before they become canon.
 - Code co-written with Kilo (AI) at the author's direction.
-- Engine license: MIT (see LICENSE). World packs are the author's
-  story and are not licensed for redistribution.
+- Engine license: MIT (see LICENSE) - covers `src/`, `web/`, `tests/`,
+  `deploy/`, `Containerfile`, and `worlds/sample-world/` (the teaching
+  example). `worlds/private-canon/` is the author's own story and game:
+  all rights reserved, no license granted - see
+  `worlds/private-canon/LICENSE`.
 
 ## Development
 
