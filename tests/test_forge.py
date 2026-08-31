@@ -2,21 +2,8 @@ import json
 
 import pytest
 
-from norn import forge
+from norn import forge, generator
 from norn.forge import ItemCard, build_payload, forge_item, keep_item, list_vault
-
-
-class FakeResponse:
-    def __init__(self, body: str):
-        self._body = body
-        self.status_code = 200
-
-    def raise_for_status(self):
-        pass
-
-    @property
-    def text(self):
-        return json.dumps({"response": self._body})
 
 
 GOOD = json.dumps(
@@ -40,7 +27,7 @@ def test_payload_keeps_bond_structure():
 
 
 def test_forge_parses_item(monkeypatch):
-    monkeypatch.setattr(forge.httpx, "post", lambda *a, **k: FakeResponse(GOOD))
+    monkeypatch.setattr(generator, "_completion", lambda *a, **k: GOOD)
     item = forge_item()
     assert item.name == "The Ledger-Ribbon"
     assert item.bond == "attuned"

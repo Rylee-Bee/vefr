@@ -4,8 +4,17 @@ import os
 import httpx
 from pydantic import BaseModel, ValidationError
 
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
-MODEL = os.environ.get("NORN_MODEL", "qwen3.8-27b:ctx32k")
+# Single source of truth for which inference backend the engine talks to.
+# Precedence:
+#   NORN_LLAMACPP_URL   llama.cpp's OpenAI-compatible /v1/chat/completions
+#                       endpoint (preferred, currently ~13x faster on
+#                       Bazzite's 6900XT than ollama with broken ROCm).
+#   OLLAMA_URL          ollama's /api/generate endpoint (legacy fallback).
+#                       Empty string "" disables a backend; unset means use
+#                       the default.
+LLAMACPP_URL = os.environ.get("NORN_LLAMACPP_URL", "http://127.0.0.1:8081").rstrip("/")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+MODEL = os.environ.get("NORN_MODEL", "gpt-oss-20b")
 KEEP_ALIVE = os.environ.get("NORN_KEEP_ALIVE", "1m")
 
 
@@ -29,6 +38,12 @@ SCHEMA = {
 
 
 def build_payload(phase: str, theme: str | None) -> dict:
+    """Build an ollama-style payload (stable build spec, kept for tests).
+
+    The actual HTTP request is shaped by _completion() into whatever the
+    active backend speaks. Tests assert on this dict; the wire format is
+    _completion's problem.
+    """
     theme_line = f" The rumor touches: {theme}." if theme else ""
     return {
         "model": MODEL,
@@ -48,15 +63,58 @@ def _system(phase: str) -> str:
     return system_prompt(phase)
 
 
+def _completion(payload: dict, max_tokens: int = 1024) -> str:
+    """Send `payload` to the active backend and return the assistant text.
+
+    Single source of truth for backend choice and wire-format translation.
+    Translates the ollama-shaped dict (system/prompt/format/think) into
+    the llama.cpp /v1/chat/completions shape (messages, response_format,
+    chat_template_kwargs) when NORN_LLAMACPP_URL is set. Returns the
+    assistant content string; callers validate against their pydantic
+    models.
+
+    gpt-oss reasoning: chat_template_kwargs.reasoning_effort=low is the
+    fastest this model family supports - it has no true off (low/medium/
+    high only, confirmed by llama.cpp maintainers; forcing lower breaks
+    output). llama.cpp's jinja template honors it server-side; for
+    non-gpt-oss models the kwarg is ignored.
+    """
+    if LLAMACPP_URL:
+        schema = payload.get("format")
+        body = {
+            "model": payload["model"],
+            "messages": [
+                {"role": "system", "content": payload.get("system", "")},
+                {"role": "user", "content": payload.get("prompt", "")},
+            ],
+            "max_tokens": max_tokens,
+            "temperature": payload.get("options", {}).get("temperature", 0.85),
+            "response_format": (
+                {
+                    "type": "json_schema",
+                    "json_schema": {"schema": schema, "strict": True},
+                }
+                if schema
+                else {"type": "text"}
+            ),
+            "stream": False,
+            "chat_template_kwargs": {"reasoning_effort": "low"},
+        }
+        r = httpx.post(
+            f"{LLAMACPP_URL}/v1/chat/completions", json=body, timeout=180
+        )
+        r.raise_for_status()
+        return json.loads(r.text)["choices"][0]["message"]["content"]
+    r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
+    r.raise_for_status()
+    return json.loads(r.text)["response"]
+
+
 def generate_rumor(phase: str = "whispers", theme: str | None = None) -> RumorCard:
     payload = build_payload(phase, theme)
     last_err: Exception | None = None
     for _ in range(2):
-        r = httpx.post(
-            f"{OLLAMA_URL}/api/generate", json=payload, timeout=180
-        )
-        r.raise_for_status()
-        raw = json.loads(r.text)["response"]
+        raw = _completion(payload)
         try:
             return RumorCard.model_validate_json(raw)
         except ValidationError as e:

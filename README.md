@@ -74,13 +74,18 @@ podman build -t localhost/norn:latest .
 mkdir -p ~/norn-data
 podman run -d --name norn -p 8820:8820 \
   -v ~/norn-data:/app/data \
-  -e OLLAMA_URL=http://127.0.0.1:11434 \
+  -e NORN_LLAMACPP_URL=http://127.0.0.1:8081 \
+  -e NORN_MODEL=gpt-oss-20b \
   localhost/norn:latest
 curl -s http://127.0.0.1:8820/api/health
 ```
 
-Model default: `qwen3.8-27b:ctx32k` (any ollama model works; set
-`NORN_MODEL` to change it; structured output via JSON schema).
+The engine prefers `NORN_LLAMACPP_URL` (llama.cpp's OpenAI-compatible
+`/v1/chat/completions` endpoint) and falls back to `OLLAMA_URL`
+(legacy ollama `/api/generate`). Set `OLLAMA_URL=""` to disable the
+fallback entirely. Model default: `gpt-oss-20b` (works with any
+llama.cpp model that supports the chat template; set `NORN_MODEL`
+to change it; structured output via JSON schema with `strict: true`).
 
 ## Make your own world
 
