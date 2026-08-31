@@ -237,8 +237,11 @@
       rewind/fork, deterministic export, `ferry scaffold`); the
       gaps are presentation - the dev menu, per-screen enhance
       calls, the chat box, ebook formatting, a bones+world
-      scaffold. The surface UI, `norns chat` v2, and the pack
-      contract work below all serve this.
+      scaffold. The shape of it: the homelab repo's two months -
+      git, PRs, an honesty contract, deploys - but fun, with
+      training wheels, a cool UI, and a story. The surface UI,
+      `norns chat` v2, and the pack contract work below all serve
+      this.
 - [ ] **surface UI for `surface: "combat"` packs**: the data shape
       now carries the surface (the always-array loader exposes it
       on every /api/world response) but the web UI + packaged
