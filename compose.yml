@@ -1,0 +1,69 @@
+# vefr - a self-contained engine + sample world, ready in three commands.
+#
+# Usage:
+#   1. podman compose up -d
+#   2. open http://localhost:8820
+#   3. (optional) `podman compose logs -f vefr` to see the engine come up
+#
+# What you get:
+#   - vefr engine on http://localhost:8820
+#   - lore/ + sample-world/ pre-loaded as engine templates (ro volume)
+#   - worlds/ writable volume for your own canon (private-canon, etc.)
+#   - data/ writable volume for player state (vault, journal, weave log)
+#
+# Bring up an LLM backend separately (ollama, llama.cpp, or any
+# OpenAI-compatible HTTP endpoint) and point vefr at it with the
+# VEFR_LLAMACPP_URL env var. Without a backend, the engine boots
+# and serves the UI; the model-backed endpoints (/api/rumor,
+# /api/forge, /api/npc, /api/stefna) return errors.
+#
+# Customizing:
+#   - Set VEFR_WORLD to a different pack name (default: sample-world)
+#   - Bind-mount a local pack under /app/worlds/<name>/ and refresh
+#   - Use `podman compose exec vefr bash` to drop into the container
+#
+# To start fresh: `podman compose down -v` (deletes volumes; the
+# image is rebuilt from the Containerfile each `up`).
+
+name: vefr
+
+services:
+  vefr:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/vefr:latest
+    container_name: vefr
+    network_mode: host
+    environment:
+      VEFR_HOME: /app
+      VEFR_WORLD: ${VEFR_WORLD:-sample-world}
+      # The OLLAMA_URL or VEFR_LLAMACPP_URL points at an external
+      # OpenAI-compatible endpoint. Uncomment one if you have a
+      # model server on the LAN:
+      # VEFR_LLAMACPP_URL: http://host.lan:8081
+      # VEFR_MODEL: gpt-oss-20b
+      VEFR_KEEP_ALIVE: 1m
+      VEFR_VAULT: /app/data/vault.json
+      VEFR_JOURNAL: /app/data/journal.json
+    volumes:
+      # Engine templates (lore, sample-world, poolworld). Read-only;
+      # updated by `podman compose build` on engine updates.
+      - vefr-template:/app/worlds-template:ro
+      # Author canon (your own packs, anything you `ferry fetch`).
+      # Writable; survives engine updates.
+      - vefr-worlds:/app/worlds
+      # Player state (vault, journal, weave log, handoff bundles).
+      # Writable; backed up via the engine's `ratatoskr ferry carry`.
+      - vefr-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8820/api/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  vefr-template:
+  vefr-worlds:
+  vefr-data:

@@ -835,6 +835,51 @@ def cmd_volumes_migrate(args) -> int:
     return vol_mod.migrate(legacy_root=legacy, dry_run=args.dry_run)
 
 
+def cmd_volumes_export(args) -> int:
+    """Export a pack to a host-side git repo for editing.
+
+    The destination gets the pack's full file tree in
+    engine-native layout (acts or flat), plus a README and
+    an initial commit. After editing + committing, run
+    `volumes import --pack <name> --from <dest>` to write
+    the change back into the engine's volume.
+    """
+    from . import volumes as vol_mod
+    return 0 if vol_mod.export_pack(
+        args.pack, Path(args.dest).expanduser().resolve(),
+        init_git=not args.no_git,
+    ) else 1
+
+
+def cmd_volumes_import(args) -> int:
+    """Import a pack from a host-side directory into the volume.
+
+    Validates the source via the engine's loader first; rejects
+    packs that wouldn't pass maplab. Then copies the tree into
+    the rw volume (or the dev-box engine checkout).
+    """
+    from . import volumes as vol_mod
+    try:
+        vol_mod.import_pack(
+            args.pack, Path(args.from_path).expanduser().resolve(),
+            dry_run=args.dry_run,
+        )
+    except (FileNotFoundError, FileExistsError, ValueError) as e:
+        print(f"import failed: {e}")
+        return 1
+    return 0
+
+
+def cmd_volumes_shell(args) -> int:
+    """Drop into a shell inside the engine container.
+
+    `--pack <name>` cds into the pack's volume path. No shell
+    on the dev box; this is a bazzite/deploy-host convenience.
+    """
+    from . import volumes as vol_mod
+    return vol_mod.shell(args.pack)
+
+
 def ratatoskr_main() -> int:
     ap = argparse.ArgumentParser(
         prog='ratatoskr', description=RATATOSKR_HELP,
@@ -903,6 +948,38 @@ def ratatoskr_main() -> int:
         help='print what would happen; do nothing',
     )
     volumes_migrate.set_defaults(fn=cmd_volumes_migrate)
+
+    volumes_export = volumes_sub.add_parser(
+        'export',
+        help='export a pack to a host-side git repo for editing in vim',
+    )
+    volumes_export.add_argument('--pack', required=True,
+                                 help='the world pack to export')
+    volumes_export.add_argument('--dest', required=True,
+                                 help='destination directory (created if missing)')
+    volumes_export.add_argument('--no-git', action='store_true',
+                                 help='skip the git init / initial commit')
+    volumes_export.set_defaults(fn=cmd_volumes_export)
+
+    volumes_import = volumes_sub.add_parser(
+        'import',
+        help='import a pack from a host-side directory into the rw volume',
+    )
+    volumes_import.add_argument('--pack', required=True,
+                                 help='the world pack name to import as')
+    volumes_import.add_argument('--from', dest='from_path', required=True,
+                                 help='source directory (engine-native layout)')
+    volumes_import.add_argument('--dry-run', action='store_true',
+                                 help='validate only; do not write')
+    volumes_import.set_defaults(fn=cmd_volumes_import)
+
+    volumes_shell = volumes_sub.add_parser(
+        'shell',
+        help='drop into a shell inside the engine container',
+    )
+    volumes_shell.add_argument('--pack', default=None,
+                                help='cd into the pack\'s volume path')
+    volumes_shell.set_defaults(fn=cmd_volumes_shell)
 
     fd = ferry_sub.add_parser('deploy', help='ship this checkout to --deploy-host')
     fd.set_defaults(fn=cmd_deploy)

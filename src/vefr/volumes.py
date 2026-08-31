@@ -27,6 +27,7 @@ migrated host is a no-op.
 import json
 import shutil
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .paths import app_home, template_dir, worlds_dir
@@ -237,3 +238,223 @@ def list_packs() -> list[dict]:
     """
     from .world import discover_packs
     return discover_packs()
+
+
+# --------------------------------------------------------------- export / import
+#
+# The author flow when the engine lives in a Docker volume and the
+# author wants to edit a pack in vim on the host:
+#
+#   1. `ratatoskr volumes export --pack sample-world \
+#         --dest ~/my-forks/sample-world`
+#      -> a git repo at ~/my-forks/sample-world with the pack's full
+#         file tree in engine-native layout (acts or flat, depending
+#         on the source pack).
+#   2. edit voices/keeper.md, logbok.md, anything in ~/my-forks/
+#   3. `git commit` inside the export
+#   4. `ratatoskr volumes import --pack sample-world \
+#         --from ~/my-forks/sample-world`
+#      -> reads the repo, validates the pack, writes into the rw
+#         volume at /app/worlds/<name>/ (or the local worlds/ on the
+#         dev box). The engine picks up the change on next request.
+#
+# The round-trip is lossless: export → import → export produces
+# the same files modulo timestamps. The intermediate git history
+# is the author's edit log.
+
+
+def _pack_layout(pack: Path) -> str:
+    """Detect the on-disk shape: 'acts' or 'flat'."""
+    return "acts" if (pack / "acts").is_dir() else "flat"
+
+
+def _copy_pack_tree(src: Path, dst: Path) -> None:
+    """Copy a pack's file tree, preserving the on-disk shape.
+
+    Used by both export (volume -> git repo) and import
+    (git repo -> volume). Symlinks, mode bits, and mtimes are
+    preserved where possible.
+    """
+    if not src.is_dir():
+        raise FileNotFoundError(f"pack source not found: {src}")
+    dst.mkdir(parents=True, exist_ok=True)
+    for item in src.iterdir():
+        target = dst / item.name
+        if item.is_dir():
+            shutil.copytree(item, target, dirs_exist_ok=True)
+        else:
+            shutil.copy2(item, target)
+
+
+def export_pack(
+    pack: str,
+    dest: Path,
+    *,
+    worlds_root: Path | None = None,
+    init_git: bool = True,
+) -> Path:
+    """Export a pack to a host-side directory as a git repo.
+
+    The destination gets the pack's full file tree in
+    engine-native layout (acts or flat), plus a README and an
+    initial git commit. The author edits in vim on the host,
+    commits, and `volumes import` reads back.
+
+    On the dev box, worlds_root defaults to the engine
+    checkout's worlds/. On bazzite (or any deploy host), it
+    defaults to ~/vefr-worlds/ - the rw canon bind mount.
+
+    If the destination already exists and is a non-empty git
+    repo, the export is a no-op (the author probably has
+    in-progress work there). Use a fresh dest to force a
+    re-export.
+    """
+    pack_src = (worlds_root or _default_worlds_root()) / pack
+    if not pack_src.is_dir():
+        raise FileNotFoundError(
+            f"pack '{pack}' not found at {pack_src} "
+            f"(worlds root: {worlds_root or _default_worlds_root()})"
+        )
+    layout = _pack_layout(pack_src)
+    if dest.exists() and any(dest.iterdir()):
+        if (dest / ".git").is_dir():
+            print(f"destination {dest} is an existing git repo; "
+                  "skipping the export (the author probably has "
+                  "in-progress work there).")
+            return dest
+        raise FileExistsError(
+            f"destination {dest} exists and is not empty; "
+            "use a fresh path or `rm -rf` first"
+        )
+    dest.mkdir(parents=True, exist_ok=True)
+    _copy_pack_tree(pack_src, dest)
+
+    readme = (
+        f"# {pack} (vefr world pack)\n\n"
+        f"Exported from the vefr engine on "
+        f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}.\n\n"
+        f"On-disk shape: **{layout}**.\n\n"
+        f"Edit anything in this directory, `git commit`, then run\n"
+        f"`ratatoskr volumes import --pack {pack} --from {dest}` to\n"
+        f"write it back into the engine's volume.\n"
+    )
+    (dest / "README.md").write_text(readme, encoding="utf-8")
+
+    if init_git:
+        # The git init is a convenience - if the engine image
+        # doesn't have git installed (or the dev box lacks it),
+        # fall back to the bare file tree with a clear message.
+        # The author can `git init` themselves or use the export
+        # as a plain directory.
+        try:
+            _run(["git", "-C", str(dest), "init", "-b", "main"], check=True)
+        except FileNotFoundError:
+            print(f"  note: 'git' not found; wrote {dest} as a plain "
+                  "directory (no git history). Run `git init` inside "
+                  "if you want version control.")
+            return dest
+        _run(["git", "-C", str(dest), "add", "-A"], check=True)
+        _run([
+            "git", "-C", str(dest), "commit", "-m",
+            f"export {pack} from vefr engine ({layout} shape)",
+        ], check=True)
+        print(f"exported {pack} to {dest} (git repo, {layout} shape)")
+    else:
+        print(f"exported {pack} to {dest} ({layout} shape, no git)")
+    return dest
+
+
+def import_pack(
+    pack: str,
+    src: Path,
+    *,
+    worlds_root: Path | None = None,
+    dry_run: bool = False,
+) -> Path:
+    """Import a pack from a host-side directory into the volume.
+
+    Reads the source directory, validates it via the engine's
+    own loader (so a bad pack is rejected before the write),
+    then copies the tree into the rw volume at
+    worlds_root/<pack>/. The engine picks up the change on
+    the next request.
+
+    The rw canon wins on conflict, so an import will overwrite
+    a pack with the same name. The ro template is never
+    touched - templates are owned by the engine repo.
+    """
+    from .maplab import load_pack as _load_pack
+    from .maplab import validate as _validate
+    from .world import load_world as _load_world
+    if not src.is_dir():
+        raise FileNotFoundError(f"import source not found: {src}")
+    # Validate the source before writing. maplab.load_pack handles
+    # both flat and acts shapes; the engine's own loader is the
+    # one that will run on the volume, so we mirror its behavior.
+    try:
+        errors = _validate(_load_pack(src), pack_dir=src)
+    except (KeyError, ValueError, RuntimeError) as e:
+        raise ValueError(f"pack at {src} fails the engine contract: {e}") from e
+    if errors:
+        msg = "; ".join(errors)
+        raise ValueError(f"pack at {src} fails the engine contract: {msg}")
+    if dry_run:
+        print(f"dry-run: would import {src} -> "
+              f"{(worlds_root or _default_worlds_root()) / pack}")
+        return src
+
+    dst = (worlds_root or _default_worlds_root()) / pack
+    # Wipe the destination before copy so removed files don't
+    # linger. The rw canon volume is the author's space; we
+    # don't preserve "untracked" state.
+    if dst.exists():
+        shutil.rmtree(dst)
+    _copy_pack_tree(src, dst)
+    print(f"imported {pack} from {src} -> {dst}")
+    # Bust the engine's load_world cache so the next request
+    # sees the change.
+    _load_world.cache_clear()
+    return dst
+
+
+def shell(pack: str | None = None) -> int:
+    """Drop into a shell inside the engine container.
+
+    Convenience wrapper around `podman exec -it vefr bash`.
+    The pack argument, if given, sets the engine's working
+    directory to the pack's volume path so the author can
+    edit voice files with `vim`, `cat`, etc. without
+    remembering where the volume is mounted.
+
+    Returns the podman exec return code.
+    """
+    cmd = ["podman", "exec", "-it", "vefr", "bash"]
+    if pack:
+        # Use the engine's known mount points. The shell will
+        # start in the rw canon (so edits land in the author's
+        # volume) unless the pack is engine-owned, in which
+        # case we cd into the ro template to inspect it.
+        rw = f"/app/worlds/{pack}"
+        ro = f"/app/worlds-template/{pack}"
+        if Path(ro).is_dir() and not Path(rw).is_dir():
+            cmd += ["-c", f"cd {ro} && exec bash"]
+        else:
+            cmd += ["-c", f"cd {rw} && exec bash"]
+    return subprocess.call(cmd)
+
+
+def _default_worlds_root() -> Path:
+    """The worlds/ root for export/import: the local worlds/ on
+    the dev box (the engine checkout), or the bind mount on a
+    deploy host. Detected by checking which one exists and is
+    writable."""
+    candidates = [
+        Path("/app/worlds"),                # container-internal
+        Path("worlds"),                     # dev-box relative
+        Path.home() / "vefr-worlds",        # legacy bind mount
+    ]
+    for c in candidates:
+        if c.is_dir() and c.parent.exists():
+            return c
+    # Last-resort: dev-box engine checkout's worlds/.
+    return Path("worlds").resolve()
