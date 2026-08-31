@@ -120,7 +120,7 @@ function mkBtnWithData(id, dataKey, dataVal) {
   return e;
 }
 const tabsBox = mk('div', '', 'tabs');
-const TABVIEWS = ['rumors', 'vault', 'bell', 'town', 'journal', 'builder'];
+const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'builder'];
 const tabBtns = {};
 for (const v of TABVIEWS) {
   tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
@@ -135,8 +135,8 @@ mk('button', 'forge-btn');
 mk('span', 'forge-status', 'note');
 const forgeOut = mk('section', 'forge-out');
 mk('section', 'vault-list');
-mk('button', 'ring-btn');
-mk('span', 'bell-status', 'note');
+mk('button', 'strike-btn');
+mk('span', 'stefna-status', 'note');
 mk('section', 'letter-out');
 mk('div', 'town-phase', 'phase-rail');
 mk('p', 'near-note', 'note');
@@ -155,7 +155,7 @@ mk('p', 'journal-status', 'note');
 mk('section', 'journal-list');
 mkBtnWithData('export-rumors-btn', 'exportTab', 'rumors');
 mkBtnWithData('export-vault-btn', 'exportTab', 'vault');
-mkBtnWithData('export-bell-btn', 'exportTab', 'bell');
+mkBtnWithData('export-stefna-btn', 'exportTab', 'stefna');
 mkBtnWithData('export-town-btn', 'exportTab', 'town');
 mk('select', 'builder-pack-picker');
 mk('button', 'builder-refresh-packs');
@@ -275,7 +275,7 @@ sandbox.fetch = (url, opts) => {
     if (body && 'phase' in body && typeof body.phase !== 'string') throw new Error('npc got a non-string phase: ' + JSON.stringify(body));
     return ok({ speaker: 'The Smith', line: 'aye' });
   }
-  if (url === '/api/bell') return ok({ letter: 'For you.' });
+  if (url === '/api/stefna') return ok({ letter: 'For you.' });
   if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
@@ -399,7 +399,7 @@ check('export fetched', calls.some((c) => c.url === '/api/export'));
 check('export status set', byId.get('journal-status').textContent.includes('yours to keep'), byId.get('journal-status').textContent);
 
 /* per-tab export buttons: each tab pulls its own markdown section */
-const tabExports = ['rumors', 'vault', 'bell', 'town', 'journal'];
+const tabExports = ['rumors', 'vault', 'stefna', 'town', 'journal'];
 for (const t of tabExports) {
   byId.get('export-' + t + '-btn').click();
   await tick();
@@ -413,10 +413,10 @@ byId.get('journal-clear-btn').click();
 await tick();
 check('journal clear posted', calls.some((c) => c.url === '/api/journal/clear'));
 
-/* the bell */
-byId.get('ring-btn').click();
+/* the stefna */
+byId.get('strike-btn').click();
 await tick();
-check('bell letter rendered', byId.get('letter-out').innerHTML.includes('For you.'));
+check('stefna letter rendered', byId.get('letter-out').innerHTML.includes('For you.'));
 
 /* town movement + talking, on the shared phase */
 sandbox.document.dispatch = null;

@@ -352,12 +352,12 @@
 </header>
 <main>
   <div class="tabs" role="tablist" aria-label="Views">
-    <button type="button" role="tab" data-view="rumors" id="tab-rumors" aria-selected="true" aria-controls="view-rumors">Rumors</button>
-    <button type="button" role="tab" data-view="vault" id="tab-vault" aria-selected="false" aria-controls="view-vault">Vault</button>
-    <button type="button" role="tab" data-view="bell" id="tab-bell" aria-selected="false" aria-controls="view-bell">Bell</button>
+    <button type="button" role="tab" data-view="rumors" id="tab-rumors" aria-selected="true" aria-controls="view-rumors">Sagnir</button>
+    <button type="button" role="tab" data-view="vault" id="tab-vault" aria-selected="false" aria-controls="view-vault">Safn</button>
+    <button type="button" role="tab" data-view="stefna" id="tab-stefna" aria-selected="false" aria-controls="view-stefna">Stefna</button>
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
-    <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Journal</button>
-    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder</button>
+    <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Annall</button>
+    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Old Name</button>
   </div>
 
   <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
@@ -384,12 +384,12 @@
     <section id="vault-list" aria-live="polite"></section>
   </section>
 
-  <section id="view-bell" class="view" role="tabpanel" aria-labelledby="tab-bell" hidden>
+  <section id="view-stefna" class="view" role="tabpanel" aria-labelledby="tab-stefna" hidden>
     <p class="note">Blackfen. The water keeps the bell's tongue. One ring is owed.</p>
     <div class="controls">
-      <button type="button" id="ring-btn">strike the bell</button>
-      <span class="note" id="bell-status">the bell waits for a hand.</span>
-      <button type="button" id="export-bell-btn" data-export-tab="bell" class="export-tab-btn">Export this tab</button>
+      <button type="button" id="strike-btn">strike the bell</button>
+      <span class="note" id="stefna-status">the bell waits for a hand.</span>
+      <button type="button" id="export-stefna-btn" data-export-tab="stefna" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="letter-out" aria-live="polite"></section>
   </section>
@@ -512,7 +512,7 @@
   var views = {
     rumors: document.getElementById('view-rumors'),
     vault: document.getElementById('view-vault'),
-    bell: document.getElementById('view-bell'),
+    stefna: document.getElementById('view-stefna'),
     town: document.getElementById('view-town'),
     journal: document.getElementById('view-journal'),
     builder: document.getElementById('view-builder'),
@@ -760,25 +760,25 @@
     });
   });
 
-  var ringBtn = document.getElementById('ring-btn');
-  var bellStatus = document.getElementById('bell-status');
+  var strikeBtn = document.getElementById('strike-btn');
+  var stefnaStatus = document.getElementById('stefna-status');
   var letterOut = document.getElementById('letter-out');
 
-  ringBtn.addEventListener('click', async function () {
-    ringBtn.disabled = true;
-    bellStatus.textContent = 'the bell sounds\u2026';
+  strikeBtn.addEventListener('click', async function () {
+    strikeBtn.disabled = true;
+    stefnaStatus.textContent = 'the bell sounds\u2026';
     try {
-      var r = await fetch('/api/bell', { method: 'POST' });
+      var r = await fetch('/api/stefna', { method: 'POST' });
       if (!r.ok) throw new Error('still water');
       var res = await r.json();
       letterOut.innerHTML = '<article class="letter-card card" style="border-color:var(--accent)">'
         + '<div class="speaker">found with the bell</div>'
         + '<p class="whisper" style="white-space:pre-line">' + esc(res.letter) + '</p>'
         + '</article>';
-      bellStatus.textContent = 'the bell waits until you return.';
+      stefnaStatus.textContent = 'the bell waits until you return.';
     } catch (err) {
-      bellStatus.textContent = 'the water did not answer. try again?';
-      ringBtn.disabled = false;
+      stefnaStatus.textContent = 'the water did not answer. try again?';
+      strikeBtn.disabled = false;
     }
   });
 
@@ -809,7 +809,7 @@
       body = '<div class="speaker">' + esc(e.name || 'something kept') + '</div>'
         + '<div class="kind">kept &middot; ' + esc(e.bond || '') + '</div>'
         + '<p class="whisper">' + esc(e.lore || '') + '</p>';
-    } else if (e.kind === 'bell_letter') {
+    } else if (e.kind === 'stefna_letter' || e.kind === 'bell_letter') {
       body = '<div class="speaker">found with the bell</div>'
         + '<blockquote>' + esc(e.letter || '') + '</blockquote>';
     } else {
