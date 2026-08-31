@@ -12,7 +12,7 @@ from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
 from .paths import app_home
-from .world import load_world
+from .world import load_world, current_act, current_town
 
 PURPOSE = "it gives the hellos that never happened"
 
@@ -140,36 +140,55 @@ def npc(req: NpcRequest, session: str = ""):
 
 @app.get("/api/world")
 def world():
-    """The town payload - everything the renderer needs, from the pack."""
+    """The town payload - everything the renderer needs, from the pack.
+
+    Returns the always-array shape: the world's metadata at the top
+    level, plus `act` (the current act) and `regions` (named regions
+    of the current act). The renderer is a single-region experience
+    in this PR; `regions.town` is the same data the legacy
+    `town` block used to expose, so the web layer can read either
+    path during the migration.
+    """
     w = load_world()
-    town = w["town"]
+    act = current_act(w)
+    region = act["regions"].get("town", {})
+    # Legacy flat-pack fields live under _town_legacy on the act.
+    # After the sample-world migration, those move into a
+    # town/contract.json the loader picks up - but the API
+    # surface stays the same.
+    legacy = act.get("_town_legacy", {})
+    town_map = region.get("map_text", "") or "\n".join(legacy.get("map", []))
+    speakers = [
+        {
+            "key": key,
+            "name": spec["name"],
+            "at": spec["at"],
+            "near": spec["near"],
+            "seeds": spec.get("seeds", {}),
+        }
+        for key, spec in act["speakers"].items()
+    ]
     return {
         "title": w["title"],
         "gold_rule": w.get("gold_rule", ""),
         "phases": list(w["phases"].keys()),
-        "tile": town["tile"],
-        "bg": town["bg"],
-        "map": town["map"],
-        "legend": town["legend"],
-        "pois": town["pois"],
-        "hero_start": town["hero_start"],
-        "hero_color": town.get("hero_color", "#e8e5df"),
-        "watch": town["watch"],
-        "sanctuary_tiles": town.get("sanctuary_tiles", []),
-        "water_by_phase": town.get("water_by_phase", {}),
-        "flood_tiles": town.get("flood_tiles", []),
-        "speakers": [
-            {
-                "key": key,
-                "name": spec["name"],
-                "at": spec["at"],
-                "near": spec["near"],
-                "seeds": spec["seeds"],
-            }
-            for key, spec in w["speakers"].items()
-        ],
-        "speaker_color": town.get("speaker_color", "#8b939c"),
-        "speaker_head": town.get("speaker_head", "#d8d5cf"),
+        "surface": w["surface"],
+        "act": {"id": act["id"], "title": act["title"]},
+        "regions": {"town": {"map_text": town_map}},
+        "tile": legacy.get("tile", 32),
+        "bg": legacy.get("bg", "#131311"),
+        "map": legacy.get("map", []),
+        "legend": legacy.get("legend", {}),
+        "pois": legacy.get("pois", {}),
+        "hero_start": legacy.get("hero_start", [1, 1]),
+        "hero_color": legacy.get("hero_color", "#e8e5df"),
+        "watch": legacy.get("watch", {}),
+        "sanctuary_tiles": legacy.get("sanctuary_tiles", []),
+        "water_by_phase": legacy.get("water_by_phase", {}),
+        "flood_tiles": legacy.get("flood_tiles", []),
+        "speakers": speakers,
+        "speaker_color": legacy.get("speaker_color", "#8b939c"),
+        "speaker_head": legacy.get("speaker_head", "#d8d5cf"),
     }
 
 
@@ -478,11 +497,22 @@ def builder_worlds():
         if (p / "world.json").exists():
             try:
                 w = json.loads((p / "world.json").read_text(encoding="utf-8"))
+                # Acts-shape packs put speakers inside the per-act
+                # contract; flat packs put them at the top level.
+                speakers: list[str] = []
+                if (p / "acts").is_dir():
+                    for ad in sorted((p / "acts").iterdir()):
+                        if not ad.is_dir() or ad.name.startswith("."):
+                            continue
+                        act_w = json.loads((ad / "world.json").read_text(encoding="utf-8"))
+                        speakers.extend(act_w.get("speakers", {}).keys())
+                else:
+                    speakers = list(w.get("speakers", {}).keys())
                 out.append({
                     "name": p.name,
                     "title": w.get("title", p.name),
                     "phases": list(w.get("phases", {}).keys()),
-                    "speakers": list(w.get("speakers", {}).keys()),
+                    "speakers": speakers,
                 })
             except (json.JSONDecodeError, OSError):
                 continue
@@ -563,6 +593,7 @@ def wiki(session: str = ""):
     lens on data that already exists.
     """
     w = load_world()
+    speakers = current_act(w)["speakers"]
     entries = journal.list_entries(sid=session)
     by_speaker: dict[str, list[dict]] = {}
     for e in entries:
@@ -572,7 +603,7 @@ def wiki(session: str = ""):
                  "line": e.get("line", "")}
             )
     characters = []
-    for key, spec in w["speakers"].items():
+    for key, spec in speakers.items():
         spoken = by_speaker.get(spec["name"], [])
         characters.append({
             "key": key,
@@ -582,7 +613,7 @@ def wiki(session: str = ""):
         })
     # A journal speaker the canon doesn't name still belongs here -
     # generated whispers sometimes speak through strangers.
-    known = {spec["name"] for spec in w["speakers"].values()}
+    known = {spec["name"] for spec in speakers.values()}
     for speaker, spoken in by_speaker.items():
         if speaker not in known:
             characters.append({
