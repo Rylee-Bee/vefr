@@ -13,7 +13,7 @@ def test_api_wiki_joins_voices_to_lines(tmp_path, monkeypatch):
     # The sample world's first speaker, spoken to once.
     from vefr.world import load_world
 
-    first = list(load_world()["speakers"].values())[0]["name"]
+    first = list(load_world()["acts"][0]["speakers"].values())[0]["name"]
     journal.log("npc_line", sid="wiki1", phase="whispers", speaker=first, line="hello")
     journal.log("npc_line", sid="wiki1", phase="whispers", speaker="A Stranger", line="who?")
 

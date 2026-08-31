@@ -29,7 +29,63 @@ BLOCKED_FALLBACK = ['~', 'B', '#', 'T', 'M']
 
 
 def load_pack(pack_dir: Path) -> dict:
-    return json.loads((Path(pack_dir) / 'world.json').read_text(encoding='utf-8'))
+    """Read a pack's world.json and return a single shape that the
+    validator can consume.
+
+    The on-disk shape is one of two:
+
+      Flat shape (legacy): a single world.json with title, phases,
+        voices, bonds, town at the top level.
+      Acts shape: a pack-level world.json + acts/<id>/world.json
+        per act. The map lives in acts/<id>/<region>/map.md.
+
+    The validator downstream reads `w['town']`, `w['speakers']`,
+    `w['phases']`, and `w['voices']`. We build a unified dict so
+    the validator never has to know which on-disk shape it came
+    from. Acts-shape packs are validated against the current act's
+    first region (the town in the canary shape).
+    """
+    pack = Path(pack_dir)
+    config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
+    if 'acts' in config or (pack / 'acts').is_dir():
+        acts_dir = pack / 'acts'
+        first_act_dir = next(
+            (d for d in sorted(acts_dir.iterdir())
+             if d.is_dir() and not d.name.startswith('.')),
+            None,
+        )
+        if first_act_dir is None:
+            raise SystemExit(f'{pack}/acts has no act directories')
+        act = json.loads((first_act_dir / 'world.json').read_text(encoding='utf-8'))
+        # Pick the first region for the validator (the canary has
+        # only `town`; multi-region acts will need a flag or a
+        # per-region validation in a follow-on).
+        region_name = next(iter(act.get('regions', {})), None)
+        region_legacy = act.get('_town_legacy', {}) or act.get('town', {})
+        return {
+            'phases': config['phases'],
+            'voices': config.get('voices', {}),
+            'bonds': config.get('bonds', {}),
+            'speakers': act.get('speakers', {}),
+            'town': {
+                'map': region_legacy.get('map', []),
+                'legend': region_legacy.get('legend', {}),
+                'pois': region_legacy.get('pois', {}),
+                'watch': region_legacy.get('watch', {}),
+                'sanctuary_tiles': region_legacy.get('sanctuary_tiles', []),
+                'water_by_phase': region_legacy.get('water_by_phase', {}),
+                'flood_tiles': region_legacy.get('flood_tiles', []),
+                'hero_start': region_legacy.get('hero_start', [1, 1]),
+                'tile': region_legacy.get('tile', 32),
+                'bg': region_legacy.get('bg', '#131311'),
+                'hero_color': region_legacy.get('hero_color', '#e8e5df'),
+                'speaker_color': region_legacy.get('speaker_color', '#8b939c'),
+                'speaker_head': region_legacy.get('speaker_head', '#d8d5cf'),
+            },
+            '_act_id': first_act_dir.name,
+            '_region': region_name,
+        }
+    return config
 
 
 def walkable(w: dict, x: int, y: int, flooded: set | None = None) -> bool:
@@ -59,8 +115,26 @@ def reach(w: dict, start: tuple, flooded: set | None = None) -> set:
 
 
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
-    """Every geometry check. Returns a list of problems (empty = good)."""
+    """Every geometry check. Returns a list of problems (empty = good).
+
+    Accepts both shapes:
+
+      Flat shape: w['town'] is the town block directly.
+      Acts shape: w['acts'][0]['_town_legacy'] holds the town block
+        (preserved for backward compat) and the act's speakers live
+        at w['acts'][0]['speakers']. The unified shape produced by
+        load_pack() sets w['town'] and w['speakers'] explicitly.
+    """
     errors: list[str] = []
+    if 'town' not in w and 'acts' in w and w['acts']:
+        # Acts shape: synthesize the flat keys the rest of the
+        # validator reads, so the same code path works for both.
+        act = w['acts'][0]
+        w = {
+            **w,
+            'town': act.get('_town_legacy', {}),
+            'speakers': act.get('speakers', w.get('speakers', {})),
+        }
     town = w['town']
     m = town['map']
     legend = town['legend']

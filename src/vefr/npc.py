@@ -11,7 +11,7 @@ from pydantic import BaseModel, ValidationError
 
 from . import generator
 from .paths import pack_file
-from .world import load_world, phase_tone
+from .world import current_act, load_world, phase_tone
 
 SCHEMA = {
     "type": "object",
@@ -36,7 +36,7 @@ def _speaker(key: str | None) -> dict:
     hardcode a name from anyone's story (a "the ferryman" default used to
     live here, which broke any pack that had never heard of her).
     """
-    speakers = load_world()["speakers"]
+    speakers = current_act(load_world())["speakers"]
     if key is None:
         return next(iter(speakers.values()))
     if key not in speakers:
