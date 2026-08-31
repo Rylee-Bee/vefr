@@ -219,14 +219,26 @@
 
 ## Next
 
-- [ ] **the engine is a game too** (2026-08-31): every part of the
-      story and the engine replaceable, modifiable, fork-able from
-      a dev menu, each part enhanced by the local AI chat. The
-      aspects - lore packs, act structure, graphics resources, maps
-      - all callable and visible in the UI and over the API. Half
-      the fun of the game is developing it - the engine should feel
-      like a game itself. Umbrella item: the surface UI, `norns
-      chat` v2, and the pack contract work below all serve it.
+- [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
+      part of the story and the engine - replaceable, modifiable,
+      fork-able from a dev menu, each enhanced by the local AI chat:
+      a structured template call scoped to the screen/resource
+      you're on, plus a chat box that answers little questions as
+      you go. The aspects (lore packs, act structure, graphics
+      resources, maps) callable and visible in the UI and over the
+      API. The container stays bones-ro / story-rw (the volumes
+      work); the story packs and exports as a real formatted ebook
+      with your own unique playthrough; the journal is always there
+      to revert and fork from - git-like history, honesty contract
+      applied to the game itself. And the export can go all the
+      way: a fully formed git repo, bones and world together, so
+      playing the game teaches the development process. Most of the
+      machinery exists (volumes ro/rw, pack contract, journal
+      rewind/fork, deterministic export, `ferry scaffold`); the
+      gaps are presentation - the dev menu, per-screen enhance
+      calls, the chat box, ebook formatting, a bones+world
+      scaffold. The surface UI, `norns chat` v2, and the pack
+      contract work below all serve this.
 - [ ] **surface UI for `surface: "combat"` packs**: the data shape
       now carries the surface (the always-array loader exposes it
       on every /api/world response) but the web UI + packaged
