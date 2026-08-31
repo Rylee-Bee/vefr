@@ -336,6 +336,37 @@ def current_town(world: dict | None = None) -> dict:
     return act["regions"].get("town", {})
 
 
+def resolve_voice_file(rel: str, world: dict | None = None) -> Path:
+    """Find a voice file by relative path. Convention-driven search:
+
+      1. acts/<current>/<region>/voices/<basename>     (convention)
+      2. pack_root/<rel>                              (flat fallback)
+
+    The speaker's `voice_file` field is a short stem in the new
+    shape ("voices/keeper.md" -> "keeper.md" in the region's
+    voices dir). The fallback lets flat packs keep working
+    unchanged.
+    """
+    from .paths import pack_dir
+    if world is None:
+        world = load_world()
+    act = current_act(world)
+    pack = pack_dir(world["name"])
+    basename = Path(rel).name
+    acts_root = pack / "acts" / act["id"]
+    if acts_root.is_dir():
+        for region_dir in acts_root.iterdir():
+            if not region_dir.is_dir():
+                continue
+            candidate = region_dir / "voices" / basename
+            if candidate.exists():
+                return candidate
+    legacy = pack / rel
+    if legacy.exists():
+        return legacy
+    return legacy
+
+
 def phase_tone(phase: str, world: dict | None = None) -> str:
     """The prose tone the engine threads into every generation for
     the given phase. The pack's own `phases` dict is the source."""

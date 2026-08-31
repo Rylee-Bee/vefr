@@ -62,13 +62,31 @@ def load_pack(pack_dir: Path) -> dict:
         # per-region validation in a follow-on).
         region_name = next(iter(act.get('regions', {})), None)
         region_legacy = act.get('_town_legacy', {}) or act.get('town', {})
+        # The map lives in acts/<id>/<region>/map.md in the new
+        # shape. If it's there, parse it; otherwise fall back to
+        # whatever the contract holds.
+        map_lines: list[str] = []
+        if region_name:
+            map_path = first_act_dir / region_name / 'map.md'
+            if map_path.exists():
+                map_lines = [
+                    ln for ln in map_path.read_text(encoding='utf-8').splitlines()
+                    if ln.strip()
+                ]
+        if not map_lines:
+            map_lines = region_legacy.get('map', [])
         return {
+            'name': pack.name,
+            'title': config.get('title', act.get('title', pack.name)),
+            'description': config.get('description', ''),
+            'gold_rule': config.get('gold_rule', ''),
             'phases': config['phases'],
             'voices': config.get('voices', {}),
             'bonds': config.get('bonds', {}),
             'speakers': act.get('speakers', {}),
+            'surface': config.get('surface', 'combat'),
             'town': {
-                'map': region_legacy.get('map', []),
+                'map': map_lines,
                 'legend': region_legacy.get('legend', {}),
                 'pois': region_legacy.get('pois', {}),
                 'watch': region_legacy.get('watch', {}),
@@ -80,7 +98,7 @@ def load_pack(pack_dir: Path) -> dict:
                 'bg': region_legacy.get('bg', '#131311'),
                 'hero_color': region_legacy.get('hero_color', '#e8e5df'),
                 'speaker_color': region_legacy.get('speaker_color', '#8b939c'),
-                'speaker_head': region_legacy.get('speaker_head', '#d8d5cf'),
+                'speaker_head': region_legacy.get('speaker_head', '#d8d5df'),
             },
             '_act_id': first_act_dir.name,
             '_region': region_name,
@@ -208,11 +226,85 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
 
 def write_pack(pack_dir: Path, w: dict) -> None:
     """Atomic write - an interrupted build must never leave world.json
-    truncated."""
-    target = Path(pack_dir) / 'world.json'
-    tmp = target.with_suffix('.json.tmp')
-    tmp.write_text(json.dumps(w, indent=2, ensure_ascii=False), encoding='utf-8')
-    tmp.replace(target)
+    truncated.
+
+    Handles both shapes:
+
+      Flat: writes a single world.json with all keys at the top.
+      Acts: writes the pack-level world.json with phases/voices/bonds
+        and the per-act world.json with the act's region, speakers,
+        and town data.
+
+    A unified shape from load_pack() (the path most callers use)
+    has w['town'] synthesized; this function demuxes it back into
+    the on-disk shape that matches the source pack.
+    """
+    pack = Path(pack_dir)
+    tmp = pack / 'world.json.tmp'
+    if 'acts' in w or (pack / 'acts').is_dir():
+        # Acts shape: write pack-level + per-act JSONs.
+        act_id = w.get('_act_id') or 'act-1'
+        act_dir = pack / 'acts' / act_id
+        act_dir.mkdir(parents=True, exist_ok=True)
+        town = w.get('town', {})
+        # The act contract: id, title, regions, town (region legacy),
+        # speakers.
+        act_contract = {
+            'id': act_id,
+            'title': w.get('title', pack.name),
+            'regions': ['town'],
+            'town': {k: v for k, v in town.items() if k != 'map'},
+            'speakers': w.get('speakers', {}),
+            'enemies': w.get('enemies', []),
+            'bosses': w.get('bosses', []),
+            'transitions': w.get('transitions', []),
+        }
+        act_tmp = act_dir / 'world.json.tmp'
+        act_tmp.write_text(json.dumps(act_contract, indent=2,
+                                      ensure_ascii=False), encoding='utf-8')
+        act_tmp.replace(act_dir / 'world.json')
+        # The map moves to acts/<id>/town/map.md.
+        if town.get('map'):
+            map_dir = act_dir / 'town'
+            map_dir.mkdir(parents=True, exist_ok=True)
+            (map_dir / 'map.md').write_text(
+                '\n'.join(town['map']) + '\n', encoding='utf-8'
+            )
+        # The pack-level contract.
+        pack_contract = {
+            'name': pack.name,
+            'title': w.get('title', pack.name),
+            'description': w.get('description', ''),
+            'gold_rule': w.get('gold_rule', ''),
+            'phases': w.get('phases', {}),
+            'surface': w.get('surface', 'combat'),
+            'voices': w.get('voices', {}),
+            'bonds': w.get('bonds', {}),
+            'bond_draw': w.get('bond_draw', ''),
+            'forge_texture': w.get('forge_texture', ''),
+        }
+        tmp.write_text(json.dumps(pack_contract, indent=2,
+                                  ensure_ascii=False), encoding='utf-8')
+        tmp.replace(pack / 'world.json')
+    else:
+        # Flat shape: a single world.json with the legacy keys.
+        legacy = {
+            'name': pack.name,
+            'title': w.get('title', pack.name),
+            'description': w.get('description', ''),
+            'gold_rule': w.get('gold_rule', ''),
+            'phases': w.get('phases', {}),
+            'surface': w.get('surface', 'combat'),
+            'voices': w.get('voices', {}),
+            'bonds': w.get('bonds', {}),
+            'bond_draw': w.get('bond_draw', ''),
+            'forge_texture': w.get('forge_texture', ''),
+            'speakers': w.get('speakers', {}),
+            'town': w.get('town', {}),
+        }
+        tmp.write_text(json.dumps(legacy, indent=2,
+                                  ensure_ascii=False), encoding='utf-8')
+        tmp.replace(pack / 'world.json')
 
 
 def build_map(segments: list) -> list[str]:

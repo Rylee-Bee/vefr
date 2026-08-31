@@ -166,16 +166,11 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         return 1
 
     shutil.copytree(scaffold, dest)
-    # The new pack is written in the flat shape regardless of
-    # the scaffold source. If the scaffold had an acts/ tree,
-    # the copy inherited it; remove it so the new pack doesn't
-    # accidentally load as acts-shape on top of the flat JSON
-    # we are about to write.
-    acts_copy = dest / "acts"
-    if acts_copy.is_dir():
-        shutil.rmtree(acts_copy)
-    # Read the scaffold via maplab so we get the unified shape
-    # regardless of whether the scaffold source is flat or acts.
+    # The new pack keeps the scaffold's shape (flat or acts).
+    # If the scaffold is acts-shape, the copy inherits acts/ and
+    # the loader reads it as such; if flat, no acts/ exists and
+    # the loader reads the flat JSON. Either way, maplab.load_pack
+    # returns a unified shape the interview can mutate.
     from .maplab import load_pack as _load_pack
     w = _load_pack(dest)
 
