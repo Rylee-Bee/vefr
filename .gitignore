@@ -18,4 +18,7 @@ __pycache__/
 /data/journal-*.json
 /data/trace.jsonl
 /data/trace.jsonl.old
+/data/weave.jsonl
+/data/weave.jsonl.old
+/data/handoffs/
 

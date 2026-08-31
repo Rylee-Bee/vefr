@@ -22,13 +22,13 @@ this module only ever teaches the engine how to speak.
 """
 
 from .paths import pack_file
-from .world import load_world, phase_tone
+from .world import load_world, phase_tone, resolve_voice_file
 
 
 def sealed_voice(key: str) -> str:
     """A world-owned voice: rules from the pack, world from the logbok."""
     voice = load_world()["voices"][key]
-    rules = pack_file(voice["file"]).read_text(encoding="utf-8")
+    rules = resolve_voice_file(voice["file"]).read_text(encoding="utf-8")
     logbok = _logbok()
     return rules + "\n\n" + logbok
 
