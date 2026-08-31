@@ -6,13 +6,10 @@ visits. If the model is unreachable, a seed line speaks instead -
 the world never breaks because the whisper went quiet.
 """
 
-import json
-import os
-
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
+from . import generator
 from .paths import pack_file
 from .world import load_world, phase_tone
 
@@ -52,7 +49,7 @@ def build_payload(phase: str, key: str | None = None) -> dict:
     voice = pack_file(spec["voice_file"]).read_text(encoding="utf-8")
     seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
     return {
-        "model": MODEL,
+        "model": generator.MODEL,
         "system": (
             voice
             + f"\n\nCURRENT PHASE: {phase_tone(phase)}\n"
@@ -66,7 +63,7 @@ def build_payload(phase: str, key: str | None = None) -> dict:
         "format": SCHEMA,
         "stream": False,
         "think": False,
-        "keep_alive": KEEP_ALIVE,
+        "keep_alive": generator.KEEP_ALIVE,
         "options": {"temperature": 0.85},
     }
 
@@ -76,9 +73,7 @@ def generate_line(phase: str = "whispers", key: str | None = None) -> NpcLine:
     payload = build_payload(phase, key)
     for _ in range(2):
         try:
-            r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
-            r.raise_for_status()
-            raw = json.loads(r.text)["response"]
+            raw = generator._completion(payload)
             line = NpcLine.model_validate_json(raw)
             line.speaker = spec["name"]
             return line

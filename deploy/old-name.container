@@ -1,11 +1,12 @@
 [Unit]
-Description=Old Name - rumor engine
+Description=Old Name - rumor engine (NOTE: stale doc - the live game runs on bazzite, see ~/.config/containers/systemd/old-name.container there. This repo file is preserved for the documented homelab-vm path but has never been the production deploy target.)
 
 [Container]
 Image=localhost/old-name:latest
 ContainerName=old-name
 Network=host
-Environment=OLLAMA_URL=http://127.0.0.1:11434
+Environment=NORN_LLAMACPP_URL=http://127.0.0.1:8081
+Environment=NORN_MODEL=gpt-oss-20b
 Environment=NORN_KEEP_ALIVE=1m
 Environment=NORN_VAULT=/app/data/vault.json
 Environment=NORN_JOURNAL=/app/data/journal.json

@@ -26,6 +26,7 @@ commands stay the same no matter whose story they're serving.
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -33,6 +34,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .maplab import load_pack, validate
+
+GITEA_BASE = 'http://192.168.2.216:3000'
 
 DEFAULT_URL = 'http://192.168.2.76:8820'
 DEFAULT_DEPLOY_HOST = 'bazzite'
