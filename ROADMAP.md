@@ -129,8 +129,28 @@
       logged, where, in what shape; (2) the weave step - templating
       vs. another local-model pass, same schema-constrained pattern
       as `old-name chat`; (3) the surface - a CLI command, an API route,
-      or both. Scope as its own session; don't bolt it onto the tail
-      of a long one.
+      or both.
+
+      **Build plan (2026-08-31, dispatched to background):**
+      - `src/norn/journal.py`: atomic-write JSON log (same tmp+replace
+        pattern as `forge.py`'s vault), one entry per rumor/npc-line/
+        kept-item/bell-letter, `log()`/`list_entries()`/`clear()`.
+        `main.py`'s existing routes call `journal.log(...)` after
+        each generation.
+      - `src/norn/export.py`: deterministic templating (not another
+        model call - must work even if ollama is down, must always
+        match what actually happened) weaving bible.md + the journal
+        + the vault into one markdown document. A model-polish pass
+        is a natural v2, not required for this to be usable.
+      - New routes: `GET /api/journal`, `POST /api/journal/clear`,
+        `GET /api/export`.
+      - New web UI tab: a readable journal timeline + an "export
+        story" button that downloads the markdown, same parchment
+        styling as the rest of `web/`.
+      - Tests: `test_journal.py`, `test_export.py` - engine-level,
+        must pass against `worlds/sample-world/` with zero setup.
+      - Tooling only, no story work: worlds/private-canon and
+        the private story repo are untouched by this.
 - [ ] **`old-name chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
