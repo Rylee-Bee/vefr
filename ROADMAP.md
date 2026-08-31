@@ -210,8 +210,23 @@
       Rylee's profile + shared agent rules load from the global
       kilo config, so this repo's instructions list stays one entry.
 
+- [x] **the handoff guide caught up** (2026-08-31):
+      `docs/guides/session-handoff.md` refreshed to the kilo-init
+      HEAD + the 171-test gate; all three "honest gaps" closed out
+      with evidence (real pool weave landed, mem0 live again,
+      `tests/test_web_packaged.py`); the next-move table repointed
+      at the surface-UI continuation.
+
 ## Next
 
+- [ ] **the engine is a game too** (2026-08-31): every part of the
+      story and the engine replaceable, modifiable, fork-able from
+      a dev menu, each part enhanced by the local AI chat. The
+      aspects - lore packs, act structure, graphics resources, maps
+      - all callable and visible in the UI and over the API. Half
+      the fun of the game is developing it - the engine should feel
+      like a game itself. Umbrella item: the surface UI, `norns
+      chat` v2, and the pack contract work below all serve it.
 - [ ] **surface UI for `surface: "combat"` packs**: the data shape
       now carries the surface (the always-array loader exposes it
       on every /api/world response) but the web UI + packaged
