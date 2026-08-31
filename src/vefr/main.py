@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import json
 
-from . import forge, journal, lore, sessions, starred, trace
+from . import forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -580,6 +580,47 @@ def trace_list(limit: int = 100):
     export, never in the packaged game.
     """
     return {"events": trace.recent(limit)}
+
+
+@app.get("/api/weave")
+def weave_list(limit: int = 200):
+    """The engine's weave log - what the loader did, newest first.
+
+    The weave log is fire-and-forget; the ring is in-memory, the
+    file is on disk. The builder's Weave tab polls this route.
+    """
+    return inspect_mod.recent_weave(limit)
+
+
+@app.get("/api/builder/resolved")
+def builder_resolved():
+    """The merged world the engine sees, after convention resolution.
+
+    A mirror of load_world()'s return value with engine-only
+    bookkeeping stripped. The builder renders this in the
+    "what does the engine see?" view so the author can compare
+    it against their on-disk files.
+    """
+    return inspect_mod.resolved_world()
+
+
+@app.post("/api/handoff")
+def handoff_create():
+    """Write a markdown bundle to data/handoffs/. Returns the path
+    so the builder can show a "saved to X" link.
+
+    The bundle has sections the author fills in (what I tried,
+    what I saw, what I've already done) plus auto-filled context
+    (resolved world, recent weave events). It is the AI-buddy
+    handoff format; see docs/guides/handoff.md.
+    """
+    inspect_mod._ensure_data_dir()
+    from .paths import app_home
+    from datetime import datetime
+    out_dir = app_home() / "data" / "handoffs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = inspect_mod.build_handoff(out_dir)
+    return {"path": str(path), "filename": path.name}
 
 
 @app.get("/api/wiki")
