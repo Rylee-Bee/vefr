@@ -120,7 +120,7 @@ function mkBtnWithData(id, dataKey, dataVal) {
   return e;
 }
 const tabsBox = mk('div', '', 'tabs');
-const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'builder'];
+const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'builder'];
 const tabBtns = {};
 for (const v of TABVIEWS) {
   tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
@@ -154,6 +154,9 @@ mkBtnWithData('export-journal-btn', 'exportTab', 'journal');
 mk('button', 'journal-clear-btn');
 mk('p', 'journal-status', 'note');
 mk('section', 'journal-list');
+mk('span', 'wiki-status', 'note');
+mk('section', 'wiki-characters');
+mk('section', 'wiki-relics');
 mkBtnWithData('export-rumors-btn', 'exportTab', 'rumors');
 mkBtnWithData('export-vault-btn', 'exportTab', 'vault');
 mkBtnWithData('export-stefna-btn', 'exportTab', 'stefna');
@@ -278,6 +281,7 @@ sandbox.fetch = (url, opts) => {
   }
   if (url === '/api/stefna') return ok({ letter: 'For you.' });
   if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
+  if (url === '/api/wiki') return ok({ characters: [{ key: 'the ferryman', name: 'the ferryman', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
   if (url === '/api/export') return ok('# story');
@@ -392,6 +396,10 @@ check('vault list still populated', byId.get('vault-list').innerHTML.includes('A
 /* the journal tab from the previous task must still work */
 check('journal rendered on its tab', byId.get('journal-list').innerHTML.includes('a voice'), byId.get('journal-list').innerHTML);
 check('journal status counted', byId.get('journal-status').textContent.includes('1 thing happened'), byId.get('journal-status').textContent);
+
+/* the wiki tab renders characters + relics from /api/wiki */
+check('wiki rendered characters', byId.get('wiki-characters').innerHTML.includes('the ferryman'), byId.get('wiki-characters').innerHTML);
+check('wiki rendered relics', byId.get('wiki-relics').innerHTML.includes('knife'), byId.get('wiki-relics').innerHTML);
 
 /* the export button from the previous task must still work */
 byId.get('export-btn').click();

@@ -358,6 +358,7 @@
     <button type="button" role="tab" data-view="stefna" id="tab-stefna" aria-selected="false" aria-controls="view-stefna">Stefna</button>
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
     <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Annall</button>
+    <button type="button" role="tab" data-view="wiki" id="tab-wiki" aria-selected="false" aria-controls="view-wiki">Fræði</button>
     <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Old Name</button>
   </div>
 
@@ -428,6 +429,13 @@
     </div>
     <p class="note" id="journal-status">&nbsp;</p>
     <section id="journal-list" aria-live="polite"></section>
+  </section>
+
+  <section id="view-wiki" class="view" role="tabpanel" aria-labelledby="tab-wiki" hidden>
+    <p class="note">the world's own wiki &mdash; who lives here, what they said this playthrough, what was carried. Auto-generated, never edited.</p>
+    <p class="note" id="wiki-status">&nbsp;</p>
+    <section id="wiki-characters" aria-live="polite"></section>
+    <section id="wiki-relics" aria-live="polite"></section>
   </section>
 
   <section id="view-builder" class="view" role="tabpanel" aria-labelledby="tab-builder" hidden>
@@ -516,6 +524,7 @@
     stefna: document.getElementById('view-stefna'),
     town: document.getElementById('view-town'),
     journal: document.getElementById('view-journal'),
+    wiki: document.getElementById('view-wiki'),
     builder: document.getElementById('view-builder'),
   };
   tabs.forEach(function (b) {
@@ -525,6 +534,7 @@
       if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
       if (b.dataset.view === 'vault') window.dispatchEvent(new Event('old-name:vault'));
       if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
+      if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('old-name:wiki'));
       if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
     });
   });
@@ -944,6 +954,43 @@
   });
 
   window.addEventListener('old-name:journal', renderJournal);
+
+  /* The world's wiki - who lives here, what they said this
+     playthrough, what was carried. Read-only, auto-generated from
+     canon + the session's journal; the author never maintains it. */
+  var wikiBox = document.getElementById('wiki-characters');
+  var wikiRelics = document.getElementById('wiki-relics');
+  var wikiStatus = document.getElementById('wiki-status');
+
+  function renderWiki() {
+    wikiStatus.textContent = 'reading\u2026';
+    fetch(VEFR_SESSION.wrap('/api/wiki')).then(function (r) { return r.json(); }).then(function (body) {
+      var chars = (body && body.characters) || [];
+      var relics = (body && body.relics) || [];
+      wikiStatus.textContent = (body.rumors || 0) + ' whispers heard \u00b7 '
+        + (body.letters || 0) + ' letters \u00b7 ' + relics.length + ' relics carried';
+      wikiBox.innerHTML = chars.length
+        ? '<h2>Characters</h2>' + chars.map(function (c) {
+            var recent = (c.recent || []).map(function (l) {
+              return '<p class="whisper">&ldquo;' + esc(l.line || '') + '&rdquo;</p>';
+            }).join('');
+            return '<article class="card"><div class="speaker">' + esc(c.name) + '</div>'
+              + '<div class="kind">' + c.lines + (c.lines === 1 ? ' line spoken' : ' lines spoken') + '</div>'
+              + recent + '</article>';
+          }).join('')
+        : '<p class="empty">Nobody has spoken yet.</p>';
+      wikiRelics.innerHTML = relics.length
+        ? '<h2>Relics</h2>' + relics.map(function (it) {
+            return '<article class="card"><div class="speaker">' + esc(it.name || 'something') + '</div>'
+              + '<div class="kind">kept &middot; ' + esc(it.bond || '') + '</div>'
+              + '<p class="whisper">' + esc(it.lore || '') + '</p></article>';
+          }).join('')
+        : '<p class="empty">Nothing carried yet.</p>';
+    }).catch(function () {
+      wikiStatus.textContent = 'the wiki did not answer.';
+    });
+  }
+  window.addEventListener('old-name:wiki', renderWiki);
 
   /* "Export this tab" - one markdown file with the canon + that tab's
      section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
