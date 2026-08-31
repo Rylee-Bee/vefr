@@ -121,12 +121,8 @@
   </div>
 
   <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
-    <div class="phase-rail" role="group" aria-label="Rumor phase">
-      <button type="button" data-phase="whispers" aria-pressed="true">whispers</button>
-      <button type="button" data-phase="doubts" aria-pressed="false">doubts</button>
-      <button type="button" data-phase="feared" aria-pressed="false">feared</button>
-      <button type="button" data-phase="awed" aria-pressed="false">awed</button>
-    </div>
+    <!-- built from the pack's own phases, shared with the town's rail -->
+    <div class="phase-rail" id="rumor-phase" role="group" aria-label="The world's tone"></div>
     <div class="controls">
       <button type="button" id="whisper-btn">Whisper</button>
       <span class="note" id="status">the mill is warm</span>
@@ -183,9 +179,11 @@
     <section id="journal-list" aria-live="polite"></section>
   </section>
 </main>
+<script src="/static/state.js"></script>
 <script src="/static/town.js"></script>
 <script>
 (function () {
+  var STATE = window.OLD-STATE-GLOBAL;
   var tabs = document.querySelectorAll('.tabs button');
   var views = {
     rumors: document.getElementById('view-rumors'),
@@ -199,19 +197,40 @@
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
       for (var k in views) views[k].hidden = (k !== b.dataset.view);
       if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
+      if (b.dataset.view === 'vault') window.dispatchEvent(new Event('old-name:vault'));
       if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
     });
   });
 
-  var currentPhase = 'whispers';
-  var rail = document.querySelector('.phase-rail');
+  /* The rumors rail. Same shared state as the town's rail, so the
+     tone you set in one view is the tone the other opens in - and the
+     names come from the pack, not from this file. */
+  var rail = document.getElementById('rumor-phase');
+  var railPhases = null;
+
+  function buildRumorRail() {
+    var phases = STATE.get().phases || [];
+    if (railPhases !== phases.join('\u0000')) {
+      railPhases = phases.join('\u0000');
+      rail.innerHTML = '';
+      phases.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.phase = p;
+        b.textContent = p;
+        b.setAttribute('aria-pressed', 'false');
+        rail.appendChild(b);
+      });
+    }
+    var now = STATE.get().phase;
+    rail.querySelectorAll('button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.phase === now ? 'true' : 'false');
+    });
+  }
+
   rail.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-phase]');
-    if (!b) return;
-    currentPhase = b.dataset.phase;
-    rail.querySelectorAll('button').forEach(function (x) {
-      x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
-    });
+    if (b) STATE.setPhase(b.dataset.phase);
   });
 
   var btn = document.getElementById('whisper-btn');
@@ -222,16 +241,19 @@
   btn.addEventListener('click', async function () {
     btn.disabled = true;
     statusEl.textContent = 'the mill turns\u2026';
+    var ph = STATE.get().phase;
     try {
+      /* Omit the phase rather than send null - only the route's own
+         default knows the pack's first phase. */
       var r = await fetch('/api/rumor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phase: currentPhase })
+        body: JSON.stringify(ph ? { phase: ph } : {})
       });
       if (!r.ok) throw new Error('mill jammed');
       var c = await r.json();
       if (empty) empty.remove();
-      feed.insertAdjacentHTML('afterbegin', whisperHTML(c, currentPhase));
+      feed.insertAdjacentHTML('afterbegin', whisperHTML(c, ph || ''));
       statusEl.textContent = 'the mill is warm';
     } catch (err) {
       statusEl.textContent = 'the mill is silent. is the model loaded?';
@@ -288,7 +310,11 @@
           ? 'kept. it works, mostly. it never asked what she wants.'
           : 'kept. it does not care who holds it.';
       b.remove();
-      renderVault();
+      /* Into the shared state, not a private fetch: the town's HUD and
+         its gold ring update from the same list, without a tab click. */
+      STATE.refreshVault().catch(function () {
+        vaultList.innerHTML = '<p class="error">the vault did not answer.</p>';
+      });
     } catch (err) {
       forgeStatus.textContent = 'the vault did not answer.';
       b.disabled = false;
@@ -308,15 +334,20 @@
       + offer + '</article>';
   }
 
-  function renderVault() {
-    fetch('/api/vault').then(function (r) { return r.json(); }).then(function (items) {
-      vaultList.innerHTML = items.length
-        ? items.slice().reverse().map(function (i) { return itemHTML(i, false); }).join('')
-        : '<p class="empty">Nothing kept yet. Forge something worth carrying.</p>';
-    }).catch(function () {
+  /* Newest first here; the shared list is oldest-first, the order the
+     journal and the export read in. */
+  function renderVaultList() {
+    var items = STATE.get().vault || [];
+    vaultList.innerHTML = items.length
+      ? items.slice().reverse().map(function (i) { return itemHTML(i, false); }).join('')
+      : '<p class="empty">Nothing kept yet. Forge something worth carrying.</p>';
+  }
+
+  window.addEventListener('old-name:vault', function () {
+    STATE.refreshVault().catch(function () {
       vaultList.innerHTML = '<p class="error">the vault did not answer.</p>';
     });
-  }
+  });
 
   var ringBtn = document.getElementById('ring-btn');
   var bellStatus = document.getElementById('bell-status');
@@ -437,6 +468,19 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
     });
   }
+
+  /* One subscription for every view this script owns. The town
+     renderer has its own; both read the same object. */
+  STATE.on(function () {
+    buildRumorRail();
+    renderVaultList();
+  });
+
+  /* Shared with town.js - whichever asks first, one request. */
+  STATE.world().catch(function () {
+    statusEl.textContent = 'the world did not load. refresh.';
+  });
+  STATE.refreshVault().catch(function () { /* the Vault tab says so on open */ });
 })();
 </script>
 </body>

@@ -1,25 +1,28 @@
-/* Old Name - the town. The renderer is engine; the world comes from /api/world. */
+/* Old Name - the town. The renderer is engine; the world comes from /api/world.
+   Phase and the carried item are not this file's to own: they live in
+   window.OLD-STATE-GLOBAL (web/state.js), shared with every other view. */
 (function () {
   var canvas = document.getElementById('town-canvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
+  var STATE = window.OLD-STATE-GLOBAL;
 
   var W = null; /* world payload */
   var TILE = 32;
   var the wanderer = null;
-  var phase = '';
-  var phases = [];
   var watchR = 0;
   var SANCT = [];
   var BLOCKED = ['~', 'B', '#', 'T', 'M'];
   var flooded = {};
-  var carried = null;
   var sighted = false;
   var openSpeaker = null;
   var busy = false;
+  var railPhases = null; /* the phase list the rail was built from */
 
-  fetch('/api/world')
-    .then(function (r) { return r.json(); })
+  function phase() { return STATE.get().phase; }
+  function carried() { return STATE.get().carrying; }
+
+  STATE.world()
     .then(init)
     .catch(function () {
       var note = document.getElementById('near-note');
@@ -29,44 +32,48 @@
       }
     });
 
+  /* Only the things the world payload owns are set here. Phase and the
+     carried item come from the shared state, so sync() draws them - the
+     vault's first read is bootstrapped once by index.html, and re-read
+     here on every old-name:town. */
   function init(data) {
     W = data;
     TILE = W.tile || 32;
-    phases = W.phases;
-    phase = phases[0];
-    watchR = W.watch.r_by_phase[phase] || W.watch.tower[2] || 12;
     SANCT = W.sanctuary_tiles || [];
-    applyWater();
-    fetchCarried();
     the wanderer = { x: W.willow_start[0], y: W.willow_start[1] };
     canvas.width = W.map[0].length * TILE;
     canvas.height = W.map.length * TILE;
+    sync();
+  }
+
+  /* Everything the shared state can change, re-applied in one place:
+     the watch radius, the water, the rail's pressed button, the canvas,
+     the HUD. Called on init and on every state change. */
+  function sync() {
+    if (!W) return;
+    watchR = (W.watch.r_by_phase && W.watch.r_by_phase[phase()])
+      || W.watch.tower[2] || 12;
+    applyWater();
     buildRail();
     draw();
     hud();
   }
 
+  STATE.on(sync);
+
   function applyWater() {
     flooded = {};
-    if (W.water_by_phase && W.water_by_phase[phase] === 'high') {
+    if (W.water_by_phase && W.water_by_phase[phase()] === 'high') {
       (W.flood_tiles || []).forEach(function (t) {
         flooded[t[0] + ',' + t[1]] = true;
       });
     }
   }
 
-  function fetchCarried() {
-    fetch('/api/vault')
-      .then(function (r) { return r.json(); })
-      .then(function (list) {
-        carried = list.length ? list[list.length - 1] : null;
-        hud();
-      })
-      .catch(function () { /* the vault keeps its silence */ });
-  }
-
+  /* Re-ask the vault when the tab opens - it can change from outside
+     the page (the CLI keeps items too). */
   window.addEventListener('old-name:town', function () {
-    fetchCarried();
+    STATE.refreshVault().catch(function () { /* the vault keeps its silence */ });
   });
 
   function rows() { return W.map.length; }
@@ -210,7 +217,8 @@
     ctx.beginPath();
     ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 7, 0, Math.PI * 2);
     ctx.fill();
-    if (carried && carried.bond === 'attuned') {
+    var held = carried();
+    if (held && held.bond === 'attuned') {
       ctx.strokeStyle = '#c9ad6b';
       ctx.beginPath();
       ctx.arc(the wanderer.x * TILE + 16, the wanderer.y * TILE + 18, 10, 0, Math.PI * 2);
@@ -236,37 +244,38 @@
     }
     var carry = document.getElementById('carrying');
     if (carry) {
-      carry.textContent = carried ? 'carrying: ' + carried.name + ' \u00b7 ' + carried.bond : '';
-      carry.style.color = carried && carried.bond === 'attuned' ? '#c9ad6b' : '';
+      var held = carried();
+      carry.textContent = held ? 'carrying: ' + held.name + ' \u00b7 ' + held.bond : '';
+      carry.style.color = held && held.bond === 'attuned' ? '#c9ad6b' : '';
     }
   }
 
+  /* Idempotent: sync() calls this on every state change, so the
+     buttons are only rebuilt when the pack's phase list itself
+     changed. Otherwise only the pressed one moves. A click writes to
+     the shared state and lets sync() do the rest - the rumors rail
+     writes to the same place, which is the whole point. */
   function buildRail() {
     var rail = document.getElementById('town-phase');
     if (!rail) return;
-    phases.forEach(function (p, i) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.phase = p;
-      b.textContent = p;
-      b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
-      b.addEventListener('click', function () { setPhase(p); });
-      rail.appendChild(b);
-    });
-  }
-
-  function setPhase(p) {
-    phase = p;
-    watchR = W.watch.r_by_phase[p] || watchR;
-    applyWater();
-    var rail = document.getElementById('town-phase');
-    if (rail) {
-      rail.querySelectorAll('button').forEach(function (b) {
-        b.setAttribute('aria-pressed', b.dataset.phase === p ? 'true' : 'false');
+    var phases = STATE.get().phases || [];
+    if (railPhases !== phases.join('\u0000')) {
+      railPhases = phases.join('\u0000');
+      rail.innerHTML = '';
+      phases.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.phase = p;
+        b.textContent = p;
+        b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', function () { STATE.setPhase(p); });
+        rail.appendChild(b);
       });
     }
-    draw();
-    hud();
+    var now = phase();
+    rail.querySelectorAll('button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.phase === now ? 'true' : 'false');
+    });
   }
 
   function move(dx, dy) {
@@ -281,7 +290,7 @@
   }
 
   function checkSighting() {
-    if (sighted || phase !== 'awed') return;
+    if (sighted || phase() !== 'awed') return;
     var onCrossing = (W.flood_tiles || []).some(function (t) {
       return t[0] === the wanderer.x && t[1] === the wanderer.y;
     });
@@ -310,10 +319,14 @@
     document.getElementById('npc-line').textContent = '\u2026';
     document.getElementById('near-note').hidden = true;
     busy = true;
+    /* Omit the phase rather than send null - the route's own default
+       is the only thing that knows the pack's first phase. */
+    var ask = { speaker: near.key };
+    if (phase()) ask.phase = phase();
     fetch('/api/npc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phase: phase, speaker: near.key })
+      body: JSON.stringify(ask)
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
