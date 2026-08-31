@@ -1,15 +1,16 @@
-# old-name
+# norn
 
-> *old-name* - memory, and longing. The raven that flies out every day
-> and comes home.
+> The three Norns weave fate at the well beneath the world tree -
+> not one fixed fate, whichever one is given them.
 >
 > **It gives the hellos that never happened.**
 
-Two entry points, `raven` and `old-name` - universal tooling that never
-references any specific game's name, so any story can be built here.
-The word "old-name" above is Old Norse (memory, longing); it's also the
-title of the author's own game, `the private story repo`, which is built on
-this engine but lives in its own private repo and ships nothing here.
+Two entry points, `raven` and `old-name`, live under this one umbrella -
+universal tooling that never references any specific game's name, so
+any story can be woven here. "Old Name" is Old Norse for memory and
+longing; it's also the title of the author's own game,
+`the private story repo`, which is built on this engine but lives in its
+own private repo and ships nothing here.
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
@@ -24,8 +25,8 @@ spoken must be true.
 ## The bones and the flesh
 
 ```
-src/old-name/           the engine (MIT)
-  paths.py           where things live (SMIDR_HOME, SMIDR_WORLD)
+src/norn/           the engine (MIT)
+  paths.py           where things live (NORN_HOME, NORN_WORLD)
   world.py           the pack loader - the only seam
   saga.py            the storytelling layer - Saga keeps the stories:
                      Bragi composes (prompts, voices), Idunn keeps
@@ -58,23 +59,23 @@ tests/               pytest - pack contract, schemas, fallbacks
 No world pack ships tracked in this repo except the sample - the
 author's own game keeps its pack in a separate private repo and
 drops it into `worlds/<name>/` locally. One env var selects the
-world: `SMIDR_WORLD=your-world`. Point it at your own pack and the
+world: `NORN_WORLD=your-world`. Point it at your own pack and the
 same engine serves your story.
 
 ## Quickstart (container)
 
 ```sh
-podman build -t localhost/old-name:latest .
-mkdir -p ~/old-name-data
-podman run -d --name old-name -p 8820:8820 \
-  -v ~/old-name-data:/app/data \
+podman build -t localhost/norn:latest .
+mkdir -p ~/norn-data
+podman run -d --name norn -p 8820:8820 \
+  -v ~/norn-data:/app/data \
   -e OLLAMA_URL=http://127.0.0.1:11434 \
-  localhost/old-name:latest
+  localhost/norn:latest
 curl -s http://127.0.0.1:8820/api/health
 ```
 
 Model default: `qwen3.8-27b:ctx32k` (any ollama model works; set
-`SMIDR_MODEL` to change it; structured output via JSON schema).
+`NORN_MODEL` to change it; structured output via JSON schema).
 
 ## Make your own world
 
@@ -86,7 +87,7 @@ Model default: `qwen3.8-27b:ctx32k` (any ollama model works; set
    and `ledger.md` (seed whispers; the cadence compounds).
 3. Define phases and their tones, your bonds, your speakers, your
    town grid and palette.
-4. `SMIDR_WORLD=yours`. The engine does the rest.
+4. `NORN_WORLD=yours`. The engine does the rest.
 
 **By conversation** (`old-name chat --name yours`): an interview, run
 against your own local ollama, drafts the canon, the theme colors,

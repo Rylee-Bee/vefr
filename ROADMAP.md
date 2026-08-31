@@ -1,8 +1,9 @@
-# old-name - Roadmap
+# norn - Roadmap
 
-> *old-name* - memory, and longing. The raven that flies out every day
-> and comes home. This is the ladder from a tool built for one
-> story, playable - to a tool anyone can point at their own.
+> The three Norns weave fate at the well beneath the world tree -
+> not one fixed fate, whichever one is given them. This is the
+> ladder from a tool built for one story, playable - to a tool
+> anyone can point at their own.
 
 ## Landed
 
@@ -60,9 +61,10 @@
       `maplab.py` is the one geometry validator shared by both CLIs
       and the tests.
 - [x] **the full rename, 2026-08-31**: this repo and package are
-      `old-name` now (were `old-name`); commands, env vars (`SMIDR_HOME`,
-      `SMIDR_WORLD`, `SMIDR_MODEL`, `SMIDR_VAULT`,
-      `SMIDR_KEEP_ALIVE`), and every hardcoded story reference in the
+      `norn` now (were `old-name`, briefly `old-name`) - the umbrella under
+      which `raven` and `old-name` both still live as commands. Env vars
+      (`NORN_HOME`, `NORN_WORLD`, `NORN_MODEL`, `NORN_VAULT`,
+      `NORN_KEEP_ALIVE`), and every hardcoded story reference in the
       engine (the API title, the health check's service name, the
       shared rumor system prompt, `world_name()`'s private-canon
       special-case) are gone. "Old Name" is free to mean only the game.

@@ -29,7 +29,7 @@ class NpcRequest(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "service": "old-name", "purpose": PURPOSE}
+    return {"ok": True, "service": "norn", "purpose": PURPOSE}
 
 
 @app.post("/api/rumor")

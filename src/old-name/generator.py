@@ -5,8 +5,8 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
-MODEL = os.environ.get("SMIDR_MODEL", "qwen3.8-27b:ctx32k")
-KEEP_ALIVE = os.environ.get("SMIDR_KEEP_ALIVE", "1m")
+MODEL = os.environ.get("NORN_MODEL", "qwen3.8-27b:ctx32k")
+KEEP_ALIVE = os.environ.get("NORN_KEEP_ALIVE", "1m")
 
 
 class RumorCard(BaseModel):

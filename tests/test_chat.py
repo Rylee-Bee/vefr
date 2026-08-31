@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from old-name import chat, maplab
+from norn import chat, maplab
 
 SCAFFOLD = Path(__file__).resolve().parents[1] / 'worlds' / 'sample-world'
 

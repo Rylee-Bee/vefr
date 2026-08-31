@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from old-name import generator
-from old-name.generator import RumorCard, build_payload, generate_rumor
+from norn import generator
+from norn.generator import RumorCard, build_payload, generate_rumor
 
 
 class FakeResponse:
