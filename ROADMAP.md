@@ -347,6 +347,21 @@
       stays open; the pool covers the common case (author has a
       model, the friend does not).
 
+- [ ] **the reachable UI** (prerequisite of the dev menu): the
+      header earns its title (vefr - a rumor engine for playable
+      worlds), 9 flat tabs become 3 static zones (Play / World /
+      Dev) with plain-English labels leading and the Norse names
+      visible as secondary, every target 44px+, luminance-only
+      active states, prefers-reduced-motion honored, keyboard and
+      focus-visible everywhere. Then the reading row: text size,
+      line spacing, contrast, and reading fonts (Atkinson
+      Hyperlegible, OpenDyslexic) - the preferences-panel pattern
+      Fluid's UI Options proves, built natively on the
+      localStorage prefs the runes already use. Hard-of-hearing:
+      when audio arrives (the bell), every sound pairs with a
+      visual event - the journal already is that record. Idea
+      credit when it lands: Fluid Infusion (fluid-project).
+
 ## The always-layer
 
 - the loop: whisper -> keep what's true -> the ledger -> the voice
