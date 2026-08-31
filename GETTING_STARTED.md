@@ -14,7 +14,7 @@ try it - a demonstration world (Emberfield) ships with the engine.
 | A pulled model | The thing Ollama runs | `ollama list` |
 
 If you don't have a model yet: `ollama pull qwen3:8b` (or any model
-you like - set `MUNR_MODEL` to its name later).
+you like - set `SMIDR_MODEL` to its name later).
 
 Podman/Docker is optional. It's how you'd run this always-on on a
 server; for trying it out, plain `uv run` is faster.
@@ -41,12 +41,11 @@ to talk to whoever's near. Whichever world pack is present under
 (see below), you'll see that; otherwise this is Emberfield, the
 demonstration world.
 
-> **Note (2026-08-31):** the author's own story pack now lives in its
-> own private repo, `the private story repo` - it's no longer expected to
-> ship inside a fresh clone of this engine repo going forward. If
-> you're reading this from a much older clone that still has
-> `worlds/private-canon/` in it, that content is not licensed for reuse
-> (see `worlds/private-canon/LICENSE`).
+> **Note (2026-08-31):** the author's own story and game, Old Name, lives
+> in its own private repo (`the private story repo`) - it never ships
+> inside a clone of this engine repo. This repo (now `rylee/old-name`)
+> is the shareable tooling only; it doesn't know or need to know any
+> specific game's name to run it.
 
 ## 3. Check the engine is sound
 
@@ -79,7 +78,7 @@ contract.
 Either way, point the engine at it:
 
 ```sh
-MUNR_WORLD=your-world uv run uvicorn old-name.main:app --app-dir src --port 8820
+SMIDR_WORLD=your-world uv run uvicorn old-name.main:app --app-dir src --port 8820
 ```
 
 ## 5. The CLI reference

@@ -41,7 +41,7 @@ def mother_voice() -> str:
 def system_prompt(phase: str) -> str:
     tone = phase_tone(phase)
     return (
-        "You are Old Name, the whisper that flies out every day and comes home.\n"
+        "You are the whisper that flies out every day and comes home.\n"
         "Write ONE tavern rumor from the world described below, in-world,\n"
         "spoken by a named minor character. Follow the Contract strictly:\n"
         "never explain, never label, never use modern words. Show only.\n\n"

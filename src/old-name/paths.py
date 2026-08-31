@@ -6,11 +6,11 @@ def app_home() -> Path:
     """Where web/ and worlds/ live.
 
     Container installs put the package in site-packages, so the dev-box
-    parent trick points at the wrong tree. OLD-NAME-HOME (set in the
+    parent trick points at the wrong tree. SMIDR_HOME (set in the
     Containerfile) wins; otherwise fall back to /app, then the repo
     checkout (dev runs).
     """
-    env = os.environ.get("OLD-NAME-HOME")
+    env = os.environ.get("SMIDR_HOME")
     if env:
         return Path(env)
     dev = Path(__file__).resolve().parents[2]
@@ -23,20 +23,20 @@ def app_home() -> Path:
 def world_name() -> str:
     """Which world pack is loaded.
 
-    MUNR_WORLD wins. Otherwise: private-canon when present (the
-    author's world), else the first pack alphabetically - the
-    bones boot with any flesh, or none at all beyond the sample.
+    SMIDR_WORLD wins. Otherwise the first pack alphabetically under
+    worlds/ - the bones boot with any flesh, or none at all beyond
+    the sample that ships with the engine. No pack name is ever
+    special-cased here; the engine doesn't know or care whose story
+    it's running.
     """
-    env = os.environ.get('MUNR_WORLD')
+    env = os.environ.get('SMIDR_WORLD')
     if env:
         return env
     base = app_home() / 'worlds'
-    if (base / 'private-canon' / 'world.json').exists():
-        return 'private-canon'
     packs = sorted(base.glob('*/world.json'))
     if packs:
         return packs[0].parent.name
-    return 'private-canon'
+    return 'sample-world'
 
 
 def pack_dir(name: str | None = None) -> Path:

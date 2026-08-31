@@ -6,8 +6,8 @@ Image=localhost/old-name:latest
 ContainerName=old-name
 Network=host
 Environment=OLLAMA_URL=http://127.0.0.1:11434
-Environment=MUNR_KEEP_ALIVE=1m
-Environment=MUNR_VAULT=/app/data/vault.json
+Environment=SMIDR_KEEP_ALIVE=1m
+Environment=SMIDR_VAULT=/app/data/vault.json
 Volume=%h/old-name-data:/app/data:Z
 
 [Service]

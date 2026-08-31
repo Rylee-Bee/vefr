@@ -55,7 +55,7 @@ def repo_root():
 
 
 def pack_root() -> Path:
-    """Where worlds/ lives: a checkout, or OLD-NAME-HOME in the container."""
+    """Where worlds/ lives: a checkout, or SMIDR_HOME in the container."""
     r = repo_root()
     if r and (r / 'worlds').is_dir():
         return r
@@ -290,7 +290,7 @@ def cmd_test(args) -> int:
     try:
         return sh(cmd).returncode
     except FileNotFoundError:
-        print('uv not found - run old-name test from a checkout with uv installed')
+        print('uv not found - run raven test from a checkout with uv installed')
         return 1
 
 
@@ -324,7 +324,7 @@ or game is built on this engine.
 """
 
 
-def munr_main() -> int:
+def raven_main() -> int:
     ap = argparse.ArgumentParser(
         prog='raven', description=RAVEN_HELP,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -385,4 +385,4 @@ def smidr_main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(munr_main())
+    sys.exit(raven_main())

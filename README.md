@@ -1,15 +1,15 @@
-# Old Name
+# old-name
 
 > *old-name* - memory, and longing. The raven that flies out every day
 > and comes home.
 >
 > **It gives the hellos that never happened.**
 
-**Naming note (2026-08-31):** this repo is still called `old-name` (its
-original name); the engine's own commands are `raven` and `old-name`
-and never reference this project's name, on purpose - so "Old Name"
-stays free to be a game's title, not the toolkit's. The author's own
-game, built on `worlds/private-canon`, is called Old Name.
+Two entry points, `raven` and `old-name` - universal tooling that never
+references any specific game's name, so any story can be built here.
+The word "old-name" above is Old Norse (memory, longing); it's also the
+title of the author's own game, `the private story repo`, which is built on
+this engine but lives in its own private repo and ships nothing here.
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
@@ -24,8 +24,8 @@ spoken must be true.
 ## The bones and the flesh
 
 ```
-src/old-name/            the engine (MIT)
-  paths.py           where things live (OLD-NAME-HOME, MUNR_WORLD)
+src/old-name/           the engine (MIT)
+  paths.py           where things live (SMIDR_HOME, SMIDR_WORLD)
   world.py           the pack loader - the only seam
   saga.py            the storytelling layer - Saga keeps the stories:
                      Bragi composes (prompts, voices), Idunn keeps
@@ -50,15 +50,16 @@ worlds/<name>/       a world pack - a story
 
 worlds/sample-world/ Emberfield - the teaching example (MIT, ships
                      with the engine so it's shareable end to end)
-worlds/private-canon/   the author's own story (all rights reserved -
-                     see worlds/private-canon/LICENSE)
 
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks
 ```
 
-One env var selects the world: `MUNR_WORLD=private-canon`. Point it at
-your own pack and the same engine serves your story.
+No world pack ships tracked in this repo except the sample - the
+author's own game keeps its pack in a separate private repo and
+drops it into `worlds/<name>/` locally. One env var selects the
+world: `SMIDR_WORLD=your-world`. Point it at your own pack and the
+same engine serves your story.
 
 ## Quickstart (container)
 
@@ -72,20 +73,20 @@ podman run -d --name old-name -p 8820:8820 \
 curl -s http://127.0.0.1:8820/api/health
 ```
 
-Model default: `MUNR_MODEL=qwen3.8-27b:ctx32k` (any ollama model
-works; structured output via JSON schema).
+Model default: `qwen3.8-27b:ctx32k` (any ollama model works; set
+`SMIDR_MODEL` to change it; structured output via JSON schema).
 
 ## Make your own world
 
 **By hand:**
 
-1. Copy `worlds/private-canon/` to `worlds/yours/` - or start from the
+1. Copy `worlds/sample-world/` to `worlds/yours/` - or start from the
    keys in `world.json` alone.
 2. Write your `bible.md` (canon + the rules the engine must obey)
    and `ledger.md` (seed whispers; the cadence compounds).
 3. Define phases and their tones, your bonds, your speakers, your
    town grid and palette.
-4. `MUNR_WORLD=yours`. The engine does the rest.
+4. `SMIDR_WORLD=yours`. The engine does the rest.
 
 **By conversation** (`old-name chat --name yours`): an interview, run
 against your own local ollama, drafts the canon, the theme colors,
@@ -125,9 +126,9 @@ when the world is kind.
 - Code co-written with Kilo (AI) at the author's direction.
 - Engine license: MIT (see LICENSE) - covers `src/`, `web/`, `tests/`,
   `deploy/`, `Containerfile`, and `worlds/sample-world/` (the teaching
-  example). `worlds/private-canon/` is the author's own story and game:
-  all rights reserved, no license granted - see
-  `worlds/private-canon/LICENSE`.
+  example). Any other world pack dropped into `worlds/<name>/` locally
+  is that pack's own author's property - the engine grants no license
+  to story content, and carries none in this repo.
 
 ## Development
 

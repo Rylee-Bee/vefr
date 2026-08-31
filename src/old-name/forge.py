@@ -11,7 +11,7 @@ from .paths import app_home
 from .saga import system_prompt
 from .world import load_world
 
-VAULT = Path(os.environ.get("MUNR_VAULT", str(app_home() / "data" / "vault.json")))
+VAULT = Path(os.environ.get("SMIDR_VAULT", str(app_home() / "data" / "vault.json")))
 
 
 class ItemCard(BaseModel):
