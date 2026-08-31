@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import json
 
-from . import forge, journal, lore, sessions, starred
+from . import forge, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -38,7 +38,9 @@ def health():
 
 @app.post("/api/rumor")
 def rumor(req: RumorRequest, session: str = ""):
-    card = generate_rumor(req.phase, req.theme)
+    with trace.span("/api/rumor", phase=req.phase, session=session or "default") as sp:
+        card = generate_rumor(req.phase, req.theme)
+        sp.set(speaker=card.speaker)
     journal.log(
         "rumor",
         sid=session,
@@ -52,7 +54,8 @@ def rumor(req: RumorRequest, session: str = ""):
 
 @app.post("/api/forge")
 def forge_roll():
-    return forge_item()
+    with trace.span("/api/forge"):
+        return forge_item()
 
 
 @app.post("/api/vault")
@@ -118,14 +121,17 @@ def vault_undo(session: str = ""):
 
 @app.post("/api/stefna")
 def stefna(session: str = ""):
-    letter = generate_letter()
+    with trace.span("/api/stefna", session=session or "default"):
+        letter = generate_letter()
     journal.log("stefna_letter", sid=session, letter=letter.letter)
     return letter
 
 
 @app.post("/api/npc")
 def npc(req: NpcRequest, session: str = ""):
-    spoken = generate_line(req.phase, req.speaker)
+    with trace.span("/api/npc", phase=req.phase, session=session or "default") as sp:
+        spoken = generate_line(req.phase, req.speaker)
+        sp.set(speaker=spoken.speaker)
     journal.log(
         "npc_line", sid=session, phase=req.phase, speaker=spoken.speaker, line=spoken.line
     )
@@ -534,6 +540,16 @@ def starred_list():
     on page load without parsing the starred file itself.
     """
     return {"starred": starred.list_starred()}
+
+
+@app.get("/api/trace")
+def trace_list(limit: int = 100):
+    """The engine's own trace - what actually ran, newest last.
+
+    Dev-UI instrumentation only: never in the journal, never in the
+    export, never in the packaged game.
+    """
+    return {"events": trace.recent(limit)}
 
 
 @app.get("/api/wiki")
