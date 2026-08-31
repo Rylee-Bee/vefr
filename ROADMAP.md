@@ -218,7 +218,8 @@
       voice files, or a template/Markov approach) that only needs
       to do what this engine actually asks for - short,
       schema-constrained JSON (one rumor, one line, one letter) -
-      not general-purpose writing.       Weaker prose than gpt-oss-20b, but zero-setup for whoever you
+      not general-purpose writing. Weaker prose than gpt-oss-20b,
+      but zero-setup for whoever you hand the file to.
       hand the file to.
 
       The most promising shape found so far: split by platform, not
@@ -237,9 +238,25 @@
       a model live. Explicitly NOT a static phrase bank / mad-libs
       table by hand - every line in the pool is real model output
       in the pack's own voice, just precomputed instead of live.
-      Needs its own investigation before any build: how many samples
-      per combination is enough, how big the resulting pool gets,
-      whether it's baked into the HTML or fetched alongside it.
+
+      The investigation, closed (2026-08-31) with concrete numbers
+      for the build:
+
+      | Question | Answer |
+      |---|---|
+      | What are the combinations, really? | whispers: 4 phases; voices: 4 phases x N speakers (~7 = 28); stefna: 1 slot; forge: 1 slot. ~34 combos, not 24 runes x anything - the cast shapes *which* pool entry is drawn, not how many exist |
+      | Samples per combination | 5. Enough that the no-duplicate rule has room across a long sitting; 10 doubles packaging time for a difference play can't feel |
+      | Packaging cost | ~175 generations at 1-2s on the 6900XT llama.cpp = 3-6 minutes of authoring, once, at weave time |
+      | Pool size | ~175 entries x ~400B = ~70KB (10 samples: ~140KB) - inline it |
+      | Embed vs sidecar | Inline into the packaged HTML. The single file is the unit of sharing; a sidecar would break "send it as one attachment" |
+      | Spent-pool behavior | Track used (speaker, line) pairs in localStorage; when a combo's pool is spent, fall back to unused lines from the same phase, then say so plainly: the pool is spent, the world waits for its author to re-weave |
+
+      Build shape: `ratatoskr weave --pool` runs the pre-generation
+      pass during packaging and inlines `window.VEFR_POOL = {combo:
+      [lines...]}` next to the other VEFR_* globals. The packaged
+      page already has a no-endpoint path to hang it on; play falls
+      back to the pool whenever no live endpoint is configured or a
+      call fails.
 
 ## The always-layer
 
