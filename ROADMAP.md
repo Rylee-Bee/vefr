@@ -7,6 +7,18 @@
 
 ## Landed
 
+- [x] **the engine's identity locked in** (2026-08-31, this session):
+      Norse-coded + Hero's Journey as story structure + lore packs as
+      data. The journey/rune anchors are in `src/norn/journey.py`
+      (whispers->Fehu, doubts->Thurisaz, feared->Kenaz, awed->Sowilo).
+      Three lore packs ship: `worlds/lore/norse/` (wandering poets),
+      `worlds/lore/historical-event/` (what the record couldn't hold),
+      `worlds/lore/norse-runes/` (the rune-cast flavor with all 24
+      Elder Futhark rune poems). Every lore pack is CC BY-SA 4.0 +
+      per-pack LICENSE.md with sources. The engine reads the
+      textures/names/questions; the author reads the prompt.md
+      and copies it into any LLM.
+
 - [x] **v0.1 - the skeleton**: FastAPI + ollama structured output,
       parchment UI, quadlet deploy on bazzite
 - [x] **v0.2 - the ledger**: collected whispers become the engine's
@@ -167,6 +179,14 @@
 
 ## Next
 
+- [ ] **surface UI for `surface: "combat"` packs**: the engine now
+      declares the surface in world.json but the web UI + packaged
+      file don't yet *render* the surface. The HP bar, the encounter
+      prompt, the "attack" button that records as a journal entry -
+      none of those are wired yet. This is the work that lets the
+      engine's Norse-coded default feel like an RPG without ever
+      gating the player on it. Packs that declare `surface: "plain"`
+      (the sample world) just skip the RPG panel.
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
@@ -179,6 +199,11 @@
 - [ ] **`norns chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
+- [ ] **more lore packs**: worlds/lore/<new-flavor>/ directories.
+      Adding one is data-only (mkdir + four markdown files); the
+      engine discovers it. Future flavors: homeric, east-asian-
+      folklore, jewish-diaspora, contemporary-urban. Each one is
+      a literary mood-board for fiction, licensed CC BY-SA 4.0.
 
 ## The always-layer
 

@@ -67,6 +67,87 @@ drops it into `worlds/<name>/` locally. One env var selects the
 world: `NORN_WORLD=your-world`. Point it at your own pack and the
 same engine serves your story.
 
+## Design
+
+The engine's identity is *part of the skeleton*, not a flavor toggle.
+
+**The contract is airtight.** The engine never gates the player on
+HP, attack, or roll results. The Old Name way — what Private Canon does,
+what Emberfield does — has no failure state. The bell never rings
+bad, items can't be lost, NPCs always have a line. HP bars are a
+*costume*. Death is not on the table.
+
+**The journey begins.** The engine's story structure is the
+**Hero's Journey** told through the **Elder Futhark** runes — a
+four-act shape anchored to four runes:
+
+| Phase | Journey stage | Rune |
+|---|---|---|
+| `whispers` | the call to adventure | **Fehu** (wealth, the seed-fire) |
+| `doubts` | the refusal / the threshold | **Thurisaz** (the thorn) |
+| `feared` | the tests, allies, enemies | **Kenaz** (the torch) |
+| `awed` | the revelation / the return | **Sowilo** (the sun) |
+
+Packs can rename their phase keys; the engine maps them by
+position. The runes don't predict either — they're the bones the
+system prompts thread through every generation, so the LLM's
+voice carries the journey shape without the journey being a gate.
+
+**The tree is being woven.** The engine is **Yggdrasil**; the
+ratatoskr ferries data between the roots (dev box, deploy host,
+Gitea, NAS) and the crown (the player's play history); the
+norns weave what happens at runtime. The world tree is also a
+literal artifact — `ratatoskr weave` produces a `<name>.tree.md`,
+the world's living document with one section per dev-UI tab.
+
+**Only the runes leave room for chaos.** Every other surface is
+deterministic — the engine's contract, the packs, the lore, the
+tree. The runes are the one stochastic surface; the cast is
+the one moment where what happens is *up to the world*. The
+player reads what the chips say; the chips don't read the player.
+
+### Lore packs
+
+Three lore packs ship with the engine. Each is data — a directory
+under `worlds/lore/<name>/` with four markdown files the engine
+reads and a fifth the author copies by hand:
+
+| File | Engine reads? | Author reads? |
+|---|---|---|
+| `textures.md` | yes | yes |
+| `names.md` | yes | yes |
+| `questions.md` | yes | yes |
+| `prompt.md` | no | **yes** (copy-paste into any LLM) |
+| `LICENSE.md` | no | yes (CC BY-SA 4.0 + attributions) |
+
+The packs:
+
+- **`norse`** — the wandering-poets flavor (skalds, verse in
+  place of record, names with weight)
+- **`historical-event`** — what the record couldn't hold (real
+  events, role-not-name descriptors, the witness)
+- **`norse-runes`** — the rune-cast flavor (twenty-four runes in
+  three aettir, mapped to the Hero's Journey stages)
+
+To use a pack, call `/api/builder/lore` with the pack name + seed
+words, get back the wandering-poets shape (`textures`, `names`,
+`questions`) — mood, not canon. Then `norns craft chat` carries
+the mood into the world's interview questions.
+
+To add your own pack: `mkdir worlds/lore/<your-flavor>` and write
+the four files. The engine discovers it; no PR required.
+
+### Surface
+
+`world.json` may declare a `surface` field — `combat`,
+`investigation`, or `plain`. The surface is the *grammar* the
+player sees (HP bars, encounter prompts, investigation dice), not
+the engine's actual behavior. Default surface is `combat` for
+back-compat with existing packs. A pack that wants the engine's
+"no HP, no dice, just the bell and the whispers" experience
+declares `surface: "plain"` and the UI knows to skip the
+RPG-looking panels.
+
 ## Quickstart (container)
 
 ```sh
