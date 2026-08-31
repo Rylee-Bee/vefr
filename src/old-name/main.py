@@ -1,9 +1,11 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from . import journal
 from .bell import generate_letter
+from .export import export_story
 from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
@@ -24,7 +26,7 @@ class RumorRequest(BaseModel):
 
 class NpcRequest(BaseModel):
     phase: str = "whispers"
-    speaker: str = "the ferryman"
+    speaker: str | None = None  # None -> the pack's first speaker
 
 
 @app.get("/api/health")
@@ -34,7 +36,15 @@ def health():
 
 @app.post("/api/rumor")
 def rumor(req: RumorRequest):
-    return generate_rumor(req.phase, req.theme)
+    card = generate_rumor(req.phase, req.theme)
+    journal.log(
+        "rumor",
+        phase=req.phase,
+        speaker=card.speaker,
+        whisper=card.whisper,
+        is_true=card.is_true,
+    )
+    return card
 
 
 @app.post("/api/forge")
@@ -46,7 +56,12 @@ def forge():
 def vault_keep(item: dict):
     from .forge import ItemCard
 
-    return keep_item(ItemCard.model_validate(item))
+    card = ItemCard.model_validate(item)
+    result = keep_item(card)
+    # Only a kept item is journalled - a forge roll nobody took is a
+    # thing that never happened.
+    journal.log("item_forged", name=card.name, bond=card.bond, lore=card.lore)
+    return result
 
 
 @app.get("/api/vault")
@@ -56,12 +71,18 @@ def vault_list():
 
 @app.post("/api/bell")
 def bell():
-    return generate_letter()
+    letter = generate_letter()
+    journal.log("bell_letter", letter=letter.letter)
+    return letter
 
 
 @app.post("/api/npc")
 def npc(req: NpcRequest):
-    return generate_line(req.phase, req.speaker)
+    spoken = generate_line(req.phase, req.speaker)
+    journal.log(
+        "npc_line", phase=req.phase, speaker=spoken.speaker, line=spoken.line
+    )
+    return spoken
 
 
 @app.get("/api/world")
@@ -97,6 +118,23 @@ def world():
         "speaker_color": town.get("speaker_color", "#8b939c"),
         "speaker_head": town.get("speaker_head", "#d8d5cf"),
     }
+
+
+@app.get("/api/journal")
+def journal_list():
+    return journal.list_entries()
+
+
+@app.post("/api/journal/clear")
+def journal_clear():
+    journal.clear()
+    return {"cleared": True}
+
+
+@app.get("/api/export", response_class=PlainTextResponse)
+def export():
+    """The whole playthrough as markdown - raw text, easy to download."""
+    return PlainTextResponse(export_story(), media_type="text/markdown")
 
 
 @app.get("/")

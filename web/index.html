@@ -69,7 +69,7 @@
   .controls button[disabled] { opacity: 0.45; cursor: wait; }
   .note { color: var(--ink-dim); font-size: 0.88rem; font-style: italic; }
 
-  #feed, #forge-out, #letter-out, #vault-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.4rem; }
+  #feed, #forge-out, #letter-out, #vault-list, #journal-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.4rem; }
   .card {
     background: var(--card); border: 1px solid var(--card-edge);
     border-radius: 6px; padding: 1rem 1.2rem; overflow-wrap: anywhere;
@@ -82,6 +82,10 @@
   .card[data-phase="awed"] .speaker, .card[data-bond="attuned"] .speaker { color: var(--accent); }
   .card[data-phase="feared"], .card[data-bond="assigned"] { border-color: var(--church); }
   .card .kind { color: var(--ink-dim); font-size: 0.85rem; font-style: italic; }
+
+  /* the journal - one card per entry, hierarchy by luminance only */
+  .card .when { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; }
+  .card blockquote { margin: 0.5rem 0 0; padding-left: 0.8rem; border-left: 1px solid var(--card-edge); color: var(--ink); white-space: pre-line; }
 
   .empty { color: var(--ink-dim); font-style: italic; margin-top: 1.4rem; }
   .error { color: var(--danger); margin-top: 1.4rem; }
@@ -113,6 +117,7 @@
     <button type="button" role="tab" data-view="vault" id="tab-vault" aria-selected="false" aria-controls="view-vault">Vault</button>
     <button type="button" role="tab" data-view="bell" id="tab-bell" aria-selected="false" aria-controls="view-bell">Bell</button>
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
+    <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Journal</button>
   </div>
 
   <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
@@ -167,6 +172,16 @@
     <p class="note" id="poi" aria-live="polite">the bookshop - the back room</p>
     <p class="note" id="watched" aria-live="polite">out of the tower's sight.</p>
   </section>
+
+  <section id="view-journal" class="view" role="tabpanel" aria-labelledby="tab-journal" hidden>
+    <p class="note">what happened, kept for you &mdash; so you don't have to hold it in your own memory.</p>
+    <div class="controls">
+      <button type="button" id="export-btn">Export story</button>
+      <button type="button" id="journal-clear-btn">Start fresh</button>
+    </div>
+    <p class="note" id="journal-status">&nbsp;</p>
+    <section id="journal-list" aria-live="polite"></section>
+  </section>
 </main>
 <script src="/static/town.js"></script>
 <script>
@@ -176,13 +191,15 @@
     rumors: document.getElementById('view-rumors'),
     vault: document.getElementById('view-vault'),
     bell: document.getElementById('view-bell'),
-    town: document.getElementById('view-town')
+    town: document.getElementById('view-town'),
+    journal: document.getElementById('view-journal')
   };
   tabs.forEach(function (b) {
     b.addEventListener('click', function () {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
       for (var k in views) views[k].hidden = (k !== b.dataset.view);
       if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
+      if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
     });
   });
 
@@ -320,6 +337,98 @@
     } catch (err) {
       bellStatus.textContent = 'the water did not answer. try again?';
       ringBtn.disabled = false;
+    }
+  });
+
+  /* the journal - the playthrough, read back. Chronological: it reads
+     as a story, and matches the order the export writes. */
+  var journalList = document.getElementById('journal-list');
+  var journalStatus = document.getElementById('journal-status');
+  var exportBtn = document.getElementById('export-btn');
+  var clearBtn = document.getElementById('journal-clear-btn');
+
+  function when(at) {
+    if (!at) return '';
+    var d = new Date(at);
+    return isNaN(d.getTime()) ? String(at) : d.toLocaleString();
+  }
+
+  function entryHTML(e) {
+    var head = '<div class="when">' + esc(when(e.at)) + '</div>';
+    var body;
+    if (e.kind === 'rumor') {
+      body = '<div class="speaker">' + esc(e.speaker || 'a whisper') + '</div>'
+        + '<p class="whisper">&ldquo;' + esc(e.whisper || '') + '&rdquo;</p>'
+        + (e.is_true === false ? '<p class="truth">a lie, or close enough</p>' : '');
+    } else if (e.kind === 'npc_line') {
+      body = '<div class="speaker">' + esc(e.speaker || 'a voice') + '</div>'
+        + '<p class="whisper">&ldquo;' + esc(e.line || '') + '&rdquo;</p>';
+    } else if (e.kind === 'item_forged') {
+      body = '<div class="speaker">' + esc(e.name || 'something kept') + '</div>'
+        + '<div class="kind">kept &middot; ' + esc(e.bond || '') + '</div>'
+        + '<p class="whisper">' + esc(e.lore || '') + '</p>';
+    } else if (e.kind === 'bell_letter') {
+      body = '<div class="speaker">found with the bell</div>'
+        + '<blockquote>' + esc(e.letter || '') + '</blockquote>';
+    } else {
+      body = '<div class="kind">' + esc(e.kind || 'something') + '</div>';
+    }
+    var bond = e.kind === 'item_forged' && e.bond ? ' data-bond="' + esc(e.bond) + '"' : '';
+    return '<article class="card"' + bond + '>' + head + body + '</article>';
+  }
+
+  function renderJournal() {
+    journalStatus.textContent = 'reading\u2026';
+    fetch('/api/journal').then(function (r) { return r.json(); }).then(function (entries) {
+      journalList.innerHTML = entries.length
+        ? entries.map(entryHTML).join('')
+        : '<p class="empty">Nothing written yet. Play, and this fills itself.</p>';
+      journalStatus.textContent = entries.length
+        ? entries.length + (entries.length === 1 ? ' thing happened.' : ' things happened.')
+        : 'the page is blank.';
+    }).catch(function () {
+      journalList.innerHTML = '<p class="error">the journal did not answer.</p>';
+      journalStatus.textContent = '';
+    });
+  }
+
+  window.addEventListener('old-name:journal', renderJournal);
+
+  exportBtn.addEventListener('click', async function () {
+    exportBtn.disabled = true;
+    journalStatus.textContent = 'weaving\u2026';
+    try {
+      var r = await fetch('/api/export');
+      if (!r.ok) throw new Error('no story');
+      var md = await r.text();
+      var url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'story-' + new Date().toISOString().slice(0, 10) + '.md';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      /* revoke on the next tick - some browsers cancel a download
+         whose blob URL is released in the same turn as the click. */
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      journalStatus.textContent = 'the story is yours to keep.';
+    } catch (err) {
+      journalStatus.textContent = 'the story did not come. try again?';
+    } finally {
+      exportBtn.disabled = false;
+    }
+  });
+
+  clearBtn.addEventListener('click', async function () {
+    if (!window.confirm('Forget everything written so far? The vault stays.')) return;
+    clearBtn.disabled = true;
+    try {
+      await fetch('/api/journal/clear', { method: 'POST' });
+      renderJournal();
+    } catch (err) {
+      journalStatus.textContent = 'the journal did not answer.';
+    } finally {
+      clearBtn.disabled = false;
     }
   });
 
