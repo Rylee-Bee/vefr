@@ -730,6 +730,138 @@ def ratatoskr_main() -> int:
     return args.fn(args)
 
 
+def cmd_handbok(args) -> int:
+    """Write the mechanics manual from real play - norns handbok.
+
+    Deterministic templating over real events, the same honesty rule
+    as the export: the trace (data/trace.jsonl) says how each
+    mechanic actually behaved - calls, latency, failures - and the
+    session journal supplies real examples. No model pass. A
+    world with no trace produces a shorter handbok, not an error.
+    """
+    import json as _json
+
+    from . import trace as trace_mod
+    from .journal import list_entries
+    from .world import load_world
+
+    if getattr(args, 'pack', None) is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        p = Path(args.pack)
+        pack = p if p.is_absolute() else pack_root() / 'worlds' / p
+    if not (pack / 'world.json').exists():
+        print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
+        return 1
+
+    sid = getattr(args, 'session', None) or None
+
+    # ---- the trace, read tolerantly ----
+    events: list[dict] = []
+    tpath = trace_mod.file_path()
+    if tpath.exists():
+        for line in tpath.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ev = _json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(ev, dict):
+                events.append(ev)
+
+    by_route: dict[str, list[dict]] = {}
+    for ev in events:
+        by_route.setdefault(ev.get('route', '?'), []).append(ev)
+
+    entries = list_entries(sid=getattr(args, 'session', None))
+    by_kind: dict[str, list[dict]] = {}
+    for e in entries:
+        by_kind.setdefault(e.get('kind', '?'), []).append(e)
+
+    world = load_world()
+    out: list[str] = [
+        f"# {world['title']} - handbok",
+        '',
+        'A mechanics manual, generated from real play: what the engine '
+        'actually did, how long each thread of the loom took, and real '
+        'examples from this playthrough. Regenerate with '
+        '`norns handbok` - this file is a snapshot, not canon.',
+        '',
+    ]
+
+    out.append('## The mechanics, as they ran')
+    out.append('')
+    if by_route:
+        out.append('| call | runs | avg | slowest | failed |')
+        out.append('|---|---|---|---|---|')
+        for route in sorted(by_route):
+            evs = by_route[route]
+            ms = [e.get('ms', 0.0) for e in evs]
+            failed = sum(1 for e in evs if e.get('ok') is False)
+            out.append(
+                f'| {route} | {len(evs)} | {sum(ms) / len(ms):.0f}ms '
+                f'| {max(ms):.0f}ms | {failed} |'
+            )
+    else:
+        out.append('_No trace yet - play with the server running, then rerun._')
+    out.append('')
+
+    out.append('## The phases, as they were walked')
+    phases_seen = []
+    for e in entries:
+        ph = e.get('phase')
+        if ph and ph not in phases_seen:
+            phases_seen.append(ph)
+    out.append(
+        ', '.join(f'**{ph}**' for ph in phases_seen)
+        or '_The world has not spoken yet._'
+    )
+    out.append('')
+
+    out.append('## Real examples, from the session')
+    out.append('')
+    examples = {
+        'rumor': 'a whisper heard',
+        'npc_line': 'a line spoken',
+        'item_forged': 'a relic kept',
+        'stefna_letter': 'the letter found',
+    }
+    for kind, label in examples.items():
+        evs = by_kind.get(kind, [])
+        if not evs:
+            continue
+        out.append(f'### {label}')
+        for e in evs[-2:]:
+            text = e.get('whisper') or e.get('line') or e.get('lore') or e.get('letter') or ''
+            out.append(f'> {_clean_example(text)}')
+            out.append('')
+        out.append('')
+
+    out.append('## The session, counted')
+    out.append('')
+    if by_kind:
+        for kind in sorted(by_kind):
+            out.append(f'- {len(by_kind[kind])} {kind}')
+    else:
+        out.append('_Nothing yet. The world is waiting._')
+    out.append('')
+
+    out_path = pack / 'handbok.md'
+    out_path.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
+    print(f'handbok written: {out_path}')
+    return 0
+
+
+def _clean_example(text: str) -> str:
+    """One line, quote-marked, truncated - a handbok is not a lore dump."""
+    one = ' '.join(str(text or '').split())
+    if len(one) > 240:
+        one = one[:237] + '...'
+    return f'\u201c{one}\u201d'
+
+
 def norns_main() -> int:
     ap = argparse.ArgumentParser(
         prog='norns', description=NORNS_HELP,
@@ -755,6 +887,14 @@ def norns_main() -> int:
     mr.add_argument('--url', default=DEFAULT_URL)
     mr.set_defaults(fn=cmd_map, map_cmd='verify', segments=None, force=False,
                     pack=None)
+
+    mh = craft.add_parser(
+        'handbok', help='write the mechanics manual from real play'
+    )
+    mh.add_argument('--pack', default=None)
+    mh.add_argument('--session', default=None,
+                    help='play session to read (default: the default one)')
+    mh.set_defaults(fn=cmd_handbok)
 
     args = ap.parse_args()
     # validate / build-map / verify default --pack to the resolved
