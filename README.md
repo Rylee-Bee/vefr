@@ -299,6 +299,13 @@ when the world is kind.
 - Model: Qwen (Apache-2.0); outputs are shaped by this repo's
   prompts and reviewed by a human before they become canon.
 - Code co-written with Kilo (AI) at the author's direction.
+- Idea credits - framing borrowed from projects whose stacks
+  didn't fit, with thanks:
+  OpenPixel-RPG (MIT) for the whitebox pattern - a deterministic
+  blueprint a generative model must respect; RPG-JS (MIT) for
+  prompting the render-target contract - any future renderer reads
+  `/api/world`; ink + inkjs (MIT) for the authored-branching idea
+  shelved for packs.
 - Engine license: MIT (see LICENSE) - covers `src/`, `web/`, `tests/`,
   `deploy/`, `Containerfile`, and `worlds/sample-world/` (the teaching
   example). Any other world pack dropped into `worlds/<name>/` locally
