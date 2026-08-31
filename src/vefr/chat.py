@@ -12,6 +12,11 @@ untouched in v1; grow it afterward with `norns build-map --segments`.
 
 Every write ends with maplab.validate() - the author never has to
 trust their own edits, the tool always checks.
+
+The new pack is written in the flat shape (single region, no acts).
+A flat pack is fully supported; the author can opt into the acts
+shape later by adding an `acts/` directory. The scaffold source
+can be either shape - maplab.load_pack unifies them on read.
 """
 
 import json
@@ -161,7 +166,13 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         return 1
 
     shutil.copytree(scaffold, dest)
-    w = json.loads((dest / "world.json").read_text(encoding="utf-8"))
+    # The new pack keeps the scaffold's shape (flat or acts).
+    # If the scaffold is acts-shape, the copy inherits acts/ and
+    # the loader reads it as such; if flat, no acts/ exists and
+    # the loader reads the flat JSON. Either way, maplab.load_pack
+    # returns a unified shape the interview can mutate.
+    from .maplab import load_pack as _load_pack
+    w = _load_pack(dest)
 
     print("\nnorns chat - let's build your world.\n")
     title = ask("What's your world called?", w["title"])

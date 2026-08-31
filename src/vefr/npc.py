@@ -11,7 +11,7 @@ from pydantic import BaseModel, ValidationError
 
 from . import generator
 from .paths import pack_file
-from .world import load_world, phase_tone
+from .world import current_act, load_world, phase_tone, resolve_voice_file
 
 SCHEMA = {
     "type": "object",
@@ -36,7 +36,7 @@ def _speaker(key: str | None) -> dict:
     hardcode a name from anyone's story (a "the ferryman" default used to
     live here, which broke any pack that had never heard of her).
     """
-    speakers = load_world()["speakers"]
+    speakers = current_act(load_world())["speakers"]
     if key is None:
         return next(iter(speakers.values()))
     if key not in speakers:
@@ -46,7 +46,7 @@ def _speaker(key: str | None) -> dict:
 
 def build_payload(phase: str, key: str | None = None) -> dict:
     spec = _speaker(key)
-    voice = pack_file(spec["voice_file"]).read_text(encoding="utf-8")
+    voice = resolve_voice_file(spec["voice_file"]).read_text(encoding="utf-8")
     seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
     return {
         "model": generator.MODEL,
