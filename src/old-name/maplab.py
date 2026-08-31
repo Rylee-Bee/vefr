@@ -130,6 +130,15 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def write_pack(pack_dir: Path, w: dict) -> None:
+    """Atomic write - an interrupted build must never leave world.json
+    truncated."""
+    target = Path(pack_dir) / 'world.json'
+    tmp = target.with_suffix('.json.tmp')
+    tmp.write_text(json.dumps(w, indent=2, ensure_ascii=False), encoding='utf-8')
+    tmp.replace(target)
+
+
 def build_map(segments: list) -> list[str]:
     rows = []
     for row_parts in segments:
@@ -163,7 +172,7 @@ def cmd_build(args) -> int:
         for e in errors:
             print(f'FAIL: {e}')
         return 1
-    json.dump(w, open(pack / 'world.json', 'w'), indent=2, ensure_ascii=False)
+    write_pack(pack, w)
     print(f"built: {len(w['town']['map'])} x {len(w['town']['map'][0])} -> {pack / 'world.json'}")
     for e in errors:
         print(f'WARN: {e}')

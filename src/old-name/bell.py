@@ -25,6 +25,7 @@ def build_payload() -> dict:
         "prompt": load_world()["voices"]["mother"]["strike"],
         "format": SCHEMA,
         "stream": False,
+        "think": False,
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": 0.8},
     }
