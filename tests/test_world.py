@@ -7,7 +7,7 @@ import pytest
 
 from vefr import maplab
 from vefr.paths import pack_dir, world_name
-from vefr.world import current_act, current_town, load_world
+from vefr.world import current_act, load_world
 
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 if world_name() != 'private-canon' or not (_pack / 'world.json').exists():

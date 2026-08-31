@@ -1,9 +1,8 @@
-import json
 
 import pytest
 
 from vefr import generator
-from vefr.generator import RumorCard, build_payload, generate_rumor
+from vefr.generator import build_payload, generate_rumor
 
 
 GOOD = '{"speaker":"Old Katla","whisper":"They say the mill grinds what the miller forgets.","is_true":false}'

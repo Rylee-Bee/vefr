@@ -106,14 +106,11 @@ without a real reason:
 
 ## Quick checklist for "continue on"
 
-1. `git status && git log --oneline -5` — confirm clean, confirm HEAD.
-2. `uv run --group test pytest -q` — confirm 171 green (if not,
-   check for a half-finished edit before touching anything).
-3. `curl -s http://192.168.2.76:8820/api/health | jq -c .` — confirm live.
-4. `preferences_get_profile` — confirm mem0 reachable; if not, say
+1. `uv run --group test norns doctor` — git sync, working tree,
+   the test gate, the current pack, and (set `VEFR_LIVE_URL` to
+   the live stack first) its `/api/health` — in one pass.
+2. `preferences_get_profile` — confirm mem0 reachable; if not, say
    so once and continue from `rylee.md`.
-5. Read `docs/guides/one-source-of-routes.md` if touching the web
-   layer; read `docs/guides/one-source-of-routes.md` if adding a
-   new route anywhere; the rule is the same.
-6. Pick from the "What to do next" table. (1) is the unfinished
-   business from the prior session.
+3. Read `docs/guides/one-source-of-routes.md` if touching the web
+   layer or adding a new route anywhere — the rule is the same.
+4. Pick from the "What to do next" table.

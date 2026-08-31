@@ -24,13 +24,11 @@ quadlet is rewritten. It is idempotent: re-running on an already-
 migrated host is a no-op.
 """
 
-import json
 import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .paths import app_home, template_dir, worlds_dir
 
 TEMPLATE_VOLUME = "vefr-template"
 WORLDS_VOLUME = "vefr-worlds"
