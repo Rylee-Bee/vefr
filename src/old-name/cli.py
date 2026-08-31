@@ -6,7 +6,7 @@ is built on this engine:
     raven - memory. The game and its keeping.
         raven tidyup     the seven questions, raven-shaped
         raven deploy     ship this checkout to your deploy host
-        raven backup     git bundle -> NAS, keep the newest two
+        raven backup     git bundle + play history (vault, journal) -> NAS
         raven test       the pytest suite
 
     old-name - the smith. Craft. Worldbuilding tools.
@@ -275,12 +275,47 @@ def cmd_backup(args) -> int:
         return 1
     sh(('ssh', args.nas_host,
         f'cd {NAS_DIR} && ls -t old-name-*.bundle | tail -n +{BUNDLE_KEEP + 1} | xargs -r rm -f'))
+    tmp.unlink(missing_ok=True)
     listing = subprocess.run(
         ('ssh', args.nas_host, f'ls -t {NAS_DIR}/old-name-*.bundle'),
         capture_output=True, text=True).stdout.strip()
     print(f'bundles on {args.nas_host}:')
     print(listing)
-    tmp.unlink(missing_ok=True)
+
+    # Play history lives on the deploy host's bind-mounted volume
+    # (~/<deploy-vol>/vault.json + journal.json), not in the repo -
+    # the bundle alone would never preserve tonight's kept items or
+    # the session journal. rsync the JSON files alongside the bundle
+    # under a per-date directory so a snapshot is one date away.
+    vol_remote = args.deploy_vol
+    snap_remote = f'{args.nas_host}:{NAS_DIR}/old-name-{date}'
+    rsync = subprocess.run(
+        ('ssh', args.deploy_host,
+         f'mkdir -p {vol_remote} && '
+         f'ls {vol_remote}/*.json 2>/dev/null'),
+        capture_output=True, text=True)
+    files_here = rsync.stdout.strip().splitlines()
+    if files_here:
+        # The deploy host may or may not have rsync; fall back to scp
+        # if it doesn't. Either way, one snapshot per date is the goal.
+        if sh(('ssh', args.nas_host, f'mkdir -p {NAS_DIR}/old-name-{date}')).returncode:
+            print('warning: could not create snapshot dir on NAS')
+        else:
+            for f in files_here:
+                leaf = Path(f).name
+                if sh(('scp', '-q', f'{args.deploy_host}:{f}',
+                       f'{args.nas_host}:{NAS_DIR}/old-name-{date}/{leaf}')).returncode:
+                    print(f'warning: {leaf} not backed up')
+                else:
+                    print(f'  play history: {leaf}')
+            # Mirror latest -> latest/, so 'the most recent snapshot'
+            # has a stable name regardless of date.
+            sh(('ssh', args.nas_host,
+                f'rm -rf {NAS_DIR}/latest && '
+                f'cp -r {NAS_DIR}/old-name-{date} {NAS_DIR}/latest'))
+    else:
+        print(f'no play history on {args.deploy_host}:{vol_remote} yet')
+
     print('backed up. <3')
     return 0
 
@@ -307,7 +342,10 @@ RAVEN_HELP = """raven - memory. The game and its keeping.
                   open ROADMAP items
   raven deploy    rsync this checkout to --deploy-host, rebuild the
                   container, restart it, verify health + the live map
-  raven backup    git bundle -> --nas-host, keep the newest two
+  raven backup    git bundle + play history (vault, journal) ->
+                  --nas-host. Bundle keeps the newest two;
+                  play history mirrors under old-name-<date>/ plus a
+                  stable latest/ pointer.
   raven test      the pytest suite (uv run --group test pytest),
                   extra args pass through: raven test -k chat
 """
@@ -334,6 +372,8 @@ def raven_main() -> int:
     )
     ap.add_argument('--url', default=DEFAULT_URL)
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
+    ap.add_argument('--deploy-vol', default='~/old-name-data',
+                    help='bind-mounted game volume on --deploy-host')
     ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
@@ -342,7 +382,10 @@ def raven_main() -> int:
     pd = sub.add_parser('deploy', help='ship this checkout to --deploy-host')
     pd.set_defaults(fn=cmd_deploy)
 
-    pb = sub.add_parser('backup', help='git bundle -> --nas-host, keep the newest two')
+    pb = sub.add_parser(
+        'backup',
+        help='git bundle + play history -> --nas-host; play history mirrors under old-name-<date>/ plus latest/'
+    )
     pb.set_defaults(fn=cmd_backup)
 
     pt = sub.add_parser(
