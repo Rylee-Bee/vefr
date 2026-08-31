@@ -61,7 +61,18 @@ def load_pack(pack_dir: Path) -> dict:
         # only `town`; multi-region acts will need a flag or a
         # per-region validation in a follow-on).
         region_name = next(iter(act.get('regions', {})), None)
+        # The town's metadata can live in three places, in priority
+        # order: the region's contract.json (new, convention-driven),
+        # the act's _town_legacy (transitional), or the act's
+        # inline `town` block (the very first acts-shape PR had
+        # this). Read all three, the highest priority wins.
+        contract: dict = {}
+        if region_name:
+            cp = first_act_dir / region_name / 'contract.json'
+            if cp.exists():
+                contract = json.loads(cp.read_text(encoding='utf-8'))
         region_legacy = act.get('_town_legacy', {}) or act.get('town', {})
+        merged = {**region_legacy, **contract}
         # The map lives in acts/<id>/<region>/map.md in the new
         # shape. If it's there, parse it; otherwise fall back to
         # whatever the contract holds.
@@ -74,7 +85,7 @@ def load_pack(pack_dir: Path) -> dict:
                     if ln.strip()
                 ]
         if not map_lines:
-            map_lines = region_legacy.get('map', [])
+            map_lines = merged.get('map', [])
         return {
             'name': pack.name,
             'title': config.get('title', act.get('title', pack.name)),
@@ -87,18 +98,18 @@ def load_pack(pack_dir: Path) -> dict:
             'surface': config.get('surface', 'combat'),
             'town': {
                 'map': map_lines,
-                'legend': region_legacy.get('legend', {}),
-                'pois': region_legacy.get('pois', {}),
-                'watch': region_legacy.get('watch', {}),
-                'sanctuary_tiles': region_legacy.get('sanctuary_tiles', []),
-                'water_by_phase': region_legacy.get('water_by_phase', {}),
-                'flood_tiles': region_legacy.get('flood_tiles', []),
-                'hero_start': region_legacy.get('hero_start', [1, 1]),
-                'tile': region_legacy.get('tile', 32),
-                'bg': region_legacy.get('bg', '#131311'),
-                'hero_color': region_legacy.get('hero_color', '#e8e5df'),
-                'speaker_color': region_legacy.get('speaker_color', '#8b939c'),
-                'speaker_head': region_legacy.get('speaker_head', '#d8d5df'),
+                'legend': merged.get('legend', {}),
+                'pois': merged.get('pois', {}),
+                'watch': merged.get('watch', {}),
+                'sanctuary_tiles': merged.get('sanctuary_tiles', []),
+                'water_by_phase': merged.get('water_by_phase', {}),
+                'flood_tiles': merged.get('flood_tiles', []),
+                'hero_start': merged.get('hero_start', [1, 1]),
+                'tile': merged.get('tile', 32),
+                'bg': merged.get('bg', '#131311'),
+                'hero_color': merged.get('hero_color', '#e8e5df'),
+                'speaker_color': merged.get('speaker_color', '#8b939c'),
+                'speaker_head': merged.get('speaker_head', '#d8d5df'),
             },
             '_act_id': first_act_dir.name,
             '_region': region_name,
@@ -242,18 +253,19 @@ def write_pack(pack_dir: Path, w: dict) -> None:
     pack = Path(pack_dir)
     tmp = pack / 'world.json.tmp'
     if 'acts' in w or (pack / 'acts').is_dir():
-        # Acts shape: write pack-level + per-act JSONs.
+        # Acts shape: write pack-level + per-act JSONs, with the
+        # town metadata in acts/<id>/town/contract.json (the
+        # convention-driven home) and the map in acts/<id>/town/map.md.
         act_id = w.get('_act_id') or 'act-1'
         act_dir = pack / 'acts' / act_id
         act_dir.mkdir(parents=True, exist_ok=True)
         town = w.get('town', {})
-        # The act contract: id, title, regions, town (region legacy),
-        # speakers.
+        # The act contract: id, title, regions, speakers. Town
+        # metadata lives in town/contract.json, not inline.
         act_contract = {
             'id': act_id,
             'title': w.get('title', pack.name),
             'regions': ['town'],
-            'town': {k: v for k, v in town.items() if k != 'map'},
             'speakers': w.get('speakers', {}),
             'enemies': w.get('enemies', []),
             'bosses': w.get('bosses', []),
@@ -263,11 +275,18 @@ def write_pack(pack_dir: Path, w: dict) -> None:
         act_tmp.write_text(json.dumps(act_contract, indent=2,
                                       ensure_ascii=False), encoding='utf-8')
         act_tmp.replace(act_dir / 'world.json')
+        # The town contract (every town-metadata field except map).
+        town_dir = act_dir / 'town'
+        town_dir.mkdir(parents=True, exist_ok=True)
+        town_contract = {k: v for k, v in town.items() if k != 'map'}
+        if town_contract:
+            (town_dir / 'contract.json').write_text(
+                json.dumps(town_contract, indent=2, ensure_ascii=False),
+                encoding='utf-8',
+            )
         # The map moves to acts/<id>/town/map.md.
         if town.get('map'):
-            map_dir = act_dir / 'town'
-            map_dir.mkdir(parents=True, exist_ok=True)
-            (map_dir / 'map.md').write_text(
+            (town_dir / 'map.md').write_text(
                 '\n'.join(town['map']) + '\n', encoding='utf-8'
             )
         # The pack-level contract.
