@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from old-name import maplab
-from old-name.paths import pack_dir, world_name
-from old-name.world import load_world
+from norn import maplab
+from norn.paths import pack_dir, world_name
+from norn.world import load_world
 
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 if world_name() != 'private-canon' or not (_pack / 'world.json').exists():

@@ -14,7 +14,7 @@ try it - a demonstration world (Emberfield) ships with the engine.
 | A pulled model | The thing Ollama runs | `ollama list` |
 
 If you don't have a model yet: `ollama pull qwen3:8b` (or any model
-you like - set `SMIDR_MODEL` to its name later).
+you like - set `NORN_MODEL` to its name later).
 
 Podman/Docker is optional. It's how you'd run this always-on on a
 server; for trying it out, plain `uv run` is faster.
@@ -22,15 +22,15 @@ server; for trying it out, plain `uv run` is faster.
 ## 1. Get the code
 
 ```sh
-git clone http://192.168.2.216:3000/rylee/old-name.git
-cd old-name
+git clone http://192.168.2.216:3000/rylee/norn.git
+cd norn
 uv sync --group test
 ```
 
 ## 2. Run it
 
 ```sh
-OLLAMA_URL=http://127.0.0.1:11434 uv run uvicorn old-name.main:app --app-dir src --port 8820
+OLLAMA_URL=http://127.0.0.1:11434 uv run uvicorn norn.main:app --app-dir src --port 8820
 ```
 
 Then, in a browser: `http://127.0.0.1:8820`
@@ -43,7 +43,7 @@ demonstration world.
 
 > **Note (2026-08-31):** the author's own story and game, Old Name, lives
 > in its own private repo (`the private story repo`) - it never ships
-> inside a clone of this engine repo. This repo (now `rylee/old-name`)
+> inside a clone of this engine repo. This repo (now `rylee/norn`)
 > is the shareable tooling only; it doesn't know or need to know any
 > specific game's name to run it.
 
@@ -78,7 +78,7 @@ contract.
 Either way, point the engine at it:
 
 ```sh
-SMIDR_WORLD=your-world uv run uvicorn old-name.main:app --app-dir src --port 8820
+NORN_WORLD=your-world uv run uvicorn norn.main:app --app-dir src --port 8820
 ```
 
 ## 5. The CLI reference

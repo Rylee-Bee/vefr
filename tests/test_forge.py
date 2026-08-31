@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from old-name import forge
-from old-name.forge import ItemCard, build_payload, forge_item, keep_item, list_vault
+from norn import forge
+from norn.forge import ItemCard, build_payload, forge_item, keep_item, list_vault
 
 
 class FakeResponse:
@@ -30,7 +30,7 @@ GOOD = json.dumps(
 
 
 def test_payload_keeps_bond_structure():
-    from old-name.world import load_world
+    from norn.world import load_world
 
     p = build_payload()
     assert p['format']['properties']['bond']['enum'] == list(
