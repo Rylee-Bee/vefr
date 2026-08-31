@@ -1,4 +1,4 @@
-# norn - Roadmap
+# vefr - Roadmap
 
 > The three Norns weave fate at the well beneath the world tree -
 > not one fixed fate, whichever one is given them. This is the
@@ -9,7 +9,7 @@
 
 - [x] **the engine's identity locked in** (2026-08-31, this session):
       Norse-coded + Hero's Journey as story structure + lore packs as
-      data. The journey/rune anchors are in `src/norn/journey.py`
+      data. The journey/rune anchors are in `src/vefr/journey.py`
       (whispers->Fehu, doubts->Thurisaz, feared->Kenaz, awed->Sowilo).
       Three lore packs ship: `worlds/lore/norse/` (wandering poets),
       `worlds/lore/historical-event/` (what the record couldn't hold),
@@ -75,11 +75,11 @@
       build-map, verify. `maplab.py` is the one geometry validator
       shared by both CLIs and the tests.
 - [x] **the full rename, 2026-08-31**: this repo and package are
-      `norn` now (were `old-name`, briefly `old-name`) - the umbrella under
-      which `ratatoskr` (formerly `raven`) and `norns` (formerly
-      `old-name`) both live as commands. Env vars
-      (`NORN_HOME`, `NORN_WORLD`, `NORN_MODEL`, `NORN_VAULT`,
-      `NORN_KEEP_ALIVE`), and every hardcoded story reference in the
+      `vefr` now (were `old-name`, briefly `old-name`, then `norn`) - the
+      umbrella under which `ratatoskr` (formerly `raven`) and `norns`
+      (formerly `old-name`) both live as commands. Env vars
+      (`VEFR_HOME`, `VEFR_WORLD`, `VEFR_MODEL`, `VEFR_VAULT`,
+      `VEFR_KEEP_ALIVE`), and every hardcoded story reference in the
       engine (the API title, the health check's service name, the
       shared rumor system prompt, `world_name()`'s private-canon
       special-case) are gone. "Old Name" is free to mean only the game.
@@ -114,7 +114,7 @@
       vault was the only thing that persisted; now `journal.py` keeps
       a timestamped record of every rumor heard, line spoken, item
       kept, and the bell's letter - same atomic tmp+replace write as
-      the vault, `NORN_JOURNAL` to move it. `main.py`'s existing
+      the vault, `VEFR_JOURNAL` to move it. `main.py`'s existing
       routes log after each generation, so the record is a byproduct
       of play, not a chore. `export.py` weaves the pack's title +
       logbok.md + the journal + the vault into one markdown document
@@ -147,7 +147,7 @@
       runtime bug that no syntax checker sees.
 
 - [x] **inference backend: ollama -> llama.cpp on the 6900XT** (2026-08-31).
-      Wall time on the live `norn` went from ~27.6s per rumor/bell
+      Wall time on the live `vefr` went from ~27.6s per rumor/bell
       to ~2-5s end-to-end (curl + SSH overhead included). Root cause
       of the old slowness: the ollama container on bazzite was the
       correct `ollama/ollama:rocm` image, but `podman inspect ollama`
@@ -158,7 +158,7 @@
       (Apache-2.0, MoE 3.6B active). All five generation modules
       (`generator`, `forge`, `bell`, `npc`, `chat`) now go through
       one helper, `generator._completion(payload)`, which decides
-      backend from `NORN_LLAMACPP_URL` (preferred) or `OLLAMA_URL`
+      backend from `VEFR_LLAMACPP_URL` (preferred) or `OLLAMA_URL`
       (fallback). JSON constraint is now `response_format.json_schema`
       with `strict: true`; reasoning control is
       `chat_template_kwargs.reasoning_effort=low` (gpt-oss has no
