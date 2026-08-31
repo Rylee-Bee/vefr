@@ -1,10 +1,19 @@
+"""Story tests - the ferryman. Skipped unless the resolved world
+IS private-canon."""
+
 import json
+from pathlib import Path
 
 import httpx
 import pytest
 
 from old-name import npc
 from old-name.npc import build_payload, generate_line
+from old-name.paths import world_name
+
+_pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
+if world_name() != 'private-canon' or not (_pack / 'world.json').exists():
+    pytest.skip('private-canon pack not resolved', allow_module_level=True)
 
 
 class FakeResponse:

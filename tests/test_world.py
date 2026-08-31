@@ -1,6 +1,17 @@
+"""Story tests - Private Canon canon. Skipped unless the resolved
+world IS private-canon: the bones must be provable with zero flesh."""
+
+from pathlib import Path
+
+import pytest
+
 from old-name import maplab
-from old-name.paths import pack_dir
+from old-name.paths import pack_dir, world_name
 from old-name.world import load_world
+
+_pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
+if world_name() != 'private-canon' or not (_pack / 'world.json').exists():
+    pytest.skip('private-canon pack not resolved', allow_module_level=True)
 
 
 def test_maplab_validates_the_pack():

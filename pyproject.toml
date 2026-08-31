@@ -17,5 +17,9 @@ dependencies = [
 [dependency-groups]
 test = ["pytest>=8.3"]
 
+[project.scripts]
+old-name = "old-name.cli:munr_main"
+old-name = "old-name.cli:smidr_main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/old-name"]
