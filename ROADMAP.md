@@ -95,6 +95,21 @@
       it, which would have shown up as narration inside rumors, item
       names, and the bell's letter.
 
+- [x] **the session journal + story export** (2026-08-31): the
+      vault was the only thing that persisted; now `journal.py` keeps
+      a timestamped record of every rumor heard, line spoken, item
+      kept, and the bell's letter - same atomic tmp+replace write as
+      the vault, `NORN_JOURNAL` to move it. `main.py`'s existing
+      routes log after each generation, so the record is a byproduct
+      of play, not a chore. `export.py` weaves the pack's title +
+      bible.md + the journal + the vault into one markdown document
+      by deterministic templating (never a model call: it must work
+      with ollama cold and must match what actually happened). New
+      routes `GET /api/journal`, `POST /api/journal/clear`,
+      `GET /api/export`; a Journal tab in `web/` reads the timeline
+      back and downloads the story as a `.md`. A model-polish pass
+      over the export stays available as a v2.
+
 ## Next
 
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
@@ -108,49 +123,6 @@
       water's-edge sighting already landed in v1.2.)
 - [ ] **shared story state**: the town's phase rail and the rumors
       rail become one state, carried across views
-- [ ] **the session journal + story export** (2026-08-31, not yet
-      designed in code - this is the spec, not the build): right now
-      only the vault (kept items + bonds) persists. Rumors heard, NPC
-      lines spoken, and whether the bell was reached all vanish the
-      moment they're generated. Two audiences, one underlying log:
-      - **the journal** - a persisted, timestamped record of what
-        happened this playthrough (rumors, NPC lines, items forged,
-        the bell letter if reached). Its first job is for Rylee
-        herself: she doesn't have to hold the details in her own
-        memory between sessions, the game does. This is the "login
-        state" - resuming play means the journal is still there, not
-        re-authentication.
-      - **the export** - a second step that reads `bible.md` + the
-        journal + the vault and weaves them into one readable
-        document: canon and what-actually-happened blended into
-        prose, no game knowledge needed to read it. Shareable with
-        someone who just wants to read the story.
-      Needs, in order: (1) the persistence layer itself - what gets
-      logged, where, in what shape; (2) the weave step - templating
-      vs. another local-model pass, same schema-constrained pattern
-      as `old-name chat`; (3) the surface - a CLI command, an API route,
-      or both.
-
-      **Build plan (2026-08-31, dispatched to background):**
-      - `src/norn/journal.py`: atomic-write JSON log (same tmp+replace
-        pattern as `forge.py`'s vault), one entry per rumor/npc-line/
-        kept-item/bell-letter, `log()`/`list_entries()`/`clear()`.
-        `main.py`'s existing routes call `journal.log(...)` after
-        each generation.
-      - `src/norn/export.py`: deterministic templating (not another
-        model call - must work even if ollama is down, must always
-        match what actually happened) weaving bible.md + the journal
-        + the vault into one markdown document. A model-polish pass
-        is a natural v2, not required for this to be usable.
-      - New routes: `GET /api/journal`, `POST /api/journal/clear`,
-        `GET /api/export`.
-      - New web UI tab: a readable journal timeline + an "export
-        story" button that downloads the markdown, same parchment
-        styling as the rest of `web/`.
-      - Tests: `test_journal.py`, `test_export.py` - engine-level,
-        must pass against `worlds/sample-world/` with zero setup.
-      - Tooling only, no story work: worlds/private-canon and
-        the private story repo are untouched by this.
 - [ ] **`old-name chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker

@@ -35,7 +35,12 @@ src/norn/           the engine (MIT)
   forge.py           items; bonds come from the pack
   bell.py            sealed voices (the goodbye)
   npc.py             whisper NPCs; seeds keep the world alive
-  main.py            FastAPI surface incl. GET /api/world
+  journal.py         the session journal - what happened, on disk
+                     (NORN_JOURNAL)
+  export.py          canon + journal + vault -> one markdown story,
+                     deterministic templating, no model needed
+  main.py            FastAPI surface incl. GET /api/world,
+                     GET /api/journal, GET /api/export
   cli.py             two entry points, raven and smith:
                        raven - memory: tidyup, deploy, backup, test
                        old-name - craft: validate, build, verify worlds

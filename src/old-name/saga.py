@@ -51,9 +51,14 @@ def system_prompt(phase: str) -> str:
     )
 
 
-def _bible() -> str:
-    path = pack_file("bible.md")
+def bible(name: str | None = None) -> str:
+    """The world's canon text, or "" when the pack keeps none."""
+    path = pack_file("bible.md", name)
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def _bible() -> str:
+    return bible()
 
 
 def _ledger() -> str:

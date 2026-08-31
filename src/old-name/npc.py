@@ -32,14 +32,22 @@ class NpcLine(BaseModel):
     source: str = "engine"
 
 
-def _speaker(key: str) -> dict:
+def _speaker(key: str | None) -> dict:
+    """Resolve a speaker key against the pack.
+
+    No key means the pack's first speaker - the engine must never
+    hardcode a name from anyone's story (a "the ferryman" default used to
+    live here, which broke any pack that had never heard of her).
+    """
     speakers = load_world()["speakers"]
+    if key is None:
+        return next(iter(speakers.values()))
     if key not in speakers:
         raise RuntimeError(f"unknown speaker '{key}' in world pack")
     return speakers[key]
 
 
-def build_payload(phase: str, key: str) -> dict:
+def build_payload(phase: str, key: str | None = None) -> dict:
     spec = _speaker(key)
     voice = pack_file(spec["voice_file"]).read_text(encoding="utf-8")
     seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
@@ -63,7 +71,7 @@ def build_payload(phase: str, key: str) -> dict:
     }
 
 
-def generate_line(phase: str = "whispers", key: str = "the ferryman") -> NpcLine:
+def generate_line(phase: str = "whispers", key: str | None = None) -> NpcLine:
     spec = _speaker(key)
     payload = build_payload(phase, key)
     for _ in range(2):
