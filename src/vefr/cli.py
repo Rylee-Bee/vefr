@@ -644,6 +644,18 @@ def cmd_deploy(args) -> int:
     if sh(('ssh', host, 'cd ~/vefr && podman build -q -t localhost/vefr:latest . '
                        '&& systemctl --user restart vefr')).returncode:
         return 1
+    # The ro + rw volumes may not exist on a fresh deploy host. The
+    # engine boots fine without them (the image ships the template
+    # at /app/worlds-template/ and an empty /app/worlds/), but the
+    # canonical post-deploy state is both volumes present. Create
+    # them so a `ratatoskr volumes list` from the deploy host shows
+    # the right shape.
+    sh(('ssh', host,
+        'podman volume exists vefr-template 2>/dev/null || '
+        'podman volume create vefr-template'))
+    sh(('ssh', host,
+        'podman volume exists vefr-worlds 2>/dev/null || '
+        'podman volume create vefr-worlds'))
     import time
     time.sleep(2)
     try:
@@ -793,6 +805,36 @@ only ever teach the engine how to speak.
 """
 
 
+# --------------------------------------------------------------- volumes
+
+def cmd_volumes_list(args) -> int:
+    """List every pack the engine can see, with the source tagged.
+
+    Source is 'canon' (rw volume, author-owned) or 'template'
+    (ro volume, engine-owned). The same list the builder UI
+    uses, in human-readable form.
+    """
+    from . import volumes as vol_mod
+    rows = vol_mod.list_packs()
+    if not rows:
+        print("no packs found")
+        return 0
+    print(f"{'pack':<24} {'source':<10} path")
+    print(f"{'----':<24} {'------':<10} ----")
+    for r in rows:
+        print(f"{r['name']:<24} {r['source']:<10} {r['path']}")
+    return 0
+
+
+def cmd_volumes_migrate(args) -> int:
+    """Split a legacy ~/vefr-worlds/ bind mount into ro + rw
+    Docker volumes. Idempotent; safe to re-run.
+    """
+    from . import volumes as vol_mod
+    legacy = Path(args.legacy_root).expanduser() if args.legacy_root else None
+    return vol_mod.migrate(legacy_root=legacy, dry_run=args.dry_run)
+
+
 def ratatoskr_main() -> int:
     ap = argparse.ArgumentParser(
         prog='ratatoskr', description=RATATOSKR_HELP,
@@ -836,6 +878,31 @@ def ratatoskr_main() -> int:
         'ferry', help='carry messages between dev box, deploy host, Gitea, NAS'
     )
     ferry_sub = ferry.add_subparsers(dest='ferry_verb', required=True)
+
+    # Volumes subcommand - manage the ro/rw volume split on the
+    # deploy host. `list` shows what's loaded; `migrate` does the
+    # one-shot split of a legacy bind mount.
+    volumes = sub.add_parser(
+        'volumes',
+        help='manage the ro template + rw canon Docker volumes',
+    )
+    volumes_sub = volumes.add_subparsers(dest='volumes_verb', required=True)
+    volumes_list = volumes_sub.add_parser(
+        'list', help='list every pack the engine can see'
+    )
+    volumes_list.set_defaults(fn=cmd_volumes_list)
+    volumes_migrate = volumes_sub.add_parser(
+        'migrate', help='split a legacy ~/vefr-worlds/ bind into ro+rw volumes'
+    )
+    volumes_migrate.add_argument(
+        '--legacy-root', default=None,
+        help='legacy worlds root (default: ~/vefr-worlds)',
+    )
+    volumes_migrate.add_argument(
+        '--dry-run', action='store_true',
+        help='print what would happen; do nothing',
+    )
+    volumes_migrate.set_defaults(fn=cmd_volumes_migrate)
 
     fd = ferry_sub.add_parser('deploy', help='ship this checkout to --deploy-host')
     fd.set_defaults(fn=cmd_deploy)

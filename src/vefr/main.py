@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import json
+from pathlib import Path
 
 from . import forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
@@ -152,12 +153,20 @@ def world():
     w = load_world()
     act = current_act(w)
     region = act["regions"].get("town", {})
-    # Legacy flat-pack fields live under _town_legacy on the act.
-    # After the sample-world migration, those move into a
-    # town/contract.json the loader picks up - but the API
-    # surface stays the same.
-    legacy = act.get("_town_legacy", {})
-    town_map = region.get("map_text", "") or "\n".join(legacy.get("map", []))
+    # Town metadata can come from three places, in priority order:
+    #   1. The region's contract.json (acts shape, convention-driven)
+    #   2. The act's _town_legacy (acts shape, transitional)
+    #   3. The legacy flat-shape town block (in _town_legacy too)
+    # The contract wins so a future PR can move the canary's
+    # data to town/contract.json without the API route changing.
+    legacy = act.get("_town_legacy", {}) or region.get("contract", {})
+    # The map lives in one of two places: the region's map_text
+    # (acts shape, served by the loader from town/map.md) or the
+    # legacy block's `map` key (flat shape, served from the
+    # pack-level world.json). Union them so the web layer doesn't
+    # care which shape the pack is in.
+    raw_map = region.get("map_text", "") or "\n".join(legacy.get("map", []))
+    town_map = [ln for ln in raw_map.splitlines() if ln.strip()]
     speakers = [
         {
             "key": key,
@@ -177,7 +186,7 @@ def world():
         "regions": {"town": {"map_text": town_map}},
         "tile": legacy.get("tile", 32),
         "bg": legacy.get("bg", "#131311"),
-        "map": legacy.get("map", []),
+        "map": town_map,
         "legend": legacy.get("legend", {}),
         "pois": legacy.get("pois", {}),
         "hero_start": legacy.get("hero_start", [1, 1]),
@@ -488,34 +497,32 @@ def builder_worlds():
     Surfaces sample-world + private-canon + any other import. The page
     uses this to populate the world picker in the Builder tab.
     """
-    from .paths import app_home
-    base = app_home() / "worlds"
-    if not base.exists():
-        return {"worlds": []}
+    from .world import discover_packs
     out = []
-    for p in sorted(base.iterdir()):
-        if (p / "world.json").exists():
-            try:
-                w = json.loads((p / "world.json").read_text(encoding="utf-8"))
-                # Acts-shape packs put speakers inside the per-act
-                # contract; flat packs put them at the top level.
-                speakers: list[str] = []
-                if (p / "acts").is_dir():
-                    for ad in sorted((p / "acts").iterdir()):
-                        if not ad.is_dir() or ad.name.startswith("."):
-                            continue
-                        act_w = json.loads((ad / "world.json").read_text(encoding="utf-8"))
-                        speakers.extend(act_w.get("speakers", {}).keys())
-                else:
-                    speakers = list(w.get("speakers", {}).keys())
-                out.append({
-                    "name": p.name,
-                    "title": w.get("title", p.name),
-                    "phases": list(w.get("phases", {}).keys()),
-                    "speakers": speakers,
-                })
-            except (json.JSONDecodeError, OSError):
-                continue
+    for entry in discover_packs():
+        p = Path(entry["path"])
+        try:
+            w = json.loads((p / "world.json").read_text(encoding="utf-8"))
+            # Acts-shape packs put speakers inside the per-act
+            # contract; flat packs put them at the top level.
+            speakers: list[str] = []
+            if (p / "acts").is_dir():
+                for ad in sorted((p / "acts").iterdir()):
+                    if not ad.is_dir() or ad.name.startswith("."):
+                        continue
+                    act_w = json.loads((ad / "world.json").read_text(encoding="utf-8"))
+                    speakers.extend(act_w.get("speakers", {}).keys())
+            else:
+                speakers = list(w.get("speakers", {}).keys())
+            out.append({
+                "name": entry["name"],
+                "title": w.get("title", entry["name"]),
+                "phases": list(w.get("phases", {}).keys()),
+                "speakers": speakers,
+                "source": entry["source"],
+            })
+        except (json.JSONDecodeError, OSError):
+            continue
     return {"worlds": out}
 
 

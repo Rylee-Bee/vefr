@@ -89,21 +89,19 @@ def _append_line(entry: dict) -> None:
     line = json.dumps(entry, ensure_ascii=False)
     path = file_path()
     with _file_lock:
-        # Atomic append: write to a temp file in the same dir, then
-        # rename. Avoids partial lines if the process is killed
-        # mid-write.
-        fd, tmp = tempfile.mkstemp(prefix="weave.", suffix=".tmp",
-                                   dir=str(path.parent))
+        # POSIX O_APPEND is atomic for files under 2GB on Linux,
+        # so a single-line append is crash-safe: the kernel moves
+        # the write offset to end-of-file before each write, and
+        # the write itself is one syscall. The earlier
+        # temp-file-then-rename pattern was atomic *but* it
+        # overwrote the file with just the new entry, so the
+        # on-disk log only ever had the last event. The ring kept
+        # the full history; the file did not.
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
+            with open(path, "a", encoding="utf-8") as f:
                 f.write(line)
                 f.write("\n")
-            os.replace(tmp, path)
-        except Exception:
-            try:
-                os.unlink(tmp)
-            except OSError:
-                pass
+        except OSError:
             raise
 
 
