@@ -77,6 +77,7 @@ uv run ratatoskr weave --pool 5
 | Severity  | Trigger                                                                                                                                                  |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Always    | `uv run --group test pytest -q` green before claiming done. Every claim about counts/results includes the exact command that produces the evidence.      |
+| Always    | Inclusive-forward is the design identity: every UI change answers the accessibility matrix - targets ≥44px, luminance over hue, plain-English first (Norse as flavor), motion off by default, reading load short, and when sound arrives, every sound paired with a visual event. |
 | Always    | `maplab.validate()` (via `norns validate`) after any world-pack write. The tool always checks; never trust a hand edit.                                   |
 | Always    | Keep deterministic surfaces deterministic: no model calls in `export.py`, `weave.py`, `maplab.py`, `journal.py`. The runes are the only stochastic surface. |
 | Always    | One ROADMAP.md entry per landed change (Landed list, dated). Keep README/GETTING_STARTED in sync when commands or contracts change.                      |
