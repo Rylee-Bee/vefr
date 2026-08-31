@@ -37,10 +37,11 @@ def health():
 
 
 @app.post("/api/rumor")
-def rumor(req: RumorRequest):
+def rumor(req: RumorRequest, session: str = ""):
     card = generate_rumor(req.phase, req.theme)
     journal.log(
         "rumor",
+        sid=session,
         phase=req.phase,
         speaker=card.speaker,
         whisper=card.whisper,
@@ -55,25 +56,27 @@ def forge():
 
 
 @app.post("/api/vault")
-def vault_keep(item: dict):
+def vault_keep(item: dict, session: str = ""):
     from .forge import ItemCard
 
     card = ItemCard.model_validate(item)
-    result = keep_item(card)
+    result = keep_item(card, sid=session)
     # Only a kept item is journalled - a forge roll nobody took is a
     # thing that never happened.
-    journal.log("item_forged", name=card.name, bond=card.bond, lore=card.lore)
+    journal.log(
+        "item_forged", sid=session, name=card.name, bond=card.bond, lore=card.lore
+    )
     return result
 
 
 @app.get("/api/vault")
-def vault_list():
-    items = list_vault()
+def vault_list(session: str = ""):
+    items = list_vault(sid=session)
     return {"items": items, "starred": starred.list_starred()}
 
 
 @app.post("/api/vault/star/{index}")
-def vault_star(index: int):
+def vault_star(index: int, session: str = ""):
     """Star a kept vault item - same shape as the journal star route."""
     from fastapi import HTTPException
     items = list_vault()
@@ -90,20 +93,20 @@ def vault_star(index: int):
 
 
 @app.post("/api/vault/remove/{index}")
-def vault_remove(index: int):
+def vault_remove(index: int, session: str = ""):
     """Drop a kept item from the vault; undoable for 60s."""
     from fastapi import HTTPException
-    removed = forge.remove(index)
+    removed = forge.remove(index, sid=session)
     if removed is None:
         raise HTTPException(status_code=404, detail=f"no vault item at index {index}")
     return {"removed": True, "item": removed, "undo_window_s": forge.UNDO_WINDOW_S}
 
 
 @app.post("/api/vault/undo")
-def vault_undo():
+def vault_undo(session: str = ""):
     """Restore the most recently removed vault item."""
     from fastapi import HTTPException
-    restored = forge.undo()
+    restored = forge.undo(sid=session)
     if restored is None:
         raise HTTPException(
             status_code=400,
@@ -114,17 +117,17 @@ def vault_undo():
 
 
 @app.post("/api/stefna")
-def stefna():
+def stefna(session: str = ""):
     letter = generate_letter()
-    journal.log("stefna_letter", letter=letter.letter)
+    journal.log("stefna_letter", sid=session, letter=letter.letter)
     return letter
 
 
 @app.post("/api/npc")
-def npc(req: NpcRequest):
+def npc(req: NpcRequest, session: str = ""):
     spoken = generate_line(req.phase, req.speaker)
     journal.log(
-        "npc_line", phase=req.phase, speaker=spoken.speaker, line=spoken.line
+        "npc_line", sid=session, phase=req.phase, speaker=spoken.speaker, line=spoken.line
     )
     return spoken
 
@@ -165,8 +168,8 @@ def world():
 
 
 @app.get("/api/journal")
-def journal_list():
-    entries = journal.list_entries()
+def journal_list(session: str = ""):
+    entries = journal.list_entries(sid=session)
     return {
         "entries": entries,
         "starred": starred.list_starred(),
@@ -174,14 +177,14 @@ def journal_list():
 
 
 @app.post("/api/journal/star/{index}")
-def journal_star(index: int):
+def journal_star(index: int, session: str = ""):
     """Append the entry at `index` to starred-whispers.md in the pack.
 
     The file lands on disk in the same place as logbok.md - next
     `ratatoskr ferry fetch --pull` ships it to the deploy host. Idempotent:
     starring the same entry twice appends a second line.
     """
-    entries = journal.list_entries()
+    entries = journal.list_entries(sid=session)
     if index < 0 or index >= len(entries):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=f"no journal entry at index {index}")
@@ -189,7 +192,7 @@ def journal_star(index: int):
 
 
 @app.post("/api/journal/remove/{index}")
-def journal_remove(index: int):
+def journal_remove(index: int, session: str = ""):
     """Remove one journal entry. Refuses the last entry of its kind.
 
     The removed entry is stashed server-side for one minute; call
@@ -197,7 +200,7 @@ def journal_remove(index: int):
     """
     from fastapi import HTTPException
     try:
-        removed = journal.remove(index)
+        removed = journal.remove(index, sid=session)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     if removed is None:
@@ -206,10 +209,10 @@ def journal_remove(index: int):
 
 
 @app.post("/api/journal/undo")
-def journal_undo():
+def journal_undo(session: str = ""):
     """Restore the most recently removed entry, if still in the undo window."""
     from fastapi import HTTPException
-    restored = journal.undo()
+    restored = journal.undo(sid=session)
     if restored is None:
         raise HTTPException(
             status_code=400,
@@ -220,8 +223,8 @@ def journal_undo():
 
 
 @app.post("/api/journal/clear")
-def journal_clear():
-    journal.clear()
+def journal_clear(session: str = ""):
+    journal.clear(sid=session)
     return {"cleared": True}
 
 
@@ -461,12 +464,12 @@ def starred_list():
 
 
 @app.get("/api/export", response_class=PlainTextResponse)
-def export():
+def export(session: str = ""):
     """The whole playthrough as markdown - one section per dev UI
     tab, in the order the player met them. See export.py for the
     shape. Raw text, easy to download.
     """
-    return PlainTextResponse(export_story(), media_type="text/markdown")
+    return PlainTextResponse(export_story(sid=session), media_type="text/markdown")
 
 
 @app.get("/api/export/tabs", response_class=PlainTextResponse)
@@ -480,7 +483,7 @@ def export_tabs_list():
 
 
 @app.get("/api/export/tabs/{name}", response_class=PlainTextResponse)
-def export_tab(name: str):
+def export_tab(name: str, session: str = ""):
     """One tab's worth of the world as markdown.
 
     The web UI's "Export this tab" button posts here; the result
@@ -493,7 +496,7 @@ def export_tab(name: str):
             status_code=404,
             detail=f"unknown tab {name!r}; expected one of {list(_TAB_NAMES)}",
         )
-    return PlainTextResponse(render_tab(name), media_type="text/markdown")
+    return PlainTextResponse(render_tab(name, sid=session), media_type="text/markdown")
 
 
 @app.get("/")

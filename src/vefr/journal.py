@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .paths import app_home
+from .sessions import clean, derive
 
 JOURNAL = Path(
     os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
@@ -30,18 +31,25 @@ KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter")
 # is dropped on the next `undo()` call.
 UNDO_WINDOW_S = 60
 
-# Module-level stash of the most recently removed entry. Single-slot
-# is the design: undo is "I just clicked the wrong button", not a
-# full undo stack. A second remove overwrites the first.
-_LAST_REMOVED: dict | None = None
-_LAST_REMOVED_AT: float | None = None
+# Per-session stash of the most recently removed entry, keyed by the
+# cleaned session id. Single-slot per session is the design: undo is
+# "I just clicked the wrong button", not a full undo stack. A second
+# remove in the same session overwrites that session's stash.
+_LAST_REMOVED: dict[str, dict] = {}
+_LAST_REMOVED_AT: dict[str, float] = {}
 
 
-def _load() -> list[dict]:
-    if not JOURNAL.exists():
+def journal_path(sid: str | None = None) -> Path:
+    """The journal file for a session; the base file when default."""
+    return derive(JOURNAL, sid)
+
+
+def _load(sid: str | None = None) -> list[dict]:
+    path = journal_path(sid)
+    if not path.exists():
         return []
     try:
-        entries = json.loads(JOURNAL.read_text(encoding="utf-8"))
+        entries = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         # A half-written or hand-edited journal must never take the
         # game down: an unreadable log reads as an empty one.
@@ -53,36 +61,37 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _touch_living_tree() -> None:
+def _touch_living_tree(sid: str | None = None) -> None:
     # Local import: export.py imports FROM this module, so a
     # module-level import here would be circular. Failures are
     # swallowed inside refresh_living_tree() itself - a stale or
     # missing living-tree file must never break a journal write.
     from .export import refresh_living_tree
 
-    refresh_living_tree()
+    refresh_living_tree(sid=sid)
 
 
-def log(kind: str, **fields) -> dict:
+def log(kind: str, sid: str | None = None, **fields) -> dict:
     """Append one timestamped entry and return it."""
     entry = {"at": _now(), "kind": kind}
     entry.update(fields)
-    entries = _load()
+    entries = _load(sid)
     entries.append(entry)
-    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
-    tmp = JOURNAL.with_suffix(".tmp")
+    path = journal_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-    tmp.replace(JOURNAL)
-    _touch_living_tree()
+    tmp.replace(path)
+    _touch_living_tree(sid)
     return entry
 
 
-def list_entries() -> list[dict]:
+def list_entries(sid: str | None = None) -> list[dict]:
     """Every entry, oldest first. An absent journal is an empty one."""
-    return _load()
+    return _load(sid)
 
 
-def remove(index: int) -> dict | None:
+def remove(index: int, sid: str | None = None) -> dict | None:
     """Remove the entry at `index` and stash it for undo().
 
     Returns None if the index is out of range. Refuses to remove the
@@ -95,8 +104,8 @@ def remove(index: int) -> dict | None:
     Each remove() stashes exactly one entry; calling remove() again
     before the undo window expires overwrites the previous stash.
     """
-    global _LAST_REMOVED, _LAST_REMOVED_AT
-    entries = _load()
+    key = clean(sid)
+    entries = _load(sid)
     if index < 0 or index >= len(entries):
         return None
     target = entries[index]
@@ -108,52 +117,57 @@ def remove(index: int) -> dict | None:
             f"use `clear()` for a full wipe, or star and edit by hand"
         )
     del entries[index]
-    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
-    tmp = JOURNAL.with_suffix(".tmp")
+    path = journal_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-    tmp.replace(JOURNAL)
+    tmp.replace(path)
     # Stash for undo - keep the original index so undo restores
     # position too when possible, otherwise append to the end.
-    _LAST_REMOVED = {"entry": target, "index": index}
-    _LAST_REMOVED_AT = time.monotonic()
-    _touch_living_tree()
+    _LAST_REMOVED[key] = {"entry": target, "index": index}
+    _LAST_REMOVED_AT[key] = time.monotonic()
+    _touch_living_tree(sid)
     return target
 
 
-def undo() -> dict | None:
+def undo(sid: str | None = None) -> dict | None:
     """Restore the most recently removed entry, if still in window.
 
     Returns the restored entry, or None if no remove has happened
     in the last UNDO_WINDOW_S seconds (or at all).
     """
-    global _LAST_REMOVED, _LAST_REMOVED_AT
-    if _LAST_REMOVED is None or _LAST_REMOVED_AT is None:
+    key = clean(sid)
+    stash = _LAST_REMOVED.get(key)
+    stash_at = _LAST_REMOVED_AT.get(key)
+    if stash is None or stash_at is None:
         return None
-    if time.monotonic() - _LAST_REMOVED_AT > UNDO_WINDOW_S:
-        _LAST_REMOVED = None
-        _LAST_REMOVED_AT = None
+    if time.monotonic() - stash_at > UNDO_WINDOW_S:
+        _LAST_REMOVED.pop(key, None)
+        _LAST_REMOVED_AT.pop(key, None)
         return None
-    entry = _LAST_REMOVED["entry"]
-    original_index = _LAST_REMOVED["index"]
-    entries = _load()
+    entry = stash["entry"]
+    original_index = stash["index"]
+    entries = _load(sid)
     # Insert at the original index, clamped to the current length.
     insert_at = min(original_index, len(entries))
     entries.insert(insert_at, entry)
-    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
-    tmp = JOURNAL.with_suffix(".tmp")
+    path = journal_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-    tmp.replace(JOURNAL)
-    _LAST_REMOVED = None
-    _LAST_REMOVED_AT = None
-    _touch_living_tree()
+    tmp.replace(path)
+    _LAST_REMOVED.pop(key, None)
+    _LAST_REMOVED_AT.pop(key, None)
+    _touch_living_tree(sid)
     return entry
 
 
-def clear() -> None:
-    """Start a fresh playthrough - the journal is forgotten."""
-    global _LAST_REMOVED, _LAST_REMOVED_AT
-    if JOURNAL.exists():
-        JOURNAL.unlink()
-    _LAST_REMOVED = None
-    _LAST_REMOVED_AT = None
-    _touch_living_tree()
+def clear(sid: str | None = None) -> None:
+    """Start a fresh playthrough - the session's journal is forgotten."""
+    path = journal_path(sid)
+    if path.exists():
+        path.unlink()
+    key = clean(sid)
+    _LAST_REMOVED.pop(key, None)
+    _LAST_REMOVED_AT.pop(key, None)
+    _touch_living_tree(sid)
