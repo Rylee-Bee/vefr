@@ -303,7 +303,7 @@ def _journal_section(entries: list[dict], exclude: set[str]) -> str:
 _TAB_KINDS = {"rumor", "item_forged", "stefna_letter", "npc_line"}
 
 
-def export_story(world: str | None = None) -> str:
+def export_story(world: str | None = None, sid: str | None = None) -> str:
     """Weave canon + every tab into one readable markdown document.
 
     The shape:
@@ -315,9 +315,12 @@ def export_story(world: str | None = None) -> str:
       ## The Stefna
       ## The Voices Heard
       ## The Journal    (anything the per-tab sections did not cover)
+
+    `sid` selects the play session the tree is woven from; None is
+    the default session.
     """
     w = load_world(world)
-    entries = list_entries()
+    entries = list_entries(sid)
     parts = _preface(w, name=world)
 
     town = _town_section(entries)
@@ -328,7 +331,7 @@ def export_story(world: str | None = None) -> str:
     if rumors:
         parts.append(rumors)
 
-    vault = _vault_section(list_vault())
+    vault = _vault_section(list_vault(sid))
     if vault:
         parts.append(vault)
 
@@ -347,7 +350,7 @@ def export_story(world: str | None = None) -> str:
     if not any([
         _town_section(entries),
         _rumors_section(entries),
-        _vault_section(list_vault()),
+        _vault_section(list_vault(sid)),
         _stefna_section(entries),
         _voices_section(entries),
         _journal_section(entries, _TAB_KINDS),
@@ -360,7 +363,7 @@ def export_story(world: str | None = None) -> str:
 _TAB_NAMES = ("town", "rumors", "vault", "stefna", "voices", "journal")
 
 
-def export_tab(name: str, world: str | None = None) -> str:
+def export_tab(name: str, world: str | None = None, sid: str | None = None) -> str:
     """One tab's worth of the world, as markdown.
 
     Returns the canon preface plus that one tab's section. Used by
@@ -369,14 +372,14 @@ def export_tab(name: str, world: str | None = None) -> str:
     if name not in _TAB_NAMES:
         raise ValueError(f"unknown tab {name!r}; expected one of {_TAB_NAMES}")
     w = load_world(world)
-    entries = list_entries()
+    entries = list_entries(sid)
     parts = _preface(w, name=world)
     if name == "town":
         s = _town_section(entries)
     elif name == "rumors":
         s = _rumors_section(entries)
     elif name == "vault":
-        s = _vault_section(list_vault())
+        s = _vault_section(list_vault(sid))
     elif name == "stefna":
         s = _stefna_section(entries)
     elif name == "voices":
@@ -401,7 +404,7 @@ def living_tree_path(world: str | None = None) -> Path:
     return pack_dir(world) / LIVING_TREE_FILE
 
 
-def refresh_living_tree(world: str | None = None) -> Path | None:
+def refresh_living_tree(world: str | None = None, sid: str | None = None) -> Path | None:
     """Rewrite the always-current World Tree file in the pack dir.
 
     Called after every journal/vault mutation (log, remove, undo,
@@ -411,6 +414,11 @@ def refresh_living_tree(world: str | None = None) -> Path | None:
     feeds back into the logbok/ledger/map, and it is safe to delete -
     the next mutation regenerates it.
 
+    `sid` names the session the tree reflects; the default session
+    when None. Whatever session triggered the mutation is the one
+    the file now shows - the tree always mirrors the newest hand
+    on the loom.
+
     Failures here must never break the mutation that triggered them
     (a missing pack dir, a read-only filesystem, a world with no
     pack yet). Returns the path written, or None if the write was
@@ -419,7 +427,7 @@ def refresh_living_tree(world: str | None = None) -> Path | None:
     try:
         path = living_tree_path(world)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(export_story(world), encoding="utf-8")
+        path.write_text(export_story(world, sid=sid), encoding="utf-8")
         return path
     except OSError:
         return None

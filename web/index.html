@@ -347,8 +347,9 @@
 </head>
 <body>
 <header>
-  <h1>OLD-NAME</h1>
+  <h1 id="app-title">vefr</h1>
   <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
+  <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
 </header>
 <main>
   <div class="tabs" role="tablist" aria-label="Views">
@@ -571,7 +572,7 @@
     try {
       /* Omit the phase rather than send null - only the route's own
          default knows the pack's first phase. */
-      var r = await fetch('/api/rumor', {
+      var r = await fetch(VEFR_SESSION.wrap('/api/rumor'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ph ? { phase: ph } : {})
@@ -624,7 +625,7 @@
     if (!b || !lastForged) return;
     b.disabled = true;
     try {
-      var r = await fetch('/api/vault', {
+      var r = await fetch(VEFR_SESSION.wrap('/api/vault'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lastForged)
@@ -679,7 +680,7 @@
     if (action === 'star') {
       btn.disabled = true;
       try {
-        var r = await fetch('/api/vault/star/' + idx, { method: 'POST' });
+        var r = await fetch(VEFR_SESSION.wrap('/api/vault/star/' + idx), { method: 'POST' });
         if (!r.ok) throw new Error('star failed');
         var data = await r.json();
         if (data && data.starred) btn.textContent = '\u2605';
@@ -690,7 +691,7 @@
       if (!window.confirm('Remove this item from the vault? You can undo for the next 60 seconds.')) return;
       btn.disabled = true;
       try {
-        var r = await fetch('/api/vault/remove/' + idx, { method: 'POST' });
+        var r = await fetch(VEFR_SESSION.wrap('/api/vault/remove/' + idx), { method: 'POST' });
         if (!r.ok) throw new Error('remove failed');
         showUndoBanner('vault');
         STATE.refreshVault().catch(function () {});
@@ -718,7 +719,7 @@
     undoBar.addEventListener('click', async function () {
       var target = undoBar.dataset.target || 'journal';
       try {
-        var r = await fetch('/api/' + target + '/undo', { method: 'POST' });
+        var r = await fetch(VEFR_SESSION.wrap('/api/' + target + '/undo'), { method: 'POST' });
         if (!r.ok) {
           var msg = 'undo failed';
           try { var b = await r.json(); msg = (b && b.detail) || msg; } catch (_) {}
@@ -768,7 +769,7 @@
     strikeBtn.disabled = true;
     stefnaStatus.textContent = 'the bell sounds\u2026';
     try {
-      var r = await fetch('/api/stefna', { method: 'POST' });
+      var r = await fetch(VEFR_SESSION.wrap('/api/stefna'), { method: 'POST' });
       if (!r.ok) throw new Error('still water');
       var res = await r.json();
       letterOut.innerHTML = '<article class="letter-card card" style="border-color:var(--accent)">'
@@ -837,7 +838,7 @@
 
   function renderJournal() {
     journalStatus.textContent = 'reading\u2026';
-    fetch('/api/journal').then(function (r) { return r.json(); }).then(function (body) {
+    fetch(VEFR_SESSION.wrap('/api/journal')).then(function (r) { return r.json(); }).then(function (body) {
       var entries = (body && body.entries) || [];
       var starredSet = starredKeySet((body && body.starred) || []);
       entries.forEach(function (e, i) { e._index = i; e._textKey = e.whisper || e.line || e.lore || e.letter || ''; });
@@ -864,7 +865,7 @@
     if (action === 'star') {
       btn.disabled = true;
       try {
-        var r = await fetch('/api/journal/star/' + idx, { method: 'POST' });
+        var r = await fetch(VEFR_SESSION.wrap('/api/journal/star/' + idx), { method: 'POST' });
         if (!r.ok) throw new Error('star failed');
         var data = await r.json();
         if (data && data.starred) {
@@ -880,7 +881,7 @@
       if (!window.confirm('Remove this entry? You can undo for the next 60 seconds.')) return;
       btn.disabled = true;
       try {
-        var r = await fetch('/api/journal/remove/' + idx, { method: 'POST' });
+        var r = await fetch(VEFR_SESSION.wrap('/api/journal/remove/' + idx), { method: 'POST' });
         if (!r.ok) {
           var msg = 'remove failed';
           try { var b = await r.json(); msg = (b && b.detail) || msg; } catch (_) {}
@@ -901,7 +902,7 @@
      section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
      Journal views. Same download-blob pattern as the full export. */
   async function exportTab(tab, filename) {
-    var r = await fetch('/api/export/tabs/' + tab);
+    var r = await fetch(VEFR_SESSION.wrap('/api/export/tabs/' + tab));
     if (!r.ok) throw new Error('export ' + tab + ' failed');
     var md = await r.text();
     var url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
@@ -933,7 +934,7 @@
     exportBtn.disabled = true;
     journalStatus.textContent = 'weaving\u2026';
     try {
-      var r = await fetch('/api/export');
+      var r = await fetch(VEFR_SESSION.wrap('/api/export'));
       if (!r.ok) throw new Error('no story');
       var md = await r.text();
       var url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
@@ -958,13 +959,28 @@
     if (!window.confirm('Forget everything written so far? The vault stays.')) return;
     clearBtn.disabled = true;
     try {
-      await fetch('/api/journal/clear', { method: 'POST' });
+      await fetch(VEFR_SESSION.wrap('/api/journal/clear'), { method: 'POST' });
       renderJournal();
     } catch (err) {
       journalStatus.textContent = 'the journal did not answer.';
     } finally {
       clearBtn.disabled = false;
     }
+  });
+
+  /* The page title is the pack's title - the engine never names
+     a specific game. The session chip shows when a named
+     playthrough is active. */
+  OLD-NAME.world().then(function (w) {
+    var el = document.getElementById('app-title');
+    if (el && w && w.title) el.textContent = w.title;
+  }).catch(function () {});
+  if (VEFR_SESSION.id) {
+    document.getElementById('session-note').hidden = false;
+    document.getElementById('session-id').textContent = VEFR_SESSION.id;
+  }
+  document.getElementById('new-game-btn').addEventListener('click', function () {
+    VEFR_SESSION.mint();
   });
 
   function esc(s) {

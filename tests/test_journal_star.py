@@ -7,6 +7,8 @@ slot undo stash, and the star-file append.
 """
 
 import json
+
+from vefr.sessions import clean
 import time
 
 import pytest
@@ -19,8 +21,8 @@ from vefr import forge, journal, starred
 @pytest.fixture
 def tmp_journal(tmp_path, monkeypatch):
     monkeypatch.setattr(journal, 'JOURNAL', tmp_path / 'journal.json')
-    monkeypatch.setattr(journal, '_LAST_REMOVED', None)
-    monkeypatch.setattr(journal, '_LAST_REMOVED_AT', None)
+    monkeypatch.setattr(journal, '_LAST_REMOVED', {})
+    monkeypatch.setattr(journal, '_LAST_REMOVED_AT', {})
 
 
 def _seed(entries):
@@ -69,8 +71,11 @@ def test_undo_returns_none_outside_window(tmp_journal):
     _seed([{'at': 'a', 'kind': 'rumor', 'whisper': 'one'},
            {'at': 'b', 'kind': 'rumor', 'whisper': 'two'}])
     journal.remove(1)
-    # Force the timestamp to be older than UNDO_WINDOW_S
-    journal._LAST_REMOVED_AT = time.monotonic() - journal.UNDO_WINDOW_S - 1
+    # Force the timestamp to be older than UNDO_WINDOW_S. The stash
+    # is keyed per session; the default session's label is 'default'.
+    key = clean(None)
+    assert journal._LAST_REMOVED_AT[key] is not None
+    journal._LAST_REMOVED_AT[key] = time.monotonic() - journal.UNDO_WINDOW_S - 1
     assert journal.undo() is None
 
 
@@ -174,8 +179,8 @@ def test_list_starred_round_trip(tmp_pack):
 @pytest.fixture
 def tmp_vault(tmp_path, monkeypatch):
     monkeypatch.setattr(forge, 'VAULT', tmp_path / 'vault.json')
-    monkeypatch.setattr(forge, '_LAST_REMOVED', None)
-    monkeypatch.setattr(forge, '_LAST_REMOVED_AT', None)
+    monkeypatch.setattr(forge, '_LAST_REMOVED', {})
+    monkeypatch.setattr(forge, '_LAST_REMOVED_AT', {})
 
 
 def test_vault_remove_and_undo(tmp_vault):
@@ -196,5 +201,7 @@ def test_vault_remove_out_of_range(tmp_vault):
 def test_vault_undo_outside_window(tmp_vault):
     forge.VAULT.write_text(json.dumps([{'name': 'a'}]), encoding='utf-8')
     forge.remove(0)
-    forge._LAST_REMOVED_AT = time.monotonic() - forge.UNDO_WINDOW_S - 1
+    fkey = clean(None)
+    assert forge._LAST_REMOVED_AT[fkey] is not None
+    forge._LAST_REMOVED_AT[fkey] = time.monotonic() - forge.UNDO_WINDOW_S - 1
     assert forge.undo() is None

@@ -128,6 +128,7 @@ for (const v of TABVIEWS) {
 }
 mk('div', 'rumor-phase', 'phase-rail');
 mk('button', 'whisper-btn');
+mk('button', 'new-game-btn');
 mk('span', 'status', 'note');
 const feed = mk('section', 'feed');
 mk('p', '', 'empty', feed);

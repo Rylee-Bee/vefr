@@ -9,14 +9,20 @@ from pydantic import BaseModel, ValidationError
 from . import generator
 from .bonds import bond_keys, bond_prompt
 from .paths import app_home
+from .sessions import clean, derive
 from .saga import system_prompt
 from .world import load_world
 
 VAULT = Path(os.environ.get("VEFR_VAULT", str(app_home() / "data" / "vault.json")))
 
 UNDO_WINDOW_S = 60
-_LAST_REMOVED: dict | None = None
-_LAST_REMOVED_AT: float | None = None
+_LAST_REMOVED: dict[str, dict] = {}
+_LAST_REMOVED_AT: dict[str, float] = {}
+
+
+def vault_path(sid: str | None = None) -> Path:
+    """The vault file for a session; the base file when default."""
+    return derive(VAULT, sid)
 
 
 class ItemCard(BaseModel):
@@ -83,77 +89,87 @@ def forge_item() -> ItemCard:
     raise RuntimeError(f"forge output failed schema twice: {last_err}")
 
 
-def _load_vault() -> list[dict]:
-    if not VAULT.exists():
+def _load_vault(sid: str | None = None) -> list[dict]:
+    path = vault_path(sid)
+    if not path.exists():
         return []
-    return json.loads(VAULT.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    return data if isinstance(data, list) else []
 
 
-def _touch_living_tree() -> None:
+def _touch_living_tree(sid: str | None = None) -> None:
     # Local import: export.py imports FROM this module, so a
     # module-level import here would be circular. Failures are
     # swallowed inside refresh_living_tree() itself.
     from .export import refresh_living_tree
 
-    refresh_living_tree()
+    refresh_living_tree(sid=sid)
 
 
-def keep_item(item: ItemCard) -> dict:
-    vault = _load_vault()
+def keep_item(item: ItemCard, sid: str | None = None) -> dict:
+    vault = _load_vault(sid)
     vault.append(item.model_dump())
-    VAULT.parent.mkdir(parents=True, exist_ok=True)
-    tmp = VAULT.with_suffix(".tmp")
+    path = vault_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(vault, indent=2), encoding="utf-8")
-    tmp.replace(VAULT)
-    _touch_living_tree()
+    tmp.replace(path)
+    _touch_living_tree(sid)
     return {"kept": True, "bond": item.bond, "count": len(vault)}
 
 
-def list_vault() -> list[dict]:
-    return _load_vault()
+def list_vault(sid: str | None = None) -> list[dict]:
+    return _load_vault(sid)
 
 
-def remove(index: int) -> dict | None:
+def remove(index: int, sid: str | None = None) -> dict | None:
     """Remove the kept item at `index` and stash it for undo().
 
     Vault items are the player's possessions, so removal is rarer
     than journal removal. Still: same single-slot, 60s undo window.
     """
-    global _LAST_REMOVED, _LAST_REMOVED_AT
-    items = _load_vault()
+    key = clean(sid)
+    items = _load_vault(sid)
     if index < 0 or index >= len(items):
         return None
     target = items[index]
     del items[index]
-    VAULT.parent.mkdir(parents=True, exist_ok=True)
-    tmp = VAULT.with_suffix(".tmp")
+    path = vault_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
-    tmp.replace(VAULT)
-    _LAST_REMOVED = {"item": target, "index": index}
-    _LAST_REMOVED_AT = time.monotonic()
-    _touch_living_tree()
+    tmp.replace(path)
+    _LAST_REMOVED[key] = {"item": target, "index": index}
+    _LAST_REMOVED_AT[key] = time.monotonic()
+    _touch_living_tree(sid)
     return target
 
 
-def undo() -> dict | None:
+def undo(sid: str | None = None) -> dict | None:
     """Restore the most recently removed vault item, if still in window."""
-    global _LAST_REMOVED, _LAST_REMOVED_AT
-    if _LAST_REMOVED is None or _LAST_REMOVED_AT is None:
+    key = clean(sid)
+    stash = _LAST_REMOVED.get(key)
+    stash_at = _LAST_REMOVED_AT.get(key)
+    if stash is None or stash_at is None:
         return None
-    if time.monotonic() - _LAST_REMOVED_AT > UNDO_WINDOW_S:
-        _LAST_REMOVED = None
-        _LAST_REMOVED_AT = None
+    if time.monotonic() - stash_at > UNDO_WINDOW_S:
+        _LAST_REMOVED.pop(key, None)
+        _LAST_REMOVED_AT.pop(key, None)
         return None
-    item = _LAST_REMOVED["item"]
-    original_index = _LAST_REMOVED["index"]
-    items = _load_vault()
+    item = stash["item"]
+    original_index = stash["index"]
+    items = _load_vault(sid)
     insert_at = min(original_index, len(items))
     items.insert(insert_at, item)
-    VAULT.parent.mkdir(parents=True, exist_ok=True)
-    tmp = VAULT.with_suffix(".tmp")
+    path = vault_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
-    tmp.replace(VAULT)
-    _LAST_REMOVED = None
-    _LAST_REMOVED_AT = None
-    _touch_living_tree()
+    tmp.replace(path)
+    _LAST_REMOVED.pop(key, None)
+    _LAST_REMOVED_AT.pop(key, None)
+    _touch_living_tree(sid)
     return item
