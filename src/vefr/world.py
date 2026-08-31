@@ -124,24 +124,37 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
     """Load one region (town or dungeon) from its directory.
 
     Convention: a region directory has map.md, optionally voices/
-    and sprites/. The map.md is the source of truth for the
-    walkable grid; the engine reads it as plain text and the
-    builder parses it.
+    and sprites/, and optionally a `contract.json` for region
+    metadata (legend, watch, sanctuary_tiles, etc.) that used
+    to live inline in the act's world.json. The loader picks up
+    whatever is there - the engine never requires the contract
+    file, but a multi-region pack is much more useful with it.
     """
     if not region_dir.is_dir():
         weave("region.missing", act=act_id, region=region_name,
               hint=f"no directory at {region_dir}")
-        return {"map_text": "", "voices": {}, "sprites": {}}
+        return {"map_text": "", "voices": {}, "sprites": {}, "contract": {}}
 
     map_text = _read_text(region_dir / "map.md",
                           what=f"{act_id}/{region_name}/map.md")
     voices = _discover_voices(region_dir / "voices")
     sprites = _discover_sprites(region_dir / "sprites")
+    contract: dict = {}
+    contract_path = region_dir / "contract.json"
+    if contract_path.exists():
+        contract = _read_json(contract_path,
+                              what=f"{act_id}/{region_name}/contract.json")
 
     weave("region.loaded", act=act_id, region=region_name,
           map_lines=len(map_text.splitlines()) if map_text else 0,
-          speakers=len(voices), sprites=len(sprites))
-    return {"map_text": map_text, "voices": voices, "sprites": sprites}
+          speakers=len(voices), sprites=len(sprites),
+          has_contract=bool(contract))
+    return {
+        "map_text": map_text,
+        "voices": voices,
+        "sprites": sprites,
+        "contract": contract,
+    }
 
 
 def _load_act(act_dir: Path) -> dict:
@@ -263,9 +276,30 @@ def load_world(name: str | None = None) -> dict:
 
     Cached: 8 entries, by pack name. Callers that need to bust the
     cache (testing, builder edits) should call `load_world.cache_clear()`.
+
+    The pack directory comes from `pack_dir()`, which prefers the
+    read-write canon mount (`/app/worlds/<name>/`) and falls back
+    to the read-only template mount (`/app/worlds-template/<name>/`).
+    This means an author's edits in the rw volume always win over
+    any engine template that happens to share a pack name.
     """
-    d = pack_dir(name)
-    weave("pack.load.start", pack=d.name, path=str(d))
+    from .paths import pack_dir as _pack_dir, template_dir as _tdir, worlds_dir as _wdir
+    d = _pack_dir(name)
+    # `source` is 'canon' when the pack resolved to the rw mount,
+    # 'template' when it fell back to the ro one. We compare
+    # `d.parent` against the resolved template/worlds dirs so
+    # the dev-box layout (where neither path is exactly /app/...)
+    # still reports the right source.
+    try:
+        d.parent.samefile(_wdir())
+        source = "canon"
+    except (FileNotFoundError, OSError):
+        try:
+            d.parent.samefile(_tdir())
+            source = "template"
+        except (FileNotFoundError, OSError):
+            source = "dev"
+    weave("pack.load.start", pack=d.name, path=str(d), source=source)
 
     if not d.is_dir():
         raise PackError(f"pack directory does not exist: {d}")
@@ -390,3 +424,35 @@ def pack_phase_to_journey(phase_key: str,
         if entry["pack_phase"] == phase_key:
             return entry
     return None
+
+
+def discover_packs() -> list[dict]:
+    """Every pack the engine can see, with the source marked.
+
+    Walks both the read-write canon mount and the read-only template
+    mount, dedupes by name (canon wins on conflict), and returns a
+    list of {name, source, path} dicts. The /api/builder/worlds
+    route uses this to populate the world picker.
+
+    The list is sorted by name, not by source, so the picker is
+    stable. Engine templates sit next to the author's canon in
+    the same list; the source tag tells the author which is
+    which.
+    """
+    from .paths import template_dir, worlds_dir
+    seen: dict[str, dict] = {}
+    for source, base in (("canon", worlds_dir()), ("template", template_dir())):
+        if not base.is_dir():
+            continue
+        for p in sorted(base.glob("*/world.json")):
+            pack_name = p.parent.name
+            if pack_name in seen:
+                # Canon beats template - if both have the same pack
+                # name, keep the canon entry.
+                continue
+            seen[pack_name] = {
+                "name": pack_name,
+                "source": source,
+                "path": str(p.parent),
+            }
+    return sorted(seen.values(), key=lambda d: d["name"])
