@@ -14,6 +14,7 @@ is built on this engine:
         old-name validate   geometry checks against the pack
         old-name build      rebuild the map from run-length rows
         old-name verify     validate a live deployment
+        old-name import     clone or pull a story repo (Gitea) into worlds/<name>/
 
 Run from any checkout; git decides which. In the container, the
 same commands serve against the deployed world (deploy and
@@ -222,6 +223,141 @@ def cmd_chat(args) -> int:
     return chatmod.run_interview(dest, scaffold)
 
 
+def _import_url(base: str, repo: str) -> str:
+    """Accept 'owner/name' or a full https://... URL; return a cloneable URL."""
+    if repo.startswith('http://') or repo.startswith('https://') or repo.startswith('git@'):
+        return repo
+    if '/' not in repo or repo.count('/') != 1:
+        raise SystemExit(
+            f"repo must be 'owner/name' or a full URL, got: {repo!r}"
+        )
+    return f'{base.rstrip("/")}/{repo}.git'
+
+
+def _import_target(args) -> tuple[str, str]:
+    """Where the clone lands: 'local' means current checkout, else an ssh host.
+
+    Returns (target_host, worlds_dir) - worlds_dir is the directory on
+    the target host that contains the per-pack subdirs. For 'local' we
+    resolve to the checkout's worlds/. For an ssh host we look up the
+    deploy-host layout by asking the host itself (`raven deploy` puts
+    the engine at ~/old-name/, so the worlds are at ~/old-name/worlds/).
+    """
+    if args.target == 'local':
+        return 'local', str(pack_root() / 'worlds')
+    # On a deploy host the engine checkout is ~/old-name/ (where
+    # raven deploy rsyncs to). The worlds live inside that checkout.
+    return args.target, '~/old-name/worlds'
+
+
+def cmd_import(args) -> int:
+    """Clone (or pull) a story repo into worlds/<name>/.
+
+    The engine and the story live in two Gitea repos on purpose - the
+    engine is public-track MIT (rylee/norn), the story is the author's
+    own (the private story repo or whatever the next world is). The world
+    pack directory on disk is the seam; this command is how the
+    latest of the story repo reaches that directory.
+
+    By default targets the current checkout (so a dev box can land
+    the story before shipping). --target <host> runs the clone over
+    ssh on the deploy host - the same box the live game is on - so
+    'I edited the private story repo, ship it' is one command end-to-end.
+    """
+    base = args.base.rstrip('/')
+    url = _import_url(base, args.repo)
+    name = args.name or url.rsplit('/', 1)[-1].removesuffix('.git')
+    target_host, worlds_dir = _import_target(args)
+    target_path = f'{worlds_dir}/{name}'
+
+    # Only the local target checks for an existing directory: an ssh
+    # host may already have a pack under that name and the user wants
+    # to overwrite - the ssh command itself does `test -d || clone`
+    # and falls back to `git pull --ff-only` when --pull is set.
+    if target_host == 'local':
+        exists_local = (pack_root() / 'worlds' / name).exists()
+        action = 'pull' if exists_local and args.pull else 'clone'
+        if exists_local and not args.pull:
+            print(
+                f"worlds/{name}/ already exists - pass --pull to update, "
+                f"or remove the directory first."
+            )
+            return 1
+    else:
+        action = 'pull' if args.pull else 'clone'
+
+    plan = (
+        f'{action} {url}\n'
+        f'  -> {target_host}:{target_path}'
+    )
+    if args.dry_run:
+        print('dry-run: would')
+        print(plan)
+        return 0
+    print(plan)
+
+    if target_host == 'local':
+        cmd = (['git', 'pull', '--ff-only'] if action == 'pull'
+               else ['git', 'clone', url, str(pack_root() / 'worlds' / name)])
+        rc = subprocess.run(cmd, capture_output=True, text=True).returncode
+        if rc:
+            print(f'git {action} failed (rc={rc})')
+            return rc
+    else:
+        # Three layouts on the deploy host:
+        #   (a) no <name>/ at all           -> clone
+        #   (b) <name>/ exists with .git    -> pull --ff-only (when --pull)
+        #                                    else refuse (avoid clobbering
+        #                                    a tracked story with a fresh
+        #                                    clone - that would lose
+        #                                    uncommitted edits)
+        #   (c) <name>/ exists without .git -> first-time adoption: back
+        #                                    the existing files up under
+        #                                    .bak-<date>, clone fresh.
+        #                                    The author usually wants to
+        #                                    reconcile by hand anyway.
+        inner = (
+            f'cd {worlds_dir} && '
+            f'if [ -d {name}/.git ]; then '
+            f'  git -C {name} pull --ff-only; '
+            f'elif [ -d {name} ]; then '
+            f'  mv {name} {name}.bak-$(date +%Y%m%d-%H%M%S) && '
+            f'  git clone {url} {name}; '
+            f'else '
+            f'  git clone {url} {name}; '
+            f'fi'
+        )
+        rc = sh(('ssh', target_host, inner)).returncode
+        if rc:
+            return rc
+
+    print(f'imported {name} from {url}')
+
+    # Validate the freshly landed pack against its own contract.
+    pack = pack_root() / 'worlds' / name
+    if target_host != 'local':
+        # maplab needs the pack on this machine too. We can't reach
+        # bazzite's worlds/ from here without another ssh+rsync, and
+        # the live game already validates itself via /api/world on
+        # the deploy host. Print the validation command instead.
+        print(f'validate on the deploy host: ssh {target_host} '
+              f'"cd ~/old-name && old-name validate --pack worlds/{name}"')
+        return 0
+    try:
+        w = load_pack(pack)
+        errors = validate(w, pack_dir=pack)
+    except Exception as e:  # noqa: BLE001
+        print(f'validate failed: {e}')
+        return 2
+    if errors:
+        print(f'{len(errors)} problem(s) in {pack}:')
+        for e in errors:
+            print(f'  FAIL: {e}')
+        return 2
+    print(f'ok - {pack} validates against the pack contract.')
+    return 0
+
+
 def cmd_map(args) -> int:
     from .maplab import main as maplab_main
     if args.map_cmd == 'validate':
@@ -359,8 +495,13 @@ SMIDR_HELP = """old-name - the smith. Craft. Worldbuilding tools.
                   the currently selected world)
   old-name build     rebuild the map from run-length rows (--segments)
   old-name verify    validate a live deployment's served world (--url)
+  old-name import    clone or pull a story repo (Gitea, --base) into
+                  worlds/<name>/. Pass 'owner/name' or a full git
+                  URL; --target <deploy-host> ships straight to the
+                  live box; --pull updates an existing pack instead
+                  of re-cloning; --dry-run prints the plan only.
 
-Universal tooling - the same four commands regardless of which world
+Universal tooling - the same commands regardless of which world
 or game is built on this engine.
 """
 
@@ -424,8 +565,42 @@ def smidr_main() -> int:
     mr.set_defaults(fn=cmd_map, map_cmd='verify', segments=None, force=False,
                     pack=None)
 
+    mi = sub.add_parser(
+        'import',
+        help='clone or pull a story repo from Gitea into worlds/<name>/',
+    )
+    mi.add_argument(
+        'repo',
+        help="the story repo: 'owner/name' shorthand (resolved via "
+             '--base) or a full git URL',
+    )
+    mi.add_argument(
+        '--name', default=None,
+        help='the worlds/ directory name (default: repo basename)',
+    )
+    mi.add_argument(
+        '--base', default=GITEA_BASE,
+        help='Gitea base URL for shorthand repo resolution',
+    )
+    mi.add_argument(
+        '--target', default='local',
+        help="where to land the pack: 'local' (this checkout) or "
+             '<deploy-host> (ssh + clone there)',
+    )
+    mi.add_argument(
+        '--pull', action='store_true',
+        help="if worlds/<name>/ exists, do `git pull --ff-only` instead of clone",
+    )
+    mi.add_argument(
+        '--dry-run', action='store_true',
+        help='show what would happen, do nothing',
+    )
+    mi.set_defaults(fn=cmd_import)
+
     args = ap.parse_args()
-    if getattr(args, 'pack', None) is None:
+    # validate / build / verify default --pack to the resolved world;
+    # chat and import don't take --pack and don't need the lookup.
+    if args.cmd in ('validate', 'build', 'verify') and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
     return args.fn(args)
 
