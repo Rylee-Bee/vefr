@@ -152,7 +152,7 @@ def q5_backups(nas_host: str) -> tuple:
     try:
         out = subprocess.run(
             ('ssh', '-o', 'ConnectTimeout=6', nas_host,
-             f'ls -t {NAS_DIR}/old-name-*.bundle 2>/dev/null | head -1'),
+             f'ls -t {NAS_DIR}/vefr-*.bundle 2>/dev/null | head -1'),
             capture_output=True, text=True, timeout=15).stdout.strip()
     except Exception as e:  # noqa: BLE001
         return 'unverified', f'ssh failed: {e}'
@@ -165,12 +165,12 @@ def q6_vault(bazzite_host: str) -> tuple:
     try:
         out = subprocess.run(
             ('ssh', '-o', 'ConnectTimeout=6', bazzite_host,
-             'ls ~/old-name-data/ 2>/dev/null | wc -l'),
+             'ls ~/vefr-data/ 2>/dev/null | wc -l'),
             capture_output=True, text=True, timeout=15).stdout.strip()
     except Exception as e:  # noqa: BLE001
         return 'unverified', f'ssh failed: {e}'
     n = out.splitlines()[-1] if out else '0'
-    return 'persisted', f'~/old-name-data present ({n} entries)'
+    return 'persisted', f'~/vefr-data present ({n} entries)'
 
 
 def q7_next(pack: Path) -> tuple:
@@ -236,13 +236,13 @@ def _import_target(args) -> tuple[str, str]:
     the target host that contains the per-pack subdirs. For 'local' we
     resolve to the checkout's worlds/. For an ssh host we look up the
     deploy-host layout by asking the host itself (`ratatoskr ferry deploy` puts
-    the engine at ~/old-name/, so the worlds are at ~/old-name/worlds/).
+    the engine at ~/vefr/, so the worlds are at ~/vefr/worlds/).
     """
     if args.target == 'local':
         return 'local', str(pack_root() / 'worlds')
-    # On a deploy host the engine checkout is ~/old-name/ (where
+    # On a deploy host the engine checkout is ~/vefr/ (where
     # ratatoskr ferry deploy rsyncs to). The worlds live inside that checkout.
-    return args.target, '~/old-name/worlds'
+    return args.target, '~/vefr/worlds'
 
 
 def cmd_import(args) -> int:
@@ -336,7 +336,7 @@ def cmd_import(args) -> int:
         # the live game already validates itself via /api/world on
         # the deploy host. Print the validation command instead.
         print(f'validate on the deploy host: ssh {target_host} '
-              f'"cd ~/old-name && norns validate --pack worlds/{name}"')
+              f'"cd ~/vefr && norns validate --pack worlds/{name}"')
         return 0
     try:
         w = load_pack(pack)
@@ -493,10 +493,10 @@ def cmd_deploy(args) -> int:
     excludes = []
     for e in DEPLOY_EXCLUDES:
         excludes += ['--exclude', e]
-    if sh(('rsync', '-a', '--delete', *excludes, f'{root}/', f'{host}:~/old-name/')).returncode:
+    if sh(('rsync', '-a', '--delete', *excludes, f'{root}/', f'{host}:~/vefr/')).returncode:
         return 1
-    if sh(('ssh', host, 'cd ~/old-name && podman build -q -t localhost/old-name:latest . '
-                       '&& systemctl --user restart old-name')).returncode:
+    if sh(('ssh', host, 'cd ~/vefr && podman build -q -t localhost/vefr:latest . '
+                       '&& systemctl --user restart vefr')).returncode:
         return 1
     import time
     time.sleep(2)
@@ -517,17 +517,18 @@ def cmd_deploy(args) -> int:
 def cmd_backup(args) -> int:
     root = need_repo()
     date = datetime.now(timezone.utc).strftime('%Y%m%d')
-    name = f'old-name-{date}.bundle'
+    name = f'vefr-{date}.bundle'
     tmp = Path('/tmp') / name
     if sh(('git', '-C', str(root), 'bundle', 'create', str(tmp), '--all')).returncode:
         return 1
     if sh(('scp', '-q', str(tmp), f'{args.nas_host}:{NAS_DIR}/{name}')).returncode:
         return 1
     sh(('ssh', args.nas_host,
-        f'cd {NAS_DIR} && ls -t old-name-*.bundle | tail -n +{BUNDLE_KEEP + 1} | xargs -r rm -f'))
+        f'cd {NAS_DIR} && ls -t old-name-*.bundle vefr-*.bundle 2>/dev/null '
+        f'| tail -n +{BUNDLE_KEEP + 1} | xargs -r rm -f'))
     tmp.unlink(missing_ok=True)
     listing = subprocess.run(
-        ('ssh', args.nas_host, f'ls -t {NAS_DIR}/old-name-*.bundle'),
+        ('ssh', args.nas_host, f'ls -t {NAS_DIR}/vefr-*.bundle'),
         capture_output=True, text=True).stdout.strip()
     print(f'bundles on {args.nas_host}:')
     print(listing)
@@ -538,7 +539,7 @@ def cmd_backup(args) -> int:
     # the session journal. rsync the JSON files alongside the bundle
     # under a per-date directory so a snapshot is one date away.
     vol_remote = args.deploy_vol
-    snap_remote = f'{args.nas_host}:{NAS_DIR}/old-name-{date}'
+    snap_remote = f'{args.nas_host}:{NAS_DIR}/vefr-{date}'
     rsync = subprocess.run(
         ('ssh', args.deploy_host,
          f'mkdir -p {vol_remote} && '
@@ -548,13 +549,13 @@ def cmd_backup(args) -> int:
     if files_here:
         # The deploy host may or may not have rsync; fall back to scp
         # if it doesn't. Either way, one snapshot per date is the goal.
-        if sh(('ssh', args.nas_host, f'mkdir -p {NAS_DIR}/old-name-{date}')).returncode:
+        if sh(('ssh', args.nas_host, f'mkdir -p {NAS_DIR}/vefr-{date}')).returncode:
             print('warning: could not create snapshot dir on NAS')
         else:
             for f in files_here:
                 leaf = Path(f).name
                 if sh(('scp', '-q', f'{args.deploy_host}:{f}',
-                       f'{args.nas_host}:{NAS_DIR}/old-name-{date}/{leaf}')).returncode:
+                       f'{args.nas_host}:{NAS_DIR}/vefr-{date}/{leaf}')).returncode:
                     print(f'warning: {leaf} not backed up')
                 else:
                     print(f'  play history: {leaf}')
@@ -562,7 +563,7 @@ def cmd_backup(args) -> int:
             # has a stable name regardless of date.
             sh(('ssh', args.nas_host,
                 f'rm -rf {NAS_DIR}/latest && '
-                f'cp -r {NAS_DIR}/old-name-{date} {NAS_DIR}/latest'))
+                f'cp -r {NAS_DIR}/vefr-{date} {NAS_DIR}/latest'))
     else:
         print(f'no play history on {args.deploy_host}:{vol_remote} yet')
 
@@ -606,7 +607,7 @@ rest of the world:
     ratatoskr ferry carry    git bundle + play history (vault,
                              journal) -> --nas-host. The newest
                              two bundles are kept; play history
-                             mirrors under old-name-<date>/ plus a
+                             mirrors under vefr-<date>/ plus a
                              stable latest/ pointer.
     ratatoskr ferry fetch    clone or pull a story repo (Gitea,
                              --base) into worlds/<name>/. Pass
@@ -653,7 +654,7 @@ def ratatoskr_main() -> int:
     )
     ap.add_argument('--url', default=DEFAULT_URL)
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
-    ap.add_argument('--deploy-vol', default='~/old-name-data',
+    ap.add_argument('--deploy-vol', default='~/vefr-data',
                     help='bind-mounted game volume on --deploy-host')
     ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
