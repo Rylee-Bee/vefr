@@ -10,7 +10,6 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from . import generator
-from .paths import pack_file
 from .world import current_act, load_world, phase_tone, resolve_voice_file
 
 SCHEMA = {

@@ -309,5 +309,6 @@ when the world is kind.
 
 ```sh
 uv sync --group test
+uv run --group test ruff check src tests
 uv run --group test pytest -q
 ```
