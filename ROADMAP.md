@@ -217,16 +217,18 @@
       `tests/test_web_packaged.py`); the next-move table repointed
       at the surface-UI continuation.
 
-- [x] **companion resources digested** (2026-08-31):
-      `docs/guides/companion-resources.md` - CC0/MIT companion
-      libraries, asset packs, and mapping tools evaluated against
-      the engine's constraints. Verdicts: Kenney CC0 art adopts as
-      pack data (renderer sprite support is the one missing link),
-      rot.js algorithms get borrowed for mapgen when `norns chat`
-      v2 opens, Pixi/Excalibur/bitECS skip (framework rules), and
-      Tiled adopts as the visual map-authoring tool behind a small
-      JSON importer - the storyteller-critical mapping gap, since
-      today's authoring is hand-edited char grids and RLE segments.
+- [x] **companion resources surveyed** (2026-08-31): a full
+      CC0/MIT tool survey (engines, renderers, map authoring,
+      narrative tools, art editors, audio, dev workflow) kept as a
+      local research note - gitignored, since the repo may publish
+      one day. Durable decisions: Kenney CC0 art ships as pack
+      data once the renderer grows sprite support; Tiled (then
+      LDtk) importers parked after the surface-UI work; rot.js
+      algorithms get borrowed for mapgen when `norns chat` v2
+      opens; frameworks skip (the custom renderer stays
+      canonical); the ebook export stays a stdlib writer; idea
+      credits for incompatible-but-borrowed sources live in
+      README's Attribution section.
 
 ## Next
 
