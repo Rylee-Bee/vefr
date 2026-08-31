@@ -4,13 +4,11 @@ Tests cover: 24-rune registry, seedable cast, position meanings,
 the prompt-injection block, and the system-prompt thread.
 """
 
-import pytest
 
-from vefr import runes, saga
+from vefr import saga
 from vefr.runes import (
     RUNES,
     PHASE_ANCHOR,
-    POSITIONS,
     Rune,
     cast,
     cast_for,
@@ -195,10 +193,8 @@ def test_system_prompt_includes_journey_rune_and_cast_rune():
 def test_cast_preference_default_is_visible():
     """First-run preference is cast_visible=true - the default is
     to see the cast. The player toggles it off if they want."""
-    import importlib
     # Simulating client behavior in pure Python: the default read
     # from a missing localStorage key returns true.
-    sentinel = object()
     raw = None  # the localStorage equivalent of "key not set"
     default = raw is None or raw == "true"
     assert default is True

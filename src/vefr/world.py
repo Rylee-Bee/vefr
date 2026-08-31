@@ -397,7 +397,6 @@ def resolve_voice_file(rel: str, world: dict | None = None) -> Path:
     voices dir). The fallback lets flat packs keep working
     unchanged.
     """
-    from .paths import pack_dir
     if world is None:
         world = load_world()
     act = current_act(world)

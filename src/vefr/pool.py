@@ -78,12 +78,12 @@ def build_pool(
             fill(
                 f"npc:{ph}:{key}", samples,
                 lambda ph=ph, key=key: generate_line(ph, key),
-                lambda l, ph=ph: {"speaker": l.speaker, "line": l.line,
-                                  "phase": ph},
+                lambda line, ph=ph: {"speaker": line.speaker,
+                                     "line": line.line, "phase": ph},
             )
 
     fill("letter", specials, generate_letter,
-         lambda l: {"letter": l.letter})
+         lambda letter: {"letter": letter.letter})
     fill("forge", specials, forge_item, lambda c: c.model_dump())
 
     return pool

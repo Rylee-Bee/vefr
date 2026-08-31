@@ -80,9 +80,8 @@ def test_every_kind_renders_in_its_own_tab():
     # town + journal sections can be empty but the headings should still
     # be present if there are journal entries that don't fit the four
     # tab kinds. After _play(), the Journal section should be empty
-    # (everything went into Rumors/Voices/Vault/Bell).
-    journal_idx = out.find("## The Journal")
-    # only present if it had content; the canonical 4 kinds don't, so
+    # (everything went into Rumors/Voices/Vault/Bell); it's only
+    # present if it had content - the canonical 4 kinds don't, so
     # the Journal section is omitted when empty.
 
 
