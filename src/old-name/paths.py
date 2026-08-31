@@ -21,9 +21,22 @@ def app_home() -> Path:
 
 
 def world_name() -> str:
-    """Which world pack is loaded. One repo can carry many; the
-    container serves exactly one."""
-    return os.environ.get("MUNR_WORLD", "private-canon")
+    """Which world pack is loaded.
+
+    MUNR_WORLD wins. Otherwise: private-canon when present (the
+    author's world), else the first pack alphabetically - the
+    bones boot with any flesh, or none at all beyond the sample.
+    """
+    env = os.environ.get('MUNR_WORLD')
+    if env:
+        return env
+    base = app_home() / 'worlds'
+    if (base / 'private-canon' / 'world.json').exists():
+        return 'private-canon'
+    packs = sorted(base.glob('*/world.json'))
+    if packs:
+        return packs[0].parent.name
+    return 'private-canon'
 
 
 def pack_dir(name: str | None = None) -> Path:

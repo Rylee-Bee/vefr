@@ -37,10 +37,11 @@ worlds/<name>/       a world pack (private - this is someone's story)
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
 
-  maplab.py          the map toolkit - validate / build / verify;
-                     one validator shared by tests, cli, and tidyup
-  tools/lab.py       one entry point: tidyup, deploy, backup, map,
-                     test - run from any checkout, git decides which
+  cli.py             two entry points, raven and smith:
+                       old-name  - memory: tidyup, deploy, backup, test
+                       old-name - craft: validate, build, verify worlds
+  maplab.py          old-name's toolkit - the one validator shared by
+                     tests and both clis
 
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks

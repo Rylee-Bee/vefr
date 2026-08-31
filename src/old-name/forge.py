@@ -48,8 +48,9 @@ def build_payload() -> dict:
         "system": _system(texture),
         "prompt": (
             "Forge ONE item from the world described below - whatever "
-            "the world would put in her hands. Decide its bond honestly: "
-            "rarity is the point. Reply with only the JSON object."
+            "the world would put in the protagonist's hands. Decide its "
+            "bond honestly: rarity is the point. Reply with only the "
+            "JSON object."
         ),
         "format": _schema(),
         "stream": False,
