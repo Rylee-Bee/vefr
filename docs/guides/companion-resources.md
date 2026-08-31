@@ -87,6 +87,11 @@ discovers them by convention. Art is pack data, not code.
 
 ## Licensing quick-rules
 
+Preference order: CC0 (public domain) first, MIT second - when two
+assets are otherwise equal, pick the more open license. The engine
+itself ships MIT; Rylee's game and story stay their own property
+(the private `the private story repo` repo).
+
 - CC0: may ship in-repo, no attribution required (credit anyway
   where a page allows).
 - MIT code: vendoring allowed with the license notice intact;
