@@ -1,17 +1,21 @@
-#!/usr/bin/env python3
-"""old-name lab - one entry point for the whole project.
+"""The ravens and the smith.
 
-    lab tidyup                 the seven questions, old-name-shaped
-    lab map validate           geometry checks against the pack
-    lab map build --segments F rebuild the map from run-length rows
-    lab map verify --url U     validate a live deployment
-    lab deploy                 ship this checkout to bazzite, rebuild,
-                               restart, health-check, map-verify
-    lab backup                 git bundle -> NAS, keep the newest two
-    lab test [-- extra]        the pytest suite
+Two entry points, one pattern:
 
-Run from any checkout of the repo; git decides which one.
-Defaults: bazzite at 192.168.2.76:8820, NAS on homelab-vm.
+    old-name - the raven. Memory. The game and its keeping.
+        old-name tidyup     the seven questions, old-name-shaped
+        old-name deploy     ship this checkout to bazzite
+        old-name backup     git bundle -> NAS, keep the newest two
+        old-name test       the pytest suite
+
+    old-name - the smith. Craft. Worldbuilding tools.
+        old-name validate  geometry checks against the pack
+        old-name build     rebuild the map from run-length rows
+        old-name verify    validate a live deployment
+
+Run from any checkout; git decides which. In the container, the
+same commands serve against the deployed world (deploy and
+backup need a git checkout, so they stay on the dev side).
 """
 
 import argparse
@@ -22,14 +26,18 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .maplab import load_pack, validate
+
 DEFAULT_URL = 'http://192.168.2.76:8820'
 DEFAULT_DEPLOY_HOST = 'bazzite'
 DEFAULT_NAS_HOST = 'homelab-vm'
 NAS_DIR = '/mnt/nas/shared/backups'
 BUNDLE_KEEP = 2
+DEPLOY_EXCLUDES = ('.venv', '__pycache__', '.pytest_cache', '*.egg-info', '.git')
 
 
-def repo_root() -> Path:
+def repo_root():
+    """The checkout you run from - None when installed (container)."""
     try:
         top = subprocess.run(('git', 'rev-parse', '--show-toplevel'),
                              capture_output=True, text=True).stdout.strip()
@@ -37,20 +45,29 @@ def repo_root() -> Path:
             return Path(top)
     except Exception:  # noqa: BLE001
         pass
-    return Path(__file__).resolve().parents[1]
+    return None
 
 
-ROOT = repo_root()
-sys.path.insert(0, str(ROOT / 'src'))
+def pack_root() -> Path:
+    """Where worlds/ lives: a checkout, or OLD-NAME-HOME in the container."""
+    r = repo_root()
+    if r and (r / 'worlds').is_dir():
+        return r
+    from .paths import app_home
+    return app_home()
 
-from old-name.maplab import load_pack, validate  # noqa: E402
 
-DEPLOY_EXCLUDES = ('.venv', '__pycache__', '.pytest_cache', '*.egg-info', '.git')
+def git_quiet(*args):
+    r = repo_root()
+    if not r:
+        return ''
+    return subprocess.run(('git',) + args, capture_output=True, text=True,
+                          cwd=str(r)).stdout.strip()
 
 
 def sh(cmd, **kw):
     print(f'+ {" ".join(str(c) for c in cmd)}')
-    return subprocess.run([str(c) for c in cmd], cwd=str(ROOT), **kw)
+    return subprocess.run([str(c) for c in cmd], **kw)
 
 
 def fetch(url, timeout=8):
@@ -58,14 +75,19 @@ def fetch(url, timeout=8):
         return json.loads(r.read().decode('utf-8'))
 
 
+def need_repo() -> Path:
+    r = repo_root()
+    if not r:
+        raise SystemExit('this command needs a git checkout - '
+                         'it is not available inside the container')
+    return r
+
+
 # --------------------------------------------------------------- tidyup
 
-def git_quiet(*args):
-    return subprocess.run(('git',) + args, capture_output=True, text=True,
-                          cwd=str(ROOT)).stdout.strip()
-
-
 def q1_sync() -> tuple:
+    if not repo_root():
+        return 'unavailable', 'no git checkout (container install)'
     branch_line = git_quiet('status', '-sb').splitlines()[0]
     if 'ahead' in branch_line or 'behind' in branch_line:
         return 'OUT-OF-SYNC', branch_line
@@ -77,6 +99,8 @@ def q1_sync() -> tuple:
 
 
 def q2_dirty() -> tuple:
+    if not repo_root():
+        return 'unavailable', 'no git checkout'
     status = git_quiet('status', '--porcelain')
     dirty = len(status.splitlines()) if status else 0
     stashes = len(git_quiet('stash', 'list').splitlines())
@@ -89,15 +113,14 @@ def q3_deployment(url: str) -> tuple:
     try:
         h = fetch(f'{url.rstrip("/")}/api/health')
         if h.get('ok') and 'purpose' in h:
-            return 'healthy', f'container up, motto present'
+            return 'healthy', 'container up, motto present'
         return 'degraded', f'unexpected health payload: {h}'
     except Exception as e:  # noqa: BLE001
         return 'down', f'{url}: {e}'
 
 
-def q4_world(url: str) -> tuple:
-    errors = validate(load_pack(ROOT / 'worlds' / 'private-canon'),
-                      pack_dir=ROOT / 'worlds' / 'private-canon')
+def q4_world(url: str, pack: Path) -> tuple:
+    errors = validate(load_pack(pack), pack_dir=pack)
     try:
         served = fetch(f'{url.rstrip("/")}/api/world')
         town_keys = ('tile', 'map', 'legend', 'pois', 'watch', 'sanctuary_tiles',
@@ -145,26 +168,30 @@ def q6_vault(bazzite_host: str) -> tuple:
     return 'persisted', f'~/old-name-data present ({n} entries)'
 
 
-def q7_next() -> tuple:
-    roadmap = (ROOT / 'ROADMAP.md').read_text(encoding='utf-8')
-    nxt = roadmap.split('## Next')[1].split('## ')[0]
+def q7_next(pack: Path) -> tuple:
+    root = pack.parent.parent
+    roadmap = root / 'ROADMAP.md'
+    if not roadmap.exists():
+        return 'unknown', 'no ROADMAP.md in this install'
+    nxt = roadmap.read_text(encoding='utf-8').split('## Next')[1].split('## ')[0]
     items = [ln.strip()[6:] for ln in nxt.splitlines() if ln.strip().startswith('- [ ]')]
     short = [i.split(':')[0].strip('**').strip() for i in items]
     return 'open', f'{len(items)} open: {"; ".join(short)}'
 
 
 def cmd_tidyup(args) -> int:
+    pack = pack_root() / 'worlds' / 'private-canon'
     rows = [
         ('Q1', 'git local + Gitea remote in sync', *q1_sync()),
         ('Q2', 'local files needing push', *q2_dirty()),
         ('Q3', 'deployment healthy (bazzite)', *q3_deployment(args.url)),
-        ('Q4', 'the world validated (pack + live)', *q4_world(args.url)),
+        ('Q4', 'the world validated (pack + live)', *q4_world(args.url, pack)),
         ('Q5', 'backups fresh (NAS bundle)', *q5_backups(args.nas_host)),
         ('Q6', 'vault persisted (volume)', *q6_vault(args.deploy_host)),
-        ('Q7', 'open items from the ROADMAP', *q7_next()),
+        ('Q7', 'open items from the ROADMAP', *q7_next(pack)),
     ]
     now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    print(f'old-name tidyup -- {now} -- repo: {ROOT}')
+    print(f'old-name tidyup -- {now}')
     print()
     print('| Q  | Question | Status | Answer |')
     print('| -- | -------- | ------ | ------ |')
@@ -178,27 +205,25 @@ def cmd_tidyup(args) -> int:
 # ------------------------------------------------------------------ map
 
 def cmd_map(args) -> int:
-    from old-name.maplab import main as maplab_main
-    rest = args.map_args
+    from .maplab import main as maplab_main
     if args.map_cmd == 'validate':
-        return maplab_main(['validate', '--pack', args.pack] + rest)
-    if args.map_cmd == 'build':
-        return maplab_main(['build', '--segments', args.segments,
-                            '--pack', args.pack] + rest)
-    if args.map_cmd == 'verify':
-        return maplab_main(['verify', '--url', args.url] + rest)
-    return 2
-
-
-# --------------------------------------------------------------- deploy
+        argv = ['validate', '--pack', str(args.pack)]
+    elif args.map_cmd == 'build':
+        argv = ['build', '--segments', args.segments, '--pack', str(args.pack)]
+        if args.force:
+            argv.append('--force')
+    elif args.map_cmd == 'verify':
+        argv = ['verify', '--url', args.url]
+    return maplab_main(argv)
 
 def cmd_deploy(args) -> int:
+    root = need_repo()
     host = args.deploy_host
     url = args.url
     excludes = []
     for e in DEPLOY_EXCLUDES:
         excludes += ['--exclude', e]
-    if sh(('rsync', '-a', '--delete', *excludes, f'{ROOT}/', f'{host}:~/old-name/')).returncode:
+    if sh(('rsync', '-a', '--delete', *excludes, f'{root}/', f'{host}:~/old-name/')).returncode:
         return 1
     if sh(('ssh', host, 'cd ~/old-name && podman build -q -t localhost/old-name:latest . '
                        '&& systemctl --user restart old-name')).returncode:
@@ -211,7 +236,7 @@ def cmd_deploy(args) -> int:
     except Exception as e:  # noqa: BLE001
         print(f'health check failed: {e}')
         return 1
-    from old-name.maplab import main as maplab_main
+    from .maplab import main as maplab_main
     ok = maplab_main(['verify', '--url', url])
     print('deployed. <3' if ok == 0 else 'deployed, but map verify flagged problems.')
     return ok
@@ -220,10 +245,11 @@ def cmd_deploy(args) -> int:
 # --------------------------------------------------------------- backup
 
 def cmd_backup(args) -> int:
+    root = need_repo()
     date = datetime.now(timezone.utc).strftime('%Y%m%d')
     name = f'old-name-{date}.bundle'
     tmp = Path('/tmp') / name
-    if sh(('git', 'bundle', 'create', str(tmp), '--all')).returncode:
+    if sh(('git', '-C', str(root), 'bundle', 'create', str(tmp), '--all')).returncode:
         return 1
     if sh(('scp', '-q', str(tmp), f'{args.nas_host}:{NAS_DIR}/{name}')).returncode:
         return 1
@@ -242,14 +268,19 @@ def cmd_backup(args) -> int:
 # ----------------------------------------------------------------- test
 
 def cmd_test(args) -> int:
+    need_repo()
     cmd = ('uv', 'run', '--group', 'test', 'pytest', '-q') + tuple(args.test_args)
-    return sh(cmd).returncode
+    try:
+        return sh(cmd).returncode
+    except FileNotFoundError:
+        print('uv not found - run old-name test from a checkout with uv installed')
+        return 1
 
 
-# ----------------------------------------------------------------- main
+# ----------------------------------------------------------------- mains
 
-def main() -> int:
-    ap = argparse.ArgumentParser(prog='lab', description=__doc__)
+def munr_main() -> int:
+    ap = argparse.ArgumentParser(prog='old-name', description=__doc__)
     ap.add_argument('--url', default=DEFAULT_URL)
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
     ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
@@ -257,27 +288,13 @@ def main() -> int:
 
     sub.add_parser('tidyup').set_defaults(fn=cmd_tidyup)
 
-    pmap = sub.add_parser('map', help='map validate / build / verify')
-    pmap_sub = pmap.add_subparsers(dest='map_cmd', required=True)
-    mv = pmap_sub.add_parser('validate')
-    mv.add_argument('--pack', default='worlds/private-canon')
-    mv.set_defaults(fn=cmd_map)
-    mb = pmap_sub.add_parser('build')
-    mb.add_argument('--segments', required=True)
-    mb.add_argument('--pack', default='worlds/private-canon')
-    mb.add_argument('--force', action='store_true')
-    mb.set_defaults(fn=cmd_map)
-    mr = pmap_sub.add_parser('verify')
-    mr.add_argument('--url', default=DEFAULT_URL)
-    mr.set_defaults(fn=cmd_map)
-
-    pd = sub.add_parser('deploy', help='ship this checkout to bazzite')
+    pd = sub.add_parser('deploy')
     pd.set_defaults(fn=cmd_deploy)
 
-    pb = sub.add_parser('backup', help='git bundle -> NAS, rotate')
+    pb = sub.add_parser('backup')
     pb.set_defaults(fn=cmd_backup)
 
-    pt = sub.add_parser('test', help='pytest suite')
+    pt = sub.add_parser('test')
     pt.add_argument('test_args', nargs='*')
     pt.set_defaults(fn=cmd_test)
 
@@ -285,5 +302,31 @@ def main() -> int:
     return args.fn(args)
 
 
+def smidr_main() -> int:
+    ap = argparse.ArgumentParser(prog='old-name', description=__doc__)
+    ap.add_argument('--url', default=DEFAULT_URL)
+    sub = ap.add_subparsers(dest='cmd', required=True)
+
+    mv = sub.add_parser('validate', help='geometry checks against the pack')
+    mv.add_argument('--pack', default=None)
+    mv.set_defaults(fn=cmd_map, map_cmd='validate', segments=None, force=False)
+
+    mb = sub.add_parser('build', help='rebuild the map from run-length rows')
+    mb.add_argument('--segments', required=True)
+    mb.add_argument('--pack', default=None)
+    mb.add_argument('--force', action='store_true')
+    mb.set_defaults(fn=cmd_map, map_cmd='build')
+
+    mr = sub.add_parser('verify', help='validate a live deployment')
+    mr.add_argument('--url', default=DEFAULT_URL)
+    mr.set_defaults(fn=cmd_map, map_cmd='verify', segments=None, force=False,
+                    pack=None)
+
+    args = ap.parse_args()
+    if getattr(args, 'pack', None) is None:
+        args.pack = pack_root() / 'worlds' / 'private-canon'
+    return args.fn(args)
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(munr_main())

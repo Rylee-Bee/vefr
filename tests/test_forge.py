@@ -29,14 +29,14 @@ GOOD = json.dumps(
 )
 
 
-def test_payload_keeps_attunement_rare():
+def test_payload_keeps_bond_structure():
+    from old-name.world import load_world
+
     p = build_payload()
-    assert p["format"]["properties"]["bond"]["enum"] == [
-        "assigned",
-        "attuned",
-        "cold",
-    ]
-    assert "rarity is the point" in p["prompt"]
+    assert p['format']['properties']['bond']['enum'] == list(
+        load_world()['bonds'].keys()
+    )
+    assert 'rarity is the point' in p['prompt']
 
 
 def test_forge_parses_item(monkeypatch):
