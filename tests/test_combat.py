@@ -7,7 +7,6 @@ they never fail, never change game state, and never end the game.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -81,8 +80,6 @@ def test_api_world_carries_hp_for_combat_packs(fixture_vefr_home):
     # to 'combat' for any pack without one. Override to verify
     # the null case.
     w["surface"] = "plain"
-    from vefr.main import app
-    from fastapi.testclient import TestClient
     # Force the loader cache clear so the test sees a fresh load.
     world_mod.load_world.cache_clear()
     w = load_world("four-phase-pack")

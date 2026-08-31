@@ -1,7 +1,6 @@
 """Volume split: ro engine template + rw author canon, merged at load time."""
 
 import json
-import shutil
 from pathlib import Path
 
 import pytest
