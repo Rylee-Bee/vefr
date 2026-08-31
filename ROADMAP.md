@@ -232,7 +232,20 @@
       to revert and fork from - git-like history, honesty contract
       applied to the game itself. And the export can go all the
       way: a fully formed git repo, bones and world together, so
-      playing the game teaches the development process. Most of the
+      playing the game teaches the development process. Two
+      audiences, two surfaces: what a young game dev wants is
+      bundled into the CLI wrappers (`ratatoskr`/`norns`); what a
+      storyteller wants enters as packs, rumors, whispers - and
+      neither has to cross the divide: a storyteller never needs
+      to learn to code, a coder never needs to learn the Hero's
+      Journey. All of the tools are available and digestible to
+      both. Every
+      model call stays inspectable - you can see the instruction
+      the LLM used (`trace.py` + the weave log already record it;
+      the dev menu surfaces it). The value ladder for everything
+      above: make it warmer, make it more honest, make it
+      learnable - then hand over the tools to make it unique. Most
+      of the
       machinery exists (volumes ro/rw, pack contract, journal
       rewind/fork, deterministic export, `ferry scaffold`); the
       gaps are presentation - the dev menu, per-screen enhance
