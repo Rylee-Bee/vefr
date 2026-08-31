@@ -172,6 +172,21 @@ const bForm = mk('form', 'builder-chat-form');
 mk('textarea', 'builder-chat-input', '', bForm);
 mk('button', 'builder-chat-send', '', bForm);
 
+// rune card + gallery stubs
+const runeCard = mk('section', 'rune-card');
+mk('button', 'rune-cast-toggle', '', runeCard);
+mk('button', 'rune-gallery-btn', '', runeCard);
+mk('div', 'rune-stave-was', '', runeCard);
+mk('div', 'rune-name-was', '', runeCard);
+mk('div', 'rune-stave-is', '', runeCard);
+mk('div', 'rune-name-is', '', runeCard);
+mk('div', 'rune-stave-asks', '', runeCard);
+mk('div', 'rune-name-asks', '', runeCard);
+mk('p', 'rune-meanings', '', runeCard);
+const runeGallery = mk('div', 'rune-gallery', 'rune-gallery');
+mk('button', 'rune-gallery-close', '', runeGallery);
+mk('div', 'rune-gallery-grid', '', runeGallery);
+
 /* a canvas whose 2d context records nothing but must never be called
    with a missing method */
 const canvas = mk('canvas', 'town-canvas');
@@ -275,6 +290,27 @@ sandbox.fetch = (url, opts) => {
     ],
   });
   if (url === '/api/builder/chat') return ok({ reply: 'aye, that is what I would write.' });
+  if (url === '/api/runes/cast') return ok({
+    phase: 'whispers',
+    seed: 1,
+    iso_minute: '2026-08-31T11:06',
+    positions: [
+      { position: 'what_was',  name: 'Fehu',  stave: '\u16A0', short: 'wealth, the seed-fire', long: 'the first gift' },
+      { position: 'what_is',   name: 'Ingwaz', stave: '\u16DC', short: 'the seed, the gestation', long: 'the time before' },
+      { position: 'what_asks', name: 'Raido',  stave: '\u16B1', short: 'the ride, the road', long: 'the first going' },
+    ],
+    prompt_block: 'cast',
+  });
+  if (url === '/api/runes') return ok({
+    runes: [
+      { name: 'Fehu', stave: '\u16A0', aettir: 1, short: 'wealth', long: 'long fehu', engine_phase: 'whispers' },
+      { name: 'Thurisaz', stave: '\u16A6', aettir: 1, short: 'thorn', long: 'long thurisaz', engine_phase: 'doubts' },
+      { name: 'Kenaz', stave: '\u16B2', aettir: 1, short: 'torch', long: 'long kenaz', engine_phase: 'feared' },
+      { name: 'Sowilo', stave: '\u16F0', aettir: 2, short: 'sun', long: 'long sowilo', engine_phase: 'awed' },
+      { name: 'Ansuz', stave: '\u16A8', aettir: 1, short: 'god', long: 'long ansuz', engine_phase: null },
+    ],
+    anchors: { whispers: { name: 'Fehu', stave: '\u16A0', short: 'wealth' } },
+  });
   throw new Error('harness: unexpected fetch ' + method + ' ' + url);
 };
 

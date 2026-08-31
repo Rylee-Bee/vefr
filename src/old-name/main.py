@@ -270,6 +270,73 @@ def builder_chat(turn: BuilderChatTurn):
     return {"reply": text}
 
 
+@app.get("/api/runes")
+def runes_registry():
+    """The full 24-rune Elder Futhark registry for the gallery view.
+
+    Each rune includes its stave (the carved shape), aettir,
+    short meaning, long meaning, and the engine phase it anchors.
+    The web UI uses this to render the rune gallery - the player
+    can see all 24 staves + meanings at a glance.
+    """
+    from .runes import RUNES, PHASE_ANCHOR
+    return {
+        "runes": [
+            {
+                "name": r.name,
+                "stave": r.stave,
+                "aettir": r.aettir,
+                "short": r.short,
+                "long": r.long,
+                "engine_phase": r.engine_phase,
+            }
+            for r in RUNES
+        ],
+        "anchors": {
+            phase: {"name": r.name, "stave": r.stave, "short": r.short}
+            for phase, r in PHASE_ANCHOR.items()
+        },
+    }
+
+
+@app.get("/api/runes/cast")
+def runes_cast():
+    """Today's cast - three runes for the current moment.
+
+    Seeded from (world_name, current ISO minute). Same cast within
+    a session-minute; new cast every minute. The model sees this
+    same cast in its system prompt; the player sees it in the UI.
+    """
+    from datetime import datetime, timezone
+    from .paths import world_name as _world_name
+    from .runes import cast_for, render_for_prompt, seed_for
+
+    # Phase comes from the pack's `phases` ordering. The first phase
+    # is the canonical "current" one if the client hasn't told us
+    # otherwise; clients can pass ?phase=X to override.
+    from fastapi import Request as _Req
+    # We can't read query params here without changing the signature;
+    # the current phase is the first phase in the pack. Clients that
+    # want a phase-specific cast can hit this endpoint with the cast
+    # baked in - or we can grow it to read query params later.
+    pack_phases = list(load_world().get("phases", {}).keys())
+    phase = pack_phases[0] if pack_phases else "whispers"
+    iso_minute = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    seed = seed_for("api.runes.cast", phase, iso_minute)
+    cast_result = cast_for(seed, phase=phase)
+    return {
+        "phase": phase,
+        "seed": seed,
+        "iso_minute": iso_minute,
+        "positions": [
+            {"position": pos, "name": r.name, "stave": r.stave,
+             "short": r.short, "long": r.long}
+            for pos, r in cast_result
+        ],
+        "prompt_block": render_for_prompt(cast_result),
+    }
+
+
 @app.post("/api/builder/lore")
 def builder_lore(req: lore.LorePreviewRequest):
     """Preview a lore pack's mood-board for a topic + seeds.

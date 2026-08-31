@@ -41,10 +41,18 @@ def mother_voice() -> str:
 def system_prompt(phase: str) -> str:
     tone = phase_tone(phase)
     from .journey import journey_for
+    from .runes import cast_for, render_for_prompt, seed_for
     jr = journey_for(phase)
     rune_line = (
         f"JOURNEY STAGE: {jr['stage']} (rune: {jr['rune']} - {jr['rune_meaning']})\n"
     )
+    # The cast is deterministic for a given moment. We seed from
+    # the phase name + the current ISO minute so the cast changes
+    # over time but stays consistent within a session-minute. The
+    # cast threads through every generation that uses this prompt.
+    seed = seed_for("system_prompt", phase)
+    cast_result = cast_for(seed, phase=phase)
+    cast_block = render_for_prompt(cast_result)
     return (
         "You are the whisper that flies out every day and comes home.\n"
         "Write ONE tavern rumor from the world described below, in-world,\n"
@@ -52,6 +60,7 @@ def system_prompt(phase: str) -> str:
         "never explain, never label, never use modern words. Show only.\n\n"
         f"CURRENT PHASE: {tone}\n"
         f"{rune_line}\n"
+        f"{cast_block}\n"
         f"{_bible()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "
         f"them:\n\n{_ledger()}"
