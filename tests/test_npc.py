@@ -7,26 +7,13 @@ from pathlib import Path
 import httpx
 import pytest
 
-from norn import npc
+from norn import generator, npc
 from norn.npc import build_payload, generate_line
 from norn.paths import world_name
 
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 if world_name() != 'private-canon' or not (_pack / 'world.json').exists():
     pytest.skip('private-canon pack not resolved', allow_module_level=True)
-
-
-class FakeResponse:
-    def __init__(self, body: str):
-        self._body = body
-        self.status_code = 200
-
-    def raise_for_status(self):
-        pass
-
-    @property
-    def text(self):
-        return json.dumps({"response": self._body})
 
 
 GOOD = json.dumps(
@@ -42,7 +29,7 @@ def test_payload_names_the_speaker_and_carries_the_voice():
 
 
 def test_line_parses(monkeypatch):
-    monkeypatch.setattr(npc.httpx, "post", lambda *a, **k: FakeResponse(GOOD))
+    monkeypatch.setattr(generator, "_completion", lambda *a, **k: GOOD)
     line = generate_line("whispers")
     assert line.speaker == "the ferryman"
     assert line.source == "engine"
@@ -50,9 +37,9 @@ def test_line_parses(monkeypatch):
 
 def test_fallback_uses_seed_when_the_whisper_is_quiet(monkeypatch):
     def down(*a, **k):
-        raise httpx.ConnectError("ollama unreachable")
+        raise httpx.ConnectError("backend unreachable")
 
-    monkeypatch.setattr(npc.httpx, "post", down)
+    monkeypatch.setattr(generator, "_completion", down)
     line = generate_line("awed")
     assert "the wanderer" in line.line
     assert line.source == "seed"

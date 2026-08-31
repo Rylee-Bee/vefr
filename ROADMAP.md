@@ -131,6 +131,37 @@
       including strict mode, to catch the undeclared-variable class of
       runtime bug that no syntax checker sees.
 
+- [x] **inference backend: ollama -> llama.cpp on the 6900XT** (2026-08-31).
+      Wall time on the live `norn` went from ~27.6s per rumor/bell
+      to ~2-5s end-to-end (curl + SSH overhead included). Root cause
+      of the old slowness: the ollama container on bazzite was the
+      correct `ollama/ollama:rocm` image, but `podman inspect ollama`
+      showed `Devices=[]` - no `/dev/kfd` or `/dev/dri` passed
+      through, so a dense 27B Qwen was running on CPU the whole time.
+      Switched to llama.cpp's OpenAI-compatible
+      `/v1/chat/completions` endpoint with `gpt-oss-20b-UD-Q4_K_XL`
+      (Apache-2.0, MoE 3.6B active). All five generation modules
+      (`generator`, `forge`, `bell`, `npc`, `chat`) now go through
+      one helper, `generator._completion(payload)`, which decides
+      backend from `NORN_LLAMACPP_URL` (preferred) or `OLLAMA_URL`
+      (fallback). JSON constraint is now `response_format.json_schema`
+      with `strict: true`; reasoning control is
+      `chat_template_kwargs.reasoning_effort=low` (gpt-oss has no
+      `off` - low/medium/high only, llama.cpp maintainers confirmed).
+      51/51 tests still pass - the helper is monkeypatched instead
+      of the wire layer, so backend swaps stay test-clean. Two btrfs-
+      on-Fedora-Atomic gotchas hit along the way (documented in
+      `~/llama-server/run-gptoss.sh`): podman bind sources MUST go
+      through `/var/home/rylee` not `/home/rylee` (the `/home`
+      symlink to `/var/home` confuses rootless-podman statfs on the
+      btrfs subvol); `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
+      for the 6900XT (RDNA2/gfx1030) since llama.cpp's compiled
+      runtime only recognizes gfx900/1030/1100/1200. The bazzite
+      quadlet `~/.config/containers/systemd/old-name.container` was
+      updated in place (note: `deploy/old-name.container` in the repo
+      is a stale doc - the live game has never run on homelab-vm,
+      only on bazzite; flagged separately).
+
 ## Next
 
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in

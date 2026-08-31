@@ -22,8 +22,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from . import maplab
-from .generator import KEEP_ALIVE, MODEL, OLLAMA_URL
+from . import generator, maplab
 
 PROSE_SCHEMA = {
     "type": "object",
@@ -77,20 +76,18 @@ def draft(prompt: str, system: str = ASSISTANT_SYSTEM) -> str:
     author always gets something to edit, never a crash mid-interview.
     """
     payload = {
-        "model": MODEL,
+        "model": generator.MODEL,
         "system": system,
         "prompt": f"{prompt} Reply with only the JSON object.",
         "format": PROSE_SCHEMA,
         "stream": False,
         "think": False,
-        "keep_alive": KEEP_ALIVE,
+        "keep_alive": generator.KEEP_ALIVE,
         "options": {"temperature": 0.85},
     }
     for _ in range(2):
         try:
-            r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
-            r.raise_for_status()
-            raw = json.loads(r.text)["response"]
+            raw = generator._completion(payload)
             return Draft.model_validate_json(raw).text
         except (httpx.HTTPError, ValidationError, KeyError, ValueError):
             continue
@@ -102,7 +99,7 @@ def draft_theme(mood: str) -> dict | None:
     back out. Returns None on any failure - the caller keeps the
     scaffold's colors, which are already proven safe."""
     payload = {
-        "model": MODEL,
+        "model": generator.MODEL,
         "system": THEME_SYSTEM,
         "prompt": (
             f"The mood is: {mood}. Reply with only the JSON object: "
@@ -111,14 +108,12 @@ def draft_theme(mood: str) -> dict | None:
         "format": THEME_SCHEMA,
         "stream": False,
         "think": False,
-        "keep_alive": KEEP_ALIVE,
+        "keep_alive": generator.KEEP_ALIVE,
         "options": {"temperature": 0.7},
     }
     for _ in range(2):
         try:
-            r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
-            r.raise_for_status()
-            raw = json.loads(r.text)["response"]
+            raw = generator._completion(payload)
             colors = Theme.model_validate_json(raw)
             if all(HEX_RE.match(v) for v in (colors.bg, colors.willow_color, colors.deco_color)):
                 return colors.model_dump()
