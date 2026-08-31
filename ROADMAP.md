@@ -202,6 +202,14 @@
       format. 159 tests pass; the canary pack validates
       identically before and after the migration.
 
+- [x] **the kilo init** (2026-08-31): `AGENTS.md` (the repo's
+      operating rules - bones/flesh contract, the boundaries table,
+      the gate command, the known drift) and `.kilo/kilo.jsonc`
+      (project config: instructions = AGENTS.md only, uv/pytest/git
+      allow-list, `data/**` + `uv.lock` edit-deny) are now tracked.
+      Rylee's profile + shared agent rules load from the global
+      kilo config, so this repo's instructions list stays one entry.
+
 ## Next
 
 - [ ] **surface UI for `surface: "combat"` packs**: the data shape

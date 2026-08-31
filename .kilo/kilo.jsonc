@@ -1,0 +1,61 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "share": "manual",
+  "autoupdate": "notify",
+  // Repo rules only. Rylee's profile (voice, accessibility, shared
+  // agent rules) comes from the GLOBAL config's instructions - do not
+  // re-list rylee.md or _shared-rules.md here (double-loading).
+  "instructions": ["AGENTS.md"],
+  "permission": {
+    "*": null,
+    "read": "allow",
+    "edit": {
+      "*": "ask",
+      "**/.env*": "deny",
+      "**/uv.lock": "deny",
+      // Engine runtime state - never hand-edited, never committed.
+      "data/**": "deny",
+    },
+    "bash": {
+      "*": "ask",
+      "git *": "allow",
+      "uv *": "allow",
+      "pytest": "allow",
+      "curl *": "allow",
+      "jq *": "allow",
+      "tea *": "allow",
+      "node *": "allow",
+      "podman *": "allow",
+    },
+    "semantic_search": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "todoread": "allow",
+    "todowrite": "allow",
+    "websearch": "allow",
+    "webfetch": "allow",
+    "lsp": "allow",
+    "skill": "allow",
+    "question": "allow",
+    "external_directory": "ask",
+    "task": "allow",
+    "gitea_*": "ask",
+    "gitea_get_commit": "allow",
+    "gitea_get_issue": "allow",
+    "gitea_list_issues": "allow",
+    "gitea_list_prs": "allow",
+    "gitea_list_repo_branches": "allow",
+    "gitea_search_repos": "allow",
+  },
+  "snapshot": false,
+  "subagent_depth": 1,
+  "compaction": {
+    "auto": true,
+    "prune": false,
+    "threshold_percent": 85,
+  },
+  "experimental": {
+    "batch_tool": true,
+  },
+}
