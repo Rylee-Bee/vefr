@@ -32,12 +32,15 @@ from pathlib import Path
 from .maplab import load_pack, validate
 from .paths import world_name
 
-GITEA_BASE = 'http://192.168.2.216:3000'
+GITEA_BASE = os.environ.get('VEFR_GITEA_URL', 'http://localhost:3000')
 
-DEFAULT_URL = 'http://192.168.2.76:8820'
-DEFAULT_DEPLOY_HOST = 'bazzite'
-DEFAULT_NAS_HOST = 'homelab-vm'
-NAS_DIR = '/mnt/nas/shared/backups'
+DEFAULT_URL = os.environ.get('VEFR_LIVE_URL', 'http://127.0.0.1:8820')
+DEFAULT_DEPLOY_HOST = os.environ.get('VEFR_DEFAULT_DEPLOY_HOST', 'bazzite')
+DEFAULT_BACKUP_LOCATION = os.environ.get(
+    'VEFR_DEFAULT_BACKUP_LOCATION', 'homelab-vm:/mnt/nas/shared/backups')
+DEFAULT_BACKUP_HOST, _, NAS_DIR = DEFAULT_BACKUP_LOCATION.partition(':')
+if not NAS_DIR:  # a location without a path still needs somewhere to land
+    DEFAULT_BACKUP_HOST, NAS_DIR = DEFAULT_BACKUP_LOCATION, '/mnt/nas/shared/backups'
 BUNDLE_KEEP = 2
 DEPLOY_EXCLUDES = ('.venv', '__pycache__', '.pytest_cache', '*.egg-info', '.git')
 
@@ -891,7 +894,7 @@ def ratatoskr_main() -> int:
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
     ap.add_argument('--deploy-vol', default='~/vefr-data',
                     help='bind-mounted game volume on --deploy-host')
-    ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
+    ap.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     sub.add_parser('skipa', help='the seven questions').set_defaults(fn=cmd_skipa)
@@ -1216,14 +1219,32 @@ def cmd_scaffold(args) -> int:
             ('git', '-C', root.stdout.strip(), 'rev-parse', '--short', 'HEAD'),
             capture_output=True, text=True,
         )
-        if sha.returncode == 0:
-            engine_sha = sha.stdout.strip()
+    if sha.returncode == 0:
+        engine_sha = sha.stdout.strip()
+
+    # The engine's home, derived from this checkout's own origin -
+    # runtime identity, never a hardcoded one.
+    origin_url = ''
+    if root.returncode == 0:
+        o = subprocess.run(
+            ('git', '-C', root.stdout.strip(), 'remote', 'get-url', 'origin'),
+            capture_output=True, text=True,
+        )
+        if o.returncode == 0:
+            u = o.stdout.strip()
+            if u.startswith('git@'):
+                u = 'https://' + u[4:].replace(':', '/', 1)
+            origin_url = u.removesuffix('.git')
+
+    engine_line = 'A world pack for vefr - a rumor engine for playable\nworlds, exported from engine commit'
+    if origin_url:
+        engine_line += f' [`{engine_sha}`]({origin_url}).'
+    else:
+        engine_line += f' `{engine_sha}`.'
 
     readme = f"""# {name}
 
-A world pack for [vefr](http://192.168.2.216:3000/rylee/vefr) - a
-rumor engine for playable worlds, exported from engine commit
-`{engine_sha}`.
+{engine_line}
 
 ## What each file is
 
@@ -1238,7 +1259,7 @@ rumor engine for playable worlds, exported from engine commit
 ## Running it
 
 ```sh
-git clone http://192.168.2.216:3000/rylee/vefr.git
+git clone {origin_url if origin_url else '<the vefr engine checkout>'}
 cd vefr && uv sync --group test
 VEFR_WORLD={name} uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```

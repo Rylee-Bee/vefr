@@ -53,6 +53,39 @@ def test_scaffold_copies_pack_and_inits_git(tmp_path, monkeypatch):
     assert "world pack pack" in _git(str(dest), "log", "--format=%s")
 
 
+def test_scaffold_readme_links_engine_origin(tmp_path, monkeypatch):
+    """The README points at this checkout's own origin - runtime
+    identity, never a hardcoded one."""
+    from vefr.cli import repo_root
+
+    root = repo_root()
+    origin = subprocess.run(
+        ('git', '-C', str(root), 'remote', 'get-url', 'origin'),
+        capture_output=True, text=True,
+    ).stdout.strip()
+    if not origin:
+        import pytest
+        pytest.skip('checkout has no origin remote')
+
+    pack = tmp_path / "worlds" / "pack"
+    pack.mkdir(parents=True)
+    (pack / "world.json").write_text('{"title": "T"}', encoding="utf-8")
+    monkeypatch.setattr(journal, "JOURNAL", tmp_path / "journal.json")
+    from vefr import world as world_mod
+    monkeypatch.setattr(
+        world_mod, "load_world",
+        lambda name=None: {"title": "T", "phases": {}},
+    )
+    monkeypatch.setattr("vefr.cli.pack_root", lambda: tmp_path)
+
+    dest = tmp_path / "out"
+    args = type("A", (), {"dest": str(dest), "name": "pack", "push": False})()
+    assert cmd_scaffold(args) == 0
+
+    expected = origin.removesuffix('.git')
+    assert expected in (dest / "README.md").read_text(encoding="utf-8")
+
+
 def test_scaffold_refuses_nonempty_dest(tmp_path, monkeypatch):
     dest = tmp_path / "out"
     dest.mkdir()
