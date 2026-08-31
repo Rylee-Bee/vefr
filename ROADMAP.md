@@ -274,6 +274,15 @@
       journal entry - none of those are wired yet. The
       `<body data-surface="...">` CSS hook is in place from the
       loader work; this is a HUD-only PR now.
+- [ ] **Tiled map importer** (parked after the surface-UI work):
+      `norns import-tiled map.json --pack X` reads Tiled's JSON
+      export - visual map authoring, the storyteller-critical gap -
+      and writes `map.md` + contract points through
+      `maplab.build_map` + `maplab.validate()`. Thin and optional;
+      text authoring stays canonical, no Tiled dependency. Tiled
+      1.10's JS scripting API could later host a one-click "export
+      as vefr pack" from inside the editor. See
+      `docs/guides/companion-resources.md`.
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
