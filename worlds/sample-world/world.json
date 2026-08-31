@@ -1,7 +1,7 @@
 {
   "name": "sample-world",
   "title": "Emberfield",
-  "description": "A demonstration world for the norn engine. Replace everything.",
+  "description": "A demonstration world for the vefr engine. Replace everything.",
   "gold_rule": "Gold appears only when the world is kind.",
   "phases": {
     "dusk": "The day settles. The tone is quiet and watchful.",

@@ -18,13 +18,13 @@ server. Two options:
 
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp) (preferred)** —
   faster, and what the engine is tuned for. Point it at
-  `NORN_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
+  `VEFR_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
 - **[Ollama](https://ollama.com) (fallback)** — simpler to install.
   Set `OLLAMA_URL=http://127.0.0.1:11434` and pull a model first:
-  `ollama pull qwen3:8b` (or any model you like - set `NORN_MODEL` to
+  `ollama pull qwen3:8b` (or any model you like - set `VEFR_MODEL` to
   its name later).
 
-If both are set, `NORN_LLAMACPP_URL` wins.
+If both are set, `VEFR_LLAMACPP_URL` wins.
 
 Podman/Docker is optional. It's how you'd run this always-on on a
 server; for trying it out, plain `uv run` is faster.
@@ -32,15 +32,15 @@ server; for trying it out, plain `uv run` is faster.
 ## 1. Get the code
 
 ```sh
-git clone http://192.168.2.216:3000/rylee/norn.git
-cd norn
+git clone http://192.168.2.216:3000/rylee/vefr.git
+cd vefr
 uv sync --group test
 ```
 
 ## 2. Run it
 
 ```sh
-OLLAMA_URL=http://127.0.0.1:11434 uv run uvicorn norn.main:app --app-dir src --port 8820
+OLLAMA_URL=http://127.0.0.1:11434 uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```
 
 Then, in a browser: `http://127.0.0.1:8820`
@@ -53,7 +53,7 @@ demonstration world.
 
 > **Note (2026-08-31):** the author's own story and game, Old Name, lives
 > in its own private repo (`the private story repo`) - it never ships
-> inside a clone of this engine repo. This repo (now `rylee/norn`)
+> inside a clone of this engine repo. This repo (now `rylee/vefr`)
 > is the shareable tooling only; it doesn't know or need to know any
 > specific game's name to run it.
 
@@ -88,7 +88,7 @@ contract.
 Either way, point the engine at it:
 
 ```sh
-NORN_WORLD=your-world uv run uvicorn norn.main:app --app-dir src --port 8820
+VEFR_WORLD=your-world uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```
 
 ## 5. The CLI reference

@@ -12,7 +12,7 @@ You are free to:
 
 Under the terms of:
 - **Attribution** - cite this lore pack ("Lore pack: historical-event,
-  by Rylee Hulgan, in the norn engine repo")
+  by Rylee Hulgan, in the vefr engine repo")
 - **ShareAlike** - any world you build using this lore pack must
   itself be released under a compatible license if you publish it
 
@@ -72,7 +72,7 @@ If you publish a world you built using this lore pack, please
 say something like:
 
 > Built with the **historical-event** lore pack from the
-> [norn engine](https://gitea.example.com/rylee/norn), licensed
+> [vefr engine](https://gitea.example.com/rylee/vefr), licensed
 > CC BY-SA 4.0.
 
 That sentence - or one like it - is the license's gift in return.
