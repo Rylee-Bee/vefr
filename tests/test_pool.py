@@ -3,7 +3,6 @@
 import json
 from types import SimpleNamespace
 
-from vefr import pool as pool_mod
 from vefr.pool import build_pool, ensure_current_world
 
 

@@ -1,7 +1,6 @@
 """norns migrate - flat-shape packs land in the acts tree."""
 
 import json
-import shutil
 from pathlib import Path
 
 from vefr import cli

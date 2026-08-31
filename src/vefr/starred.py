@@ -24,7 +24,6 @@ the engine never reads this file (yet), so the duplication is
 only cosmetic.
 """
 
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 

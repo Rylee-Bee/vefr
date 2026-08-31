@@ -21,6 +21,7 @@ commands stay the same no matter whose story they're serving.
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -605,9 +606,11 @@ def cmd_build_web(args) -> int:
             with _ur.urlopen(f"{url}/api/journal", timeout=15) as r:
                 journal_data = _json.loads(r.read().decode("utf-8")).get("entries", [])
             with _tmp.NamedTemporaryFile("w", suffix=".json", delete=False) as vf:
-                _json.dump(vault_data, vf); vault_tmp = Path(vf.name)
+                _json.dump(vault_data, vf)
+                vault_tmp = Path(vf.name)
             with _tmp.NamedTemporaryFile("w", suffix=".json", delete=False) as jf:
-                _json.dump(journal_data, jf); journal_tmp = Path(jf.name)
+                _json.dump(journal_data, jf)
+                journal_tmp = Path(jf.name)
             vault_path = vault_tmp
             journal_path = journal_tmp
             print(f"  pulled vault ({len(vault_data)} items) + "
@@ -700,7 +703,6 @@ def cmd_backup(args) -> int:
     # the session journal. rsync the JSON files alongside the bundle
     # under a per-date directory so a snapshot is one date away.
     vol_remote = args.deploy_vol
-    snap_remote = f'{args.nas_host}:{NAS_DIR}/vefr-{date}'
     rsync = subprocess.run(
         ('ssh', args.deploy_host,
          f'mkdir -p {vol_remote} && '
@@ -1064,8 +1066,6 @@ def cmd_handbok(args) -> int:
         print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
         return 1
 
-    sid = getattr(args, 'session', None) or None
-
     # ---- the trace, read tolerantly ----
     events: list[dict] = []
     tpath = trace_mod.file_path()
@@ -1341,6 +1341,81 @@ reads whatever the pack gives it.
     return 0
 
 
+# ---------------------------------------------------------------- doctor
+
+def _pytest_summary(repo: Path) -> tuple:
+    """Run the gate quietly; return (status, detail)."""
+    try:
+        r = subprocess.run(
+            (sys.executable, '-m', 'pytest', '-q', '--tb=no'),
+            capture_output=True, text=True, cwd=str(repo), timeout=600,
+        )
+    except FileNotFoundError:
+        return 'skip', 'pytest not installed - uv sync --group test'
+    lines = (r.stdout or '').strip().splitlines()
+    summary = lines[-1] if lines else 'no output'
+    return ('ok', summary) if r.returncode == 0 else ('FAIL', summary)
+
+
+def cmd_doctor(args) -> int:
+    """Session-start health check - norns doctor.
+
+    One command instead of the manual checklist: git sync state,
+    the working tree, the test gate, the current pack's geometry,
+    and (when VEFR_LIVE_URL is set) a running stack's /api/health.
+    Neutral words only. Exit 1 only when something local is broken
+    (tests, pack); a remote that answers slowly is reported, not
+    failed.
+    """
+    rows: list[tuple] = [('git',) + q1_sync()]
+    tree = q2_dirty()
+    if tree[0] != 'unavailable':
+        rows.append(('tree',) + tree)
+
+    repo = repo_root()
+    if repo:
+        rows.append(('tests',) + _pytest_summary(repo))
+    else:
+        rows.append(('tests', 'skip', 'no git checkout (container install)'))
+
+    pack = Path(args.pack)
+    if not pack.is_absolute():
+        pack = pack_root() / 'worlds' / pack
+    try:
+        w = load_pack(pack)
+        errors = validate(w, pack_dir=pack)
+        if errors:
+            rows.append(('pack', 'FAIL',
+                         f'{pack.name}: {len(errors)} problem(s) - '
+                         f'norns validate --pack {pack}'))
+        else:
+            rows.append(('pack', 'ok',
+                         f'{pack.name}: geometry, reachability, voices pass'))
+    except Exception as exc:  # a missing/broken pack is doctor's business
+        rows.append(('pack', 'FAIL', f'{pack.name}: {exc}'))
+
+    live = os.environ.get('VEFR_LIVE_URL')
+    if not live:
+        rows.append(('live', 'skip',
+                     'set VEFR_LIVE_URL to check a running stack'))
+    else:
+        try:
+            payload = fetch(live.rstrip('/') + '/api/health', timeout=5)
+            ok = bool(payload.get('ok'))
+            rows.append(('live', 'ok' if ok else 'DOWN', live))
+        except Exception as exc:
+            rows.append(('live', 'DOWN', f'{live} - {exc.__class__.__name__}'))
+
+    print('norns doctor')
+    for name, status, detail in rows:
+        print(f'  {name:<6} {status:<12} {detail}')
+    failed = sum(1 for r in rows if r[1] == 'FAIL')
+    skipped = sum(1 for r in rows if r[1] == 'skip')
+    ok_n = len(rows) - failed - skipped
+    print(f'doctor: {ok_n} ok, {failed} failed, {skipped} skipped')
+    return 1 if failed else 0
+
+
 def norns_main() -> int:
     ap = argparse.ArgumentParser(
         prog='norns', description=NORNS_HELP,
@@ -1384,10 +1459,19 @@ def norns_main() -> int:
                     help='play session to read (default: the default one)')
     mh.set_defaults(fn=cmd_handbok)
 
+    md = craft.add_parser(
+        'doctor',
+        help='session-start health check: git, tests, pack, live stack',
+    )
+    md.add_argument('--pack', default=None)
+    md.set_defaults(fn=cmd_doctor)
+
     args = ap.parse_args()
-    # validate / build-map / verify default --pack to the resolved
-    # world; chat doesn't take --pack and doesn't need the lookup.
-    if args.craft_cmd in ('validate', 'build-map', 'verify') and getattr(args, 'pack', None) is None:
+    # validate / build-map / verify / doctor default --pack to the
+    # resolved world; chat doesn't take --pack and doesn't need the
+    # lookup.
+    if args.craft_cmd in ('validate', 'build-map', 'verify', 'doctor') \
+            and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
     return args.fn(args)
 
