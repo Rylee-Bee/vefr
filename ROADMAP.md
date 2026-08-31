@@ -110,6 +110,27 @@
       back and downloads the story as a `.md`. A model-polish pass
       over the export stays available as a v2.
 
+- [x] **shared story state** (2026-08-31): the two phase rails were
+      two variables. `web/state.js` is now the one client-side state
+      (`window.OLD-STATE-GLOBAL` - a plain object, a patch function, a list of
+      subscribers; no framework), and both script scopes - the town
+      renderer and the tabs - read and write it. Set the world's tone
+      in Rumors and the town's rail, watch radius, water level and
+      canvas follow; set it in Town and the rumors rail follows.
+      Keeping an item reaches the town's HUD and its gold ring without
+      a tab click, because the vault list the Vault tab draws and the
+      item the wanderer carries are the same list. `/api/world` is fetched
+      once for the page instead of once per view. Two smaller things
+      fell out of it: the rumors rail was hardcoded to the author's own
+      four phase names (a story leak in engine HTML - any other pack's
+      rumors silently fell back to its first phase), so it is built
+      from the pack like the town's always was; and the Vault tab now
+      loads the kept list when you open it rather than only after a
+      forge. Validated by executing `state.js`, `town.js` and
+      index.html's inline script under a stubbed DOM in node -
+      including strict mode, to catch the undeclared-variable class of
+      runtime bug that no syntax checker sees.
+
 ## Next
 
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
@@ -121,8 +142,6 @@
       town says the name; the golden light's words arrive. The last
       screen is gold. (The reed crossing's water-level choice and the
       water's-edge sighting already landed in v1.2.)
-- [ ] **shared story state**: the town's phase rail and the rumors
-      rail become one state, carried across views
 - [ ] **`old-name chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
