@@ -724,6 +724,18 @@ def ratatoskr_main() -> int:
     )
     fct.set_defaults(fn=cmd_import)
 
+    fs = ferry_sub.add_parser(
+        'scaffold',
+        help='export the active pack as a standalone git repo, ready for a new author',
+    )
+    fs.add_argument('dest', help='destination directory (created, must be empty)')
+    fs.add_argument('--name', default=None,
+                    help='the pack to export (default: the resolved world)')
+    fs.add_argument('--push', action='store_true',
+                    help='create a private Gitea repo and push, using this '
+                         "checkout's origin credentials")
+    fs.set_defaults(fn=cmd_scaffold)
+
     args, extra = ap.parse_known_args()
     if args.cmd == 'test':
         args.test_args = extra
@@ -860,6 +872,157 @@ def _clean_example(text: str) -> str:
     if len(one) > 240:
         one = one[:237] + '...'
     return f'\u201c{one}\u201d'
+
+
+# ----------------------------------------------------------------- scaffold
+
+def cmd_scaffold(args) -> int:
+    """Export the active pack as a standalone, git-ready repo - ferry scaffold.
+
+    For handing a world to someone who will make it their own: the
+    pack's files as-is (canon, voices, map, ledger - the author's
+    content), a README explaining what vefr is and which files are
+    meant to be replaced with real art, and a fresh git history so
+    their work starts at commit one. --push creates the Gitea repo
+    and pushes, reusing whatever credentials the engine checkout's
+    own origin carries.
+    """
+    dest = Path(args.dest).resolve()
+    if dest.exists() and any(dest.iterdir()):
+        print(f'refusing: {dest} exists and is not empty')
+        return 1
+
+    name = args.name or world_name()
+    src = pack_root() / 'worlds' / name
+    if not (src / 'world.json').exists():
+        print(f'pack not found at {src}; pass --name or set VEFR_WORLD')
+        return 1
+
+    # Derived artifacts regenerate on the next run; stash files are
+    # transient. Everything else the author touched ships as-is.
+    EXCLUDE = {'world-tree.md', 'handbok.md'}
+    dest.mkdir(parents=True, exist_ok=True)
+    for item in src.iterdir():
+        if item.name in EXCLUDE or item.name.endswith('.tmp') or item.name.endswith('.rewind.json'):
+            continue
+        target = dest / item.name
+        if item.is_dir():
+            shutil.copytree(item, target, dirs_exist_ok=True)
+        else:
+            shutil.copy2(item, target)
+
+    engine_sha = 'unknown'
+    root = subprocess.run(
+        ('git', 'rev-parse', '--show-toplevel'),
+        capture_output=True, text=True, cwd=str(Path(__file__).resolve().parent),
+    )
+    if root.returncode == 0:
+        sha = subprocess.run(
+            ('git', '-C', root.stdout.strip(), 'rev-parse', '--short', 'HEAD'),
+            capture_output=True, text=True,
+        )
+        if sha.returncode == 0:
+            engine_sha = sha.stdout.strip()
+
+    readme = f"""# {name}
+
+A world pack for [vefr](http://192.168.2.216:3000/rylee/vefr) - a
+rumor engine for playable worlds, exported from engine commit
+`{engine_sha}`.
+
+## What each file is
+
+| File | What it is | Replaceable? |
+|---|---|---|
+| `world.json` | the world's shape: town, phases, voices, bonds | the schema is the engine's; the contents are yours |
+| `logbok.md` | canon - the rules the story must never break | yours, entirely |
+| `ledger.md` | the whispers the engine matches cadence against | yours, entirely |
+| `voices/*.md` | each speaker's system prompt | yours, entirely |
+| `map.md` | the walkable map (run-length rows + legend) | yours, entirely |
+
+## Running it
+
+```sh
+git clone http://192.168.2.216:3000/rylee/vefr.git
+cd vefr && uv sync --group test
+VEFR_WORLD={name} uv run uvicorn vefr.main:app --app-dir src --port 8820
+```
+
+Or point this directory's name at `worlds/` inside a vefr clone.
+
+## Making it yours
+
+This scaffold is a starting point, not a finished thing: drop in
+your own artwork, rewrite the voices, replace the map. The engine
+reads whatever the pack gives it.
+"""
+    (dest / 'README.md').write_text(readme, encoding='utf-8')
+    if not (dest / 'LICENSE').exists() and not (dest / 'LICENSE.md').exists():
+        (dest / 'LICENSE.md').write_text(
+            f'{name} - all rights reserved by its author.\n'
+            'Replace this file with the license you choose before sharing.\n',
+            encoding='utf-8',
+        )
+
+    if sh(('git', '-C', str(dest), 'init', '-b', 'main')).returncode:
+        print('git init failed - the files are copied; init by hand')
+        return 1
+    sh(('git', '-C', str(dest), 'add', '-A'))
+    if sh(('git', '-C', str(dest), 'commit', '-m',
+           f'world pack {name}, exported from vefr {engine_sha}')).returncode:
+        print('commit failed - files are staged; commit by hand')
+        return 1
+
+    if not args.push:
+        print(f'scaffold ready: {dest} (git main, 1 commit)')
+        return 0
+
+    # --push: create the Gitea repo from the engine checkout's own
+    # credentials, then push the new repo's main there.
+    origin = subprocess.run(
+        ('git', '-C', str(need_repo()), 'remote', 'get-url', 'origin'),
+        capture_output=True, text=True,
+    ).stdout.strip()
+    creds = urllib.parse.urlparse(origin)
+    if not creds.username:
+        print(f'no credentials in {origin}; push by hand:')
+        print(f'  git -C {dest} remote add origin <your repo url>')
+        print(f'  git -C {dest} push -u origin main')
+        return 1
+    base = f'{creds.scheme}://{creds.netloc.rsplit("@", 1)[1]}'
+    owner = creds.path.strip('/').split('/')[0]
+    token = creds.password or ''
+    dest_name = dest.name
+    import urllib.error
+    import urllib.parse
+
+    req = urllib.request.Request(
+        f'{base}/api/v1/repos/{owner}',
+        data=json.dumps({'name': dest_name, 'private': True}).encode(),
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
+    import base64 as _b64
+    req.add_header('Authorization', 'Basic ' + _b64.b64encode(
+        f'{creds.username}:{token}'.encode()).decode())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            body = json.loads(resp.read().decode())
+        print(f'gitea repo created: {body.get("full_name", dest_name)}')
+    except urllib.error.HTTPError as e:
+        if e.code == 409:
+            print(f'repo {owner}/{dest_name} already exists - pushing to it')
+        else:
+            print(f'repo create failed: HTTP {e.code}')
+            return 1
+    remote = f'{creds.scheme}://{creds.username}:{token}@{creds.netloc.rsplit("@", 1)[1]}/{owner}/{dest_name}.git'
+    if sh(('git', '-C', str(dest), 'remote', 'add', 'origin', remote)).returncode:
+        sh(('git', '-C', str(dest), 'remote', 'set-url', 'origin', remote))
+    if sh(('git', '-C', str(dest), 'push', '-u', 'origin', 'main')).returncode:
+        print('push failed - the commit exists locally; push by hand')
+        return 1
+    print(f'pushed: {owner}/{dest_name}')
+    return 0
 
 
 def norns_main() -> int:
