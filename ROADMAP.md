@@ -216,6 +216,14 @@
       with evidence (real pool weave landed, mem0 live again,
       `tests/test_web_packaged.py`); the next-move table repointed
       at the surface-UI continuation.
+- [x] **the LAN left the source** (2026-08-31): `VEFR_GITEA_URL`,
+      `VEFR_LIVE_URL`, `VEFR_DEFAULT_DEPLOY_HOST`, and
+      `VEFR_DEFAULT_BACKUP_LOCATION` (host:/path) replace the
+      hardcoded Gitea IP, the live-stack IP, and the SSH host
+      aliases - the engine source now carries neutral localhost
+      defaults and takes its identity from the environment. The
+      scaffold README derives its engine link from the checkout's
+      own `origin` at runtime. Runtime data, not repo data.
 
 - [x] **companion resources surveyed** (2026-08-31): a full
       CC0/MIT tool survey (engines, renderers, map authoring,
@@ -368,6 +376,17 @@
       built small generators for a world with NO pool at all -
       stays open; the pool covers the common case (author has a
       model, the friend does not).
+
+- [ ] **the marketplace**: a community place to share, search, and
+      rate engine add-ons - world packs, lore packs, sprites, map
+      recipes, and model settings ("local LLM packs": someone's
+      perfect llama.cpp + gpt-oss configuration for their exact
+      hardware, shareable as data). The distribution path already
+      exists (`ferry fetch --pull`, the Builder tab's import by
+      owner/name), so v1 is an index over plain git repos, not new
+      infrastructure - ratings live with the community, and
+      discovery may grow a `norns market` command. The always-
+      layer's "private until it isn't" made social.
 
 ## The always-layer
 
