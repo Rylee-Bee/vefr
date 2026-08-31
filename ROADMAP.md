@@ -54,8 +54,10 @@
       renderer stays canonical. RPG-JS stays admired (MIT, a fine
       tool), and the door remains open through the pack contract:
       any future render target reads the same /api/world.
-- [x] **`old-name`/`old-name` - the lab-style wrapper**: two entry points,
-      raven and smith. `old-name tidyup/deploy/backup/test`,
+- [x] **`raven`/`old-name` - the lab-style wrapper**: two entry points,
+      raven and smith - universal tooling, story-agnostic. Renamed
+      from `old-name` 2026-08-31 so "Old Name" stays free to mean only the
+      game. `raven tidyup/deploy/backup/test`,
       `old-name validate/build/verify`. `maplab.py` is the one geometry
       validator shared by both CLIs and the tests.
 - [x] **the bones boot alone**: `worlds/sample-world/` (Emberfield) -

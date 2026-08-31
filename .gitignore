@@ -2,3 +2,8 @@ __pycache__/
 .venv/
 *.egg-info/
 .pytest_cache/
+
+# the author's own story - lives in worlds/private-canon/ on disk,
+# tracked separately in the private the private story repo repo since
+# 2026-08-31. never committed here again.
+/worlds/private-canon/
