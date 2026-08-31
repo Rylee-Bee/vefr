@@ -359,6 +359,7 @@
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
     <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Annall</button>
     <button type="button" role="tab" data-view="wiki" id="tab-wiki" aria-selected="false" aria-controls="view-wiki">Fræði</button>
+    <button type="button" role="tab" data-view="trace" id="tab-trace" aria-selected="false" aria-controls="view-trace">Spor</button>
     <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Old Name</button>
   </div>
 
@@ -436,6 +437,12 @@
     <p class="note" id="wiki-status">&nbsp;</p>
     <section id="wiki-characters" aria-live="polite"></section>
     <section id="wiki-relics" aria-live="polite"></section>
+  </section>
+
+  <section id="view-trace" class="view" role="tabpanel" aria-labelledby="tab-trace" hidden>
+    <p class="note">the engine's own trace &mdash; every generation call, live. Dev only; the packaged game has none.</p>
+    <p class="note" id="trace-status">&nbsp;</p>
+    <section id="trace-list" aria-live="polite"></section>
   </section>
 
   <section id="view-builder" class="view" role="tabpanel" aria-labelledby="tab-builder" hidden>
@@ -525,6 +532,7 @@
     town: document.getElementById('view-town'),
     journal: document.getElementById('view-journal'),
     wiki: document.getElementById('view-wiki'),
+    trace: document.getElementById('view-trace'),
     builder: document.getElementById('view-builder'),
   };
   tabs.forEach(function (b) {
@@ -535,6 +543,7 @@
       if (b.dataset.view === 'vault') window.dispatchEvent(new Event('old-name:vault'));
       if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
       if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('old-name:wiki'));
+      if (b.dataset.view === 'trace') window.dispatchEvent(new Event('old-name:trace'));
       if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
     });
   });
@@ -991,6 +1000,35 @@
     });
   }
   window.addEventListener('old-name:wiki', renderWiki);
+
+  /* The engine's trace - every generation call, live. Dev only. */
+  var traceList = document.getElementById('trace-list');
+  var traceStatus = document.getElementById('trace-status');
+
+  function renderTrace() {
+    traceStatus.textContent = 'reading\u2026';
+    fetch('/api/trace').then(function (r) { return r.json(); }).then(function (body) {
+      var evs = (body && body.events) || [];
+      traceStatus.textContent = evs.length + ' calls in memory (500 ring, JSONL on disk).';
+      traceList.innerHTML = evs.length
+        ? evs.slice().reverse().map(function (ev) {
+            var head = '<div class="when">' + esc((ev.at || '').slice(11, 19)) + ' &middot; '
+              + esc(ev.route || '') + ' &middot; ' + esc(ev.ms + 'ms') + '</div>';
+            var detail = [];
+            if (ev.phase) detail.push(esc(ev.phase));
+            if (ev.speaker) detail.push(esc(ev.speaker));
+            if (ev.session && ev.session !== 'default') detail.push('session ' + esc(ev.session));
+            var bodyEl = '<div class="kind">' + (detail.join(' &middot; ') || (ev.ok ? 'ok' : 'error')) + '</div>';
+            if (!ev.ok) bodyEl += '<p class="truth">' + esc(ev.error || 'failed') + '</p>';
+            return '<article class="card"' + (ev.ok ? '' : ' style="border-color:var(--ink)"') + '>'
+              + head + bodyEl + '</article>';
+          }).join('')
+        : '<p class="empty">Nothing generated yet this server-lifetime.</p>';
+    }).catch(function () {
+      traceStatus.textContent = 'the trace did not answer.';
+    });
+  }
+  window.addEventListener('old-name:trace', renderTrace);
 
   /* "Export this tab" - one markdown file with the canon + that tab's
      section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
