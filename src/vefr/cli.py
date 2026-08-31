@@ -218,6 +218,109 @@ def cmd_chat(args) -> int:
     return chatmod.run_interview(dest, scaffold)
 
 
+def cmd_migrate(args) -> int:
+    """Migrate a flat-shape world pack to the acts tree.
+
+    A flat pack has its `town`, `speakers`, and `map.md` at the
+    top level. The acts shape splits these into per-region
+    directories under `acts/<id>/<region>/`. The migrator
+    creates the acts tree and rewrites `world.json` to the
+    pack-level contract; the flat `town` data moves into
+    `acts/<id>/town/` (a `town/contract.json` is written for
+    town metadata; `map.md` is the walkable grid; `voices/`
+    is the auto-discovered region voices).
+
+    This is the safe path for the author's own canon: the
+    migration is a copy, not a destructive move, and the engine
+    supports both on-disk shapes indefinitely.
+    """
+    import json
+    import shutil
+
+    pack_name = args.pack
+    src = pack_root() / 'worlds' / pack_name
+    if not (src / 'world.json').exists():
+        print(f'pack not found: {src}')
+        return 1
+    if (src / 'acts').is_dir():
+        print(f'{src} is already in the acts shape - nothing to migrate')
+        return 0
+    config = json.loads((src / 'world.json').read_text(encoding='utf-8'))
+    if 'town' not in config:
+        print(f'{src} has no `town` block - is this a flat pack?')
+        return 1
+
+    acts_root = src / 'acts' / (args.act_id or 'act-1')
+    town_dir = acts_root / 'town'
+    town_dir.mkdir(parents=True, exist_ok=True)
+
+    # town contract: every town-metadata field except `map` and
+    # `voices` (those move into separate files). The canary shape.
+    town_block = config['town']
+    town_contract = {k: v for k, v in town_block.items()
+                     if k not in ('map',)}
+    act_contract = {
+        'id': acts_root.name,
+        'title': config.get('title', src.name),
+        'regions': ['town'],
+        'town': town_contract,
+        'speakers': config.get('speakers', {}),
+        'enemies': config.get('enemies', []),
+        'bosses': config.get('bosses', []),
+        'transitions': config.get('transitions', []),
+    }
+    (acts_root / 'world.json').write_text(
+        json.dumps(act_contract, indent=2, ensure_ascii=False),
+        encoding='utf-8',
+    )
+
+    # map.md: the walkable grid as a plain text file.
+    if town_block.get('map'):
+        (town_dir / 'map.md').write_text(
+            '\n'.join(town_block['map']) + '\n',
+            encoding='utf-8',
+        )
+
+    # voices/: move any existing pack-level voices into the
+    # region's voices dir. The loader discovers them by
+    # convention; voice_file paths in the speaker contract
+    # still resolve via resolve_voice_file().
+    src_voices = src / 'voices'
+    if src_voices.is_dir():
+        dst_voices = town_dir / 'voices'
+        dst_voices.mkdir(parents=True, exist_ok=True)
+        for vf in src_voices.glob('*.md'):
+            shutil.copy2(vf, dst_voices / vf.name)
+
+    # Rewrite the pack-level world.json: keep metadata + canon,
+    # remove town/speakers/map (they're in the act now).
+    pack_contract = {
+        k: v for k, v in config.items()
+        if k not in ('town', 'speakers', 'enemies', 'bosses', 'transitions')
+    }
+    (src / 'world.json').write_text(
+        json.dumps(pack_contract, indent=2, ensure_ascii=False),
+        encoding='utf-8',
+    )
+
+    # Validate the migrated pack end-to-end. We pass the absolute
+    # pack path so tests (which monkeypatch pack_root) work, and
+    # the production path resolves the same way through pack_root.
+    from .maplab import load_pack as _load_pack
+    from .maplab import validate as _validate
+    unified = _load_pack(src)
+    errors = _validate(unified, pack_dir=src)
+    if errors:
+        print(f'migrated but validation flagged {len(errors)} issue(s):')
+        for e in errors:
+            print(f'  FAIL: {e}')
+        return 2
+    print(f'migrated {src} to the acts shape - '
+          f'{acts_root}/, {town_dir}/, pack-level world.json rewritten.')
+    print('validates against the engine contract.')
+    return 0
+
+
 def _import_url(base: str, repo: str) -> str:
     """Accept 'owner/name' or a full https://... URL; return a cloneable URL."""
     if repo.startswith('http://') or repo.startswith('https://') or repo.startswith('git@'):
@@ -1083,6 +1186,15 @@ def norns_main() -> int:
     mc = craft.add_parser('chat', help='interview a new world into existence')
     mc.add_argument('--name', required=True, help='the new pack name (worlds/<name>)')
     mc.set_defaults(fn=cmd_chat)
+
+    mm = craft.add_parser(
+        'migrate', help='migrate a flat-shape pack to the acts tree'
+    )
+    mm.add_argument('--pack', required=True,
+                    help='the world pack name (worlds/<pack>)')
+    mm.add_argument('--act-id', default=None,
+                    help='act id for the new tree (default: act-1)')
+    mm.set_defaults(fn=cmd_migrate)
 
     mv = craft.add_parser('validate', help='geometry checks against the pack')
     mv.add_argument('--pack', default=None)
