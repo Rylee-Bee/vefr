@@ -130,6 +130,54 @@
     border-color: var(--accent); outline: none;
   }
 
+  /* builder mode - read the existing controls pattern, just give
+     each section a heading and a little breathing room. */
+  .builder-section { margin-top: 1.4rem; }
+  .builder-section .builder-h { font-weight: normal; font-size: 0.92rem; letter-spacing: 0.06em; color: var(--ink-dim); margin: 0 0 0.5rem; }
+  .builder-section .controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .builder-section input[type="text"] {
+    font: inherit; padding: 0.45rem 0.6rem; min-height: 44px;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+  }
+  .builder-section select {
+    font: inherit; padding: 0.45rem 0.6rem; min-height: 44px;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+  }
+  .builder-chat-log {
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    background: var(--card);
+    padding: 0.8rem 1rem;
+    max-height: 320px; overflow-y: auto;
+    margin: 0.6rem 0;
+  }
+  .builder-chat-log:empty::before {
+    content: 'no conversation yet.';
+    color: var(--ink-dim); font-style: italic;
+  }
+  .builder-chat-log .chat-msg { margin: 0.4rem 0; }
+  .builder-chat-log .chat-msg .who { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; margin-right: 0.5rem; }
+  .builder-chat-log .chat-msg.assistant .who { color: var(--accent); }
+  .builder-chat-log .chat-msg.user .who { color: var(--ink); }
+  .builder-chat-form { display: flex; gap: 0.5rem; align-items: flex-end; }
+  .builder-chat-form textarea {
+    flex: 1; font: inherit; padding: 0.55rem 0.7rem; min-height: 44px;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+    resize: vertical;
+  }
+  .builder-chat-form button {
+    font: inherit; font-size: 0.92rem; padding: 0.55rem 1rem;
+    min-height: 44px; min-width: 80px;
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+    cursor: pointer;
+  }
+  .builder-chat-form button:hover, .builder-chat-form button:focus-visible {
+    border-color: var(--accent); outline: none;
+  }
+
   /* the journal - one card per entry, hierarchy by luminance only */
   .card .when { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; }
   .card blockquote { margin: 0.5rem 0 0; padding-left: 0.8rem; border-left: 1px solid var(--card-edge); color: var(--ink); white-space: pre-line; }
@@ -165,6 +213,7 @@
     <button type="button" role="tab" data-view="bell" id="tab-bell" aria-selected="false" aria-controls="view-bell">Bell</button>
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
     <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Journal</button>
+    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder</button>
   </div>
 
   <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
@@ -225,6 +274,48 @@
     <p class="note" id="journal-status">&nbsp;</p>
     <section id="journal-list" aria-live="polite"></section>
   </section>
+
+  <section id="view-builder" class="view" role="tabpanel" aria-labelledby="tab-builder" hidden>
+    <p class="note">worldbuilder mode &mdash; chat with the local model, import story repos, validate geometry, verify a live deploy. For the author, not the player.</p>
+
+    <div class="builder-section">
+      <h2 class="builder-h">Packs</h2>
+      <div class="controls">
+        <select id="builder-pack-picker" aria-label="Active pack"></select>
+        <button type="button" id="builder-refresh-packs">refresh</button>
+      </div>
+      <p class="note" id="builder-pack-info">&nbsp;</p>
+    </div>
+
+    <div class="builder-section">
+      <h2 class="builder-h">Import</h2>
+      <div class="controls">
+        <input type="text" id="builder-import-repo" placeholder="owner/name or full URL" size="32" />
+        <input type="text" id="builder-import-name" placeholder="pack dir (default: repo name)" size="20" />
+        <button type="button" id="builder-import-btn">Import (pull)</button>
+      </div>
+      <p class="note" id="builder-import-status">&nbsp;</p>
+    </div>
+
+    <div class="builder-section">
+      <h2 class="builder-h">Validate &amp; verify</h2>
+      <div class="controls">
+        <button type="button" id="builder-validate-btn">Validate active pack</button>
+        <button type="button" id="builder-verify-btn">Verify live deployment</button>
+      </div>
+      <p class="note" id="builder-validate-status">&nbsp;</p>
+    </div>
+
+    <div class="builder-section">
+      <h2 class="builder-h">Chat with the smith</h2>
+      <p class="note">Short conversation. State lives in the page; the server only sees what you submit.</p>
+      <section id="builder-chat-log" aria-live="polite" class="builder-chat-log"></section>
+      <form id="builder-chat-form" class="builder-chat-form" autocomplete="off">
+        <textarea id="builder-chat-input" rows="2" placeholder="what are you trying to figure out?"></textarea>
+        <button type="submit" id="builder-chat-send">send</button>
+      </form>
+    </div>
+  </section>
 </main>
 <div id="undo-banner" class="undo-banner" hidden role="status">
   <span>Removed. <span class="undo-time">60s</span> to undo:</span>
@@ -241,7 +332,8 @@
     vault: document.getElementById('view-vault'),
     bell: document.getElementById('view-bell'),
     town: document.getElementById('view-town'),
-    journal: document.getElementById('view-journal')
+    journal: document.getElementById('view-journal'),
+    builder: document.getElementById('view-builder'),
   };
   tabs.forEach(function (b) {
     b.addEventListener('click', function () {
@@ -250,6 +342,7 @@
       if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
       if (b.dataset.view === 'vault') window.dispatchEvent(new Event('old-name:vault'));
       if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
+      if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
     });
   });
 
@@ -678,6 +771,186 @@
     statusEl.textContent = 'the world did not load. refresh.';
   });
   STATE.refreshVault().catch(function () { /* the Vault tab says so on open */ });
+
+  /* -------------------- builder mode --------------------
+     The web UI is the dev surface. The server is stateless
+     except where the pack is the state: chat keeps its history
+     here, not on the server; packs are real files on disk.
+     Same fetch() patterns as the rest of the page. */
+  var builderPackPicker = document.getElementById('builder-pack-picker');
+  var builderPackInfo = document.getElementById('builder-pack-info');
+  var builderRefreshP = document.getElementById('builder-refresh-packs');
+  var builderImportRepo = document.getElementById('builder-import-repo');
+  var builderImportName = document.getElementById('builder-import-name');
+  var builderImportBtn = document.getElementById('builder-import-btn');
+  var builderImportStatus = document.getElementById('builder-import-status');
+  var builderValidateBtn = document.getElementById('builder-validate-btn');
+  var builderVerifyBtn = document.getElementById('builder-verify-btn');
+  var builderValidateStatus = document.getElementById('builder-validate-status');
+  var builderChatLog = document.getElementById('builder-chat-log');
+  var builderChatForm = document.getElementById('builder-chat-form');
+  var builderChatInput = document.getElementById('builder-chat-input');
+  var builderChatSend = document.getElementById('builder-chat-send');
+  var builderHistory = []; // [{role, content}]
+
+  function loadBuilderPacks() {
+    builderPackInfo.textContent = 'loading\u2026';
+    fetch('/api/builder/worlds').then(function (r) { return r.json(); })
+      .then(function (body) {
+        builderPackPicker.innerHTML = '';
+        (body.worlds || []).forEach(function (w) {
+          var opt = document.createElement('option');
+          opt.value = w.name; opt.textContent = w.title + ' (' + w.name + ')';
+          builderPackPicker.appendChild(opt);
+        });
+        var current = STATE.get().world && STATE.get().world.name;
+        if (current && (body.worlds || []).some(function (w) { return w.name === current; })) {
+          builderPackPicker.value = current;
+          var w = (body.worlds || []).filter(function (x) { return x.name === current; })[0];
+          builderPackInfo.textContent = 'phase: ' + (w.phases || []).join(', ')
+            + ' \u00b7 speakers: ' + (w.speakers || []).join(', ');
+        } else if ((body.worlds || []).length) {
+          var w = body.worlds[0];
+          builderPackInfo.textContent = 'phase: ' + (w.phases || []).join(', ')
+            + ' \u00b7 speakers: ' + (w.speakers || []).join(', ');
+        } else {
+          builderPackInfo.textContent = 'no packs found';
+        }
+      })
+      .catch(function () { builderPackInfo.textContent = 'failed to load packs'; });
+  }
+
+  builderRefreshP.addEventListener('click', loadBuilderPacks);
+
+  function setBuilderStatus(el, text, kind) {
+    el.textContent = text || '\u00a0';
+    el.style.color = kind === 'error' ? 'var(--danger)'
+                  : kind === 'ok' ? 'var(--accent)'
+                  : '';
+  }
+
+  builderImportBtn.addEventListener('click', async function () {
+    var repo = (builderImportRepo.value || '').trim();
+    var name = (builderImportName.value || '').trim() || null;
+    if (!repo) {
+      setBuilderStatus(builderImportStatus, 'enter a repo (owner/name or URL)', 'error');
+      return;
+    }
+    setBuilderStatus(builderImportStatus, 'pulling\u2026');
+    builderImportBtn.disabled = true;
+    try {
+      var r = await fetch('/api/builder/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repo, name: name, pull: true }),
+      });
+      var data = await r.json();
+      setBuilderStatus(builderImportStatus,
+        r.ok ? ('ok (rc=' + data.rc + ') \u2014 pull complete') : 'import failed',
+        r.ok ? 'ok' : 'error');
+      loadBuilderPacks();
+    } catch (err) {
+      setBuilderStatus(builderImportStatus, 'import failed: ' + err.message, 'error');
+    } finally {
+      builderImportBtn.disabled = false;
+    }
+  });
+
+  builderValidateBtn.addEventListener('click', async function () {
+    setBuilderStatus(builderValidateStatus, 'validating\u2026');
+    builderValidateBtn.disabled = true;
+    try {
+      var r = await fetch('/api/builder/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: builderPackPicker.value }),
+      });
+      var data = await r.json();
+      if (data.ok) {
+        setBuilderStatus(builderValidateStatus,
+          'ok \u2014 ' + (data.pack || '') + ' passes the pack contract', 'ok');
+      } else {
+        setBuilderStatus(builderValidateStatus,
+          (data.errors || ['unknown error']).join('; '), 'error');
+      }
+    } catch (err) {
+      setBuilderStatus(builderValidateStatus, 'validate failed: ' + err.message, 'error');
+    } finally {
+      builderValidateBtn.disabled = false;
+    }
+  });
+
+  builderVerifyBtn.addEventListener('click', async function () {
+    setBuilderStatus(builderValidateStatus, 'verifying live deploy\u2026');
+    builderVerifyBtn.disabled = true;
+    try {
+      var r = await fetch('/api/builder/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: window.location.origin }),
+      });
+      var data = await r.json();
+      if (data.ok) {
+        setBuilderStatus(builderValidateStatus,
+          'ok \u2014 ' + data.url + ' serves a valid world', 'ok');
+      } else {
+        setBuilderStatus(builderValidateStatus,
+          (data.errors || ['unknown error']).join('; '), 'error');
+      }
+    } catch (err) {
+      setBuilderStatus(builderValidateStatus, 'verify failed: ' + err.message, 'error');
+    } finally {
+      builderVerifyBtn.disabled = false;
+    }
+  });
+
+  function appendChat(role, content) {
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    var who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = role === 'user' ? 'you' : 'smith';
+    var body = document.createElement('span');
+    body.textContent = content;
+    div.appendChild(who); div.appendChild(body);
+    builderChatLog.appendChild(div);
+    builderChatLog.scrollTop = builderChatLog.scrollHeight;
+  }
+
+  builderChatForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var msg = (builderChatInput.value || '').trim();
+    if (!msg) return;
+    builderChatInput.value = '';
+    appendChat('user', msg);
+    builderHistory.push({ role: 'user', content: msg });
+    builderChatSend.disabled = true;
+    builderChatSend.textContent = 'thinking\u2026';
+    try {
+      var r = await fetch('/api/builder/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          history: builderHistory.slice(0, -1),
+          world: builderPackPicker.value,
+        }),
+      });
+      var data = await r.json();
+      appendChat('assistant', data.reply || '(no reply)');
+      builderHistory.push({ role: 'assistant', content: data.reply || '' });
+      // Keep history short - the model sees the last 6 turns anyway.
+      if (builderHistory.length > 24) builderHistory = builderHistory.slice(-24);
+    } catch (err) {
+      appendChat('assistant', '(failed: ' + err.message + ')');
+    } finally {
+      builderChatSend.disabled = false;
+      builderChatSend.textContent = 'send';
+    }
+  });
+
+  window.addEventListener('old-name:builder', loadBuilderPacks);
+  loadBuilderPacks();
 })();
 </script>
 </body>
