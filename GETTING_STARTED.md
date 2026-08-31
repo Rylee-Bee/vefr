@@ -10,11 +10,21 @@ try it - a demonstration world (Emberfield) ships with the engine.
 |---|---|---|
 | Python 3.11+ | The engine runs on it | `python3 --version` |
 | [`uv`](https://docs.astral.sh/uv/) | Installs dependencies, runs the CLIs | `uv --version` |
-| [Ollama](https://ollama.com) | Runs the local model that drafts prose | `ollama --version` |
-| A pulled model | The thing Ollama runs | `ollama list` |
+| A local model server | Runs the model that drafts prose | see below |
+| A pulled model | The thing the server runs | see below |
 
-If you don't have a model yet: `ollama pull qwen3:8b` (or any model
-you like - set `NORN_MODEL` to its name later).
+The engine talks to any OpenAI-compatible `/v1/chat/completions`
+server. Two options:
+
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp) (preferred)** —
+  faster, and what the engine is tuned for. Point it at
+  `NORN_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
+- **[Ollama](https://ollama.com) (fallback)** — simpler to install.
+  Set `OLLAMA_URL=http://127.0.0.1:11434` and pull a model first:
+  `ollama pull qwen3:8b` (or any model you like - set `NORN_MODEL` to
+  its name later).
+
+If both are set, `NORN_LLAMACPP_URL` wins.
 
 Podman/Docker is optional. It's how you'd run this always-on on a
 server; for trying it out, plain `uv run` is faster.
@@ -71,7 +81,7 @@ checks it with `norns validate` before it's done. You never have to
 trust your own edits; the tool always checks.
 
 Or by hand: copy `worlds/sample-world/` to `worlds/your-world/` and
-edit `world.json`, `bible.md`, and the `voices/` files directly - see
+edit `world.json`, `logbok.md`, and the `voices/` files directly - see
 the "Make your own world" section of `README.md` for the full
 contract.
 
@@ -84,7 +94,7 @@ NORN_WORLD=your-world uv run uvicorn norn.main:app --app-dir src --port 8820
 ## 5. The CLI reference
 
 ```sh
-uv run ratatoskr --help    # memory: tidyup, test, weave, ferry (deploy, carry, fetch)
+uv run ratatoskr --help    # memory: skipa, test, weave, ferry (deploy, carry, fetch)
 uv run norns --help    # craft: chat, validate, build-map, verify
 ```
 

@@ -7,9 +7,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from norn import generator, npc
-from norn.npc import build_payload, generate_line
-from norn.paths import world_name
+from vefr import generator, npc
+from vefr.npc import build_payload, generate_line
+from vefr.paths import world_name
 
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 if world_name() != 'private-canon' or not (_pack / 'world.json').exists():

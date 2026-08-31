@@ -36,10 +36,10 @@ THEME_SCHEMA = {
     "type": "object",
     "properties": {
         "bg": {"type": "string"},
-        "willow_color": {"type": "string"},
+        "hero_color": {"type": "string"},
         "deco_color": {"type": "string"},
     },
-    "required": ["bg", "willow_color", "deco_color"],
+    "required": ["bg", "hero_color", "deco_color"],
 }
 
 THEME_SYSTEM = (
@@ -48,14 +48,14 @@ THEME_SYSTEM = (
     "stay dark and low-saturation (near-black, muted). The protagonist "
     "color must read clearly against that dark background. The accent "
     "color is a small warm highlight, never neon, never fully "
-    "saturated. Reply with only the JSON object: bg, willow_color, "
+    "saturated. Reply with only the JSON object: bg, hero_color, "
     "deco_color."
 )
 
 
 class Theme(BaseModel):
     bg: str
-    willow_color: str
+    hero_color: str
     deco_color: str
 
 ASSISTANT_SYSTEM = (
@@ -103,7 +103,7 @@ def draft_theme(mood: str) -> dict | None:
         "system": THEME_SYSTEM,
         "prompt": (
             f"The mood is: {mood}. Reply with only the JSON object: "
-            f"bg, willow_color, deco_color."
+            f"bg, hero_color, deco_color."
         ),
         "format": THEME_SCHEMA,
         "stream": False,
@@ -115,7 +115,7 @@ def draft_theme(mood: str) -> dict | None:
         try:
             raw = generator._completion(payload)
             colors = Theme.model_validate_json(raw)
-            if all(HEX_RE.match(v) for v in (colors.bg, colors.willow_color, colors.deco_color)):
+            if all(HEX_RE.match(v) for v in (colors.bg, colors.hero_color, colors.deco_color)):
                 return colors.model_dump()
         except (httpx.HTTPError, ValidationError, KeyError, ValueError):
             continue
@@ -172,15 +172,15 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     if premise:
         w["description"] = premise
 
-    print("\ndrafting the canon (bible.md)...")
-    bible_text = draft(
+    print("\ndrafting the canon (logbok.md)...")
+    logbok_text = draft(
         f"The world is called {title}. The story: {premise or 'unspecified'}. "
         f"The protagonist: {protagonist or 'unspecified'}. Write a short "
-        f"world bible: the central truth of this place, and one or two "
+        f"world logbok: the central truth of this place, and one or two "
         f"rules the story must never break. Plain prose, 4-8 sentences."
     )
-    (dest / "bible.md").write_text(f"# {title}\n\n{bible_text}\n", encoding="utf-8")
-    print(f"\n--- bible.md ---\n{bible_text}\n")
+    (dest / "logbok.md").write_text(f"# {title}\n\n{logbok_text}\n", encoding="utf-8")
+    print(f"\n--- logbok.md ---\n{logbok_text}\n")
 
     theme_mood = ask(
         "In a few words, what's the color mood of your world? "
@@ -191,13 +191,13 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         colors = draft_theme(theme_mood)
         if colors:
             w["town"]["bg"] = colors["bg"]
-            w["town"]["willow_color"] = colors["willow_color"]
+            w["town"]["hero_color"] = colors["hero_color"]
             for entry in w["town"]["legend"].values():
                 if "deco" in entry:
                     entry["deco_color"] = colors["deco_color"]
             print(
                 f"  theme: bg {colors['bg']}, protagonist "
-                f"{colors['willow_color']}, accent {colors['deco_color']}"
+                f"{colors['hero_color']}, accent {colors['deco_color']}"
             )
         else:
             print("  theme draft failed twice - keeping the scaffold's colors")
@@ -317,13 +317,13 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         )
         for e in errors:
             print(f"  FAIL: {e}")
-        print(f"\nFix by hand in {dest}, then: old-name validate --pack {dest}")
+        print(f"\nFix by hand in {dest}, then: norns validate --pack {dest}")
         return 1
 
     print(f"\nok - {dest} is valid and ready.")
     print("\nNext steps:")
-    print(f"  NORN_WORLD={dest.name} old-name validate --pack {dest}")
-    print(f"  NORN_WORLD={dest.name} raven test")
+    print(f"  VEFR_WORLD={dest.name} norns validate --pack {dest}")
+    print(f"  VEFR_WORLD={dest.name} ratatoskr test")
     print(
         "  grow the map with: norns build-map --segments <file> --pack "
         f"{dest}"

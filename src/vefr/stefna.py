@@ -16,11 +16,23 @@ class Letter(BaseModel):
     letter: str
 
 
+def stefna_voice_key() -> str:
+    """Which speaker's voice fills the Stefna role for this pack.
+
+    A pack points at whichever voice should write the sealed letter
+    via a top-level `stefna_voice` field. No pack is forced to name
+    that speaker "mother" - `mother` is only the fallback for packs
+    written before this was configurable.
+    """
+    return load_world().get("stefna_voice", "mother")
+
+
 def build_payload() -> dict:
+    key = stefna_voice_key()
     return {
         "model": generator.MODEL,
         "system": _system(),
-        "prompt": load_world()["voices"]["mother"]["strike"],
+        "prompt": load_world()["voices"][key]["strike"],
         "format": SCHEMA,
         "stream": False,
         "think": False,
@@ -30,7 +42,7 @@ def build_payload() -> dict:
 
 
 def _system() -> str:
-    return sealed_voice("mother")
+    return sealed_voice(stefna_voice_key())
 
 
 def generate_letter() -> Letter:

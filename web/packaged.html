@@ -8,7 +8,7 @@
   /* the packaged game UI - the bones, on a phone. Color and layout
      match the engine's web/ style: dark, low-saturation, rank by
      luminance not hue, WCAG 2.5.5 tap targets. Inlined into one
-     file at old-name build time, with the world's pack baked in. */
+     file at `ratatoskr weave` time, with the world's pack baked in. */
   :root {
     --bg: #131311;
     --card: #1a1a18;
@@ -148,10 +148,10 @@
 </main>
 <script>
 // ---- inlined world pack ----
-window.NORN_WORLD = {{world_json}};
-window.NORN_BIBLE = {{bible_json}};
-window.NORN_LEDGER = {{ledger_json}};
-window.NORN_VOICES = {{voices_json}};
+window.VEFR_WORLD = {{world_json}};
+window.VEFR_LOGBOK = {{logbok_json}};
+window.VEFR_LEDGER = {{ledger_json}};
+window.VEFR_VOICES = {{voices_json}};
 
 // ---- minimal state ----
 const STATE = (function () {
@@ -164,7 +164,7 @@ const STATE = (function () {
 })();
 
 // ---- config persistence ----
-const CONFIG_KEY = 'norn-packaged-config';
+const CONFIG_KEY = 'vefr-packaged-config';
 function loadConfig() {
   try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); }
   catch (_) { return {}; }
@@ -200,7 +200,7 @@ if (llmUrl && llmModel) {
 }
 
 function bootstrap() {
-  STATE.set({ world: window.NORN_WORLD, phase: Object.keys(window.NORN_WORLD.phases)[0] });
+  STATE.set({ world: window.VEFR_WORLD, phase: Object.keys(window.VEFR_WORLD.phases)[0] });
   buildPhaseRail();
   bindWhisper();
   setupTown();
@@ -210,7 +210,7 @@ function bootstrap() {
 function buildPhaseRail() {
   var rail = document.getElementById('phase');
   rail.innerHTML = '';
-  Object.keys(window.NORN_WORLD.phases).forEach(function (k) {
+  Object.keys(window.VEFR_WORLD.phases).forEach(function (k) {
     var b = document.createElement('button');
     b.type = 'button'; b.textContent = k; b.dataset.phase = k;
     b.setAttribute('aria-pressed', 'false');
@@ -236,15 +236,15 @@ function bindWhisper() {
     btn.disabled = true;
     status.textContent = 'the mill turns\u2026';
     var ph = STATE.get().phase;
-    var tone = window.NORN_WORLD.phases[ph] || '';
+    var tone = window.VEFR_WORLD.phases[ph] || '';
     var system = 'You are the whisper that flies out every day and comes home.\n'
       + 'Write ONE tavern rumor from the world described below, in-world,\n'
       + 'spoken by a named minor character. Follow the Contract strictly:\n'
       + 'never explain, never label, never use modern words. Show only.\n\n'
       + 'CURRENT PHASE: ' + tone + '\n\n'
-      + (window.NORN_BIBLE || '').slice(0, 4000) + '\n\n'
+      + (window.VEFR_LOGBOK || '').slice(0, 4000) + '\n\n'
       + 'Whispers already collected - match their cadence, do not repeat them:\n\n'
-      + (window.NORN_LEDGER || '');
+      + (window.VEFR_LEDGER || '');
     var schema = { type: 'object', properties: {
       speaker: { type: 'string' },
       whisper: { type: 'string' },
@@ -294,13 +294,13 @@ function esc(s) {
 // Renders the static map grid and moves the wanderer around it. NPC clicks
 // fire a one-line ask to the same LLM with the active speaker's voice.
 function setupTown() {
-  var world = window.NORN_WORLD;
+  var world = window.VEFR_WORLD;
   var town = world.town;
   var canvas = document.getElementById('town-canvas');
   canvas.width = town.map[0].length * town.tile;
   canvas.height = town.map.length * town.tile;
   var ctx = canvas.getContext('2d');
-  var the wanderer = town.willow_start.slice();
+  var hero = town.hero_start.slice();
   var phase = function () { return STATE.get().phase; };
 
   var legend = town.legend;
@@ -336,19 +336,19 @@ function setupTown() {
       });
     }
     // the wanderer
-    ctx.fillStyle = town.willow_color || '#e8e5df';
+    ctx.fillStyle = town.hero_color || '#e8e5df';
     ctx.beginPath();
-    ctx.arc(the wanderer[0] * town.tile + town.tile / 2,
-            the wanderer[1] * town.tile + town.tile / 2,
+    ctx.arc(hero[0] * town.tile + town.tile / 2,
+            hero[1] * town.tile + town.tile / 2,
             town.tile / 3, 0, Math.PI * 2);
     ctx.fill();
   }
 
   function move(dx, dy) {
-    var nx = the wanderer[0] + dx, ny = the wanderer[1] + dy;
+    var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
-    the wanderer = [nx, ny];
+    hero = [nx, ny];
     draw();
     var here = '';
     for (var k in pois) {
@@ -362,7 +362,7 @@ function setupTown() {
     var nearest = null, dmin = 999;
     for (var key in speakers) {
       var s = speakers[key];
-      var d = Math.abs(s.at[0] - the wanderer[0]) + Math.abs(s.at[1] - the wanderer[1]);
+      var d = Math.abs(s.at[0] - hero[0]) + Math.abs(s.at[1] - hero[1]);
       if (d < dmin) { dmin = d; nearest = { key: key, spec: s, dist: d }; }
     }
     if (!nearest || nearest.dist > 2) {
@@ -370,7 +370,7 @@ function setupTown() {
       return;
     }
     var seed = (nearest.spec.seeds || {})[ph] || '';
-    var voice = window.NORN_VOICES[nearest.key] || '';
+    var voice = window.VEFR_VOICES[nearest.key] || '';
     var tone = world.phases[ph] || '';
     var system = voice + '\n\nCURRENT PHASE: ' + tone;
     var userPrompt = nearest.spec.name + ' speaks one line at ' + nearest.spec.near

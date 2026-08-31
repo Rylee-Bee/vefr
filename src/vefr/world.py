@@ -1,8 +1,8 @@
 """The world pack loader - the seam between the engine and the story.
 
-The engine (src/norn) never hardcodes world content. Everything the
+The engine (src/vefr) never hardcodes world content. Everything the
 story owns - phases, voices, bonds, the town, the surface - lives
-in a pack directory: worlds/<name>/{world.json, bible.md, ledger.md,
+in a pack directory: worlds/<name>/{world.json, logbok.md, ledger.md,
 map.md, voices/}. Take the bones, grow your own flesh.
 
 SURFACE: world.json may declare a 'surface' field - one of

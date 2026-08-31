@@ -15,7 +15,7 @@ Two shapes:
 
   export_story()       the full World Tree - one section per
                        dev-UI tab, in the order the player met them.
-                       This is what `old-name build` writes alongside
+                       This is what `ratatoskr weave --with-bundle` writes alongside
                        the playable HTML file as <name>.tree.md.
 
   export_tab(name)     one section per individual tab - what the
@@ -26,9 +26,9 @@ preface before any of them):
 
   ## The Fen Walked    moves + sightings the journal can witness
   ## The Whispers Heard  the rumors the player actually clicked
-  ## What Was Carried   the items they kept (named, bonded, lore)
-  ## The Bell's Letters  every letter the bell gave, in order
-  ## The Voices Heard   the lines NPCs spoke when the wanderer spoke to them
+  ## Relics             the items they kept (named, bonded, lore)
+  ## The Stefna         every letter the summons gave, in order
+  ## The Voices Heard   the lines NPCs spoke when the hero spoke to them
   ## The Journal        the rest, in pure chronological order (anything
                        the per-tab sections did not cover)
 
@@ -37,10 +37,11 @@ has played yet - and produces a shorter document, not an error.
 """
 
 import json
+from pathlib import Path
 
 from .forge import list_vault
 from .journal import list_entries
-from .saga import bible
+from .saga import logbok
 from .world import load_world
 
 
@@ -52,7 +53,7 @@ def _para(text) -> str:
 
 
 def _demote(canon: str, demote: int = 1) -> str:
-    """Shift the bible's headings down by `demote` levels.
+    """Shift the logbok's headings down by `demote` levels.
 
     The document already has at least one H1 - the world's title -
     and "## The World Tree" sits between them. So the pack's own
@@ -101,7 +102,7 @@ def _item_forged(e: dict) -> str:
     return line
 
 
-def _bell_letter(e: dict) -> str:
+def _stefna_letter(e: dict) -> str:
     letter = str(e.get("letter") or "").strip()
     if not letter:
         return "> A letter was found, and said nothing."
@@ -114,7 +115,7 @@ _RENDER = {
     "rumor": _rumor,
     "npc_line": _npc_line,
     "item_forged": _item_forged,
-    "bell_letter": _bell_letter,
+    "stefna_letter": _stefna_letter,
 }
 
 
@@ -141,7 +142,7 @@ def _carried(items: list[dict]) -> str:
 # ---- the title + canon preface (shared by every shape) ----
 
 def _preface(world: dict, name: str | None = None) -> list[str]:
-    """The H1 world title and the demoted bible.md canon.
+    """The H1 world title and the demoted logbok.md canon.
 
     Every export starts with these - they're the world's identity,
     not its play history. The per-tab sections follow. The canon
@@ -149,11 +150,11 @@ def _preface(world: dict, name: str | None = None) -> list[str]:
     the roots-of-the-story are loaded first.
     """
     parts: list[str] = [f"# {world['title']}"]
-    canon = bible(name).strip()
+    canon = logbok(name).strip()
     if canon:
         parts.append("## The World Tree")
-        # The bible's own heading is nested under "The World Tree";
-        # keep the bible's structure but shift its H1 down to H3.
+        # The logbok's own heading is nested under "The World Tree";
+        # keep the logbok's structure but shift its H1 down to H3.
         parts.append(_demote(canon, demote=2))
     return parts
 
@@ -179,10 +180,19 @@ def _rumors_section(entries: list[dict]) -> str:
 
 
 def _vault_section(items: list[dict]) -> str:
-    """The Vault tab: kept items, with phase + bond metadata."""
+    """The Vault tab + the export's Relics section: kept items.
+
+    Every item the player chose to keep is a relic - chosen in
+    defiance, in hope, in curiosity, in grief. The player chose;
+    the world remembers. This section lists every relic with its
+    full character: name, lore, enchant, curse, bond. A cursed
+    sword the player kept *because* it was cursed is still a relic.
+    A cold tool that does not care who holds it is still a relic.
+    The keep is the thing.
+    """
     if not items:
         return ""
-    lines = ["## What Was Carried", ""]
+    lines = ["## Relics", ""]
     for item in items:
         name = _para(item.get("name") or "something without a name")
         bond = _para(item.get("bond") or "")
@@ -202,12 +212,12 @@ def _vault_section(items: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _bell_section(entries: list[dict]) -> str:
-    """The Bell tab: every letter, in order."""
-    letters = [e for e in entries if e.get("kind") == "bell_letter"]
+def _stefna_section(entries: list[dict]) -> str:
+    """The Stefna tab: every letter the summons gave, in order."""
+    letters = [e for e in entries if e.get("kind") == "stefna_letter"]
     if not letters:
         return ""
-    lines = ["## The Bell's Letters", ""]
+    lines = ["## The Stefna", ""]
     for i, e in enumerate(letters, 1):
         when = e.get("at", "?")[:19]
         lines.append(f"### Letter {i} - {when}")
@@ -290,7 +300,7 @@ def _journal_section(entries: list[dict], exclude: set[str]) -> str:
 
 # The kinds that have a dedicated tab section. Everything else goes
 # into the catch-all "Journal" tab at the end.
-_TAB_KINDS = {"rumor", "item_forged", "bell_letter", "npc_line"}
+_TAB_KINDS = {"rumor", "item_forged", "stefna_letter", "npc_line"}
 
 
 def export_story(world: str | None = None) -> str:
@@ -298,11 +308,11 @@ def export_story(world: str | None = None) -> str:
 
     The shape:
       # World Title
-      ## The World Tree - the demoted bible.md canon (the roots)
+      ## The World Tree - the demoted logbok.md canon (the roots)
       ## The Fen Walked
       ## The Whispers Heard
-      ## What Was Carried
-      ## The Bell's Letters
+      ## Relics
+      ## The Stefna
       ## The Voices Heard
       ## The Journal    (anything the per-tab sections did not cover)
     """
@@ -322,9 +332,9 @@ def export_story(world: str | None = None) -> str:
     if vault:
         parts.append(vault)
 
-    bell = _bell_section(entries)
-    if bell:
-        parts.append(bell)
+    stefna = _stefna_section(entries)
+    if stefna:
+        parts.append(stefna)
 
     voices = _voices_section(entries)
     if voices:
@@ -338,7 +348,7 @@ def export_story(world: str | None = None) -> str:
         _town_section(entries),
         _rumors_section(entries),
         _vault_section(list_vault()),
-        _bell_section(entries),
+        _stefna_section(entries),
         _voices_section(entries),
         _journal_section(entries, _TAB_KINDS),
     ]):
@@ -347,7 +357,7 @@ def export_story(world: str | None = None) -> str:
     return "\n\n".join(parts).rstrip() + "\n"
 
 
-_TAB_NAMES = ("town", "rumors", "vault", "bell", "voices", "journal")
+_TAB_NAMES = ("town", "rumors", "vault", "stefna", "voices", "journal")
 
 
 def export_tab(name: str, world: str | None = None) -> str:
@@ -367,8 +377,8 @@ def export_tab(name: str, world: str | None = None) -> str:
         s = _rumors_section(entries)
     elif name == "vault":
         s = _vault_section(list_vault())
-    elif name == "bell":
-        s = _bell_section(entries)
+    elif name == "stefna":
+        s = _stefna_section(entries)
     elif name == "voices":
         s = _voices_section(entries)
     else:
@@ -379,3 +389,37 @@ def export_tab(name: str, world: str | None = None) -> str:
         parts.append(f"## {name.capitalize()}")
         parts.append("_Nothing yet._")
     return "\n\n".join(parts).rstrip() + "\n"
+
+
+LIVING_TREE_FILE = "world-tree.md"
+
+
+def living_tree_path(world: str | None = None) -> Path:
+    """Where the always-current World Tree file lives for a pack."""
+    from .paths import pack_dir
+
+    return pack_dir(world) / LIVING_TREE_FILE
+
+
+def refresh_living_tree(world: str | None = None) -> Path | None:
+    """Rewrite the always-current World Tree file in the pack dir.
+
+    Called after every journal/vault mutation (log, remove, undo,
+    clear, keep_item) so the file on disk is never stale - the same
+    idea as export_story(), just persisted instead of only computed
+    on request. This is a derived artifact, not canon: it never
+    feeds back into the logbok/ledger/map, and it is safe to delete -
+    the next mutation regenerates it.
+
+    Failures here must never break the mutation that triggered them
+    (a missing pack dir, a read-only filesystem, a world with no
+    pack yet). Returns the path written, or None if the write was
+    skipped.
+    """
+    try:
+        path = living_tree_path(world)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(export_story(world), encoding="utf-8")
+        return path
+    except OSError:
+        return None
