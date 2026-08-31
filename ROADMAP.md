@@ -1,8 +1,8 @@
-# Old Name - Roadmap
+# old-name - Roadmap
 
 > *old-name* - memory, and longing. The raven that flies out every day
-> and comes home. This is the ladder from a tool to her story,
-> playable - and then to a tool anyone can point at their own story.
+> and comes home. This is the ladder from a tool built for one
+> story, playable - to a tool anyone can point at their own.
 
 ## Landed
 
@@ -55,14 +55,25 @@
       tool), and the door remains open through the pack contract:
       any future render target reads the same /api/world.
 - [x] **`raven`/`old-name` - the lab-style wrapper**: two entry points,
-      raven and smith - universal tooling, story-agnostic. Renamed
-      from `old-name` 2026-08-31 so "Old Name" stays free to mean only the
-      game. `raven tidyup/deploy/backup/test`,
-      `old-name validate/build/verify`. `maplab.py` is the one geometry
-      validator shared by both CLIs and the tests.
+      raven and smith - universal tooling, story-agnostic.
+      `raven tidyup/deploy/backup/test`, `old-name validate/build/verify`.
+      `maplab.py` is the one geometry validator shared by both CLIs
+      and the tests.
+- [x] **the full rename, 2026-08-31**: this repo and package are
+      `old-name` now (were `old-name`); commands, env vars (`SMIDR_HOME`,
+      `SMIDR_WORLD`, `SMIDR_MODEL`, `SMIDR_VAULT`,
+      `SMIDR_KEEP_ALIVE`), and every hardcoded story reference in the
+      engine (the API title, the health check's service name, the
+      shared rumor system prompt, `world_name()`'s private-canon
+      special-case) are gone. "Old Name" is free to mean only the game.
+      The story itself (`worlds/private-canon/`, `STYLE.md`) moved to
+      its own private repo, `the private story repo`, verified
+      byte-identical before the move; the engine repo's history was
+      then rewritten (`git filter-repo`) so no trace of it remains in
+      any commit.
 - [x] **the bones boot alone**: `worlds/sample-world/` (Emberfield) -
       a demonstration pack with zero story content, proven by
-      physically removing `worlds/private-canon/` and running the suite
+      physically removing the author's own pack and running the suite
       green. The engine works with any pack, or none beyond the
       sample.
 - [x] **license split**: engine MIT (`src/`, `web/`, `tests/`,

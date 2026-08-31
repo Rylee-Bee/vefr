@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "old-name"
 version = "2.0.0"
-description = "Old Name - a rumor engine. Memory and longing, flying out and coming home. It gives the hellos that never happened."
+description = "old-name - a rumor engine for playable worlds. Take the bones, grow your own flesh."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -18,7 +18,7 @@ dependencies = [
 test = ["pytest>=8.3"]
 
 [project.scripts]
-raven = "old-name.cli:munr_main"
+raven = "old-name.cli:raven_main"
 old-name = "old-name.cli:smidr_main"
 
 [tool.hatch.build.targets.wheel]

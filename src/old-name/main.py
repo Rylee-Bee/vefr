@@ -12,7 +12,7 @@ from .world import load_world
 
 PURPOSE = "it gives the hellos that never happened"
 
-app = FastAPI(title="Old Name", version="2.0.0", description=PURPOSE.capitalize())
+app = FastAPI(title=load_world()["title"], version="2.0.0", description=PURPOSE.capitalize())
 WEB = app_home() / "web"
 app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
