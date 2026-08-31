@@ -1,4 +1,4 @@
-# norn
+# vefr
 
 > The three Norns weave fate at the well beneath the world tree -
 > not one fixed fate, whichever one is given them.
@@ -25,8 +25,8 @@ spoken must be true.
 ## The bones and the flesh
 
 ```
-src/norn/           the engine (MIT)
-  paths.py           where things live (NORN_HOME, NORN_WORLD)
+src/vefr/           the engine (MIT)
+  paths.py           where things live (VEFR_HOME, VEFR_WORLD)
   world.py           the pack loader - the only seam
   saga.py            the storytelling layer - Saga keeps the stories:
                      Bragi composes (prompts, voices), Idunn keeps
@@ -36,20 +36,20 @@ src/norn/           the engine (MIT)
   bell.py            sealed voices (the goodbye)
   npc.py             whisper NPCs; seeds keep the world alive
   journal.py         the session journal - what happened, on disk
-                     (NORN_JOURNAL)
+                     (VEFR_JOURNAL)
   export.py          canon + journal + vault -> one markdown story,
                      deterministic templating, no model needed
   main.py            FastAPI surface incl. GET /api/world,
                      GET /api/journal, GET /api/export
   cli.py             two entry points, ratatoskr (the squirrel) and norns (the weavers):
-                       ratatoskr - memory: tidyup, test, weave, ferry (deploy, carry, fetch)
+                       ratatoskr - memory: skipa, test, weave, ferry (deploy, carry, fetch)
                        norns - craft: chat, validate, build-map, verify
   maplab.py          norns's toolkit - the one validator shared by
                      tests and both clis
 
 worlds/<name>/       a world pack - a story
   world.json         phases, tones, voices, bonds, speakers, the town
-  bible.md           the world bible - canon + style contract
+  logbok.md          the world logbok - canon + style contract
   ledger.md          collected whispers - voice anchors, hand-curated
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
@@ -64,7 +64,7 @@ tests/               pytest - pack contract, schemas, fallbacks
 No world pack ships tracked in this repo except the sample - the
 author's own game keeps its pack in a separate private repo and
 drops it into `worlds/<name>/` locally. One env var selects the
-world: `NORN_WORLD=your-world`. Point it at your own pack and the
+world: `VEFR_WORLD=your-world`. Point it at your own pack and the
 same engine serves your story.
 
 ## Design
@@ -117,7 +117,7 @@ runes are what the memory can't capture.**
 
 Which is to say — the rune cast is *not* a memory system. It is
 the absence of one. The homelab's `memory_journal_log` and the
-norn engine's `journal.log()` are both *memories*: atomic, dated,
+vefr engine's `journal.log()` are both *memories*: atomic, dated,
 replayable. The rune cast is **what neither memory captures**.
 It is the unrepeatable surprise that sits inside a fully
 replayable world. **You can replay a session and the lore, the
@@ -133,7 +133,7 @@ journey is the shape. The cast is the surprise inside the shape.**
 
 Same seed -> same cast. The player can replay a minute and find
 the same runes (within that minute). The author can name a moment
-in the bible ("the morning of Woden's day") and the cast for that
+in the logbok ("the morning of Woden's day") and the cast for that
 minute will always match. The surprise is *bounded*, never
 unbound.
 
@@ -162,7 +162,7 @@ The packs:
 
 To use a pack, call `/api/builder/lore` with the pack name + seed
 words, get back the wandering-poets shape (`textures`, `names`,
-`questions`) — mood, not canon. Then `norns craft chat` carries
+`questions`) — mood, not canon. Then `norns chat` carries
 the mood into the world's interview questions.
 
 To add your own pack: `mkdir worlds/lore/<your-flavor>` and write
@@ -182,22 +182,26 @@ RPG-looking panels.
 ## Quickstart (container)
 
 ```sh
-podman build -t localhost/norn:latest .
-mkdir -p ~/norn-data
-podman run -d --name norn -p 8820:8820 \
-  -v ~/norn-data:/app/data \
-  -e NORN_LLAMACPP_URL=http://127.0.0.1:8081 \
-  -e NORN_MODEL=gpt-oss-20b \
-  localhost/norn:latest
+podman build -t localhost/vefr:latest .
+mkdir -p ~/vefr-data
+podman run -d --name vefr -p 8820:8820 \
+  -v ~/vefr-data:/app/data \
+  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8081 \
+  -e VEFR_MODEL=gpt-oss-20b \
+  localhost/vefr:latest
 curl -s http://127.0.0.1:8820/api/health
 ```
 
-The engine prefers `NORN_LLAMACPP_URL` (llama.cpp's OpenAI-compatible
+The engine prefers `VEFR_LLAMACPP_URL` (llama.cpp's OpenAI-compatible
 `/v1/chat/completions` endpoint) and falls back to `OLLAMA_URL`
 (legacy ollama `/api/generate`). Set `OLLAMA_URL=""` to disable the
 fallback entirely. Model default: `gpt-oss-20b` (works with any
-llama.cpp model that supports the chat template; set `NORN_MODEL`
+llama.cpp model that supports the chat template; set `VEFR_MODEL`
 to change it; structured output via JSON schema with `strict: true`).
+
+Other env vars the engine reads: `VEFR_VAULT` (path to `vault.json`,
+default `<home>/data/vault.json`) and `VEFR_KEEP_ALIVE` (ollama-only
+model keep-alive window, e.g. `1m`).
 
 ### Use your own pack
 
@@ -205,19 +209,19 @@ The bundled engine ships with `worlds/sample-world/` (Emberfield) so
 it boots with something to play. To swap in your own world:
 
 1. Copy `worlds/sample-world/` to `worlds/<your-name>/`.
-2. Edit `world.json`, `bible.md`, `voices/*.md`, `map.md`. The
+2. Edit `world.json`, `logbok.md`, `voices/*.md`, `map.md`. The
    contract lives in `world.json`'s `REQUIRED` keys (see
-   `src/norn/world.py`); `norns validate --pack worlds/<your-name>`
+   `src/vefr/world.py`); `norns validate --pack worlds/<your-name>`
    catches mistakes.
 3. Mount it into the container and tell the engine which pack to load:
 
 ```sh
-podman run -d --name norn -p 8820:8820 \
-  -v ~/norn-data:/app/data \
+podman run -d --name vefr -p 8820:8820 \
+  -v ~/vefr-data:/app/data \
   -v /path/to/your-pack:/app/worlds/your-name:Z \
-  -e NORN_WORLD=your-name \
-  -e NORN_LLAMACPP_URL=http://host.docker.internal:8081 \
-  localhost/norn:latest
+  -e VEFR_WORLD=your-name \
+  -e VEFR_LLAMACPP_URL=http://host.docker.internal:8081 \
+  localhost/vefr:latest
 ```
 
 ### Point it at a phone-as-backend
@@ -231,7 +235,7 @@ the engine is happy. That includes:
   + Metal, sideloadable via AltStore
 - A Mac running Ollama / LM Studio, exposed to your LAN
 
-Set `NORN_LLAMACPP_URL=http://<phone-ip>:11434/v1` and the game runs
+Set `VEFR_LLAMACPP_URL=http://<phone-ip>:11434/v1` and the game runs
 entirely off the laptop, the cloud, and any LAN host.
 
 ### Package a single HTML file (the bones)
@@ -253,11 +257,11 @@ internet.
 
 1. Copy `worlds/sample-world/` to `worlds/yours/` - or start from the
    keys in `world.json` alone.
-2. Write your `bible.md` (canon + the rules the engine must obey)
+2. Write your `logbok.md` (canon + the rules the engine must obey)
    and `ledger.md` (seed whispers; the cadence compounds).
 3. Define phases and their tones, your bonds, your speakers, your
    town grid and palette.
-4. `NORN_WORLD=yours`. The engine does the rest.
+4. `VEFR_WORLD=yours`. The engine does the rest.
 
 **By conversation** (`norns chat --name yours`): an interview, run
 against your own local ollama, drafts the canon, the theme colors,

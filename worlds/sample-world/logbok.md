@@ -1,4 +1,4 @@
-# Emberfield - the world bible
+# Emberfield - the world logbok
 
 A demonstration world. This file is the canon the engine reads
 before every generation: write the rules of your world here and

@@ -6,8 +6,8 @@ the prompt-injection block, and the system-prompt thread.
 
 import pytest
 
-from norn import runes, saga
-from norn.runes import (
+from vefr import runes, saga
+from vefr.runes import (
     RUNES,
     PHASE_ANCHOR,
     POSITIONS,

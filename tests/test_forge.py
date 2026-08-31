@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from norn import forge, generator
-from norn.forge import ItemCard, build_payload, forge_item, keep_item, list_vault
+from vefr import forge, generator
+from vefr.forge import ItemCard, build_payload, forge_item, keep_item, list_vault
 
 
 GOOD = json.dumps(
@@ -17,7 +17,7 @@ GOOD = json.dumps(
 
 
 def test_payload_keeps_bond_structure():
-    from norn.world import load_world
+    from vefr.world import load_world
 
     p = build_payload()
     assert p['format']['properties']['bond']['enum'] == list(

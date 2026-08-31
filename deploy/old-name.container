@@ -5,11 +5,11 @@ Description=Old Name - rumor engine (NOTE: stale doc - the live game runs on baz
 Image=localhost/old-name:latest
 ContainerName=old-name
 Network=host
-Environment=NORN_LLAMACPP_URL=http://127.0.0.1:8081
-Environment=NORN_MODEL=gpt-oss-20b
-Environment=NORN_KEEP_ALIVE=1m
-Environment=NORN_VAULT=/app/data/vault.json
-Environment=NORN_JOURNAL=/app/data/journal.json
+Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8081
+Environment=VEFR_MODEL=gpt-oss-20b
+Environment=VEFR_KEEP_ALIVE=1m
+Environment=VEFR_VAULT=/app/data/vault.json
+Environment=VEFR_JOURNAL=/app/data/journal.json
 Volume=%h/old-name-data:/app/data:Z
 
 [Service]

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import json
 
 from . import forge, journal, lore, starred
-from .bell import generate_letter
+from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
 from .generator import generate_rumor
@@ -33,7 +33,7 @@ class NpcRequest(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "service": "norn", "purpose": PURPOSE}
+    return {"ok": True, "service": "vefr", "purpose": PURPOSE}
 
 
 @app.post("/api/rumor")
@@ -113,10 +113,10 @@ def vault_undo():
     return {"restored": True, "item": restored}
 
 
-@app.post("/api/bell")
-def bell():
+@app.post("/api/stefna")
+def stefna():
     letter = generate_letter()
-    journal.log("bell_letter", letter=letter.letter)
+    journal.log("stefna_letter", letter=letter.letter)
     return letter
 
 
@@ -143,8 +143,8 @@ def world():
         "map": town["map"],
         "legend": town["legend"],
         "pois": town["pois"],
-        "willow_start": town["willow_start"],
-        "willow_color": town.get("willow_color", "#e8e5df"),
+        "hero_start": town["hero_start"],
+        "hero_color": town.get("hero_color", "#e8e5df"),
         "watch": town["watch"],
         "sanctuary_tiles": town.get("sanctuary_tiles", []),
         "water_by_phase": town.get("water_by_phase", {}),
@@ -177,8 +177,8 @@ def journal_list():
 def journal_star(index: int):
     """Append the entry at `index` to starred-whispers.md in the pack.
 
-    The file lands on disk in the same place as bible.md - next
-    `old-name import --pull` ships it to the deploy host. Idempotent:
+    The file lands on disk in the same place as logbok.md - next
+    `ratatoskr ferry fetch --pull` ships it to the deploy host. Idempotent:
     starring the same entry twice appends a second line.
     """
     entries = journal.list_entries()
@@ -228,7 +228,7 @@ def journal_clear():
 # --------------------------------------------------------------- builder
 
 # The builder surface in the web UI: stateless turn-based chat with
-# the local model, plus thin wrappers around old-name's import/validate/
+# the local model, plus thin wrappers around vefr's import/validate/
 # verify commands. The web UI holds the conversation history; the
 # server is just "given the history so far, write the next line".
 # Same `chat.draft()` machinery as the CLI interview, but driven by
@@ -267,6 +267,22 @@ def builder_chat(turn: BuilderChatTurn):
     if context:
         prompt = f"(recent conversation)\n{context}\n\nAuthor: {turn.message}"
     text = draft(prompt, system=BUILDER_SYSTEM)
+
+    # If the chat is about a lore pack, persist the response as a
+    # lore note. The author has been doing research and the engine
+    # has something to say - both should land in the pack so the
+    # export reads them later and the world knows itself better.
+    if turn.world:
+        from datetime import datetime, timezone
+        from .paths import pack_dir
+        pack = pack_dir(turn.world)
+        if pack.exists():
+            notes_path = pack / "lore-notes.md"
+            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+            entry = f"\n## {ts} (lore: {turn.world})\n\n{text}\n"
+            with notes_path.open("a", encoding="utf-8") as f:
+                f.write(entry)
+
     return {"reply": text}
 
 
@@ -393,7 +409,7 @@ def builder_worlds():
 
 @app.post("/api/builder/import")
 def builder_import(payload: dict):
-    """Thin wrapper around old-name import --pull. {repo: 'owner/name', name: 'private-canon'}"""
+    """Thin wrapper around ratatoskr ferry fetch --pull. {repo: 'owner/name', name: 'private-canon'}"""
     from .cli import cmd_import
     import argparse
 
@@ -458,7 +474,7 @@ def export_tabs_list():
     """List of available per-tab exports, for the web UI to render
     as 'Export this tab' buttons."""
     return PlainTextResponse(
-        "\n".join(["town", "rumors", "vault", "bell", "voices", "journal"]),
+        "\n".join(["town", "rumors", "vault", "stefna", "voices", "journal"]),
         media_type="text/plain",
     )
 

@@ -4,11 +4,11 @@ Three kinds of star-target exist:
   - rumor:        appended under ## <phase> in starred-whispers.md
   - npc_line:     same file, under ## <phase>
   - item_forged:  appended under ## kept-items (no phase)
-  - bell_letter:  appended under ## letters (under 'awed' phase)
+  - stefna_letter: appended under ## letters (under 'awed' phase)
 
 The file lives at <pack>/starred-whispers.md. It's part of the
-pack on disk like bible.md - committed to the private story repo and
-pulled by `old-name import --pull`, so stars survive restarts and
+pack on disk like logbok.md - committed to the private story repo and
+pulled by `ratatoskr ferry fetch --pull`, so stars survive restarts and
 follow the deploy box's pack.
 
 A star entry records what the player kept, when, and from which
@@ -33,11 +33,11 @@ from .paths import pack_dir
 FILE_NAME = "starred-whispers.md"
 
 # Phase labels for non-rumor/npc kinds. Item_forged is phase-less
-# by design (the forge is its own beat); bell letters always live
-# under the 'awed' phase because that's when the bell rings.
+# by design (the forge is its own beat); stefna letters always live
+# under the 'awed' phase because that's when the summons is answered.
 FALLBACK_PHASE = {
     "item_forged": "kept-items",
-    "bell_letter": "awed",
+    "stefna_letter": "awed",
 }
 
 
@@ -65,7 +65,7 @@ def _text_for(entry: dict) -> str:
         return entry.get("line", "")
     if kind == "item_forged":
         return f"{entry.get('name', '')} - {entry.get('lore', '')}".strip(" -")
-    if kind == "bell_letter":
+    if kind == "stefna_letter":
         # Letters are formatted in prose elsewhere; preserve them as
         # a single quoted block.
         return entry.get("letter", "").replace("\n", " / ")
