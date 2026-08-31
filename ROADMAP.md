@@ -55,14 +55,17 @@
       renderer stays canonical. RPG-JS stays admired (MIT, a fine
       tool), and the door remains open through the pack contract:
       any future render target reads the same /api/world.
-- [x] **`raven`/`old-name` - the lab-style wrapper**: two entry points,
-      raven and smith - universal tooling, story-agnostic.
-      `raven tidyup/deploy/backup/test`, `old-name validate/build/verify`.
-      `maplab.py` is the one geometry validator shared by both CLIs
-      and the tests.
+- [x] **`ratatoskr`/`norns` - the world-tree tooling**: two CLI
+      entry points, story-agnostic. `ratatoskr` is the squirrel who
+      ferries messages up and down Yggdrasil - tidyup, test, weave
+      (the file packager), and ferry (deploy / carry to NAS / fetch
+      from Gitea). `norns` are the weavers - chat, validate,
+      build-map, verify. `maplab.py` is the one geometry validator
+      shared by both CLIs and the tests.
 - [x] **the full rename, 2026-08-31**: this repo and package are
       `norn` now (were `old-name`, briefly `old-name`) - the umbrella under
-      which `raven` and `old-name` both still live as commands. Env vars
+      which `ratatoskr` (formerly `raven`) and `norns` (formerly
+      `old-name`) both live as commands. Env vars
       (`NORN_HOME`, `NORN_WORLD`, `NORN_MODEL`, `NORN_VAULT`,
       `NORN_KEEP_ALIVE`), and every hardcoded story reference in the
       engine (the API title, the health check's service name, the
@@ -82,7 +85,7 @@
       `deploy/`, `Containerfile`, `worlds/sample-world/`);
       `worlds/private-canon/` is the author's own story and game - all
       rights reserved, see `worlds/private-canon/LICENSE`.
-- [x] **`old-name chat`**: the conversational world-builder. Interviews
+- [x] **`norns chat`**: the conversational world-builder. Interviews
       canon, theme colors, phases, bonds, and one speaker's voice
       against the local ollama, starting from `worlds/sample-world/`
       so geometry can't break. The interview's flow is deterministic
@@ -173,7 +176,7 @@
       town says the name; the golden light's words arrive. The last
       screen is gold. (The reed crossing's water-level choice and the
       water's-edge sighting already landed in v1.2.)
-- [ ] **`old-name chat` v2**: let the interview grow the map itself
+- [ ] **`norns chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
 

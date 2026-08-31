@@ -50,7 +50,7 @@ demonstration world.
 ## 3. Check the engine is sound
 
 ```sh
-uv run raven test
+uv run ratatoskr test
 ```
 
 That's the full pytest suite. It should pass with zero setup beyond
@@ -61,13 +61,13 @@ step 1 - the engine tests itself against the demonstration world.
 Two ways in:
 
 ```sh
-uv run old-name chat --name your-world
+uv run norns chat --name your-world
 ```
 
 An interview, run against your own Ollama: it asks about your
 story's canon, its color mood, its phases, its bonds, and one
 speaker's voice - then drafts prose into `worlds/your-world/` and
-checks it with `old-name validate` before it's done. You never have to
+checks it with `norns validate` before it's done. You never have to
 trust your own edits; the tool always checks.
 
 Or by hand: copy `worlds/sample-world/` to `worlds/your-world/` and
@@ -84,8 +84,8 @@ NORN_WORLD=your-world uv run uvicorn norn.main:app --app-dir src --port 8820
 ## 5. The CLI reference
 
 ```sh
-uv run raven --help    # memory: tidyup, deploy, backup, test
-uv run old-name --help    # craft: chat, validate, build, verify
+uv run ratatoskr --help    # memory: tidyup, test, weave, ferry (deploy, carry, fetch)
+uv run norns --help    # craft: chat, validate, build-map, verify
 ```
 
 Both print a full command list with descriptions - that's the

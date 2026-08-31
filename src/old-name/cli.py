@@ -1,21 +1,14 @@
-"""The raven and the smith - universal tooling, not story-shaped.
+"""The norns, the squirrel, and the tree - the engine's three shapes.
 
-Two entry points, always the same regardless of which game or world
-is built on this engine:
+Two CLI entry points:
 
-    raven - memory. The game and its keeping.
-        raven tidyup     the seven questions, raven-shaped
-        raven deploy     ship this checkout to your deploy host
-        raven backup     git bundle + play history (vault, journal) -> NAS
-        raven test       the pytest suite
+    ratatoskr - the squirrel. Ferries messages between the dev box,
+                the deploy host, Gitea, the NAS, and the World Tree
+                bundle. Subcommands: tidyup, test, weave, ferry
+                (deploy / carry / fetch).
 
-    old-name - the smith. Craft. Worldbuilding tools.
-        old-name chat       interview a new world into existence
-        old-name validate   geometry checks against the pack
-        old-name build      package web/<name>/ into one self-contained HTML file
-        old-name build-map  rebuild the map from run-length rows
-        old-name verify     validate a live deployment
-        old-name import     clone or pull a story repo (Gitea) into worlds/<name>/
+    norns     - the weavers. Craft commands for shaping the world:
+                chat, validate, build-map, verify.
 
 Run from any checkout; git decides which. In the container, the
 same commands serve against the deployed world (deploy and
@@ -203,7 +196,7 @@ def cmd_tidyup(args) -> int:
         ('Q7', 'open items from the ROADMAP', *q7_next(pack)),
     ]
     now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    print(f'raven tidyup -- {now}')
+    print(f'ratatoskr tidyup -- {now}')
     print()
     print('| Q  | Question | Status | Answer |')
     print('| -- | -------- | ------ | ------ |')
@@ -242,13 +235,13 @@ def _import_target(args) -> tuple[str, str]:
     Returns (target_host, worlds_dir) - worlds_dir is the directory on
     the target host that contains the per-pack subdirs. For 'local' we
     resolve to the checkout's worlds/. For an ssh host we look up the
-    deploy-host layout by asking the host itself (`raven deploy` puts
+    deploy-host layout by asking the host itself (`ratatoskr ferry deploy` puts
     the engine at ~/old-name/, so the worlds are at ~/old-name/worlds/).
     """
     if args.target == 'local':
         return 'local', str(pack_root() / 'worlds')
     # On a deploy host the engine checkout is ~/old-name/ (where
-    # raven deploy rsyncs to). The worlds live inside that checkout.
+    # ratatoskr ferry deploy rsyncs to). The worlds live inside that checkout.
     return args.target, '~/old-name/worlds'
 
 
@@ -343,7 +336,7 @@ def cmd_import(args) -> int:
         # the live game already validates itself via /api/world on
         # the deploy host. Print the validation command instead.
         print(f'validate on the deploy host: ssh {target_host} '
-              f'"cd ~/old-name && old-name validate --pack worlds/{name}"')
+              f'"cd ~/old-name && norns craft validate --pack worlds/{name}"')
         return 0
     try:
         w = load_pack(pack)
@@ -435,6 +428,62 @@ def cmd_build_web(args) -> int:
     size_kb = out_path.stat().st_size / 1024
     print(f'wrote {out_path} ({size_kb:.1f} KB)')
     print('open it in a browser, set your LLM URL + model, and play.')
+
+    # Optional: also write <name>-<date>.tree.md alongside the HTML,
+    # weaving every dev-UI tab into one document. The vault and
+    # journal come from either --vault/--journal paths, the live
+    # game's HTTP API (--from-live), or the env-driven defaults.
+    # If nothing is reachable the build still succeeds, just without
+    # play history.
+    if args.with_bundle:
+        from . import forge as _forge_mod, journal as _journal_mod
+        from .export import export_story as _render
+
+        # Pull vault + journal to local temp files. The export module
+        # reads from disk paths only, so we materialize whatever source
+        # we pick into the same shape.
+        import tempfile as _tmp
+        vault_path = Path(args.vault) if args.vault else None
+        journal_path = Path(args.journal) if args.journal else None
+
+        if args.from_live:
+            # Fetch the live deployment's vault and journal over HTTP.
+            import json as _json
+            import urllib.request as _ur
+            url = args.from_live.rstrip("/")
+            with _ur.urlopen(f"{url}/api/vault", timeout=15) as r:
+                vault_data = _json.loads(r.read().decode("utf-8")).get("items", [])
+            with _ur.urlopen(f"{url}/api/journal", timeout=15) as r:
+                journal_data = _json.loads(r.read().decode("utf-8")).get("entries", [])
+            with _tmp.NamedTemporaryFile("w", suffix=".json", delete=False) as vf:
+                _json.dump(vault_data, vf); vault_tmp = Path(vf.name)
+            with _tmp.NamedTemporaryFile("w", suffix=".json", delete=False) as jf:
+                _json.dump(journal_data, jf); journal_tmp = Path(jf.name)
+            vault_path = vault_tmp
+            journal_path = journal_tmp
+            print(f"  pulled vault ({len(vault_data)} items) + "
+                  f"journal ({len(journal_data)} entries) from {url}")
+        else:
+            vault_path = vault_path or _forge_mod.VAULT
+            journal_path = journal_path or _journal_mod.JOURNAL
+
+        old_vault, old_journal = _forge_mod.VAULT, _journal_mod.JOURNAL
+        _forge_mod.VAULT = vault_path
+        _journal_mod.JOURNAL = journal_path
+        try:
+            bundle_md = _render()
+        finally:
+            _forge_mod.VAULT = old_vault
+            _journal_mod.JOURNAL = old_journal
+
+        bundle_path = out_path.with_name(
+            out_path.stem.replace('private-canon', pack.name) + '.tree.md'
+        )
+        bundle_path.write_text(bundle_md, encoding="utf-8")
+        bundle_kb = bundle_path.stat().st_size / 1024
+        print(f"wrote {bundle_path} ({bundle_kb:.1f} KB)")
+        print("  one section per dev UI tab, woven from "
+              f"{vault_path.name} + {journal_path.name}.")
     return 0
 
 def cmd_deploy(args) -> int:
@@ -529,55 +578,77 @@ def cmd_test(args) -> int:
     try:
         return sh(cmd).returncode
     except FileNotFoundError:
-        print('uv not found - run raven test from a checkout with uv installed')
+        print('uv not found - run ratatoskr test from a checkout with uv installed')
         return 1
 
 
 # ----------------------------------------------------------------- mains
 
-RAVEN_HELP = """raven - memory. The game and its keeping.
+RATATOSKR_HELP = """ratatoskr - the squirrel who carries messages up and down Yggdrasil.
 
-  raven tidyup    the seven questions, raven-shaped: git/deploy sync,
-                  local files needing push, deployment health, world
-                  validation, backup freshness, vault persistence,
-                  open ROADMAP items
-  raven deploy    rsync this checkout to --deploy-host, rebuild the
-                  container, restart it, verify health + the live map
-  raven backup    git bundle + play history (vault, journal) ->
-                  --nas-host. Bundle keeps the newest two;
-                  play history mirrors under old-name-<date>/ plus a
-                  stable latest/ pointer.
-  raven test      the pytest suite (uv run --group test pytest),
-                  extra args pass through: raven test -k chat
+Three subcommands for ferrying things between the engine and the
+rest of the world:
+
+  ratatoskr tidyup         the seven questions - git/deploy sync,
+                           local files needing push, deployment
+                           health, world validation, backup
+                           freshness, vault persistence, open
+                           ROADMAP items
+  ratatoskr test           the pytest suite (uv run --group test pytest),
+                           extra args pass through: ratatoskr test -k chat
+  ratatoskr ferry <verb>   ferry tools - carry the world between the
+                           dev box, the deploy host, Gitea, the NAS,
+                           and the World Tree bundle:
+
+    ratatoskr ferry deploy   ship this checkout to --deploy-host,
+                             rebuild the container, restart it,
+                             verify health + the live map
+    ratatoskr ferry carry    git bundle + play history (vault,
+                             journal) -> --nas-host. The newest
+                             two bundles are kept; play history
+                             mirrors under old-name-<date>/ plus a
+                             stable latest/ pointer.
+    ratatoskr ferry fetch    clone or pull a story repo (Gitea,
+                             --base) into worlds/<name>/. Pass
+                             'owner/name' or a full git URL;
+                             --target <deploy-host> ships straight
+                             to the live box; --pull updates an
+                             existing pack instead of re-cloning;
+                             --dry-run prints the plan only.
+
+  ratatoskr weave          package worlds/<name>/ + web/packaged.html
+                           into one self-contained HTML file. Pair it
+                           with --with-bundle to also write the
+                           World Tree (a markdown document with one
+                           section per dev UI tab, woven from
+                           vault + journal). Send the pair to
+                           someone - they open the HTML in a browser,
+                           point at any OpenAI-compatible LLM URL,
+                           and play.
 """
 
-SMIDR_HELP = """old-name - the smith. Craft. Worldbuilding tools.
+NORNS_HELP = """norns - the weavers of fate at the well beneath Yggdrasil.
 
-  old-name chat      interview a new world into existence, against your
-                  local ollama - writes worlds/<name>/, validates as
-                  it goes
-  old-name validate  geometry checks against a pack (--pack defaults to
-                  the currently selected world)
-  old-name build     package web/packaged.html + the active world into
-                  one self-contained HTML file at dist/<name>-<date>.html.
-                  Send it to someone - they open it in a browser, point
-                  it at any OpenAI-compatible LLM URL, and play.
-  old-name build-map rebuild the map from run-length rows (--segments)
-  old-name verify    validate a live deployment's served world (--url)
-  old-name import    clone or pull a story repo (Gitea, --base) into
-                  worlds/<name>/. Pass 'owner/name' or a full git
-                  URL; --target <deploy-host> ships straight to the
-                  live box; --pull updates an existing pack instead
-                  of re-cloning; --dry-run prints the plan only.
+Four subcommands for shaping what the engine makes:
 
-Universal tooling - the same commands regardless of which world
-or game is built on this engine.
+  norns chat        interview a new world into existence, against
+                    your local model. Writes worlds/<name>/,
+                    validates as it goes.
+  norns validate    geometry checks against a pack (--pack defaults
+                    to the currently selected world)
+  norns verify      validate a live deployment's served world (--url)
+  norns build-map   rebuild the map from run-length rows (--segments,
+                    --pack, --force)
+
+The shape of every world, the town's grid, and the keepers'
+voices are yours - the bones and the flesh alike. The norns
+only ever teach the engine how to speak.
 """
 
 
-def raven_main() -> int:
+def ratatoskr_main() -> int:
     ap = argparse.ArgumentParser(
-        prog='raven', description=RAVEN_HELP,
+        prog='ratatoskr', description=RATATOSKR_HELP,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument('--url', default=DEFAULT_URL)
@@ -589,101 +660,109 @@ def raven_main() -> int:
 
     sub.add_parser('tidyup', help='the seven questions').set_defaults(fn=cmd_tidyup)
 
-    pd = sub.add_parser('deploy', help='ship this checkout to --deploy-host')
-    pd.set_defaults(fn=cmd_deploy)
-
-    pb = sub.add_parser(
-        'backup',
-        help='git bundle + play history -> --nas-host; play history mirrors under old-name-<date>/ plus latest/'
-    )
-    pb.set_defaults(fn=cmd_backup)
-
     pt = sub.add_parser(
         'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
     )
     pt.set_defaults(fn=cmd_test)
 
+    # `weave` is the file-packaging command - kept at top level so it's
+    # easy to reach without the ferry sub-tree.
+    pw = sub.add_parser('weave', help='package a world into one self-contained HTML file')
+    pw.add_argument('--pack', default=None, help='world to bundle (default: current)')
+    pw.add_argument('--out', default=None, help='output HTML path (default: dist/<name>-<date>.html)')
+    pw.add_argument('--with-bundle', action='store_true',
+                    help='also write <name>-<date>.tree.md alongside the HTML')
+    pw.add_argument('--vault', default=None,
+                    help='path to vault.json (default: $NORN_VAULT)')
+    pw.add_argument('--journal', default=None,
+                    help='path to journal.json (default: $NORN_JOURNAL)')
+    pw.add_argument('--from-live', default=None,
+                    help='pull vault+journal from a live deployment URL')
+    pw.set_defaults(fn=cmd_build_web)
+
+    # Ferry subcommand - carries things between places.
+    ferry = sub.add_parser(
+        'ferry', help='carry messages between dev box, deploy host, Gitea, NAS'
+    )
+    ferry_sub = ferry.add_subparsers(dest='ferry_verb', required=True)
+
+    fd = ferry_sub.add_parser('deploy', help='ship this checkout to --deploy-host')
+    fd.set_defaults(fn=cmd_deploy)
+
+    fcp = ferry_sub.add_parser('carry', help='git bundle + play history -> --nas-host')
+    fcp.set_defaults(fn=cmd_backup)
+
+    fct = ferry_sub.add_parser(
+        'fetch',
+        help='clone or pull a story repo from Gitea into worlds/<name>/',
+    )
+    fct.add_argument(
+        'repo',
+        help="the story repo: 'owner/name' shorthand (resolved via "
+             '--base) or a full git URL',
+    )
+    fct.add_argument(
+        '--name', default=None,
+        help='the worlds/ directory name (default: repo basename)',
+    )
+    fct.add_argument(
+        '--base', default=GITEA_BASE,
+        help='Gitea base URL for shorthand repo resolution',
+    )
+    fct.add_argument(
+        '--target', default='local',
+        help="where to land the pack: 'local' (this checkout) or "
+             '<deploy-host> (ssh + clone there)',
+    )
+    fct.add_argument(
+        '--pull', action='store_true',
+        help="if worlds/<name>/ exists, do `git pull --ff-only` instead of clone",
+    )
+    fct.add_argument(
+        '--dry-run', action='store_true',
+        help='show what would happen, do nothing',
+    )
+    fct.set_defaults(fn=cmd_import)
+
     args, extra = ap.parse_known_args()
-    args.test_args = extra if args.cmd == 'test' else []
+    if args.cmd == 'test':
+        args.test_args = extra
     return args.fn(args)
 
 
-def smidr_main() -> int:
+def norns_main() -> int:
     ap = argparse.ArgumentParser(
-        prog='old-name', description=SMIDR_HELP,
+        prog='norns', description=NORNS_HELP,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    sub = ap.add_subparsers(dest='cmd', required=True)
+    craft = ap.add_subparsers(dest='craft_cmd', required=True)
 
-    mc = sub.add_parser('chat', help='interview a new world into existence')
+    mc = craft.add_parser('chat', help='interview a new world into existence')
     mc.add_argument('--name', required=True, help='the new pack name (worlds/<name>)')
     mc.set_defaults(fn=cmd_chat)
 
-    mv = sub.add_parser('validate', help='geometry checks against the pack')
+    mv = craft.add_parser('validate', help='geometry checks against the pack')
     mv.add_argument('--pack', default=None)
     mv.set_defaults(fn=cmd_map, map_cmd='validate', segments=None, force=False)
 
-    mbw = sub.add_parser(
-        'build',
-        help='compile worlds/<name>/ + web/packaged.html into one self-contained HTML file',
-    )
-    mbw.add_argument('--pack', default=None, help='world to bundle (default: current)')
-    mbw.add_argument('--out', default=None, help='output path (default: dist/<name>-<date>.html)')
-    mbw.add_argument('--target', default='web', choices=['web'], help='build target (only web for now)')
-    mbw.set_defaults(fn=cmd_build_web)
-
-    # Map-builder kept for parity; --target web routed to cmd_build_web.
-    mb = sub.add_parser('build-map', help='rebuild the map from run-length rows')
+    mb = craft.add_parser('build-map', help='rebuild the map from run-length rows')
     mb.add_argument('--segments', required=True)
     mb.add_argument('--pack', default=None)
     mb.add_argument('--force', action='store_true')
     mb.set_defaults(fn=cmd_map, map_cmd='build')
 
-    mr = sub.add_parser('verify', help='validate a live deployment')
+    mr = craft.add_parser('verify', help='validate a live deployment')
     mr.add_argument('--url', default=DEFAULT_URL)
     mr.set_defaults(fn=cmd_map, map_cmd='verify', segments=None, force=False,
                     pack=None)
 
-    mi = sub.add_parser(
-        'import',
-        help='clone or pull a story repo from Gitea into worlds/<name>/',
-    )
-    mi.add_argument(
-        'repo',
-        help="the story repo: 'owner/name' shorthand (resolved via "
-             '--base) or a full git URL',
-    )
-    mi.add_argument(
-        '--name', default=None,
-        help='the worlds/ directory name (default: repo basename)',
-    )
-    mi.add_argument(
-        '--base', default=GITEA_BASE,
-        help='Gitea base URL for shorthand repo resolution',
-    )
-    mi.add_argument(
-        '--target', default='local',
-        help="where to land the pack: 'local' (this checkout) or "
-             '<deploy-host> (ssh + clone there)',
-    )
-    mi.add_argument(
-        '--pull', action='store_true',
-        help="if worlds/<name>/ exists, do `git pull --ff-only` instead of clone",
-    )
-    mi.add_argument(
-        '--dry-run', action='store_true',
-        help='show what would happen, do nothing',
-    )
-    mi.set_defaults(fn=cmd_import)
-
     args = ap.parse_args()
-    # validate / build / build-map / verify default --pack to the
-    # resolved world; chat and import don't take --pack and don't
-    # need the lookup.
-    if args.cmd in ('validate', 'build', 'build-map', 'verify') and getattr(args, 'pack', None) is None:
+    # validate / build-map / verify default --pack to the resolved
+    # world; chat doesn't take --pack and doesn't need the lookup.
+    if args.craft_cmd in ('validate', 'build-map', 'verify') and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
     return args.fn(args)
 
 
 if __name__ == '__main__':
-    sys.exit(raven_main())
+    sys.exit(ratatoskr_main())

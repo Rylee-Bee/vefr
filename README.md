@@ -5,7 +5,7 @@
 >
 > **It gives the hellos that never happened.**
 
-Two entry points, `raven` and `old-name`, live under this one umbrella -
+Two entry points, `ratatoskr` and `norns`, live under this one umbrella -
 universal tooling that never references any specific game's name, so
 any story can be woven here. "Old Name" is Old Norse for memory and
 longing; it's also the title of the author's own game,
@@ -41,10 +41,10 @@ src/norn/           the engine (MIT)
                      deterministic templating, no model needed
   main.py            FastAPI surface incl. GET /api/world,
                      GET /api/journal, GET /api/export
-  cli.py             two entry points, raven and smith:
-                       raven - memory: tidyup, deploy, backup, test
-                       old-name - craft: validate, build, verify worlds
-  maplab.py          old-name's toolkit - the one validator shared by
+  cli.py             two entry points, ratatoskr (the squirrel) and norns (the weavers):
+                       ratatoskr - memory: tidyup, test, weave, ferry (deploy, carry, fetch)
+                       norns - craft: chat, validate, build-map, verify
+  maplab.py          norns's toolkit - the one validator shared by
                      tests and both clis
 
 worlds/<name>/       a world pack - a story
@@ -95,7 +95,7 @@ it boots with something to play. To swap in your own world:
 1. Copy `worlds/sample-world/` to `worlds/<your-name>/`.
 2. Edit `world.json`, `bible.md`, `voices/*.md`, `map.md`. The
    contract lives in `world.json`'s `REQUIRED` keys (see
-   `src/norn/world.py`); `old-name validate --pack worlds/<your-name>`
+   `src/norn/world.py`); `norns validate --pack worlds/<your-name>`
    catches mistakes.
 3. Mount it into the container and tell the engine which pack to load:
 
@@ -125,7 +125,7 @@ entirely off the laptop, the cloud, and any LAN host.
 ### Package a single HTML file (the bones)
 
 ```sh
-old-name build
+ratatoskr weave
 # -> dist/private-canon-2026-08-31.html  (one self-contained file)
 ```
 
@@ -147,7 +147,7 @@ internet.
    town grid and palette.
 4. `NORN_WORLD=yours`. The engine does the rest.
 
-**By conversation** (`old-name chat --name yours`): an interview, run
+**By conversation** (`norns chat --name yours`): an interview, run
 against your own local ollama, drafts the canon, the theme colors,
 your phases, bonds, and one speaker's voice - starting from
 `worlds/sample-world/` (a known-valid scaffold) so the geometry can
@@ -156,13 +156,13 @@ call; the model only ever fills in prose or a hex color inside a
 schema it can't escape. Every write ends in `maplab.validate()` - you
 never have to trust your own edits, the tool always checks. The map
 itself stays the scaffold's in v1; grow it after with
-`old-name build --segments`.
+`norns build-map --segments`.
 
 ## More docs
 
 - **New here?** `GETTING_STARTED.md` - install, run, build your own
   world, no story content required.
-- **CLI reference:** `raven --help` / `old-name --help` - the full
+- **CLI reference:** `ratatoskr --help` / `norns --help` - the full
   command list, always in sync with the code.
 - **API reference:** the running app serves interactive docs for
   free at `/docs` (e.g. `http://127.0.0.1:8820/docs`) - every route,

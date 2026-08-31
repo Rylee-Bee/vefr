@@ -85,6 +85,8 @@ function matchOne(el, sel) {
   if (m) return String(el.className).split(/\s+/).includes(m[1]);
   m = sel.match(/^#([\w-]+)$/);
   if (m) return el.id === m[1];
+  m = sel.match(/^\[data-([\w-]+)\]$/);
+  if (m) return el.dataset && el.dataset[camel(m[1])] !== undefined;
   m = sel.match(/^\.tabs button$/);
   if (m) return el.tagName === 'BUTTON' && isUnder(el, (a) => String(a.className).split(/\s+/).includes('tabs'));
   throw new Error('harness: unsupported selector ' + sel);
@@ -113,8 +115,10 @@ function mk(tag, id, cls, parent = root, data = {}) {
   if (e.id) byId.set(e.id, e);
   return e;
 }
-
-/* the elements both scripts reach for, matching index.html */
+function mkBtnWithData(id, dataKey, dataVal) {
+  var e = mk('button', id, '', root, { [dataKey]: dataVal });
+  return e;
+}
 const tabsBox = mk('div', '', 'tabs');
 const TABVIEWS = ['rumors', 'vault', 'bell', 'town', 'journal', 'builder'];
 const tabBtns = {};
@@ -145,9 +149,14 @@ mk('button', 'npc-close', '', npcBox);
 mk('p', 'poi', 'note');
 mk('p', 'watched', 'note');
 mk('button', 'export-btn');
+mkBtnWithData('export-journal-btn', 'exportTab', 'journal');
 mk('button', 'journal-clear-btn');
 mk('p', 'journal-status', 'note');
 mk('section', 'journal-list');
+mkBtnWithData('export-rumors-btn', 'exportTab', 'rumors');
+mkBtnWithData('export-vault-btn', 'exportTab', 'vault');
+mkBtnWithData('export-bell-btn', 'exportTab', 'bell');
+mkBtnWithData('export-town-btn', 'exportTab', 'town');
 mk('select', 'builder-pack-picker');
 mk('button', 'builder-refresh-packs');
 mk('p', 'builder-pack-info', 'note');
@@ -256,6 +265,10 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
   if (url === '/api/export') return ok('# story');
+  if (url.startsWith('/api/export/tabs/')) {
+    const tab = url.split('/').pop();
+    return ok(`# section\n\n## ${tab}\n\nexported.`);
+  }
   if (url === '/api/builder/worlds') return ok({
     worlds: [
       { name: 'sample-world', title: 'Emberfield', phases: ['dusk', 'dawn'], speakers: ['smith'] },
@@ -348,6 +361,16 @@ byId.get('export-btn').click();
 await tick();
 check('export fetched', calls.some((c) => c.url === '/api/export'));
 check('export status set', byId.get('journal-status').textContent.includes('yours to keep'), byId.get('journal-status').textContent);
+
+/* per-tab export buttons: each tab pulls its own markdown section */
+const tabExports = ['rumors', 'vault', 'bell', 'town', 'journal'];
+for (const t of tabExports) {
+  byId.get('export-' + t + '-btn').click();
+  await tick();
+  check('per-tab export ' + t + ' fetched',
+    calls.some((c) => c.url === '/api/export/tabs/' + t),
+    calls.filter((c) => c.url === '/api/export/tabs/' + t).length + ' calls');
+}
 
 /* journal clear */
 byId.get('journal-clear-btn').click();

@@ -177,6 +177,18 @@
   .builder-chat-form button:hover, .builder-chat-form button:focus-visible {
     border-color: var(--accent); outline: none;
   }
+  /* per-tab export button - small, dim, sits at the right of the
+     tab's controls row. Clicking pulls the tab's section as markdown. */
+  .export-tab-btn {
+    font: inherit; font-size: 0.82rem; padding: 0.45rem 0.8rem;
+    min-height: 44px;
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--card-edge); border-radius: 3px;
+    cursor: pointer; margin-left: auto;
+  }
+  .export-tab-btn:hover, .export-tab-btn:focus-visible {
+    border-color: var(--accent); color: var(--ink); outline: none;
+  }
 
   /* the journal - one card per entry, hierarchy by luminance only */
   .card .when { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; }
@@ -222,6 +234,7 @@
     <div class="controls">
       <button type="button" id="whisper-btn">Whisper</button>
       <span class="note" id="status">the mill is warm</span>
+      <button type="button" id="export-rumors-btn" data-export-tab="rumors" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="feed" aria-live="polite">
       <p class="empty">The mill is quiet. Press Whisper.</p>
@@ -232,6 +245,7 @@
     <div class="controls">
       <button type="button" id="forge-btn">Forge</button>
       <span class="note" id="forge-status">most are assigned or cold. the attuned are rare.</span>
+      <button type="button" id="export-vault-btn" data-export-tab="vault" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="forge-out" aria-live="polite"></section>
     <h2 style="font-weight:normal;font-size:1rem;color:var(--ink-dim);margin:1.8rem 0 0;">Kept</h2>
@@ -240,7 +254,11 @@
 
   <section id="view-bell" class="view" role="tabpanel" aria-labelledby="tab-bell" hidden>
     <p class="note">Blackfen. The water keeps the bell's tongue. One ring is owed.</p>
-    <div class="controls"><button type="button" id="ring-btn">strike the bell</button><span class="note" id="bell-status">the bell waits for a hand.</span></div>
+    <div class="controls">
+      <button type="button" id="ring-btn">strike the bell</button>
+      <span class="note" id="bell-status">the bell waits for a hand.</span>
+      <button type="button" id="export-bell-btn" data-export-tab="bell" class="export-tab-btn">Export this tab</button>
+    </div>
     <section id="letter-out" aria-live="polite"></section>
   </section>
 
@@ -250,6 +268,9 @@
     <canvas id="town-canvas" width="960" height="640"></canvas>
     <p class="note" id="near-note" aria-live="polite" hidden></p>
     <p class="note" id="carrying" aria-live="polite"></p>
+    <div class="controls">
+      <button type="button" id="export-town-btn" data-export-tab="town" class="export-tab-btn">Export this tab</button>
+    </div>
     <div class="dpad" id="dpad" aria-label="Move">
       <button type="button" data-dir="up" style="grid-area:u">&#8593;</button>
       <button type="button" data-dir="left" style="grid-area:l">&#8592;</button>
@@ -268,7 +289,8 @@
   <section id="view-journal" class="view" role="tabpanel" aria-labelledby="tab-journal" hidden>
     <p class="note">what happened, kept for you &mdash; so you don't have to hold it in your own memory.</p>
     <div class="controls">
-      <button type="button" id="export-btn">Export story</button>
+      <button type="button" id="export-btn">Export whole story</button>
+      <button type="button" id="export-journal-btn" data-export-tab="journal">Export this tab</button>
       <button type="button" id="journal-clear-btn">Start fresh</button>
     </div>
     <p class="note" id="journal-status">&nbsp;</p>
@@ -714,6 +736,38 @@
   });
 
   window.addEventListener('old-name:journal', renderJournal);
+
+  /* "Export this tab" - one markdown file with the canon + that tab's
+     section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
+     Journal views. Same download-blob pattern as the full export. */
+  async function exportTab(tab, filename) {
+    var r = await fetch('/api/export/tabs/' + tab);
+    if (!r.ok) throw new Error('export ' + tab + ' failed');
+    var md = await r.text();
+    var url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename || (tab + '-' + new Date().toISOString().slice(0, 10) + '.md');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+  document.querySelectorAll('[data-export-tab]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      btn.disabled = true;
+      var orig = btn.textContent;
+      btn.textContent = 'exporting\u2026';
+      try {
+        await exportTab(btn.dataset.exportTab, btn.dataset.exportTab + '.md');
+      } catch (err) {
+        btn.textContent = 'failed';
+      } finally {
+        btn.disabled = false;
+        setTimeout(function () { btn.textContent = orig; }, 1200);
+      }
+    });
+  });
 
   exportBtn.addEventListener('click', async function () {
     exportBtn.disabled = true;
