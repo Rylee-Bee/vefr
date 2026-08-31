@@ -1,9 +1,26 @@
 """The rune cast - the engine's one stochastic surface.
 
-The lore, the bible, the journey, the surface, the contract - all
-deterministic. The runes are the exception. After everything has
-been laid down (lore pack chosen, bible.md written, journey mapped),
-the cast is the one moment where what happens is *up to the world*.
+The lore, the bible, the journey, the surface, the contract, the
+tree, the journal, the export, the backup - all deterministic,
+all replayable. The runes are the exception. After everything
+has been laid down (lore pack chosen, bible.md written, journey
+mapped), the cast is the one moment where what happens is *up
+to the world*.
+
+**The rune cast is not a memory.** The engine's journal is the
+memory: atomic, dated, replayable. The rune cast is what memory
+can't capture. Same seed -> same cast - within a session-minute -
+but the seed changes every minute, so the cast is never the same
+twice across sessions. The tree is the memory. The runes are
+the *absence* of one.
+
+The Hero's Journey *is* the deterministic backbone. The four
+phases anchored to four runes (Fehu, Thurisaz, Kenaz, Sowilo)
+are the bones. The cast is what lives *outside* the journey: the
+two free runes in every cast (what_is, what_asks) are the
+random cards the deterministic structure leaves room for.
+**The journey is the shape. The cast is the surprise inside
+the shape.**
 
 The runes are 24 Elder Futhark runes in three aettir (groups of
 eight). The cast is three runes in three positions:

@@ -102,19 +102,40 @@ the world's living document with one section per dev-UI tab.
 
 **Only the runes leave room for chaos.** Every other surface is
 deterministic — the engine's contract, the packs, the lore, the
-tree. The runes are the one stochastic surface; the cast is
-the one moment where what happens is *up to the world*. The
-player reads what the chips say; the chips don't read the player.
+tree, the journal, the export, the backup. The runes are the one
+stochastic surface; the cast is the one moment where what happens
+is *up to the world*. The player reads what the chips say; the
+chips don't read the player.
 
-The rune cast is the engine's *personal memory* — same role as
-the homelab's `memory_memory_search` / `memory_journal_log` /
-LangGraph persistence layer. Same shape (atomic write, timestamped,
-seedable), same honesty (every claim verifiable, every cast
-reproducible), same commitment (the story persists; replays
-return the same canon). The runes are the only surface that
-varies within a session-minute, and even they can be replayed
-by re-seeding. **The contract is honest. The bones are
-documented. The journey begins.**
+The deterministic surfaces are the engine's *commitment to being
+honest*: every claim has a verifiable command, every backup
+restores, every export reads the journal exactly as written. The
+rune cast is the engine's *commitment to being alive*: the cast
+isn't recorded, isn't persisted, isn't replayable across sessions
+(the seed changes every minute). **The tree is the memory. The
+runes are what the memory can't capture.**
+
+Which is to say — the rune cast is *not* a memory system. It is
+the absence of one. The homelab's `memory_journal_log` and the
+norn engine's `journal.log()` are both *memories*: atomic, dated,
+replayable. The rune cast is **what neither memory captures**.
+It is the unrepeatable surprise that sits inside a fully
+replayable world. **You can replay a session and the lore, the
+tree, the journal, the export are all identical. The cast is
+never the same twice.**
+
+The Hero's Journey *is* the deterministic backbone — the four
+phases anchored to four runes (Fehu, Thurisaz, Kenaz, Sowilo) are
+the journey. The cast is what lives *outside* the journey: the
+two free runes in every cast (what_is, what_asks) are the
+random cards the deterministic structure leaves room for. **The
+journey is the shape. The cast is the surprise inside the shape.**
+
+Same seed -> same cast. The player can replay a minute and find
+the same runes (within that minute). The author can name a moment
+in the bible ("the morning of Woden's day") and the cast for that
+minute will always match. The surprise is *bounded*, never
+unbound.
 
 ### Lore packs
 
