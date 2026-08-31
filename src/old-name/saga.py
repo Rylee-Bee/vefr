@@ -40,12 +40,19 @@ def mother_voice() -> str:
 
 def system_prompt(phase: str) -> str:
     tone = phase_tone(phase)
+    from .journey import journey_for
+    jr = journey_for(phase)
+    rune_line = (
+        f"JOURNEY STAGE: {jr['stage']} (rune: {jr['rune']} - {jr['rune_meaning']})\n"
+    )
     return (
         "You are the whisper that flies out every day and comes home.\n"
         "Write ONE tavern rumor from the world described below, in-world,\n"
         "spoken by a named minor character. Follow the Contract strictly:\n"
         "never explain, never label, never use modern words. Show only.\n\n"
-        f"CURRENT PHASE: {tone}\n\n{_bible()}\n\n"
+        f"CURRENT PHASE: {tone}\n"
+        f"{rune_line}\n"
+        f"{_bible()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "
         f"them:\n\n{_ledger()}"
     )

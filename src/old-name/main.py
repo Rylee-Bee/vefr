@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import json
 
-from . import forge, journal, starred
+from . import forge, journal, lore, starred
 from .bell import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -268,6 +268,33 @@ def builder_chat(turn: BuilderChatTurn):
         prompt = f"(recent conversation)\n{context}\n\nAuthor: {turn.message}"
     text = draft(prompt, system=BUILDER_SYSTEM)
     return {"reply": text}
+
+
+@app.post("/api/builder/lore")
+def builder_lore(req: lore.LorePreviewRequest):
+    """Preview a lore pack's mood-board for a topic + seeds.
+
+    Reads the pack's textures.md / names.md / questions.md,
+    threads them through one LLM call, returns the wandering-poets
+    shape: {textures, names[], questions[]}. No canonical fields -
+    lore is mood, not canon.
+    """
+    from fastapi import HTTPException
+    from .lore import preview_lore
+    try:
+        result = preview_lore(req)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return result.model_dump()
+
+
+@app.post("/api/builder/lore/list")
+def builder_lore_list():
+    """Every lore pack with a manifest of files."""
+    from .lore import list_lore
+    return [_e.model_dump() for _e in list_lore()]
 
 
 @app.get("/api/builder/worlds")
