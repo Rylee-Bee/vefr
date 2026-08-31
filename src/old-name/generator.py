@@ -80,26 +80,42 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
     non-gpt-oss models the kwarg is ignored.
     """
     if LLAMACPP_URL:
-        schema = payload.get("format")
-        body = {
-            "model": payload["model"],
-            "messages": [
+        # Three payload shapes are supported:
+        #   - legacy ollama shape: {system, prompt, format, ...}
+        #   - messages shape (with optional response_format): messages is the source of truth
+        #   - explicit response_format from the caller (e.g. lore previews)
+        if payload.get("messages"):
+            messages = payload["messages"]
+        else:
+            messages = [
                 {"role": "system", "content": payload.get("system", "")},
                 {"role": "user", "content": payload.get("prompt", "")},
-            ],
-            "max_tokens": max_tokens,
-            "temperature": payload.get("options", {}).get("temperature", 0.85),
-            "response_format": (
-                {
-                    "type": "json_schema",
-                    "json_schema": {"schema": schema, "strict": True},
-                }
-                if schema
-                else {"type": "text"}
-            ),
+            ]
+        # response_format priority:
+        #   1. caller-provided response_format (already JSON-schema shaped)
+        #   2. legacy `format` field (converted to JSON-schema)
+        #   3. plain text fallback
+        if "response_format" in payload:
+            response_format = payload["response_format"]
+        else:
+            schema = payload.get("format")
+            response_format = (
+                {"type": "json_schema",
+                 "json_schema": {"schema": schema, "strict": True}}
+                if schema else {"type": "text"}
+            )
+        body = {
+            "model": payload["model"],
+            "messages": messages,
+            "response_format": response_format,
             "stream": False,
             "chat_template_kwargs": {"reasoning_effort": "low"},
         }
+        # Allow callers to override defaults via the payload (useful
+        # for lore drafts that need much more headroom than 1024).
+        for k in ("max_tokens", "temperature"):
+            if k in payload:
+                body[k] = payload[k]
         r = httpx.post(
             f"{LLAMACPP_URL}/v1/chat/completions", json=body, timeout=180
         )
