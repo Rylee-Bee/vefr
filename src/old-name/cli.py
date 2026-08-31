@@ -9,6 +9,7 @@ Two entry points, one pattern:
         old-name test       the pytest suite
 
     old-name - the smith. Craft. Worldbuilding tools.
+        old-name chat      interview a new world into existence
         old-name validate  geometry checks against the pack
         old-name build     rebuild the map from run-length rows
         old-name verify    validate a live deployment
@@ -204,6 +205,15 @@ def cmd_tidyup(args) -> int:
 
 # ------------------------------------------------------------------ map
 
+def cmd_chat(args) -> int:
+    from . import chat as chatmod
+
+    name = chatmod.slugify(args.name)
+    scaffold = pack_root() / 'worlds' / 'sample-world'
+    dest = pack_root() / 'worlds' / name
+    return chatmod.run_interview(dest, scaffold)
+
+
 def cmd_map(args) -> int:
     from .maplab import main as maplab_main
     if args.map_cmd == 'validate':
@@ -306,6 +316,10 @@ def smidr_main() -> int:
     ap = argparse.ArgumentParser(prog='old-name', description=__doc__)
     ap.add_argument('--url', default=DEFAULT_URL)
     sub = ap.add_subparsers(dest='cmd', required=True)
+
+    mc = sub.add_parser('chat', help='interview a new world into existence')
+    mc.add_argument('--name', required=True, help='the new pack name (worlds/<name>)')
+    mc.set_defaults(fn=cmd_chat)
 
     mv = sub.add_parser('validate', help='geometry checks against the pack')
     mv.add_argument('--pack', default=None)

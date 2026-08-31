@@ -57,6 +57,7 @@ def build_payload(phase: str, key: str) -> dict:
         ),
         "format": SCHEMA,
         "stream": False,
+        "think": False,
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": 0.85},
     }
