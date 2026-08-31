@@ -20,7 +20,10 @@ combo's list and moves on - a smaller pool beats a failed weave.
 import os
 
 
-def build_pool(samples: int = 5, specials: int = 3, progress=None) -> dict:
+def build_pool(
+    samples: int = 5, specials: int = 3, progress=None,
+    pack_name: str | None = None,
+) -> dict:
     """Pre-generate real outputs for every combination the game can hit.
 
     Keys mirror the live API's shapes:
@@ -38,7 +41,13 @@ def build_pool(samples: int = 5, specials: int = 3, progress=None) -> dict:
     from .stefna import generate_letter
     from .world import load_world
 
-    world = load_world()
+    # Explicit name, not the env-resolved no-arg call: load_world is
+    # lru_cached on its name argument, so load_world() would keep
+    # returning whichever world the process cached first (the server's
+    # default, a prior test's, whatever). The pool must read the pack
+    # it was asked to weave, by name; None falls back to the env
+    # default for direct callers.
+    world = load_world(pack_name)
     phases = list(world.get("phases", {}).keys())
     speakers = list(world.get("speakers", {}).keys())
 
