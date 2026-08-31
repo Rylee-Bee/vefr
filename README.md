@@ -5,6 +5,12 @@
 >
 > **It gives the hellos that never happened.**
 
+**Naming note (2026-08-31):** this repo is still called `old-name` (its
+original name); the engine's own commands are `raven` and `old-name`
+and never reference this project's name, on purpose - so "Old Name"
+stays free to be a game's title, not the toolkit's. The author's own
+game, built on `worlds/private-canon`, is called Old Name.
+
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
 watchful tower. A **world pack** holds the story. The two only
@@ -30,7 +36,7 @@ src/old-name/            the engine (MIT)
   npc.py             whisper NPCs; seeds keep the world alive
   main.py            FastAPI surface incl. GET /api/world
   cli.py             two entry points, raven and smith:
-                       old-name  - memory: tidyup, deploy, backup, test
+                       raven - memory: tidyup, deploy, backup, test
                        old-name - craft: validate, build, verify worlds
   maplab.py          old-name's toolkit - the one validator shared by
                      tests and both clis
@@ -91,6 +97,17 @@ schema it can't escape. Every write ends in `maplab.validate()` - you
 never have to trust your own edits, the tool always checks. The map
 itself stays the scaffold's in v1; grow it after with
 `old-name build --segments`.
+
+## More docs
+
+- **New here?** `GETTING_STARTED.md` - install, run, build your own
+  world, no story content required.
+- **CLI reference:** `raven --help` / `old-name --help` - the full
+  command list, always in sync with the code.
+- **API reference:** the running app serves interactive docs for
+  free at `/docs` (e.g. `http://127.0.0.1:8820/docs`) - every route,
+  every shape, try-it-out included. No separate file to keep in sync.
+- **What's landed, what's next:** `ROADMAP.md`.
 
 ## The town
 

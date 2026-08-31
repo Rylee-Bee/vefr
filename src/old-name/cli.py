@@ -1,22 +1,27 @@
-"""The ravens and the smith.
+"""The raven and the smith - universal tooling, not story-shaped.
 
-Two entry points, one pattern:
+Two entry points, always the same regardless of which game or world
+is built on this engine:
 
-    old-name - the raven. Memory. The game and its keeping.
-        old-name tidyup     the seven questions, old-name-shaped
-        old-name deploy     ship this checkout to bazzite
-        old-name backup     git bundle -> NAS, keep the newest two
-        old-name test       the pytest suite
+    raven - memory. The game and its keeping.
+        raven tidyup     the seven questions, raven-shaped
+        raven deploy     ship this checkout to your deploy host
+        raven backup     git bundle -> NAS, keep the newest two
+        raven test       the pytest suite
 
     old-name - the smith. Craft. Worldbuilding tools.
-        old-name chat      interview a new world into existence
-        old-name validate  geometry checks against the pack
-        old-name build     rebuild the map from run-length rows
-        old-name verify    validate a live deployment
+        old-name chat       interview a new world into existence
+        old-name validate   geometry checks against the pack
+        old-name build      rebuild the map from run-length rows
+        old-name verify     validate a live deployment
 
 Run from any checkout; git decides which. In the container, the
 same commands serve against the deployed world (deploy and
 backup need a git checkout, so they stay on the dev side).
+
+Your own game's name never appears here - that's the point. Whatever
+you build (Old Name, or anything else) sits in worlds/, and these two
+commands stay the same no matter whose story they're serving.
 """
 
 import argparse
@@ -192,7 +197,7 @@ def cmd_tidyup(args) -> int:
         ('Q7', 'open items from the ROADMAP', *q7_next(pack)),
     ]
     now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    print(f'old-name tidyup -- {now}')
+    print(f'raven tidyup -- {now}')
     print()
     print('| Q  | Question | Status | Answer |')
     print('| -- | -------- | ------ | ------ |')
@@ -224,6 +229,8 @@ def cmd_map(args) -> int:
             argv.append('--force')
     elif args.map_cmd == 'verify':
         argv = ['verify', '--url', args.url]
+    else:
+        raise SystemExit(f'unknown map command: {args.map_cmd}')
     return maplab_main(argv)
 
 def cmd_deploy(args) -> int:
@@ -289,32 +296,67 @@ def cmd_test(args) -> int:
 
 # ----------------------------------------------------------------- mains
 
+RAVEN_HELP = """raven - memory. The game and its keeping.
+
+  raven tidyup    the seven questions, raven-shaped: git/deploy sync,
+                  local files needing push, deployment health, world
+                  validation, backup freshness, vault persistence,
+                  open ROADMAP items
+  raven deploy    rsync this checkout to --deploy-host, rebuild the
+                  container, restart it, verify health + the live map
+  raven backup    git bundle -> --nas-host, keep the newest two
+  raven test      the pytest suite (uv run --group test pytest),
+                  extra args pass through: raven test -k chat
+"""
+
+SMIDR_HELP = """old-name - the smith. Craft. Worldbuilding tools.
+
+  old-name chat      interview a new world into existence, against your
+                  local ollama - writes worlds/<name>/, validates as
+                  it goes
+  old-name validate  geometry checks against a pack (--pack defaults to
+                  the currently selected world)
+  old-name build     rebuild the map from run-length rows (--segments)
+  old-name verify    validate a live deployment's served world (--url)
+
+Universal tooling - the same four commands regardless of which world
+or game is built on this engine.
+"""
+
+
 def munr_main() -> int:
-    ap = argparse.ArgumentParser(prog='old-name', description=__doc__)
+    ap = argparse.ArgumentParser(
+        prog='raven', description=RAVEN_HELP,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     ap.add_argument('--url', default=DEFAULT_URL)
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
     ap.add_argument('--nas-host', default=DEFAULT_NAS_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
-    sub.add_parser('tidyup').set_defaults(fn=cmd_tidyup)
+    sub.add_parser('tidyup', help='the seven questions').set_defaults(fn=cmd_tidyup)
 
-    pd = sub.add_parser('deploy')
+    pd = sub.add_parser('deploy', help='ship this checkout to --deploy-host')
     pd.set_defaults(fn=cmd_deploy)
 
-    pb = sub.add_parser('backup')
+    pb = sub.add_parser('backup', help='git bundle -> --nas-host, keep the newest two')
     pb.set_defaults(fn=cmd_backup)
 
-    pt = sub.add_parser('test')
-    pt.add_argument('test_args', nargs='*')
+    pt = sub.add_parser(
+        'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
+    )
     pt.set_defaults(fn=cmd_test)
 
-    args = ap.parse_args()
+    args, extra = ap.parse_known_args()
+    args.test_args = extra if args.cmd == 'test' else []
     return args.fn(args)
 
 
 def smidr_main() -> int:
-    ap = argparse.ArgumentParser(prog='old-name', description=__doc__)
-    ap.add_argument('--url', default=DEFAULT_URL)
+    ap = argparse.ArgumentParser(
+        prog='old-name', description=SMIDR_HELP,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     mc = sub.add_parser('chat', help='interview a new world into existence')
@@ -338,7 +380,7 @@ def smidr_main() -> int:
 
     args = ap.parse_args()
     if getattr(args, 'pack', None) is None:
-        args.pack = pack_root() / 'worlds' / 'private-canon'
+        args.pack = pack_root() / 'worlds' / world_name()
     return args.fn(args)
 
 
