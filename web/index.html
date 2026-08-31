@@ -349,6 +349,93 @@
   .npc-line { margin: 0.4rem 0 0.9rem; }
   .npc-box button { font: inherit; font-size: 0.88rem; padding: 0.5rem 1rem; min-height: 44px; border-radius: 3px; border: 1px solid var(--card-edge); background: transparent; color: var(--ink-dim); cursor: pointer; }
   .npc-box button:hover { border-color: var(--accent); }
+
+  /* The surface costume. The engine's surface field becomes a
+     <body data-surface="combat|investigation|plain"> attribute on
+     load; CSS keys off of it. Combat packs get an HP bar and tinted
+     whisper cards. Plain packs get neither - the page is identical
+     to what it was before this PR, minus the data-surface="plain"
+     attribute, which is a no-op in CSS.
+
+     The HP bar is at the top of the Town view; the combat verb
+     buttons live in the npc-box; the encounter prompt is a
+     one-line note under the canvas that appears in
+     doubted/feared/awed phases.
+
+     Luminance-first: rank by lightness, not hue. A red/brown tint
+     is the max deviation; the cards stay mostly ink-on-card. */
+  body[data-surface="combat"] .card[data-phase="feared"] {
+    border-color: #6b3a2a;       /* dim red-brown */
+  }
+  body[data-surface="combat"] .card[data-phase="awed"] {
+    border-color: var(--accent);
+  }
+
+  /* HP bar - combat surface only. The bar is a thin flexbox
+     pinned above the phase rail in the Town view. Plain /
+     investigation surfaces have it hidden via the data-surface
+     selector. */
+  .hud-hp {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin: 1rem 0 0;
+    padding: 0.5rem 0.7rem;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 4px;
+  }
+  body[data-surface="plain"] .hud-hp,
+  body[data-surface="investigation"] .hud-hp { display: none; }
+  .hud-hp-label {
+    color: var(--ink-dim); font-size: 0.78rem;
+    letter-spacing: 0.06em; text-transform: lowercase;
+  }
+  .hud-hp-bar {
+    flex: 1; height: 0.6rem;
+    background: #2a2520;
+    border: 1px solid var(--card-edge);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hud-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6b3a2a 0%, #8a4a36 100%);
+    transition: width 0.4s ease;
+  }
+  .hud-hp-value {
+    color: var(--ink); font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch; text-align: right;
+  }
+
+  /* Encounter prompt - combat surface, non-whispers phase only.
+     Plain / investigation surfaces have it hidden. */
+  .encounter-prompt {
+    margin: 0.4rem 0 0;
+    color: var(--ink-dim);
+    font-size: 0.92rem;
+    font-style: italic;
+  }
+  body[data-surface="plain"] .encounter-prompt,
+  body[data-surface="investigation"] .encounter-prompt { display: none; }
+
+  /* Verb buttons - combat surface only. Plain / investigation
+     surfaces have them hidden. The button row lives inside
+     the npc-box. */
+  .verb-row {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    margin-top: 0.6rem;
+  }
+  body[data-surface="plain"] .verb-row,
+  body[data-surface="investigation"] .verb-row { display: none; }
+  .verb-row button {
+    font: inherit; font-size: 0.88rem; padding: 0.45rem 0.9rem;
+    min-height: 44px; border-radius: 3px;
+    border: 1px solid var(--card-edge); background: transparent;
+    color: var(--ink-dim); cursor: pointer;
+  }
+  .verb-row button:hover { border-color: var(--accent); }
+  .verb-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .npc-box button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .npc-box.sighting { border-color: var(--accent); }
   .npc-box.sighting .npc-line { color: var(--accent); }
@@ -357,7 +444,7 @@
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
-<body>
+<body data-surface="plain">
 <header>
   <h1 id="app-title">vefr</h1>
   <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
@@ -412,6 +499,12 @@
 
   <section id="view-town" class="view" role="tabpanel" aria-labelledby="tab-town" hidden>
     <p class="note">walk with the pad or the arrow keys. the tower watches.</p>
+    <div class="hud-hp" id="hud-hp" role="status" aria-live="polite">
+      <span class="hud-hp-label">hp</span>
+      <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+      <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+    </div>
+    <p class="encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
     <div class="phase-rail" id="town-phase" role="group" aria-label="The world's tone"></div>
     <canvas id="town-canvas" width="960" height="640"></canvas>
     <p class="note" id="near-note" aria-live="polite" hidden></p>
@@ -428,6 +521,12 @@
     <div class="npc-box" id="npc-box" hidden>
       <p class="npc-name" id="npc-name"></p>
       <p class="npc-line" id="npc-line"></p>
+      <div class="verb-row" id="verb-row">
+        <button type="button" data-verb="attack">Strike</button>
+        <button type="button" data-verb="console">Console</button>
+        <button type="button" data-verb="hurl">Hurl an insult</button>
+        <button type="button" data-verb="observe">Observe</button>
+      </div>
       <button type="button" id="npc-close">close</button>
     </div>
     <p class="note" id="poi" aria-live="polite">the bookshop - the back room</p>
@@ -647,6 +746,86 @@
       + '<div class="speaker">' + esc(c.speaker) + '</div>'
       + '<p class="whisper">&ldquo;' + esc(c.whisper) + '&rdquo;</p>'
       + hook + truth + '</article>';
+  }
+
+  /* --- surface costume: HP bar + encounter prompt + verbs --- */
+
+  function renderHudHp(hp) {
+    var fill = document.getElementById('hud-hp-fill');
+    var value = document.getElementById('hud-hp-value');
+    if (!fill || !value) return;
+    var pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
+    fill.style.width = pct + '%';
+    value.textContent = hp.current + '/' + hp.max;
+  }
+
+  function renderEncounterPrompt(w) {
+    var el = document.getElementById('encounter-prompt');
+    if (!el) return;
+    var ph = STATE.get().phase || (w.phases && w.phases[0]) || '';
+    var phaseIdx = (w.phases || []).indexOf(ph);
+    // Encounter appears in non-whispers phases. Whispers is the
+    // 'before' phase - the world hasn't noticed her yet.
+    if (phaseIdx <= 0) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    var lines = {
+      'doubts': 'something watches from the corner of the street.',
+      'feared': 'the air tastes like old metal. they are very still.',
+      'awed':   'the room is quiet in a way that means something has been said.'
+    };
+    el.hidden = false;
+    el.textContent = lines[ph] || ('something stirs nearby.');
+  }
+  window.addEventListener('old-name:phase', function () {
+    var p = STATE.get().phase;
+    OLD-NAME.world().then(function (w) {
+      if (w && w.surface === 'combat') renderEncounterPrompt(w);
+      if (p && w && w.hp && w.hp.per_phase && w.hp.per_phase[p] != null) {
+        // The current HP is the per-phase value (full HP for the
+        // current phase). The bar shows that.
+        renderHudHp({
+          current: w.hp.per_phase[p],
+          max: w.hp.max,
+          per_phase: w.hp.per_phase,
+        });
+      }
+    });
+  });
+
+  /* Verb buttons - combat surface only. Clicking a verb posts
+     to /api/combat/action and the response lands in the journal
+     tab. The button briefly disables so the user knows the
+     action fired. */
+  var verbRow = document.getElementById('verb-row');
+  if (verbRow) {
+    verbRow.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-verb]');
+      if (!btn) return;
+      btn.disabled = true;
+      var ph = STATE.get().phase;
+      var target = (document.getElementById('npc-name') || {}).textContent || '';
+      fetch(VEFR_SESSION.wrap('/api/combat/action'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: btn.dataset.verb, phase: ph, target: target })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('combat ' + r.status);
+        return r.json();
+      }).then(function (entry) {
+        // Briefly show the journal just landed. The journal tab
+        // pulls the entry on next visit (it re-renders on
+        // old-name:journal). For the immediate feedback, flash the
+        // button's label.
+        var orig = btn.textContent;
+        btn.textContent = 'done';
+        setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 700);
+      }).catch(function () {
+        btn.disabled = false;
+      });
+    });
   }
 
   var forgeBtn = document.getElementById('forge-btn');
@@ -1172,6 +1351,19 @@
     // world too, not just the in-page h1. Without this the tab
     // sticks at whatever was in <title> at page load.
     if (w && w.title) document.title = w.title;
+    // The surface attribute drives every combat/plain branch in
+    // the CSS. Default to 'plain' if the engine doesn't ship one.
+    if (w && w.surface) {
+      document.body.setAttribute('data-surface', w.surface);
+    } else {
+      document.body.setAttribute('data-surface', 'plain');
+    }
+    // The HP bar reads from the world payload. For non-combat
+    // surfaces w.hp is null and the bar is hidden via CSS.
+    if (w && w.hp) renderHudHp(w.hp);
+    // The encounter prompt is surface+phase dependent; render
+    // it once on load. The phase rail re-renders the prompt.
+    if (w && w.surface === 'combat') renderEncounterPrompt(w);
   }).catch(function () {});
   if (VEFR_SESSION.id) {
     document.getElementById('session-note').hidden = false;

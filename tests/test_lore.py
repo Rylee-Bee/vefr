@@ -35,24 +35,6 @@ from vefr.journey import (
 )
 
 
-@pytest.fixture
-def fixture_vefr_home(monkeypatch, tmp_path):
-    """Point VEFR_HOME at a temp tree with the four-phase fixture
-    pack so journey tests don't depend on any canon pack being
-    on disk. The fixture is at tests/fixtures/four-phase-pack/;
-    we copy it into a tmpdir's worlds/ so load_world() sees it.
-    """
-    fixture_src = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "four-phase-pack"
-    home = tmp_path / "vefr-home"
-    (home / "worlds" / "four-phase-pack").mkdir(parents=True)
-    shutil.copytree(fixture_src, home / "worlds" / "four-phase-pack",
-                    dirs_exist_ok=True)
-    monkeypatch.setenv("VEFR_HOME", str(home))
-    world.load_world.cache_clear()
-    yield home
-    world.load_world.cache_clear()
-
-
 # ---- journey.py ----
 
 def test_default_phases_are_four():
