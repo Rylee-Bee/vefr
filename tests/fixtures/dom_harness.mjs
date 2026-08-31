@@ -260,7 +260,46 @@ const WORLD = {
 
 let vault = [];
 const calls = [];
+
+/* The harness refuses to answer a URL the real server would not
+   serve. The route table comes from FastAPI itself, written to a
+   JSON file by test_web_dom.py (VEFR_ROUTES_JSON) - one source of
+   truth, so a renamed route fails HERE with the real message
+   instead of passing green while live play 404s. Without the env
+   var (bare `node harness` runs), validation is skipped. */
+const KNOWN_ROUTES = (() => {
+  // VEFR_ROUTES_JSON names a FILE of routes (written by test_web_dom.py);
+  // parse the file, never the path itself.
+  const p = process.env.VEFR_ROUTES_JSON;
+  if (!p) return [];
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch (err) {
+    console.error("harness: could not read route table", p, "-", err.message);
+    return [];
+  }
+})();
+function assertServed(url) {
+  if (!KNOWN_ROUTES.length) return;
+  const path = String(url).split('?')[0];
+  const served = KNOWN_ROUTES.some((p) => {
+    if (p === path) return true;
+    if (!p.includes('{')) return false;
+    const rx = new RegExp(
+      '^' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{[^}]+\\\}/g, '[^/]+') + '$'
+    );
+    return rx.test(path);
+  });
+  if (!served) {
+    throw new Error(
+      'harness fetched a route the server does not serve: ' + path
+      + ' - update web/ to match src/vefr/main.py (stefna-tab incident class)'
+    );
+  }
+}
+
 sandbox.fetch = (url, opts) => {
+  assertServed(url);
   const method = (opts && opts.method) || 'GET';
   const body = opts && opts.body ? JSON.parse(opts.body) : null;
   calls.push({ url, method, body });
