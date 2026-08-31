@@ -328,7 +328,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     print(f"\nok - {dest} is valid and ready.")
     print("\nNext steps:")
     print(f"  MUNR_WORLD={dest.name} old-name validate --pack {dest}")
-    print(f"  MUNR_WORLD={dest.name} old-name test")
+    print(f"  MUNR_WORLD={dest.name} raven test")
     print(
         "  grow the map with: old-name build --segments <file> --pack "
         f"{dest}"

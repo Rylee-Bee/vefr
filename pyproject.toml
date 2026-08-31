@@ -18,7 +18,7 @@ dependencies = [
 test = ["pytest>=8.3"]
 
 [project.scripts]
-old-name = "old-name.cli:munr_main"
+raven = "old-name.cli:munr_main"
 old-name = "old-name.cli:smidr_main"
 
 [tool.hatch.build.targets.wheel]
