@@ -12,8 +12,9 @@ Environment=VEFR_MODEL=gpt-oss-20b
 Environment=VEFR_KEEP_ALIVE=1m
 Environment=VEFR_VAULT=/app/data/vault.json
 Environment=VEFR_JOURNAL=/app/data/journal.json
+Volume=vefr-template:/app/worlds-template:ro
+Volume=vefr-worlds:/app/worlds
 Volume=%h/vefr-data:/app/data:Z
-Volume=%h/vefr-worlds:/app/worlds:Z
 
 [Service]
 Restart=on-failure

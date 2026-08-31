@@ -1,4 +1,11 @@
-# Deploying vefr — the rsync dance
+# Deploying vefr — the rsync dance (LEGACY, replaced by volumes)
+
+> **This guide is for legacy installs on the bind-mount path.**
+> New installs use named Docker volumes; see
+> [docs/guides/volumes.md](volumes.md) for the current flow.
+> The dance below is preserved because old deploy hosts still
+> run it, and the migration script can take a legacy host to
+> the new shape in one command.
 
 The `ferry deploy` command is the happy-path, but it has a hidden
 requirement: the worlds live on a **separate bind mount** on the

@@ -3,10 +3,27 @@ WORKDIR /app
 ENV VEFR_HOME=/app \
     VEFR_VAULT=/app/data/vault.json \
     VEFR_JOURNAL=/app/data/journal.json
+
+# Engine-owned templates ship INSIDE the image at /app/worlds-template/.
+# At runtime, the deploy host bind-mounts a read-only Docker volume
+# (vefr-template) on top of this path, so a `ferry deploy` can update
+# the templates without rebuilding the image. The image's copy is
+# the offline boot fallback: if the volume is empty (first run, after
+# a `volume rm`), the engine still has lore/ and sample-world/ to load
+# from. The author's canon (private-canon, anything `ferry fetch` lands)
+# lives at /app/worlds/ on a separate read-write volume.
 COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir .
 COPY web ./web
-COPY worlds ./worlds
-RUN mkdir -p /app/data
+COPY worlds ./worlds-template
+
+# The three runtime data roots. Declared as VOLUME so any Docker
+# tooling (docker run -v, Compose, the quadlet's Volume=) knows
+# they're meant to be mount points. The image is still bootable
+# without any of them mounted - the loader falls back to the
+# baked-in template at /app/worlds-template/ and an empty /app/data/.
+RUN mkdir -p /app/worlds /app/data
+VOLUME ["/app/worlds-template", "/app/worlds", "/app/data"]
+
 CMD ["uvicorn", "vefr.main:app", "--host", "0.0.0.0", "--port", "8820"]
