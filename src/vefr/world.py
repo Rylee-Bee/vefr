@@ -316,6 +316,22 @@ def load_world(name: str | None = None) -> dict:
             acts.append(_load_act(act_dir))
         if not acts:
             raise PackError(f"pack '{d.name}' has acts/ but no act subdirectories")
+        # Synthesize a `_town_legacy` block on the first act from
+        # its region's contract.json + map. This is what the
+        # validator and older tests read; it keeps the public
+        # shape stable as the on-disk layout migrates from
+        # inline `town: { ... }` to per-region `town/contract.json`
+        # + `town/map.md`.
+        first_act = acts[0]
+        first_region = next(iter(first_act["regions"].values()), None)
+        if first_region is not None:
+            legacy = dict(first_region.get("contract", {}))
+            # The map is in map_text (a string) in the acts shape;
+            # the validator wants a list of rows. Convert.
+            map_text = first_region.get("map_text", "")
+            if map_text and "map" not in legacy:
+                legacy["map"] = [ln for ln in map_text.splitlines() if ln.strip()]
+            first_act["_town_legacy"] = legacy
     else:
         # Flat shape: worlds/<name>/world.json with legacy keys.
         config = _read_json(pack_contract_path, what=f"{d.name}/world.json")
