@@ -23,7 +23,7 @@ JOURNAL = Path(
     os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
 )
 
-KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter")
+KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "fork")
 
 # How long a `remove()`'d entry stays recoverable. One minute gives
 # the player a real undo window for a fat-fingered delete, without
@@ -160,6 +160,62 @@ def undo(sid: str | None = None) -> dict | None:
     _LAST_REMOVED_AT.pop(key, None)
     _touch_living_tree(sid)
     return entry
+
+
+def set_entries(entries: list[dict], sid: str | None = None) -> None:
+    """Replace a session's whole journal - the fork's write path."""
+    path = journal_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    tmp.replace(path)
+    _touch_living_tree(sid)
+
+
+def rewind(index: int, sid: str | None = None) -> dict | None:
+    """Drop entries[index:] and stash the tail for rewind_undo().
+
+    Same semantics as the fork's `at`: keep [:index]. The vault is
+    left untouched - possessions were forged before the cut, and the
+    UI confirms before calling. The tail lands in a side file so one
+    rewind_undo() within UNDO_WINDOW_S can bring it back.
+    """
+    entries = _load(sid)
+    if index < 0 or index >= len(entries):
+        return None
+    tail = entries[index:]
+    path = journal_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    stash = path.with_suffix(".rewind.json")
+    stash.write_text(
+        json.dumps({"at": _now(), "entries": tail}, indent=2),
+        encoding="utf-8",
+    )
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(entries[:index], indent=2), encoding="utf-8")
+    tmp.replace(path)
+    _touch_living_tree(sid)
+    return {"rewound_to": index, "dropped": len(tail)}
+
+
+def rewind_undo(sid: str | None = None) -> dict | None:
+    """Restore the tail of the most recent rewind, within the window."""
+    path = journal_path(sid)
+    stash = path.with_suffix(".rewind.json")
+    if not stash.exists():
+        return None
+    try:
+        data = json.loads(stash.read_text(encoding="utf-8"))
+        at = datetime.fromisoformat(data.get("at", ""))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return None
+    if time.time() - at.timestamp() > UNDO_WINDOW_S:
+        stash.unlink()
+        return None
+    tail = data.get("entries", [])
+    set_entries(_load(sid) + tail, sid)
+    stash.unlink()
+    return {"restored": len(tail)}
 
 
 def clear(sid: str | None = None) -> None:

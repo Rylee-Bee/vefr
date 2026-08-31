@@ -125,6 +125,15 @@ def list_vault(sid: str | None = None) -> list[dict]:
     return _load_vault(sid)
 
 
+def set_vault(items: list[dict], sid: str | None = None) -> None:
+    """Replace a session's whole vault - the fork's write path."""
+    path = vault_path(sid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
 def remove(index: int, sid: str | None = None) -> dict | None:
     """Remove the kept item at `index` and stash it for undo().
 

@@ -111,11 +111,17 @@ def _stefna_letter(e: dict) -> str:
     )
 
 
+def _fork(e: dict) -> str:
+    note = _para(e.get("note") or "a playthrough forked")
+    return f"{note}."
+
+
 _RENDER = {
     "rumor": _rumor,
     "npc_line": _npc_line,
     "item_forged": _item_forged,
     "stefna_letter": _stefna_letter,
+    "fork": _fork,
 }
 
 

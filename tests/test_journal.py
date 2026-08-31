@@ -82,4 +82,5 @@ def test_every_hooked_kind_is_a_known_kind():
         "npc_line",
         "item_forged",
         "stefna_letter",
+        "fork",
     }

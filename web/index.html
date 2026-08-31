@@ -824,6 +824,8 @@
     var actions = '<div class="entry-actions">'
       + '<button type="button" class="star-btn" data-action="star" data-index="' + idx + '" aria-label="' + starLabel + '" title="' + starLabel + '">' + starGlyph + '</button>'
       + '<button type="button" class="remove-btn" data-action="remove" data-index="' + idx + '" aria-label="remove" title="remove">&times;</button>'
+      + '<button type="button" class="fork-btn" data-action="fork" data-index="' + idx + '" aria-label="fork from here" title="fork a new playthrough from this moment">&oline;</button>'
+      + '<button type="button" class="rewind-btn" data-action="rewind" data-index="' + idx + '" aria-label="rewind to here" title="cut the journal back to this moment">&larr;</button>'
       + '</div>';
     return '<article class="card"' + bond + ' data-index="' + idx + '">' + head + actions + body + '</article>';
   }
@@ -874,6 +876,51 @@
         }
       } catch (err) {
         btn.disabled = false;
+      }
+      return;
+    }
+    if (action === 'fork') {
+      if (!window.confirm('Fork a new playthrough from this moment? This session stays as it is.')) return;
+      btn.disabled = true;
+      try {
+        var fr = await fetch(VEFR_SESSION.wrap('/api/journal/fork'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ at: idx + 1 })
+        });
+        if (!fr.ok) {
+          var fmsg = 'fork failed';
+          try { var fb = await fr.json(); fmsg = (fb && fb.detail) || fmsg; } catch (_) {}
+          throw new Error(fmsg);
+        }
+        var forked = await fr.json();
+        journalStatus.textContent = 'forked - ' + forked.session;
+        location.href = forked.url;
+      } catch (err) {
+        btn.disabled = false;
+        journalStatus.textContent = err.message || 'fork failed';
+      }
+      return;
+    }
+    if (action === 'rewind') {
+      if (!window.confirm('Cut the journal back to this moment? Entries after it are dropped - undoable for 60 seconds. The vault stays.')) return;
+      btn.disabled = true;
+      try {
+        var rr = await fetch(VEFR_SESSION.wrap('/api/journal/rewind'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ at: idx + 1 })
+        });
+        if (!rr.ok) {
+          var rmsg = 'rewind failed';
+          try { var rb = await rr.json(); rmsg = (rb && rb.detail) || rmsg; } catch (_) {}
+          throw new Error(rmsg);
+        }
+        showUndoBanner('journal/rewind');
+        renderJournal();
+      } catch (err) {
+        btn.disabled = false;
+        journalStatus.textContent = err.message || 'rewind failed';
       }
       return;
     }

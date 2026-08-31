@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 import json
 
-from . import forge, journal, lore, starred
+from . import forge, journal, lore, sessions, starred
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -51,7 +51,7 @@ def rumor(req: RumorRequest, session: str = ""):
 
 
 @app.post("/api/forge")
-def forge():
+def forge_roll():
     return forge_item()
 
 
@@ -226,6 +226,79 @@ def journal_undo(session: str = ""):
 def journal_clear(session: str = ""):
     journal.clear(sid=session)
     return {"cleared": True}
+
+
+class RewindRequest(BaseModel):
+    at: int  # keep entries[:at] - same semantics as the fork's cut
+
+
+class ForkRequest(BaseModel):
+    at: int  # keep entries[:at]
+
+
+@app.post("/api/journal/rewind")
+def journal_rewind(req: RewindRequest, session: str = ""):
+    """Cut the journal back to entries[:at]; the tail is undoable 60s.
+
+    The vault is left untouched: possessions were forged before the
+    cut, and the UI confirms before calling.
+    """
+    from fastapi import HTTPException
+    result = journal.rewind(req.at, sid=session)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"nothing to rewind at {req.at}")
+    result["undo_window_s"] = journal.UNDO_WINDOW_S
+    return result
+
+
+@app.post("/api/journal/rewind/undo")
+def journal_rewind_undo(session: str = ""):
+    """Bring back the tail of the most recent rewind, within the window."""
+    from fastapi import HTTPException
+    restored = journal.rewind_undo(sid=session)
+    if restored is None:
+        raise HTTPException(
+            status_code=400,
+            detail="nothing to undo - either nothing was rewound, "
+                   f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
+        )
+    return restored
+
+
+@app.post("/api/journal/fork")
+def journal_fork(req: ForkRequest, session: str = ""):
+    """Copy journal[:at] + the vault into a new session; parent pointer kept.
+
+    The current session is never modified - forking branches, never
+    cuts. The new session's journal opens with one `fork` entry
+    describing where it came from, and sessions/<sid>.meta.json
+    records the parent for tooling.
+    """
+    entries = journal.list_entries(sid=session)
+    at = max(0, min(req.at, len(entries)))
+    new_sid = sessions.new_id()
+    journal.set_entries(entries[:at], sid=new_sid)
+    forge.set_vault(forge.list_vault(sid=session), sid=new_sid)
+    parent = sessions.clean(session)
+    sessions.write_meta(
+        new_sid,
+        {"parent": parent, "fork_at": at, "at": sessions.now_iso()},
+    )
+    label = "the default playthrough" if sessions.is_default(session) else f"session {parent}"
+    journal.log(
+        "fork",
+        sid=new_sid,
+        parent=parent,
+        fork_at=at,
+        note=f"forked from {label} with {at} entries kept",
+    )
+    return {
+        "session": new_sid,
+        "parent": parent,
+        "fork_at": at,
+        "kept": at,
+        "url": f"/?session={new_sid}",
+    }
 
 
 # --------------------------------------------------------------- builder
