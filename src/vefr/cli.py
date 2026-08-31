@@ -417,6 +417,37 @@ def cmd_build_web(args) -> int:
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
 
+    # The woven pool: real generations baked into the file, so a
+    # player with no LLM endpoint still hears the world. Zero by
+    # default - the pool costs real generation time at weave.
+    pool = {}
+    pool_n = getattr(args, 'pool', 0) or 0
+    if pool_n:
+        import os as _os
+
+        from . import pool as pool_mod
+
+        old_world_env = _os.environ.get('VEFR_WORLD')
+        pool_mod.ensure_current_world(pack.name)
+        try:
+            print(f'weaving the pool: ~{pool_n} real generations per '
+                  'combination - this takes a few minutes against the '
+                  'live model...')
+            pool = pool_mod.build_pool(
+                samples=pool_n,
+                progress=lambda combo, count: print(f'  {combo}: {count}'),
+            )
+        finally:
+            # The weave is a visitor in this world - put back whichever
+            # world the author had selected before it started.
+            if old_world_env is None:
+                _os.environ.pop('VEFR_WORLD', None)
+            else:
+                _os.environ['VEFR_WORLD'] = old_world_env
+        total = sum(len(v) for v in pool.values())
+        print(f'pool woven: {total} lines across {len(pool)} combinations')
+    out_html = out_html.replace('{{pool_json}}', _json.dumps(pool, ensure_ascii=False))
+
     if args.out:
         out_path = Path(args.out)
     else:
@@ -677,6 +708,10 @@ def ratatoskr_main() -> int:
                     help='path to vault.json (default: $VEFR_VAULT)')
     pw.add_argument('--journal', default=None,
                     help='path to journal.json (default: $VEFR_JOURNAL)')
+    pw.add_argument('--pool', type=int, default=0, metavar='N',
+                    help='pre-generate N real outputs per mechanic/phase/'
+                         'speaker combination and bake them into the file '
+                         'as the offline fallback pool (needs a live model)')
     pw.add_argument('--from-live', default=None,
                     help='pull vault+journal from a live deployment URL')
     pw.set_defaults(fn=cmd_build_web)
