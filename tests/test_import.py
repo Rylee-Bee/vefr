@@ -51,10 +51,10 @@ def test_import_target_local_returns_pack_root(tmp_path, monkeypatch):
     assert worlds_dir == str(tmp_path / 'worlds')
 
 
-def test_import_target_ssh_returns_munr_layout():
+def test_import_target_ssh_returns_vefr_layout():
     host, worlds_dir = cli._import_target(_args(target='bazzite'))
     assert host == 'bazzite'
-    assert worlds_dir == '~/old-name/worlds'
+    assert worlds_dir == '~/vefr/worlds'
 
 
 # ---- cmd_import: end-to-end behavior, subprocess mocked ----
