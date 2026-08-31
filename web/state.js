@@ -12,6 +12,34 @@
  * subscribers. Loaded before every other script; every consumer
  * reaches it as `window.OLD-STATE-GLOBAL`.
  */
+/* Per-session play state. ?session=<id> in the URL wins; the last
+   minted id is remembered in localStorage; no id at all is the
+   default playthrough the deployed quadlet has always kept. */
+window.VEFR_SESSION = (function () {
+  var sid = '';
+  try {
+    sid = new URLSearchParams(location.search).get('session')
+      || localStorage.getItem('vefr-session')
+      || '';
+  } catch (err) { /* no storage - play the default session */ }
+  return {
+    id: sid,
+    /* Append the session to any state-touching API URL. */
+    wrap: function (url) {
+      if (!sid) return url;
+      return url + (url.indexOf('?') > -1 ? '&' : '?')
+        + 'session=' + encodeURIComponent(sid);
+    },
+    /* New game: label a fresh playthrough and move to it. The old
+       session is never deleted - forking back is a URL away. */
+    mint: function () {
+      var id = Math.random().toString(16).slice(2, 10);
+      try { localStorage.setItem('vefr-session', id); } catch (err) {}
+      location.href = location.pathname + '?session=' + id;
+    }
+  };
+})();
+
 window.OLD-STATE-GLOBAL = (function () {
   var subs = [];
   var worldReq = null;
@@ -91,7 +119,7 @@ window.OLD-STATE-GLOBAL = (function () {
      coalesced with an in-flight request - a refresh right after
      keeping an item must not be answered by an older one. */
   function refreshVault() {
-    return fetch('/api/vault')
+    return fetch(VEFR_SESSION.wrap('/api/vault'))
       .then(function (r) {
         if (!r.ok) throw new Error('the vault did not answer');
         return r.json();

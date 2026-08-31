@@ -323,7 +323,7 @@
        is the only thing that knows the pack's first phase. */
     var ask = { speaker: near.key };
     if (phase()) ask.phase = phase();
-    fetch('/api/npc', {
+    fetch(VEFR_SESSION.wrap('/api/npc'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ask)
