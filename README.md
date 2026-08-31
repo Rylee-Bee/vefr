@@ -71,6 +71,8 @@ works; structured output via JSON schema).
 
 ## Make your own world
 
+**By hand:**
+
 1. Copy `worlds/private-canon/` to `worlds/yours/` - or start from the
    keys in `world.json` alone.
 2. Write your `bible.md` (canon + the rules the engine must obey)
@@ -78,6 +80,17 @@ works; structured output via JSON schema).
 3. Define phases and their tones, your bonds, your speakers, your
    town grid and palette.
 4. `MUNR_WORLD=yours`. The engine does the rest.
+
+**By conversation** (`old-name chat --name yours`): an interview, run
+against your own local ollama, drafts the canon, the theme colors,
+your phases, bonds, and one speaker's voice - starting from
+`worlds/sample-world/` (a known-valid scaffold) so the geometry can
+never break. The interview's flow is plain Python, never the model's
+call; the model only ever fills in prose or a hex color inside a
+schema it can't escape. Every write ends in `maplab.validate()` - you
+never have to trust your own edits, the tool always checks. The map
+itself stays the scaffold's in v1; grow it after with
+`old-name build --segments`.
 
 ## The town
 

@@ -50,30 +50,52 @@
       for the goddess who keeps stories at Sokkvabekk. Bragi
       composes the prompts; Idunn keeps the ledger that renews
       the voice.
+- [x] **the rpg-js question**: answered 2026-08-30 - the custom
+      renderer stays canonical. RPG-JS stays admired (MIT, a fine
+      tool), and the door remains open through the pack contract:
+      any future render target reads the same /api/world.
+- [x] **`old-name`/`old-name` - the lab-style wrapper**: two entry points,
+      raven and smith. `old-name tidyup/deploy/backup/test`,
+      `old-name validate/build/verify`. `maplab.py` is the one geometry
+      validator shared by both CLIs and the tests.
+- [x] **the bones boot alone**: `worlds/sample-world/` (Emberfield) -
+      a demonstration pack with zero story content, proven by
+      physically removing `worlds/private-canon/` and running the suite
+      green. The engine works with any pack, or none beyond the
+      sample.
+- [x] **license split**: engine MIT (`src/`, `web/`, `tests/`,
+      `deploy/`, `Containerfile`, `worlds/sample-world/`);
+      `worlds/private-canon/` is the author's own story and game - all
+      rights reserved, see `worlds/private-canon/LICENSE`.
+- [x] **`old-name chat`**: the conversational world-builder. Interviews
+      canon, theme colors, phases, bonds, and one speaker's voice
+      against the local ollama, starting from `worlds/sample-world/`
+      so geometry can't break. The interview's flow is deterministic
+      Python; the model only ever fills in prose or a hex color
+      inside a schema it can't escape - `maplab.validate()` runs
+      after every write. Fixed alongside it: every schema-constrained
+      call in the engine (`generator`, `forge`, `bell`, `npc`, `chat`)
+      now sends `"think": false` - the thinking model was dumping its
+      chain-of-thought into the one string field a JSON schema left
+      it, which would have shown up as narration inside rumors, item
+      names, and the bell's letter.
 
-- [ ] **v1.2 - items in the world**: the vault becomes the game's
-      inventory; attunement moments on screen (gold only when the
-      world is kind); the reed path's water level becomes a choice;
-      the the sea-figure sighting at the water's edge (awed, gold)
 ## Next
 
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
       chore-note as map. It feels like the ending. It is not.
-- [ ] **v1.4 - the water (act III)**: the reed crossing becomes a
-      choice; the grave in the reeds; the bell rings once,
-      warm-tuned; the the sea-figure surfaces (gold); the town says the
-      name; the golden light's words arrive. The last screen is
-      gold.
+- [ ] **v1.4 - the water (act III)**: the grave in the reeds; the
+      bell rings once, warm-tuned; the the sea-figure surfaces (gold); the
+      town says the name; the golden light's words arrive. The last
+      screen is gold. (The reed crossing's water-level choice and the
+      water's-edge sighting already landed in v1.2.)
 - [ ] **shared story state**: the town's phase rail and the rumors
       rail become one state, carried across views
-- [x] **the rpg-js question**: answered 2026-08-30 - the custom
-      renderer stays canonical. RPG-JS stays admired (MIT, a fine
-      tool), and the door remains open through the pack contract:
-      any future render target reads the same /api/world. A
-      lab-style wrapper (`lab deploy`, `lab verify`, `lab pack
-      check`) is still welcome whenever it earns its keep
+- [ ] **`old-name chat` v2**: let the interview grow the map itself
+      (currently frozen at the scaffold's proven-valid layout),
+      and add more than one speaker
 
 ## The always-layer
 

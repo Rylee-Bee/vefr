@@ -36,6 +36,7 @@ def build_payload(phase: str, theme: str | None) -> dict:
         "prompt": f"Whisper one tavern rumor.{theme_line} Reply with only the JSON object.",
         "format": SCHEMA,
         "stream": False,
+        "think": False,
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": 0.95},
     }
