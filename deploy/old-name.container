@@ -8,6 +8,7 @@ Network=host
 Environment=OLLAMA_URL=http://127.0.0.1:11434
 Environment=NORN_KEEP_ALIVE=1m
 Environment=NORN_VAULT=/app/data/vault.json
+Environment=NORN_JOURNAL=/app/data/journal.json
 Volume=%h/old-name-data:/app/data:Z
 
 [Service]
