@@ -108,6 +108,29 @@
       water's-edge sighting already landed in v1.2.)
 - [ ] **shared story state**: the town's phase rail and the rumors
       rail become one state, carried across views
+- [ ] **the session journal + story export** (2026-08-31, not yet
+      designed in code - this is the spec, not the build): right now
+      only the vault (kept items + bonds) persists. Rumors heard, NPC
+      lines spoken, and whether the bell was reached all vanish the
+      moment they're generated. Two audiences, one underlying log:
+      - **the journal** - a persisted, timestamped record of what
+        happened this playthrough (rumors, NPC lines, items forged,
+        the bell letter if reached). Its first job is for Rylee
+        herself: she doesn't have to hold the details in her own
+        memory between sessions, the game does. This is the "login
+        state" - resuming play means the journal is still there, not
+        re-authentication.
+      - **the export** - a second step that reads `bible.md` + the
+        journal + the vault and weaves them into one readable
+        document: canon and what-actually-happened blended into
+        prose, no game knowledge needed to read it. Shareable with
+        someone who just wants to read the story.
+      Needs, in order: (1) the persistence layer itself - what gets
+      logged, where, in what shape; (2) the weave step - templating
+      vs. another local-model pass, same schema-constrained pattern
+      as `old-name chat`; (3) the surface - a CLI command, an API route,
+      or both. Scope as its own session; don't bolt it onto the tail
+      of a long one.
 - [ ] **`old-name chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
