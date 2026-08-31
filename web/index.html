@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Old Name</title>
+<title>vefr</title>
 <style>
   :root {
     --bg: #131311;
@@ -120,6 +120,12 @@
     background: var(--card); border-top: 1px solid var(--card-edge);
     font-size: 0.92rem;
   }
+  /* Same `display: flex` defeats `hidden` gotcha as the rune
+     gallery: the explicit display wins over the UA's `display:
+     none` from the `hidden` attribute, so toggling `hidden`
+     visually does nothing. The override keeps the banner
+     hidden when its JS sets `hidden = true`. */
+  .undo-banner[hidden] { display: none; }
   .undo-banner .undo-time { color: var(--ink); font-variant-numeric: tabular-nums; margin: 0 0.2rem; }
   .undo-banner button {
     font: inherit; font-size: 0.88rem; padding: 0.45rem 0.9rem;
@@ -270,6 +276,12 @@
     display: flex; align-items: center; justify-content: center;
     z-index: 100;
   }
+  /* The `hidden` attribute is a UA-level display:none, but an
+     explicit `display: flex` on .rune-gallery above wins over
+     it. Without this override, the close button and Esc toggle
+     `hidden` but the modal stays on screen. Same gotcha bit the
+     undo banner and the rune card earlier. */
+  .rune-gallery[hidden] { display: none; }
   .rune-gallery-inner {
     background: var(--card); color: var(--ink);
     max-width: 720px; max-height: 88vh; overflow-y: auto;
@@ -1156,6 +1168,10 @@
   OLD-NAME.world().then(function (w) {
     var el = document.getElementById('app-title');
     if (el && w && w.title) el.textContent = w.title;
+    // The browser tab title (and the bookmark name) tracks the
+    // world too, not just the in-page h1. Without this the tab
+    // sticks at whatever was in <title> at page load.
+    if (w && w.title) document.title = w.title;
   }).catch(function () {});
   if (VEFR_SESSION.id) {
     document.getElementById('session-note').hidden = false;
