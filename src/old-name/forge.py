@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 
 import httpx
@@ -12,6 +13,10 @@ from .saga import system_prompt
 from .world import load_world
 
 VAULT = Path(os.environ.get("NORN_VAULT", str(app_home() / "data" / "vault.json")))
+
+UNDO_WINDOW_S = 60
+_LAST_REMOVED: dict | None = None
+_LAST_REMOVED_AT: float | None = None
 
 
 class ItemCard(BaseModel):
@@ -96,3 +101,47 @@ def keep_item(item: ItemCard) -> dict:
 
 def list_vault() -> list[dict]:
     return _load_vault()
+
+
+def remove(index: int) -> dict | None:
+    """Remove the kept item at `index` and stash it for undo().
+
+    Vault items are the player's possessions, so removal is rarer
+    than journal removal. Still: same single-slot, 60s undo window.
+    """
+    global _LAST_REMOVED, _LAST_REMOVED_AT
+    items = _load_vault()
+    if index < 0 or index >= len(items):
+        return None
+    target = items[index]
+    del items[index]
+    VAULT.parent.mkdir(parents=True, exist_ok=True)
+    tmp = VAULT.with_suffix(".tmp")
+    tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
+    tmp.replace(VAULT)
+    _LAST_REMOVED = {"item": target, "index": index}
+    _LAST_REMOVED_AT = time.monotonic()
+    return target
+
+
+def undo() -> dict | None:
+    """Restore the most recently removed vault item, if still in window."""
+    global _LAST_REMOVED, _LAST_REMOVED_AT
+    if _LAST_REMOVED is None or _LAST_REMOVED_AT is None:
+        return None
+    if time.monotonic() - _LAST_REMOVED_AT > UNDO_WINDOW_S:
+        _LAST_REMOVED = None
+        _LAST_REMOVED_AT = None
+        return None
+    item = _LAST_REMOVED["item"]
+    original_index = _LAST_REMOVED["index"]
+    items = _load_vault()
+    insert_at = min(original_index, len(items))
+    items.insert(insert_at, item)
+    VAULT.parent.mkdir(parents=True, exist_ok=True)
+    tmp = VAULT.with_suffix(".tmp")
+    tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
+    tmp.replace(VAULT)
+    _LAST_REMOVED = None
+    _LAST_REMOVED_AT = None
+    return item

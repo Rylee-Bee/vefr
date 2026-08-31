@@ -12,6 +12,7 @@ always {"at": <UTC ISO>, "kind": <str>, ...fields}.
 
 import json
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -22,6 +23,18 @@ JOURNAL = Path(
 )
 
 KINDS = ("rumor", "npc_line", "item_forged", "bell_letter")
+
+# How long a `remove()`'d entry stays recoverable. One minute gives
+# the player a real undo window for a fat-fingered delete, without
+# keeping dead state around forever. After UNDO_WINDOW_S the stash
+# is dropped on the next `undo()` call.
+UNDO_WINDOW_S = 60
+
+# Module-level stash of the most recently removed entry. Single-slot
+# is the design: undo is "I just clicked the wrong button", not a
+# full undo stack. A second remove overwrites the first.
+_LAST_REMOVED: dict | None = None
+_LAST_REMOVED_AT: float | None = None
 
 
 def _load() -> list[dict]:
@@ -58,7 +71,75 @@ def list_entries() -> list[dict]:
     return _load()
 
 
+def remove(index: int) -> dict | None:
+    """Remove the entry at `index` and stash it for undo().
+
+    Returns None if the index is out of range. Refuses to remove the
+    last entry of its kind (a soft invariant: every kind the
+    engine writes must remain represented in the journal, so an
+    empty journal never pretends a kind never existed). The author
+    can still clear the whole journal via `clear()` if they want
+    a true wipe.
+
+    Each remove() stashes exactly one entry; calling remove() again
+    before the undo window expires overwrites the previous stash.
+    """
+    global _LAST_REMOVED, _LAST_REMOVED_AT
+    entries = _load()
+    if index < 0 or index >= len(entries):
+        return None
+    target = entries[index]
+    kind = target.get("kind", "")
+    same_kind = sum(1 for e in entries if e.get("kind") == kind)
+    if same_kind <= 1:
+        raise ValueError(
+            f"refusing to remove the last entry of kind {kind!r} - "
+            f"use `clear()` for a full wipe, or star and edit by hand"
+        )
+    del entries[index]
+    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
+    tmp = JOURNAL.with_suffix(".tmp")
+    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    tmp.replace(JOURNAL)
+    # Stash for undo - keep the original index so undo restores
+    # position too when possible, otherwise append to the end.
+    _LAST_REMOVED = {"entry": target, "index": index}
+    _LAST_REMOVED_AT = time.monotonic()
+    return target
+
+
+def undo() -> dict | None:
+    """Restore the most recently removed entry, if still in window.
+
+    Returns the restored entry, or None if no remove has happened
+    in the last UNDO_WINDOW_S seconds (or at all).
+    """
+    global _LAST_REMOVED, _LAST_REMOVED_AT
+    if _LAST_REMOVED is None or _LAST_REMOVED_AT is None:
+        return None
+    if time.monotonic() - _LAST_REMOVED_AT > UNDO_WINDOW_S:
+        _LAST_REMOVED = None
+        _LAST_REMOVED_AT = None
+        return None
+    entry = _LAST_REMOVED["entry"]
+    original_index = _LAST_REMOVED["index"]
+    entries = _load()
+    # Insert at the original index, clamped to the current length.
+    insert_at = min(original_index, len(entries))
+    entries.insert(insert_at, entry)
+    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
+    tmp = JOURNAL.with_suffix(".tmp")
+    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    tmp.replace(JOURNAL)
+    _LAST_REMOVED = None
+    _LAST_REMOVED_AT = None
+    return entry
+
+
 def clear() -> None:
     """Start a fresh playthrough - the journal is forgotten."""
+    global _LAST_REMOVED, _LAST_REMOVED_AT
     if JOURNAL.exists():
         JOURNAL.unlink()
+    _LAST_REMOVED = None
+    _LAST_REMOVED_AT = None

@@ -219,7 +219,7 @@ sandbox.fetch = (url, opts) => {
     text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
   });
   if (url === '/api/world') return ok(WORLD);
-  if (url === '/api/vault' && method === 'GET') return ok(vault.slice());
+  if (url === '/api/vault' && method === 'GET') return ok({ items: vault.slice(), starred: [] });
   if (url === '/api/vault' && method === 'POST') { vault.push(body); return ok({ bond: body.bond }); }
   if (url === '/api/forge') return ok({ name: 'Ash Hammer', kind: 'tool', bond: 'attuned', lore: 'warm', enchant: null, curse: null });
   if (url === '/api/rumor') {
@@ -231,7 +231,8 @@ sandbox.fetch = (url, opts) => {
     return ok({ speaker: 'The Smith', line: 'aye' });
   }
   if (url === '/api/bell') return ok({ letter: 'For you.' });
-  if (url === '/api/journal') return ok([{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }]);
+  if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
+  if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
   if (url === '/api/export') return ok('# story');
   throw new Error('harness: unexpected fetch ' + method + ' ' + url);

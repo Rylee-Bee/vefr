@@ -96,12 +96,12 @@ window.OLD-STATE-GLOBAL = (function () {
         if (!r.ok) throw new Error('the vault did not answer');
         return r.json();
       })
-      .then(function (list) {
-        var items = Array.isArray(list) ? list : [];
-        state.vault = items;
-        state.carrying = items.length ? items[items.length - 1] : null;
+      .then(function (body) {
+        var list = Array.isArray(body) ? body : (body && body.items) || [];
+        state.vault = list;
+        state.carrying = list.length ? list[list.length - 1] : null;
         notify();
-        return items;
+        return list;
       });
   }
 
