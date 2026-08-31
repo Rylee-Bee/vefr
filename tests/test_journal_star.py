@@ -108,7 +108,6 @@ def tmp_pack(tmp_path, monkeypatch):
     pack = tmp_path / 'worlds' / 'private-canon'
     pack.mkdir(parents=True)
     (pack / 'world.json').write_text('{"title": "t", "phases": {}, "voices": {}, "bonds": {}, "town": {}}')
-    from vefr.paths import pack_dir
     monkeypatch.setattr('vefr.starred.pack_dir', lambda *a, **k: pack)
     return pack
 

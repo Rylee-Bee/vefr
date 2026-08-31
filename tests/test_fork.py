@@ -6,7 +6,6 @@ cuts in place and stashes the tail for one undo inside the window.
 """
 
 import json
-import time
 
 import pytest
 
@@ -76,7 +75,6 @@ def test_fork_copies_entries_and_vault(tmp_journal, tmp_path, monkeypatch):
     )
 
     from vefr.main import journal_fork
-    from vefr.sessions import clean
 
     req = type("F", (), {"at": 2})()
     result = journal_fork(req, session="s1")
