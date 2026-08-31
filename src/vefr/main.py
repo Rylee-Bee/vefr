@@ -536,6 +536,53 @@ def starred_list():
     return {"starred": starred.list_starred()}
 
 
+@app.get("/api/wiki")
+def wiki(session: str = ""):
+    """The world's wiki, auto-generated from canon + play - read-only.
+
+    Characters are the pack's voices joined to what they actually
+    said this session (npc_line entries, newest last). Relics are
+    the session's kept items, canon order. The counts give the
+    session's shape at a glance. No model calls - the wiki is a
+    lens on data that already exists.
+    """
+    w = load_world()
+    entries = journal.list_entries(sid=session)
+    by_speaker: dict[str, list[dict]] = {}
+    for e in entries:
+        if e.get("kind") == "npc_line":
+            by_speaker.setdefault(e.get("speaker") or "a voice", []).append(
+                {"at": e.get("at", ""), "phase": e.get("phase", ""),
+                 "line": e.get("line", "")}
+            )
+    characters = []
+    for key, spec in w["speakers"].items():
+        spoken = by_speaker.get(spec["name"], [])
+        characters.append({
+            "key": key,
+            "name": spec["name"],
+            "lines": len(spoken),
+            "recent": spoken[-3:],
+        })
+    # A journal speaker the canon doesn't name still belongs here -
+    # generated whispers sometimes speak through strangers.
+    known = {spec["name"] for spec in w["speakers"].values()}
+    for speaker, spoken in by_speaker.items():
+        if speaker not in known:
+            characters.append({
+                "key": "",
+                "name": speaker,
+                "lines": len(spoken),
+                "recent": spoken[-3:],
+            })
+    return {
+        "characters": characters,
+        "relics": forge.list_vault(sid=session),
+        "rumors": sum(1 for e in entries if e.get("kind") == "rumor"),
+        "letters": sum(1 for e in entries if e.get("kind") in ("stefna_letter", "bell_letter")),
+    }
+
+
 @app.get("/api/export", response_class=PlainTextResponse)
 def export(session: str = ""):
     """The whole playthrough as markdown - one section per dev UI
