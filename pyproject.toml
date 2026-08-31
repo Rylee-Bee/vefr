@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "old-name"
+name = "norn"
 version = "2.0.0"
-description = "old-name - a rumor engine for playable worlds. Take the bones, grow your own flesh."
+description = "norn - a rumor engine for playable worlds. Weaves whichever story you give it. Take the bones, grow your own flesh."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -18,8 +18,8 @@ dependencies = [
 test = ["pytest>=8.3"]
 
 [project.scripts]
-raven = "old-name.cli:raven_main"
-old-name = "old-name.cli:smidr_main"
+raven = "norn.cli:raven_main"
+old-name = "norn.cli:smidr_main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/old-name"]
+packages = ["src/norn"]

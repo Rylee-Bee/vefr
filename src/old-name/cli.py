@@ -55,7 +55,7 @@ def repo_root():
 
 
 def pack_root() -> Path:
-    """Where worlds/ lives: a checkout, or SMIDR_HOME in the container."""
+    """Where worlds/ lives: a checkout, or NORN_HOME in the container."""
     r = repo_root()
     if r and (r / 'worlds').is_dir():
         return r

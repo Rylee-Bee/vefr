@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from old-name import bell
-from old-name.bell import Letter, build_payload, generate_letter
+from norn import bell
+from norn.bell import Letter, build_payload, generate_letter
 
 
 class FakeResponse:

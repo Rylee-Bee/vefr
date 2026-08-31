@@ -6,6 +6,6 @@ from pathlib import Path
 # the flesh to prove themselves.
 _pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
 os.environ.setdefault(
-    'SMIDR_WORLD',
+    'NORN_WORLD',
     'private-canon' if (_pack / 'world.json').exists() else 'sample-world',
 )

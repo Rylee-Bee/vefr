@@ -6,9 +6,9 @@ sample world that ships with the framework.
 
 import copy
 
-from old-name import maplab
-from old-name.paths import pack_dir
-from old-name.world import load_world
+from norn import maplab
+from norn.paths import pack_dir
+from norn.world import load_world
 
 
 def test_sample_world_validates():
@@ -34,8 +34,8 @@ def test_maplab_flags_broken_maps():
 
 
 def test_bond_schema_follows_the_pack():
-    from old-name.forge import build_payload
-    from old-name.world import load_world
+    from norn.forge import build_payload
+    from norn.world import load_world
 
     p = build_payload()
     assert p['format']['properties']['bond']['enum'] == list(
@@ -45,7 +45,7 @@ def test_bond_schema_follows_the_pack():
 
 
 def test_seeds_cover_every_phase():
-    from old-name.world import load_world
+    from norn.world import load_world
 
     w = load_world()
     for key, spec in w['speakers'].items():
