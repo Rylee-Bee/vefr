@@ -153,6 +153,10 @@ window.VEFR_LOGBOK = {{logbok_json}};
 window.VEFR_LEDGER = {{ledger_json}};
 window.VEFR_VOICES = {{voices_json}};
 
+// The woven pool - real model output baked in at weave time
+// (--pool N). Drawn when no live endpoint answers; see poolDraw.
+window.VEFR_POOL = {{pool_json}};
+
 // ---- minimal state ----
 const STATE = (function () {
   var s = { phase: null, world: null };
@@ -277,7 +281,21 @@ function bindWhisper() {
       feed.insertBefore(div, feed.firstChild);
       status.textContent = 'the mill is warm.';
     } catch (err) {
-      status.textContent = 'the mill is silent (' + (err.message || 'failed') + ').';
+      // No live endpoint (or it failed): draw from the woven pool -
+      // real model output, pre-generated at weave time.
+      var pooled = poolDraw('rumor:' + (STATE.get().phase || ''));
+      if (pooled) {
+        var pempty = feed.querySelector('.empty'); if (pempty) pempty.remove();
+        var pdiv = document.createElement('div');
+        pdiv.className = 'card';
+        pdiv.innerHTML = '<div class="speaker">' + esc(pooled.speaker) + '</div>'
+          + '<p class="whisper">&ldquo;' + esc(pooled.whisper) + '&rdquo;</p>'
+          + (pooled.is_true ? '' : '<p class="status">a lie, or close enough</p>');
+        feed.insertBefore(pdiv, feed.firstChild);
+        status.textContent = 'from the woven pool.';
+      } else {
+        status.textContent = 'the mill is silent (' + (err.message || 'failed') + ').';
+      }
     } finally {
       btn.disabled = false;
     }
@@ -288,6 +306,36 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, function (ch) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
   });
+}
+
+// ---- the woven pool ----
+// When no live endpoint answers, draw a real, pre-generated line
+// from the pool. Used entries are remembered per combo; when a
+// combo is spent, unused lines from any other combo keep the world
+// speaking; when the whole pool is spent, say so plainly.
+const POOL_USED = (function () {
+  try { return JSON.parse(localStorage.getItem('vefr-pool-used') || '{}'); }
+  catch (e) { return {}; }
+})();
+
+function poolDraw(key) {
+  const pool = window.VEFR_POOL || {};
+  const combos = [key].concat(Object.keys(pool).filter(function (k) { return k !== key; }));
+  for (let c = 0; c < combos.length; c++) {
+    const k = combos[c];
+    const entries = pool[k] || [];
+    const used = POOL_USED[k] || [];
+    const fresh = [];
+    for (let i = 0; i < entries.length; i++) {
+      if (used.indexOf(i) === -1) fresh.push(i);
+    }
+    if (!fresh.length) continue;
+    const idx = fresh[Math.floor(Math.random() * fresh.length)];
+    POOL_USED[k] = used.concat(idx);
+    try { localStorage.setItem('vefr-pool-used', JSON.stringify(POOL_USED)); } catch (e) {}
+    return entries[idx];
+  }
+  return null;
 }
 
 // ---- town ----
@@ -394,7 +442,14 @@ function setupTown() {
       document.getElementById('npc-line').textContent = line.line;
       document.getElementById('npc-box').hidden = false;
     }).catch(function () {
-      document.getElementById('near').textContent = 'the voice did not answer.';
+      var pooled = poolDraw('npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?'));
+      if (pooled) {
+        document.getElementById('npc-name').textContent = pooled.speaker;
+        document.getElementById('npc-line').textContent = pooled.line;
+        document.getElementById('npc-box').hidden = false;
+      } else {
+        document.getElementById('near').textContent = 'the voice did not answer.';
+      }
     });
   }
 
