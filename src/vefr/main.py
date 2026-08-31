@@ -557,13 +557,13 @@ def builder_worlds():
 @app.post("/api/builder/import")
 def builder_import(payload: dict):
     """Thin wrapper around ratatoskr ferry fetch --pull. {repo: 'owner/name', name: 'private-canon'}"""
-    from .cli import cmd_import
+    from .cli import GITEA_BASE, cmd_import
     import argparse
 
     args = argparse.Namespace(
         repo=payload.get("repo", ""),
         name=payload.get("name"),
-        base=payload.get("base", "http://192.168.2.216:3000"),
+        base=payload.get("base", GITEA_BASE),
         target=payload.get("target", "local"),
         pull=payload.get("pull", True),
         dry_run=False,
