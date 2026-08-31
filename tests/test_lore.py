@@ -12,9 +12,15 @@ flavor toggles:
      directory with textures.md, names.md, questions.md, prompt.md,
      LICENSE.md. The engine reads the first three; the author copies
      the fourth. lore is mood, not canon.
+
+Journey/rune tests use a four-phase fixture pack under
+tests/fixtures/four-phase-pack/ so the tests run whether or not
+the user's canon pack is on disk.
 """
 
 import json
+import shutil
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -27,6 +33,24 @@ from vefr.journey import (
     journey_for,
     journey_prose_for,
 )
+
+
+@pytest.fixture
+def fixture_vefr_home(monkeypatch, tmp_path):
+    """Point VEFR_HOME at a temp tree with the four-phase fixture
+    pack so journey tests don't depend on any canon pack being
+    on disk. The fixture is at tests/fixtures/four-phase-pack/;
+    we copy it into a tmpdir's worlds/ so load_world() sees it.
+    """
+    fixture_src = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "four-phase-pack"
+    home = tmp_path / "vefr-home"
+    (home / "worlds" / "four-phase-pack").mkdir(parents=True)
+    shutil.copytree(fixture_src, home / "worlds" / "four-phase-pack",
+                    dirs_exist_ok=True)
+    monkeypatch.setenv("VEFR_HOME", str(home))
+    world.load_world.cache_clear()
+    yield home
+    world.load_world.cache_clear()
 
 
 # ---- journey.py ----
@@ -133,19 +157,20 @@ def test_preview_response_shape():
 
 # ---- world.py: journey attachment ----
 
-def test_load_world_attaches_journey_to_each_phase_by_position(monkeypatch):
+def test_load_world_attaches_journey_to_each_phase_by_position(fixture_vefr_home):
     """The engine maps pack phases to journey stages by position.
 
     A pack that renames its phases ('the ordinary day' instead of
     'whispers') still gets the engine's bones attached by order.
+
+    Uses the four-phase fixture pack so the test runs whether or
+    not the user's canon pack is on disk.
     """
-    # Use the sample-world pack (which has 2 phases; we only need 4+
-    # to test the mapping). Emberfield's `phases` dict has only two
-    # keys, so we test on private-canon which has four.
-    w = world.load_world("private-canon")
+    w = world.load_world("four-phase-pack")
+    assert w["phases"].keys() == {"whispers", "doubts", "feared", "awed"}
     assert "_journey" in w
     assert len(w["_journey"]) == 4
-    # First phase in private-canon is whispers; engine should anchor
+    # First phase in the fixture is whispers; engine should anchor
     # it to the first journey stage (Fehu, the call).
     assert w["_journey"][0]["pack_phase"] == "whispers"
     assert w["_journey"][0]["rune"] == "Fehu"
@@ -154,14 +179,14 @@ def test_load_world_attaches_journey_to_each_phase_by_position(monkeypatch):
     assert w["_journey"][3]["rune"] == "Sowilo"
 
 
-def test_pack_phase_to_journey_lookup():
+def test_pack_phase_to_journey_lookup(fixture_vefr_home):
     """The helper resolves a pack's phase key to its journey entry."""
-    w = world.load_world("private-canon")
-    entry = world.pack_phase_to_journey("awed")
+    w = world.load_world("four-phase-pack")
+    entry = world.pack_phase_to_journey("awed", world=w)
     assert entry is not None
     assert entry["rune"] == "Sowilo"
     # An unknown phase returns None.
-    assert world.pack_phase_to_journey("a phase private-canon doesn't have") is None
+    assert world.pack_phase_to_journey("a phase the fixture doesn't have", world=w) is None
 
 
 # ---- saga.py: the rune line in system prompts ----
