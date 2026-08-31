@@ -106,6 +106,16 @@ tree. The runes are the one stochastic surface; the cast is
 the one moment where what happens is *up to the world*. The
 player reads what the chips say; the chips don't read the player.
 
+The rune cast is the engine's *personal memory* — same role as
+the homelab's `memory_memory_search` / `memory_journal_log` /
+LangGraph persistence layer. Same shape (atomic write, timestamped,
+seedable), same honesty (every claim verifiable, every cast
+reproducible), same commitment (the story persists; replays
+return the same canon). The runes are the only surface that
+varies within a session-minute, and even they can be replayed
+by re-seeding. **The contract is honest. The bones are
+documented. The journey begins.**
+
 ### Lore packs
 
 Three lore packs ship with the engine. Each is data — a directory
