@@ -180,7 +180,23 @@ def cmd_build(args) -> int:
 
 
 def cmd_verify(args) -> int:
-    with urllib.request.urlopen(f'{args.url.rstrip("/")}/api/world', timeout=15) as r:
+    ok, errors = verify_live(args.url)
+    if not ok:
+        for e in errors:
+            print(f'FAIL: {e}')
+        return 1
+    print(f'ok: {args.url} - the deployed world passes validation')
+    return 0
+
+
+def verify_live(url: str) -> tuple[bool, list[str]]:
+    """Validate a live deployment's served /api/world payload.
+
+    Used by both the maplab CLI ('verify') and the builder web UI
+    ('/api/builder/verify'). Returns (ok, errors).
+    """
+    import urllib.request
+    with urllib.request.urlopen(f'{url.rstrip("/")}/api/world', timeout=15) as r:
         served = json.loads(r.read().decode('utf-8'))
     town_keys = ('tile', 'map', 'legend', 'pois', 'watch', 'sanctuary_tiles',
                  'water_by_phase', 'flood_tiles', 'willow_start')
@@ -195,12 +211,7 @@ def cmd_verify(args) -> int:
         'town': {k: served[k] for k in town_keys if k in served},
     }
     errors = validate(w)
-    if errors:
-        for e in errors:
-            print(f'FAIL: {e}')
-        return 1
-    print(f'ok: {args.url} - the deployed world passes validation')
-    return 0
+    return (not errors), errors
 
 
 def main(argv=None) -> int:

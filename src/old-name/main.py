@@ -3,6 +3,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import json
+
 from . import forge, journal, starred
 from .bell import generate_letter
 from .export import export_story
@@ -221,6 +223,121 @@ def journal_undo():
 def journal_clear():
     journal.clear()
     return {"cleared": True}
+
+
+# --------------------------------------------------------------- builder
+
+# The builder surface in the web UI: stateless turn-based chat with
+# the local model, plus thin wrappers around old-name's import/validate/
+# verify commands. The web UI holds the conversation history; the
+# server is just "given the history so far, write the next line".
+# Same `chat.draft()` machinery as the CLI interview, but driven by
+# fetch() from the page instead of input() in a terminal.
+
+BUILDER_SYSTEM = (
+    "You are a warm, curious world-building collaborator helping "
+    "an author shape their own story. Plain prose, never purple, "
+    "never a lecture. Reply with one short paragraph (2-5 sentences) "
+    "or one short list. If the author is stuck, ask a focused question. "
+    "Stay grounded in the pack they're editing - if they reference "
+    "the ferryman or the roll-keeper by name, treat those as the people they are. "
+    "Never invent facts about the story; when you don't know, ask."
+)
+
+
+class BuilderChatTurn(BaseModel):
+    message: str
+    history: list[dict] = []  # [{role, content}] pairs
+    world: str | None = None  # pack to focus on (None = current)
+
+
+@app.post("/api/builder/chat")
+def builder_chat(turn: BuilderChatTurn):
+    """One turn of the builder-mode chat. Stateless."""
+    from .chat import ASSISTANT_SYSTEM, draft
+    # Replay the history briefly so the model has context. We keep it
+    # short - the page holds the long view.
+    context_lines = []
+    for h in turn.history[-6:]:
+        if h.get("role") in ("user", "assistant") and h.get("content"):
+            who = "Author" if h["role"] == "user" else "Builder"
+            context_lines.append(f"{who}: {h['content']}")
+    context = "\n".join(context_lines)
+    prompt = turn.message
+    if context:
+        prompt = f"(recent conversation)\n{context}\n\nAuthor: {turn.message}"
+    text = draft(prompt, system=BUILDER_SYSTEM)
+    return {"reply": text}
+
+
+@app.get("/api/builder/worlds")
+def builder_worlds():
+    """Every pack under worlds/ that has a world.json.
+
+    Surfaces sample-world + private-canon + any other import. The page
+    uses this to populate the world picker in the Builder tab.
+    """
+    from .paths import app_home
+    base = app_home() / "worlds"
+    if not base.exists():
+        return {"worlds": []}
+    out = []
+    for p in sorted(base.iterdir()):
+        if (p / "world.json").exists():
+            try:
+                w = json.loads((p / "world.json").read_text(encoding="utf-8"))
+                out.append({
+                    "name": p.name,
+                    "title": w.get("title", p.name),
+                    "phases": list(w.get("phases", {}).keys()),
+                    "speakers": list(w.get("speakers", {}).keys()),
+                })
+            except (json.JSONDecodeError, OSError):
+                continue
+    return {"worlds": out}
+
+
+@app.post("/api/builder/import")
+def builder_import(payload: dict):
+    """Thin wrapper around old-name import --pull. {repo: 'owner/name', name: 'private-canon'}"""
+    from .cli import cmd_import
+    import argparse
+
+    args = argparse.Namespace(
+        repo=payload.get("repo", ""),
+        name=payload.get("name"),
+        base=payload.get("base", "http://192.168.2.216:3000"),
+        target=payload.get("target", "local"),
+        pull=payload.get("pull", True),
+        dry_run=False,
+    )
+    rc = cmd_import(args)
+    return {"rc": rc}
+
+
+@app.post("/api/builder/validate")
+def builder_validate(payload: dict):
+    """Run maplab.validate on the named pack."""
+    from .maplab import load_pack, validate
+    from .paths import pack_dir
+
+    name = payload.get("name") or None
+    try:
+        pack = pack_dir(name)
+        w = load_pack(pack)
+        errors = validate(w, pack_dir=pack)
+    except Exception as e:  # noqa: BLE001
+        return {"errors": [f"validate failed: {e}"], "ok": False}
+    return {"errors": errors, "ok": len(errors) == 0, "pack": str(pack)}
+
+
+@app.post("/api/builder/verify")
+def builder_verify(payload: dict):
+    """Verify the live deployment's served world against the live URL."""
+    from .maplab import verify_live
+    url = payload.get("url", "http://127.0.0.1:8820")
+    ok, errors = verify_live(url)
+    return {"ok": bool(ok), "errors": errors, "url": url}
 
 
 @app.get("/api/starred")

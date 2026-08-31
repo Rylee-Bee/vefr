@@ -35,12 +35,19 @@ class El {
       contains: (c) => this.classList._s.has(c),
     };
   }
-  get textContent() { return this._text; }
+  get textContent() {
+    /* recursive like the real DOM: own _text + all descendants' _text */
+    let s = this._text || '';
+    for (const c of this.children) s += c.textContent;
+    return s;
+  }
   set textContent(v) { this._text = String(v); this.children = []; }
   set innerHTML(v) { this._html = String(v); if (v === '') this.children = []; }
   get innerHTML() { return this._html === undefined ? '' : this._html; }
   setAttribute(k, v) { this.attrs[k] = String(v); }
   getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+  get value() { return this._value || ''; }
+  set value(v) { this._value = String(v); }
   appendChild(c) { c.parent = this; this.children.push(c); return c; }
   remove() {
     if (this.parent) this.parent.children = this.parent.children.filter((c) => c !== this);
@@ -109,7 +116,7 @@ function mk(tag, id, cls, parent = root, data = {}) {
 
 /* the elements both scripts reach for, matching index.html */
 const tabsBox = mk('div', '', 'tabs');
-const TABVIEWS = ['rumors', 'vault', 'bell', 'town', 'journal'];
+const TABVIEWS = ['rumors', 'vault', 'bell', 'town', 'journal', 'builder'];
 const tabBtns = {};
 for (const v of TABVIEWS) {
   tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
@@ -141,6 +148,20 @@ mk('button', 'export-btn');
 mk('button', 'journal-clear-btn');
 mk('p', 'journal-status', 'note');
 mk('section', 'journal-list');
+mk('select', 'builder-pack-picker');
+mk('button', 'builder-refresh-packs');
+mk('p', 'builder-pack-info', 'note');
+mk('input', 'builder-import-repo');
+mk('input', 'builder-import-name');
+mk('button', 'builder-import-btn');
+mk('p', 'builder-import-status', 'note');
+mk('button', 'builder-validate-btn');
+mk('button', 'builder-verify-btn');
+mk('p', 'builder-validate-status', 'note');
+mk('section', 'builder-chat-log');
+const bForm = mk('form', 'builder-chat-form');
+mk('textarea', 'builder-chat-input', '', bForm);
+mk('button', 'builder-chat-send', '', bForm);
 
 /* a canvas whose 2d context records nothing but must never be called
    with a missing method */
@@ -235,6 +256,12 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
   if (url === '/api/export') return ok('# story');
+  if (url === '/api/builder/worlds') return ok({
+    worlds: [
+      { name: 'sample-world', title: 'Emberfield', phases: ['dusk', 'dawn'], speakers: ['smith'] },
+    ],
+  });
+  if (url === '/api/builder/chat') return ok({ reply: 'aye, that is what I would write.' });
   throw new Error('harness: unexpected fetch ' + method + ' ' + url);
 };
 
@@ -352,6 +379,21 @@ dpadBtn.dataset.dir = 'up';
 byId.get('dpad').appendChild(dpadBtn);
 dpadBtn.click();
 check('dpad move did not throw', true);
+
+/* the builder tab from this session: packs load, chat round-trips */
+tabBtns.builder.click();
+await tick();
+check('builder packs loaded',
+  calls.some((c) => c.url === '/api/builder/worlds') &&
+  byId.get('builder-pack-picker').children.length === 1,
+  byId.get('builder-pack-picker').children.length + ' picker options');
+byId.get('builder-chat-input').value = 'who is the smith?';
+byId.get('builder-chat-form').dispatch('submit');
+await tick();
+const chatCall = calls.filter((c) => c.url === '/api/builder/chat').pop();
+check('builder chat posted', !!chatCall, JSON.stringify(chatCall));
+check('builder chat reply rendered', byId.get('builder-chat-log').textContent.includes('aye'));
+check('builder validate button wired', byId.get('builder-validate-btn') !== null);
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
 process.exit(fail.length ? 1 : 0);

@@ -87,6 +87,54 @@ fallback entirely. Model default: `gpt-oss-20b` (works with any
 llama.cpp model that supports the chat template; set `NORN_MODEL`
 to change it; structured output via JSON schema with `strict: true`).
 
+### Use your own pack
+
+The bundled engine ships with `worlds/sample-world/` (Emberfield) so
+it boots with something to play. To swap in your own world:
+
+1. Copy `worlds/sample-world/` to `worlds/<your-name>/`.
+2. Edit `world.json`, `bible.md`, `voices/*.md`, `map.md`. The
+   contract lives in `world.json`'s `REQUIRED` keys (see
+   `src/norn/world.py`); `old-name validate --pack worlds/<your-name>`
+   catches mistakes.
+3. Mount it into the container and tell the engine which pack to load:
+
+```sh
+podman run -d --name norn -p 8820:8820 \
+  -v ~/norn-data:/app/data \
+  -v /path/to/your-pack:/app/worlds/your-name:Z \
+  -e NORN_WORLD=your-name \
+  -e NORN_LLAMACPP_URL=http://host.docker.internal:8081 \
+  localhost/norn:latest
+```
+
+### Point it at a phone-as-backend
+
+Anywhere the engine can reach an OpenAI-compatible HTTP endpoint,
+the engine is happy. That includes:
+
+- `Local LLM Server` on the iPhone (App Store, iOS 26+) - runs Apple's
+  Foundation Models on-device, exposes OpenAI + Ollama APIs
+- `Crucible LLM Server` or `Pirate LLM Server` - open-source, llama.cpp
+  + Metal, sideloadable via AltStore
+- A Mac running Ollama / LM Studio, exposed to your LAN
+
+Set `NORN_LLAMACPP_URL=http://<phone-ip>:11434/v1` and the game runs
+entirely off the laptop, the cloud, and any LAN host.
+
+### Package a single HTML file (the bones)
+
+```sh
+old-name build
+# -> dist/private-canon-2026-08-31.html  (one self-contained file)
+```
+
+The packaged file is the engine's `web/` UI with your world pack
+inlined as JSON. Send it to someone - they open it in a browser
+(on a phone, on a tablet, on a desktop), point it at any
+OpenAI-compatible LLM URL, and play. No Python, no server, no
+internet.
+
 ## Make your own world
 
 **By hand:**

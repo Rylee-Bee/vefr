@@ -12,7 +12,8 @@ is built on this engine:
     old-name - the smith. Craft. Worldbuilding tools.
         old-name chat       interview a new world into existence
         old-name validate   geometry checks against the pack
-        old-name build      rebuild the map from run-length rows
+        old-name build      package web/<name>/ into one self-contained HTML file
+        old-name build-map  rebuild the map from run-length rows
         old-name verify     validate a live deployment
         old-name import     clone or pull a story repo (Gitea) into worlds/<name>/
 
@@ -35,6 +36,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .maplab import load_pack, validate
+from .paths import world_name
 
 GITEA_BASE = 'http://192.168.2.216:3000'
 
@@ -372,6 +374,69 @@ def cmd_map(args) -> int:
         raise SystemExit(f'unknown map command: {args.map_cmd}')
     return maplab_main(argv)
 
+
+def cmd_build_web(args) -> int:
+    """Bundle worlds/<name>/ + web/packaged.html into one self-contained file.
+
+    The player opens the file, points it at any OpenAI-compatible LLM
+    endpoint, and plays. No Python, no server, no internet: the pack's
+    bible, ledger, voices, and town are inlined as JSON inside the
+    HTML. Distributable: send it as a single email attachment, host
+    on any static site, open from a phone's Files app.
+
+    The 'bones' shape carries through here. Whatever the engine reads
+    from the pack on disk, the bundled file reads from a JS object.
+    """
+    import json as _json
+    from datetime import date
+
+    if args.pack is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        # Bare name -> resolve under worlds/; absolute path -> use as-is.
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = p if p.is_dir() else p.parent
+        else:
+            pack = pack_root() / 'worlds' / p
+
+    if not (pack / 'world.json').exists():
+        print(f'pack not found at {pack}; pass --pack NAME or set NORN_WORLD')
+        return 1
+
+    world = _json.loads((pack / 'world.json').read_text(encoding='utf-8'))
+    title = world.get('title', pack.name)
+    bible = (pack / 'bible.md').read_text(encoding='utf-8') if (pack / 'bible.md').exists() else ''
+    ledger = (pack / 'ledger.md').read_text(encoding='utf-8') if (pack / 'ledger.md').exists() else ''
+    voices = {}
+    if (pack / 'voices').exists():
+        for sf in (pack / 'voices').glob('*.md'):
+            voices[sf.stem] = sf.read_text(encoding='utf-8')
+
+    template = (Path(__file__).resolve().parents[2] / 'web' / 'packaged.html').read_text(encoding='utf-8')
+
+    tagline = world.get('gold_rule') or 'memory and longing.'
+    out_html = template
+    out_html = out_html.replace('{{title}}', title)
+    out_html = out_html.replace('{{tagline}}', tagline)
+    out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
+    out_html = out_html.replace('{{bible_json}}', _json.dumps(bible))
+    out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
+    out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
+
+    if args.out:
+        out_path = Path(args.out)
+    else:
+        out_dir = Path('dist')
+        out_dir.mkdir(exist_ok=True)
+        out_path = out_dir / f'{pack.name}-{date.today().isoformat()}.html'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(out_html, encoding='utf-8')
+    size_kb = out_path.stat().st_size / 1024
+    print(f'wrote {out_path} ({size_kb:.1f} KB)')
+    print('open it in a browser, set your LLM URL + model, and play.')
+    return 0
+
 def cmd_deploy(args) -> int:
     root = need_repo()
     host = args.deploy_host
@@ -493,7 +558,11 @@ SMIDR_HELP = """old-name - the smith. Craft. Worldbuilding tools.
                   it goes
   old-name validate  geometry checks against a pack (--pack defaults to
                   the currently selected world)
-  old-name build     rebuild the map from run-length rows (--segments)
+  old-name build     package web/packaged.html + the active world into
+                  one self-contained HTML file at dist/<name>-<date>.html.
+                  Send it to someone - they open it in a browser, point
+                  it at any OpenAI-compatible LLM URL, and play.
+  old-name build-map rebuild the map from run-length rows (--segments)
   old-name verify    validate a live deployment's served world (--url)
   old-name import    clone or pull a story repo (Gitea, --base) into
                   worlds/<name>/. Pass 'owner/name' or a full git
@@ -554,7 +623,17 @@ def smidr_main() -> int:
     mv.add_argument('--pack', default=None)
     mv.set_defaults(fn=cmd_map, map_cmd='validate', segments=None, force=False)
 
-    mb = sub.add_parser('build', help='rebuild the map from run-length rows')
+    mbw = sub.add_parser(
+        'build',
+        help='compile worlds/<name>/ + web/packaged.html into one self-contained HTML file',
+    )
+    mbw.add_argument('--pack', default=None, help='world to bundle (default: current)')
+    mbw.add_argument('--out', default=None, help='output path (default: dist/<name>-<date>.html)')
+    mbw.add_argument('--target', default='web', choices=['web'], help='build target (only web for now)')
+    mbw.set_defaults(fn=cmd_build_web)
+
+    # Map-builder kept for parity; --target web routed to cmd_build_web.
+    mb = sub.add_parser('build-map', help='rebuild the map from run-length rows')
     mb.add_argument('--segments', required=True)
     mb.add_argument('--pack', default=None)
     mb.add_argument('--force', action='store_true')
@@ -598,9 +677,10 @@ def smidr_main() -> int:
     mi.set_defaults(fn=cmd_import)
 
     args = ap.parse_args()
-    # validate / build / verify default --pack to the resolved world;
-    # chat and import don't take --pack and don't need the lookup.
-    if args.cmd in ('validate', 'build', 'verify') and getattr(args, 'pack', None) is None:
+    # validate / build / build-map / verify default --pack to the
+    # resolved world; chat and import don't take --pack and don't
+    # need the lookup.
+    if args.cmd in ('validate', 'build', 'build-map', 'verify') and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
     return args.fn(args)
 
