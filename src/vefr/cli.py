@@ -406,7 +406,18 @@ def cmd_build_web(args) -> int:
         for sf in (pack / 'voices').glob('*.md'):
             voices[sf.stem] = sf.read_text(encoding='utf-8')
 
-    template = (Path(__file__).resolve().parents[2] / 'web' / 'packaged.html').read_text(encoding='utf-8')
+    # The template ships with the repo in a checkout, but in the
+    # container the package is pip-installed into site-packages while
+    # web/ lives under VEFR_HOME - so try both, and prefer whichever
+    # actually exists.
+    template_candidates = [
+        Path(__file__).resolve().parents[2] / 'web' / 'packaged.html',
+    ]
+    from .paths import app_home
+    template_candidates.append(app_home() / 'web' / 'packaged.html')
+    template_path = next(
+        (p for p in template_candidates if p.exists()), template_candidates[0])
+    template = template_path.read_text(encoding='utf-8')
 
     tagline = world.get('gold_rule') or 'memory and longing.'
     out_html = template
