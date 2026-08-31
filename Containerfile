@@ -4,6 +4,15 @@ ENV VEFR_HOME=/app \
     VEFR_VAULT=/app/data/vault.json \
     VEFR_JOURNAL=/app/data/journal.json
 
+# git is needed by `ratatoskr volumes export` to init a host-style
+# repo. alpine-style `apk add` would be smaller; on debian-slim
+# it's `apt-get install -y --no-install-recommends git` + cleanup.
+# We layer the install before the source COPYs so the git layer
+# caches independently of the source code.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Engine-owned templates ship INSIDE the image at /app/worlds-template/.
 # At runtime, the deploy host bind-mounts a read-only Docker volume
 # (vefr-template) on top of this path, so a `ferry deploy` can update
