@@ -8,7 +8,7 @@ import copy
 
 from vefr import maplab
 from vefr.paths import pack_dir
-from vefr.world import load_world
+from vefr.world import current_act, load_world
 
 
 def test_sample_world_validates():
@@ -18,7 +18,7 @@ def test_sample_world_validates():
 
 def test_maplab_flags_broken_maps():
     w = copy.deepcopy(load_world())
-    town = w['town']
+    town = current_act(w).get("_town_legacy", {})
     solid_xy = next(
         (x, y)
         for y, row in enumerate(town['map'])
@@ -45,8 +45,9 @@ def test_bond_schema_follows_the_pack():
 
 
 def test_seeds_cover_every_phase():
-    from vefr.world import load_world
+    from vefr.world import current_act, load_world
 
     w = load_world()
-    for key, spec in w['speakers'].items():
+    speakers = current_act(w)['speakers']
+    for key, spec in speakers.items():
         assert set(spec['seeds'].keys()) == set(w['phases'].keys()), key

@@ -177,16 +177,41 @@
       is a stale doc - the live game has never run on homelab-vm,
       only on bazzite; flagged separately).
 
+- [x] **the always-array world loader + the visible engine**
+      (2026-08-31). `load_world()` now returns a single canonical
+      shape: top-level keys (title, phases, surface, logbok,
+      ledger, voices, bonds, acts) and `acts` is ALWAYS a list.
+      Two on-disk shapes are supported. Flat: worlds/<name>/
+      world.json + voices/ + map.md (legacy packs still work).
+      Acts: worlds/<name>/world.json (pack-level contract) +
+      acts/<id>/world.json (act contract) + acts/<id>/<region>/
+      (map.md, voices/, sprites/). The loader walks the tree
+      and discovers voices/sprites by convention. maplab.load_pack
+      and maplab.write_pack round-trip both shapes; chat.py
+      writes a new pack in whichever shape the scaffold uses.
+      `current_act(world)` and `current_town(world)` are the
+      accessors; every consumer reads through them. The canary
+      pack `sample-world/` is migrated to the acts shape. The
+      `surface` field is now in the always-array payload so the
+      web UI can branch on it in a follow-on PR. Every loader
+      step is recorded to `data/weave.jsonl` (the weave log) and
+      surfaced at `/api/weave`. The Builder tab gets a "What the
+      engine sees" panel that shows the resolved world and
+      packages a markdown handoff bundle for an AI-buddy
+      debugging session - see `docs/guides/handoff.md` for the
+      format. 159 tests pass; the canary pack validates
+      identically before and after the migration.
+
 ## Next
 
-- [ ] **surface UI for `surface: "combat"` packs**: the engine now
-      declares the surface in world.json but the web UI + packaged
-      file don't yet *render* the surface. The HP bar, the encounter
-      prompt, the "attack" button that records as a journal entry -
-      none of those are wired yet. This is the work that lets the
-      engine's Norse-coded default feel like an RPG without ever
-      gating the player on it. Packs that declare `surface: "plain"`
-      (the sample world) just skip the RPG panel.
+- [ ] **surface UI for `surface: "combat"` packs**: the data shape
+      now carries the surface (the always-array loader exposes it
+      on every /api/world response) but the web UI + packaged
+      file don't yet *render* the surface. The HP bar, the
+      encounter prompt, the "attack" button that records as a
+      journal entry - none of those are wired yet. The
+      `<body data-surface="...">` CSS hook is in place from the
+      loader work; this is a HUD-only PR now.
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
