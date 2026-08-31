@@ -360,12 +360,19 @@
       localStorage prefs the runes already use. Hard-of-hearing:
       when audio arrives (the bell), every sound pairs with a
       visual event - the journal already is that record. Idea
-      credit when it lands: Fluid Infusion (fluid-project).
+      credit when it lands: Fluid Infusion (fluid-project). And
+      per the Game Accessibility Guidelines' Basic tier: control
+      remapping (a keybinds map in localStorage, the cast_visible
+      pattern) joins the reading row.
 
 ## The always-layer
 
 - the loop: whisper -> keep what's true -> the ledger -> the voice
   compounds
 - the backups: Gitea, the durable clone, the NAS bundle
+- inclusive-forward: every screen answers for different needs -
+  reading load, target size, contrast over color, motion off by
+  default, and when sound arrives, every sound paired with a
+  visual event. It is part of the gate, not a follow-up.
 - private until it isn't: one checkbox, whenever - or never. Both
   are complete endings.
