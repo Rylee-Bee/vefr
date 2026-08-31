@@ -40,7 +40,7 @@ never needs to learn to code.
 
 | Resource             | License        | Verdict                        | Why                                                                                       |
 | -------------------- | -------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
-| Tiled Map Editor     | GPL-2.0+ (tool) | Adopt as authoring tool + small importer | The open standard for visual tile-map authoring: paint tiles, object layers for named points (`"tower": [5,1]`). Authors use the app; vefr parses Tiled's documented JSON export into `map.md` + contract points, gated by `maplab.validate()`. No GPL code enters vefr - we only read the output format |
+| Tiled Map Editor (github.com/mapeditor/tiled) | GPL-2.0+ app, BSD/Apache components | Adopt as authoring tool + small importer | The open standard for visual tile-map authoring: 12.9k stars, actively maintained, JSON export, and a JS scripting API - a small vefr export script could write pack-native files from inside Tiled. Authors paint tiles; object layers hold named points (`"tower": [5,1]`); the export gates through `maplab.validate()`. No GPL code enters vefr - we only parse the documented output format |
 | Rot.js mapgen + FOV  | MIT            | Borrow algorithms (see above)  | Generation, not authoring - complements Tiled, never replaces validation                  |
 | In-engine visual editor | -           | North-star item                | The dev menu grows its own paint-the-map surface; the Tiled importer bridges until then    |
 
@@ -50,6 +50,22 @@ never needs to learn to code.
 | ------------------ | ------- | ------------ | ------------------------------------------------------------------------------------------- |
 | Kenney 1-Bit Pack  | CC0 1.0 | Adopt - best fit | Monochrome = luminance-based, exactly the accessibility rule (rank by lightness, never hue); CC0 can ship inside the MIT engine repo; the scaffold README already tells authors to replace default art - Kenney is the neutral default |
 | Kenney RPG Base    | CC0 1.0 | Adopt as alt | Colored terrain tiles fine; status/rank must stay luminance-encoded; `W.tile` is pack-driven (`web/town.js:41`, default 32) so tile px adapts without code change |
+| Kenney RPG Audio + Interface Sounds | CC0 1.0 | Adopt when audio lands | Confirmed CC0; the default source for the bell's ring and UI sounds if real files beat the WebAudio synth |
+
+### Found in research (2026-08-31)
+
+| Pack                    | License | Verdict                                                              |
+| ----------------------- | ------- | -------------------------------------------------------------------- |
+| Foozle "Lucifer" Exterior | CC0   | 32x32 - exact `W.tile` match; .ase sources included; strongest alt to Kenney for outdoor regions |
+| Foozle "Lucifer" Desert   | CC0   | Same family; biome variety for act regions                           |
+| Mythic Dungeon (VerzatileDev) | CC0 | 16/32/48/64 sizes; walls, water, chests - ready for the labyrinth  |
+
+"Name your own price" is not CC0. The Mixel 32x32 pack is free
+for commercial use but forbids modification - it fails the
+make-it-unique rule. Paid packs (Wardmarch, Emberfen) carry
+no-redistribution clauses: an author may use them inside their own
+local pack, but they cannot ship in `worlds/sample-world/` or the
+repo.
 
 Sprites drop into a pack's `sprites/` directory - the acts loader
 discovers them by convention. Art is pack data, not code.
@@ -66,7 +82,8 @@ discovers them by convention. Art is pack data, not code.
    `maplab.validate()`.
 4. Rot.js mapgen when `norns chat` v2 opens up geometry.
 5. Audio decision when the bell deserves its ring: WebAudio synth
-   before asset files.
+   before asset files; Kenney's CC0 audio packs are the fallback
+   source when real files arrive.
 
 ## Licensing quick-rules
 
@@ -90,6 +107,11 @@ discovers them by convention. Art is pack data, not code.
 - Javascript-astar: bgrins.github.io/javascript-astar
 - bitECS: github.com/fritzy/ecs-js (bitECS)
 - Howler.js: howlerjs.com
-- Tiled: mapeditor.org
+- Tiled: mapeditor.org (repo: github.com/mapeditor/tiled)
 - Kenney 1-Bit: kenney-assets.itch.io/1-bit-pack
 - Kenney RPG Base: kenney.nl/assets/rpg-base
+- Kenney RPG Audio: kenney.nl/assets/rpg-audio
+- Kenney Interface Sounds: kenney.nl/assets/interface-sounds
+- Foozle Lucifer Exterior: foozlecc.itch.io/lucifer-exterior-tileset
+- Foozle Lucifer Desert: foozlecc.itch.io/lucifer-desert-tileset
+- Mythic Dungeon: verzatiledev.itch.io/mythic-dungeon
