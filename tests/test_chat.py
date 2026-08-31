@@ -102,7 +102,11 @@ def test_mismatched_rename_count_keeps_originals(tmp_path, monkeypatch):
 
 def test_theme_updates_colors_but_never_map_chars(tmp_path, monkeypatch):
     dest = tmp_path / 'themed-world'
-    original_map = json.loads((SCAFFOLD / 'world.json').read_text(encoding='utf-8'))['town']['map']
+    # Read the scaffold as a unified shape (handles flat or acts
+    # on-disk layouts). The new-shape sample-world stores town
+    # metadata in acts/act-1/town/contract.json equivalent; maplab
+    # synthesizes w['town'] for the validator and consumer.
+    original_map = maplab.load_pack(SCAFFOLD)['town']['map']
     monkeypatch.setattr(
         'builtins.input',
         _answers('', '', '', 'candlelit and warm'),  # only the theme mood is set
@@ -136,7 +140,7 @@ def test_slugify_handles_spaces_and_punctuation():
 def test_write_pack_is_atomic(tmp_path):
     dest = tmp_path / 'pack'
     dest.mkdir()
-    w = json.loads((SCAFFOLD / 'world.json').read_text(encoding='utf-8'))
+    w = maplab.load_pack(SCAFFOLD)
     maplab.write_pack(dest, w)
     assert not (dest / 'world.json.tmp').exists()
     assert json.loads((dest / 'world.json').read_text(encoding='utf-8'))['title'] == w['title']
