@@ -258,6 +258,19 @@
       back to the pool whenever no live endpoint is configured or a
       call fails.
 
+      LANDED (2026-08-31): `ratatoskr weave --pool N` is live, the
+      packaged page draws from the pool with per-combo spending
+      tracked in localStorage, the first real-model weave ran
+      end-to-end in the container against the warm 6900XT
+      (sample-world, 1 sample per combo, 10 lines, 24KB file), and
+      the pool-draw runtime itself is machine-tested
+      (tests/test_web_packaged.py executes the shipped poolDraw code
+      in a node vm: no repeats, cross-combo fallthrough, honest
+      null when spent). The deeper research item above - purpose-
+      built small generators for a world with NO pool at all -
+      stays open; the pool covers the common case (author has a
+      model, the friend does not).
+
 ## The always-layer
 
 - the loop: whisper -> keep what's true -> the ledger -> the voice
