@@ -18,8 +18,8 @@ dependencies = [
 test = ["pytest>=8.3"]
 
 [project.scripts]
-raven = "norn.cli:raven_main"
-old-name = "norn.cli:smidr_main"
+ratatoskr = "norn.cli:ratatoskr_main"
+norns = "norn.cli:norns_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/norn"]
