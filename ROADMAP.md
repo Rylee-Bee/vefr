@@ -402,18 +402,29 @@
       sweep across web globals/events, and test harness execution for
       the reading row controller.
 
-## Next
+- [x] **dev overlay & aspect inspector + engine maintenance bundle** (2026-09-01, this session):
+      In-game development overlay & aspect inspector drawer with
+      accessible 44px trigger, dark-mode styling, and keyboard shortcuts
+      (` and F12), wired to `GET /api/builder/aspects`. Surfaces loaded pack
+      aspects, active act structure, region metadata, speaker seed matrices,
+      living rune cast, and recent trace events. Full DOM harness coverage
+      and FastAPI route verification. Plus mechanical cleanup bundle:
+      deduplicated journey attachment in `world.py` (L2), extracted shared
+      `UndoBuffer` helper in `sessions.py` preserving living tree touch
+      semantics across vault and journal (L3), populated speaker source on
+      `NpcLine` (L4), resilient FastAPI title & static mount handling (M5),
+      and robust `app_home()` fallback guards for unbundled installs (M6).
 
-- [ ] **dev menu & aspect inspector**: in-game development overlay
-      surfacing pack aspects (lore, acts, maps, textures) and live
-      trace inspection. Acceptance: dev menu opens via shortcut/button,
-      displays loaded pack aspects, and links directly to inspect endpoints.
-      (Existing machinery: `/api/builder/resolved`, `trace.py`, weave ring).
-- [ ] **contextual AI enhance**: scoped structured generation calls
-      tailored to the active screen/resource (improving map descriptions,
-      voice prompts, item curses). Acceptance: per-screen enhance button
-      POSTs to structured generation routes and returns schema-validated JSON.
-      (Existing machinery: `generator.py`, `saga.py`, `stefna.py`).
+- [x] **contextual AI enhance** (2026-09-01, this session):
+      Scoped structured generation calls tailored to the active screen
+      and resource in authoring and dev views. Implemented `src/vefr/enhance.py`
+      with strict JSON schemas for map/POI descriptions, speaker voice prompts &
+      dialogue rules, and relic forge flavor/curses. Wired into FastAPI at
+      `POST /api/builder/enhance/{map,voice,item}` and integrated into the
+      Builder tab with accessible triggers and status reporting. Tested with
+      dedicated test suite (`tests/test_enhance.py`).
+
+## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
       Acceptance: persistent 6-turn chat in Builder tab successfully calls
