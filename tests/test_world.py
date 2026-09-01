@@ -1,5 +1,8 @@
-"""Story tests - Private Canon canon. Skipped unless the resolved
-world IS private-canon: the bones must be provable with zero flesh."""
+"""Story tests - the author's canon pack (Private Canon) as a
+known-good test fixture. Skipped unless the resolved world IS
+private-canon. The bones must be provable with zero flesh - but
+when the flesh IS mounted, the engine must surface it intact."""
+
 
 from pathlib import Path
 

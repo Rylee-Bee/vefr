@@ -67,6 +67,54 @@ drops it into `worlds/<name>/` locally. One env var selects the
 world: `VEFR_WORLD=your-world`. Point it at your own pack and the
 same engine serves your story.
 
+### Worked example: bones here, flesh in your own repo
+
+The repo split is the contract. The engine knows:
+
+| The engine reads | The engine never reads |
+| --- | --- |
+| `world.json` keys: title, phases, surface, voices, bonds, acts | the *names* of any specific pack's NPCs, places, or prose |
+| `map.md` (geography only - the geometry, not the names) | sample text from any specific pack |
+| `voices/*.md` (the rule shape, not the words) | the bell's letter, the keeper's name, your characters |
+| pack-name only as an identifier for routes + filenames | any pack's flavor text |
+
+What this looks like in practice:
+
+```
+rylee/vefr/                  # this repo (MIT, the bones)
+the private story repo/            # the author's game repo (private, the flesh)
+  worlds/private-canon/         # the pack, lives in the story repo
+    world.json               # phases: dusk / dawn, voices, bonds
+    logbok.md                # your canon + style contract
+    ledger.md                # collected whispers
+    map.md                   # your geometry
+    voices/*.md              # your sealed voices
+```
+
+You develop the engine here. You write the game there. When you
+want to play:
+
+```bash
+# on the bazzite live stack
+ssh bazzite
+cd ~/vefr                            # the engine checkout
+ferry fetch --pull the private story repo  # your pack lands in worlds/private-canon/
+systemctl --user restart vefr.service
+```
+
+When you want to ship the game as your own thing:
+
+```bash
+ratatoskr weave --pool 5 --pack private-canon   # one self-contained HTML
+```
+
+The packaged file is yours to release. The engine that built it
+isn't.
+
+If a future engine contributor (human or AI) reads the source and
+sees names that aren't theirs, that's a leak. The bones are
+empty until a pack mounts.
+
 ## Design
 
 The engine's identity is *part of the skeleton*, not a flavor toggle.

@@ -19,8 +19,8 @@ RUN apt-get update \
 # the templates without rebuilding the image. The image's copy is
 # the offline boot fallback: if the volume is empty (first run, after
 # a `volume rm`), the engine still has lore/ and sample-world/ to load
-# from. The author's canon (private-canon, anything `ferry fetch` lands)
-# lives at /app/worlds/ on a separate read-write volume.
+# from. Author-imported packs (whatever `ferry fetch --pack <name>`
+# lands) live at /app/worlds/ on a separate read-write volume.
 COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir .

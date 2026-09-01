@@ -1,5 +1,7 @@
-"""Story tests - the ferryman. Skipped unless the resolved world
-IS private-canon."""
+"""Story tests - the author's canon pack (the ferryman) as a
+known-good test fixture. Skipped unless the resolved world
+IS private-canon. NPC payload tests prove the engine surfaces a
+pack's speaker voices intact."""
 
 import json
 from pathlib import Path

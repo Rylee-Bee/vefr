@@ -29,10 +29,17 @@ kilo config - do not add personal files to this repo.
 
 ## What this repo isn't
 
-- The game. The author's story (Old Name, `worlds/private-canon/`) lives in
-  the private `the private story repo` repo and is gitignored here. Engine
-  history was filter-repo'd on 2026-08-31 to remove every trace; the
-  engine must never re-learn any specific game's name.
+- The game. The engine is the bones; the author's story is the
+  flesh, kept in a separate private pack repo (e.g.
+  `the private story repo`) and dropped into `worlds/<name>/` locally
+  when it's time to play. `worlds/private-canon/` (if it exists on
+  this checkout) is gitignored here. Engine history was
+  filter-repo'd on 2026-08-31 to remove every trace; the engine
+  must never re-learn any specific game's name - whether from the
+  author's pack or from any other pack. If a string in `web/`,
+  `src/`, a system prompt, or a placeholder defaults to a name
+  that isn't pack-supplied, that's a leak; replace it with an
+  engine-neutral verb (or empty the slot until the pack loads).
 - Multi-backend tied: llama.cpp (`VEFR_LLAMACPP_URL`) is preferred,
   Ollama (`OLLAMA_URL`) is fallback. Structured output only
   (`response_format.json_schema`, `strict: true`).
