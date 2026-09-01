@@ -55,7 +55,7 @@
       (gold ring, gold only when the world is kind); the reed
       crossing's water level became a choice (high in feared); the
       the sea-figure sighting at the water's edge (awed, gold, once).
-      And the town grew 30x20 -> 40x28: the moot hall (Old the roll-keeper
+      And the town grew 30x20 -> 40x28: the moot hall (its keeper
       keeps the roll), Katla's tavern (rumors are born there),
       Sigga's store (her ledger is not the parish ledger) - all
       with doors, verified reachable by flood-fill.

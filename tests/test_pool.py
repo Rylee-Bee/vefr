@@ -14,7 +14,7 @@ def _fake_world(monkeypatch):
         lambda name=None: {
             "title": "T",
             "phases": {"whispers": "", "doubts": ""},
-            "speakers": {"the ferryman": {"name": "the ferryman"}, "katla": {"name": "Katla"}},
+            "speakers": {"ferry": {"name": "the ferryman"}, "katla": {"name": "Katla"}},
         },
     )
 
@@ -42,8 +42,8 @@ def test_build_pool_shapes_and_counts(monkeypatch):
     _fake_generators(monkeypatch)
     p = build_pool(samples=5, specials=3)
     assert set(p) == {"rumor:whispers", "rumor:doubts",
-                      "npc:whispers:the ferryman", "npc:whispers:katla",
-                      "npc:doubts:the ferryman", "npc:doubts:katla",
+                      "npc:whispers:ferry", "npc:whispers:katla",
+                      "npc:doubts:ferry", "npc:doubts:katla",
                       "letter", "forge"}
     assert len(p["rumor:whispers"]) == 5
     assert p["rumor:doubts"][0]["whisper"] == "w-doubts"
@@ -62,7 +62,7 @@ def test_pool_tolerates_a_cold_model(monkeypatch):
     p = build_pool(samples=5, specials=3)
     assert p["rumor:whispers"] == []
     # The rest of the pool still wove.
-    assert len(p["npc:whispers:the ferryman"]) == 5
+    assert len(p["npc:whispers:ferry"]) == 5
     assert len(p["letter"]) == 3
 
 
@@ -93,14 +93,14 @@ def test_weave_bakes_pool_into_html(tmp_path, monkeypatch):
     (pack / "logbok.md").write_text("# canon", encoding="utf-8")
     (pack / "ledger.md").write_text("", encoding="utf-8")
     (pack / "voices").mkdir()
-    (pack / "voices" / "the ferryman.md").write_text("voice", encoding="utf-8")
+    (pack / "voices" / "ferry.md").write_text("voice", encoding="utf-8")
 
     monkeypatch.setattr(cli, "pack_root", lambda: tmp_path)
     from vefr import world as world_mod
 
     monkeypatch.setattr(world_mod, "load_world", lambda name=None: {
         "title": "Pool", "phases": {"whispers": ""},
-        "speakers": {"the ferryman": {"name": "the ferryman"}}})
+        "speakers": {"ferry": {"name": "the ferryman"}}})
     _fake_generators(monkeypatch)
 
     out = tmp_path / "out.html"
