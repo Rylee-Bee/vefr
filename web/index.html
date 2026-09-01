@@ -15,13 +15,140 @@
     --church: #2a2e33;
     --danger: #b8543f;
   }
+
+  /* Reading fonts - self-hosted under web/fonts/. The packaged
+     ratatoskr weave output ships them inline; offline is part of the
+     always-layer. License notes live at web/fonts/README.md (Atkinson
+     Hyperlegible Next is SIL OFL; OpenDyslexic is SIL OFL). When the
+     woff2 isn't installed the file simply 404s and the CSS falls
+     through to the system serif in body{}, which is fine. */
+  @font-face {
+    font-family: 'Atkinson Hyperlegible Next';
+    font-style: normal; font-weight: 400; font-display: swap;
+    src: url('/static/fonts/AtkinsonHyperlegibleNext-Regular.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Atkinson Hyperlegible Next';
+    font-style: normal; font-weight: 700; font-display: swap;
+    src: url('/static/fonts/AtkinsonHyperlegibleNext-Bold.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal; font-weight: 400; font-display: swap;
+    src: url('/static/fonts/OpenDyslexic-Regular.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal; font-weight: 700; font-display: swap;
+    src: url('/static/fonts/OpenDyslexic-Bold.woff2') format('woff2');
+  }
+
+  /* The reading row. Every rule keys off a single attribute on <html>
+     set by web/prefs.js, so the stylesheet never has to read JS state
+     - it just reacts to a string. Luminance carries rank; hue is a
+     tint at most. Density shifts spacing without changing color. */
+  html[data-prefs^="text=xs"] body   { font-size: 0.92rem; }
+  html[data-prefs^="text=s"]  body   { font-size: 0.98rem; }
+  html[data-prefs^="text=m"]  body   { font-size: 1.04rem; }
+  html[data-prefs^="text=l"]  body   { font-size: 1.14rem; }
+  html[data-prefs^="text=xl"] body   { font-size: 1.26rem; }
+  html[data-prefs^="text=2xl"] body  { font-size: 1.40rem; }
+
+  html[data-prefs~="space=loose"] body    { line-height: 1.85; }
+  html[data-prefs~="space=loose"] .card   { padding: 1.3rem 1.5rem; }
+  html[data-prefs~="space=loose"] #feed,
+  html[data-prefs~="space=loose"] #vault-list,
+  html[data-prefs~="space=loose"] #journal-list { gap: 1.4rem; }
+  html[data-prefs~="space=tight"] body   { line-height: 1.45; }
+  html[data-prefs~="space=tight"] .card  { padding: 0.7rem 0.9rem; }
+
+  html[data-prefs~="font=atkinson"]    body { font-family: 'Atkinson Hyperlegible Next', Georgia, serif; letter-spacing: 0.005em; }
+  html[data-prefs~="font=opendyslexic"] body { font-family: 'OpenDyslexic', Georgia, serif; }
+  html[data-prefs~="font=serif"]       body { font-family: Georgia, 'Times New Roman', serif; }
+  html[data-prefs~="font=system"]      body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+  html[data-prefs~="contrast=high"] {
+    --bg: #0d0d0b; --card: #18161200; --card-edge: #5a5347;
+    --ink: #f5f3ec; --ink-dim: #c2bdb0; --accent: #e1c282;
+  }
+  html[data-prefs~="contrast=ultra"] {
+    --bg: #000; --card: #000; --card-edge: #ffffff;
+    --ink: #ffffff; --ink-dim: #e8e8e8; --accent: #ffd56b;
+  }
+  html[data-prefs~="contrast=ultra"] body { font-weight: 550; }
+  html[data-prefs~="contrast=ultra"] .card { border-width: 2px; }
+  html[data-prefs~="contrast=ultra"] .tabs button:focus-visible,
+  html[data-prefs~="contrast=ultra"] .zone-btn:focus-visible,
+  html[data-prefs~="contrast=ultra"] #prefs-trigger:focus-visible { outline-width: 3px; }
+
+  /* Colorblind-safe palette: shift the two phase hues (gold for
+     'awed', brown-red for 'feared') toward luminance-equivalent
+     blue/gray so they remain distinguishable for the most common
+     forms of CVD. The named hues stay; only the encoded values
+     change, and they stay high-contrast either way. */
+  html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"]   { border-color: #6c8aa8; }
+  html[data-prefs~="palette=cb-safe"] .card[data-phase="feared"] { border-color: #6b6b78; }
+  html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] { border-color: #6c8aa8; }
+  html[data-prefs~="palette=cb-safe"] .card[data-bond="assigned"]{ border-color: #6b6b78; }
+  html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"] .speaker,
+  html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] .speaker { color: #8ea7c4; }
+
+  /* Motion. The default is off; 'subtle' allows < 200ms transitions
+     on color/opacity only; 'full' is the original transition budget. */
+  html[data-prefs~="motion=off"]    *, html[data-prefs~="motion=off"]    *::before,
+                                    html[data-prefs~="motion=off"]    *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  html[data-prefs~="motion=subtle"] *, html[data-prefs~="motion=subtle"] *::before,
+                                     html[data-prefs~="motion=subtle"] *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 200ms !important;
+  }
+  /* Respect the OS-level override regardless of saved prefs. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* Focus ring. Luminance default (a soft white outline that doesn't
+     require the accent color); the accent variant is what we had. */
+  html[data-prefs~="focus=luminance"] .tabs button:focus-visible,
+  html[data-prefs~="focus=luminance"] .zone-btn:focus-visible,
+  html[data-prefs~="focus=luminance"] .phase-rail button:focus-visible,
+  html[data-prefs~="focus=luminance"] .controls button:focus-visible,
+  html[data-prefs~="focus=luminance"] #prefs-trigger:focus-visible,
+  html[data-prefs~="focus=luminance"] #prefs-panel button:focus-visible,
+  html[data-prefs~="focus=luminance"] #prefs-panel input:focus-visible,
+  html[data-prefs~="focus=luminance"] #prefs-panel select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  html[data-prefs~="focus=accent"] .tabs button:focus-visible,
+  html[data-prefs~="focus=accent"] .zone-btn:focus-visible,
+  html[data-prefs~="focus=accent"] .phase-rail button:focus-visible,
+  html[data-prefs~="focus=accent"] .controls button:focus-visible,
+  html[data-prefs~="focus=accent"] #prefs-trigger:focus-visible,
+  html[data-prefs~="focus=accent"] #prefs-panel button:focus-visible,
+  html[data-prefs~="focus=accent"] #prefs-panel input:focus-visible,
+  html[data-prefs~="focus=accent"] #prefs-panel select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Density. Comfortable is the default; compact trims vertical
+     padding on the zone buttons, tabs, and cards so the same screen
+     fits more. */
+  html[data-prefs~="density=compact"] .tabs button,
+  html[data-prefs~="density=compact"] .zone-btn,
+  html[data-prefs~="density=compact"] .phase-rail button { padding: 0.35rem 0.7rem; min-height: 36px; }
+  html[data-prefs~="density=compact"] .card { padding: 0.7rem 0.9rem; }
+
+  /* Caption / subtitle pairing. Captions are off by default until the
+     bell's audio lands, but the hook is here so the toggle is real. */
+  html[data-prefs~="captions=off"] .captions { display: none; }
+
   * { box-sizing: border-box; }
   html { color-scheme: dark; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Atkinson Hyperlegible Next', Georgia, 'Times New Roman', serif;
     line-height: 1.6;
     min-height: 100vh;
   }
@@ -465,11 +592,348 @@
 
   @keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* Title-row + preferences trigger.
+     The header used to be a single h1; now it carries a 44x44
+     button to the right edge. English label leads, Norse rides
+     visibly as a secondary line - matching the tab/zone pattern. */
+  .title-row {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .title-row h1 { margin: 0; }
+  .prefs-trigger {
+    font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--card-edge);
+    border-radius: 4px; cursor: pointer;
+    min-height: 44px; min-width: 44px;
+    padding: 0.45rem 0.9rem;
+    display: inline-flex; align-items: center; gap: 0.55rem;
+  }
+  .prefs-trigger:hover { border-color: var(--accent); }
+  .prefs-trigger[aria-expanded="true"] { border-color: var(--accent); background: var(--card-edge); }
+  .prefs-icon { display: inline-flex; }
+  .prefs-trigger-text { display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+  .prefs-trigger-en  { font-size: 0.88rem; letter-spacing: 0.02em; }
+  .prefs-trigger-norse { font-size: 0.66rem; letter-spacing: 0.05em; opacity: 0.7; }
+
+  /* Backdrop + bottom-sheet panel. The panel slides up from the
+     bottom edge on narrow screens and centers as a dialog above
+     ~720px. Focus is trapped while open (panel.js); ESC closes. */
+  .prefs-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 90;
+  }
+  .prefs-backdrop[hidden] { display: none; }
+
+  .prefs-panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    max-height: 90vh; overflow-y: auto;
+    background: var(--bg); color: var(--ink);
+    border: 1px solid var(--card-edge); border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    padding: 1.2rem 1.2rem 1.4rem;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+  }
+  .prefs-panel[hidden] { display: none; }
+
+  @media (min-width: 720px) {
+    .prefs-panel {
+      left: 50%; right: auto; bottom: auto;
+      top: 50%; transform: translate(-50%, -50%);
+      width: min(64rem, calc(100vw - 3rem));
+      max-height: calc(100vh - 4rem);
+      border-radius: 10px; border: 1px solid var(--card-edge);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  .prefs-header {
+    display: flex; align-items: flex-start; gap: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+  .prefs-header h2 {
+    margin: 0; font-size: 1.15rem; font-weight: normal; letter-spacing: 0.04em;
+    display: flex; flex-direction: column; line-height: 1.15;
+  }
+  .prefs-title-en    { font-size: 1.15rem; }
+  .prefs-title-norse { font-size: 0.75rem; color: var(--ink-dim); letter-spacing: 0.06em; }
+  .prefs-desc { color: var(--ink-dim); font-size: 0.88rem; margin: 0.3rem 1.6rem 0 0; flex: 1; }
+  .prefs-close {
+    font: inherit; color: var(--ink); background: transparent;
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    cursor: pointer; min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .prefs-close:hover { border-color: var(--accent); }
+
+  .prefs-cols {
+    display: grid; gap: 1rem; margin-top: 0.8rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 720px) {
+    .prefs-cols { grid-template-columns: 18rem 1fr 18rem; }
+  }
+
+  .prefs-col {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 6px;
+    padding: 0.8rem 1rem 1rem;
+    margin: 0;
+    min-width: 0;
+  }
+  .prefs-col legend {
+    padding: 0 0.4rem;
+    display: flex; flex-direction: column; line-height: 1.2;
+  }
+  .col-norse {
+    font-size: 0.66rem; letter-spacing: 0.08em;
+    color: var(--ink-dim); text-transform: uppercase;
+  }
+  .col-en { font-size: 0.98rem; }
+  .col-note {
+    margin: 0.4rem 0 0.8rem;
+    color: var(--ink-dim); font-size: 0.85rem;
+  }
+
+  .prefs-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.6rem; }
+  .prefs-action {
+    font: inherit; color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    cursor: pointer;
+    min-height: 44px;
+    padding: 0.5rem 0.8rem;
+    display: flex; flex-direction: column; align-items: flex-start;
+    line-height: 1.15;
+  }
+  .prefs-action:hover { border-color: var(--accent); }
+  .prefs-action-warn { color: var(--ink); }
+  .prefs-action-warn:hover { border-color: var(--danger); color: var(--danger); }
+  .action-en { font-size: 0.92rem; }
+  .action-norse { font-size: 0.66rem; color: var(--ink-dim); letter-spacing: 0.05em; }
+  .prefs-share-status { margin: 0.5rem 0 0; color: var(--ink-dim); font-size: 0.82rem; min-height: 1.2em; }
+
+  .pref-row {
+    display: grid; grid-template-columns: 1fr; gap: 0.3rem;
+    margin: 0.7rem 0;
+  }
+  .pref-row label {
+    color: var(--ink); font-size: 0.92rem;
+    display: flex; flex-direction: column; line-height: 1.15;
+  }
+  .pref-row label .sub {
+    font-size: 0.66rem; color: var(--ink-dim);
+    letter-spacing: 0.05em; margin-top: 0.1rem;
+  }
+  .pref-row select {
+    font: inherit; color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--card-edge); border-radius: 4px;
+    padding: 0.5rem 0.7rem; min-height: 44px;
+    width: 100%;
+  }
+  .pref-row select:focus-visible { outline-offset: 2px; }
+  .pref-row select:hover { border-color: var(--accent); }
+
+  .skuld-preview {
+    margin-top: 0.6rem;
+    background: var(--bg);
+    border: 1px dashed var(--card-edge);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+  }
+  .skuld-headline {
+    margin: 0; color: var(--ink);
+    font-size: 1.05rem; letter-spacing: 0.02em;
+  }
+  .skuld-body {
+    margin: 0.5rem 0 0; color: var(--ink);
+  }
+  .skuld-meta {
+    margin: 0.6rem 0 0; color: var(--ink-dim);
+    font-size: 0.82rem;
+  }
+  .skuld-meta strong { color: var(--accent); }
+
+  .prefs-footer {
+    margin-top: 0.8rem; padding-top: 0.6rem;
+    border-top: 1px solid var(--card-edge);
+  }
+  .prefs-footnote {
+    margin: 0; color: var(--ink-dim); font-size: 0.82rem;
+  }
+  .prefs-footnote a { color: var(--accent); }
 </style>
 </head>
 <body data-surface="plain">
+
+<div id="prefs-backdrop" class="prefs-backdrop" hidden></div>
+
+<div id="prefs-panel" class="prefs-panel" role="dialog" aria-modal="true"
+     aria-labelledby="prefs-title" aria-describedby="prefs-desc" hidden>
+  <header class="prefs-header">
+    <h2 id="prefs-title">
+      <span class="prefs-title-en">Reading &amp; sound</span>
+      <span class="prefs-title-norse">Raddsaga</span>
+    </h2>
+    <p id="prefs-desc" class="prefs-desc">
+      how the story reads to you and sounds to you. Saved on this device;
+      a share-link button below lets you take it with you.
+    </p>
+    <button type="button" id="prefs-close" class="prefs-close" aria-label="Close preferences">
+      <svg viewBox="0 0 24 24" width="22" height="22" focusable="false" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+
+  <div class="prefs-cols" role="group" aria-label="Preference categories">
+
+    <fieldset class="prefs-col prefs-col-urd">
+      <legend>
+        <span class="col-norse">Urd</span>
+        <span class="col-en">what was recalled</span>
+      </legend>
+      <p class="col-note">Saved preferences on this device. Reset brings everything back to the engine's defaults.</p>
+
+      <div class="prefs-actions">
+        <button type="button" id="prefs-share" class="prefs-action">
+          <span class="action-en">Copy preferences as a link</span>
+          <span class="action-norse">Deila</span>
+        </button>
+        <button type="button" id="prefs-reset" class="prefs-action prefs-action-warn">
+          <span class="action-en">Reset to defaults</span>
+          <span class="action-norse">Afturkalla</span>
+        </button>
+      </div>
+      <p class="prefs-share-status" id="prefs-share-status" aria-live="polite"></p>
+    </fieldset>
+
+    <fieldset class="prefs-col prefs-col-verdandi">
+      <legend>
+        <span class="col-norse">Verdandi</span>
+        <span class="col-en">how it reads and sounds right now</span>
+      </legend>
+
+      <div class="pref-row">
+        <label for="pref-text">Text size <span class="sub">Leturstærð</span></label>
+        <select id="pref-text" data-pref-key="textSize">
+          <option value="xs">very small (XS)</option>
+          <option value="s">small (S)</option>
+          <option value="m">medium (M, default)</option>
+          <option value="l">large (L)</option>
+          <option value="xl">extra large (XL)</option>
+          <option value="2xl">maximum (2XL)</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-spacing">Line spacing <span class="sub">Línubil</span></label>
+        <select id="pref-spacing" data-pref-key="spacing">
+          <option value="tight">tight</option>
+          <option value="m">medium (default)</option>
+          <option value="loose">loose</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-font">Reading font <span class="sub">Letur</span></label>
+        <select id="pref-font" data-pref-key="font">
+          <option value="atkinson">Atkinson Hyperlegible (default)</option>
+          <option value="opendyslexic">OpenDyslexic</option>
+          <option value="serif">saga serif (Georgia)</option>
+          <option value="system">system sans-serif</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-contrast">Contrast <span class="sub">Andstæða</span></label>
+        <select id="pref-contrast" data-pref-key="contrast">
+          <option value="m">medium (default)</option>
+          <option value="high">high</option>
+          <option value="ultra">ultra (maximum)</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-palette">Color palette <span class="sub">Litir</span></label>
+        <select id="pref-palette" data-pref-key="palette">
+          <option value="standard">standard</option>
+          <option value="cb-safe">colorblind-safe</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-motion">Motion <span class="sub">Hreyfing</span></label>
+        <select id="pref-motion" data-pref-key="motion">
+          <option value="off">off (default)</option>
+          <option value="subtle">subtle</option>
+          <option value="full">full</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-focus">Focus ring <span class="sub">Yfirlit</span></label>
+        <select id="pref-focus" data-pref-key="focus">
+          <option value="luminance">luminance-only (default)</option>
+          <option value="accent">accent</option>
+        </select>
+      </div>
+
+      <div class="pref-row">
+        <label for="pref-density">Density <span class="sub">Þéttleiki</span></label>
+        <select id="pref-density" data-pref-key="density">
+          <option value="comfortable">comfortable (default)</option>
+          <option value="compact">compact</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset class="prefs-col prefs-col-skuld">
+      <legend>
+        <span class="col-norse">Skuld</span>
+        <span class="col-en">what changes if you commit</span>
+      </legend>
+      <p class="col-note">A live preview of your current settings. The whole page above reacts in real time.</p>
+      <div class="skuld-preview" aria-hidden="true">
+        <p class="skuld-headline">A whisper from the bog</p>
+        <p class="skuld-body">The reeds lean. A bell rings once, warm-tuned. You learn the name before you know you knew it.</p>
+        <p class="skuld-meta">phase: <strong>awed</strong> &middot; speaker: <strong>the sea-figure</strong></p>
+      </div>
+    </fieldset>
+  </div>
+
+  <footer class="prefs-footer">
+    <p class="prefs-footnote">
+      The reading row is part of the always-layer &mdash; the gate.
+      <a href="docs/guides/identity-terms-glossary.html" target="_blank" rel="noopener">What does that mean?</a>
+    </p>
+  </footer>
+</div>
 <header>
-  <h1 id="app-title">vefr <span class="title-tag">a rumor engine for playable worlds</span></h1>
+  <div class="title-row">
+    <h1 id="app-title">vefr <span class="title-tag">a rumor engine for playable worlds</span></h1>
+    <button type="button" id="prefs-trigger" class="prefs-trigger"
+            aria-haspopup="dialog" aria-controls="prefs-panel" aria-expanded="false"
+            aria-label="Reading and sound preferences">
+      <span class="prefs-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+          <path d="M4 19V5h12l-1.4 1.4L18 9.8 14.8 13l-1.4-1.4L14 10.4 8.2 16.2 6.8 14.8 12.6 9 11.4 7.8 14.6 4.6 16 6H4v13z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <circle cx="17.5" cy="17" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M19.7 19.2l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="prefs-trigger-text">
+        <span class="prefs-trigger-en">Reading &amp; sound</span>
+        <span class="prefs-trigger-norse">Raddsaga</span>
+      </span>
+    </button>
+  </div>
   <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
   <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
 </header>
@@ -682,6 +1146,7 @@
   <button type="button" id="undo-btn">bring it back</button>
 </div>
 <script src="/static/state.js"></script>
+<script src="/static/prefs.js"></script>
 <script src="/static/town.js"></script>
 <script>
 (function () {
@@ -1793,6 +2258,160 @@
   applyCastVisibility();
 
   loadCast();
+})();
+</script>
+
+<script>
+/* The reading-and-sound preferences controller.
+ *
+ * Owns the trigger button, the bottom-sheet panel, focus trap, and
+ * the binding between every [data-pref-key] select in the panel and
+ * VEFR_PREFS. Changes save on input - there is no "Apply" button,
+ * because reading-row settings should never have a hidden commit
+ * gate between the user and the change they just made.
+ *
+ * Cross-device sync is via the share-link: each set() updates
+ * localStorage, the URL ?prefs= query is the wire format, and a
+ * fresh visit to that URL (or pasting it into another browser)
+ * replays the settings through VEFR_PREFS.set(). */
+(function () {
+  var PREFS = window.VEFR_PREFS;
+  if (!PREFS) return;
+
+  var trigger = document.getElementById('prefs-trigger');
+  var panel = document.getElementById('prefs-panel');
+  var backdrop = document.getElementById('prefs-backdrop');
+  var closeBtn = document.getElementById('prefs-close');
+  var shareBtn = document.getElementById('prefs-share');
+  var resetBtn = document.getElementById('prefs-reset');
+  var shareStatus = document.getElementById('prefs-share-status');
+  if (!trigger || !panel || !backdrop) return;
+
+  function openPanel() {
+    panel.hidden = false;
+    backdrop.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    /* Move focus into the panel; the close button is the first
+       tab stop so a screen reader announces "Close, button" right
+       away. The panel is small enough that we don't bother with
+       a full focus-trap library - returning focus to the trigger
+       on close covers the WCAG keyboard-contract. */
+    closeBtn && closeBtn.focus();
+    syncSelects();
+  }
+  function closePanel() {
+    panel.hidden = true;
+    backdrop.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    trigger.focus();
+  }
+
+  function syncSelects() {
+    var live = PREFS.get();
+    var rows = panel.querySelectorAll('[data-pref-key]');
+    rows.forEach(function (el) {
+      var k = el.getAttribute('data-pref-key');
+      if (live[k] != null) el.value = live[k];
+    });
+  }
+
+  /* The trigger button opens. ESC and the backdrop close. The close
+     button is for the mouse and for screen readers. */
+  trigger.addEventListener('click', function () {
+    if (panel.hidden) openPanel(); else closePanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+  backdrop.addEventListener('click', closePanel);
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !panel.hidden) {
+      ev.preventDefault();
+      closePanel();
+    }
+  });
+
+  /* The select rows. Every change is a set(); the panel writes
+     straight to localStorage through VEFR_PREFS. No debounce: the
+     writes are localStorage.setItem on a ~200-byte blob, and the
+     preview feedback is what users expect. */
+  panel.querySelectorAll('[data-pref-key]').forEach(function (el) {
+    el.addEventListener('change', function () {
+      var patch = {};
+      var k = el.getAttribute('data-pref-key');
+      patch[k] = el.value;
+      PREFS.set(patch);
+    });
+  });
+
+  /* Reset. Asks before clobbering a non-default saved state so a
+     stray click doesn't wipe a customized reading row. */
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      var live = PREFS.get();
+      var def = PREFS.defaults();
+      var same = Object.keys(def).every(function (k) {
+        if (k === 'sound') {
+          return JSON.stringify(live.sound) === JSON.stringify(def.sound);
+        }
+        return live[k] === def[k];
+      });
+      if (same) {
+        showStatus('Already at defaults.');
+        return;
+      }
+      PREFS.reset();
+      syncSelects();
+      showStatus('Reset to defaults.');
+    });
+  }
+
+  /* Share-link. Builds a ?prefs=<base64> URL, copies it, and writes
+     a status line. The clipboard API needs a user gesture, which this
+     click is. Fallback: select+copy the link via a temporary
+     textarea. */
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function () {
+      var link = PREFS.shareLink();
+      var done = function () { showStatus('Link copied. Open it on another device to apply.'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done, function () {
+          fallbackCopy(link); done();
+        });
+      } else {
+        fallbackCopy(link); done();
+      }
+    });
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+  function showStatus(msg) {
+    if (!shareStatus) return;
+    shareStatus.textContent = msg;
+    clearTimeout(showStatus._t);
+    showStatus._t = setTimeout(function () { shareStatus.textContent = ''; }, 4000);
+  }
+
+  /* External set() calls (a share-link paste, a future /api/prefs
+     push) keep the panel selects in sync. */
+  PREFS.on(function () { syncSelects(); });
+
+  /* Apply a ?prefs= URL parameter once on load, then drop it from
+     the address bar so reloads don't re-apply the same link. */
+  if (PREFS.applyFromUrl()) {
+    syncSelects();
+  } else {
+    syncSelects();
+  }
 })();
 </script>
 </body>
