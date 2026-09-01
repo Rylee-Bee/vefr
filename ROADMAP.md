@@ -395,6 +395,22 @@
       with per-combo spending tracked in localStorage and fallback to
       honest silence when spent.
 
+- [x] **surface UI for `surface: "combat"` packs** (2026-08-31,
+      `06eed41`): the web UI renders the surface. `web/index.html`
+      gains the HP bar (`.hud-hp`, combat surface only), the
+      phase-dependent encounter prompt (hidden in the whispers
+      phase), the combat verb row posting to `/api/combat/action`
+      with the response landing in the journal, and the
+      `<body data-surface="...">` attribute set from the
+      `/api/world` payload at load. HP is synthesized per-phase by
+      `combat.hp_for_pack()`, so packs need no hp data of their
+      own; plain/investigation surfaces hide the whole costume
+      via CSS. Verified live on bazzite (2026-09-01): `/api/world`
+      serves `surface: combat` + `hp: {current: 4, max: 4,
+      per_phase: {dusk: 3, dawn: 4}}`. The half still open:
+      `web/packaged.html`, the weave artifact, has none of it
+      (Next keeps that scoped item).
+
 - [x] **audit 2026-09-01** (2026-09-01): 10 PR sequence resolving
       live scaffold NameError, pack contract verification (stefna_voice,
       voices dual convention, strike prompt), final story prose and
@@ -445,6 +461,19 @@
       bind-mount hosts. Tested in `tests/test_deploy.py` (4 new
       tests, full suite 200 passed).
 
+- [x] **deploy-day fixes, atomic with the first wrapper deploy**
+      (2026-09-01, `a11e532`). Two bugs the first ferry deploy
+      exposed: `norns validate --pack sample-world` accepted only
+      real paths and raised `FileNotFoundError` on a bare name, so
+      the pre-flight gate could never pass - `maplab.cmd_validate`
+      now resolves bare names through `pack_root()` the way
+      `handbok`/`doctor`/`export` already did (3 tests in
+      `tests/test_validate_pack_path.py`). And the post-deploy
+      health probe hit `127.0.0.1` on the dev box (its `bazzite`
+      SSH alias resolves to the wrong host) and gave up after one
+      fixed 2-second sleep - it now probes through an SSH
+      port-forward with a 20-attempt x 1.5s retry loop.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
@@ -461,14 +490,13 @@
       Acceptance: `ratatoskr ferry scaffold --full` creates functional standalone
       repo with passing offline test suite.
       (Existing machinery: `cmd_scaffold`, pack contract loader).
-- [ ] **surface UI for `surface: "combat"` packs**: the data shape
-      now carries the surface (the always-array loader exposes it
-      on every /api/world response) but the web UI + packaged
-      file don't yet *render* the surface. The HP bar, the
-      encounter prompt, the "attack" button that records as a
-      journal entry - none of those are wired yet. The
-      `<body data-surface="...">` CSS hook is in place from the
-      loader work; this is a HUD-only PR now.
+- [ ] **surface UI in the packaged file**: the web UI half landed
+      (`06eed41`, see Landed) but `web/packaged.html` - the
+      single-file weave artifact - still has no surface costume
+      (zero matches for hud-hp / data-surface / encounter-prompt /
+      verb-row). The weave template needs the same HP bar,
+      encounter prompt, and verb-row treatment before offline
+      packaged play shows the combat surface.
 - [ ] **Tiled map importer** (parked after the surface-UI work):
       `norns import-tiled map.json --pack X` reads Tiled's JSON
       export - visual map authoring, the storyteller-critical gap -
