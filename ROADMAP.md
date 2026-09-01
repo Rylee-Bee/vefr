@@ -289,6 +289,7 @@
 
 ## Next
 
+- [ ] **the dev board** (github-projects feel, pack-aware cards, drag-to-rank, right-rail detail)
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
       part of the story and the engine - replaceable, modifiable,
       fork-able from a dev menu, each enhanced by the local AI chat:
