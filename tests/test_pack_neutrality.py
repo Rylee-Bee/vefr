@@ -1,28 +1,32 @@
-"""The sample pack must never tell anyone's story.
+"""The sample pack and engine surfaces must never tell anyone's story.
 
 The bone-strip audited the engine's code, but a pack is data - the
 gate proves structure, not story absence, so the sample world
 escaped the audit and carried the author's story grammar ("write
 the goodbye", "her hands", the Gold Rule) into an MIT-licensed
-directory. This test is the missing audit.
+directory.
 
-It reads an OPTIONAL, gitignored list of private terms
-(tests/canon-strings.local.txt, one per line, case-insensitive)
-and fails when any term appears in the shipped surfaces:
+This module provides two independent guards:
+1. `test_sample_surfaces_carry_no_private_story`: reads an optional,
+   gitignored list of private terms (tests/canon-strings.local.txt)
+   and checks for literal term leakage across shipped surfaces.
+2. `test_engine_surfaces_carry_no_gendered_pronouns`: a shape-based
+   guard that verifies no third-person singular gendered pronouns
+   (she/her/hers/his/him) appear in user-facing code strings or
+   prompts under `web/` or `src/vefr/`. Module docstrings that describe
+   mythological characters (such as Saga in `saga.py`) are exempted
+   by structural AST shape rather than by an arbitrary literal allowlist.
+3. `test_no_historical_package_names`: anti-regression test ensuring
+   pre-rename package names ('old-name', 'old-name') never reappear in `src/`,
+   `web/`, or `tests/`.
 
-  - worlds/sample-world/   (the MIT demonstration pack)
-  - web/                   (the served UI + shipped JS)
-  - src/vefr/              (the engine)
-
-The mechanism ships; the names stay private - on any machine
-without the list, this test skips.
-
-There are NO exceptions. If this test flags a string, the string
-leaves the source - an allowlist would be a permanent blind spot
-in the one gate that prevents this class of leak. History lives
-in ROADMAP (the ledger), not in shipped code.
+There are NO exceptions or literal term allowlists: an allowlist is a
+permanent blind spot. If a test flags a string, the string leaves the
+source.
 """
 
+import ast
+import re
 from pathlib import Path
 
 import pytest
@@ -32,6 +36,8 @@ LIST_FILE = Path(__file__).resolve().parent / "canon-strings.local.txt"
 
 AUDIT_DIRS = ["worlds/sample-world", "web", "src"]
 AUDIT_SUFFIXES = {".py", ".js", ".mjs", ".html", ".css", ".md", ".json", ".txt"}
+
+PRONOUN_PATTERN = re.compile(r"\b(she|her|hers|his|him)\b", re.IGNORECASE)
 
 
 def _audit_files():
@@ -73,3 +79,102 @@ def test_sample_surfaces_carry_no_private_story():
         + "\n".join(failures)
         + "\n\nThere are no exceptions: the string leaves the source."
     )
+
+
+def test_engine_surfaces_carry_no_gendered_pronouns():
+    """Shape guard: no third-person singular gendered pronouns in user-facing
+    code strings or prompt scaffolding in web/ or src/vefr/.
+
+    Module docstrings in Python files are structural documentation (e.g. Saga in
+    saga.py) and are excluded by AST inspection so no brittle string allowlist
+    is required.
+    """
+    failures = []
+
+    # 1. Audit web/ files (.js, .mjs, .html)
+    web_dir = ROOT / "web"
+    if web_dir.is_dir():
+        for f in sorted(web_dir.rglob("*")):
+            if not f.is_file() or f.suffix not in {".js", ".mjs", ".html"}:
+                continue
+            if "vendor" in f.parts:
+                continue
+            rel = str(f.relative_to(ROOT))
+            for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                for m in PRONOUN_PATTERN.finditer(line):
+                    failures.append(
+                        f"  {rel}:{i}: pronoun {m.group(0)!r} leaves the source: {line.strip()[:80]!r}"
+                    )
+
+    # 2. Audit src/vefr/ files (.py) for string literals and comments
+    src_dir = ROOT / "src" / "vefr"
+    if src_dir.is_dir():
+        for f in sorted(src_dir.rglob("*.py")):
+            if not f.is_file():
+                continue
+            rel = str(f.relative_to(ROOT))
+            text = f.read_text(encoding="utf-8")
+            tree = ast.parse(text, filename=str(f))
+            module_docstring = ast.get_docstring(tree)
+
+            # Check comments
+            for i, line in enumerate(text.splitlines(), 1):
+                if "#" in line:
+                    comment = line[line.index("#") :]
+                    for m in PRONOUN_PATTERN.finditer(comment):
+                        failures.append(
+                            f"  {rel}:{i}: comment pronoun {m.group(0)!r}: {comment.strip()[:80]!r}"
+                        )
+
+            # Check AST string literals (excluding module docstring)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    if tree.body and isinstance(tree.body[0], ast.Expr) and tree.body[0].value is node:
+                        # Skip module docstring
+                        continue
+                    if module_docstring and node.value == module_docstring:
+                        continue
+                    for m in PRONOUN_PATTERN.finditer(node.value):
+                        ln = getattr(node, "lineno", "?")
+                        failures.append(
+                            f"  {rel}:{ln}: string literal pronoun {m.group(0)!r} leaves the source: {node.value.strip()[:80]!r}"
+                        )
+
+    assert not failures, (
+        "third-person singular gendered pronouns found in code or prompts:\n"
+        + "\n".join(failures)
+        + "\n\nEngine scaffolding must remain gender-neutral."
+    )
+
+
+def test_no_historical_package_names():
+    """Anti-regression test: ensure legacy package names
+    do not reappear in src/, web/, or tests/."""
+    failures = []
+    # Build regex without naming historical literals directly in the source file
+    bad_terms = ["m" + "unr", "s" + "midr"]
+    pattern = re.compile(r"\b(" + "|".join(bad_terms) + r")\b", re.IGNORECASE)
+    for d in ["src", "web", "tests"]:
+        root = ROOT / d
+        if not root.exists():
+            continue
+        for f in sorted(root.rglob("*")):
+            if not f.is_file() or f.suffix not in AUDIT_SUFFIXES:
+                continue
+            if "vendor" in f.parts:
+                continue
+            if f.resolve() == Path(__file__).resolve():
+                continue
+            rel = str(f.relative_to(ROOT))
+            for i, line in enumerate(f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                for m in pattern.finditer(line):
+                    failures.append(
+                        f"  {rel}:{i}: found historical package name {m.group(0)!r}: {line.strip()[:80]!r}"
+                    )
+
+    assert not failures, (
+        "historical package names found in codebase:\n"
+        + "\n".join(failures)
+        + "\n\nEngine naming must remain consistently 'vefr'."
+    )
+
