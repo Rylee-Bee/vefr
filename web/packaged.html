@@ -79,6 +79,31 @@
     border-radius: 3px; padding: 1rem 1.1rem; margin-top: 1rem;
   }
   .npc-line { margin: 0.4rem 0 0.9rem; }
+  /* The surface costume - hp bar, encounter prompt, verbs. Only a
+     combat-surface pack shows any of it; plain/investigation packs
+     never do. Mirrors web/index.html's costume. */
+  .hud-hp { display: flex; align-items: center; gap: 0.6rem; margin: 0.8rem 0 0; }
+  .hud-hp-label { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .hud-hp-bar { flex: 1; max-width: 220px; height: 10px; background: var(--bg); border: 1px solid var(--card-edge); border-radius: 2px; }
+  .hud-hp-fill { height: 100%; background: var(--accent); width: 100%; }
+  .hud-hp-value { color: var(--ink-dim); font-size: 0.82rem; }
+  body[data-surface="plain"] .hud-hp,
+  body[data-surface="investigation"] .hud-hp { display: none; }
+  .encounter-prompt { margin: 0.6rem 0 0; color: var(--ink); font-style: italic; }
+  body[data-surface="plain"] .encounter-prompt,
+  body[data-surface="investigation"] .encounter-prompt { display: none; }
+  .verb-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  body[data-surface="plain"] .verb-row,
+  body[data-surface="investigation"] .verb-row { display: none; }
+  .verb-row button {
+    font: inherit; font-size: 0.92rem; padding: 0.55rem 0.9rem;
+    min-height: 44px; min-width: 44px;
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--card-edge); border-radius: 3px; cursor: pointer;
+  }
+  .verb-row button:hover, .verb-row button:focus-visible { border-color: var(--accent); outline: none; }
+  .verb-row button:disabled { opacity: 0.45; cursor: wait; }
+  #combat-log { min-height: 1.2em; }
   .dpad {
     display: grid; grid-template-areas: ". u ." "l d r"; width: 132px;
     gap: 4px; margin: 1rem auto;
@@ -130,6 +155,12 @@
 
     <h2 style="font-weight:normal;font-size:1rem;color:var(--ink-dim);margin:2rem 0 0.5rem;">Town</h2>
     <p class="status">walk with the pad or arrow keys.</p>
+    <div class="hud-hp" id="hud-hp" role="status" aria-live="polite">
+      <span class="hud-hp-label">hp</span>
+      <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+      <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+    </div>
+    <p class="encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
     <canvas id="town-canvas" width="480" height="336"></canvas>
     <p class="status" id="near" aria-live="polite"></p>
     <p class="status" id="poi" aria-live="polite"></p>
@@ -144,6 +175,12 @@
       <p class="npc-line" id="npc-line"></p>
       <button type="button" id="npc-close" class="primary">close</button>
     </div>
+    <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions">
+      <button type="button" data-verb="attack">Strike</button>
+      <button type="button" data-verb="console">Console</button>
+      <button type="button" data-verb="hurl">Hurl an insult</button>
+    </div>
+    <p class="status" id="combat-log" aria-live="polite"></p>
   </div>
 </main>
 <script>
@@ -205,9 +242,81 @@ if (llmUrl && llmModel) {
 
 function bootstrap() {
   STATE.set({ world: window.VEFR_WORLD, phase: Object.keys(window.VEFR_WORLD.phases)[0] });
+  applySurface();
   buildPhaseRail();
   bindWhisper();
   setupTown();
+}
+
+// ---- the surface costume (hp bar, encounter prompt, verbs) ----
+// Mirrors src/vefr/combat.py: per-phase HP is positional, clamped,
+// current starts at the phase's value. No tick system here - the
+// number on the bar is the honest state, and it can never drop a
+// player to zero (the no-failure contract holds in the file too).
+var HP_BY_INDEX = [3, 4, 5, 6];
+
+function perPhaseHp() {
+  var world = window.VEFR_WORLD || {};
+  var per = {};
+  Object.keys(world.phases || {}).forEach(function (k, i) {
+    per[k] = HP_BY_INDEX[Math.min(i, HP_BY_INDEX.length - 1)];
+  });
+  return per;
+}
+
+function renderHp() {
+  var fill = document.getElementById('hud-hp-fill');
+  var value = document.getElementById('hud-hp-value');
+  if (!fill || !value) return;
+  var per = perPhaseHp();
+  var vals = Object.keys(per).map(function (k) { return per[k]; });
+  var max = vals.length ? Math.max.apply(null, vals) : 0;
+  var cur = per[STATE.get().phase] != null ? per[STATE.get().phase] : 0;
+  var pct = max > 0 ? Math.round((cur / max) * 100) : 0;
+  fill.style.width = pct + '%';
+  value.textContent = cur + '/' + max;
+}
+
+function renderEncounter() {
+  var el = document.getElementById('encounter-prompt');
+  if (!el) return;
+  var world = window.VEFR_WORLD || {};
+  var phases = Object.keys(world.phases || {});
+  // The encounter appears in non-initial phases; the text stays
+  // engine-neutral - the phase names belong to the pack, never to
+  // this file.
+  if (phases.indexOf(STATE.get().phase) <= 0) {
+    el.hidden = true; el.textContent = ''; return;
+  }
+  el.hidden = false;
+  el.textContent = 'something stirs nearby.';
+}
+
+function applySurface() {
+  var surface = (window.VEFR_WORLD && window.VEFR_WORLD.surface) || 'plain';
+  document.body.setAttribute('data-surface', surface);
+  renderHp();
+  renderEncounter();
+}
+
+// Verbs record to the packaged player's own journal - the same
+// no-failure contract as the server route they mirror
+// (/api/combat/action): the action only lives in the log.
+const COMBAT_KEY = 'vefr-packaged-combat';
+function recordVerb(verb) {
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]'); } catch (e) {}
+  log.push({ verb: verb, phase: STATE.get().phase, at: new Date().toISOString() });
+  try { localStorage.setItem(COMBAT_KEY, JSON.stringify(log)); } catch (e) {}
+  renderCombatLog(log);
+}
+
+function renderCombatLog(log) {
+  var el = document.getElementById('combat-log');
+  if (!el) return;
+  if (!log || !log.length) { el.textContent = ''; return; }
+  var last = log[log.length - 1];
+  el.textContent = 'last action: ' + last.verb + ' (' + last.phase + ')';
 }
 
 // ---- phase rail ----
@@ -223,6 +332,10 @@ function buildPhaseRail() {
       rail.querySelectorAll('button').forEach(function (x) {
         x.setAttribute('aria-pressed', x.dataset.phase === k ? 'true' : 'false');
       });
+      // A new tone moves the costume too: per-phase HP and the
+      // encounter prompt follow the phase, same as the live app.
+      renderHp();
+      renderEncounter();
     });
     rail.appendChild(b);
   });
@@ -455,6 +568,16 @@ function setupTown() {
 
   document.getElementById('npc-close').addEventListener('click', function () {
     document.getElementById('npc-box').hidden = true;
+  });
+  // The verbs. The journal is local storage - same honest shape as
+  // the server route's entries, minus the server.
+  try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
+  document.getElementById('verb-row').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-verb]');
+    if (!b) return;
+    b.disabled = true;
+    recordVerb(b.dataset.verb);
+    window.setTimeout(function () { b.disabled = false; }, 400);
   });
   canvas.addEventListener('click', tryNPC);
   document.getElementById('dpad').addEventListener('click', function (e) {
