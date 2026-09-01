@@ -74,7 +74,8 @@ window.VEFR_BOARD = (function () {
     world: null,
     cards: null,   /* { column: [card...] } - card: {id,name,content,edited} */
     selected: null,
-    selectedEl: null
+    selectedEl: null,
+    threads: {}    /* { cardId: [{role, content}] } - one smith thread per card */
   };
 
   /* --- seeded randomness ------------------------------------------- */
@@ -313,6 +314,7 @@ window.VEFR_BOARD = (function () {
     setText('rail-response', api.response);
     setText('rail-templates', 'the pack\u2019s own voice fragments - read-only until the wire-up');
     setText('rail-try-out', '');
+    renderThread(card.id, null);
     el.className = 'board-card board-card-selected';
   }
 
@@ -360,6 +362,70 @@ window.VEFR_BOARD = (function () {
       });
   }
 
+  /* Draft to the smith: one thread per card. Each turn carries the
+     card's context so the smith knows what the author is pointing
+     at; the thread lives in the page (the endpoint is stateless)
+     and dies with it - drafts are conversation, not lore. */
+  function sendDraft() {
+    var card = state.selected;
+    if (!card) return;
+    var box = document.getElementById('rail-draft');
+    var text = box ? box.value.trim() : '';
+    if (!text) return;
+    var col = columnOf(card.id);
+    var api = API[col] || API.whispers;
+    var thread = state.threads[card.id] || [];
+    var composed = '[card] ' + card.name + ' - ' + api.title
+      + ' - column: ' + col
+      + '\ncurrent text: ' + card.content
+      + '\n\n' + text;
+    /* `short` keeps the rail's log readable; `content` is what the
+       endpoint replays (context included) */
+    thread.push({ role: 'user', content: composed, short: text });
+    var sendBtn = document.getElementById('rail-chat-send');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'thinking\u2026'; }
+    var log = renderThread(card.id, 'thinking\u2026');
+    var wrap = (window.VEFR_SESSION && window.VEFR_SESSION.wrap)
+      || function (u) { return u; };
+    fetch(wrap('/api/builder/chat'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: composed, history: thread.slice(-6) })
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('bad answer');
+        return r.json();
+      })
+      .then(function (body) {
+        thread.push({ role: 'assistant', content: body.reply });
+        state.threads[card.id] = thread;
+        renderThread(card.id, null);
+        if (box) box.value = '';
+      })
+      .catch(function () {
+        /* the smith never heard it - the turn comes back out of the
+           thread so history stays true */
+        thread.pop();
+        renderThread(card.id, 'no answer from the engine - the draft stays yours');
+      })
+      .then(function () {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
+      });
+  }
+
+  function renderThread(cardId, status) {
+    var log = document.getElementById('rail-chat-log');
+    if (!log) return null;
+    var thread = state.threads[cardId] || [];
+    var lines = thread.map(function (turn) {
+      var what = turn.role === 'user' ? (turn.short || turn.content) : turn.content;
+      return (turn.role === 'user' ? 'you: ' : 'smith: ') + what;
+    });
+    if (status) lines.push(status);
+    log.textContent = lines.join('\n\n');
+    return log;
+  }
+
   /* --- boot ----------------------------------------------------------- */
 
   function getWorld() {
@@ -397,6 +463,8 @@ window.VEFR_BOARD = (function () {
     wireRehome();
     var tryBtn = document.getElementById('rail-try');
     if (tryBtn) tryBtn.addEventListener('click', tryIt);
+    var sendBtn = document.getElementById('rail-chat-send');
+    if (sendBtn) sendBtn.addEventListener('click', sendDraft);
   }
 
   /* Pointer/touch drag. With the vendored Sortable, drops keep their

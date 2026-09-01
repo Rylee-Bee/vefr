@@ -353,6 +353,22 @@
       dragged in from another column would have been silently
       dropped) and the move() rewrite had lost its render() call.
 
+- [x] **the draft wires to the smith** (2026-08-31, this session):
+      the board rail's draft box is live - it was shipped inert with
+      an IOU and now keeps its promise. One thread per card, held by
+      the page (the /api/builder/chat endpoint is stateless; the
+      last 6 turns replay for context). Every turn carries the
+      card's context - name, kind, column, current text - so the
+      smith knows what the author is pointing at; the wire format
+      keeps the composed message while the rail's log renders the
+      short draft. The thread dies with the page: drafts are
+      conversation, not lore (nothing is persisted to the pack).
+      Offline, the turn comes back out of the thread and the rail
+      says so plainly - the draft stays yours. The vm harness drives
+      the full contract: context in the composed message, both turns
+      logged, textarea cleared, honest failure leaving the thread
+      empty.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
