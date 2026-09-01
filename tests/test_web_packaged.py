@@ -118,15 +118,24 @@ def test_packaged_pool_draw_semantics(tmp_path, monkeypatch, canned_generators):
     assert "window.VEFR_POOL = {" in html
     assert '"rumor:dusk"' in html
     assert "canned whisper dusk" in html
+    # The canary bank rode along: the keeper's fragments are inlined.
+    assert "The stone keeps what is brought to it." in html
 
     # The wiring: the rumor and npc catch blocks must reach the pool,
-    # and past the pool into the composer (spent-pool play).
+    # and past the pool into the composer, then the fragment banks.
     assert "poolDraw(phaseKey)" in html
     assert "composeWhisper(phaseKey)" in html
     assert "poolDraw(key)" in html
     assert "composeLine(key)" in html
-    # The composer's status lines are honest about provenance.
+    assert "whisperFromFragments()" in html
+    assert "composeFromFragments(nearest.key, 'line')" in html
+    # The banks are inlined and the status lines are honest about
+    # provenance: pool, pool's cloth, fragments, silence.
+    assert "window.VEFR_FRAGMENTS = " in html
+    assert "from the woven pool." in html
     assert "woven anew from the pool's cloth." in html
+    assert "from the pack's own fragments." in html
+    assert "from their own fragments." in html
     assert "nothing came back (" in html
 
     code = _extract(html)

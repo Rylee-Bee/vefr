@@ -11,6 +11,10 @@
       pool words only, deterministic under a fixed seed
    7. an npc line never borrows another speaker's words
    8. with no pool at all, the composer keeps the honest silence
+   9. with no pool but a fragment bank, the bank speaks: author
+      words only, the display name resolves from the world payload
+   10. a bank with fewer than two lines (or no bank at all) keeps
+       the honest silence; an npc line only splices its own bank
 
    The spec file (argv[2]) is JSON: {code: <extracted JS>, pool: {...}}.
    The python test extracts the code block from the real built HTML, so
@@ -146,5 +150,41 @@ if (s6.composeWhisper('rumor:dusk', 1) !== null) {
   throw new Error('silence must stay honest when there is no pool at all');
 }
 console.log('PASS cross-combo whispers weave; no pool keeps the honest silence');
+
+/* ---------- scenario 9: no pool, a fragment bank speaks ---------- */
+const s7 = makeSandbox({});
+s7.window.VEFR_POOL = {};
+s7.window.VEFR_FRAGMENTS = {
+  keeper: ['The stone keeps what is brought to it.', 'Some things only a hill has seen.'],
+};
+s7.window.VEFR_WORLD = { speakers: { keeper: { name: 'The Keeper' } } };
+const wovenFrag = s7.whisperFromFragments(11);
+if (!wovenFrag) throw new Error('fragment bank failed to speak with no pool');
+const fragWords = new Set();
+for (const ln of s7.window.VEFR_FRAGMENTS.keeper) for (const w of words(ln)) fragWords.add(w);
+for (const w of words(wovenFrag.whisper)) {
+  if (!fragWords.has(w)) throw new Error('fragment composer invented a word: ' + w);
+}
+if (wovenFrag.speaker !== 'The Keeper') {
+  throw new Error('fragment whisper did not resolve the display name: ' + wovenFrag.speaker);
+}
+console.log('PASS fragment bank speaks with no pool (author words only, display name kept)');
+
+/* ---------- scenario 10: npc lines splice only their own bank ---------- */
+const s8 = makeSandbox({});
+s8.window.VEFR_FRAGMENTS = { keeper: ['one line alone.'] };
+if (s8.composeFromFragments('keeper', 'line', 5) !== null) {
+  throw new Error('a one-line bank must stay silent, not repeat itself');
+}
+if (s8.composeFromFragments('nobody', 'line', 5) !== null) {
+  throw new Error('a speaker with no bank must stay silent');
+}
+const s8b = makeSandbox({});
+s8b.window.VEFR_POOL = {};
+s8b.window.VEFR_FRAGMENTS = {};
+if (s8b.whisperFromFragments(5) !== null) {
+  throw new Error('no banks at all must keep the honest silence');
+}
+console.log('PASS fragment voice-lock and tiny/absent banks keep the honest silence');
 
 console.log('pool harness passed');
