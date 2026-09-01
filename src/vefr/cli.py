@@ -247,12 +247,17 @@ def q7_next(pack: Path) -> tuple:
 
 def cmd_skipa(args) -> int:
     pack = pack_root() / 'worlds' / world_name()
+    url = args.url
+    if url == DEFAULT_URL:
+        # The silent default is the dev box itself, not the deploy
+        # host. deploy.toml's url is the declared live endpoint.
+        url = _deploy_toml().get('url') or url
     rows = [
         ('Q1', 'git local + Gitea remote in sync', *q1_sync()),
         ('Q2', 'local files needing push', *q2_dirty()),
         ('Q3', 'deployment healthy (bazzite)',
-         *q3_deployment(args.url, args.deploy_host)),
-        ('Q4', 'the world validated (pack + live)', *q4_world(args.url, pack)),
+         *q3_deployment(url, args.deploy_host)),
+        ('Q4', 'the world validated (pack + live)', *q4_world(url, pack)),
         ('Q5', 'backups fresh (NAS bundle)', *q5_backups(args.nas_host)),
         ('Q6', 'vault persisted (volume)', *q6_vault(args.deploy_host)),
         ('Q7', 'open items from the ROADMAP', *q7_next(pack)),

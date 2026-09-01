@@ -140,3 +140,32 @@ def test_q2_reports_reading_fonts(monkeypatch, tmp_path):
     for f in fonts.glob('*.woff2'):
         f.unlink()
     assert 'fonts 0/4' in cli.q2_dirty()[1]
+
+
+def test_skipa_url_falls_back_to_deploy_toml(monkeypatch, tmp_path, capsys):
+    """The silent url default is the dev box itself, not the deploy
+    host - skipa must ask deploy.toml for the declared endpoint."""
+    calls = []
+    monkeypatch.setattr(cli, 'repo_root', lambda: tmp_path)
+    monkeypatch.setattr(cli, 'q1_sync', lambda: ('in-sync', 'x'))
+    monkeypatch.setattr(cli, 'q2_dirty', lambda: ('clean', 'x'))
+    monkeypatch.setattr(cli, 'q5_backups', lambda host: ('fresh', 'x'))
+    monkeypatch.setattr(cli, 'q6_vault', lambda host: ('persisted', 'x'))
+    monkeypatch.setattr(cli, 'q7_next', lambda pack: ('open', 'x'))
+    monkeypatch.setattr(cli, 'pack_root', lambda: tmp_path)
+    monkeypatch.setattr(cli, 'world_name', lambda: 'sample-world')
+
+    def fake_q3(url, host):
+        calls.append(url)
+        return ('healthy', 'x')
+
+    def fake_q4(url, pack):
+        calls.append(url)
+        return ('validated', 'x')
+
+    monkeypatch.setattr(cli, 'q3_deployment', fake_q3)
+    monkeypatch.setattr(cli, 'q4_world', fake_q4)
+    (tmp_path / 'deploy.toml').write_text('url = "http://toml-host:8820"\n', encoding='utf-8')
+    cli.cmd_skipa(SimpleNamespace(url=cli.DEFAULT_URL, deploy_host='my-stack',
+                                  nas_host='nas'))
+    assert calls == ['http://toml-host:8820', 'http://toml-host:8820']
