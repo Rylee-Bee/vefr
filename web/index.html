@@ -938,7 +938,8 @@
   <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
 </header>
 <main>
-  <div class="zones" role="toolbar" aria-label="Site areas">
+<div class="board-container"><div class="board-file-tree"><div>⌄ worlds/</div><div>⌄ src/vefr/</div><div>⌄ web/</div></div><div class="board-columns"><div id="board-whispers" class="board-column"><h3>Whispers</h3></div><div id="board-voices" class="board-column"><h3>Voices</h3></div><div id="board-forge" class="board-column"><h3>Forge</h3></div><div id="board-bell" class="board-column"><h3>Bell</h3></div></div><div id="board-right-rail" class="board-right-rail"><div class="rail-section" id="rail-name"></div><div class="rail-section" id="rail-timestamp"></div><div class="rail-section">REQUEST</div><div class="rail-section">RESPONSE</div><div class="rail-section">TEMPLATES</div><div class="rail-section"><button>TRY IT</button></div><div class="rail-section"><textarea>DRAFT</textarea></div></div><script src="board.js"></script>
+<div class="zones" role="toolbar" aria-label="Site areas">
     <button type="button" class="zone-btn" data-zone="play" aria-pressed="true">Play</button>
     <button type="button" class="zone-btn" data-zone="world" aria-pressed="false">World</button>
     <button type="button" class="zone-btn" data-zone="dev" aria-pressed="false">Dev</button>
