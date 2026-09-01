@@ -33,7 +33,7 @@ src/vefr/           the engine (MIT)
                      (the ledger that renews the voice)
   generator.py       rumor cards (speaker, whisper, is_true)
   forge.py           items; bonds come from the pack
-  bell.py            sealed voices (the goodbye)
+  stefna.py          sealed voices (the bell / letter)
   npc.py             whisper NPCs; seeds keep the world alive
   journal.py         the session journal - what happened, on disk
                      (VEFR_JOURNAL)

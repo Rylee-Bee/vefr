@@ -315,7 +315,7 @@ function assert(cond, msg) {
     'online try-it shows the response JSON');
 }
 
-/* ---- 9. the lazy boot registered for old-name:board --------------------- */
+/* ---- 9. the lazy boot registered for vefr:board --------------------- */
 {
   let worldCalls = 0;
   const countingFetch = (url) => {
@@ -324,8 +324,8 @@ function assert(cond, msg) {
   };
   const s = makeSandbox({}, countingFetch);
   run(s);
-  const fns = s._winListeners['old-name:board'] || [];
-  assert(fns.length === 1, `boot must listen for old-name:board (got ${fns.length})`);
+  const fns = s._winListeners['vefr:board'] || [];
+  assert(fns.length === 1, `boot must listen for vefr:board (got ${fns.length})`);
   fns[0]({});
   await tick();
   const doc = s.document._registry;
