@@ -20,14 +20,80 @@ label on a playthrough, nothing more.
 import json
 import re
 import secrets
+import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 from .paths import app_home
 
 DEFAULT = "default"
+UNDO_WINDOW_S = 60
 
 _SID_OK = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
+
+class UndoBuffer:
+    """Shared single-slot, time-bounded undo buffer for journal and vault removals."""
+
+    def __init__(self, window_s: float = UNDO_WINDOW_S):
+        self.window_s = window_s
+        self._stash: dict[str, dict] = {}
+        self._stash_at: dict[str, float] = {}
+
+    def remove(
+        self,
+        index: int,
+        load_fn: Callable[[str | None], list[dict]],
+        save_fn: Callable[[list[dict], str | None], None],
+        sid: str | None = None,
+        touch_fn: Callable[[str | None], None] | None = None,
+    ) -> dict | None:
+        key = clean(sid)
+        items = load_fn(sid)
+        if index < 0 or index >= len(items):
+            return None
+        target = items[index]
+        del items[index]
+        save_fn(items, sid)
+        self._stash[key] = {"item": target, "index": index}
+        self._stash_at[key] = time.monotonic()
+        if touch_fn:
+            touch_fn(sid)
+        return target
+
+    def undo(
+        self,
+        load_fn: Callable[[str | None], list[dict]],
+        save_fn: Callable[[list[dict], str | None], None],
+        sid: str | None = None,
+        touch_fn: Callable[[str | None], None] | None = None,
+    ) -> dict | None:
+        key = clean(sid)
+        stash = self._stash.get(key)
+        stash_at = self._stash_at.get(key)
+        if stash is None or stash_at is None:
+            return None
+        if time.monotonic() - stash_at > self.window_s:
+            self._stash.pop(key, None)
+            self._stash_at.pop(key, None)
+            return None
+        item = stash.get("item") if "item" in stash else stash.get("entry")
+        original_index = stash["index"]
+        items = load_fn(sid)
+        insert_at = min(original_index, len(items))
+        items.insert(insert_at, item)
+        save_fn(items, sid)
+        self._stash.pop(key, None)
+        self._stash_at.pop(key, None)
+        if touch_fn:
+            touch_fn(sid)
+        return item
+
+    def clear(self, sid: str | None = None) -> None:
+        key = clean(sid)
+        self._stash.pop(key, None)
+        self._stash_at.pop(key, None)
 
 
 def clean(sid: str | None) -> str:
