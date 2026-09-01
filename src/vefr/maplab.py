@@ -223,6 +223,16 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         elif m[y][x] == '~':
             errors.append(f'flood tile ({x},{y}) is already deep water')
 
+    voices = w.get('voices', {})
+    stefna_voice = w.get('stefna_voice')
+    if stefna_voice is not None:
+        if stefna_voice not in voices:
+            errors.append(f"stefna_voice '{stefna_voice}' does not resolve to a declared voice")
+
+    for vkey, voice in voices.items():
+        if not isinstance(voice, dict) or not str(voice.get('strike', '')).strip():
+            errors.append(f"voice '{vkey}' is missing required non-empty 'strike' prompt")
+
     if pack_dir is not None:
         for voice in w.get('voices', {}).values():
             if not (Path(pack_dir) / voice['file']).exists():
