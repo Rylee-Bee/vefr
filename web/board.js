@@ -228,6 +228,10 @@ window.VEFR_BOARD = (function () {
         if (list[i].id === cardId) list[i].edited = Date.now();
       }
       announce('re-homed to ' + toCol + '.');
+    } else {
+      /* An intra-column reorder is a real move too - say so, or the
+         aria-live region stays silent while the board visibly changes. */
+      announce('reordered in ' + toCol + '.');
     }
     saveStore();
   }
@@ -417,13 +421,37 @@ window.VEFR_BOARD = (function () {
     var log = document.getElementById('rail-chat-log');
     if (!log) return null;
     var thread = state.threads[cardId] || [];
-    var lines = thread.map(function (turn) {
+    /* Turns render as labeled paragraphs, not one flat blob - the
+       reading-load rule. The log scrolls to the newest turn. */
+    log.innerHTML = '';
+    thread.forEach(function (turn) {
       var what = turn.role === 'user' ? (turn.short || turn.content) : turn.content;
-      return (turn.role === 'user' ? 'you: ' : 'smith: ') + what;
+      var p = document.createElement('p');
+      /* The smith is the persona, whatever the wire calls the role. */
+      p.className = 'board-chat-turn '
+        + (turn.role === 'user' ? 'board-chat-user' : 'board-chat-smith');
+      p.textContent = (turn.role === 'user' ? 'you: ' : 'smith: ') + what;
+      log.appendChild(p);
     });
-    if (status) lines.push(status);
-    log.textContent = lines.join('\n\n');
+    if (status) {
+      var s = document.createElement('p');
+      s.className = 'board-chat-status';
+      s.textContent = status;
+      log.appendChild(s);
+    }
+    log.scrollTop = log.scrollHeight;
     return log;
+  }
+
+  /* The thread dies with the page anyway; the clear button is for
+     starting a card's draft over mid-session. Same store, honest
+     announcement. */
+  function clearThread() {
+    var card = state.selected;
+    if (!card) return;
+    state.threads[card.id] = [];
+    renderThread(card.id, null);
+    announce('draft thread cleared.');
   }
 
   /* --- boot ----------------------------------------------------------- */
@@ -465,6 +493,8 @@ window.VEFR_BOARD = (function () {
     if (tryBtn) tryBtn.addEventListener('click', tryIt);
     var sendBtn = document.getElementById('rail-chat-send');
     if (sendBtn) sendBtn.addEventListener('click', sendDraft);
+    var clearBtn = document.getElementById('rail-chat-clear');
+    if (clearBtn) clearBtn.addEventListener('click', clearThread);
     var reseedBtn = document.getElementById('board-reseed');
     if (reseedBtn) reseedBtn.addEventListener('click', reseed);
   }
