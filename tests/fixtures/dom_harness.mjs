@@ -208,6 +208,8 @@ devDrawer.hidden = true;
 byId.get('dev-drawer-backdrop').hidden = true;
 mk('button', 'dev-drawer-trigger');
 mk('button', 'dev-drawer-close', '', devDrawer);
+mk('input', 'dev-drawer-filter', '', devDrawer);
+mk('p', 'dev-drawer-filter-count', '', devDrawer);
 mk('div', 'dev-drawer-content', '', devDrawer);
 
 // prefs panel stubs
@@ -703,6 +705,37 @@ check('backtick key opens dev drawer', dDrawer.hidden === false && dBackdrop.hid
 dClose.click();
 await tick();
 check('close button closes dev drawer', dDrawer.hidden === true && dBackdrop.hidden === true);
+
+// 5. The section filter re-renders from the stored payload
+const dFilter = byId.get('dev-drawer-filter');
+const dCount = byId.get('dev-drawer-filter-count');
+dTrig.click();
+await tick();
+check('filter restores all sections on a fresh open',
+  dContent.innerHTML.includes('Pack &amp; Surface') && dCount.innerHTML === '');
+dFilter.value = 'rune';
+dFilter.dispatch('input');
+await tick();
+check('filter narrows to the matching section',
+  dContent.innerHTML.includes('Living Rune Cast')
+  && !dContent.innerHTML.includes('Pack &amp; Surface'));
+check('filter announces the match count',
+  dCount.textContent.includes('of 6 sections match'));
+dFilter.value = 'zzz-no-such-aspect';
+dFilter.dispatch('input');
+await tick();
+check('a filter with no matches says so plainly',
+  dContent.innerHTML.includes('no sections match')
+  && dCount.textContent.includes('0 of 6'));
+dFilter.value = '';
+dFilter.dispatch('input');
+await tick();
+check('clearing the filter restores all sections',
+  dContent.innerHTML.includes('Pack &amp; Surface')
+  && dContent.innerHTML.includes('Recent Trace Events')
+  && dCount.textContent === '');
+dClose.click();
+await tick();
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
 process.exit(fail.length ? 1 : 0);
