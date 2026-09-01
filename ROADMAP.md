@@ -387,11 +387,32 @@
       infrastructure - ratings live with the community, and
       discovery may grow a `norns market` command. The always-
       layer's "private until it isn't" made social.
+- [ ] **the reachable UI** (prerequisite of the dev menu): the
+      header earns its title (vefr - a rumor engine for playable
+      worlds), 9 flat tabs become 3 static zones (Play / World /
+      Dev) with plain-English labels leading and the Norse names
+      visible as secondary, every target 44px+, luminance-only
+      active states, prefers-reduced-motion honored, keyboard and
+      focus-visible everywhere. Then the reading row: text size,
+      line spacing, contrast, and reading fonts (Atkinson
+      Hyperlegible, OpenDyslexic) - the preferences-panel pattern
+      Fluid's UI Options proves, built natively on the
+      localStorage prefs the runes already use. Hard-of-hearing:
+      when audio arrives (the bell), every sound pairs with a
+      visual event - the journal already is that record. Idea
+      credit when it lands: Fluid Infusion (fluid-project). And
+      per the Game Accessibility Guidelines' Basic tier: control
+      remapping (a keybinds map in localStorage, the cast_visible
+      pattern) joins the reading row.
 
 ## The always-layer
 
 - the loop: whisper -> keep what's true -> the ledger -> the voice
   compounds
 - the backups: Gitea, the durable clone, the NAS bundle
+- inclusive-forward: every screen answers for different needs -
+  reading load, target size, contrast over color, motion off by
+  default, and when sound arrives, every sound paired with a
+  visual event. It is part of the gate, not a follow-up.
 - private until it isn't: one checkbox, whenever - or never. Both
   are complete endings.
