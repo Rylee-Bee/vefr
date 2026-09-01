@@ -6,10 +6,10 @@ capability boundary between them:
   /app/worlds-template/   RO Docker volume. Engine-owned templates
                           (lore/, sample-world/, poolworld/). Updated
                           by `ferry deploy`, never by the author.
-  /app/worlds/            RW Docker volume. Author canon (private-canon/,
-                          anything `ferry fetch` lands). The author
-                          edits these freely. The engine reads
-                          from here first; conflicts with the ro
+  /app/worlds/            RW Docker volume. Author canon (whatever
+                          the author imports - worlds the engine
+                          didn't ship with). The author edits these
+                          freely. The engine reads from here first; conflicts with the ro
                           volume are resolved in the author's favor.
   /app/data/              RW bind mount. Per-session vault, journal,
                           weave log, handoff bundles. The only
@@ -91,9 +91,9 @@ def _copy_pack_contents(src: Path, dst: Path) -> None:
     """Copy a pack's contents from one root to another.
 
     Used by the migration to move lore/, sample-world/ into the
-    ro volume and private-canon/ into the rw volume. Preserves the
-    on-disk shape (flat or acts); we never reshape during a
-    volume migration.
+    ro volume and any author-imported pack into the rw volume.
+    Preserves the on-disk shape (flat or acts); we never reshape
+    during a volume migration.
     """
     if not src.is_dir():
         return

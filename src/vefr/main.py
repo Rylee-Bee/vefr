@@ -380,7 +380,7 @@ BUILDER_SYSTEM = (
     "never a lecture. Reply with one short paragraph (2-5 sentences) "
     "or one short list. If the author is stuck, ask a focused question. "
     "Stay grounded in the pack they're editing - if they reference "
-    "the ferryman or the roll-keeper by name, treat those as the people they are. "
+    "a character or place by name, treat that as part of their canon. "
     "Never invent facts about the story; when you don't know, ask."
 )
 
@@ -522,8 +522,10 @@ def builder_lore_list():
 def builder_worlds():
     """Every pack under worlds/ that has a world.json.
 
-    Surfaces sample-world + private-canon + any other import. The page
-    uses this to populate the world picker in the Builder tab.
+    Surfaces the engine-shipped packs (sample-world + lore packs)
+    alongside any pack the author has imported via `ferry fetch`.
+    The page uses this to populate the world picker in the Builder
+    tab.
     """
     from .world import discover_packs
     out = []
@@ -556,7 +558,10 @@ def builder_worlds():
 
 @app.post("/api/builder/import")
 def builder_import(payload: dict):
-    """Thin wrapper around ratatoskr ferry fetch --pull. {repo: 'owner/name', name: 'private-canon'}"""
+    """Thin wrapper around `ratatoskr ferry fetch --pull`.
+
+    Payload: {repo: 'owner/name', name: 'your-pack-name'}
+    """
     from .cli import GITEA_BASE, cmd_import
     import argparse
 
