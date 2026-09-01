@@ -10,7 +10,9 @@ surface - lives in a pack directory. Two shapes are supported:
       logbok.md
       ledger.md
       map.md
-      voices/*.md
+      voices/*.md                 # speaker voice prompts
+      voices/<name>.fragments.md  # optional: speakable lines for
+                                  # offline play (bullet lines)
 
   Acts shape (multi-region, self-contained per act):
     worlds/<name>/
@@ -111,12 +113,67 @@ def _read_text(path: Path, *, what: str) -> str:
 
 def _discover_voices(voices_dir: Path) -> dict:
     """Convention: every *.md under voices/ is a speaker voice file,
-    named by the file's stem. The loader returns {stem: content}."""
+    named by the file's stem. The loader returns {stem: content}.
+    `<stem>.fragments.md` files are NOT voices - they are the
+    speaker's offline whisper bank (see _discover_fragments)."""
     if not voices_dir.is_dir():
         return {}
     out = {}
     for sf in sorted(voices_dir.glob("*.md")):
+        if sf.name.endswith(".fragments.md"):
+            continue
         out[sf.stem] = sf.read_text(encoding="utf-8")
+    return out
+
+
+def _discover_fragments(voices_dir: Path) -> dict:
+    """Convention: `<name>.fragments.md` beside a voice file carries
+    that speaker's speakable fragments - short lines the author
+    writes by hand so a packaged game with no woven pool and no
+    model can still hear them. Bullet lines speak; every other line
+    is a note to the author. The loader returns
+    {name: [lines]} with the `.fragments` suffix stripped. Optional
+    per voice: a pack without fragment banks keeps the honest
+    silence it has always had."""
+    if not voices_dir.is_dir():
+        return {}
+    out: dict[str, list[str]] = {}
+    for sf in sorted(voices_dir.glob("*.fragments.md")):
+        lines: list[str] = []
+        for raw in sf.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if line.startswith("- ") and len(line) > 2:
+                lines.append(line[2:].strip())
+        if lines:
+            out[sf.name[: -len(".fragments.md")]] = lines
+    return out
+
+
+def fragments_for_pack(pack: Path) -> dict[str, list[str]]:
+    """Every fragment bank in a pack, by speaker key.
+
+    Walks the same convention voice discovery walks - the pack
+    root's voices/ (flat shape) plus every act region's voices/
+    (acts shape) - so a region's fragment bank travels with its
+    own speakers. Later files never override earlier lines: banks
+    with the same speaker key merge in file order, deduplicated.
+    """
+    out: dict[str, list[str]] = {}
+    roots = [pack / "voices"]
+    acts_dir = pack / "acts"
+    if acts_dir.is_dir():
+        for act_dir in sorted(acts_dir.iterdir()):
+            if not act_dir.is_dir() or act_dir.name.startswith("."):
+                continue
+            for region_dir in sorted(act_dir.iterdir()):
+                if region_dir.is_dir() and (region_dir / "voices").is_dir():
+                    roots.append(region_dir / "voices")
+    for root in roots:
+        for key, lines in _discover_fragments(root).items():
+            merged = out.setdefault(key, [])
+            for ln in lines:
+                if ln not in merged:
+                    merged.append(ln)
     return out
 
 
@@ -146,11 +203,13 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
     if not region_dir.is_dir():
         weave("region.missing", act=act_id, region=region_name,
               hint=f"no directory at {region_dir}")
-        return {"map_text": "", "voices": {}, "sprites": {}, "contract": {}}
+        return {"map_text": "", "voices": {}, "fragments": {},
+                "sprites": {}, "contract": {}}
 
     map_text = _read_text(region_dir / "map.md",
                           what=f"{act_id}/{region_name}/map.md")
     voices = _discover_voices(region_dir / "voices")
+    fragments = _discover_fragments(region_dir / "voices")
     sprites = _discover_sprites(region_dir / "sprites")
     contract: dict = {}
     contract_path = region_dir / "contract.json"
@@ -165,6 +224,7 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
     return {
         "map_text": map_text,
         "voices": voices,
+        "fragments": fragments,
         "sprites": sprites,
         "contract": contract,
     }
@@ -238,6 +298,7 @@ def _flat_to_act(config: dict, pack: Path) -> dict:
     town_region = {
         "map_text": _read_text(pack / "map.md", what=f"{pack.name}/map.md"),
         "voices": _discover_voices(pack / "voices"),
+        "fragments": _discover_fragments(pack / "voices"),
         "sprites": _discover_sprites(pack / "sprites"),
     }
     return {
@@ -364,6 +425,7 @@ def load_world(name: str | None = None) -> dict:
         "logbok": _read_text(d / "logbok.md", what=f"{d.name}/logbok.md"),
         "ledger": _read_text(d / "ledger.md", what=f"{d.name}/ledger.md"),
         "voices": config.get("voices", {}),
+        "fragments": fragments_for_pack(d),
         "bonds": config.get("bonds", {}),
         "bond_draw": config.get("bond_draw", ""),
         "forge_texture": config.get("forge_texture", ""),
