@@ -27,12 +27,18 @@
 
 ### **Important URL note (caught 2026-09-01)**
 
-The SSH alias `bazzite` on this dev box resolves to **192.168.2.145
-(homelab-vm), not 192.168.2.76 (the bazzite GPU host)**. The
-deploy wrapper now SSH-tunnels the health probe (`ssh -L 8820:127.0.0.1:8820
-bazzite`) so it never depends on dev-box DNS — see the wrapper's
-post-deploy step. For all other bazzite work (curl, ssh, podman) use
-the IP literal `192.168.2.76`.
+**UPDATE 2026-09-01 ~15:00Z: the alias is fixed.** `~/.ssh/config`
+now has `Host bazzite` → `HostName 192.168.2.76`, `User rylee`,
+`IdentityFile ~/.ssh/id_ed25519` — verified with
+`ssh bazzite 'echo ok: $(whoami)@$(hostname)'` → `ok: rylee@rylee-bazzite`.
+Use the alias `bazzite` for SSH/rsync/deploy (`VEFR_DEPLOY_HOST=bazzite`),
+which carries the correct user; a bare IP literal drops the user and
+fails as `ryleeb@192.168.2.76: Permission denied`. The deploy wrapper
+still tunnels its health probe, so it never depended on this either way.
+
+Original note (2026-09-01 morning, now historical): the alias then
+resolved to 192.168.2.145 (homelab-vm), and the wrapper's SSH-tunnelled
+probe existed because of it.
 
 ## What landed last session
 

@@ -474,6 +474,31 @@
       fixed 2-second sleep - it now probes through an SSH
       port-forward with a 20-attempt x 1.5s retry loop.
 
+- [x] **dev zone polish: board, draft thread, inspector filter**
+      (2026-09-01, PR #32, `526e06c`). Board drags within a column
+      now announce `reordered in <col>.` in the board-status
+      aria-live region (cross-column moves already did; intra-column
+      was silent), and cards get a grabbing cursor while held. The
+      draft-to-the-smith thread renders as labeled paragraphs
+      (`board-chat-user` / `board-chat-smith`, luminance carries the
+      role) instead of one flat text blob, auto-scrolls to the
+      newest turn, gains a Clear thread button, and says under the
+      log that the last 6 turns replay - the 7-turn harness run
+      proves the cap. The aspect inspector gains a section filter
+      (`dev-drawer-filter` + aria-live match count) that re-renders
+      from the stored `/api/builder/aspects` payload - no refetch
+      per keystroke; an empty query restores all six sections, and a
+      no-match query says `no sections match.` plainly. Two real
+      bugs the harnesses caught before any human did: the smith
+      paragraph was classed `board-chat-assistant` (the CSS and the
+      claim say smith), and the filter read `.html` off a string.
+      Live on bazzite after deploy (`526e06c`): served index.html
+      carries the new ids, served board.css carries the grabbing
+      cursor. Discovered and fixed along the way: the dev-box
+      `bazzite` SSH alias is now correct (user `rylee` @
+      `192.168.2.76`), so `VEFR_DEPLOY_HOST=bazzite` is the right
+      value - a bare IP literal drops the user and rsync fails.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
