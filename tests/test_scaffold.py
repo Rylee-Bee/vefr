@@ -18,7 +18,7 @@ def test_scaffold_copies_pack_and_inits_git(tmp_path, monkeypatch):
     (pack / "logbok.md").write_text("# canon", encoding="utf-8")
     voices = pack / "voices"
     voices.mkdir()
-    (voices / "the ferryman.md").write_text("voice text", encoding="utf-8")
+    (voices / "ferry.md").write_text("voice text", encoding="utf-8")
     # Derived + transient files must not ship.
     (pack / "world-tree.md").write_text("derived", encoding="utf-8")
     (pack / "handbok.md").write_text("derived", encoding="utf-8")
@@ -40,7 +40,7 @@ def test_scaffold_copies_pack_and_inits_git(tmp_path, monkeypatch):
 
     assert (dest / "world.json").exists()
     assert (dest / "logbok.md").exists()
-    assert (dest / "voices" / "the ferryman.md").exists()
+    assert (dest / "voices" / "ferry.md").exists()
     assert (dest / "README.md").exists()
     assert (dest / "LICENSE.md").exists()
     assert not (dest / "world-tree.md").exists()
