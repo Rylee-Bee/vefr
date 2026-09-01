@@ -87,6 +87,10 @@ def test_board_wired_into_chrome():
     assert 'id="board-move-forge"' in html, "keyboard re-home buttons missing"
     assert 'id="rail-chat-send"' in html, "smith draft send button missing"
     assert 'id="board-reseed"' in html, "board reseed control missing"
+    assert 'id="rail-chat-clear"' in html, "thread clear button missing"
+    assert 'id="rail-chat-note"' in html, "6-turn replay note missing"
+    assert 'id="dev-drawer-filter"' in html, "inspector filter input missing"
+    assert 'id="dev-drawer-filter-count"' in html, "filter match count missing"
     assert 'disabled' not in (html.split('id="rail-draft"')[1][:200]), (
         "the draft box must be live now - it wires to /api/builder/chat"
     )
