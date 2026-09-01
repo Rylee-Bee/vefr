@@ -11,7 +11,7 @@
  *
  * No framework: a plain object, a patch function, and a list of
  * subscribers. Loaded before every other script; every consumer
- * reaches it as `window.OLD-STATE-GLOBAL`.
+ * reaches it as `window.VEFR_STATE`.
  */
 /* Per-session play state. ?session=<id> in the URL wins; the last
    minted id is remembered in localStorage; no id at all is the
@@ -41,7 +41,7 @@ window.VEFR_SESSION = (function () {
   };
 })();
 
-window.OLD-STATE-GLOBAL = (function () {
+window.VEFR_STATE = (function () {
   var subs = [];
   var worldReq = null;
 

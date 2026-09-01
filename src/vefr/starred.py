@@ -7,7 +7,7 @@ Three kinds of star-target exist:
   - stefna_letter: appended under ## letters (under 'awed' phase)
 
 The file lives at <pack>/starred-whispers.md. It's part of the
-pack on disk like logbok.md - committed to the private story repo and
+pack on disk like logbok.md - committed to the story repo and
 pulled by `ratatoskr ferry fetch --pull`, so stars survive restarts and
 follow the deploy box's pack.
 

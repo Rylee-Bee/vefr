@@ -1,11 +1,11 @@
 /* vefr - the town. The renderer is engine; the world comes from /api/world.
    Phase and the carried item are not this file's to own: they live in
-   window.OLD-STATE-GLOBAL (web/state.js), shared with every other view. */
+   window.VEFR_STATE (web/state.js), shared with every other view. */
 (function () {
   var canvas = document.getElementById('town-canvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var STATE = window.OLD-STATE-GLOBAL;
+  var STATE = window.VEFR_STATE;
 
   var W = null; /* world payload */
   var TILE = 32;
@@ -35,7 +35,7 @@
   /* Only the things the world payload owns are set here. Phase and the
      carried item come from the shared state, so sync() draws them - the
      vault's first read is bootstrapped once by index.html, and re-read
-     here on every old-name:town. */
+     here on every vefr:town. */
   function init(data) {
     W = data;
     TILE = W.tile || 32;
@@ -72,7 +72,7 @@
 
   /* Re-ask the vault when the tab opens - it can change from outside
      the page (the CLI keeps items too). */
-  window.addEventListener('old-name:town', function () {
+  window.addEventListener('vefr:town', function () {
     STATE.refreshVault().catch(function () { /* the vault keeps its silence */ });
   });
 
