@@ -19,10 +19,10 @@ def test_handbok_writes_mechanics_and_examples(tmp_path, monkeypatch):
     monkeypatch.setattr(journal, "JOURNAL", tmp_path / "journal.json")
     monkeypatch.setattr(trace, "file_path", lambda: tmp_path / "trace.jsonl")
 
-    trace.record("/api/rumor", ms=812.0, phase="whispers", speaker="the ferryman")
+    trace.record("/api/rumor", ms=812.0, phase="whispers", speaker="Old Sela")
     trace.record("/api/rumor", ms=900.0, phase="doubts", ok=False, error="cold")
     trace.record("/api/npc", ms=500.0, phase="whispers", speaker="Katla")
-    journal.log("rumor", phase="whispers", speaker="the ferryman",
+    journal.log("rumor", phase="whispers", speaker="Old Sela",
                 whisper="the well remembers", is_true=True)
     journal.log("item_forged", name="knife", bond="assigned", lore="heavy")
 

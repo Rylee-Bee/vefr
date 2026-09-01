@@ -20,11 +20,19 @@ def stefna_voice_key() -> str:
     """Which speaker's voice fills the Stefna role for this pack.
 
     A pack points at whichever voice should write the sealed letter
-    via a top-level `stefna_voice` field. No pack is forced to name
-    that speaker "mother" - `mother` is only the fallback for packs
-    written before this was configurable.
+    via a top-level `stefna_voice` field. No default lives in the
+    engine - the pack declares its own bell voice; a pack without
+    the field falls back to its first declared voice, and a pack
+    with no voices at all has nothing for the bell to say.
     """
-    return load_world().get("stefna_voice", "mother")
+    w = load_world()
+    declared = w.get("stefna_voice")
+    if declared:
+        return declared
+    voices = w.get("voices") or {}
+    if not voices:
+        raise KeyError("this pack declares no voices for the bell")
+    return next(iter(voices))
 
 
 def build_payload() -> dict:

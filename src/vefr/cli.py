@@ -629,13 +629,7 @@ def cmd_build_web(args) -> int:
             _forge_mod.VAULT = old_vault
             _journal_mod.JOURNAL = old_journal
 
-        # The scaffold tree file is written under the scaffold's
-        # historical default name; rename it to match the pack the
-        # scaffold just became. (Back-compat from before the engine
-        # knew about generic pack names.)
-        bundle_path = out_path.with_name(
-            out_path.stem.replace('private-canon', pack.name) + '.tree.md'
-        )
+        bundle_path = out_path.with_name(out_path.stem + '.tree.md')
         bundle_path.write_text(bundle_md, encoding="utf-8")
         bundle_kb = bundle_path.stat().st_size / 1024
         print(f"wrote {bundle_path} ({bundle_kb:.1f} KB)")

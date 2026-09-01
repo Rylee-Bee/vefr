@@ -387,4 +387,24 @@ function assert(cond, msg) {
     'failed turn leaves the thread empty');
 }
 
+/* ---- 11. reseed: the seeded board is disposable ---------------------- */
+{
+  const s = makeSandbox({}, undefined);
+  const B = run(s);
+  B.init();
+  await tick();
+  const doc = s.document._registry;
+  /* move a card around first - reseed must wipe the moves too */
+  B.move(doc['board-whispers'].children[0].dataset.id, 'forge');
+  assert(doc['board-forge'].children.length === 6, 'precondition: card moved');
+  B.reseed();
+  assert(doc['board-whispers'].children.length === 5, 'reseed restored whispers');
+  assert(doc['board-forge'].children.length === 5, 'reseed restored forge');
+  assert(doc['board-voices'].children.length === 1, 'reseed restored voices');
+  const saved = JSON.parse(s.localStorage.getItem('vefr-board-cards'));
+  assert(saved.forge.length === 5, 'reseeded store persisted');
+  assert(doc['board-status'].textContent.includes('reseeded'),
+    'reseed announced');
+}
+
 console.log('ALL PASS');

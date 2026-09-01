@@ -63,15 +63,15 @@ def test_discover_packs_walks_both_mounts(fake_app_home):
     _make_pack(ro, "lore", title="Lore", phases={"a": "."})
     _make_pack(ro, "sample-world", title="Emberfield",
                phases={"dusk": "."})
-    _make_pack(rw, "private-canon", title="Private Canon",
+    _make_pack(rw, "my-canon", title="Private Canon",
                phases={"whispers": "."})
 
     packs = discover_packs()
     by_name = {p["name"]: p for p in packs}
-    assert set(by_name) == {"lore", "sample-world", "private-canon"}
+    assert set(by_name) == {"lore", "sample-world", "my-canon"}
     assert by_name["lore"]["source"] == "template"
     assert by_name["sample-world"]["source"] == "template"
-    assert by_name["private-canon"]["source"] == "canon"
+    assert by_name["my-canon"]["source"] == "canon"
 
 
 def test_discover_packs_canon_wins_on_conflict(fake_app_home):
@@ -123,7 +123,7 @@ def test_load_world_records_source_in_weave(fake_app_home):
 def test_classify_pack_known_engine_packs():
     for name in ("lore", "sample-world", "poolworld"):
         assert vol_mod._classify_pack(name) == "engine", name
-    for name in ("private-canon", "my-canon", "anything-else"):
+    for name in ("my-canon", "my-canon", "anything-else"):
         assert vol_mod._classify_pack(name) == "author", name
 
 
@@ -177,7 +177,7 @@ def test_volumes_list_returns_visible_packs(fake_app_home, capsys):
     ro = fake_app_home / "worlds-template"
     rw = fake_app_home / "worlds"
     _make_pack(ro, "sample-world", title="Emberfield", phases={"dusk": "."})
-    _make_pack(rw, "private-canon", title="Private Canon",
+    _make_pack(rw, "my-canon", title="Private Canon",
                phases={"whispers": "."})
 
     import argparse
@@ -186,5 +186,5 @@ def test_volumes_list_returns_visible_packs(fake_app_home, capsys):
     out = capsys.readouterr().out
     assert "sample-world" in out
     assert "template" in out
-    assert "private-canon" in out
+    assert "my-canon" in out
     assert "canon" in out

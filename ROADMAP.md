@@ -386,6 +386,48 @@
       whole content, and hiding it behind a selection would add
       reading load, not remove it.
 
+- [x] **the sample stops telling the story** (2026-09-01, this
+      session): the structural leak Rylee caught by playing - the
+      bell generated a mother's chore-note because the SAMPLE PACK
+      carried the story's grammar. Four agents had each "fixed" the
+      strip and it kept coming back; the flaw was structural: the
+      engine has no no-world state (world_name() fell back to
+      sample-world, so every build boots running a complete
+      fiction), and a complete pack cannot be neutral - stripped of
+      names, it still carries voice and grammar, and the model
+      regenerates story-shaped content from it forever.
+
+      Fixed at the structure, not the symptom:
+
+      - The sample pack's contract is mechanical now: voice key
+        "mother" -> "keeper", the strike prompt asks for "the
+        letter this place leaves behind" (no goodbye, no "the
+        right name"), bonds de-gendered ("waiting hands", "made
+        for someone else"), gold_rule is Emberfield's own ("Gold
+        waits for a kind world" - the Gold Rule text was canon).
+      - The stefna voice is pack-declared: a top-level
+        `stefna_voice` field; the engine's hardcoded "mother"
+        fallback is gone. BREAKING for packs written before the
+        field existed - private-canon needs one line in its world.json
+        (`"stefna_voice": "mother"`), owned by the private story repo, not by
+        the engine.
+      - The vault keep-status strings in the served UI ("it fits
+        her hands") are neutralized.
+      - The stefna scaffold's dead private-canon rename and the
+        history docstring naming "the ferryman" left the source; test
+        data (trace/handbok/volumes/dom-harness fixtures) uses
+        neutral names.
+      - tests/test_pack_neutrality.py: the canon audit. Reads a
+        gitignored term list (tests/canon-strings.local.txt - the
+        mechanism ships, the names never do) and fails on any hit
+        in worlds/sample-world, web/, or src/. There are NO
+        exceptions: an allowlist is a permanent blind spot; the
+        string leaves the source. History lives in the ledger.
+      - Sample-design answer: the engine ships a DEFINITE SCAFFOLD
+        (mechanical, contract-complete, zero fiction) - a full
+        demo world is authored content and arrives as an imported
+        pack, never bundled.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every

@@ -11,12 +11,12 @@ from vefr import trace
 def test_record_appends_and_persists(tmp_path, monkeypatch):
     monkeypatch.setattr(trace, "_events", trace.deque(maxlen=trace.MAX_EVENTS))
     monkeypatch.setattr(trace, "file_path", lambda: tmp_path / "trace.jsonl")
-    ev = trace.record("/api/rumor", ms=812.3, phase="whispers", speaker="the ferryman")
+    ev = trace.record("/api/rumor", ms=812.3, phase="whispers", speaker="Old Sela")
     assert ev["ok"] is True
     assert ev["ms"] == 812.3
     assert trace.recent() == [ev]
     lines = (tmp_path / "trace.jsonl").read_text(encoding="utf-8").strip().splitlines()
-    assert json.loads(lines[0])["speaker"] == "the ferryman"
+    assert json.loads(lines[0])["speaker"] == "Old Sela"
 
 
 def test_recent_limit(tmp_path, monkeypatch):
@@ -34,7 +34,7 @@ def test_span_records_ok_and_error(tmp_path, monkeypatch):
     monkeypatch.setattr(trace, "file_path", lambda: tmp_path / "t.jsonl")
 
     with trace.span("/api/rumor", phase="whispers") as sp:
-        sp.set(speaker="the ferryman")
+        sp.set(speaker="Old Sela")
 
     with pytest.raises(RuntimeError):
         with trace.span("/api/npc", phase="doubts"):
@@ -42,7 +42,7 @@ def test_span_records_ok_and_error(tmp_path, monkeypatch):
 
     events = trace.recent()
     assert events[0]["ok"] is True
-    assert events[0]["speaker"] == "the ferryman"
+    assert events[0]["speaker"] == "Old Sela"
     assert events[1]["ok"] is False
     assert "the well was silent" in events[1]["error"]
     # The span must re-raise, never swallow.

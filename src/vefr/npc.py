@@ -31,9 +31,9 @@ class NpcLine(BaseModel):
 def _speaker(key: str | None) -> dict:
     """Resolve a speaker key against the pack.
 
-    No key means the pack's first speaker - the engine must never
-    hardcode a name from anyone's story (a "the ferryman" default used to
-    live here, which broke any pack that had never heard of her).
+    No key means the pack's first speaker - the engine never
+    hardcodes a speaker name; a hardcoded default used to live here
+    and broke any pack that had never heard of it.
     """
     speakers = current_act(load_world())["speakers"]
     if key is None:
