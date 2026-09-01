@@ -101,3 +101,35 @@ def test_scaffold_missing_pack(tmp_path, monkeypatch):
     args = type("A", (), {"dest": str(dest), "name": "no-such-pack", "push": False})()
     assert cmd_scaffold(args) == 1
     assert not dest.exists()
+
+
+def test_scaffold_nongit_fallback(tmp_path, monkeypatch):
+    """When running outside a git checkout, engine_sha falls back to
+    'unknown' rather than raising NameError."""
+    pack = tmp_path / "worlds" / "pack"
+    pack.mkdir(parents=True)
+    (pack / "world.json").write_text('{"title": "T"}', encoding="utf-8")
+    monkeypatch.setattr(journal, "JOURNAL", tmp_path / "journal.json")
+    from vefr import world as world_mod
+    monkeypatch.setattr(
+        world_mod, "load_world",
+        lambda name=None: {"title": "T", "phases": {}},
+    )
+    monkeypatch.setattr("vefr.cli.pack_root", lambda: tmp_path)
+
+    real_run = subprocess.run
+
+    def fake_run(cmd, *args, **kwargs):
+        if isinstance(cmd, tuple) and cmd[:2] == ("git", "rev-parse"):
+            return subprocess.CompletedProcess(cmd, 1, "", "not a git repo")
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    dest = tmp_path / "out"
+    args = type("A", (), {"dest": str(dest), "name": "pack", "push": False})()
+    rc = cmd_scaffold(args)
+    assert rc == 0
+    readme = (dest / "README.md").read_text(encoding="utf-8")
+    assert "`unknown`" in readme
+
