@@ -404,42 +404,31 @@
 
 ## Next
 
-- [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
-      part of the story and the engine - replaceable, modifiable,
-      fork-able from a dev menu, each enhanced by the local AI chat:
-      a structured template call scoped to the screen/resource
-      you're on, plus a chat box that answers little questions as
-      you go. The aspects (lore packs, act structure, graphics
-      resources, maps) callable and visible in the UI and over the
-      API. The container stays bones-ro / story-rw (the volumes
-      work); the story packs and exports as a real formatted ebook
-      with your own unique playthrough; the journal is always there
-      to revert and fork from - git-like history, honesty contract
-      applied to the game itself. And the export can go all the
-      way: a fully formed git repo, bones and world together, so
-      playing the game teaches the development process. Two
-      audiences, two surfaces: what a young game dev wants is
-      bundled into the CLI wrappers (`ratatoskr`/`norns`); what a
-      storyteller wants enters as packs, rumors, whispers - and
-      neither has to cross the divide: a storyteller never needs
-      to learn to code, a coder never needs to learn the Hero's
-      Journey. All of the tools are available and digestible to
-      both. Every
-      model call stays inspectable - you can see the instruction
-      the LLM used (`trace.py` + the weave log already record it;
-      the dev menu surfaces it). The value ladder for everything
-      above: make it warmer, make it more honest, make it
-      learnable - then hand over the tools to make it unique. Most
-      of the
-      machinery exists (volumes ro/rw, pack contract, journal
-      rewind/fork, deterministic export, `ferry scaffold`); the
-      gaps are presentation - the dev menu, per-screen enhance
-      calls, the chat box, ebook formatting, a bones+world
-      scaffold. The shape of it: the homelab repo's two months -
-      git, PRs, an honesty contract, deploys - but fun, with
-      training wheels, a cool UI, and a story. The surface UI,
-      `norns chat` v2, and the pack contract work below all serve
-      this.
+- [ ] **dev menu & aspect inspector**: in-game development overlay
+      surfacing pack aspects (lore, acts, maps, textures) and live
+      trace inspection. Acceptance: dev menu opens via shortcut/button,
+      displays loaded pack aspects, and links directly to inspect endpoints.
+      (Existing machinery: `/api/builder/resolved`, `trace.py`, weave ring).
+- [ ] **contextual AI enhance**: scoped structured generation calls
+      tailored to the active screen/resource (improving map descriptions,
+      voice prompts, item curses). Acceptance: per-screen enhance button
+      POSTs to structured generation routes and returns schema-validated JSON.
+      (Existing machinery: `generator.py`, `saga.py`, `stefna.py`).
+- [ ] **interactive chat helper**: inline conversational assistant in
+      the builder UI answering world-building questions and adjusting pack data.
+      Acceptance: persistent 6-turn chat in Builder tab successfully calls
+      `/api/builder/chat` with pack context.
+      (Existing machinery: `chat.py`, `/api/builder/chat`).
+- [ ] **formatted ebook export**: single-document narrative exporter
+      formatting playthroughs with chapter headings, character wiki, and
+      collected relics. Acceptance: `/api/export` generates clean e-reader
+      compatible EPUB/Markdown artifact with full metadata.
+      (Existing machinery: `export.py`, deterministic preface templating).
+- [ ] **engine + world full git scaffold**: standalone repository exporter
+      packaging engine bones and author pack into an independent git project.
+      Acceptance: `ratatoskr ferry scaffold --full` creates functional standalone
+      repo with passing offline test suite.
+      (Existing machinery: `cmd_scaffold`, pack contract loader).
 - [ ] **surface UI for `surface: "combat"` packs**: the data shape
       now carries the surface (the always-array loader exposes it
       on every /api/world response) but the web UI + packaged
