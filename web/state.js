@@ -3,10 +3,11 @@
  * The town renderer (town.js) and the tabs (the inline script in
  * index.html) are two separate script scopes. Each used to keep its
  * own copy of the same three facts - which phase the world is in,
- * what is in the vault, what the wanderer is carrying - so the two phase
- * rails disagreed the moment you touched either one, and keeping an
- * item in the Vault tab did not reach the town's HUD until you
- * clicked the Town tab. One state, read and written by every view.
+ * what is in the vault, what the player is carrying - so the two
+ * phase rails disagreed the moment you touched either one, and
+ * keeping an item in the Vault tab did not reach the town's HUD
+ * until you clicked the Town tab. One state, read and written by
+ * every view.
  *
  * No framework: a plain object, a patch function, and a list of
  * subscribers. Loaded before every other script; every consumer
@@ -49,7 +50,7 @@ window.OLD-STATE-GLOBAL = (function () {
     phases: [],      /* the pack's phase names, in order */
     phase: null,     /* the one current phase, shared by both rails */
     vault: [],       /* everything kept, oldest first */
-    carrying: null   /* the newest kept item - what the wanderer holds */
+    carrying: null   /* the newest kept item - what the player holds */
   };
 
   function get() { return state; }

@@ -1,4 +1,4 @@
-/* Old Name - the town. The renderer is engine; the world comes from /api/world.
+/* vefr - the town. The renderer is engine; the world comes from /api/world.
    Phase and the carried item are not this file's to own: they live in
    window.OLD-STATE-GLOBAL (web/state.js), shared with every other view. */
 (function () {
@@ -212,7 +212,7 @@
     W.speakers.forEach(function (s) {
       drawFigure(s.at[0] * TILE, s.at[1] * TILE, W.speaker_color, W.speaker_head);
     });
-    /* the wanderer - ink on the world */
+    /* The hero - ink on the world */
     ctx.fillStyle = W.hero_color;
     ctx.beginPath();
     ctx.arc(hero.x * TILE + 16, hero.y * TILE + 18, 7, 0, Math.PI * 2);
@@ -232,8 +232,8 @@
     document.getElementById('watched').textContent = onSanct
       ? 'safe here.'
       : watched(hero.x, hero.y)
-        ? 'the tower watches.'
-        : 'out of the tower\u2019s sight.';
+        ? 'seen.'
+        : 'unseen.';
     var near = speakerNear();
     var note = document.getElementById('near-note');
     if (near && !openSpeaker) {

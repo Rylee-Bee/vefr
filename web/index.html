@@ -901,9 +901,9 @@
       </legend>
       <p class="col-note">A live preview of your current settings. The whole page above reacts in real time.</p>
       <div class="skuld-preview" aria-hidden="true">
-        <p class="skuld-headline">A whisper from the bog</p>
-        <p class="skuld-body">The reeds lean. A bell rings once, warm-tuned. You learn the name before you know you knew it.</p>
-        <p class="skuld-meta">phase: <strong>awed</strong> &middot; speaker: <strong>the sea-figure</strong></p>
+        <p class="skuld-headline">A whisper</p>
+        <p class="skuld-body">Something moves at the edge of hearing. You catch the shape of a sentence before you have the words.</p>
+        <p class="skuld-meta">phase: <strong>&mdash;</strong> &middot; speaker: <strong>&mdash;</strong></p>
       </div>
     </fieldset>
   </div>
@@ -965,18 +965,18 @@
     <div class="phase-rail" id="rumor-phase" role="group" aria-label="The world's tone"></div>
     <div class="controls">
       <button type="button" id="whisper-btn">Whisper</button>
-      <span class="note" id="status">the mill is warm</span>
+      <span class="note" id="status" aria-live="polite"></span>
       <button type="button" id="export-rumors-btn" data-export-tab="rumors" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="feed" aria-live="polite">
-      <p class="empty">The mill is quiet. Press Whisper.</p>
+      <p class="empty">Press Whisper.</p>
     </section>
   </section>
 
   <section id="view-vault" class="view" role="tabpanel" aria-labelledby="tab-vault" hidden>
     <div class="controls">
       <button type="button" id="forge-btn">Forge</button>
-      <span class="note" id="forge-status">most are assigned or cold. the attuned are rare.</span>
+      <span class="note" id="forge-status" aria-live="polite"></span>
       <button type="button" id="export-vault-btn" data-export-tab="vault" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="forge-out" aria-live="polite"></section>
@@ -985,17 +985,17 @@
   </section>
 
   <section id="view-stefna" class="view" role="tabpanel" aria-labelledby="tab-stefna" hidden>
-    <p class="note">Blackfen. The water keeps the bell's tongue. One ring is owed.</p>
+    <p class="note" id="stefna-flavor" aria-live="polite"></p>
     <div class="controls">
       <button type="button" id="strike-btn">strike the bell</button>
-      <span class="note" id="stefna-status">the bell waits for a hand.</span>
+      <span class="note" id="stefna-status" aria-live="polite"></span>
       <button type="button" id="export-stefna-btn" data-export-tab="stefna" class="export-tab-btn">Export this tab</button>
     </div>
     <section id="letter-out" aria-live="polite"></section>
   </section>
 
   <section id="view-town" class="view" role="tabpanel" aria-labelledby="tab-town" hidden>
-    <p class="note">walk with the pad or the arrow keys. the tower watches.</p>
+    <p class="note">walk with the pad or the arrow keys.</p>
     <div class="hud-hp" id="hud-hp" role="status" aria-live="polite">
       <span class="hud-hp-label">hp</span>
       <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
@@ -1026,8 +1026,8 @@
       </div>
       <button type="button" id="npc-close">close</button>
     </div>
-    <p class="note" id="poi" aria-live="polite">the bookshop - the back room</p>
-    <p class="note" id="watched" aria-live="polite">out of the tower's sight.</p>
+    <p class="note" id="poi" aria-live="polite"></p>
+    <p class="note" id="watched" aria-live="polite"></p>
   </section>
 
   <section id="view-journal" class="view" role="tabpanel" aria-labelledby="tab-journal" hidden>
@@ -1231,7 +1231,7 @@
 
   btn.addEventListener('click', async function () {
     btn.disabled = true;
-    statusEl.textContent = 'the mill turns\u2026';
+    statusEl.textContent = 'listening\u2026';
     var ph = STATE.get().phase;
     try {
       /* Omit the phase rather than send null - only the route's own
@@ -1241,13 +1241,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ph ? { phase: ph } : {})
       });
-      if (!r.ok) throw new Error('mill jammed');
+      if (!r.ok) throw new Error('whisper failed');
       var c = await r.json();
       if (empty) empty.remove();
       feed.insertAdjacentHTML('afterbegin', whisperHTML(c, ph || ''));
-      statusEl.textContent = 'the mill is warm';
+      statusEl.textContent = 'whispered';
     } catch (err) {
-      statusEl.textContent = 'the mill is silent. is the model loaded?';
+      statusEl.textContent = 'nothing came back. is the model loaded?';
     } finally {
       btn.disabled = false;
     }
@@ -1350,11 +1350,11 @@
 
   forgeBtn.addEventListener('click', async function () {
     forgeBtn.disabled = true;
-    forgeStatus.textContent = 'the forge heats\u2026';
+    forgeStatus.textContent = 'forging\u2026';
     forgeOut.innerHTML = '';
     try {
       var r = await fetch('/api/forge', { method: 'POST' });
-      if (!r.ok) throw new Error('forge cold');
+      if (!r.ok) throw new Error('forge failed');
       lastForged = await r.json();
       forgeOut.innerHTML = itemHTML(lastForged, true);
     } catch (err) {
@@ -1514,15 +1514,15 @@
     stefnaStatus.textContent = 'the bell sounds\u2026';
     try {
       var r = await fetch(VEFR_SESSION.wrap('/api/stefna'), { method: 'POST' });
-      if (!r.ok) throw new Error('still water');
+      if (!r.ok) throw new Error('stefna failed');
       var res = await r.json();
       letterOut.innerHTML = '<article class="letter-card card" style="border-color:var(--accent)">'
-        + '<div class="speaker">found with the bell</div>'
+        + '<div class="speaker">' + esc('letter') + '</div>'
         + '<p class="whisper" style="white-space:pre-line">' + esc(res.letter) + '</p>'
         + '</article>';
-      stefnaStatus.textContent = 'the bell waits until you return.';
+      stefnaStatus.textContent = 'awaiting your return.';
     } catch (err) {
-      stefnaStatus.textContent = 'the water did not answer. try again?';
+      stefnaStatus.textContent = 'nothing came back. try again?';
       strikeBtn.disabled = false;
     }
   });
@@ -1555,7 +1555,7 @@
         + '<div class="kind">kept &middot; ' + esc(e.bond || '') + '</div>'
         + '<p class="whisper">' + esc(e.lore || '') + '</p>';
     } else if (e.kind === 'stefna_letter' || e.kind === 'bell_letter') {
-      body = '<div class="speaker">found with the bell</div>'
+      body = '<div class="speaker">letter</div>'
         + '<blockquote>' + esc(e.letter || '') + '</blockquote>';
     } else {
       body = '<div class="kind">' + esc(e.kind || 'something') + '</div>';
