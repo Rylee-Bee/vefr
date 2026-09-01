@@ -357,15 +357,14 @@ def cmd_import(args) -> int:
     """Clone (or pull) a story repo into worlds/<name>/.
 
     The engine and the story live in two Gitea repos on purpose - the
-    engine is public-track MIT (rylee/vefr), the story is the author's
-    own (the private story repo or whatever the next world is). The world
-    pack directory on disk is the seam; this command is how the
-    latest of the story repo reaches that directory.
+    engine is public-track MIT (rylee/vefr), the story is your own
+    story pack. The world pack directory on disk is the seam; this command
+    is how the latest of the story repo reaches that directory.
 
     By default targets the current checkout (so a dev box can land
     the story before shipping). --target <host> runs the clone over
     ssh on the deploy host - the same box the live game is on - so
-    'I edited the private story repo, ship it' is one command end-to-end.
+    'I edited my story pack, ship it' is one command end-to-end.
     """
     base = args.base.rstrip('/')
     url = _import_url(base, args.repo)
@@ -686,8 +685,10 @@ def cmd_backup(args) -> int:
         return 1
     if sh(('scp', '-q', str(tmp), f'{args.nas_host}:{NAS_DIR}/{name}')).returncode:
         return 1
+    # Clean up old bundles, preserving both historical
+    # and current (vefr-*) bundles up to BUNDLE_KEEP.
     sh(('ssh', args.nas_host,
-        f'cd {NAS_DIR} && ls -t old-name-*.bundle vefr-*.bundle 2>/dev/null '
+        f'cd {NAS_DIR} && ls -t vefr-*.bundle 2>/dev/null '
         f'| tail -n +{BUNDLE_KEEP + 1} | xargs -r rm -f'))
     tmp.unlink(missing_ok=True)
     listing = subprocess.run(

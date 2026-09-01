@@ -429,8 +429,8 @@ window.VEFR_BOARD = (function () {
   /* --- boot ----------------------------------------------------------- */
 
   function getWorld() {
-    if (window.OLD-STATE-GLOBAL && typeof window.OLD-STATE-GLOBAL.world === 'function') {
-      return window.OLD-STATE-GLOBAL.world();
+    if (window.VEFR_STATE && typeof window.VEFR_STATE.world === 'function') {
+      return window.VEFR_STATE.world();
     }
     return fetch('/api/world').then(function (r) { return r.json(); });
   }
@@ -568,7 +568,7 @@ window.VEFR_BOARD = (function () {
   var section = document.getElementById('view-board');
   if (!section || !window.VEFR_BOARD) return;
   var booted = false;
-  window.addEventListener('old-name:board', function () {
+  window.addEventListener('vefr:board', function () {
     if (!booted) {
       booted = true;
       window.VEFR_BOARD.init();
