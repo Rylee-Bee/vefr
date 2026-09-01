@@ -513,6 +513,24 @@
       + reset on both readouts. Live on bazzite after deploy
       (`a579d90`).
 
+- [x] **api manner: honest 422/404s + the route guide tells the
+      truth** (2026-09-01, PR #34, `2bfa064`). Found by driving the
+      play loop live: `POST /api/vault` took a bare dict and answered
+      a caller's typo (a missing `kind`) with a bare 500 - it now
+      takes a typed `ItemCard` and answers 422 naming the missing
+      fields. `POST /api/npc` answered an unknown speaker with a
+      RuntimeError 500, and a voice-less pack would have died inside
+      `next(iter({}))` - both are 404s in the engine's own words now
+      (unreachable by the UI on sample-world; hand-rolled callers
+      get the honesty too). And `one-source-of-routes.md` - the
+      anti-drift doc itself - was drifted: it claimed a
+      `POST /api/starred` that does not exist and listed 14 routes
+      where 41 are served (missing `/api/world` itself, `/api/handoff`,
+      the enhance trio, aspects, the journal/vault index routes).
+      Regenerated from `app.routes`, dated. 4 new tests
+      (`tests/test_api_manner.py`), suite 207 passed. Live-verified
+      on bazzite after deploy.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
