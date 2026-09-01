@@ -13,6 +13,10 @@ __pycache__/
 # never commit: the LAN leaves the source, runtime data not repo data.
 /.env
 
+# local deploy config - the per-host twin of deploy.toml.example
+# (the example documents the convention; this file holds the values).
+/deploy.toml
+
 # build output
 /dist/
 
