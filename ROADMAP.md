@@ -659,6 +659,27 @@
       live: health 200, the resolved view shows the keeper bank
       (6 lines), fonts 200.
 
+- [x] **the wrapper reads its own config** (2026-09-01, this
+      session): three wrapper additions for the recurring frictions
+      the deploy-day work surfaced. `ferry deploy` consumes
+      `deploy.toml` directly (stdlib tomllib; host and image
+      resolve from it whenever --flags and env are silent - the
+      export dance is gone, and a malformed toml reads as absent
+      rather than taking the deploy path down). `skipa` grew two
+      checks inside its existing seven questions: Q3 now runs the
+      shadow check on the deploy host's rw bind and names any
+      engine-shipped pack that would hide a freshly built template
+      (the deploy-day find), and Q2 reports the reading-row fonts
+      (0/4 would mean the woff2s never landed). `norns doctor`
+      falls back to deploy.toml's url for the live check when
+      `VEFR_LIVE_URL` is unset. And the deploy tunnel no longer
+      leaks: `ssh -fN` forked past the Popen pid so `terminate()`
+      could never reach it - one orphaned tunnel per deploy (three
+      on the dev box as of today, killed; `-N` keeps the process
+      where the finally can reach it). GETTING_STARTED's deploy
+      section drops the export line. Gate: 247 passed
+      (`uv run --group test pytest -q`), ruff clean.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.

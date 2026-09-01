@@ -18,8 +18,10 @@ def fresh_cli(monkeypatch):
     return cli
 
 
-def test_deploy_refuses_silent_bazzite_default(fresh_cli, capsys):
-    """A fresh checkout with no VEFR_DEPLOY_HOST must NOT ssh bazzite."""
+def test_deploy_refuses_silent_bazzite_default(fresh_cli, tmp_path, monkeypatch, capsys):
+    """A fresh checkout with no VEFR_DEPLOY_HOST and no deploy.toml
+    must NOT ssh bazzite."""
+    monkeypatch.setattr(fresh_cli, 'need_repo', lambda: tmp_path)
     args = fresh_cli.argparse.Namespace(
         init=False, skip_tests=True, rebuild=False, no_health=True,
         deploy_host=fresh_cli.DEFAULT_DEPLOY_HOST,  # 'bazzite' with env unset
@@ -84,3 +86,46 @@ def test_deploy_init_refuses_to_overwrite(fresh_cli, tmp_path, monkeypatch, caps
     assert rc == 1
     out = capsys.readouterr().out
     assert 'already exists' in out
+
+
+def test_deploy_reads_host_and_image_from_deploy_toml(fresh_cli, tmp_path, monkeypatch):
+    """deploy.toml is load-bearing: with env silent, the host and
+    image come from the file - the export dance is gone."""
+    (tmp_path / 'deploy.toml').write_text(
+        'host  = "my-stack"\nimage = "localhost/vefr:test"\n',
+        encoding='utf-8')
+    monkeypatch.setattr(fresh_cli, 'need_repo', lambda: tmp_path)
+    calls = []
+
+    def fake_sh(cmd, **kwargs):
+        calls.append(cmd)
+        return type('R', (), {'returncode': 0})()
+
+    monkeypatch.setattr(fresh_cli, 'sh', fake_sh)
+    args = fresh_cli.argparse.Namespace(
+        init=False, skip_tests=True, rebuild=False, no_health=True,
+        deploy_host=fresh_cli.DEFAULT_DEPLOY_HOST,  # silent default
+        url=fresh_cli.DEFAULT_URL,
+    )
+    rc = fresh_cli.cmd_deploy(args)
+    assert rc == 0
+    ssh_cmds = [' '.join(c) for c in calls if c and c[0] == 'ssh']
+    assert any('restart vefr' in c for c in ssh_cmds), calls
+    # the toml image rode along on the remote commands
+    assert any('localhost/vefr:latest' not in c and 'my-stack' in c
+               for c in ssh_cmds), ssh_cmds
+
+
+def test_deploy_toml_broken_is_an_empty_config(fresh_cli, tmp_path, monkeypatch, capsys):
+    """A malformed deploy.toml must never take the deploy path down:
+    it reads as absent, and the guard behaves as if no file existed."""
+    (tmp_path / 'deploy.toml').write_text('host = [broken', encoding='utf-8')
+    monkeypatch.setattr(fresh_cli, 'need_repo', lambda: tmp_path)
+    args = fresh_cli.argparse.Namespace(
+        init=False, skip_tests=True, rebuild=False, no_health=True,
+        deploy_host=fresh_cli.DEFAULT_DEPLOY_HOST,
+        url=fresh_cli.DEFAULT_URL,
+    )
+    rc = fresh_cli.cmd_deploy(args)
+    assert rc == 2  # the silent-default refusal, not a crash
+    assert 'not declared' in capsys.readouterr().out
