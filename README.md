@@ -28,13 +28,24 @@ spoken must be true.
 src/vefr/           the engine (MIT)
   paths.py           where things live (VEFR_HOME, VEFR_WORLD)
   world.py           the pack loader - the only seam
-  saga.py            the storytelling layer - Saga keeps the stories:
-                     Bragi composes (prompts, voices), Idunn keeps
-                     (the ledger that renews the voice)
+  saga.py            the storytelling layer (prompts, voices, ledger)
   generator.py       rumor cards (speaker, whisper, is_true)
   forge.py           items; bonds come from the pack
   stefna.py          sealed voices (the bell / letter)
   npc.py             whisper NPCs; seeds keep the world alive
+  combat.py          encounter and combat action surface
+  bonds.py           bond contracts and draws
+  journey.py         Hero's Journey stage and rune anchors
+  runes.py           Elder Futhark rune casts and interpretations
+  pool.py            precomputed generation pools for offline play
+  weave.py           the weave event log for loader actions
+  trace.py           in-memory and JSONL generation call tracing
+  sessions.py        multi-session state management
+  starred.py         player-marked favorite entries
+  chat.py            builder AI interview generator
+  inspect.py         pack geometry and contract inspection
+  volumes.py         container storage volume configuration
+  lore.py            lore pack discovery and rendering
   journal.py         the session journal - what happened, on disk
                      (VEFR_JOURNAL)
   export.py          canon + journal + vault -> one markdown story,
@@ -42,8 +53,8 @@ src/vefr/           the engine (MIT)
   main.py            FastAPI surface incl. GET /api/world,
                      GET /api/journal, GET /api/export
   cli.py             two entry points, ratatoskr (the squirrel) and norns (the weavers):
-                       ratatoskr - memory: skipa, test, weave, ferry (deploy, carry, fetch)
-                       norns - craft: chat, validate, build-map, verify
+                       ratatoskr - memory: skipa, test, weave, ferry (deploy, carry, fetch, scaffold)
+                       norns - craft: chat, validate, build-map, verify, doctor, handbok
   maplab.py          norns's toolkit - the one validator shared by
                      tests and both clis
 
@@ -81,9 +92,9 @@ The repo split is the contract. The engine knows:
 What this looks like in practice:
 
 ```
-rylee/vefr/                  # this repo (MIT, the bones)
-the private story repo/            # the author's game repo (private, the flesh)
-  worlds/private-canon/         # the pack, lives in the story repo
+user/vefr/                   # this repo (MIT, the bones)
+user/story-repo/             # your story repo (private, the flesh)
+  worlds/your-world/         # the pack, lives in the story repo
     world.json               # phases: dusk / dawn, voices, bonds
     logbok.md                # your canon + style contract
     ledger.md                # collected whispers
@@ -95,10 +106,10 @@ You develop the engine here. You write the game there. When you
 want to play:
 
 ```bash
-# on the bazzite live stack
-ssh bazzite
+# on the deploy host
+ssh deploy-host
 cd ~/vefr                            # the engine checkout
-ferry fetch --pull the private story repo  # your pack lands in worlds/private-canon/
+ferry fetch --pull user/story-repo   # your pack lands in worlds/your-world/
 systemctl --user restart vefr.service
 ```
 
@@ -197,6 +208,7 @@ reads and a fifth the author copies by hand:
 | `names.md` | yes | yes |
 | `questions.md` | yes | yes |
 | `prompt.md` | no | **yes** (copy-paste into any LLM) |
+| `cards.md` (optional, e.g. norse-runes) | yes | yes |
 | `LICENSE.md` | no | yes (CC BY-SA 4.0 + attributions) |
 
 The packs:

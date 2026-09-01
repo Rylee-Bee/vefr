@@ -163,7 +163,7 @@
       with `strict: true`; reasoning control is
       `chat_template_kwargs.reasoning_effort=low` (gpt-oss has no
       `off` - low/medium/high only, llama.cpp maintainers confirmed).
-      51/51 tests still pass - the helper is monkeypatched instead
+      The helper is monkeypatched instead
       of the wire layer, so backend swaps stay test-clean. Two btrfs-
       on-Fedora-Atomic gotchas hit along the way (documented in
       `~/llama-server/run-gptoss.sh`): podman bind sources MUST go
@@ -172,10 +172,7 @@
       btrfs subvol); `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
       for the 6900XT (RDNA2/gfx1030) since llama.cpp's compiled
       runtime only recognizes gfx900/1030/1100/1200. The bazzite
-      quadlet `~/.config/containers/systemd/old-name.container` was
-      updated in place (note: `deploy/old-name.container` in the repo
-      is a stale doc - the live game has never run on homelab-vm,
-      only on bazzite; flagged separately).
+      quadlet was updated in place.
 
 - [x] **the always-array world loader + the visible engine**
       (2026-08-31). `load_world()` now returns a single canonical
@@ -199,7 +196,7 @@
       engine sees" panel that shows the resolved world and
       packages a markdown handoff bundle for an AI-buddy
       debugging session - see `docs/guides/handoff.md` for the
-      format. 159 tests pass; the canary pack validates
+      format. The canary pack validates
       identically before and after the migration.
 
 - [x] **the kilo init** (2026-08-31): `AGENTS.md` (the repo's
@@ -386,47 +383,24 @@
       whole content, and hiding it behind a selection would add
       reading load, not remove it.
 
-- [x] **the sample stops telling the story** (2026-09-01, this
-      session): the structural leak Rylee caught by playing - the
-      bell generated a mother's chore-note because the SAMPLE PACK
-      carried the story's grammar. Four agents had each "fixed" the
-      strip and it kept coming back; the flaw was structural: the
-      engine has no no-world state (world_name() fell back to
-      sample-world, so every build boots running a complete
-      fiction), and a complete pack cannot be neutral - stripped of
-      names, it still carries voice and grammar, and the model
-      regenerates story-shaped content from it forever.
+- [x] **the reachable UI** (2026-08-31): header earns its title,
+      9 flat tabs become 3 static zones (Play / World / Dev) with
+      plain-English labels leading and Norse secondary, 44px+ targets,
+      luminance-only active states, prefers-reduced-motion honored,
+      keyboard focus-visible tokens, and the reading row (text size,
+      line spacing, contrast, fonts) built on VEFR_PREFS.
 
-      Fixed at the structure, not the symptom:
+- [x] **ratatoskr weave --pool** (2026-08-31): pre-generation pass
+      during packaging inlines `window.VEFR_POOL` for offline play
+      with per-combo spending tracked in localStorage and fallback to
+      honest silence when spent.
 
-      - The sample pack's contract is mechanical now: voice key
-        "mother" -> "keeper", the strike prompt asks for "the
-        letter this place leaves behind" (no goodbye, no "the
-        right name"), bonds de-gendered ("waiting hands", "made
-        for someone else"), gold_rule is Emberfield's own ("Gold
-        waits for a kind world" - the Gold Rule text was canon).
-      - The stefna voice is pack-declared: a top-level
-        `stefna_voice` field; the engine's hardcoded "mother"
-        fallback is gone. BREAKING for packs written before the
-        field existed - private-canon needs one line in its world.json
-        (`"stefna_voice": "mother"`), owned by the private story repo, not by
-        the engine.
-      - The vault keep-status strings in the served UI ("it fits
-        her hands") are neutralized.
-      - The stefna scaffold's dead private-canon rename and the
-        history docstring naming "the ferryman" left the source; test
-        data (trace/handbok/volumes/dom-harness fixtures) uses
-        neutral names.
-      - tests/test_pack_neutrality.py: the canon audit. Reads a
-        gitignored term list (tests/canon-strings.local.txt - the
-        mechanism ships, the names never do) and fails on any hit
-        in worlds/sample-world, web/, or src/. There are NO
-        exceptions: an allowlist is a permanent blind spot; the
-        string leaves the source. History lives in the ledger.
-      - Sample-design answer: the engine ships a DEFINITE SCAFFOLD
-        (mechanical, contract-complete, zero fiction) - a full
-        demo world is authored content and arrives as an imported
-        pack, never bundled.
+- [x] **audit 2026-09-01** (2026-09-01): 10 PR sequence resolving
+      live scaffold NameError, pack contract verification (stefna_voice,
+      voices dual convention, strike prompt), final story prose and
+      pronoun stripping, AST shape-based neutrality guard, vefr renaming
+      sweep across web globals/events, and test harness execution for
+      the reading row controller.
 
 ## Next
 
@@ -501,71 +475,9 @@
       folklore, jewish-diaspora, contemporary-urban. Each one is
       a literary mood-board for fiction, licensed CC BY-SA 4.0.
 - [ ] **research: offline/no-server generation fallback for shared
-      packaged games**. Today's `ratatoskr weave` output still needs
-      a live OpenAI-compatible endpoint (VEFR_LLAMACPP_URL or
-      OLLAMA_URL) to generate anything - a friend you send a .html
-      file to needs their own model server. Siri/Apple Intelligence
-      and Android's Gemini Nano are dead ends for a browser-based
-      packaged file (native-app-only APIs, no web page access);
-      Chrome's experimental on-device AI API is Chrome-only and
-      origin-trial-gated. The real candidate is purpose-built, not
-      a general LLM: a small, narrow generator (a tiny fine-tuned
-      model, a retrieval+recombination system over the pack's own
-      voice files, or a template/Markov approach) that only needs
-      to do what this engine actually asks for - short,
-      schema-constrained JSON (one rumor, one line, one letter) -
-      not general-purpose writing. Weaker prose than gpt-oss-20b,
-      but zero-setup for whoever you hand the file to.
-      hand the file to.
-
-      The most promising shape found so far: split by platform, not
-      by trying to build one fallback model that works everywhere.
-      Desktop/world-building keeps the live local LLM (full power,
-      you're actively authoring). Mobile/handed-to-a-friend play
-      uses a pool PRE-generated by that same LLM during authoring,
-      not hand-written templates - the rune cast's shape is finite
-      (24 runes x N phases x N speakers), so a `ratatoskr weave`
-      step could ask the live model for several real generations
-      per rune/phase/speaker combination and bake that pool into
-      the packaged file. Mobile play then pulls from the pool for
-      whichever rune/phase/speaker actually lands, reusing the rune
-      cast's own no-duplicate-within-a-draw rule so it doesn't feel
-      like picking from a fixed list even though nothing is calling
-      a model live. Explicitly NOT a static phrase bank / mad-libs
-      table by hand - every line in the pool is real model output
-      in the pack's own voice, just precomputed instead of live.
-
-      The investigation, closed (2026-08-31) with concrete numbers
-      for the build:
-
-      | Question | Answer |
-      |---|---|
-      | What are the combinations, really? | whispers: 4 phases; voices: 4 phases x N speakers (~7 = 28); stefna: 1 slot; forge: 1 slot. ~34 combos, not 24 runes x anything - the cast shapes *which* pool entry is drawn, not how many exist |
-      | Samples per combination | 5. Enough that the no-duplicate rule has room across a long sitting; 10 doubles packaging time for a difference play can't feel |
-      | Packaging cost | ~175 generations at 1-2s on the 6900XT llama.cpp = 3-6 minutes of authoring, once, at weave time |
-      | Pool size | ~175 entries x ~400B = ~70KB (10 samples: ~140KB) - inline it |
-      | Embed vs sidecar | Inline into the packaged HTML. The single file is the unit of sharing; a sidecar would break "send it as one attachment" |
-      | Spent-pool behavior | Track used (speaker, line) pairs in localStorage; when a combo's pool is spent, fall back to unused lines from the same phase, then say so plainly: the pool is spent, the world waits for its author to re-weave |
-
-      Build shape: `ratatoskr weave --pool` runs the pre-generation
-      pass during packaging and inlines `window.VEFR_POOL = {combo:
-      [lines...]}` next to the other VEFR_* globals. The packaged
-      page already has a no-endpoint path to hang it on; play falls
-      back to the pool whenever no live endpoint is configured or a
-      call fails.
-
-      LANDED (2026-08-31): `ratatoskr weave --pool N` is live, the
-      packaged page draws from the pool with per-combo spending
-      tracked in localStorage, the first real-model weave ran
-      end-to-end in the container against the warm 6900XT
-      (sample-world, 1 sample per combo, 10 lines, 24KB file), and
-      the pool-draw runtime itself is machine-tested
-      (tests/test_web_packaged.py executes the shipped poolDraw code
-      in a node vm: no repeats, cross-combo fallthrough, honest
-      null when spent). The deeper research item above - purpose-
-      built small generators for a world with NO pool at all -
-      stays open; the pool covers the common case (author has a
-      model, the friend does not).
+      packaged games**. Purpose-built small generators for a world
+      with no precomputed pool. The pool covers the common case
+      (author has a model, friend does not).
 
 - [ ] **the marketplace**: a community place to share, search, and
       rate engine add-ons - world packs, lore packs, sprites, map
@@ -577,32 +489,9 @@
       infrastructure - ratings live with the community, and
       discovery may grow a `norns market` command. The always-
       layer's "private until it isn't" made social.
-- [ ] **the reachable UI** (prerequisite of the dev menu): the
-      header earns its title (vefr - a rumor engine for playable
-      worlds), 9 flat tabs become 3 static zones (Play / World /
-      Dev) with plain-English labels leading and the Norse names
-      visible as secondary, every target 44px+, luminance-only
-      active states, prefers-reduced-motion honored, keyboard and
-      focus-visible everywhere. Then the reading row: text size,
-      line spacing, contrast, and reading fonts (Atkinson
-      Hyperlegible, OpenDyslexic) - the preferences-panel pattern
-      Fluid's UI Options proves, built natively on the
-      localStorage prefs the runes already use. Hard-of-hearing:
-      when audio arrives (the bell), every sound pairs with a
-      visual event - the journal already is that record. Idea
-      credit when it lands: Fluid Infusion (fluid-project). And
-      per the Game Accessibility Guidelines' Basic tier: control
-      remapping (a keybinds map in localStorage, the cast_visible
-      pattern) joins the reading row.
-
-      Chrome + 44px targets + luminance + keyboard + the reading
-      row all landed in this session's two-PR sequence (chrome in
-      #8, reading row above). Remaining: the keybinds remap (GAG
-      Basic, the cast_visible pattern, localStorage), the audio
-      pairing hooks when the bell's audio lands, and the GAG
-      Intermediate-tier features we haven't claimed yet (subtitles
-      hooks, colorblind-safe palette is shipped but motion-
-      sickness and wider UI Options can grow the panel further).
+- [ ] **accessible controls and audio-pairing**: the keybinds remap
+      (GAG Basic, localStorage config) and audio-pairing hooks for
+      visual event pairing when sound effects land.
 
 ## The always-layer
 

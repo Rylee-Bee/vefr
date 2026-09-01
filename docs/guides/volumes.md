@@ -76,7 +76,7 @@ or Podman overlays the new image content on top.
 
 **User packs** (the rw canon) do not auto-update. If you change a
 canary and want a user's canon to track, the user runs
-`norns migrate --to-acts <name>` on their own schedule. The
+`norns migrate --pack <name>` on their own schedule. The
 migrator validates end-to-end before writing.
 
 ## Offline boots
