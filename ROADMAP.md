@@ -369,6 +369,23 @@
       logged, textarea cleared, honest failure leaving the thread
       empty.
 
+- [x] **one shell, every zone** (2026-08-31, this session): the
+      layout instability Rylee flagged - the page swapped between a
+      narrow reading column (Play/World) and a wide workbench (Dev),
+      and the World zone was a third unrelated body of bare lists -
+      is gone. The shell is one width everywhere (min(80rem,
+      100% - 2rem)); reading surfaces cap their own line length
+      (46rem) because the short-line reading win belongs to the
+      text column, not the page. The World pane now wears the same
+      skeleton as the board: Characters / Relics as two columns of
+      selectable cards (role=button, Enter/Space, aria-pressed,
+      luminance ring) with the full record in a shared right rail.
+      The pane vocabulary (board-container / board-column /
+      board-cards / board-rail) is the app's shared skeleton;
+      Play keeps its inline cards for now - they already show their
+      whole content, and hiding it behind a selection would add
+      reading load, not remove it.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every

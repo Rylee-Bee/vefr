@@ -243,11 +243,23 @@
     margin: -1px; padding: 0; overflow: hidden;
     clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  header { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
+  header { max-width: min(80rem, 100% - 2rem); margin: 0 auto; padding: 2.5rem 1rem 0; }
   header h1 { margin: 0; font-size: 1.5rem; font-weight: normal; letter-spacing: 0.12em; }
   header .tagline { color: var(--ink-dim); margin: 0.3rem 0 0; font-size: 0.95rem; }
 
-  main { max-width: 40rem; margin: 0 auto; padding: 0 1rem 3rem; }
+  main { max-width: min(80rem, 100% - 2rem); margin: 0 auto; padding: 0 1rem 3rem; }
+
+  /* One shell width, every zone. The zone switch used to swap the
+     page between a narrow reading column and a wide workbench -
+     exactly the layout instability the a11y matrix calls out
+     (predictable shape and location). Reading surfaces cap their
+     own line length below instead: the short-line reading win is a
+     property of the text column, not of the whole page. */
+  #feed, #forge-out, #letter-out, #vault-list, #journal-list,
+  #rumor-phase, #town-phase, .view > .controls, .view > .phase-rail,
+  .view > .note {
+    max-width: 46rem;
+  }
 
   .tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1.6rem 0 0; padding-bottom: 1rem; border-bottom: 1px solid var(--card-edge); }
   .tabs button {
@@ -303,6 +315,13 @@
     padding: 1rem 1.2rem; overflow-wrap: anywhere;
     position: relative; /* anchors the entry-actions overlay */
   }
+  /* Selectable reading cards - the wiki pane's entries use the same
+     selection contract as the board: role=button, focusable,
+     aria-pressed, luminance ring. */
+  .card[role="button"] { cursor: pointer; }
+  .card[role="button"]:hover { border-color: var(--primary); }
+  .card:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .card[aria-pressed="true"] { border-color: var(--primary); }
   .card .speaker { color: var(--ink-dim); font-size: 0.85rem; letter-spacing: 0.06em; }
   .card .whisper { margin: 0.4rem 0 0; }
   .card .hook { color: var(--ink-dim); font-style: italic; margin: 0.5rem 0 0; font-size: 0.92rem; }
@@ -1052,10 +1071,25 @@
   </section>
 
   <section id="view-wiki" class="view" role="tabpanel" aria-labelledby="tab-wiki" hidden>
-    <p class="note">the world's own wiki &mdash; who lives here, what they said this playthrough, what was carried. Auto-generated, never edited.</p>
+    <p class="note">the world's own wiki &mdash; who lives here, what they said this playthrough, what was carried. Auto-generated, never edited. Select an entry for the full record.</p>
     <p class="note" id="wiki-status">&nbsp;</p>
-    <section id="wiki-characters" aria-live="polite"></section>
-    <section id="wiki-relics" aria-live="polite"></section>
+    <div class="board-container">
+      <div class="board-columns board-cols-2">
+        <div class="board-column">
+          <h3>Characters <span class="sub">Sagnir</span></h3>
+          <div class="board-cards" id="wiki-characters" aria-live="polite"></div>
+        </div>
+        <div class="board-column">
+          <h3>Relics <span class="sub">Safn</span></h3>
+          <div class="board-cards" id="wiki-relics" aria-live="polite"></div>
+        </div>
+      </div>
+      <aside class="board-rail" id="wiki-rail" tabindex="-1" aria-label="Entry detail" hidden>
+        <h3 id="wiki-rail-name"></h3>
+        <p class="note" id="wiki-rail-meta">&nbsp;</p>
+        <pre id="wiki-rail-body"></pre>
+      </aside>
+    </div>
   </section>
 
   <section id="view-trace" class="view" role="tabpanel" aria-labelledby="tab-trace" hidden>
@@ -1786,40 +1820,102 @@
   window.addEventListener('old-name:journal', renderJournal);
 
   /* The world's wiki - who lives here, what they said this
-     playthrough, what was carried. Read-only, auto-generated from
-     canon + the session's journal; the author never maintains it. */
+      playthrough, what was carried. Read-only, auto-generated from
+      canon + the session's journal; the author never maintains it.
+      Entries are selectable: same contract as the board's cards
+      (role=button, Enter/Space, aria-pressed), same rail pattern.
+      The full record lives in the rail; the card carries the shape
+      of the entry. */
   var wikiBox = document.getElementById('wiki-characters');
   var wikiRelics = document.getElementById('wiki-relics');
   var wikiStatus = document.getElementById('wiki-status');
+  var wikiData = null;
+
+  function wikiSelect(kind, idx, el) {
+    var body = wikiData ? wikiData[kind] : null;
+    var entry = body ? body[idx] : null;
+    var rail = document.getElementById('wiki-rail');
+    if (!entry || !rail) return;
+    rail.hidden = false;
+    if (typeof rail.focus === 'function') rail.focus();
+    document.querySelectorAll('#view-wiki .wiki-entry').forEach(function (c) {
+      c.setAttribute('aria-pressed', c === el ? 'true' : 'false');
+      c.classList.toggle('card-selected', c === el);
+    });
+    document.getElementById('wiki-rail-name').textContent =
+      entry.name || (kind === 'relics' ? 'something' : 'a voice');
+    document.getElementById('wiki-rail-meta').textContent = kind === 'relics'
+      ? 'kept relic \u00b7 bond: ' + (entry.bond || 'none')
+      : entry.lines + (entry.lines === 1 ? ' line spoken' : ' lines spoken');
+    var lines = (entry.recent || []).map(function (l) {
+      return '&ldquo;' + esc(l.line || '') + '&rdquo;';
+    });
+    var bodyText = kind === 'relics'
+      ? (entry.lore || 'no lore recorded.')
+      : (lines.length
+          ? entry.recent.map(function (l) { return '\u201c' + (l.line || '') + '\u201d'; }).join('\n\n')
+          : 'nothing said yet.');
+    var bodyEl = document.getElementById('wiki-rail-body');
+    if (kind === 'relics') { bodyEl.innerHTML = esc(bodyText); }
+    else { bodyEl.innerHTML = bodyText; }
+  }
+
+  function clearWikiSelection() {
+    var rail = document.getElementById('wiki-rail');
+    if (rail) rail.hidden = true;
+  }
 
   function renderWiki() {
     wikiStatus.textContent = 'reading\u2026';
     fetch(VEFR_SESSION.wrap('/api/wiki')).then(function (r) { return r.json(); }).then(function (body) {
       var chars = (body && body.characters) || [];
       var relics = (body && body.relics) || [];
+      wikiData = body;
       wikiStatus.textContent = (body.rumors || 0) + ' whispers heard \u00b7 '
         + (body.letters || 0) + ' letters \u00b7 ' + relics.length + ' relics carried';
       wikiBox.innerHTML = chars.length
-        ? '<h2>Characters</h2>' + chars.map(function (c) {
+        ? chars.map(function (c, i) {
             var recent = (c.recent || []).map(function (l) {
               return '<p class="whisper">&ldquo;' + esc(l.line || '') + '&rdquo;</p>';
             }).join('');
-            return '<article class="card"><div class="speaker">' + esc(c.name) + '</div>'
+            return '<article class="card wiki-entry" role="button" tabindex="0" data-kind="characters" data-idx="' + i + '"><div class="speaker">' + esc(c.name) + '</div>'
               + '<div class="kind">' + c.lines + (c.lines === 1 ? ' line spoken' : ' lines spoken') + '</div>'
               + recent + '</article>';
           }).join('')
         : '<p class="empty">Nobody has spoken yet.</p>';
       wikiRelics.innerHTML = relics.length
-        ? '<h2>Relics</h2>' + relics.map(function (it) {
-            return '<article class="card"><div class="speaker">' + esc(it.name || 'something') + '</div>'
+        ? relics.map(function (it, i) {
+            return '<article class="card wiki-entry" role="button" tabindex="0" data-kind="relics" data-idx="' + i + '"><div class="speaker">' + esc(it.name || 'something') + '</div>'
               + '<div class="kind">kept &middot; ' + esc(it.bond || '') + '</div>'
               + '<p class="whisper">' + esc(it.lore || '') + '</p></article>';
           }).join('')
         : '<p class="empty">Nothing carried yet.</p>';
+      clearWikiSelection();
     }).catch(function () {
       wikiStatus.textContent = 'the wiki did not answer.';
     });
   }
+  function wikiPick(e) {
+    var t = e.target.closest ? e.target.closest('.wiki-entry') : null;
+    if (!t) return;
+    wikiSelect(t.dataset.kind, parseInt(t.dataset.idx, 10), t);
+  }
+  wikiBox.addEventListener('click', wikiPick);
+  wikiRelics.addEventListener('click', wikiPick);
+  wikiBox.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ')
+        && e.target.classList && e.target.classList.contains('wiki-entry')) {
+      e.preventDefault();
+      wikiSelect(e.target.dataset.kind, parseInt(e.target.dataset.idx, 10), e.target);
+    }
+  });
+  wikiRelics.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ')
+        && e.target.classList && e.target.classList.contains('wiki-entry')) {
+      e.preventDefault();
+      wikiSelect(e.target.dataset.kind, parseInt(e.target.dataset.idx, 10), e.target);
+    }
+  });
   window.addEventListener('old-name:wiki', renderWiki);
 
   /* The engine's trace - every generation call, live. Dev only. */
