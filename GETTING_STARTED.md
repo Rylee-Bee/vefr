@@ -32,7 +32,7 @@ server; for trying it out, plain `uv run` is faster.
 ## 1. Get the code
 
 ```sh
-git clone http://192.168.2.216:3000/rylee/vefr.git
+git clone ${VEFR_GITEA_URL:-https://your-git-host/user/vefr.git}
 cd vefr
 uv sync --group test
 ```
