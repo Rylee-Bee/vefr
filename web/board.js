@@ -12,9 +12,9 @@
  * "try it" button calls the column's endpoint like the game's own
  * buttons do; when the engine does not answer it says so plainly.
  *
- * Contract: window.VEFR_BOARD.{init, state, move, generateStore}.
- * Shipped JS - machine-tested by tests/test_board.py executing this
- * file in a node vm (see tests/fixtures/board_harness.mjs).
+ * Contract: window.VEFR_BOARD.{init, state, move, syncColumns,
+ * generateStore}. Shipped JS - machine-tested by tests/test_board.py
+ * executing this file in a node vm (see tests/fixtures/board_harness.mjs).
  */
 window.VEFR_BOARD = (function () {
   'use strict';
@@ -176,7 +176,9 @@ window.VEFR_BOARD = (function () {
 
   /* Re-home a card: find it by id in any column, move it to the end
      of toColumn, stamp it, persist, re-render. Returns true on a
-     real move, false when the id or column is unknown. */
+     real move, false when the id or column is unknown. Keyboard and
+     rail moves land here; pointer/touch drops go through syncColumns
+     instead, which preserves the dropped position. */
   function move(id, toCol) {
     if (!state.cards || COLUMNS.indexOf(toCol) === -1) return false;
     var card = null;
@@ -193,7 +195,56 @@ window.VEFR_BOARD = (function () {
     state.cards[toCol].push(card);
     saveStore();
     render();
+    announce(card.name + ' re-homed to ' + toCol + '.');
+    if (state.selected && state.selected.id === id) state.selectedEl = null;
+    refreshRailMeta();
     return true;
+  }
+
+  /* Pointer/touch drops: Sortable has already moved the DOM, so the
+     store syncs to the DOM order instead of re-rendering - the card
+     lands exactly where it was dropped, position included. The
+     lookup spans every column: a dropped card is in the DOM but not
+     yet in the target column's store array. */
+  function syncColumns(fromCol, toCol, cardId) {
+    if (!state.cards) return;
+    var all = {};
+    COLUMNS.forEach(function (col) {
+      (state.cards[col] || []).forEach(function (c) { all[c.id] = c; });
+    });
+    COLUMNS.forEach(function (col) {
+      var holder = document.getElementById('board-' + col);
+      if (!holder) return;
+      state.cards[col] = holder.children
+        .map(function (el) { return el.dataset ? el.dataset.id : null; })
+        .filter(function (id) { return !!id; })
+        .map(function (id) { return all[id]; })
+        .filter(function (c) { return !!c; });
+    });
+    if (fromCol !== toCol) {
+      var list = state.cards[toCol] || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === cardId) list[i].edited = Date.now();
+      }
+      announce('re-homed to ' + toCol + '.');
+    }
+    saveStore();
+  }
+
+  function announce(text) {
+    setText('board-status', text);
+  }
+
+  function refreshRailMeta() {
+    var card = state.selected;
+    if (!card) return;
+    var col = columnOf(card.id);
+    var api = API[col] || API.whispers;
+    setText('rail-meta', api.title + ' \u00b7 column: ' + col);
+    COLUMNS.forEach(function (c) {
+      var btn = document.getElementById('board-move-' + c);
+      if (btn) btn.disabled = (c === col);
+    });
   }
 
   /* --- render -------------------------------------------------------- */
@@ -257,7 +308,7 @@ window.VEFR_BOARD = (function () {
     if (typeof rail.focus === 'function') rail.focus();
     var api = API[col] || API.whispers;
     setText('rail-name', card.name);
-    setText('rail-meta', api.title + ' \u00b7 column: ' + col);
+    refreshRailMeta();
     setText('rail-request', api.method + ' ' + api.endpoint + '\n' + api.request);
     setText('rail-response', api.response);
     setText('rail-templates', 'the pack\u2019s own voice fragments - read-only until the wire-up');
@@ -343,11 +394,39 @@ window.VEFR_BOARD = (function () {
       }).catch(function () { /* no world - the board stays bare */ });
     }
     wireDropTargets();
+    wireRehome();
     var tryBtn = document.getElementById('rail-try');
     if (tryBtn) tryBtn.addEventListener('click', tryIt);
   }
 
+  /* Pointer/touch drag. With the vendored Sortable, drops keep their
+     position and touch works; without it (the test sandbox, or a
+     packaged file that ships without the vendor directory) the board
+     falls back to native HTML5 DnD - cross-column moves, desktop
+     only. Both paths end in the same persisted store. */
   function wireDropTargets() {
+    if (window.Sortable && typeof window.Sortable.create === 'function') {
+      COLUMNS.forEach(function (col) {
+        var holder = document.getElementById('board-' + col);
+        if (!holder) return;
+        window.Sortable.create(holder, {
+          group: 'vefr-board',
+          draggable: '.board-card',
+          animation: 0,
+          ghostClass: 'board-drag-ghost',
+          chosenClass: 'board-drag-chosen',
+          onEnd: function (evt) {
+            var fromCol = evt.from && evt.from.id
+              ? evt.from.id.replace('board-', '') : col;
+            var toCol = evt.to && evt.to.id
+              ? evt.to.id.replace('board-', '') : col;
+            var id = evt.item && evt.item.dataset ? evt.item.dataset.id : null;
+            if (id) syncColumns(fromCol, toCol, id);
+          }
+        });
+      });
+      return;
+    }
     COLUMNS.forEach(function (col) {
       var holder = document.getElementById('board-' + col);
       if (!holder) return;
@@ -367,9 +446,24 @@ window.VEFR_BOARD = (function () {
     });
   }
 
+  /* Keyboard re-homing: the rail carries one button per column, so a
+     card is movable without a pointer at all. The current column's
+     button is disabled; moves are the same persisted store write. */
+  function wireRehome() {
+    COLUMNS.forEach(function (col) {
+      var btn = document.getElementById('board-move-' + col);
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        if (!state.selected) return;
+        move(state.selected.id, col);
+      });
+    });
+  }
+
   return {
     init: init,
     move: move,
+    syncColumns: syncColumns,
     render: render,
     state: state,
     generateStore: generateStore,

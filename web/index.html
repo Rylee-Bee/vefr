@@ -1188,6 +1188,13 @@
         </details>
         <button type="button" id="rail-try">Try it</button>
         <pre id="rail-try-out"></pre>
+        <div class="board-move-row" id="board-move-row" role="group" aria-label="Re-home this card">
+          <button type="button" class="board-move" id="board-move-whispers">whispers</button>
+          <button type="button" class="board-move" id="board-move-voices">voices</button>
+          <button type="button" class="board-move" id="board-move-forge">forge</button>
+          <button type="button" class="board-move" id="board-move-bell">bell</button>
+        </div>
+        <p class="note" id="board-status" aria-live="polite">&nbsp;</p>
         <textarea id="rail-draft" rows="3" disabled
                   placeholder="draft to the smith - wires in a later landing"></textarea>
       </aside>
@@ -1229,6 +1236,7 @@
 <script src="/static/state.js"></script>
 <script src="/static/prefs.js"></script>
 <script src="/static/town.js"></script>
+<script src="/static/vendor/Sortable.min.js"></script>
 <script src="/static/board.js"></script>
 <script>
 (function () {
