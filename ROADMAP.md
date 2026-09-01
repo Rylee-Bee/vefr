@@ -644,6 +644,21 @@
       stragglers on its first run. Gate: 240 passed, 0 skipped
       (`uv run --group test pytest -q`), ruff clean.
 
+- [x] **the deploy button** (2026-09-01, this session):
+      deploy.toml scaffolding landed (`--init` writes it; the
+      per-host twin is gitignored like `.env`; the dev box's copy
+      points at bazzite and `.env` carries `VEFR_DEPLOY_HOST`) -
+      and the deploy it drove surfaced a real wrinkle: the live
+      quadlet's rw bind (`~/vefr-worlds/`) shadowed the engine's
+      own sample-world with a pre-acts stale copy, so rebuilt
+      templates never reached the running pack. The stale copy
+      moved to `~/vefr-worlds-backup-20260901/` (starred-whispers
+      preserved); engine-shipped packs now serve from the ro
+      template and refresh on every image build, while author
+      packs still land in the rw bind via ferry fetch. Verified
+      live: health 200, the resolved view shows the keeper bank
+      (6 lines), fonts 200.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
