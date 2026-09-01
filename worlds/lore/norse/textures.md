@@ -30,7 +30,7 @@ A town in this flavor feels like:
 
 - **Names as living things.** Names have weight; to name something
   is to be responsible for it. The wrong name is not "wrong" -
-  it's a different relationship. The right name is what changes.
+  it's a different relationship. The true name is what changes.
 
 The model should produce textures and names that feel like *someone
 said this on the road*. Not library prose. Roadside prose.
