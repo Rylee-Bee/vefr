@@ -202,6 +202,10 @@ window.VEFR_BOARD = (function () {
     var el = document.createElement('div');
     el.className = 'board-card';
     el.draggable = true;
+    /* Keyboard-reachable like every other target in the chrome:
+       focusable, button semantics, Enter/Space selects. */
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
     el.dataset.id = card.id;
     el.textContent = card.name + ' \u2014 ' + card.content;
     var when = document.createElement('span');
@@ -214,6 +218,12 @@ window.VEFR_BOARD = (function () {
       e.dataTransfer.setData('text/plain', card.id);
     });
     el.addEventListener('click', function () { select(card, el); });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        select(card, el);
+      }
+    });
     return el;
   }
 
@@ -231,13 +241,20 @@ window.VEFR_BOARD = (function () {
   /* --- the right rail ------------------------------------------------ */
 
   function select(card, el) {
-    if (state.selectedEl) state.selectedEl.className = 'board-card';
+    if (state.selectedEl) {
+      state.selectedEl.className = 'board-card';
+      state.selectedEl.setAttribute('aria-pressed', 'false');
+    }
     state.selected = card;
     state.selectedEl = el;
+    el.setAttribute('aria-pressed', 'true');
     var col = columnOf(card.id);
     var rail = document.getElementById('board-rail');
     if (!rail) return;
     rail.hidden = false;
+    /* Move focus with the disclosure, so keyboard users land in the
+       rail instead of continuing to tab through hidden columns. */
+    if (typeof rail.focus === 'function') rail.focus();
     var api = API[col] || API.whispers;
     setText('rail-name', card.name);
     setText('rail-meta', api.title + ' \u00b7 column: ' + col);
