@@ -23,7 +23,7 @@ JOURNAL = Path(
     os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
 )
 
-KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "fork")
+KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "move", "fork")
 
 # Per-session stash of the most recently removed entry, keyed by the
 # cleaned session id. Single-slot per session is the design: undo is

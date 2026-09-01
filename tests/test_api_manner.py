@@ -84,3 +84,26 @@ def test_npc_voiceless_pack_is_404_not_500(client, monkeypatch):
     r = client.post("/api/npc", json={})
     assert r.status_code == 404
     assert "no speakers" in r.json()["detail"]
+
+
+def test_move_without_poi_is_422_naming_the_field(client):
+    """A move with no `poi` is a 422 that names the field - the same
+    honesty the vault's typed card gives (the client is the only
+    thing that knows where the hero stands, so its shape is the
+    contract)."""
+    r = client.post("/api/journal/move", json={"x": 7, "y": 3})
+    assert r.status_code == 422
+    assert "poi" in json.dumps(r.json())
+
+
+def test_move_logs_one_entry(client):
+    r = client.post(
+        "/api/journal/move",
+        json={"poi": "the stone", "x": 7, "y": 3, "phase": "dusk"},
+    )
+    assert r.status_code == 200
+    assert r.json()["logged"] is True
+    entries = journal_mod.list_entries()
+    assert entries[-1]["kind"] == "move"
+    assert entries[-1]["poi"] == "the stone"
+    assert entries[-1]["phase"] == "dusk"

@@ -1,9 +1,10 @@
 # web/fonts/
 
 Self-hosted reading fonts for the Reading & sound preferences
-panel. Tracked-empty directory: the woff2 binaries ship under
-this path but are NOT included in git because they're
-third-party downloads. Add them with the script below.
+panel. The four woff2 files below are tracked in git (SIL OFL 1.1
+permits redistribution with the license notice; see each family's
+license link) so a fresh clone and the `ratatoskr weave` packaged
+file both work offline from the first byte.
 
 ## Atkinson Hyperlegible Next
 
@@ -12,6 +13,8 @@ third-party downloads. Add them with the script below.
   commercial use)
 - Web files needed: `AtkinsonHyperlegibleNext-Regular.woff2`,
   `AtkinsonHyperlegibleNext-Bold.woff2`
+- Vendored from: Fontsource (`@fontsource/atkinson-hyperlegible-next`,
+  latin subset, 400/700 normal) via cdn.jsdelivr.net, 2026-09-01.
 
 ## OpenDyslexic
 
@@ -19,13 +22,15 @@ third-party downloads. Add them with the script below.
 - License: SIL Open Font License 1.1
 - Web files needed: `OpenDyslexic-Regular.woff2`,
   `OpenDyslexic-Bold.woff2`
+- Vendored from: Fontsource (`@fontsource/opendyslexic`, latin
+  subset, 400/700 normal) via cdn.jsdelivr.net, 2026-09-01.
 
 ## Install
 
-Download the latest woff2 files for both families and drop them
-in this directory. The exact filenames above are what
-`web/index.html`'s `@font-face` rules reference, so as long as
-those four files land here the panel works.
+The exact filenames above are what `web/index.html`'s
+`@font-face` rules reference; they are tracked, so nothing to do.
+To refresh a family, re-download the woff2 at the same filenames
+and keep the OFL license note with it.
 
 If the files are missing, the CSS `@font-face` rules 404
 silently and the panel falls back to the engine's system serif

@@ -26,6 +26,16 @@ server. Two options:
 
 If both are set, `VEFR_LLAMACPP_URL` wins.
 
+Tip: keep your endpoint config in one place. Copy `example.env`
+to `.env` (gitignored), fill in your host, and source it before
+any entry point - the engine reads plain process env vars:
+
+```sh
+cp example.env .env
+# edit .env - point VEFR_LLAMACPP_URL at your llama.cpp host
+set -a; source .env; set +a
+```
+
 Podman/Docker is optional. It's how you'd run this always-on on a
 server; for trying it out, plain `uv run` is faster.
 
