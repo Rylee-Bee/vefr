@@ -495,9 +495,23 @@
       Live on bazzite after deploy (`526e06c`): served index.html
       carries the new ids, served board.css carries the grabbing
       cursor. Discovered and fixed along the way: the dev-box
-      `bazzite` SSH alias is now correct (user `rylee` @
+      `bazzite`       SSH alias is now correct (user `rylee` @
       `192.168.2.76`), so `VEFR_DEPLOY_HOST=bazzite` is the right
       value - a bare IP literal drops the user and rsync fails.
+
+- [x] **reading row: Urd/Verdandi/Skuld live readbacks** (2026-09-01,
+      PR #33, `a579d90`). The Skuld empty-state honesty check the
+      matrix called for: the sample text was already engine-neutral
+      (passes - no sample-world voice, the em-dash rule holds), but
+      its meta line was dead placeholders - `phase: - speaker: -` for
+      data the panel never had. Urd now carries a saved-state readout
+      and Skuld a live `reading now:` readback, both fed by the same
+      VEFR_PREFS values on every change, aria-live, layout pinned by
+      min-height. The fake phase/speaker line is gone. Sound
+      controls deliberately absent - no sound engine exists; sliders
+      for silence would be dishonest UI. Harness checks cover change
+      + reset on both readouts. Live on bazzite after deploy
+      (`a579d90`).
 
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
