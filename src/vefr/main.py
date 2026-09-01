@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import json
 from pathlib import Path
 
-from . import combat, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
+from . import combat, enhance, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -17,9 +17,18 @@ from .world import load_world, current_act
 
 PURPOSE = "it gives the hellos that never happened"
 
-app = FastAPI(title=load_world()["title"], version="2.0.0", description=PURPOSE.capitalize())
+
+def _app_title() -> str:
+    try:
+        return load_world()["title"]
+    except Exception:
+        return "vefr"
+
+
+app = FastAPI(title=_app_title(), version="2.0.0", description=PURPOSE.capitalize())
 WEB = app_home() / "web"
-app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
+if WEB.is_dir():
+    app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
 
 class RumorRequest(BaseModel):
@@ -639,6 +648,49 @@ def builder_resolved():
     return inspect_mod.resolved_world()
 
 
+@app.get("/api/builder/aspects")
+def builder_aspects(phase: str | None = None):
+    """Active world aspects for the Dev Overlay & Aspect Inspector.
+
+    Returns loaded pack aspects, active act metadata, active regions,
+    speaker seed matrices, current rune cast, and recent trace events.
+    """
+    return inspect_mod.pack_aspects(phase=phase)
+
+
+@app.post("/api/builder/enhance/map")
+def builder_enhance_map(req: enhance.MapEnhanceRequest):
+    """Contextual AI Enhance for POI and map descriptions.
+
+    Enriches sensory descriptions and interactive details for a
+    point of interest or room using loaded pack canon and active tone.
+    """
+    with trace.span("/api/builder/enhance/map", region=req.region, poi=req.poi_name):
+        return enhance.enhance_map(req)
+
+
+@app.post("/api/builder/enhance/voice")
+def builder_enhance_voice(req: enhance.VoiceEnhanceRequest):
+    """Contextual AI Enhance for NPC voices and speech rules.
+
+    Drafts cadence rules, seed dialogue, and strike prompts for
+    world characters in the requested tone.
+    """
+    with trace.span("/api/builder/enhance/voice", speaker=req.speaker_name):
+        return enhance.enhance_voice(req)
+
+
+@app.post("/api/builder/enhance/item")
+def builder_enhance_item(req: enhance.ItemEnhanceRequest):
+    """Contextual AI Enhance for item flavor, enchants, and curses.
+
+    Crafts quiet enchantments and subtle, non-gory curses anchored
+    in the world's forge texture.
+    """
+    with trace.span("/api/builder/enhance/item", kind=req.kind, bond=req.bond):
+        return enhance.enhance_item(req)
+
+
 @app.post("/api/handoff")
 def handoff_create():
     """Write a markdown bundle to data/handoffs/. Returns the path
@@ -743,4 +795,7 @@ def export_tab(name: str, session: str = ""):
 
 @app.get("/")
 def index():
-    return FileResponse(WEB / "index.html")
+    idx = WEB / "index.html"
+    if idx.is_file():
+        return FileResponse(idx)
+    return PlainTextResponse("vefr engine running (web UI unbundled)", status_code=200)

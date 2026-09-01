@@ -52,8 +52,8 @@
   "subagent_depth": 1,
   "compaction": {
     "auto": true,
-    "prune": false,
-    "threshold_percent": 85,
+    "prune": true,
+    "threshold_percent": 75,
   },
   "experimental": {
     "batch_tool": true,
