@@ -517,7 +517,14 @@ def cmd_build_web(args) -> int:
     voices = {}
     if (pack / 'voices').exists():
         for sf in (pack / 'voices').glob('*.md'):
+            if sf.name.endswith('.fragments.md'):
+                continue
             voices[sf.stem] = sf.read_text(encoding='utf-8')
+    # The offline whisper banks: per-speaker fragments the composer
+    # re-splices when a package has no pool and no model. The same
+    # convention walk as voice discovery (pack root + act regions).
+    from .world import fragments_for_pack
+    fragments = fragments_for_pack(pack)
 
     # The template ships with the repo in a checkout, but in the
     # container the package is pip-installed into site-packages while
@@ -540,6 +547,7 @@ def cmd_build_web(args) -> int:
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
+    out_html = out_html.replace('{{fragments_json}}', _json.dumps(fragments, ensure_ascii=False))
 
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Zero by

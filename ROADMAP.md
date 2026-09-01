@@ -604,6 +604,27 @@
       known-drift note reads none. Gate: 221 passed, 2 skipped
       (`uv run --group test pytest -q`), ruff clean.
 
+- [x] **the no-pool world speaks** (2026-09-01, this session): the
+      offline/no-server fallback's remaining half. Convention:
+      `voices/<name>.fragments.md` beside a voice file carries that
+      speaker's speakable lines - bullet lines speak, every other
+      line is an author note. The loader strips the `.fragments`
+      suffix, never registers a fragments file as a voice (the stem
+      trap is test-pinned), and merges banks across act regions in
+      file order - a region's bank travels with its own speakers.
+      The packaged composer's ladder is now: live model -> woven
+      pool -> the pool's own cloth -> the pack's own fragments ->
+      honest silence, with the status line naming the rung (`from
+      the pack's own fragments.` / `from their own fragments.`). An
+      npc line only ever splices its own speaker's bank; fewer than
+      two lines stays silent. sample-world ships the canary
+      (`voices/keeper.fragments.md`), the package inlines the banks
+      (`window.VEFR_FRAGMENTS`), and the pack-contract docstring
+      documents the convention. `norns chat` v2 can later interview
+      banks out of the author the way it drafts voice files. Gate:
+      225 passed, 2 skipped (`uv run --group test pytest -q`), ruff
+      clean.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
@@ -634,15 +655,6 @@
       engine discovers it. Future flavors: homeric, east-asian-
       folklore, jewish-diaspora, contemporary-urban. Each one is
       a literary mood-board for fiction, licensed CC BY-SA 4.0.
-- [ ] **research: offline/no-server generation fallback for shared
-      packaged games**. Purpose-built small generators for a world
-      with no precomputed pool. The pool covers the common case
-      (author has a model, friend does not). The spent-pool half
-      landed 2026-09-01 (the composer re-weaves the pool's cloth -
-      see the landed entry); what remains is the no-pool world,
-      which needs pack-supplied whisper fragments - an optional
-      pack-contract convention, so it stays a proposal.
-
 - [ ] **the marketplace**: a community place to share, search, and
       rate engine add-ons - world packs, lore packs, sprites, map
       recipes, and model settings ("local LLM packs": someone's
