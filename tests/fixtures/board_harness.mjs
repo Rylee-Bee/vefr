@@ -48,7 +48,11 @@ function makeEl(id) {
     className: '',
     draggable: false,
     hidden: false,
+    tabIndex: 0,
     textContent: '',
+    focus() { this.focused = true; },
+    setAttribute(k, v) { this.attrs = this.attrs || {}; this.attrs[k] = String(v); },
+    getAttribute(k) { return this.attrs ? (this.attrs[k] ?? null) : null; },
     appendChild(child) { this.children.push(child); return child; },
     addEventListener(type, fn) {
       (this.listeners[type] = this.listeners[type] || []).push(fn);
@@ -222,6 +226,15 @@ function assert(cond, msg) {
   assert(doc['rail-request'].textContent.includes('/api/rumor'),
     'request panel names the endpoint');
   assert(doc['rail-name'].textContent.length > 0, 'rail shows the card name');
+  assert(doc['board-rail'].focused === true, 'focus moves into the opened rail');
+  assert(card.getAttribute('aria-pressed') === 'true', 'selected card is pressed');
+  /* keyboard path: Enter selects, same as click */
+  const card2 = doc['board-whispers'].children[1];
+  assert(card2.getAttribute('role') === 'button' && card2.tabIndex === 0,
+    'cards are keyboard-reachable buttons');
+  card2.fire('keydown', { key: 'Enter', preventDefault() {} });
+  assert(B.state.selected.id === card2.dataset.id,
+    'keyboard select moved selection to the second card');
 }
 
 /* ---- 8. try it: honest offline, live online ------------------------- */
