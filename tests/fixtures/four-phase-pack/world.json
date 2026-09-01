@@ -10,8 +10,8 @@
   },
   "surface": "plain",
   "voices": {
-    "mother": {
-      "file": "voices/mother.md",
+    "keeper": {
+      "file": "voices/keeper.md",
       "strike": "write a letter"
     }
   },

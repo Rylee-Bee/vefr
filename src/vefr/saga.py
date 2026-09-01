@@ -3,7 +3,7 @@
 Named for Saga, the goddess who keeps stories, drinking with
 Odin at Sokkvabekk where the cool waters speak. Within her:
 
-  - Bragi composes: system_prompt, sealed_voice, mother_voice -
+  - Bragi composes: system_prompt, sealed_voice -
     the prompt-builders that shape what the engine says.
   - Idunn keeps: the ledger of collected whispers - the apples
     that renew the voice, compounding every time the raven
@@ -31,11 +31,6 @@ def sealed_voice(key: str) -> str:
     rules = resolve_voice_file(voice["file"]).read_text(encoding="utf-8")
     logbok = _logbok()
     return rules + "\n\n" + logbok
-
-
-def mother_voice() -> str:
-    """Back-compat alias: the mother is the pack's sealed voice."""
-    return sealed_voice("mother")
 
 
 def system_prompt(phase: str) -> str:

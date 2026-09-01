@@ -1409,7 +1409,7 @@
     var ph = STATE.get().phase || (w.phases && w.phases[0]) || '';
     var phaseIdx = (w.phases || []).indexOf(ph);
     // Encounter appears in non-whispers phases. Whispers is the
-    // 'before' phase - the world hasn't noticed her yet.
+    // initial phase - the world is still quiet.
     if (phaseIdx <= 0) {
       el.hidden = true;
       el.textContent = '';
