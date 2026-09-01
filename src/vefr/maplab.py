@@ -369,14 +369,31 @@ def build_map(segments: list) -> list[str]:
 
 
 def cmd_validate(args) -> int:
-    pack = Path(args.pack)
+    from .cli import pack_root
+    pack_arg = Path(args.pack)
+    if pack_arg.is_absolute():
+        pack = pack_arg
+    else:
+        # Accept a bare name ("sample-world"), a worlds-relative path
+        # ("worlds/foo"), or an absolute path. Matches the resolution
+        # the other verbs (handbok, doctor, export) use.
+        if (pack_arg / 'world.json').exists():
+            pack = pack_arg
+        elif (pack_root() / 'worlds' / pack_arg / 'world.json').exists():
+            pack = pack_root() / 'worlds' / pack_arg
+        else:
+            print(
+                f'pack not found: {pack_arg} '
+                f'(looked at {pack_arg} and {pack_root() / "worlds" / pack_arg})'
+            )
+            return 1
     w = load_pack(pack)
     errors = validate(w, pack_dir=pack)
     if errors:
         for e in errors:
             print(f'FAIL: {e}')
         return 1
-    print(f'ok: {args.pack} - geometry, reachability, voices all pass')
+    print(f'ok: {pack} - geometry, reachability, voices all pass')
     return 0
 
 
