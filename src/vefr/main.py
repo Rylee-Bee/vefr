@@ -9,7 +9,7 @@ from pathlib import Path
 from . import combat, enhance, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
-from .forge import forge_item, keep_item, list_vault
+from .forge import ItemCard, forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
 from .paths import app_home
@@ -69,15 +69,15 @@ def forge_roll():
 
 
 @app.post("/api/vault")
-def vault_keep(item: dict, session: str = ""):
-    from .forge import ItemCard
-
-    card = ItemCard.model_validate(item)
-    result = keep_item(card, sid=session)
+def vault_keep(item: ItemCard, session: str = ""):
+    """A typed body, not a bare dict: a shape error is a 422 naming
+    the missing field. The route used to model_validate a bare dict
+    and answered a caller's typo with a bare 500."""
+    result = keep_item(item, sid=session)
     # Only a kept item is journalled - a forge roll nobody took is a
     # thing that never happened.
     journal.log(
-        "item_forged", sid=session, name=card.name, bond=card.bond, lore=card.lore
+        "item_forged", sid=session, name=item.name, bond=item.bond, lore=item.lore
     )
     return result
 
@@ -139,9 +139,16 @@ def stefna(session: str = ""):
 
 @app.post("/api/npc")
 def npc(req: NpcRequest, session: str = ""):
-    with trace.span("/api/npc", phase=req.phase, session=session or "default") as sp:
-        spoken = generate_line(req.phase, req.speaker)
-        sp.set(speaker=spoken.speaker)
+    """An unknown speaker (or a voice-less pack) is a 404 in plain
+    English - the engine's own words, not a RuntimeError 500."""
+    from fastapi import HTTPException
+
+    try:
+        with trace.span("/api/npc", phase=req.phase, session=session or "default") as sp:
+            spoken = generate_line(req.phase, req.speaker)
+            sp.set(speaker=spoken.speaker)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     journal.log(
         "npc_line", sid=session, phase=req.phase, speaker=spoken.speaker, line=spoken.line
     )
