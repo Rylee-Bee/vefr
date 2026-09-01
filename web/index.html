@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vefr</title>
+<link rel="stylesheet" href="/static/board.css">
 <style>
   :root {
     --bg: #131311;
@@ -938,8 +939,7 @@
   <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
 </header>
 <main>
-<div class="board-container"><div class="board-file-tree"><div>⌄ worlds/</div><div>⌄ src/vefr/</div><div>⌄ web/</div></div><div class="board-columns"><div id="board-whispers" class="board-column"><h3>Whispers</h3></div><div id="board-voices" class="board-column"><h3>Voices</h3></div><div id="board-forge" class="board-column"><h3>Forge</h3></div><div id="board-bell" class="board-column"><h3>Bell</h3></div></div><div id="board-right-rail" class="board-right-rail"><div class="rail-section" id="rail-name"></div><div class="rail-section" id="rail-timestamp"></div><div class="rail-section">REQUEST</div><div class="rail-section">RESPONSE</div><div class="rail-section">TEMPLATES</div><div class="rail-section"><button>TRY IT</button></div><div class="rail-section"><textarea>DRAFT</textarea></div></div><script src="board.js"></script>
-<div class="zones" role="toolbar" aria-label="Site areas">
+  <div class="zones" role="toolbar" aria-label="Site areas">
     <button type="button" class="zone-btn" data-zone="play" aria-pressed="true">Play</button>
     <button type="button" class="zone-btn" data-zone="world" aria-pressed="false">World</button>
     <button type="button" class="zone-btn" data-zone="dev" aria-pressed="false">Dev</button>
@@ -956,6 +956,7 @@
     <button type="button" role="tab" data-view="wiki" id="tab-wiki" aria-selected="false" aria-controls="view-wiki">Lore <span class="sub">Fr&aelig;&eth;i</span></button>
   </nav>
   <nav class="tabs zone-nav" data-zone-nav="dev" role="tablist" aria-label="Dev" hidden>
+    <button type="button" role="tab" data-view="board" id="tab-board" aria-selected="false" aria-controls="view-board">Board <span class="sub">Bor&eth;</span></button>
     <button type="button" role="tab" data-view="trace" id="tab-trace" aria-selected="false" aria-controls="view-trace">Trace <span class="sub">Spor</span></button>
     <button type="button" role="tab" data-view="weave" id="tab-weave" aria-selected="false" aria-controls="view-weave">Weave <span class="sub">Veft</span></button>
     <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder <span class="sub">Old Name</span></button>
@@ -1114,6 +1115,77 @@
     </div>
   </section>
 
+  <section id="view-board" class="view" role="tabpanel" aria-labelledby="tab-board" hidden>
+    <p class="note">the dev board &mdash; the pack's generators as cards. Cards are drawn from the loaded pack; a column the pack cannot fill is seeded. Drag a card to another column to re-home it; moves persist on this device.</p>
+    <div class="board-container">
+      <nav class="board-file-tree" aria-label="Pack files">
+        <ul>
+          <li class="board-tree-open">worlds/</li>
+          <li>
+            <ul>
+              <li>sample-world/</li>
+              <li>lore/</li>
+            </ul>
+          </li>
+          <li class="board-tree-open">src/vefr/</li>
+          <li>
+            <ul>
+              <li>world.py</li>
+              <li>main.py</li>
+              <li>chat.py</li>
+            </ul>
+          </li>
+          <li class="board-tree-open">web/</li>
+          <li>
+            <ul>
+              <li>index.html</li>
+              <li>board.js</li>
+              <li>state.js</li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+      <div class="board-columns">
+        <div class="board-column">
+          <h3>Whispers <span class="sub">Sagnir</span></h3>
+          <div class="board-cards" id="board-whispers"></div>
+        </div>
+        <div class="board-column">
+          <h3>Voices <span class="sub">R&ouml;dd</span></h3>
+          <div class="board-cards" id="board-voices"></div>
+        </div>
+        <div class="board-column">
+          <h3>Forge <span class="sub">Sm&iacute;&eth;</span></h3>
+          <div class="board-cards" id="board-forge"></div>
+        </div>
+        <div class="board-column">
+          <h3>Bell <span class="sub">Stefna</span></h3>
+          <div class="board-cards" id="board-bell"></div>
+        </div>
+      </div>
+      <aside id="board-rail" class="board-rail" aria-label="Card detail" hidden>
+        <h3 id="rail-name"></h3>
+        <p class="note" id="rail-meta">&nbsp;</p>
+        <details open>
+          <summary>request</summary>
+          <pre id="rail-request"></pre>
+        </details>
+        <details open>
+          <summary>response</summary>
+          <pre id="rail-response"></pre>
+        </details>
+        <details>
+          <summary>templates</summary>
+          <pre id="rail-templates"></pre>
+        </details>
+        <button type="button" id="rail-try">Try it</button>
+        <pre id="rail-try-out"></pre>
+        <textarea id="rail-draft" rows="3" disabled
+                  placeholder="draft to the smith - wires in a later landing"></textarea>
+      </aside>
+    </div>
+  </section>
+
   <section id="rune-card" class="rune-card" aria-live="polite">
     <div class="rune-card-head">
       <span class="rune-card-label">today's cast</span>
@@ -1149,6 +1221,7 @@
 <script src="/static/state.js"></script>
 <script src="/static/prefs.js"></script>
 <script src="/static/town.js"></script>
+<script src="/static/board.js"></script>
 <script>
 (function () {
   var STATE = window.OLD-STATE-GLOBAL;
@@ -1163,6 +1236,7 @@
     trace: document.getElementById('view-trace'),
     weave: document.getElementById('view-weave'),
     builder: document.getElementById('view-builder'),
+    board: document.getElementById('view-board'),
   };
   tabs.forEach(function (b) {
     b.addEventListener('click', function () {
@@ -1175,6 +1249,7 @@
       if (b.dataset.view === 'trace') window.dispatchEvent(new Event('old-name:trace'));
       if (b.dataset.view === 'weave') window.dispatchEvent(new Event('old-name:weave'));
       if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
+      if (b.dataset.view === 'board') window.dispatchEvent(new Event('old-name:board'));
     });
   });
 

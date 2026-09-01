@@ -120,12 +120,19 @@ function mkBtnWithData(id, dataKey, dataVal) {
   return e;
 }
 const tabsBox = mk('div', '', 'tabs');
-const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'trace', 'weave', 'builder'];
+const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'trace', 'weave', 'builder', 'board'];
 const tabBtns = {};
 for (const v of TABVIEWS) {
   tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
   mk('section', 'view-' + v, 'view');
 }
+/* the dev board's holders - the lazy boot renders into these */
+mk('div', 'board-whispers');
+mk('div', 'board-voices');
+mk('div', 'board-forge');
+mk('div', 'board-bell');
+mk('aside', 'board-rail');
+mk('button', 'rail-try');
 mk('div', 'rumor-phase', 'phase-rail');
 mk('button', 'whisper-btn');
 mk('button', 'new-game-btn');
@@ -387,6 +394,7 @@ const inline = html.split('<script>')[1].split('</script>')[0];
 for (const [label, code] of [
   ['state.js', read('web/state.js')],
   ['town.js', read('web/town.js')],
+  ['board.js', read('web/board.js')],
   ['index.html inline', inline],
 ]) {
   vm.runInContext('"use strict";' + code, ctxVm, { filename: label });
@@ -452,6 +460,14 @@ check('carrying survived a full tab tour', S().carrying && S().carrying.name ===
 check('town rail still pressed correctly', railOf('town-phase').join(',') === 'dusk*,dawn', railOf('town-phase').join(','));
 check('rumors rail still pressed correctly', railOf('rumor-phase').join(',') === 'dusk*,dawn', railOf('rumor-phase').join(','));
 check('vault list still populated', byId.get('vault-list').innerHTML.includes('Ash Hammer'));
+
+/* the dev board boots lazily on its own tab, off the shared world
+   fetch - the page must still have asked /api/world exactly once */
+check('board rendered cards', byId.get('board-whispers').children.length > 0,
+  `whispers cards: ${byId.get('board-whispers').children.length}`);
+check('board added no second world fetch',
+  calls.filter((c) => c.url === '/api/world').length === 1,
+  calls.filter((c) => c.url === '/api/world').length);
 
 /* the journal tab from the previous task must still work */
 check('journal rendered on its tab', byId.get('journal-list').innerHTML.includes('a voice'), byId.get('journal-list').innerHTML);
