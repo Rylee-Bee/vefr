@@ -33,9 +33,14 @@ def _speaker(key: str | None) -> dict:
 
     No key means the pack's first speaker - the engine never
     hardcodes a speaker name; a hardcoded default used to live here
-    and broke any pack that had never heard of it.
+    and broke any pack that had never heard of it. A pack with no
+    speakers at all (sample-world's permanent state) raises a plain
+    RuntimeError instead of dying inside next(iter({})) - the route
+    turns it into a 404 that names the real situation.
     """
     speakers = current_act(load_world())["speakers"]
+    if not speakers:
+        raise RuntimeError("this pack has no speakers")
     if key is None:
         return next(iter(speakers.values()))
     if key not in speakers:

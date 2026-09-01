@@ -53,39 +53,55 @@ What it cannot catch (known limits, stated honestly):
   table instead of hand-writing them) is the follow-up that covers
   those; it is in ROADMAP, not yet built.
 
-## The route inventory (all 14 active routes)
+## The route inventory (regenerated from `app.routes`, 2026-09-01)
+
+41 routes. This table is derived from the server's route table, not
+maintained by hand where it can be derived - the drift below happened
+once already.
 
 | Verb | Path | Description |
 |---|---|---|
-| GET | `/api/world` | Active world pack state (geometry, phases, speakers) |
-| POST | `/api/rumor` | Generate a rumor for current phase |
-| POST | `/api/npc` | Generate a speaker whisper line |
-| GET / POST | `/api/vault` | Read / persist kept items |
-| POST | `/api/forge` | Generate and roll an item |
-| POST | `/api/stefna` | Generate sealed bell letter |
-| GET | `/api/journal` | Read session journal entries |
-| POST | `/api/journal/clear` | Clear session journal |
-| POST | `/api/combat/action` | Execute combat surface action |
-| POST | `/api/journal/rewind` | Rewind journal state |
-| POST | `/api/journal/rewind/undo` | Undo journal rewind |
-| POST | `/api/journal/fork` | Fork journal state |
-| GET | `/api/runes` | Full rune registry |
-| GET | `/api/runes/cast` | Seeded rune cast for current minute |
-| GET | `/api/trace` | Live model call trace events |
-| GET | `/api/weave` | Live loader weave event log |
-| GET | `/api/wiki` | World knowledge summary (characters, relics) |
-| GET / POST | `/api/starred` | Read / star favorite journal lines |
-| GET | `/api/export` | Export full playthrough markdown |
-| GET | `/api/export/tabs` | List available exportable tabs |
-| GET | `/api/export/tabs/{name}` | Export single tab markdown |
-| GET | `/api/builder/worlds` | List discovered world packs |
-| POST | `/api/builder/lore/list` | List available lore packs |
-| POST | `/api/builder/lore` | Generate lore mood text |
-| POST | `/api/builder/chat` | Chat with builder AI |
-| POST | `/api/builder/import` | Import / clone pack into worlds |
-| POST | `/api/builder/validate` | Offline pack validation |
-| POST | `/api/builder/verify` | Live endpoint verification |
-| GET | `/api/builder/resolved` | Resolved raw pack payload |
+| GET | /api/builder/aspects | Aspect inspector: live pack state |
+| POST | /api/builder/chat | Chat with builder AI |
+| POST | /api/builder/enhance/item | Contextual AI enhance: item |
+| POST | /api/builder/enhance/map | Contextual AI enhance: map/POI |
+| POST | /api/builder/enhance/voice | Contextual AI enhance: voice |
+| POST | /api/builder/import | Import / clone pack into worlds |
+| POST | /api/builder/lore | Generate lore mood text |
+| POST | /api/builder/lore/list | List available lore packs |
+| GET | /api/builder/resolved | Resolved raw pack payload |
+| POST | /api/builder/validate | Offline pack validation |
+| POST | /api/builder/verify | Live endpoint verification |
+| GET | /api/builder/worlds | List discovered world packs |
+| POST | /api/combat/action | Execute combat surface action |
+| GET | /api/export | Export full playthrough markdown |
+| GET | /api/export/tabs | List available exportable tabs |
+| GET | /api/export/tabs/{name} | Export single tab markdown |
+| POST | /api/forge | Generate and roll an item |
+| POST | /api/handoff | AI-buddy debugging handoff bundle |
+| GET | /api/health | Health probe (ok + purpose) |
+| GET | /api/journal | Read session journal entries |
+| POST | /api/journal/clear | Clear session journal |
+| POST | /api/journal/fork | Fork journal state |
+| POST | /api/journal/remove/{index} | Remove a journal entry |
+| POST | /api/journal/rewind | Rewind journal state |
+| POST | /api/journal/rewind/undo | Undo journal rewind |
+| POST | /api/journal/star/{index} | Star a journal entry |
+| POST | /api/journal/undo | Undo journal entry removal |
+| POST | /api/npc | Generate a speaker whisper line |
+| POST | /api/rumor | Generate a rumor for current phase |
+| GET | /api/runes | Full rune registry |
+| GET | /api/runes/cast | Seeded rune cast for current minute |
+| GET | /api/starred | Read starred favorite lines (no POST - starring is `/api/journal/star/{index}` or `/api/vault/star/{index}`) |
+| POST | /api/stefna | Generate sealed bell letter |
+| GET | /api/trace | Live model call trace events |
+| GET / POST | /api/vault | Read / persist kept items |
+| POST | /api/vault/remove/{index} | Drop a kept vault item (undoable 60s) |
+| POST | /api/vault/star/{index} | Star a kept vault item |
+| POST | /api/vault/undo | Restore the last removed vault item |
+| GET | /api/weave | Live loader weave event log |
+| GET | /api/wiki | World knowledge summary (characters, relics) |
+| GET | /api/world | Active world pack state (geometry, phases, speakers) |
 
 ## The habit
 
