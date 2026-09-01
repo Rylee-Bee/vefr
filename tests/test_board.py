@@ -71,3 +71,16 @@ def test_board_wired_into_chrome():
     # The board must not leak outside the Dev zone: it lives only in
     # its own hidden view section, not in the always-on markup.
     assert html.count("board-container") == 1, "board container should appear exactly once"
+    # The drag layer: Sortable is vendored and loaded before board.js;
+    # the keyboard re-home row + live status live in the rail markup.
+    assert 'src="/static/vendor/Sortable.min.js"' in html, (
+        "vendored Sortable script tag missing (drag layer)"
+    )
+    assert html.index('src="/static/vendor/Sortable.min.js"') < html.index('src="/static/board.js"'), (
+        "Sortable must load before board.js"
+    )
+    assert 'id="board-status"' in html, "aria-live move status missing"
+    assert 'id="board-move-forge"' in html, "keyboard re-home buttons missing"
+    assert (Path(__file__).resolve().parents[1] / "web" / "vendor" / "Sortable.min.js").exists(), (
+        "vendored Sortable.min.js file missing"
+    )
