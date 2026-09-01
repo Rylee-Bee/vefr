@@ -6,7 +6,6 @@ the whole context for an AI-buddy debugging handoff. They are
 the antidote to 'magic happened' when authoring a pack.
 """
 
-import json
 from pathlib import Path
 
 import pytest
@@ -57,7 +56,6 @@ def test_handoff_writes_a_readable_bundle(tmp_path, monkeypatch):
     in and paste anywhere. Auto-filled sections are present;
     open sections are marked."""
     from vefr import inspect, weave as weave_mod
-    from vefr.paths import app_home
 
     # Re-point the weave log to a tmp file so we can assert on it.
     log_path = tmp_path / "weave.jsonl"
