@@ -81,3 +81,62 @@ def test_doctor_live_ok_when_stack_answers(monkeypatch, tmp_path, capsys):
     out = capsys.readouterr().out
     assert rc == 0
     assert 'live' in out and 'ok' in out
+
+
+def test_doctor_live_falls_back_to_deploy_toml(monkeypatch, tmp_path, capsys):
+    """No VEFR_LIVE_URL? deploy.toml's url is the operator's declared
+    live endpoint - doctor uses it instead of skipping."""
+    args = _patch(monkeypatch, tmp_path)
+    (tmp_path / 'deploy.toml').write_text(
+        'url = "http://toml-host:8820"\n', encoding='utf-8')
+    monkeypatch.setattr(cli, 'fetch',
+                        lambda url, timeout=5: {'ok': True, 'purpose': 'p'})
+    rc = cli.cmd_doctor(args)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert 'http://toml-host:8820' in out
+    assert 'skip' not in out.split('live')[1].split('\n')[0]
+
+
+def test_doctor_live_still_skips_without_toml(monkeypatch, tmp_path, capsys):
+    args = _patch(monkeypatch, tmp_path)
+    rc = cli.cmd_doctor(args)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert 'add url to deploy.toml' in out
+
+
+def test_q3_flags_engine_pack_shadows(monkeypatch, tmp_path):
+    """An engine-shipped pack in the deploy host's rw bind shadows
+    the template: skipa must name it, not wave a green flag at a
+    stale pack (the 2026-09-01 deploy-day find)."""
+    monkeypatch.setattr(cli, 'fetch', lambda url, **k: {'ok': True, 'purpose': 'p'})
+    monkeypatch.setattr(
+        cli.subprocess, 'run',
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout='sample-world\nmy-pack\n'))
+    status, answer = cli.q3_deployment('http://x:8820', 'my-stack')
+    assert status == 'shadowed'
+    assert 'sample-world' in answer
+
+
+def test_q3_shadow_check_stays_quiet_when_clean(monkeypatch):
+    monkeypatch.setattr(cli, 'fetch', lambda url, **k: {'ok': True, 'purpose': 'p'})
+    monkeypatch.setattr(
+        cli.subprocess, 'run',
+        lambda *a, **k: SimpleNamespace(returncode=0, stdout='my-canon\n'))
+    status, answer = cli.q3_deployment('http://x:8820', 'my-stack')
+    assert status == 'healthy'
+    assert 'no pack shadows' in answer
+
+
+def test_q2_reports_reading_fonts(monkeypatch, tmp_path):
+    monkeypatch.setattr(cli, 'git_quiet', lambda *a, **k: '')
+    monkeypatch.setattr(cli, 'repo_root', lambda: tmp_path)
+    fonts = tmp_path / 'web' / 'fonts'
+    fonts.mkdir(parents=True)
+    for n in range(4):
+        (fonts / f'f{n}.woff2').write_bytes(b'wOF2')
+    assert 'fonts ok' in cli.q2_dirty()[1]
+    for f in fonts.glob('*.woff2'):
+        f.unlink()
+    assert 'fonts 0/4' in cli.q2_dirty()[1]
