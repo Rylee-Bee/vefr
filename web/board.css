@@ -124,6 +124,35 @@
 .board-chat button:hover { border-color: var(--primary); }
 .board-chat button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .board-chat button:disabled { opacity: 0.45; cursor: wait; }
+.board-chat-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* The thread: labeled paragraphs, newest at the bottom. Luminance
+   carries the role (author bright, smith dim), hue stays out. */
+.board-chat-log {
+  max-height: 12rem;
+  overflow-y: auto;
+  margin-top: 0.2rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.board-chat-log:empty { display: none; }
+.board-chat-turn {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.board-chat-turn:first-child { margin-top: 0; }
+.board-chat-user { color: var(--foreground); }
+.board-chat-smith { color: var(--muted-foreground); }
+.board-chat-status {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink-dim);
+}
+.board-chat-note { font-size: 0.72rem; color: var(--ink-dim); margin: 0.3rem 0 0; }
 
 .board-card {
   background: var(--bg);
@@ -133,6 +162,7 @@
   cursor: grab;
   overflow-wrap: anywhere;
 }
+.board-card:active { cursor: grabbing; }
 .board-card .when {
   display: block;
   margin-top: 0.25rem;

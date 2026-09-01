@@ -265,6 +265,8 @@ function assert(cond, msg) {
   const ids = doc['board-whispers'].children.map((el) => el.dataset.id);
   doc['board-whispers'].children.reverse();
   B.syncColumns('whispers', 'whispers', ids[0]);
+  assert(doc['board-status'].textContent.includes('reordered in whispers'),
+    'within-column reorder announced, not silent');
   const saved = JSON.parse(s.localStorage.getItem('vefr-board-cards'));
   assert(JSON.stringify(saved.whispers.map((c) => c.id))
     === JSON.stringify(doc['board-whispers'].children.map((el) => el.dataset.id)),
@@ -356,10 +358,17 @@ function assert(cond, msg) {
   draftBox.value = 'make it about the harvest';
   doc['rail-chat-send'].click();
   await tick();
-  assert(doc['rail-chat-log'].textContent.includes('you: make it about the harvest'),
+  /* the thread renders as labeled paragraphs - one per turn */
+  const turnText = () => doc['rail-chat-log'].children.map((p) => p.textContent).join('\n');
+  assert(doc['rail-chat-log'].children.length === 2, 'one paragraph per turn');
+  assert(turnText().includes('you: make it about the harvest'),
     'draft logged as the author turn');
-  assert(doc['rail-chat-log'].textContent.includes('smith: keep it short.'),
+  assert(turnText().includes('smith: keep it short.'),
     'smith reply logged');
+  assert(doc['rail-chat-log'].children[0].className.indexOf('board-chat-user') > -1,
+    'author turn is classed for the luminance roles');
+  assert(doc['rail-chat-log'].children[1].className.indexOf('board-chat-smith') > -1,
+    'smith reply is classed too');
   assert(draftBox.value === '', 'textarea cleared on success');
   assert(B.state.threads[card.dataset.id].length === 2, 'thread holds both turns');
   assert(chatBodies.length === 1, 'exactly one chat call');
@@ -368,6 +377,21 @@ function assert(cond, msg) {
     'composed message carries the card context');
   assert(chatBodies[0].message.includes('make it about the harvest'),
     'composed message carries the draft');
+  assert(chatBodies[0].history.length === 1,
+    'the first call replays the one turn so far');
+
+  /* the 6-turn cap: keep talking; the engine must never see more
+     than the last six turns of the thread */
+  for (let n = 2; n <= 7; n++) {
+    draftBox.value = 'turn ' + n;
+    doc['rail-chat-send'].click();
+    await tick();
+  }
+  assert(chatBodies.length === 7, 'seven turns sent');
+  assert(chatBodies[6].history.length === 6,
+    'the engine sees at most the last 6 turns');
+  assert(chatBodies[6].history.some((t) => t.content.includes('turn 7')),
+    'the newest turn is inside the replayed window');
 
   /* offline: the turn comes back out of the thread, told honestly */
   const sOff = makeSandbox({}, (url) => (url.indexOf('/api/builder/chat') > -1
@@ -381,10 +405,30 @@ function assert(cond, msg) {
   sOff.document.getElementById('rail-draft').value = 'a question for later';
   dOff['rail-chat-send'].click();
   await tick();
-  assert(dOff['rail-chat-log'].textContent.includes('the draft stays yours'),
+  assert(dOff['rail-chat-log'].children.some((p) => p.textContent.includes('the draft stays yours')),
     'offline draft says so plainly');
   assert((BOff.state.threads[dOff['board-whispers'].children[0].dataset.id] || []).length === 0,
     'failed turn leaves the thread empty');
+}
+
+/* ---- 10b. clearing the thread: same store, honest announcement ------- */
+{
+  const s = makeSandbox({}, undefined);
+  const B = run(s);
+  B.init();
+  await tick();
+  s.fetch = (url) => Promise.resolve({ ok: true, json: async () => ({ reply: 'aye.' }) });
+  const doc = s.document._registry;
+  const card = doc['board-whispers'].children[0];
+  card.click();
+  s.document.getElementById('rail-draft').value = 'a first take';
+  doc['rail-chat-send'].click();
+  await tick();
+  assert(doc['rail-chat-log'].children.length === 2, 'precondition: thread rendered');
+  doc['rail-chat-clear'].click();
+  assert((B.state.threads[card.dataset.id] || []).length === 0, 'clear wiped the thread');
+  assert(doc['rail-chat-log'].children.length === 0, 'clear emptied the log');
+  assert(doc['board-status'].textContent.includes('cleared'), 'clear announced');
 }
 
 /* ---- 11. reseed: the seeded board is disposable ---------------------- */
