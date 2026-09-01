@@ -67,7 +67,7 @@ def test_board_wired_into_chrome():
         assert f'id="board-{col}"' in html, f"board-{col} column holder missing"
     assert 'src="/static/board.js"' in html, "board.js script tag missing"
     assert 'href="/static/board.css"' in html, "board.css stylesheet link missing"
-    assert "old-name:board" in html, "tabs must dispatch old-name:board for lazy boot"
+    assert "vefr:board" in html, "tabs must dispatch vefr:board for lazy boot"
     # The board must not leak outside the Dev zone: it lives only in
     # its own hidden view section, not in the always-on markup. The
     # container CLASS is shared vocabulary now (the wiki pane wears

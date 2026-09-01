@@ -403,7 +403,7 @@ for (const [label, code] of [
 
 /* ---------- drive the flows ---------- */
 const tick = () => new Promise((r) => setTimeout(r, 5));
-const S = () => sandbox.window.OLD-STATE-GLOBAL.get();
+const S = () => sandbox.window.VEFR_STATE.get();
 const railOf = (id) => byId.get(id).children.map((b) => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : ''));
 const fail = [];
 const check = (name, cond, extra = '') => {
@@ -516,7 +516,7 @@ check('npc asked with the shared phase', npcCall && npcCall.body.phase === 'dusk
 check('npc line rendered', byId.get('npc-line').textContent === 'aye', byId.get('npc-line').textContent);
 
 /* setPhase must refuse a tone the pack does not have */
-sandbox.window.OLD-STATE-GLOBAL.setPhase('whispers');
+sandbox.window.VEFR_STATE.setPhase('whispers');
 check('unknown phase refused', S().phase === 'dusk', S().phase);
 
 /* dpad still moves */
