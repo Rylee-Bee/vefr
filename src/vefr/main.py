@@ -316,6 +316,43 @@ class ForkRequest(BaseModel):
     at: int  # keep entries[:at]
 
 
+class MoveRequest(BaseModel):
+    """One arrival the town renderer witnessed.
+
+    `poi` is where the hero stands (a place name from the pack, or
+    the world title when between places); `x`/`y` are tile
+    coordinates; `phase` is the world's phase at the moment of
+    arrival. The client only posts on change of place, never per
+    tile - a walk logs visits, not footsteps.
+    """
+
+    poi: str
+    x: int
+    y: int
+    phase: str | None = None
+
+
+@app.post("/api/journal/move")
+def journal_move(req: MoveRequest, session: str = ""):
+    """Journal one arrival - where the hero actually stood.
+
+    The town renderer posts this when the place under the hero
+    changes, so the export's "The Fen Walked" section can witness
+    the journey the way it witnesses whispers and lines. Pure
+    bookkeeping: no model call, no validation against the map -
+    the client is the only thing that knows where the hero is.
+    """
+    entry = journal.log(
+        "move",
+        sid=session,
+        poi=req.poi,
+        x=req.x,
+        y=req.y,
+        phase=req.phase,
+    )
+    return {"logged": True, "entry": entry}
+
+
 @app.post("/api/journal/rewind")
 def journal_rewind(req: RewindRequest, session: str = ""):
     """Cut the journal back to entries[:at]; the tail is undoable 60s.

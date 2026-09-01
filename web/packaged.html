@@ -311,6 +311,20 @@ function recordVerb(verb) {
   renderCombatLog(log);
 }
 
+// Arrivals journal - the packaged twin of /api/journal/move: one
+// entry per change of named place under the hero, localStorage
+// only, same no-failure contract as the verbs above.
+const MOVES_KEY = 'vefr-packaged-moves';
+var lastPlace = null;
+function journalVisit(poi, x, y) {
+  if (poi === lastPlace) return;
+  lastPlace = poi;
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem(MOVES_KEY) || '[]'); } catch (e) {}
+  log.push({ kind: 'move', poi: poi, x: x, y: y, phase: STATE.get().phase, at: new Date().toISOString() });
+  try { localStorage.setItem(MOVES_KEY, JSON.stringify(log)); } catch (e) {}
+}
+
 function renderCombatLog(log) {
   var el = document.getElementById('combat-log');
   if (!el) return;
@@ -395,17 +409,21 @@ function bindWhisper() {
       status.textContent = 'whispered.';
     } catch (err) {
       // No live endpoint (or it failed): draw from the woven pool -
-      // real model output, pre-generated at weave time.
-      var pooled = poolDraw('rumor:' + (STATE.get().phase || ''));
-      if (pooled) {
+      // real model output, pre-generated at weave time. Pool spent?
+      // The composer re-weaves the pool's own cloth; with no cloth
+      // at all, the honest silence stays.
+      var phaseKey = 'rumor:' + (STATE.get().phase || '');
+      var pooled = poolDraw(phaseKey);
+      var card = pooled || composeWhisper(phaseKey);
+      if (card) {
         var pempty = feed.querySelector('.empty'); if (pempty) pempty.remove();
         var pdiv = document.createElement('div');
         pdiv.className = 'card';
-        pdiv.innerHTML = '<div class="speaker">' + esc(pooled.speaker) + '</div>'
-          + '<p class="whisper">&ldquo;' + esc(pooled.whisper) + '&rdquo;</p>'
-          + (pooled.is_true ? '' : '<p class="status">a lie, or close enough</p>');
+        pdiv.innerHTML = '<div class="speaker">' + esc(card.speaker) + '</div>'
+          + '<p class="whisper">&ldquo;' + esc(card.whisper) + '&rdquo;</p>'
+          + (card.is_true ? '' : '<p class="status">a lie, or close enough</p>');
         feed.insertBefore(pdiv, feed.firstChild);
-        status.textContent = 'from the woven pool.';
+        status.textContent = pooled ? 'from the woven pool.' : "woven anew from the pool's cloth.";
       } else {
         status.textContent = 'nothing came back (' + (err.message || 'failed') + ').';
       }
@@ -449,6 +467,85 @@ function poolDraw(key) {
     return entries[idx];
   }
   return null;
+}
+
+// ---- the local composer ----
+// When the pool is spent, the world need not fall silent mid-play:
+// a small seeded generator re-weaves the pool's own cloth. Every
+// word is real model output in the pack's voice, cut into sentences
+// and re-sewn under a seed drawn from this save - the same few
+// threads, new cloth each play. Nothing is invented here: whispers
+// may cross combos (a rumor travels), but an npc line only ever
+// splices that speaker's own words, and when there is no pool at
+// all the world stays honestly silent.
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function saveSeed() {
+  try {
+    let s = localStorage.getItem('vefr-save-seed');
+    if (!s) {
+      s = String(Math.floor(Math.random() * 0x7fffffff));
+      localStorage.setItem('vefr-save-seed', s);
+    }
+    return parseInt(s, 10) || 1;
+  } catch (e) { return 1; }
+}
+
+function nextDraw() {
+  try {
+    const n = (parseInt(localStorage.getItem('vefr-localgen-draws') || '0', 10) || 0) + 1;
+    localStorage.setItem('vefr-localgen-draws', String(n));
+    return n;
+  } catch (e) { return 1; }
+}
+
+function spliceCloth(aText, bText, rng) {
+  const sa = String(aText).match(/[^.!?]+[.!?]*/g) || [String(aText)];
+  const sb = String(bText).match(/[^.!?]+[.!?]*/g) || [String(bText)];
+  const head = sa[0].trim();
+  const tail = (sb.length > 1 ? sb.slice(1).join(' ') : sb[0]).trim();
+  if (head === tail || !head || !tail) return head || null;
+  return head + ' ' + tail;
+}
+
+function _compose(key, crossKind, seedOverride) {
+  const pool = window.VEFR_POOL || {};
+  let entries = (pool[key] || []).slice();
+  if (crossKind && entries.length < 2) {
+    const kind = key.split(':')[0];
+    for (const k in pool) {
+      if (k !== key && k.split(':')[0] === kind) entries = entries.concat(pool[k]);
+    }
+  }
+  if (entries.length < 2) return null;
+  const rng = mulberry32(seedOverride || (saveSeed() + nextDraw()));
+  const textOf = (e) => (e.whisper !== undefined ? e.whisper : e.line);
+  let a = entries[Math.floor(rng() * entries.length)];
+  let b = entries[Math.floor(rng() * entries.length)];
+  for (let tries = 0; tries < 4 && String(textOf(a)) === String(textOf(b)); tries++) {
+    b = entries[Math.floor(rng() * entries.length)];
+  }
+  const woven = spliceCloth(textOf(a), textOf(b), rng);
+  if (!woven) return null;
+  const card = {};
+  for (const f in a) card[f] = a[f];
+  if (a.whisper !== undefined) card.whisper = woven; else card.line = woven;
+  return card;
+}
+
+function composeWhisper(key, seedOverride) {
+  return _compose(key, true, seedOverride);
+}
+
+function composeLine(key, seedOverride) {
+  return _compose(key, false, seedOverride);
 }
 
 // ---- town ----
@@ -516,6 +613,7 @@ function setupTown() {
       if (k === nx + ',' + ny) { here = pois[k]; break; }
     }
     document.getElementById('poi').textContent = here || '';
+    if (here) journalVisit(here, nx, ny);
   }
 
   function tryNPC() {
@@ -555,11 +653,16 @@ function setupTown() {
       document.getElementById('npc-line').textContent = line.line;
       document.getElementById('npc-box').hidden = false;
     }).catch(function () {
-      var pooled = poolDraw('npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?'));
-      if (pooled) {
-        document.getElementById('npc-name').textContent = pooled.speaker;
-        document.getElementById('npc-line').textContent = pooled.line;
+      var key = 'npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?');
+      var pooled = poolDraw(key);
+      var card = pooled || composeLine(key);
+      if (card) {
+        document.getElementById('npc-name').textContent = card.speaker;
+        document.getElementById('npc-line').textContent = card.line;
         document.getElementById('npc-box').hidden = false;
+        document.getElementById('near').textContent = pooled
+          ? ''
+          : "woven anew from the pool's cloth.";
       } else {
         document.getElementById('near').textContent = 'the voice did not answer.';
       }

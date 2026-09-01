@@ -55,7 +55,7 @@ What it cannot catch (known limits, stated honestly):
 
 ## The route inventory (regenerated from `app.routes`, 2026-09-01)
 
-41 routes. This table is derived from the server's route table, not
+42 routes. This table is derived from the server's route table, not
 maintained by hand where it can be derived - the drift below happened
 once already.
 
@@ -83,6 +83,7 @@ once already.
 | GET | /api/journal | Read session journal entries |
 | POST | /api/journal/clear | Clear session journal |
 | POST | /api/journal/fork | Fork journal state |
+| POST | /api/journal/move | Journal one town arrival (no model call) |
 | POST | /api/journal/remove/{index} | Remove a journal entry |
 | POST | /api/journal/rewind | Rewind journal state |
 | POST | /api/journal/rewind/undo | Undo journal rewind |
