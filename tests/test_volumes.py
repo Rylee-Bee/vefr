@@ -63,7 +63,7 @@ def test_discover_packs_walks_both_mounts(fake_app_home):
     _make_pack(ro, "lore", title="Lore", phases={"a": "."})
     _make_pack(ro, "sample-world", title="Emberfield",
                phases={"dusk": "."})
-    _make_pack(rw, "my-canon", title="Private Canon",
+    _make_pack(rw, "my-canon", title="Hillfort",
                phases={"whispers": "."})
 
     packs = discover_packs()
@@ -177,7 +177,7 @@ def test_volumes_list_returns_visible_packs(fake_app_home, capsys):
     ro = fake_app_home / "worlds-template"
     rw = fake_app_home / "worlds"
     _make_pack(ro, "sample-world", title="Emberfield", phases={"dusk": "."})
-    _make_pack(rw, "my-canon", title="Private Canon",
+    _make_pack(rw, "my-canon", title="Hillfort",
                phases={"whispers": "."})
 
     import argparse

@@ -28,7 +28,7 @@
       (grey). Offer your hand. Kept items persist on bazzite.
 - [x] **v0.4 - the bell**: the bog at night, one ring per visit, the
       mother's chore-note in her voice - headed "For you."
-- [x] **the canon**: the archive, Private Canon, the hero, the bell, the
+- [x] **the canon**: the archive, the hero, the bell, the
       church, the dictionary, the laughing room, the labyrinth, the
       monsters, Bog & Bell style, the Gold Rule
 - [x] **the founding myth**: the Keeper's empty throne, the Weaver's
@@ -37,12 +37,12 @@
       leaves the bookshop; the tower's sightlines became geometry you
       can feel
 - [x] **v2.0 - the bones and the flesh**: engine/world split. All
-      canon moved into worlds/private-canon/ (logbok, ledger, map,
+      canon moved into the author's private story pack (logbok, ledger, map,
       voices, world.json); the engine reads everything through the
       pack loader. The town renderer is world-driven (/api/world).
       MIT on the bones; the flesh stays private. Someday: hand
       someone the bones, they grow their own story.
-- [x] **the hearth**: the old soldier and the housekeeper come to Private Canon -
+- [x] **the hearth**: the old soldier and the housekeeper come to the story -
       the soldier's house in the church's own shadow, one standing
       gold window, a sanctuary threshold the watch never crosses,
       plain speech and corn-bread. The the sea-folk join the canon: the
@@ -75,16 +75,16 @@
       build-map, verify. `maplab.py` is the one geometry validator
       shared by both CLIs and the tests.
 - [x] **the full rename, 2026-08-31**: this repo and package are
-      `vefr` now (were `old-name`, briefly `old-name`, then `norn`) - the
-      umbrella under which `ratatoskr` (formerly `raven`) and `norns`
-      (formerly `old-name`) both live as commands. Env vars
+      `vefr` now (renamed several times before landing here) - the
+      umbrella under which `ratatoskr` and `norns` both live as
+      commands. Env vars
       (`VEFR_HOME`, `VEFR_WORLD`, `VEFR_MODEL`, `VEFR_VAULT`,
       `VEFR_KEEP_ALIVE`), and every hardcoded story reference in the
       engine (the API title, the health check's service name, the
-      shared rumor system prompt, `world_name()`'s private-canon
-      special-case) are gone. "Old Name" is free to mean only the game.
-      The story itself (`worlds/private-canon/`, `STYLE.md`) moved to
-      its own private repo, `the private story repo`, verified
+      shared rumor system prompt, `world_name()`'s private-pack
+      special-case) are gone.
+      The story itself (the author's pack, `STYLE.md` included) moved
+      to its own private repo, verified
       byte-identical before the move; the engine repo's history was
       then rewritten (`git filter-repo`) so no trace of it remains in
       any commit.
@@ -95,8 +95,8 @@
       sample.
 - [x] **license split**: engine MIT (`src/`, `web/`, `tests/`,
       `deploy/`, `Containerfile`, `worlds/sample-world/`);
-      `worlds/private-canon/` is the author's own story and game - all
-      rights reserved, see `worlds/private-canon/LICENSE`.
+      the author's own story pack is all rights reserved, not
+      covered by the engine's MIT - see that pack's own LICENSE.
 - [x] **`norns chat`**: the conversational world-builder. Interviews
       canon, theme colors, phases, bonds, and one speaker's voice
       against the local ollama, starting from `worlds/sample-world/`
@@ -127,7 +127,7 @@
 
 - [x] **shared story state** (2026-08-31): the two phase rails were
       two variables. `web/state.js` is now the one client-side state
-      (`window.OLD-STATE-GLOBAL` - a plain object, a patch function, a list of
+      (a plain object, a patch function, a list of
       subscribers; no framework), and both script scopes - the town
       renderer and the tabs - read and write it. Set the world's tone
       in Rumors and the town's rail, watch radius, water level and
@@ -271,17 +271,17 @@
       instead of `the mill turns / the mill is warm / the
       mill is silent`, the Skuld preview shows em-dashes
       where the pack's phase + speaker would live. Comment
-      drift (`the wanderer` in `state.js` / `town.js`,
-      `Old Name` in `world.py`, `private-canon` in `volumes.py` /
-      `cli.py` / `main.py`) replaced with engine-neutral
-      identifiers; the one load-bearing `private-canon` rename
+      drift (canon names in `state.js` / `town.js` /
+      `world.py` / `volumes.py` / `cli.py` / `main.py`) replaced
+      with engine-neutral identifiers; the one load-bearing
+      private-pack-name rename
       in `norns build-map`'s scaffold helper gets an
       explanatory comment so the history isn't lost. The
       `norns chat` builder's system prompt no longer names
       example NPCs from the author's canon. README's
       "bones and the flesh" section now carries a worked
       example: develop on vefr, write the game in
-      `the private story repo`, ferry fetch to play. The bones
+      the private story repo, ferry fetch to play. The bones
       stay empty until a pack mounts.
 
 - [x] **the dev board** (2026-08-31, this session): the Dev zone's
@@ -407,9 +407,8 @@
       own; plain/investigation surfaces hide the whole costume
       via CSS. Verified live on bazzite (2026-09-01): `/api/world`
       serves `surface: combat` + `hp: {current: 4, max: 4,
-      per_phase: {dusk: 3, dawn: 4}}`. The half still open:
-      `web/packaged.html`, the weave artifact, has none of it
-      (Next keeps that scoped item).
+      per_phase: {dusk: 3, dawn: 4}}`. The packaged half landed
+      the same day (see the packaged-costume entry).
 
 - [x] **audit 2026-09-01** (2026-09-01): 10 PR sequence resolving
       live scaffold NameError, pack contract verification (stefna_voice,

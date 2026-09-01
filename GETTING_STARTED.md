@@ -61,11 +61,11 @@ to talk to whoever's near. Whichever world pack is present under
 (see below), you'll see that; otherwise this is Emberfield, the
 demonstration world.
 
-> **Note (2026-08-31):** the author's own story and game, Old Name, lives
-> in its own private repo (`the private story repo`) - it never ships
-> inside a clone of this engine repo. This repo (now `rylee/vefr`)
-> is the shareable tooling only; it doesn't know or need to know any
-> specific game's name to run it.
+> **Note (2026-08-31):** the author's own story and game live in
+> their own private repo - they never ship inside a clone of this
+> engine repo. This repo (`rylee/vefr`) is the shareable tooling
+> only; it doesn't know or need to know any specific game's name
+> to run it.
 
 ## 3. Check the engine is sound
 

@@ -50,7 +50,7 @@ landed change.
 
 - Don't repoint `git origin` — default
   `http://<lan-host>:3000/rylee/vefr.git`.
-- Don't rename the engine. `vefr` public, `Old Name` private.
+- Don't rename the engine. `vefr` public; the game's name stays private.
 - Don't bake `<lan-host>` into engine source.
 - Don't claim "codebase is solid" without the gate output.
 - Don't let the packaged template name a pack's phase vocabulary

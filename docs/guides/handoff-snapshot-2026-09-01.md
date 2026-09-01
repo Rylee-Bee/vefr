@@ -130,7 +130,7 @@ Same rules as before, plus one new:
 - **Don't repoint `git origin`** at the DuckDNS hostname. Default
   is `http://<lan-host>:3000/rylee/vefr.git` (LAN-direct Gitea).
 - **Don't rename the engine again.** `vefr` is the public name;
-  `Old Name` is the private game that runs on the engine. Both repos
+  The private game runs on the engine. Both repos
   exist; if a real trademark issue surfaces, file an issue and
   pause — don't pick a new name.
 - **Don't bake `<lan-host>` into the engine source.** The wrapper
