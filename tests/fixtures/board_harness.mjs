@@ -228,6 +228,11 @@ function assert(cond, msg) {
   assert(doc['rail-name'].textContent.length > 0, 'rail shows the card name');
   assert(doc['board-rail'].focused === true, 'focus moves into the opened rail');
   assert(card.getAttribute('aria-pressed') === 'true', 'selected card is pressed');
+  /* keyboard re-homing: the rail carries one button per column */
+  assert(doc['board-move-whispers'].disabled === true,
+    'current column re-home button disabled');
+  assert(doc['board-move-forge'].disabled === false,
+    'other column re-home buttons enabled');
   /* keyboard path: Enter selects, same as click */
   const card2 = doc['board-whispers'].children[1];
   assert(card2.getAttribute('role') === 'button' && card2.tabIndex === 0,
@@ -235,6 +240,47 @@ function assert(cond, msg) {
   card2.fire('keydown', { key: 'Enter', preventDefault() {} });
   assert(B.state.selected.id === card2.dataset.id,
     'keyboard select moved selection to the second card');
+  /* rail re-home button moves the card and announces it */
+  const cardId = B.state.selected.id;
+  doc['board-move-forge'].click();
+  assert(B.state.selected.id === cardId, 'selection survives a rail move');
+  assert(doc['board-forge'].children.length === 6, 'rail move landed the card (5 seeded + 1)');
+  assert(doc['board-forge'].children[5].dataset.id === cardId,
+    'the moved card is the one that arrived');
+  assert(doc['board-whispers'].children.length === 4, 'rail move emptied the source');
+  assert(doc['board-status'].textContent.includes('forge'),
+    'move announced via aria-live status');
+  assert(JSON.parse(s.localStorage.getItem('vefr-board-cards')).forge.length === 6,
+    'rail move persisted');
+}
+
+/* ---- 7b. syncColumns: pointer drops keep their dropped position ----- */
+{
+  const s = makeSandbox({}, undefined);
+  const B = run(s);
+  B.init();
+  await tick();
+  const doc = s.document._registry;
+  /* simulate a within-column drag: reverse the whispers order in the DOM */
+  const ids = doc['board-whispers'].children.map((el) => el.dataset.id);
+  doc['board-whispers'].children.reverse();
+  B.syncColumns('whispers', 'whispers', ids[0]);
+  const saved = JSON.parse(s.localStorage.getItem('vefr-board-cards'));
+  assert(JSON.stringify(saved.whispers.map((c) => c.id))
+    === JSON.stringify(doc['board-whispers'].children.map((el) => el.dataset.id)),
+    'store order synced to the dropped DOM order');
+  /* simulate a cross-column drop: move the last whispers card to forge */
+  const moved = doc['board-whispers'].children[4];
+  const movedId = moved.dataset.id;
+  doc['board-forge'].children.push(moved);
+  doc['board-whispers'].children.pop();
+  B.syncColumns('whispers', 'forge', movedId);
+  const saved2 = JSON.parse(s.localStorage.getItem('vefr-board-cards'));
+  const movedCard = saved2.forge.find((c) => c.id === movedId);
+  assert(!!movedCard, 'cross-column drop synced the store');
+  assert(movedCard.edited !== null, 're-homed card stamped as edited');
+  assert(s.document._registry['board-status'].textContent.includes('forge'),
+    'cross-column drop announced');
 }
 
 /* ---- 8. try it: honest offline, live online ------------------------- */

@@ -333,6 +333,26 @@
       renderer stays custom (the rpg-js decision stands - this
       layer dresses the document UI, not the game canvas).
 
+- [x] **the drag layer** (2026-08-31, this session): the board's
+      pointer drag moved to vendored SortableJS 1.15.7 (MIT, 45KB,
+      classic script, provenance in web/vendor/README.md) - native
+      HTML5 DnD has no touch support, so the board was desktop-only
+      before. Drops now keep their dropped position (the store syncs
+      to the DOM order instead of re-rendering), the ghost/chosen
+      states use the token vocabulary, and native DnD remains as the
+      honest fallback when the vendor file is absent (the test
+      sandbox, a packaged file without it). Keyboard users re-home
+      cards without a pointer at all: the rail carries one button
+      per column (current column disabled), every move announces
+      through an aria-live status line. @dnd-kit/dom was evaluated
+      first and rejected on evidence: v0.5.0 ships ESM-only (verified
+      against the jsDelivr entrypoint), which would force an import
+      map or bundler onto a no-build repo. Two real bugs caught by
+      the vm harness on the way in: syncColumns originally resolved
+      cards only from the target column's store array (a card
+      dragged in from another column would have been silently
+      dropped) and the move() rewrite had lost its render() call.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
