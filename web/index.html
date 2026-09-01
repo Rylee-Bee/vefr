@@ -798,6 +798,78 @@
     margin: 0; color: var(--ink-dim); font-size: 0.82rem;
   }
   .prefs-footnote a { color: var(--accent); }
+
+  /* Dev Inspector Overlay Drawer */
+  .dev-drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 95;
+  }
+  .dev-drawer-backdrop[hidden] { display: none; }
+
+  .dev-drawer {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: min(42rem, 100vw);
+    background: var(--background); color: var(--foreground);
+    border-left: 1px solid var(--border);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 105;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .dev-drawer[hidden] { display: none; }
+
+  .dev-drawer-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .dev-drawer-header h2 {
+    margin: 0; font-size: 1.15rem; font-weight: normal; letter-spacing: 0.04em;
+    display: flex; flex-direction: column; line-height: 1.15;
+  }
+  .dev-drawer-content {
+    flex: 1; overflow-y: auto; padding: 1.2rem;
+    display: flex; flex-direction: column; gap: 1.2rem;
+  }
+  .dev-drawer-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+  }
+  .dev-drawer-section h3 {
+    margin: 0 0 0.6rem; font-size: 0.95rem; font-weight: normal;
+    color: var(--primary); letter-spacing: 0.04em;
+  }
+  .dev-drawer-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.5rem; font-size: 0.85rem;
+  }
+  .dev-drawer-field {
+    display: flex; flex-direction: column; gap: 0.15rem;
+  }
+  .dev-drawer-field .k { font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .dev-drawer-field .v { font-size: 0.9rem; color: var(--foreground); }
+  .dev-drawer-pre {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.8rem;
+    font-family: monospace; font-size: 0.8rem;
+    white-space: pre-wrap; word-break: break-word;
+    margin: 0.4rem 0 0; max-height: 12rem; overflow-y: auto;
+  }
+  .dev-drawer-trigger {
+    padding: 0.45rem 0.8rem;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+  }
+  .dev-drawer-trigger kbd {
+    font-size: 0.72rem; padding: 0.1rem 0.35rem;
+    background: var(--background); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--ink-dim);
+  }
 </style>
 </head>
 <body data-surface="plain">
@@ -945,24 +1017,60 @@
     </p>
   </footer>
 </div>
+<div id="dev-drawer-backdrop" class="dev-drawer-backdrop" hidden></div>
+
+<div id="dev-drawer" class="dev-drawer" role="dialog" aria-modal="true"
+     aria-labelledby="dev-drawer-title" aria-describedby="dev-drawer-desc" hidden>
+  <header class="dev-drawer-header">
+    <div>
+      <h2 id="dev-drawer-title">
+        <span>Aspect Inspector</span>
+        <span class="sub" style="font-size:0.75rem;color:var(--ink-dim);letter-spacing:0.06em;">Sjónarhorn</span>
+      </h2>
+      <p id="dev-drawer-desc" style="margin:0.2rem 0 0;font-size:0.82rem;color:var(--ink-dim);">
+        Live world aspects, active act structure, rune cast &amp; engine trace. Shortcut: <code>`</code> or <code>F12</code>.
+      </p>
+    </div>
+    <button type="button" id="dev-drawer-close" class="prefs-close" aria-label="Close aspect inspector">
+      <svg viewBox="0 0 24 24" width="22" height="22" focusable="false" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+  <div class="dev-drawer-content" id="dev-drawer-content" aria-live="polite">
+    <div style="color:var(--ink-dim);font-size:0.9rem;">Loading aspects...</div>
+  </div>
+</div>
+
 <header>
   <div class="title-row">
     <h1 id="app-title">vefr <span class="title-tag">a rumor engine for playable worlds</span></h1>
-    <button type="button" id="prefs-trigger" class="prefs-trigger"
-            aria-haspopup="dialog" aria-controls="prefs-panel" aria-expanded="false"
-            aria-label="Reading and sound preferences">
-      <span class="prefs-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
-          <path d="M4 19V5h12l-1.4 1.4L18 9.8 14.8 13l-1.4-1.4L14 10.4 8.2 16.2 6.8 14.8 12.6 9 11.4 7.8 14.6 4.6 16 6H4v13z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-          <circle cx="17.5" cy="17" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
-          <path d="M19.7 19.2l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="prefs-trigger-text">
-        <span class="prefs-trigger-en">Reading &amp; sound</span>
-        <span class="prefs-trigger-norse">Raddsaga</span>
-      </span>
-    </button>
+    <div style="display:inline-flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+      <button type="button" id="dev-drawer-trigger" class="dev-drawer-trigger"
+              aria-haspopup="dialog" aria-controls="dev-drawer" aria-expanded="false"
+              aria-label="Open development overlay and aspect inspector">
+        <span class="prefs-trigger-text">
+          <span class="prefs-trigger-en">Dev Overlay</span>
+          <span class="prefs-trigger-norse">Sjónarhorn</span>
+        </span>
+        <kbd>`</kbd>
+      </button>
+      <button type="button" id="prefs-trigger" class="prefs-trigger"
+              aria-haspopup="dialog" aria-controls="prefs-panel" aria-expanded="false"
+              aria-label="Reading and sound preferences">
+        <span class="prefs-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" focusable="false">
+            <path d="M4 19V5h12l-1.4 1.4L18 9.8 14.8 13l-1.4-1.4L14 10.4 8.2 16.2 6.8 14.8 12.6 9 11.4 7.8 14.6 4.6 16 6H4v13z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="17.5" cy="17" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M19.7 19.2l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="prefs-trigger-text">
+          <span class="prefs-trigger-en">Reading &amp; sound</span>
+          <span class="prefs-trigger-norse">Raddsaga</span>
+        </span>
+      </button>
+    </div>
   </div>
   <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
   <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
@@ -2605,6 +2713,148 @@
   } else {
     syncSelects();
   }
+})();
+</script>
+
+<script>
+/* The Development Overlay & Aspect Inspector controller.
+ *
+ * Owns the dev drawer toggle, keyboard shortcuts (` and F12),
+ * and fetches /api/builder/aspects to render active pack state,
+ * act structure, speaker matrices, rune cast, and living traces.
+ */
+(function () {
+  'use strict';
+  var trigger = document.getElementById('dev-drawer-trigger');
+  var drawer = document.getElementById('dev-drawer');
+  var backdrop = document.getElementById('dev-drawer-backdrop');
+  var closeBtn = document.getElementById('dev-drawer-close');
+  var content = document.getElementById('dev-drawer-content');
+  if (!trigger || !drawer || !backdrop || !content) return;
+
+  function renderAspects(data) {
+    var p = data.pack || {};
+    var a = data.act || {};
+    var rc = data.rune_cast || {};
+    var sps = data.speakers || {};
+    var rgs = data.regions || {};
+    var traces = data.recent_trace || [];
+
+    var spkRows = Object.keys(sps).map(function (k) {
+      var s = sps[k];
+      var seedKeys = Object.keys(s.seeds || {}).join(', ');
+      return '<div class="dev-drawer-field">' +
+        '<span class="k">' + (s.name || k) + ' (' + (s.near || 'standing') + ')</span>' +
+        '<span class="v">Voice: <code>' + (s.voice_file || '-') + '</code> | Seeds: ' + (seedKeys || 'none') + '</span>' +
+      '</div>';
+    }).join('');
+
+    var regRows = Object.keys(rgs).map(function (k) {
+      var r = rgs[k];
+      return '<div class="dev-drawer-field">' +
+        '<span class="k">' + (r.title || k) + '</span>' +
+        '<span class="v">Map: ' + (r.has_map ? 'Loaded' : 'No') + ' | POIs: ' + (r.pois ? r.pois.join(', ') : 'none') + '</span>' +
+      '</div>';
+    }).join('');
+
+    var runeRows = (rc.positions || []).map(function (pos) {
+      return '<div><strong>' + pos.stave + ' ' + pos.name + '</strong> (' + pos.position + ') &mdash; ' + pos.short + '</div>';
+    }).join('');
+
+    var traceRows = traces.slice(-8).map(function (t) {
+      return '<div style="margin-bottom:0.3rem;"><code>' + t.at.slice(11, 19) + '</code> ' + t.route + ' (' + t.ms + 'ms)' + (t.speaker ? ' [' + t.speaker + ']' : '') + '</div>';
+    }).join('');
+
+    content.innerHTML =
+      '<div class="dev-drawer-section">' +
+        '<h3>Pack &amp; Surface</h3>' +
+        '<div class="dev-drawer-grid">' +
+          '<div class="dev-drawer-field"><span class="k">Pack Name</span><span class="v">' + (p.name || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Title</span><span class="v">' + (p.title || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Surface</span><span class="v">' + (p.surface || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Shape</span><span class="v">' + (p.shape || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Phases</span><span class="v">' + ((p.phases || []).join(', ') || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Gold Rule</span><span class="v">' + (p.gold_rule || 'None') + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dev-drawer-section">' +
+        '<h3>Active Act &amp; Structure</h3>' +
+        '<div class="dev-drawer-grid">' +
+          '<div class="dev-drawer-field"><span class="k">Act ID</span><span class="v">' + (a.id || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Act Title</span><span class="v">' + (a.title || '-') + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Progress</span><span class="v">Act ' + ((a.index || 0) + 1) + ' of ' + (a.total_acts || 1) + '</span></div>' +
+          '<div class="dev-drawer-field"><span class="k">Enemies / Bosses</span><span class="v">' + (a.enemies || []).length + ' / ' + (a.bosses || []).length + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dev-drawer-section">' +
+        '<h3>Regions</h3>' +
+        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (regRows || 'No regions') + '</div>' +
+      '</div>' +
+      '<div class="dev-drawer-section">' +
+        '<h3>Speakers Matrix</h3>' +
+        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (spkRows || 'No speakers') + '</div>' +
+      '</div>' +
+      '<div class="dev-drawer-section">' +
+        '<h3>Living Rune Cast</h3>' +
+        '<div style="font-size:0.88rem;display:flex;flex-direction:column;gap:0.3rem;">' + (runeRows || 'No cast') + '</div>' +
+      '</div>' +
+      '<div class="dev-drawer-section">' +
+        '<h3>Recent Trace Events</h3>' +
+        '<div class="dev-drawer-pre">' + (traceRows || 'No trace events') + '</div>' +
+      '</div>';
+  }
+
+  function loadAspects() {
+    content.innerHTML = '<div style="color:var(--ink-dim);font-size:0.9rem;">Loading aspects...</div>';
+    var statePhase = (window.VEFR_STATE && window.VEFR_STATE.get && window.VEFR_STATE.get().phase) || '';
+    var url = '/api/builder/aspects' + (statePhase ? '?phase=' + encodeURIComponent(statePhase) : '');
+    fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        renderAspects(data);
+      })
+      .catch(function (err) {
+        content.innerHTML = '<div style="color:var(--destructive);font-size:0.9rem;">Failed to load aspects: ' + err.message + '</div>';
+      });
+  }
+
+  function openDrawer() {
+    drawer.hidden = false;
+    backdrop.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    closeBtn && closeBtn.focus();
+    loadAspects();
+  }
+
+  function closeDrawer() {
+    drawer.hidden = true;
+    backdrop.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    trigger.focus();
+  }
+
+  trigger.addEventListener('click', function () {
+    if (drawer.hidden) openDrawer(); else closeDrawer();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !drawer.hidden) {
+      ev.preventDefault();
+      closeDrawer();
+    } else if ((ev.key === '`' || ev.key === 'F12') && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+      var tag = (ev.target && ev.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      ev.preventDefault();
+      if (drawer.hidden) openDrawer(); else closeDrawer();
+    }
+  });
 })();
 </script>
 </body>

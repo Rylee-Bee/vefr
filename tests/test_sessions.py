@@ -115,6 +115,28 @@ def test_api_journal_session_isolation(tmp_path, monkeypatch):
     assert c.get("/api/journal").json()["entries"] == []
 
 
+def test_undo_buffer_helper():
+    """Verify UndoBuffer helper independently."""
+    from vefr.sessions import UndoBuffer
+    buf = UndoBuffer(window_s=60)
+    store = [{"id": "1"}, {"id": "2"}]
+
+    def load_fn(sid):
+        return list(store)
+
+    def save_fn(items, sid):
+        nonlocal store
+        store = list(items)
+
+    removed = buf.remove(0, load_fn=load_fn, save_fn=save_fn, sid="test-sid")
+    assert removed == {"id": "1"}
+    assert store == [{"id": "2"}]
+
+    restored = buf.undo(load_fn=load_fn, save_fn=save_fn, sid="test-sid")
+    assert restored == {"id": "1"}
+    assert store == [{"id": "1"}, {"id": "2"}]
+
+
 def test_is_default_and_env_paths_derive():
     assert is_default(None) and is_default("") and is_default(DEFAULT)
     assert not is_default("abc")

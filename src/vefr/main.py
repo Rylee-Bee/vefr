@@ -17,9 +17,18 @@ from .world import load_world, current_act
 
 PURPOSE = "it gives the hellos that never happened"
 
-app = FastAPI(title=load_world()["title"], version="2.0.0", description=PURPOSE.capitalize())
+
+def _app_title() -> str:
+    try:
+        return load_world()["title"]
+    except Exception:
+        return "vefr"
+
+
+app = FastAPI(title=_app_title(), version="2.0.0", description=PURPOSE.capitalize())
 WEB = app_home() / "web"
-app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
+if WEB.is_dir():
+    app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
 
 class RumorRequest(BaseModel):
@@ -639,6 +648,16 @@ def builder_resolved():
     return inspect_mod.resolved_world()
 
 
+@app.get("/api/builder/aspects")
+def builder_aspects(phase: str | None = None):
+    """Active world aspects for the Dev Overlay & Aspect Inspector.
+
+    Returns loaded pack aspects, active act metadata, active regions,
+    speaker seed matrices, current rune cast, and recent trace events.
+    """
+    return inspect_mod.pack_aspects(phase=phase)
+
+
 @app.post("/api/handoff")
 def handoff_create():
     """Write a markdown bundle to data/handoffs/. Returns the path
@@ -743,4 +762,7 @@ def export_tab(name: str, session: str = ""):
 
 @app.get("/")
 def index():
-    return FileResponse(WEB / "index.html")
+    idx = WEB / "index.html"
+    if idx.is_file():
+        return FileResponse(idx)
+    return PlainTextResponse("vefr engine running (web UI unbundled)", status_code=200)
