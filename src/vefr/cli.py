@@ -43,6 +43,31 @@ DEFAULT_DEPLOY_HOST = os.environ.get(
 DEFAULT_BACKUP_LOCATION = os.environ.get(
     'VEFR_DEFAULT_BACKUP_LOCATION', 'homelab-vm:/mnt/nas/shared/backups')
 DEFAULT_BACKUP_HOST, _, NAS_DIR = DEFAULT_BACKUP_LOCATION.partition(':')
+
+# Engine-shipped pack names: when one of these sits in the deploy
+# host's rw bind (~/vefr-worlds/), it shadows the freshly built
+# template and the running pack goes stale on every engine update
+# (the 2026-09-01 deploy-day find).
+ENGINE_PACKS = ('sample-world', 'lore')
+
+
+def _deploy_toml(root: Path | None = None) -> dict:
+    """deploy.toml - the per-host twin of deploy.toml.example - read
+    with stdlib tomllib. The wrapper consumes it so the file is
+    load-bearing config instead of documentation: host and image
+    resolve from here whenever --flags and env are silent, and
+    norns doctor falls back to its url for the live check. A
+    missing or malformed file is an empty dict - a bad toml must
+    never take the deploy path down."""
+    base = root or repo_root() or Path.cwd()
+    p = base / 'deploy.toml'
+    if not p.exists():
+        return {}
+    try:
+        import tomllib
+        return tomllib.loads(p.read_text(encoding='utf-8'))
+    except Exception:  # noqa: BLE001 - broken config, not a broken deploy
+        return {}
 if not NAS_DIR:  # a location without a path still needs somewhere to land
     DEFAULT_BACKUP_HOST, NAS_DIR = DEFAULT_BACKUP_LOCATION, '/mnt/nas/shared/backups'
 BUNDLE_KEEP = 2
@@ -113,23 +138,48 @@ def q1_sync() -> tuple:
 
 def q2_dirty() -> tuple:
     if not repo_root():
-        return 'unavailable', 'no git checkout'
+        return 'unavailable', 'no git checkout (container install)'
     status = git_quiet('status', '--porcelain')
     dirty = len(status.splitlines()) if status else 0
     stashes = len(git_quiet('stash', 'list').splitlines())
     if dirty or stashes:
         return 'dirty', f'{dirty} uncommitted file(s), {stashes} stash(es)'
-    return 'clean', '0 uncommitted, 0 stashes'
+    # The reading row's fonts are tracked since 2026-09-01; an empty
+    # web/fonts/ means the woff2 binaries never landed - the panel
+    # 404s silently and the packaged file ships without them.
+    fonts_dir = repo_root() / 'web' / 'fonts'
+    have = len(list(fonts_dir.glob('*.woff2'))) if fonts_dir.is_dir() else 0
+    fonts = f'fonts {have}/4' if have < 4 else 'fonts ok'
+    return 'clean', f'0 uncommitted, 0 stashes; {fonts}'
 
 
-def q3_deployment(url: str) -> tuple:
+def q3_deployment(url: str, deploy_host: str | None = None) -> tuple:
     try:
         h = fetch(f'{url.rstrip("/")}/api/health')
-        if h.get('ok') and 'purpose' in h:
-            return 'healthy', 'container up, motto present'
-        return 'degraded', f'unexpected health payload: {h}'
+        if not (h.get('ok') and 'purpose' in h):
+            return 'degraded', f'unexpected health payload: {h}'
     except Exception as e:  # noqa: BLE001
         return 'down', f'{url}: {e}'
+    # The shadow check: an engine-shipped pack in the deploy host's
+    # rw bind hides the freshly built template, so the running pack
+    # goes stale on every engine update. A green deploy that serves
+    # old content is worse than a red one.
+    if not deploy_host:
+        return 'healthy', 'container up, motto present'
+    try:
+        out = subprocess.run(
+            ('ssh', '-o', 'ConnectTimeout=6', deploy_host,
+             'ls ~/vefr-worlds/ 2>/dev/null'),
+            capture_output=True, text=True, timeout=15).stdout.split()
+    except Exception as e:  # noqa: BLE001
+        return 'healthy', f'container up, motto present (shadow check skipped: {e})'
+    shadowed = [p for p in out if p in ENGINE_PACKS]
+    if shadowed:
+        return ('shadowed',
+                f'container up, but engine pack(s) {", ".join(shadowed)} in '
+                f'~/vefr-worlds/ shadow the template - move them aside and '
+                f'restart, or the running pack goes stale')
+    return 'healthy', 'container up, motto present, no pack shadows'
 
 
 def q4_world(url: str, pack: Path) -> tuple:
@@ -200,7 +250,8 @@ def cmd_skipa(args) -> int:
     rows = [
         ('Q1', 'git local + Gitea remote in sync', *q1_sync()),
         ('Q2', 'local files needing push', *q2_dirty()),
-        ('Q3', 'deployment healthy (bazzite)', *q3_deployment(args.url)),
+        ('Q3', 'deployment healthy (bazzite)',
+         *q3_deployment(args.url, args.deploy_host)),
         ('Q4', 'the world validated (pack + live)', *q4_world(args.url, pack)),
         ('Q5', 'backups fresh (NAS bundle)', *q5_backups(args.nas_host)),
         ('Q6', 'vault persisted (volume)', *q6_vault(args.deploy_host)),
@@ -681,24 +732,32 @@ def cmd_deploy(args) -> int:
     if args.init:
         return _deploy_init(root)
 
+    cfg = _deploy_toml(root)
     host = args.deploy_host
-    if host == 'bazzite' and not os.environ.get('VEFR_DEPLOY_HOST'):
+    declared_env = bool(os.environ.get('VEFR_DEPLOY_HOST'))
+    declared_toml = 'host' in cfg
+    if host == DEFAULT_DEPLOY_HOST and not declared_env and declared_toml:
+        # --flag and env are silent: deploy.toml is the third voice.
+        host = cfg['host']
+    if host == 'bazzite' and not declared_env and not declared_toml:
         # The silent default of 'bazzite' was a leak: a fresh
         # checkout would `ssh bazzite` and explode against a host
         # it cannot resolve. Force the operator to declare.
         print(
-            'refusing to deploy: VEFR_DEPLOY_HOST is not set.\n'
+            'refusing to deploy: the deploy host is not declared.\n'
             '\n'
             '  export VEFR_DEPLOY_HOST=<your-host-or-ssh-alias>\n'
             '  uv run ratatoskr ferry deploy\n'
             '\n'
             'First time?  `uv run ratatoskr ferry deploy --init` writes\n'
-            'deploy.toml.example + docs/guides/deploy.md to this checkout.'
+            'deploy.toml.example + docs/guides/deploy.md to this checkout,\n'
+            'or add host = "<your-host>" to deploy.toml.'
         )
         return 2
 
     url = args.url
-    image = os.environ.get('VEFR_DEPLOY_IMAGE', 'localhost/vefr:latest')
+    image = (os.environ.get('VEFR_DEPLOY_IMAGE')
+             or cfg.get('image') or 'localhost/vefr:latest')
 
     if not args.skip_tests:
         if sh(('uv', 'run', '--group', 'test', 'pytest', '-q')).returncode:
@@ -764,7 +823,11 @@ def cmd_deploy(args) -> int:
         local_port = '8820'
         ssh_args = ('ssh', '-o', 'ExitOnForwardFailure=yes',
                     '-L', f'{local_port}:127.0.0.1:8820', host)
-        forward = subprocess.Popen(('ssh', '-fN', *ssh_args[1:]))
+        # No `-f`: ssh must stay in the foreground of this Popen so
+        # the finally below can actually terminate it. `-fN` forks
+        # past the captured pid, and every tunnel outlived its
+        # deploy (the 2026-09-01 orphaned-tunnel find).
+        forward = subprocess.Popen(('ssh', '-N', *ssh_args[1:]))
         try:
             probe_url = f'http://127.0.0.1:{local_port}'
         except Exception:
@@ -1604,9 +1667,14 @@ def cmd_doctor(args) -> int:
         rows.append(('pack', 'FAIL', f'{pack.name}: {exc}'))
 
     live = os.environ.get('VEFR_LIVE_URL')
+    if not live and repo:
+        # No env var? deploy.toml's url is the operator's declared
+        # live endpoint - one command tells the whole truth.
+        live = _deploy_toml(repo).get('url')
     if not live:
         rows.append(('live', 'skip',
-                     'set VEFR_LIVE_URL to check a running stack'))
+                     'set VEFR_LIVE_URL (or add url to deploy.toml) '
+                     'to check a running stack'))
     else:
         try:
             payload = fetch(live.rstrip('/') + '/api/health', timeout=5)
