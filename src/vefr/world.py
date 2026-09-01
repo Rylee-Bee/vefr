@@ -49,8 +49,9 @@ SURFACE: world.json may declare a 'surface' field - one of 'combat',
 'investigation', 'plain'. The surface is the *grammar* the player
 sees (HP bars, encounter prompts, investigation dice), not the
 engine's actual behavior. The engine never gates the player on HP,
-attack, or roll results - the surface is a costume over the Old Name
-way. Default surface is 'combat' for back-compat with existing packs.
+attack, or roll results - the surface is a costume over the
+underlying rumor engine. Default surface is 'combat' for
+back-compat with existing packs.
 
 JOURNEY: the engine's story structure is the Hero's Journey, told
 through four Elder Futhark runes. The mapping lives in journey.py.
