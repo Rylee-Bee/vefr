@@ -17,7 +17,7 @@ This module provides two independent guards:
    mythological characters (such as Saga in `saga.py`) are exempted
    by structural AST shape rather than by an arbitrary literal allowlist.
 3. `test_no_historical_package_names`: anti-regression test ensuring
-   pre-rename package names ('old-name', 'old-name') never reappear in `src/`,
+   historical package names never reappear in `src/`,
    `web/`, or `tests/`.
 
 There are NO exceptions or literal term allowlists: an allowlist is a

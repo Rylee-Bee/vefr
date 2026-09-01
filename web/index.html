@@ -986,7 +986,7 @@
     <button type="button" role="tab" data-view="board" id="tab-board" aria-selected="false" aria-controls="view-board">Board <span class="sub">Bor&eth;</span></button>
     <button type="button" role="tab" data-view="trace" id="tab-trace" aria-selected="false" aria-controls="view-trace">Trace <span class="sub">Spor</span></button>
     <button type="button" role="tab" data-view="weave" id="tab-weave" aria-selected="false" aria-controls="view-weave">Weave <span class="sub">Veft</span></button>
-    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder <span class="sub">Old Name</span></button>
+    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder <span class="sub">Byggir</span></button>
   </nav>
 
   <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
@@ -1278,7 +1278,7 @@
 <script src="/static/board.js"></script>
 <script>
 (function () {
-  var STATE = window.OLD-STATE-GLOBAL;
+  var STATE = window.VEFR_STATE;
   var tabs = document.querySelectorAll('.tabs button');
   var views = {
     rumors: document.getElementById('view-rumors'),
@@ -1296,14 +1296,14 @@
     b.addEventListener('click', function () {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
       for (var k in views) views[k].hidden = (k !== b.dataset.view);
-      if (b.dataset.view === 'town') window.dispatchEvent(new Event('old-name:town'));
-      if (b.dataset.view === 'vault') window.dispatchEvent(new Event('old-name:vault'));
-      if (b.dataset.view === 'journal') window.dispatchEvent(new Event('old-name:journal'));
-      if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('old-name:wiki'));
-      if (b.dataset.view === 'trace') window.dispatchEvent(new Event('old-name:trace'));
-      if (b.dataset.view === 'weave') window.dispatchEvent(new Event('old-name:weave'));
-      if (b.dataset.view === 'builder') window.dispatchEvent(new Event('old-name:builder'));
-      if (b.dataset.view === 'board') window.dispatchEvent(new Event('old-name:board'));
+      if (b.dataset.view === 'town') window.dispatchEvent(new Event('vefr:town'));
+      if (b.dataset.view === 'vault') window.dispatchEvent(new Event('vefr:vault'));
+      if (b.dataset.view === 'journal') window.dispatchEvent(new Event('vefr:journal'));
+      if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('vefr:wiki'));
+      if (b.dataset.view === 'trace') window.dispatchEvent(new Event('vefr:trace'));
+      if (b.dataset.view === 'weave') window.dispatchEvent(new Event('vefr:weave'));
+      if (b.dataset.view === 'builder') window.dispatchEvent(new Event('vefr:builder'));
+      if (b.dataset.view === 'board') window.dispatchEvent(new Event('vefr:board'));
     });
   });
 
@@ -1423,9 +1423,9 @@
     el.hidden = false;
     el.textContent = lines[ph] || ('something stirs nearby.');
   }
-  window.addEventListener('old-name:phase', function () {
+  window.addEventListener('vefr:phase', function () {
     var p = STATE.get().phase;
-    OLD-NAME.world().then(function (w) {
+    STATE.world().then(function (w) {
       if (w && w.surface === 'combat') renderEncounterPrompt(w);
       if (p && w && w.hp && w.hp.per_phase && w.hp.per_phase[p] != null) {
         // The current HP is the per-phase value (full HP for the
@@ -1461,7 +1461,7 @@
       }).then(function (entry) {
         // Briefly show the journal just landed. The journal tab
         // pulls the entry on next visit (it re-renders on
-        // old-name:journal). For the immediate feedback, flash the
+        // vefr:journal). For the immediate feedback, flash the
         // button's label.
         var orig = btn.textContent;
         btn.textContent = 'done';
@@ -1629,7 +1629,7 @@
       });
   }
 
-  window.addEventListener('old-name:vault', function () {
+  window.addEventListener('vefr:vault', function () {
     STATE.refreshVault().catch(function () {
       vaultList.innerHTML = '<p class="error">the vault did not answer.</p>';
     });
@@ -1817,7 +1817,7 @@
     }
   });
 
-  window.addEventListener('old-name:journal', renderJournal);
+  window.addEventListener('vefr:journal', renderJournal);
 
   /* The world's wiki - who lives here, what they said this
       playthrough, what was carried. Read-only, auto-generated from
@@ -1916,7 +1916,7 @@
       wikiSelect(e.target.dataset.kind, parseInt(e.target.dataset.idx, 10), e.target);
     }
   });
-  window.addEventListener('old-name:wiki', renderWiki);
+  window.addEventListener('vefr:wiki', renderWiki);
 
   /* The engine's trace - every generation call, live. Dev only. */
   var traceList = document.getElementById('trace-list');
@@ -1945,7 +1945,7 @@
       traceStatus.textContent = 'the trace did not answer.';
     });
   }
-  window.addEventListener('old-name:trace', renderTrace);
+  window.addEventListener('vefr:trace', renderTrace);
 
   /* The engine's weave log - every loader step, live. */
   var weaveList = document.getElementById('weave-list');
@@ -1975,7 +1975,7 @@
       weaveStatus.textContent = 'the weave did not answer.';
     });
   }
-  window.addEventListener('old-name:weave', renderWeave);
+  window.addEventListener('vefr:weave', renderWeave);
 
   /* "Export this tab" - one markdown file with the canon + that tab's
      section. Used by the per-tab buttons in the Rumors/Vault/Bell/Town/
@@ -2050,7 +2050,7 @@
   /* The page title is the pack's title - the engine never names
      a specific game. The session chip shows when a named
      playthrough is active. */
-  OLD-NAME.world().then(function (w) {
+  STATE.world().then(function (w) {
     var el = document.getElementById('app-title');
     if (el && w && w.title) el.textContent = w.title;
     // The browser tab title (and the bookmark name) tracks the
@@ -2313,7 +2313,7 @@
     }
   });
 
-  window.addEventListener('old-name:builder', loadBuilderPacks);
+  window.addEventListener('vefr:builder', loadBuilderPacks);
   loadBuilderPacks();
 
   /* ----- the rune card + gallery -----

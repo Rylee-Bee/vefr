@@ -17,18 +17,18 @@ from vefr import cli
 
 def test_import_url_shorthand():
     assert cli._import_url(
-        'http://192.168.2.216:3000', 'the private story repo'
-    ) == 'http://192.168.2.216:3000/the private story repo.git'
+        'http://192.168.2.216:3000', 'rylee/sample-pack'
+    ) == 'http://192.168.2.216:3000/rylee/sample-pack.git'
 
 
 def test_import_url_shorthand_trims_trailing_slash():
     assert cli._import_url(
-        'http://192.168.2.216:3000/', 'the private story repo'
-    ) == 'http://192.168.2.216:3000/the private story repo.git'
+        'http://192.168.2.216:3000/', 'rylee/sample-pack'
+    ) == 'http://192.168.2.216:3000/rylee/sample-pack.git'
 
 
 def test_import_url_full_https_passthrough():
-    url = 'https://gitea.hulganfamily.duckdns.org/the private story repo.git'
+    url = 'https://gitea.hulganfamily.duckdns.org/rylee/sample-pack.git'
     assert cli._import_url('http://wrong.base', url) == url
 
 
@@ -61,7 +61,7 @@ def test_import_target_ssh_returns_vefr_layout():
 
 class _Args:
     def __init__(self, **kw):
-        self.repo = 'the private story repo'
+        self.repo = 'rylee/sample-pack'
         self.name = None
         self.base = 'http://192.168.2.216:3000'
         self.target = 'local'
@@ -96,7 +96,7 @@ def test_dry_run_returns_zero_without_subprocess(monkeypatch, capsys, tmp_path):
     assert rc == 0
     captured = capsys.readouterr().out
     assert 'dry-run: would' in captured
-    assert 'clone http://192.168.2.216:3000/the private story repo.git' in captured
+    assert 'clone http://192.168.2.216:3000/rylee/sample-pack.git' in captured
     assert calls == [], 'dry-run must not invoke git'
 
 

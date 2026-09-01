@@ -10,7 +10,7 @@ from vefr import world as world_mod
 # the flesh to prove themselves.
 #
 # Tests use `worlds/private-canon/` as a known-good canonical pack
-# (the author's `the private story repo`). It is the most thoroughly
+# (the author's private story pack). It is the most thoroughly
 # voiced pack we have; using it as a test fixture proves the
 # engine surfaces a pack's voices, phases, and speakers intact.
 # The engine itself doesn't know the name - the loader reads
