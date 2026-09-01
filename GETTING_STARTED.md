@@ -119,9 +119,14 @@ health check behind one command. First-time setup:
 ```sh
 uv run ratatoskr ferry deploy --init          # writes deploy.toml.example
 cp deploy.toml.example deploy.toml            # then edit to match your host
-export VEFR_DEPLOY_HOST=$(grep ^host deploy.toml | cut -d'"' -f2)
-uv run ratatoskr ferry deploy                 # pre-flight + build + restart + verify
+uv run ratatoskr ferry deploy                 # reads deploy.toml directly:
+                                              # pre-flight + build + restart + verify
 ```
+
+The wrapper consumes `deploy.toml` itself (host and image resolve
+from it whenever `--flags` and env are silent), so there is no
+export step. `VEFR_DEPLOY_HOST`/`VEFR_DEPLOY_IMAGE` still override
+when you want them to.
 
 Full guide: `docs/guides/deploy.md`.
 
