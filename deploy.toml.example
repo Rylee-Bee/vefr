@@ -1,0 +1,21 @@
+# vefr deploy configuration (example - rename to deploy.toml and edit)
+#
+# This file is read by YOU; ratatoskr ferry deploy reads from
+# environment variables. The convention below lets you keep your
+# host + image names in one place and export them with one shell
+# snippet. deploy.toml itself is gitignored.
+#
+# Required:
+#   host   - SSH alias or user@host reachable from this dev box.
+#            Must be reachable as `ssh <host>` without arguments.
+#   image  - the podman image name/tag the quadlet runs. Defaults
+#            to localhost/vefr:latest.
+#
+# Optional:
+#   url    - the engine's HTTP endpoint (used for /api/health +
+#            maplab verify after deploy). Defaults to
+#            http://<host>:8820.
+
+host  = "bazzite"
+image = "localhost/vefr:latest"
+url   = "http://bazzite:8820"
