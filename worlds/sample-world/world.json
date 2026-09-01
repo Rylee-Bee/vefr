@@ -2,16 +2,17 @@
   "name": "sample-world",
   "title": "Emberfield",
   "description": "A demonstration world for the vefr engine. Replace everything.",
-  "gold_rule": "Gold appears only when the world is kind.",
+  "gold_rule": "Gold waits for a kind world.",
+  "stefna_voice": "keeper",
   "phases": {
     "dusk": "The day settles. The tone is quiet and watchful.",
     "dawn": "The day begins. The tone is tentative and warm."
   },
   "surface": "combat",
   "voices": {
-    "mother": {
+    "keeper": {
       "file": "voices/keeper.md",
-      "strike": "The bell has been struck. Write the goodbye: a letter left where only the right name will find it. Reply with only the JSON object."
+      "strike": "The bell has been struck. Write the letter this place leaves behind: short, plain, in this place's own voice - care, instruction, or remembrance. Reply with only the JSON object."
     }
   },
   "bonds": {
@@ -21,7 +22,7 @@
     },
     "found": {
       "card": "Found, as if waiting.",
-      "prompt": "found: made for her hands before she knew she needed them. Rare."
+      "prompt": "found: made for waiting hands before they knew they needed them. Rare."
     },
     "cold": {
       "card": "A tool that does not care.",
@@ -29,5 +30,5 @@
     }
   },
   "bond_draw": "Weight the random draw honestly: most are given or cold. Found is rare - maybe one in five. rarity is the point.",
-  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was never hers."
+  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was made for someone else."
 }
