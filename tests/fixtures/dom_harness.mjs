@@ -201,6 +201,23 @@ const bForm = mk('form', 'builder-chat-form');
 mk('textarea', 'builder-chat-input', '', bForm);
 mk('button', 'builder-chat-send', '', bForm);
 
+// prefs panel stubs
+mk('div', 'prefs-backdrop');
+const prefsPanel = mk('div', 'prefs-panel');
+prefsPanel.hidden = true;
+byId.get('prefs-backdrop').hidden = true;
+mk('button', 'prefs-trigger');
+mk('button', 'prefs-close', '', prefsPanel);
+mk('button', 'prefs-share', '', prefsPanel);
+mk('button', 'prefs-reset', '', prefsPanel);
+mk('p', 'prefs-share-status', '', prefsPanel);
+
+const prefKeys = ['textSize', 'spacing', 'font', 'contrast', 'palette', 'motion', 'focus', 'density'];
+for (const k of prefKeys) {
+  const sel = mk('select', 'pref-' + k, '', prefsPanel, { prefKey: k });
+  sel.setAttribute('data-pref-key', k);
+}
+
 // rune card + gallery stubs
 const runeCard = mk('section', 'rune-card');
 mk('button', 'rune-cast-toggle', '', runeCard);
@@ -227,6 +244,7 @@ const ctx2d = new Proxy({}, {
 });
 canvas.getContext = () => ctx2d;
 
+const store = {};
 const winListeners = {};
 const sandbox = {
   console,
@@ -242,17 +260,42 @@ const sandbox = {
   Number,
   Boolean,
   Error,
-  URL: { createObjectURL: () => 'blob:x', revokeObjectURL: () => {} },
+  URLSearchParams,
+  URL: {
+    createObjectURL: () => 'blob:x',
+    revokeObjectURL: () => {},
+  },
+  btoa: (s) => Buffer.from(s, 'binary').toString('base64'),
+  atob: (s) => Buffer.from(s, 'base64').toString('binary'),
+  history: { replaceState: () => {} },
+  localStorage: {
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; },
+  },
+  location: {
+    origin: 'http://localhost',
+    pathname: '/',
+    href: 'http://localhost/',
+    search: '',
+  },
+  navigator: {
+    clipboard: {
+      writeText: (txt) => { sandbox._lastCopied = txt; return Promise.resolve(); },
+    },
+  },
   Blob: class { constructor(p) { this.parts = p; } },
 };
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
 sandbox.document = {
+  documentElement: root,
   getElementById: (id) => byId.get(id) || null,
   querySelector: (s) => root.querySelector(s),
   querySelectorAll: (s) => root.querySelectorAll(s),
   createElement: (t) => new El(t),
   addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
+  execCommand: (cmd) => true,
   body: root,
 };
 sandbox.Event = class { constructor(t) { this.type = t; } };
@@ -352,7 +395,7 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/wiki') return ok({ characters: [{ key: 'sela', name: 'Old Sela', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
-  if (url === '/api/export') return ok('# story');
+  if (url.startsWith('/api/export')) return ok('# story');
   if (url.startsWith('/api/export/tabs/')) {
     const tab = url.split('/').pop();
     return ok(`# section\n\n## ${tab}\n\nexported.`);
@@ -390,15 +433,30 @@ sandbox.fetch = (url, opts) => {
 /* ---------- run the real scripts, in page order ---------- */
 const ctxVm = vm.createContext(sandbox);
 const html = read('web/index.html');
-const inline = html.split('<script>')[1].split('</script>')[0];
 
-for (const [label, code] of [
+// Extract and execute all scripts in order
+const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+const inlineScripts = [];
+let match;
+while ((match = scriptRegex.exec(html)) !== null) {
+  const fullTag = match[0];
+  if (!fullTag.includes('src=')) {
+    inlineScripts.push(match[1]);
+  }
+}
+
+const scriptsToRun = [
   ['state.js', read('web/state.js')],
+  ['prefs.js', read('web/prefs.js')],
   ['town.js', read('web/town.js')],
   ['board.js', read('web/board.js')],
-  ['index.html inline', inline],
-]) {
-  vm.runInContext('"use strict";' + code, ctxVm, { filename: label });
+];
+for (let i = 0; i < inlineScripts.length; i++) {
+  scriptsToRun.push([`index.html inline [${i}]`, inlineScripts[i]]);
+}
+
+for (const [label, code] of scriptsToRun) {
+  vm.runInContext('"use strict";\n' + code, ctxVm, { filename: label });
 }
 
 /* ---------- drive the flows ---------- */
@@ -540,6 +598,63 @@ const chatCall = calls.filter((c) => c.url === '/api/builder/chat').pop();
 check('builder chat posted', !!chatCall, JSON.stringify(chatCall));
 check('builder chat reply rendered', byId.get('builder-chat-log').textContent.includes('aye'));
 check('builder validate button wired', byId.get('builder-validate-btn') !== null);
+
+/* ---------- preferences controller flows ---------- */
+const trig = byId.get('prefs-trigger');
+const pPanel = byId.get('prefs-panel');
+const pBackdrop = byId.get('prefs-backdrop');
+const pClose = byId.get('prefs-close');
+const pShare = byId.get('prefs-share');
+const pReset = byId.get('prefs-reset');
+
+check('prefs panel initially hidden', pPanel.hidden === true && pBackdrop.hidden === true);
+
+// 1. Trigger opens panel
+trig.click();
+await tick();
+check('prefs panel opens on trigger click', pPanel.hidden === false && pBackdrop.hidden === false && trig.getAttribute('aria-expanded') === 'true');
+
+// 2. Escape key closes panel
+for (const fn of winListeners['keydown'] || []) fn({ key: 'Escape', preventDefault() {} });
+await tick();
+check('escape key closes prefs panel', pPanel.hidden === true && pBackdrop.hidden === true && trig.getAttribute('aria-expanded') === 'false');
+
+// 3. Backdrop click closes panel
+trig.click();
+await tick();
+pBackdrop.click();
+await tick();
+check('backdrop click closes prefs panel', pPanel.hidden === true && pBackdrop.hidden === true);
+
+// 4. Close button closes panel
+trig.click();
+await tick();
+pClose.click();
+await tick();
+check('close button closes prefs panel', pPanel.hidden === true && pBackdrop.hidden === true);
+
+// 5. Select rows call VEFR_PREFS.set
+trig.click();
+await tick();
+for (const k of prefKeys) {
+  const sel = byId.get('pref-' + k);
+  sel.value = k === 'contrast' ? 'high' : (k === 'textSize' ? 'xl' : 'test-val');
+  sel.dispatch('change');
+  await tick();
+  const cur = sandbox.window.VEFR_PREFS.get();
+  check(`pref select ${k} updates state`, cur[k] === sel.value, `${cur[k]} vs ${sel.value}`);
+}
+
+// 6. Reset restores defaults
+pReset.click();
+await tick();
+const afterReset = sandbox.window.VEFR_PREFS.get();
+check('reset restores defaults', afterReset.textSize === 'm' && afterReset.contrast === 'm');
+
+// 7. Share link button generates URL and copies
+pShare.click();
+await tick();
+check('share button copies url', typeof sandbox._lastCopied === 'string' && sandbox._lastCopied.includes('?prefs='));
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
 process.exit(fail.length ? 1 : 0);
