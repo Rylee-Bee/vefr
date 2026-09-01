@@ -5,21 +5,16 @@ from pathlib import Path
 import pytest
 from vefr import world as world_mod
 
-# The pack resolves before any ratatoskr ferry fetch: the author's world when
-# present, the demonstration world otherwise. The bones never require
-# the flesh to prove themselves.
+# The pack resolves before any ratatoskr ferry fetch: whatever the
+# environment points at. The bones never require the flesh to prove
+# themselves.
 #
-# Tests use `worlds/private-canon/` as a known-good canonical pack
-# (the author's private story pack). It is the most thoroughly
-# voiced pack we have; using it as a test fixture proves the
-# engine surfaces a pack's voices, phases, and speakers intact.
-# The engine itself doesn't know the name - the loader reads
-# whatever pack the env var points at.
-_pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
-os.environ.setdefault(
-    'VEFR_WORLD',
-    'private-canon' if (_pack / 'world.json').exists() else 'sample-world',
-)
+# Tests use `worlds/sample-world/` as the tracked known-good pack -
+# the demonstration pack ships with the engine, so every checkout
+# runs the same story tests against the same geometry. The engine
+# itself doesn't know any pack's name - the loader reads whatever
+# pack the env var points at.
+os.environ.setdefault('VEFR_WORLD', 'sample-world')
 
 
 @pytest.fixture

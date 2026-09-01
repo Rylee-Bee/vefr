@@ -77,10 +77,10 @@ def test_progress_callback_reports(monkeypatch):
 
 def test_ensure_current_world_points_generation_at_pack(monkeypatch):
     monkeypatch.delenv("VEFR_WORLD", raising=False)
-    ensure_current_world("private-canon")
+    ensure_current_world("sample-world")
     import os
 
-    assert os.environ["VEFR_WORLD"] == "private-canon"
+    assert os.environ["VEFR_WORLD"] == "sample-world"
 
 
 def test_weave_bakes_pool_into_html(tmp_path, monkeypatch):

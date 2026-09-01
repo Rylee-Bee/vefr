@@ -1,39 +1,33 @@
-"""Story tests - the author's canon pack (the ferryman) as a
-known-good test fixture. Skipped unless the resolved world
-IS private-canon. NPC payload tests prove the engine surfaces a
-pack's speaker voices intact."""
+"""Story tests - the demonstration pack's speaker (The Keeper) as
+the tracked known-good fixture. The pack ships with the engine:
+NPC payload tests prove the engine surfaces a pack's speaker
+voices intact on every checkout."""
 
 import json
-from pathlib import Path
 
 import httpx
 import pytest
 
 from vefr import generator
 from vefr.npc import build_payload, generate_line
-from vefr.paths import world_name
-
-_pack = Path(__file__).resolve().parents[1] / 'worlds' / 'private-canon'
-if world_name() != 'private-canon' or not (_pack / 'world.json').exists():
-    pytest.skip('private-canon pack not resolved', allow_module_level=True)
-
 
 GOOD = json.dumps(
-    {"speaker": "the ferryman", "line": "Drink while the bucket's down."}
+    {"speaker": "The Keeper", "line": "Sit. The stone does not ask your name."}
 )
 
 
 def test_payload_names_the_speaker_and_carries_the_voice():
-    p = build_payload("feared", "the ferryman")
+    p = build_payload("dusk", "keeper")
     assert p["format"]["required"] == ["speaker", "line"]
-    assert "the ferryman" in p["prompt"]
-    assert "parish ledger" in p["system"]
+    assert "The Keeper" in p["prompt"]
+    # the voice system prompt is the pack's own file, not engine prose
+    assert "short sentences" in p["system"]
 
 
 def test_line_parses(monkeypatch):
     monkeypatch.setattr(generator, "_completion", lambda *a, **k: GOOD)
-    line = generate_line("whispers")
-    assert line.speaker == "the ferryman"
+    line = generate_line("dusk")
+    assert line.speaker == "The Keeper"
     assert line.source == "engine"
 
 
@@ -42,11 +36,11 @@ def test_fallback_uses_seed_when_the_whisper_is_quiet(monkeypatch):
         raise httpx.ConnectError("backend unreachable")
 
     monkeypatch.setattr(generator, "_completion", down)
-    line = generate_line("awed")
-    assert "the wanderer" in line.line
+    line = generate_line("dawn")
+    assert "The stone kept the night" in line.line
     assert line.source == "seed"
 
 
 def test_unknown_speaker_raises():
     with pytest.raises(RuntimeError):
-        build_payload("whispers", "nobody")
+        build_payload("dusk", "nobody")

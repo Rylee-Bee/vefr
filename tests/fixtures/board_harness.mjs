@@ -164,9 +164,11 @@ function assert(cond, msg) {
   assert(store.voices.every((c) => c.name === 'Barefield'), 'fillers are title-named');
   assert(store.voices.every((c) => B.NEUTRAL.voices.includes(c.content)),
     'filler content comes from the neutral pool');
-  /* the bone-strip invariant: no canon string anywhere in the store */
+  /* the bone-strip invariant: no canon string anywhere in the store -
+     the sentinels are the shipped pack's own vocabulary (title +
+     speaker), which the deterministic seed pool must never echo */
   const blob = JSON.stringify(store);
-  ['the wanderer', 'the ferryman', 'the roll-keeper', 'the sea-figure', 'private-canon'].forEach((n) => {
+  ['Emberfield', 'The Keeper', 'keeper'].forEach((n) => {
     assert(!blob.includes(n), `neutral store must not contain "${n}"`);
   });
 }
