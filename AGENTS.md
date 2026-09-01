@@ -94,7 +94,13 @@ uv run ratatoskr weave --pool 5
 | Always    | One ROADMAP.md entry per landed change (Landed list, dated). Keep README/GETTING_STARTED in sync when commands or contracts change.                      |
 | Ask first | Changing the pack contract: `world.py` REQUIRED keys, `VALID_SURFACES`, the loader's canonical shape, or the acts/flat on-disk layouts.                  |
 | Ask first | Adding a tracked world pack beyond `sample-world`, or a new public API route in `main.py`.                                                             |
-| Ask first | Any git history rewrite. (The 2026-08-31 filter-repo was a one-time, backed-up, verified operation - not a template.)                                    |
+| Ask first | Any git history rewrite. There have been two, both
+             backed-up and verified: 2026-08-31 (removed the story
+             pack's content) and 2026-09-01 (scrubbed the private
+             pack, game, and canon names from every historical blob,
+             message, and path - backups in
+             `vefr-pre-scrub-2026-09-01.bundle` on the dev box root
+             and bazzite `~/`). Neither is a template. |
 | Never     | Commit story content from a private story-pack repo (any non-shipped pack under `worlds/` is gitignored - keep it that way), or name any specific game in engine code, prompts, API titles, tests, or docs. |
 | Never     | Commit runtime state: `data/sessions/`, `data/vault-*.json`, `data/journal-*.json`, `data/weave.jsonl`, `worlds/*/world-tree.md`, `worlds/*/handbok.md` (all gitignored). |
 | Never     | Hand-edit `uv.lock`. Add `"think": true` (or drop `strict: true`) on any schema-constrained generation call.                                             |
