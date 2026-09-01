@@ -262,6 +262,31 @@
       credits for incompatible-but-borrowed sources live in
       README's Attribution section.
 
+- [x] **the bones stop talking** (2026-08-31, this session):
+      A1+A2+A3+A4 - the strip. Every user-visible string in the
+      engine that named a specific pack's voice, place, or
+      speaker (the mill / the bell / the tower / the bookshop /
+      the bog / the ferryman / the roll-keeper / the wanderer / the sea-figure) is gone or
+      replaced with engine-neutral prose. The engine paints
+      nothing where a pack would speak - tabs show empty
+      status until `/api/world` returns, the whisper button
+      says `listening...` / `whispered` / `nothing came back`
+      instead of `the mill turns / the mill is warm / the
+      mill is silent`, the Skuld preview shows em-dashes
+      where the pack's phase + speaker would live. Comment
+      drift (`the wanderer` in `state.js` / `town.js`,
+      `Old Name` in `world.py`, `private-canon` in `volumes.py` /
+      `cli.py` / `main.py`) replaced with engine-neutral
+      identifiers; the one load-bearing `private-canon` rename
+      in `norns build-map`'s scaffold helper gets an
+      explanatory comment so the history isn't lost. The
+      `norns chat` builder's system prompt no longer names
+      example NPCs from the author's canon. README's
+      "bones and the flesh" section now carries a worked
+      example: develop on vefr, write the game in
+      `the private story repo`, ferry fetch to play. The bones
+      stay empty until a pack mounts.
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
