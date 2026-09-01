@@ -73,6 +73,10 @@ uv run --group test norns doctor   # set VEFR_LIVE_URL to check a stack
 uv run ratatoskr --help            # ops: skipa, test, weave, ferry
 uv run norns --help                # craft: chat, validate, build-map, verify
 
+# Session tidyup - the seven questions (this repo's own; do not use
+# the homelab's scripts/tidyup.sh here)
+uv run ratatoskr skipa
+
 # Validate a world pack
 uv run norns validate --pack worlds/<name>
 
