@@ -20,9 +20,9 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from . import weave as weave_mod
+from . import runes, trace, weave as weave_mod
 from .paths import app_home
-from .world import load_world
+from .world import current_act, load_world
 
 
 def recent_weave(limit: int = 200) -> dict:
@@ -64,6 +64,81 @@ def resolved_world() -> dict:
         ],
         "_current_act": w["_current_act"],
         "_shape": w["_shape"],
+    }
+
+
+def pack_aspects(phase: str | None = None) -> dict:
+    """Active world aspects for the in-game Development Overlay & Inspector.
+
+    Returns loaded pack aspects, active act structure, active regions,
+    speaker seed matrices, current rune cast, and living trace log.
+    """
+    w = load_world()
+    act = current_act(w)
+    pack_phases = list(w.get("phases", {}).keys())
+    active_phase = phase if phase and phase in pack_phases else (pack_phases[0] if pack_phases else "whispers")
+
+    iso_minute = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    seed = runes.seed_for("api.runes.cast", active_phase, iso_minute)
+    cast_result = runes.cast_for(seed, phase=active_phase)
+
+    speakers_matrix = {}
+    for skey, sspec in act.get("speakers", {}).items():
+        speakers_matrix[skey] = {
+            "name": sspec.get("name", ""),
+            "at": sspec.get("at", []),
+            "near": sspec.get("near", ""),
+            "voice_file": sspec.get("voice_file", ""),
+            "seeds": sspec.get("seeds", {}),
+        }
+
+    regions_summary = {}
+    for rkey, rval in act.get("regions", {}).items():
+        regions_summary[rkey] = {
+            "title": rval.get("contract", {}).get("title") or rkey,
+            "has_map": bool(rval.get("map_text") or rval.get("contract", {}).get("map")),
+            "pois": list(rval.get("contract", {}).get("pois", {}).keys()),
+            "hero_start": rval.get("contract", {}).get("hero_start", [1, 1]),
+        }
+
+    return {
+        "pack": {
+            "name": w.get("name", ""),
+            "title": w.get("title", ""),
+            "surface": w.get("surface", "combat"),
+            "shape": w.get("_shape", "acts"),
+            "phases": pack_phases,
+            "gold_rule": w.get("gold_rule", ""),
+            "journey": w.get("_journey", []),
+        },
+        "act": {
+            "id": act.get("id", ""),
+            "title": act.get("title", ""),
+            "index": w.get("_current_act", 0),
+            "total_acts": len(w.get("acts", [])),
+            "enemies": act.get("enemies", []),
+            "bosses": act.get("bosses", []),
+            "transitions": act.get("transitions", []),
+        },
+        "regions": regions_summary,
+        "speakers": speakers_matrix,
+        "rune_cast": {
+            "phase": active_phase,
+            "seed": seed,
+            "iso_minute": iso_minute,
+            "positions": [
+                {
+                    "position": pos,
+                    "name": r.name,
+                    "stave": r.stave,
+                    "short": r.short,
+                    "long": r.long,
+                }
+                for pos, r in cast_result
+            ],
+            "prompt_block": runes.render_for_prompt(cast_result),
+        },
+        "recent_trace": trace.recent(20),
     }
 
 
