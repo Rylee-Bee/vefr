@@ -8,7 +8,8 @@
 # What you get:
 #   - vefr engine on http://localhost:8820
 #   - lore/ + sample-world/ pre-loaded as engine templates (ro volume)
-#   - worlds/ writable volume for your own canon (private-canon, etc.)
+#   - worlds/ writable volume for any pack you import
+#     (`ferry fetch --pack <name>`, or your own story repo)
 #   - data/ writable volume for player state (vault, journal, weave log)
 #
 # Bring up an LLM backend separately (ollama, llama.cpp, or any
