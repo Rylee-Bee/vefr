@@ -531,6 +531,19 @@
       (`tests/test_api_manner.py`), suite 207 passed. Live-verified
       on bazzite after deploy.
 
+- [x] **block 5: sample-world polish - the pack stays neutral about
+      bonds** (2026-09-01, PR #35, `041b77d`). Playing the pack live
+      surfaced one defect: the board's forge response doc hardcoded
+      `assigned | attuned | cold` - a bond list sample-world has
+      never heard of (it draws given/found/cold). The doc now says
+      `<the pack's bond keys>` with the reason in a comment, and
+      `test_board_wired_into_chrome` refuses any hardcoded bond list
+      in board.js (the canon-strings rule, applied to pack
+      vocabulary). The pack itself validated and played green - and
+      a handoff myth died on the record: `voices: 0` counts voice
+      files, not speakers; sample-world ships one speaker (The
+      Keeper) and the default-speaker npc flow works live.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
