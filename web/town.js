@@ -299,7 +299,7 @@
     var box = document.getElementById('npc-box');
     box.classList.add('sighting');
     document.getElementById('npc-name').textContent = '';
-    document.getElementById('npc-line').textContent = 'she is there. she was always there.';
+    document.getElementById('npc-line').textContent = 'a figure stands at the crossing, watching.';
     box.hidden = false;
     window.setTimeout(function () {
       box.classList.remove('sighting');
@@ -332,13 +332,13 @@
       .then(function (data) {
         if (openSpeaker && openSpeaker.key === near.key) {
           document.getElementById('npc-line').textContent =
-            data.line || 'she says nothing, and stays.';
+            data.line || 'nothing came back.';
         }
       })
       .catch(function () {
         if (openSpeaker && openSpeaker.key === near.key) {
           document.getElementById('npc-line').textContent =
-            'she says nothing, and stays.';
+            'nothing came back.';
         }
       })
       .finally(function () { busy = false; });
