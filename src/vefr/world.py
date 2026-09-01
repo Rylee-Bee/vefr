@@ -59,6 +59,12 @@ Packs can rename their phases (any keys the author wants) but the
 journey-stage anchors are positional - first phase in `phases` maps
 to the first rune, and so on.
 
+STEFNA / BELL VOICE: a pack may declare an optional top-level
+`stefna_voice` (string naming which speaker writes the sealed letter;
+absent means "the pack's first declared voice"). Every voice declared
+in the pack must carry a non-empty `strike` string prompt for that
+letter.
+
 VISIBLE ENGINE: every load step is recorded to the weave log so the
 author can see exactly what the loader did. See weave.py.
 """
