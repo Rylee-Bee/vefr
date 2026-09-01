@@ -315,6 +315,24 @@
       belongs to `norns chat`, not a textarea - navigation-only
       chrome on purpose.
 
+- [x] **the shadcn layer** (2026-08-31, this session): the UI
+      adopts shadcn/ui's design language as a token vocabulary +
+      component anatomy - CSS custom properties only. No React, no
+      Tailwind, no build step: the packaged single-file stays
+      self-contained. The shadcn names (--background, --foreground,
+      --card, --border, --ring, --primary, --radius...) are DERIVED
+      tokens referencing the engine's own luminance-first palette,
+      so the reading row's contrast/palette overrides flow through
+      the entire new vocabulary unchanged - the focus ring became a
+      token (--ring), replacing two long per-selector pref lists
+      with one rule pair. Buttons, cards, and inputs collapsed from
+      ~8 near-duplicate blocks each into one :is() anatomy (outline
+      default, solid primary variant, 44px minimums, motion off);
+      radii follow shadcn's scale (one base, sm/md/lg/xl derived).
+      The board stylesheet rides the same tokens. The town canvas
+      renderer stays custom (the rpg-js decision stands - this
+      layer dresses the document UI, not the game canvas).
+
 ## Next
 
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
