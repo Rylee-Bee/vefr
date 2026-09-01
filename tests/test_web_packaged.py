@@ -119,9 +119,15 @@ def test_packaged_pool_draw_semantics(tmp_path, monkeypatch, canned_generators):
     assert '"rumor:dusk"' in html
     assert "canned whisper dusk" in html
 
-    # The wiring: the rumor and npc catch blocks must reach the pool.
-    assert "poolDraw('rumor:'" in html
-    assert "poolDraw('npc:'" in html
+    # The wiring: the rumor and npc catch blocks must reach the pool,
+    # and past the pool into the composer (spent-pool play).
+    assert "poolDraw(phaseKey)" in html
+    assert "composeWhisper(phaseKey)" in html
+    assert "poolDraw(key)" in html
+    assert "composeLine(key)" in html
+    # The composer's status lines are honest about provenance.
+    assert "woven anew from the pool's cloth." in html
+    assert "nothing came back (" in html
 
     code = _extract(html)
 

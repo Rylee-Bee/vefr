@@ -7,6 +7,10 @@
    3. a spent combo falls through to another combo's unused lines
    4. a fully spent pool draws null (the honest silence)
    5. usage persists across a "reload" via the localStorage store
+   6. a spent pool re-weaves its own cloth: the composer's words are
+      pool words only, deterministic under a fixed seed
+   7. an npc line never borrows another speaker's words
+   8. with no pool at all, the composer keeps the honest silence
 
    The spec file (argv[2]) is JSON: {code: <extracted JS>, pool: {...}}.
    The python test extracts the code block from the real built HTML, so
@@ -81,5 +85,66 @@ const s2 = makeSandbox(store); // same store: simulates a page reload
 s2.window.VEFR_POOL = pool;
 if (s2.poolDraw('rumor:dusk') !== null) throw new Error('usage did not persist across a reload');
 console.log('PASS persistence across reload');
+
+/* ---------- scenario 3: the composer re-weaves spent cloth ---------- */
+const s3 = makeSandbox(store); // the pool is fully spent by now
+s3.window.VEFR_POOL = pool;
+const woven = s3.composeWhisper('rumor:dusk');
+if (!woven) throw new Error('composer returned silence with a spent-but-nonempty pool');
+const words = (s) => String(s).toLowerCase().replace(/[^a-z' ]/g, ' ').split(/\s+/).filter(Boolean);
+const cloth = new Set();
+for (const list of Object.values(pool)) {
+  for (const e of list) if (e.whisper) for (const w of words(e.whisper)) cloth.add(w);
+}
+for (const w of words(woven.whisper)) {
+  if (!cloth.has(w)) throw new Error('composer invented a word outside the pool: ' + w);
+}
+const again = s3.composeWhisper('rumor:dusk', 42);
+const repeat = s3.composeWhisper('rumor:dusk', 42);
+if (JSON.stringify(again) !== JSON.stringify(repeat)) {
+  throw new Error('composer is not deterministic under a fixed seed');
+}
+console.log('PASS composer re-weaves spent cloth (pool words only, deterministic under seed)');
+
+/* ---------- scenario 4: an npc line never borrows another voice ---------- */
+const npcPool = {
+  'npc:dusk:smith': [
+    { speaker: 'The Smith', line: 'the forge keeps its own heat.' },
+    { speaker: 'The Smith', line: 'iron remembers the hand that held it.' },
+  ],
+};
+const s4 = makeSandbox({});
+s4.window.VEFR_POOL = npcPool;
+const wovenLine = s4.composeLine('npc:dusk:smith', 9);
+if (!wovenLine || wovenLine.speaker !== 'The Smith') {
+  throw new Error('composer failed on a two-entry npc combo');
+}
+const smithWords = new Set();
+npcPool['npc:dusk:smith'].forEach((e) => words(e.line).forEach((w) => smithWords.add(w)));
+for (const w of words(wovenLine.line)) {
+  if (!smithWords.has(w)) throw new Error('npc composer borrowed outside the speaker: ' + w);
+}
+const loneVoice = makeSandbox({});
+loneVoice.window.VEFR_POOL = { 'npc:dusk:smith': [npcPool['npc:dusk:smith'][0]] };
+if (loneVoice.composeLine('npc:dusk:smith', 9) !== null) {
+  throw new Error('a one-line npc combo must stay honestly silent, not borrow a voice');
+}
+console.log('PASS npc composer stays inside the speaker (honest silence with one line)');
+
+/* ---------- scenario 5: whispers cross combos; no pool = silence ---------- */
+const s5 = makeSandbox({});
+s5.window.VEFR_POOL = {
+  'rumor:dusk': [{ speaker: 'Ember', whisper: 'one alone.', is_true: true }],
+  'rumor:dawn': [{ speaker: 'Ember', whisper: 'two together.', is_true: false }],
+};
+if (!s5.composeWhisper('rumor:dusk', 3)) {
+  throw new Error('whisper composer refused a cross-combo weave');
+}
+const s6 = makeSandbox({});
+s6.window.VEFR_POOL = {};
+if (s6.composeWhisper('rumor:dusk', 1) !== null) {
+  throw new Error('silence must stay honest when there is no pool at all');
+}
+console.log('PASS cross-combo whispers weave; no pool keeps the honest silence');
 
 console.log('pool harness passed');

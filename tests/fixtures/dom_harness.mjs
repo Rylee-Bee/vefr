@@ -416,6 +416,12 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/wiki') return ok({ characters: [{ key: 'sela', name: 'Old Sela', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
+  if (url === '/api/journal/move' && method === 'POST') {
+    if (!body || typeof body.poi !== 'string' || typeof body.x !== 'number' || typeof body.y !== 'number') {
+      throw new Error('move got a bad body: ' + JSON.stringify(body));
+    }
+    return ok({ logged: true, entry: body });
+  }
   if (url.startsWith('/api/export')) return ok('# story');
   if (url.startsWith('/api/export/tabs/')) {
     const tab = url.split('/').pop();
@@ -593,6 +599,24 @@ await tick();
 const npcCall = calls.filter((c) => c.url === '/api/npc').pop();
 check('npc asked with the shared phase', npcCall && npcCall.body.phase === 'dusk', JSON.stringify(npcCall && npcCall.body));
 check('npc line rendered', byId.get('npc-line').textContent === 'aye', byId.get('npc-line').textContent);
+
+/* the road walked: one /api/journal/move per change of place,
+   nothing per tile (the throttle is place-equality) */
+const moveCalls = () => calls.filter((c) => c.url === '/api/journal/move');
+const movesBefore = moveCalls().length;
+for (const fn of winListeners['keydown'] || []) fn({ key: 'ArrowDown', preventDefault() {} }); // (1,2) - still 'the well'
+await tick();
+check('same-place step posted no move', moveCalls().length === movesBefore, String(moveCalls().length));
+for (let i = 0; i < 3; i++) {
+  for (const fn of winListeners['keydown'] || []) fn({ key: 'ArrowRight', preventDefault() {} });
+  await tick();
+}
+check('place change posted one move', moveCalls().length === movesBefore + 1,
+  JSON.stringify(moveCalls().slice(-1)));
+const moveCall = moveCalls().pop();
+check('move carries poi, phase, tile', moveCall && moveCall.body.poi === 'Emberfield'
+  && moveCall.body.phase === 'dusk' && moveCall.body.x === 4 && moveCall.body.y === 2,
+  JSON.stringify(moveCall && moveCall.body));
 
 /* setPhase must refuse a tone the pack does not have */
 sandbox.window.VEFR_STATE.setPhase('whispers');
