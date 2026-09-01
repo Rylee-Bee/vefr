@@ -790,6 +790,15 @@
   }
   .skuld-meta strong { color: var(--accent); }
 
+  /* The live readbacks (Urd saved / Skuld reading-now). Dim, small,
+     one line - the same shape as prefs-share-status. min-height keeps
+     the layout static when the text changes under aria-live. */
+  .prefs-readout {
+    margin: 0.5rem 0 0; color: var(--ink-dim);
+    font-size: 0.82rem; min-height: 1.2em;
+    overflow-wrap: anywhere;
+  }
+
   .prefs-footer {
     margin-top: 0.8rem; padding-top: 0.6rem;
     border-top: 1px solid var(--card-edge);
@@ -917,6 +926,7 @@
         <span class="col-en">what was recalled</span>
       </legend>
       <p class="col-note">Saved preferences on this device. Reset brings everything back to the engine's defaults.</p>
+      <p class="prefs-readout" id="prefs-saved-readout" aria-live="polite"></p>
 
       <div class="prefs-actions">
         <button type="button" id="prefs-share" class="prefs-action">
@@ -1020,8 +1030,8 @@
       <div class="skuld-preview" aria-hidden="true">
         <p class="skuld-headline">A whisper</p>
         <p class="skuld-body">Something moves at the edge of hearing. You catch the shape of a sentence before you have the words.</p>
-        <p class="skuld-meta">phase: <strong>&mdash;</strong> &middot; speaker: <strong>&mdash;</strong></p>
       </div>
+      <p class="prefs-readout" id="skuld-readout" aria-live="polite"></p>
     </fieldset>
   </div>
 
@@ -2696,6 +2706,30 @@
       if (live[k] != null) el.value = live[k];
     });
   }
+
+  /* The honest readbacks. Urd says what is saved on this device and
+     Skuld says what is reading now - the same eight values, live on
+     every change, so both columns tell the truth instead of holding
+     dead placeholders. (The old Skuld meta line was em-dashes for
+     phase/speaker data the panel never had.) */
+  var savedReadout = document.getElementById('prefs-saved-readout');
+  var skuldReadout = document.getElementById('skuld-readout');
+
+  function readoutText() {
+    var p = PREFS.get();
+    return 'text ' + p.textSize + ' \u00b7 spacing ' + p.spacing
+      + ' \u00b7 font ' + p.font + ' \u00b7 contrast ' + p.contrast
+      + ' \u00b7 palette ' + p.palette + ' \u00b7 motion ' + p.motion
+      + ' \u00b7 focus ' + p.focus + ' \u00b7 density ' + p.density;
+  }
+
+  function updateReadouts() {
+    var t = readoutText();
+    if (savedReadout) savedReadout.textContent = 'saved: ' + t;
+    if (skuldReadout) skuldReadout.textContent = 'reading now: ' + t;
+  }
+  PREFS.on(updateReadouts);
+  updateReadouts();
 
   /* The trigger button opens. ESC and the backdrop close. The close
      button is for the mouse and for screen readers. */

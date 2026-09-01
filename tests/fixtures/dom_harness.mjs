@@ -222,6 +222,8 @@ mk('button', 'prefs-close', '', prefsPanel);
 mk('button', 'prefs-share', '', prefsPanel);
 mk('button', 'prefs-reset', '', prefsPanel);
 mk('p', 'prefs-share-status', '', prefsPanel);
+mk('p', 'prefs-saved-readout', '', prefsPanel);
+mk('p', 'skuld-readout', '', prefsPanel);
 
 const prefKeys = ['textSize', 'spacing', 'font', 'contrast', 'palette', 'motion', 'focus', 'density'];
 for (const k of prefKeys) {
@@ -664,11 +666,27 @@ for (const k of prefKeys) {
   check(`pref select ${k} updates state`, cur[k] === sel.value, `${cur[k]} vs ${sel.value}`);
 }
 
+// 5b. The readbacks: Urd says what is saved, Skuld says what reads
+// now - both live on every change, no dead em-dash placeholders.
+const savedReadout = byId.get('prefs-saved-readout');
+const skuldReadout = byId.get('skuld-readout');
+check('urd readout announces the saved state',
+  savedReadout.textContent.includes('saved:') && savedReadout.textContent.includes('text xl'),
+  savedReadout.textContent);
+check('skuld readback is live, not placeholders',
+  skuldReadout.textContent.includes('reading now:') && skuldReadout.textContent.includes('contrast high'),
+  skuldReadout.textContent);
+check('skuld sample keeps its engine voice, no dead meta',
+  !skuldReadout.textContent.includes('phase:') && !skuldReadout.textContent.includes('speaker:'));
+
 // 6. Reset restores defaults
 pReset.click();
 await tick();
 const afterReset = sandbox.window.VEFR_PREFS.get();
 check('reset restores defaults', afterReset.textSize === 'm' && afterReset.contrast === 'm');
+check('readbacks return to defaults after reset',
+  savedReadout.textContent.includes('text m') && skuldReadout.textContent.includes('contrast m'),
+  savedReadout.textContent + ' | ' + skuldReadout.textContent);
 
 // 7. Share link button generates URL and copies
 pShare.click();
