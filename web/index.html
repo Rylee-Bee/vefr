@@ -1158,7 +1158,7 @@
   </section>
 
   <section id="view-board" class="view" role="tabpanel" aria-labelledby="tab-board" hidden>
-    <p class="note">the dev board &mdash; the pack's generators as cards. Cards are drawn from the loaded pack; a column the pack cannot fill is seeded. Drag a card to another column to re-home it; moves persist on this device.</p>
+    <p class="note">the dev board &mdash; the pack's generators as cards. Cards are drawn from the loaded pack; a column the pack cannot fill is seeded. Drag a card to another column to re-home it; moves persist on this device. <button type="button" id="board-reseed" class="board-mini">reseed</button></p>
     <div class="board-container">
       <nav class="board-file-tree" aria-label="Pack files">
         <ul>
@@ -1506,9 +1506,9 @@
       });
       var res = await r.json();
       forgeStatus.textContent = res.bond === 'attuned'
-        ? 'it fits her hands. it was always going to.'
+        ? 'it fits. it was always going to.'
         : res.bond === 'assigned'
-          ? 'kept. it works, mostly. it never asked what she wants.'
+          ? 'kept. it works, mostly. it never asked what anyone wants.'
           : 'kept. it does not care who holds it.';
       b.remove();
       /* Into the shared state, not a private fetch: the town's HUD and

@@ -6,4 +6,4 @@ the engine obeys them.
 
 - One region, one threshold, one keeper.
 - Never explain. Never label. Show only.
-- Gold appears only when the world is kind.
+- Gold waits for a kind world.

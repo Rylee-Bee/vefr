@@ -345,11 +345,11 @@ sandbox.fetch = (url, opts) => {
   }
   if (url === '/api/stefna') return ok({ letter: 'For you.' });
   if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
-  if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'the ferryman' }] });
+  if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'Old Sela' }] });
   if (url === '/api/weave') return ok({ events: [{ event: 'pack.load.end', at: 1234567890.0, pack: 'sample-world', acts: 1, shape: 'acts', surface: 'combat' }] });
   if (url === '/api/builder/resolved') return ok({ name: 'sample-world', title: 'Emberfield', _shape: 'acts', _current_act: 0, acts: [] });
   if (url === '/api/combat/action' && method === 'POST') return ok({ at: '2026-08-31T22:00:00Z', kind: body.kind, phase: body.phase, target: body.target });
-  if (url === '/api/wiki') return ok({ characters: [{ key: 'the ferryman', name: 'the ferryman', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
+  if (url === '/api/wiki') return ok({ characters: [{ key: 'sela', name: 'Old Sela', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
   if (url === '/api/starred') return ok({ starred: [] });
   if (url === '/api/journal/clear') return ok({ cleared: true });
   if (url === '/api/export') return ok('# story');
@@ -475,7 +475,7 @@ check('journal rendered on its tab', byId.get('journal-list').innerHTML.includes
 check('journal status counted', byId.get('journal-status').textContent.includes('1 thing happened'), byId.get('journal-status').textContent);
 
 /* the wiki tab renders characters + relics from /api/wiki */
-check('wiki rendered characters', byId.get('wiki-characters').innerHTML.includes('the ferryman'), byId.get('wiki-characters').innerHTML);
+check('wiki rendered characters', byId.get('wiki-characters').innerHTML.includes('Old Sela'), byId.get('wiki-characters').innerHTML);
 check('wiki rendered relics', byId.get('wiki-relics').innerHTML.includes('knife'), byId.get('wiki-relics').innerHTML);
 check('trace rendered the call', byId.get('trace-list').innerHTML.includes('/api/rumor'), byId.get('trace-list').innerHTML);
 
