@@ -170,3 +170,37 @@ def test_export_tab_vault_only_has_vault():
 def test_export_tab_rejects_unknown_name():
     with pytest.raises(ValueError):
         export_tab("nope", WORLD)
+
+# ---- the road walked (move entries, 2026-09-01) ----
+
+def test_moves_render_in_the_fen_walked():
+    journal.log("move", poi="the stone", x=7, y=3, phase="dusk")
+    journal.log("move", poi="the threshold", x=7, y=5, phase="dawn")
+    out = export_story(WORLD)
+    town = out[out.index("## The Fen Walked"):]
+    assert "The road walked:" in town
+    assert "the stone" in town
+    assert "the threshold" in town
+    assert "(dusk)" in town and "(dawn)" in town
+
+
+def test_moves_do_not_leak_into_the_journal_catchall():
+    journal.log("move", poi="the stone", x=7, y=3, phase="dusk")
+    out = export_story(WORLD)
+    # move has its own tab section, so the catch-all must not repeat it
+    assert "## The Journal" not in out
+    # and the export still reads as something that happened
+    assert "Nothing has happened here yet." not in out
+
+
+def test_town_section_without_moves_keeps_the_phase_witness():
+    journal.log("npc_line", phase="whispers", speaker="the ferryman", line="stay off the reeds")
+    out = export_story(WORLD)
+    town = out[out.index("## The Fen Walked"):]
+    assert "The road walked:" not in town
+    assert "whispers" in town
+
+
+def test_empty_journal_still_has_no_fen_section():
+    out = export_story(WORLD)
+    assert "## The Fen Walked" not in out
