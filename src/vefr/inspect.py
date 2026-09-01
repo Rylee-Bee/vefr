@@ -48,6 +48,7 @@ def resolved_world() -> dict:
         "phases": w["phases"],
         "bonds": w.get("bonds", {}),
         "voices": w.get("voices", {}),
+        "fragments": w.get("fragments", {}),
         "acts": [
             {
                 "id": a["id"],

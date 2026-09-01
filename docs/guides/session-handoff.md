@@ -53,8 +53,8 @@ The old (1) first-real-weave and (2) packaged-file harness landed
 | # | Move                                                                | Why                                                                                       |
 | - | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | 1 | Continue surface UI for combat packs (ROADMAP Next)                 | PR #4 landed the first pass (HP bar, tinted cards, encounter prompt, combat verbs); rendering follow-ups remain |
-| 2 | USPTO + common-law name-collision search for `vefr` AND `Old Name`     | Pre-release gate; both names live on `rylee/vefr` description                              |
-| 3 | Clean up the pre-rename `old-name-*` bundle NAS backups                 | Rotation now covers both prefixes; old bundles keep accumulating unless pruned            |
+| 2 | USPTO + common-law name-collision search for `vefr`     | Pre-release gate; the name lives on `rylee/vefr` description                              |
+| 3 | Clean up the pre-rename `*-*.bundle` NAS backups                 | Rotation now covers both prefixes; old bundles keep accumulating unless pruned            |
 | 4 | Move Gitea to a public-reachable host before any public release    | `http://192.168.2.216:3000` is LAN-only                                                   |
 
 The next agent should pick (1) first — it's the ROADMAP's top Next
@@ -76,14 +76,14 @@ from scratch:
 | `src/vefr/pool.py`                      | `build_pool(samples, specials, progress=None)`, `ensure_current_world(name)`. Visitor pattern: set `VEFR_WORLD` for the build, restore in `finally`. |
 | `src/vefr/stefna.py`                    | `stefna_voice_key()` config-driven, falls back to the pack's first declared voice. `Letter` model + `generate_letter()`. |
 | `src/vefr/export.py`                    | `_preface()` reads `logbok.md` + `lore-notes.md`; `refresh_living_tree(world, sid)`. Headings `## The Fen Walked`, `## The Whispers Heard`, `## Relics`, `## The Stefna`, `## The Voices Heard`, `## The Journal`. Includes a `fork` kind renderer. |
-| `src/vefr/cli.py`                       | `ratatoskr` + `norns` entry points. `cmd_weave` has `--pool N`. `cmd_scaffold` (`ferry scaffold`) copies a pack as standalone repo. `cmd_backup` rotation prunes both `vefr-*.bundle` AND `old-name-*.bundle` — leave that as-is until #4 above. |
-| `web/index.html` + `web/state.js`       | `window.VEFR_SESSION = { id, wrap, mint }`. Tab labels are Norse (Sagnir/Safn/Annall/Fræði/Spor/Old Name/Town). `data-view` keys kept stable — DOM harness depends on this. |
+| `src/vefr/cli.py`                       | `ratatoskr` + `norns` entry points. `cmd_weave` has `--pool N`. `cmd_scaffold` (`ferry scaffold`) copies a pack as standalone repo. `cmd_backup` rotation prunes both bundle prefixes — leave that as-is until #4 above. |
+| `web/index.html` + `web/state.js`       | `window.VEFR_SESSION = { id, wrap, mint }`. Tab labels are Norse (Sagnir/Safn/Annall/Fræði/Spor/Town). `data-view` keys kept stable — DOM harness depends on this. |
 | `web/packaged.html`                     | Inlines `window.VEFR_WORLD/VEFR_LOGBOK/VEFR_LEDGER/VEFR_VOICES/VEFR_POOL`. Pool fallback: unused-from-this-combo → unused-from-any-combo → honest silence. `localStorage.vefr-pool-used` tracks spent. |
 | `tests/fixtures/dom_harness.mjs`        | Reads `VEFR_ROUTES_JSON` (a file path) and validates every fetched URL against the real route table before answering. Falls back to bare stubs if env absent (so plain `node harness` still works). |
 | `tests/test_web_routes.py`              | Scans `web/*.js` + `web/index.html` for `/api/...` literals; asserts each is in `app.routes`. The guard that would have caught the Stefna-tab incident. |
 | `docs/guides/one-source-of-routes.md`   | The incident + the rule + the guard. Read before touching any web layer. |
 | `worlds/lore/<name>/`                   | Five files: `textures.md`, `names.md`, `questions.md`, `prompt.md`, `LICENSE.md` (CC BY-SA 4.0). Not gitignored — they're shareable. |
-| `worlds/<private-name>/` (gitignored)   | Rylee's private game (`private-canon` today). Lives on disk + `the private story repo` Gitea repo + bazzite `~/vefr-worlds/`. Don't commit into `rylee/vefr`. |
+| `worlds/<private-name>/` (gitignored)   | Rylee's private game. Lives on disk + a private Gitea repo + bazzite `~/vefr-worlds/`. Don't commit into `rylee/vefr`. |
 
 ## Things the next agent must not do
 
@@ -93,7 +93,7 @@ without a real reason:
 - **Don't re-point `git origin`** at the DuckDNS hostname. Default
   is `http://192.168.2.216:3000/rylee/vefr.git` (LAN-direct Gitea).
 - **Don't rename the engine again.** `vefr` is the public name;
-  `Old Name` is the private game that runs on the engine. Both repos
+  The private game runs on the engine. Both repos
   exist. If a real trademark issue surfaces, file an issue and
   pause — don't pick a new name on the spot.
 - **Don't add `hostname`, `mac_address`, or `com.docker.compose.*`

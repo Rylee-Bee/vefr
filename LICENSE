@@ -17,10 +17,11 @@ deploy/, Containerfile, pyproject.toml, and the pack contract they
 implement. It also covers worlds/sample-world/ (Emberfield), the
 teaching example, so the engine is actually shareable end to end.
 
-worlds/private-canon/ is the author's own story and game. It is NOT
-covered by this license or any license - all rights reserved, per
-the notice in worlds/private-canon/LICENSE. Take the bones; grow your
-own flesh. This one stays hers.
+Any pack under worlds/ other than worlds/sample-world/ and
+worlds/lore/ belongs to whoever wrote it. A private story pack is
+NOT covered by this license or any license - all rights reserved,
+per the notice in that pack's own LICENSE file. Take the bones;
+grow your own flesh. This one stays hers.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
