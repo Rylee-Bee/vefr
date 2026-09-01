@@ -465,6 +465,8 @@ window.VEFR_BOARD = (function () {
     if (tryBtn) tryBtn.addEventListener('click', tryIt);
     var sendBtn = document.getElementById('rail-chat-send');
     if (sendBtn) sendBtn.addEventListener('click', sendDraft);
+    var reseedBtn = document.getElementById('board-reseed');
+    if (reseedBtn) reseedBtn.addEventListener('click', reseed);
   }
 
   /* Pointer/touch drag. With the vendored Sortable, drops keep their
@@ -472,6 +474,22 @@ window.VEFR_BOARD = (function () {
      packaged file that ships without the vendor directory) the board
      falls back to native HTML5 DnD - cross-column moves, desktop
      only. Both paths end in the same persisted store. */
+  /* The seeded cards are placeholder data by design - reseed wipes
+     the stored board and redraws from the loaded world and a fresh
+     seed. The one destructive control, and the visible proof that
+     seeded data is disposable. */
+  function reseed() {
+    if (!state.world) return;
+    state.seed = Math.floor(Math.random() * 1000000);
+    try { localStorage.setItem(SEED_KEY, String(state.seed)); } catch (err) { /* no storage */ }
+    state.cards = generateStore(state.world, state.seed);
+    state.selected = null;
+    state.selectedEl = null;
+    saveStore();
+    render();
+    announce('reseeded from the loaded pack.');
+  }
+
   function wireDropTargets() {
     if (window.Sortable && typeof window.Sortable.create === 'function') {
       COLUMNS.forEach(function (col) {
@@ -532,6 +550,7 @@ window.VEFR_BOARD = (function () {
     init: init,
     move: move,
     syncColumns: syncColumns,
+    reseed: reseed,
     render: render,
     state: state,
     generateStore: generateStore,
