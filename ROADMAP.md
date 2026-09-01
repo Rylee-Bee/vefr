@@ -624,6 +624,26 @@
       225 passed, 2 skipped (`uv run --group test pytest -q`), ruff
       clean.
 
+- [x] **the ledger forgets no name** (2026-09-01, this session):
+      the neutrality work's final three landed changes, recorded
+      together. The tree scrub (PR #40): every tracked trace of the
+      private pack and game names gone from tests, docs, LICENSE,
+      and the guides - the two previously-skipped fixture suites
+      now run against the tracked canary instead of skipping - and
+      the two flagged follow-ups closed with it (`/api/builder/
+      resolved` surfaces the fragment banks; the surface-UI entry
+      no longer claims a half that the packaged-costume PR closed).
+      The canon-name sweep (PR #41): the private-term list's
+      character names swept from the synthetic fixtures and the
+      ROADMAP story descriptions; the lore packs stay by design.
+      The history scrub: a third filter-repo pass (backed up and
+      verified, per the AGENTS.md boundary) rewrote every blob,
+      commit message, and historical path name-free across all 200
+      commits. The anti-regression guard's scope now covers src/,
+      web/, tests/, docs/, and the root documents - it caught two
+      stragglers on its first run. Gate: 240 passed, 0 skipped
+      (`uv run --group test pytest -q`), ruff clean.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
