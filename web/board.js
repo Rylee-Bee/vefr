@@ -52,7 +52,7 @@ window.VEFR_BOARD = (function () {
     voices: {
       title: 'a speaker\u2019s line',
       endpoint: '/api/npc', method: 'POST',
-      request: '{ "phase": "<the pack\u2019s phase>",\n  "speaker": "keeper | null" }',
+      request: '{ "phase": "<the pack\u2019s phase>",\n  "speaker": "<speaker-key> | null" }',
       response: '{ "speaker": "...", "line": "..." }'
     },
     forge: {

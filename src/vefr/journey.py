@@ -56,7 +56,7 @@ PHASE_JOURNEY_RUNE: dict[str, dict[str, str]] = {
         "stage": "the revelation / the return",
         "rune": "Sowilo",
         "rune_meaning": "the sun - the gold moment, the warmth earned by the journey back",
-        "journey_question": "what does the protagonist carry home that she did not carry out?",
+        "journey_question": "what does the protagonist carry home that they did not carry out?",
     },
 }
 
@@ -71,14 +71,14 @@ JOURNEY_STAGE_PROSE: dict[str, str] = {
     ),
     "doubts": (
         "The world says no. The protagonist must answer the no to "
-        "pass through. The refusal is the threshold - what she "
-        "gives up to go further, and what she keeps that the no "
+        "pass through. The refusal is the threshold - what they "
+        "give up to go further, and what they keep that the no "
         "doesn't know about."
     ),
     "feared": (
         "The town watches. The allies and the enemies are the "
         "same people from different angles. What the protagonist "
-        "learns in this act is what she did not know she was "
+        "learns in this act is what they did not know they were "
         "looking for."
     ),
     "awed": (
