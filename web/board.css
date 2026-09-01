@@ -73,6 +73,25 @@ body:has(.zone-btn[data-zone="dev"][aria-pressed="true"]) main {
   min-height: 5rem;
 }
 .board-cards.board-drag-over { outline: 1px dashed var(--border); outline-offset: 2px; }
+.board-drag-ghost { opacity: 0.4; }
+.board-drag-chosen { border-color: var(--primary); }
+
+/* Keyboard re-homing - one small button per column in the rail. */
+.board-move-row {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+.board-move {
+  font: inherit; font-size: 0.82rem;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 0.35rem 0.7rem; min-height: 44px; min-width: 44px;
+  cursor: pointer;
+}
+.board-move:hover:not(:disabled) { border-color: var(--primary); color: var(--foreground); }
+.board-move:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.board-move:disabled { opacity: 0.4; cursor: default; }
 
 .board-card {
   background: var(--bg);
