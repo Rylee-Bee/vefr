@@ -1,6 +1,5 @@
 import json
 
-import pytest
 
 from vefr import forge, generator
 from vefr.forge import ItemCard, build_payload, forge_item, keep_item, list_vault

@@ -7,9 +7,7 @@ working. Named sessions derive sibling files and never see each
 other's entries.
 """
 
-import json
 
-import pytest
 
 from vefr import forge, journal
 from vefr.sessions import DEFAULT, clean, derive, is_default, new_id

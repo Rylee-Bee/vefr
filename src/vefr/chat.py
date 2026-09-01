@@ -19,7 +19,6 @@ shape later by adding an `acts/` directory. The scaffold source
 can be either shape - maplab.load_pack unifies them on read.
 """
 
-import json
 import re
 import shutil
 from pathlib import Path
