@@ -122,14 +122,14 @@
     <div class="phase-rail" id="phase" role="group" aria-label="The world's tone"></div>
     <section class="controls">
       <button type="button" id="whisper" class="primary">Whisper</button>
-      <span class="status" id="status">the world listens.</span>
+      <span class="status" id="status">ready.</span>
     </section>
     <section id="feed" aria-live="polite">
-      <p class="empty">The mill is quiet. Press Whisper.</p>
+      <p class="empty">Press Whisper.</p>
     </section>
 
     <h2 style="font-weight:normal;font-size:1rem;color:var(--ink-dim);margin:2rem 0 0.5rem;">Town</h2>
-    <p class="status">walk with the pad or arrow keys. the world stays where you put it.</p>
+    <p class="status">walk with the pad or arrow keys.</p>
     <canvas id="town-canvas" width="480" height="336"></canvas>
     <p class="status" id="near" aria-live="polite"></p>
     <p class="status" id="poi" aria-live="polite"></p>
@@ -238,7 +238,7 @@ function bindWhisper() {
   var feed = document.getElementById('feed');
   btn.addEventListener('click', async function () {
     btn.disabled = true;
-    status.textContent = 'the mill turns\u2026';
+    status.textContent = 'listening\u2026';
     var ph = STATE.get().phase;
     var tone = window.VEFR_WORLD.phases[ph] || '';
     var system = 'You are the whisper that flies out every day and comes home.\n'
@@ -279,7 +279,7 @@ function bindWhisper() {
         + '<p class="whisper">&ldquo;' + esc(card.whisper) + '&rdquo;</p>'
         + (card.is_true ? '' : '<p class="status">a lie, or close enough</p>');
       feed.insertBefore(div, feed.firstChild);
-      status.textContent = 'the mill is warm.';
+      status.textContent = 'whispered.';
     } catch (err) {
       // No live endpoint (or it failed): draw from the woven pool -
       // real model output, pre-generated at weave time.
@@ -294,7 +294,7 @@ function bindWhisper() {
         feed.insertBefore(pdiv, feed.firstChild);
         status.textContent = 'from the woven pool.';
       } else {
-        status.textContent = 'the mill is silent (' + (err.message || 'failed') + ').';
+        status.textContent = 'nothing came back (' + (err.message || 'failed') + ').';
       }
     } finally {
       btn.disabled = false;
@@ -339,7 +339,7 @@ function poolDraw(key) {
 }
 
 // ---- town ----
-// Renders the static map grid and moves the wanderer around it. NPC clicks
+// Renders the static map grid and moves the hero around it. NPC clicks
 // fire a one-line ask to the same LLM with the active speaker's voice.
 function setupTown() {
   var world = window.VEFR_WORLD;
@@ -383,7 +383,7 @@ function setupTown() {
         ctx.fillRect(t[0] * town.tile, t[1] * town.tile, town.tile, town.tile);
       });
     }
-    // the wanderer
+    // The hero
     ctx.fillStyle = town.hero_color || '#e8e5df';
     ctx.beginPath();
     ctx.arc(hero[0] * town.tile + town.tile / 2,
