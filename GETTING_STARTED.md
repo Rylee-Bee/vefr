@@ -101,6 +101,20 @@ uv run norns --help    # craft: chat, validate, build-map, verify
 Both print a full command list with descriptions - that's the
 canonical reference, always in sync with the code.
 
+## 5b. Shipping to a deploy host
+
+The deploy wrapper hides rsync + podman build + quadlet restart +
+health check behind one command. First-time setup:
+
+```sh
+uv run ratatoskr ferry deploy --init          # writes deploy.toml.example
+cp deploy.toml.example deploy.toml            # then edit to match your host
+export VEFR_DEPLOY_HOST=$(grep ^host deploy.toml | cut -d'"' -f2)
+uv run ratatoskr ferry deploy                 # pre-flight + build + restart + verify
+```
+
+Full guide: `docs/guides/deploy.md`.
+
 ## 6. The API reference
 
 The FastAPI app serves interactive docs for free, no separate file

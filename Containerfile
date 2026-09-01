@@ -35,4 +35,12 @@ COPY worlds ./worlds-template
 RUN mkdir -p /app/worlds /app/data
 VOLUME ["/app/worlds-template", "/app/worlds", "/app/data"]
 
+# Stamp the build with the engine source SHA so `ratatoskr ferry deploy`
+# can skip a no-op `podman build` when the remote image already matches
+# the checkout HEAD. Falls back to a build-time `git rev-parse`; if the
+# repo metadata is missing (a packaged tarball, an export that stripped
+# .git) the label is the literal string "unknown".
+ARG ENGINE_SHA=unknown
+LABEL vefr.engine_sha=${ENGINE_SHA}
+
 CMD ["uvicorn", "vefr.main:app", "--host", "0.0.0.0", "--port", "8820"]

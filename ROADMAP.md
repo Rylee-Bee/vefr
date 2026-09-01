@@ -424,6 +424,27 @@
       Builder tab with accessible triggers and status reporting. Tested with
       dedicated test suite (`tests/test_enhance.py`).
 
+- [x] **`ferry deploy` hardened as the single ship button** (2026-09-01,
+      this session). `ratatoskr ferry deploy` now owns the bazzite
+      deploy path end-to-end: pre-flight gate (`pytest -q` +
+      `norns validate --pack sample-world`, `--skip-tests` to bypass),
+      rsync the checkout, skip `podman build` when the remote image's
+      `vefr.engine_sha` label already matches the local HEAD
+      (`--rebuild` to force), `systemctl --user restart vefr`,
+      ensure the `vefr-{template,worlds}` named volumes exist,
+      post-deploy `/api/health` + `maplab verify` (`--no-health` to
+      bypass). `--init` writes `deploy.toml.example` + the README
+      path; the wrapper refuses to run with the silent `bazzite`
+      default and points operators at `--init` (a fresh clone
+      without a host should explode loudly, not `ssh` a hostname
+      that resolves to nothing). `Containerfile` stamps
+      `ENGINE_SHA=$(git rev-parse HEAD)` as a label so the
+      no-op-skip works; `VEFR_DEPLOY_IMAGE` env override. New guide
+      `docs/guides/deploy.md`; cross-link in `GETTING_STARTED.md`.
+      Legacy `docs/guides/deploy-rsync-dance.md` kept for old
+      bind-mount hosts. Tested in `tests/test_deploy.py` (4 new
+      tests, full suite 200 passed).
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
