@@ -49,6 +49,7 @@ class El {
   get value() { return this._value || ''; }
   set value(v) { this._value = String(v); }
   appendChild(c) { c.parent = this; this.children.push(c); return c; }
+  focus() { /* focusable like the real element; harness tracks nothing */ }
   remove() {
     if (this.parent) this.parent.children = this.parent.children.filter((c) => c !== this);
     this.parent = null;
