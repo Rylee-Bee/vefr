@@ -30,16 +30,16 @@ kilo config - do not add personal files to this repo.
 ## What this repo isn't
 
 - The game. The engine is the bones; the author's story is the
-  flesh, kept in a separate private pack repo (e.g.
-  `the private story repo`) and dropped into `worlds/<name>/` locally
-  when it's time to play. `worlds/private-canon/` (if it exists on
-  this checkout) is gitignored here. Engine history was
-  filter-repo'd on 2026-08-31 to remove every trace; the engine
-  must never re-learn any specific game's name - whether from the
-  author's pack or from any other pack. If a string in `web/`,
-  `src/`, a system prompt, or a placeholder defaults to a name
-  that isn't pack-supplied, that's a leak; replace it with an
-  engine-neutral verb (or empty the slot until the pack loads).
+  flesh, kept in a separate private pack repo and dropped into
+  `worlds/<name>/` locally when it's time to play. Any non-shipped
+  pack under `worlds/` is author-canon and gitignored here. Engine
+  history was filter-repo'd on 2026-08-31 to remove every trace of
+  any specific game; the engine must never re-learn a game's name
+  - whether from the author's pack or from any other pack. If a
+  string in `web/`, `src/`, docs, tests, a system prompt, or a
+  placeholder defaults to a name that isn't pack-supplied, that's
+  a leak; replace it with an engine-neutral verb (or empty the
+  slot until the pack loads).
 - Multi-backend tied: llama.cpp (`VEFR_LLAMACPP_URL`) is preferred,
   Ollama (`OLLAMA_URL`) is fallback. Structured output only
   (`response_format.json_schema`, `strict: true`).
@@ -95,7 +95,7 @@ uv run ratatoskr weave --pool 5
 | Ask first | Changing the pack contract: `world.py` REQUIRED keys, `VALID_SURFACES`, the loader's canonical shape, or the acts/flat on-disk layouts.                  |
 | Ask first | Adding a tracked world pack beyond `sample-world`, or a new public API route in `main.py`.                                                             |
 | Ask first | Any git history rewrite. (The 2026-08-31 filter-repo was a one-time, backed-up, verified operation - not a template.)                                    |
-| Never     | Commit story content from `the private story repo` (`worlds/private-canon/` is gitignored - keep it that way), or name any specific game in engine code, prompts, API titles, or tests. |
+| Never     | Commit story content from a private story-pack repo (any non-shipped pack under `worlds/` is gitignored - keep it that way), or name any specific game in engine code, prompts, API titles, tests, or docs. |
 | Never     | Commit runtime state: `data/sessions/`, `data/vault-*.json`, `data/journal-*.json`, `data/weave.jsonl`, `worlds/*/world-tree.md`, `worlds/*/handbok.md` (all gitignored). |
 | Never     | Hand-edit `uv.lock`. Add `"think": true` (or drop `strict: true`) on any schema-constrained generation call.                                             |
 | Never     | Report done without the pytest gate output pasted. Proposed = committed, not merged; staged = on a branch only.                                          |
@@ -108,9 +108,9 @@ uv run ratatoskr weave --pool 5
 - **Honesty contract:** this repo's own design ethos applies to its
   process too - every name spoken must be true, every claim has a
   verifiable command. Paste the command with the claim.
-- **Rename history:** this package was `old-name`, briefly `old-name`, then
-  `norn`, now `vefr` (2026-08-31). Env vars are `VEFR_*`. If you meet
-  an old name in a comment, it's drift - fix it.
+- **Rename history:** this package was renamed several times before
+  it landed as `vefr` (2026-08-31). Env vars are `VEFR_*`. If you
+  meet an old name in a comment, it's drift - fix it.
 - **Known drift:** none. The 76 tracked runtime-state files under
   `data/` plus `worlds/poolworld/world-tree.md` were untracked
   2026-09-01 (`git rm -r --cached`, feat/dev-playability-five);

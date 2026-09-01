@@ -105,7 +105,7 @@ def test_second_remove_overwrites_first_stash(tmp_journal):
 def tmp_pack(tmp_path, monkeypatch):
     # pack_dir() uses app_home()/worlds/<resolved>, so point both at tmp.
     monkeypatch.setattr(journal, 'JOURNAL', tmp_path / 'journal.json')
-    pack = tmp_path / 'worlds' / 'private-canon'
+    pack = tmp_path / 'worlds' / 'my-canon'
     pack.mkdir(parents=True)
     (pack / 'world.json').write_text('{"title": "t", "phases": {}, "voices": {}, "bonds": {}, "town": {}}')
     monkeypatch.setattr('vefr.starred.pack_dir', lambda *a, **k: pack)
