@@ -234,12 +234,34 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             errors.append(f"voice '{vkey}' is missing required non-empty 'strike' prompt")
 
     if pack_dir is not None:
-        for voice in w.get('voices', {}).values():
-            if not (Path(pack_dir) / voice['file']).exists():
-                errors.append(f'missing voice file: {voice["file"]}')
+        p = Path(pack_dir)
+        # Helper to check if a voice file exists in acts or flat layout
+        def find_voice_file(fname: str) -> bool:
+            if not fname:
+                return False
+            basename = Path(fname).name
+            acts_dir = p / 'acts'
+            if acts_dir.is_dir():
+                for act_dir in acts_dir.iterdir():
+                    if not act_dir.is_dir():
+                        continue
+                    for region_dir in act_dir.iterdir():
+                        if (region_dir / 'voices' / basename).exists():
+                            return True
+            if (p / fname).exists() or (p / 'voices' / basename).exists():
+                return True
+            return False
+
+        for vkey, voice in voices.items():
+            # In flat packs or acts packs, check if voice file exists on disk
+            vfile = voice.get('file', f'voices/{vkey}.md') if isinstance(voice, dict) else f'voices/{vkey}.md'
+            if not find_voice_file(vfile):
+                errors.append(f"missing voice file for voice '{vkey}': {vfile}")
+
         for spec in w.get('speakers', {}).values():
-            if not (Path(pack_dir) / spec['voice_file']).exists():
-                errors.append(f'missing speaker voice file: {spec["voice_file"]}')
+            sfile = spec.get('voice_file', '')
+            if not find_voice_file(sfile):
+                errors.append(f'missing speaker voice file: {sfile}')
 
     return errors
 
@@ -390,6 +412,10 @@ def verify_live(url: str) -> tuple[bool, list[str]]:
 
     Used by both the maplab CLI ('verify') and the builder web UI
     ('/api/builder/verify'). Returns (ok, errors).
+
+    Note: /api/world serves phases, speakers, and town geometry; pack-level
+    voices are omitted from offline validation during live verification as
+    they are internal prompt templates.
     """
     with urllib.request.urlopen(f'{url.rstrip("/")}/api/world', timeout=15) as r:
         served = json.loads(r.read().decode('utf-8'))
@@ -402,7 +428,6 @@ def verify_live(url: str) -> tuple[bool, list[str]]:
                        'seeds': s.get('seeds', {})}
             for s in served['speakers']
         },
-        'voices': {},
         'town': {k: served[k] for k in town_keys if k in served},
     }
     errors = validate(w)
