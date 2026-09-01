@@ -81,6 +81,10 @@ def test_board_wired_into_chrome():
     )
     assert 'id="board-status"' in html, "aria-live move status missing"
     assert 'id="board-move-forge"' in html, "keyboard re-home buttons missing"
+    assert 'id="rail-chat-send"' in html, "smith draft send button missing"
+    assert 'disabled' not in (html.split('id="rail-draft"')[1][:200]), (
+        "the draft box must be live now - it wires to /api/builder/chat"
+    )
     assert (Path(__file__).resolve().parents[1] / "web" / "vendor" / "Sortable.min.js").exists(), (
         "vendored Sortable.min.js file missing"
     )

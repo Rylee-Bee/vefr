@@ -1195,8 +1195,12 @@
           <button type="button" class="board-move" id="board-move-bell">bell</button>
         </div>
         <p class="note" id="board-status" aria-live="polite">&nbsp;</p>
-        <textarea id="rail-draft" rows="3" disabled
-                  placeholder="draft to the smith - wires in a later landing"></textarea>
+        <div class="board-chat">
+          <textarea id="rail-draft" rows="3"
+                    placeholder="draft to the smith about this card"></textarea>
+          <button type="button" id="rail-chat-send">Send</button>
+        </div>
+        <pre id="rail-chat-log" aria-live="polite"></pre>
       </aside>
     </div>
   </section>
