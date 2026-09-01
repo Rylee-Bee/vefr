@@ -457,15 +457,6 @@
       1.10's JS scripting API could later host a one-click "export
       as vefr pack" from inside the editor. See
       `docs/guides/companion-resources.md`.
-- [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
-      order - the heels, the sentence, the dictionary, the letter -
-      one wall down per accepted thing, the empty room, the
-      chore-note as map. It feels like the ending. It is not.
-- [ ] **v1.4 - the water (act III)**: the grave in the reeds; the
-      bell rings once, warm-tuned; the the sea-figure surfaces (gold); the
-      town says the name; the golden light's words arrive. The last
-      screen is gold. (The reed crossing's water-level choice and the
-      water's-edge sighting already landed in v1.2.)
 - [ ] **`norns chat` v2**: let the interview grow the map itself
       (currently frozen at the scaffold's proven-valid layout),
       and add more than one speaker
