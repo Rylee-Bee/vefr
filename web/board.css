@@ -1,15 +1,11 @@
 /* The dev board. Lives only in the Dev zone (view-board); the
    palette is the page's own - luminance carries rank, hue is a tint
    at most. Columns are a grid that never forces horizontal scroll;
-   on narrow screens it folds to two columns, then one. */
+   on narrow screens it folds to two columns, then one.
 
-/* The Dev zone is a wide workbench; Play and World stay the reading
-   column. This keys off the zone button's own aria-pressed state, so
-   it is pure CSS: no script change, and a browser without :has()
-   simply keeps the narrow column - degraded, not broken. */
-body:has(.zone-btn[data-zone="dev"][aria-pressed="true"]) main {
-  max-width: min(100rem, 100% - 2rem);
-}
+   The pane vocabulary here (board-container / board-column /
+   board-cards / board-rail) is the app's shared skeleton now: the
+   wiki pane reuses it, so the shell reads the same in every zone. */
 
 .board-container {
   display: flex;
@@ -46,6 +42,10 @@ body:has(.zone-btn[data-zone="dev"][aria-pressed="true"]) main {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
   min-width: 0;
+}
+/* Two-column variant - the World pane (Characters / Relics). */
+.board-columns.board-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .board-column {
   background: var(--card);

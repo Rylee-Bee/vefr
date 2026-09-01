@@ -69,8 +69,12 @@ def test_board_wired_into_chrome():
     assert 'href="/static/board.css"' in html, "board.css stylesheet link missing"
     assert "old-name:board" in html, "tabs must dispatch old-name:board for lazy boot"
     # The board must not leak outside the Dev zone: it lives only in
-    # its own hidden view section, not in the always-on markup.
-    assert html.count("board-container") == 1, "board container should appear exactly once"
+    # its own hidden view section, not in the always-on markup. The
+    # container CLASS is shared vocabulary now (the wiki pane wears
+    # it too) - what must stay unique is the board's own ids.
+    assert html.count('id="view-board"') == 1, "view-board should appear exactly once"
+    for col in ("whispers", "voices", "forge", "bell"):
+        assert html.count(f'id="board-{col}"') == 1, f"board-{col} should appear exactly once"
     # The drag layer: Sortable is vendored and loaded before board.js;
     # the keyboard re-home row + live status live in the rail markup.
     assert 'src="/static/vendor/Sortable.min.js"' in html, (
