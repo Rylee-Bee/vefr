@@ -287,9 +287,36 @@
       `the private story repo`, ferry fetch to play. The bones
       stay empty until a pack mounts.
 
+- [x] **the dev board** (2026-08-31, this session): the Dev zone's
+      github-projects-style board - the pack's four generators
+      (whispers / voices / forge / bell) as draggable cards in a
+      file-tree chrome. Cards are drawn from the loaded pack
+      (/api/world, shared fetch - one request per page); a column
+      the pack cannot fill is seeded from a deterministic
+      engine-neutral pool (Norse-coded names, no canon strings -
+      the strip holds here too), so the board is never empty and
+      never storyful. A fresh seed per browser persists in
+      localStorage (`vefr-board-seed`), so a run is reproducible
+      but never identical to the pack. Dragging a card between
+      columns re-homes it and persists (`vefr-board-cards`), with
+      an honest "moved" timestamp; a fresh boot loads the store
+      instead of regenerating. The right rail (hidden until a card
+      is selected) shows the column's real endpoint, request and
+      response shapes, a "try it" button that calls the endpoint
+      like the game's own buttons do (and says plainly when the
+      engine does not answer), and a draft box reserved for
+      `norns chat` wiring. The board boots lazily on its own tab
+      - the Play path never asks for it - and `web/board.js` is
+      machine-tested two ways: the vm contract harness
+      (tests/fixtures/board_harness.mjs) and the full-DOM
+      harness's tab tour, which now proves the board adds no
+      second /api/world fetch. Packaged play files are untouched
+      (the board is a served-UI Dev feature). Editing cards
+      belongs to `norns chat`, not a textarea - navigation-only
+      chrome on purpose.
+
 ## Next
 
-- [ ] **the dev board** (github-projects feel, pack-aware cards, drag-to-rank, right-rail detail)
 - [ ] **the engine is a game too** (2026-08-31): the umbrella. Every
       part of the story and the engine - replaceable, modifiable,
       fork-able from a dev menu, each enhanced by the local AI chat:
