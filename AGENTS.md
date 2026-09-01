@@ -111,10 +111,10 @@ uv run ratatoskr weave --pool 5
 - **Rename history:** this package was `old-name`, briefly `old-name`, then
   `norn`, now `vefr` (2026-08-31). Env vars are `VEFR_*`. If you meet
   an old name in a comment, it's drift - fix it.
-- **Known drift:** 76 runtime-state files under `data/` plus
-  `worlds/poolworld/world-tree.md` are still tracked despite matching
-  gitignore rules (they predate the rules). Removing them is its own
-  PR (`git rm -r --cached`), not a drive-by.
+- **Known drift:** none. The 76 tracked runtime-state files under
+  `data/` plus `worlds/poolworld/world-tree.md` were untracked
+  2026-09-01 (`git rm -r --cached`, feat/dev-playability-five);
+  the gitignore rules now hold alone.
 
 ## Style
 
