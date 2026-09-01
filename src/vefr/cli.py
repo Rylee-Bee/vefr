@@ -747,18 +747,65 @@ def cmd_deploy(args) -> int:
         print('deployed (health check skipped). <3')
         return 0
 
-    import time
-    time.sleep(2)
-    try:
-        h = fetch(f'{url.rstrip("/")}/api/health')
+    # Probe the deploy via an SSH-tunnelled localhost when the
+    # operator didn't pass --url. This avoids depending on the dev
+    # box's local DNS or /etc/hosts for the deploy host (the
+    # "bazzite alias resolved to 192.168.2.145" failure mode).
+    import os as _os
+    if url == DEFAULT_URL:
+        local_port = '8820'
+        ssh_args = ('ssh', '-o', 'ExitOnForwardFailure=yes',
+                    '-L', f'{local_port}:127.0.0.1:8820', host)
+        forward = subprocess.Popen(('ssh', '-fN', *ssh_args[1:]))
+        try:
+            probe_url = f'http://127.0.0.1:{local_port}'
+        except Exception:
+            forward.terminate()
+            raise
+        try:
+            h = _wait_for_health(probe_url)
+            print(f'health (via tunnel): {h}')
+            from .maplab import main as maplab_main
+            ok = maplab_main(['verify', '--url', probe_url])
+            print('deployed. <3' if ok == 0
+                  else 'deployed, but map verify flagged problems.')
+            return ok
+        finally:
+            subprocess.run(('ssh', '-O', 'exit', host),
+                           capture_output=True)
+            try:
+                _os.kill(forward.pid, 0)
+            except (ProcessLookupError, OSError):
+                pass
+            forward.terminate()
+    else:
+        h = _wait_for_health(url)
         print(f'health: {h}')
-    except Exception as e:  # noqa: BLE001
-        print(f'health check failed: {e}')
-        return 1
-    from .maplab import main as maplab_main
-    ok = maplab_main(['verify', '--url', url])
-    print('deployed. <3' if ok == 0 else 'deployed, but map verify flagged problems.')
-    return ok
+        from .maplab import main as maplab_main
+        ok = maplab_main(['verify', '--url', url])
+        print('deployed. <3' if ok == 0
+              else 'deployed, but map verify flagged problems.')
+        return ok
+
+
+def _wait_for_health(url: str, attempts: int = 20, delay: float = 1.5) -> str:
+    """Poll /api/health up to `attempts` times, sleeping `delay` between.
+
+    A fresh uvicorn + FastAPI cold start takes ~5-10s; the old fixed
+    2s sleep gave up before the server was actually listening.
+    Raises the last urllib error on exhaustion.
+    """
+    import time as _time
+    last_err: Exception | None = None
+    for _ in range(attempts):
+        try:
+            return fetch(f'{url.rstrip("/")}/api/health')
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            _time.sleep(delay)
+    raise RuntimeError(
+        f'health check never went green after {attempts * delay:.0f}s: {last_err}'
+    )
 
 
 def _deploy_init(root: Path) -> int:
