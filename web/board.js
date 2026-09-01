@@ -59,7 +59,10 @@ window.VEFR_BOARD = (function () {
       title: 'an item',
       endpoint: '/api/forge', method: 'POST',
       request: '{}',
-      response: '{ "name": "...", "lore": "...",\n  "bond": "assigned | attuned | cold" }'
+      /* The bond keys belong to the pack - sample-world draws
+         given/found/cold, another pack may draw anything. The
+         engine file names no pack's vocabulary. */
+      response: '{ "name": "...", "lore": "...",\n  "bond": "<the pack\u2019s bond keys>" }'
     },
     bell: {
       title: 'the bell\u2019s letter',
