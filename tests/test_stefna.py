@@ -2,8 +2,9 @@ import json
 
 import pytest
 
-from vefr import stefna, generator
+from vefr import generator, maplab, stefna
 from vefr.stefna import build_payload, generate_letter
+from vefr.world import PackError
 
 
 GOOD = json.dumps({"letter": "Keep the door shut at night. The rest is yours."})
@@ -22,15 +23,41 @@ def test_stefna_voice_falls_back_to_the_packs_first_voice(monkeypatch):
     # the pack declares itself.
     monkeypatch.setattr(
         stefna, "load_world",
-        lambda: {"voices": {"keeper": {}, "other": {}}},
+        lambda: {"voices": {"keeper": {"strike": "strike text"}, "other": {"strike": "other"}}},
     )
     assert stefna.stefna_voice_key() == "keeper"
 
 
 def test_stefna_voice_refuses_a_voiceless_pack(monkeypatch):
     monkeypatch.setattr(stefna, "load_world", lambda: {"voices": {}})
-    with pytest.raises(KeyError):
+    with pytest.raises(PackError):
         stefna.stefna_voice_key()
+
+
+def test_stefna_voice_refuses_unknown_declared_voice(monkeypatch):
+    monkeypatch.setattr(
+        stefna, "load_world",
+        lambda: {"stefna_voice": "keepr", "voices": {"keeper": {"strike": "s"}}},
+    )
+    with pytest.raises(PackError) as exc:
+        stefna.stefna_voice_key()
+    assert "keepr" in str(exc.value)
+
+
+def test_validator_catches_stefna_voice_typo():
+    from vefr.world import load_world
+    w = load_world("sample-world")
+    w["stefna_voice"] = "nonexistent_voice"
+    errs = maplab.validate(w)
+    assert any("stefna_voice 'nonexistent_voice'" in e for e in errs)
+
+
+def test_validator_catches_missing_voice_strike():
+    from vefr.world import load_world
+    w = load_world("sample-world")
+    w["voices"]["keeper"]["strike"] = ""
+    errs = maplab.validate(w)
+    assert any("missing required non-empty 'strike'" in e for e in errs)
 
 
 def test_letter_parses(monkeypatch):
@@ -49,3 +76,4 @@ def test_letter_retries(monkeypatch):
     monkeypatch.setattr(generator, "_completion", flaky)
     assert "door" in generate_letter().letter
     assert len(calls) == 2
+
