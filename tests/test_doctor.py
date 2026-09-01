@@ -21,7 +21,7 @@ def _patch(monkeypatch, tmp_path, **overrides):
     monkeypatch.setattr(cli, 'repo_root', lambda: tmp_path)
     monkeypatch.setattr(
         cli, '_pytest_summary',
-        lambda repo: ('ok', '171 passed, 2 skipped in 0.5s'))
+        lambda repo: ('ok', 'passed tests in 0.5s'))
     monkeypatch.setattr(cli, 'load_pack', lambda pack: {'title': 't'})
     monkeypatch.setattr(cli, 'validate', lambda w, pack_dir=None: [])
     monkeypatch.delenv('VEFR_LIVE_URL', raising=False)

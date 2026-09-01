@@ -456,25 +456,20 @@ def runes_registry():
 
 
 @app.get("/api/runes/cast")
-def runes_cast():
+def runes_cast(phase: str | None = None):
     """Today's cast - three runes for the current moment.
 
     Seeded from (world_name, current ISO minute). Same cast within
     a session-minute; new cast every minute. The model sees this
     same cast in its system prompt; the player sees it in the UI.
+    Pass ?phase=X to get the cast for a specific phase.
     """
     from datetime import datetime, timezone
     from .runes import cast_for, render_for_prompt, seed_for
 
-    # Phase comes from the pack's `phases` ordering. The first phase
-    # is the canonical "current" one if the client hasn't told us
-    # otherwise; clients can pass ?phase=X to override.
-    # We can't read query params here without changing the signature;
-    # the current phase is the first phase in the pack. Clients that
-    # want a phase-specific cast can hit this endpoint with the cast
-    # baked in - or we can grow it to read query params later.
     pack_phases = list(load_world().get("phases", {}).keys())
-    phase = pack_phases[0] if pack_phases else "whispers"
+    if not phase:
+        phase = pack_phases[0] if pack_phases else "whispers"
     iso_minute = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
     seed = seed_for("api.runes.cast", phase, iso_minute)
     cast_result = cast_for(seed, phase=phase)
