@@ -870,6 +870,21 @@
     background: var(--background); border: 1px solid var(--border);
     border-radius: var(--radius-sm); color: var(--ink-dim);
   }
+  /* Section filter - one input above the content, count announced
+     politely. Same 44px target and focus ring as every other field. */
+  .dev-drawer-filter { padding: 0 1rem 0.4rem; }
+  .dev-drawer-input {
+    font: inherit; width: 100%;
+    min-height: 44px;
+    background: var(--background); color: var(--foreground);
+    border: 1px solid var(--input); border-radius: var(--radius-md);
+    padding: 0.5rem 0.6rem;
+  }
+  .dev-drawer-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .dev-drawer-filter-count {
+    margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--ink-dim);
+    min-height: 1em;
+  }
 </style>
 </head>
 <body data-surface="plain">
@@ -1037,6 +1052,11 @@
       </svg>
     </button>
   </header>
+  <div class="dev-drawer-filter">
+    <input type="search" id="dev-drawer-filter" class="dev-drawer-input"
+           placeholder="filter sections" aria-label="Filter inspector sections">
+    <p class="dev-drawer-filter-count" id="dev-drawer-filter-count" aria-live="polite"></p>
+  </div>
   <div class="dev-drawer-content" id="dev-drawer-content" aria-live="polite">
     <div style="color:var(--ink-dim);font-size:0.9rem;">Loading aspects...</div>
   </div>
@@ -1354,9 +1374,13 @@
         <div class="board-chat">
           <textarea id="rail-draft" rows="3"
                     placeholder="draft to the smith about this card"></textarea>
-          <button type="button" id="rail-chat-send">Send</button>
+          <div class="board-chat-actions">
+            <button type="button" id="rail-chat-send">Send</button>
+            <button type="button" id="rail-chat-clear">Clear thread</button>
+          </div>
         </div>
-        <pre id="rail-chat-log" aria-live="polite"></pre>
+        <div class="board-chat-log" id="rail-chat-log" aria-live="polite"></div>
+        <p class="note" id="rail-chat-note">last 6 turns replay to the engine.</p>
       </aside>
     </div>
   </section>
@@ -2787,7 +2811,19 @@
   var content = document.getElementById('dev-drawer-content');
   if (!trigger || !drawer || !backdrop || !content) return;
 
-  function renderAspects(data) {
+  var lastAspects = null;
+  var filterInput = document.getElementById('dev-drawer-filter');
+  var filterCount = document.getElementById('dev-drawer-filter-count');
+
+  /* One section = title + pre-built body. The filter re-renders from
+     the stored payload instead of hiding parsed rows - honest, and
+     every check stays a plain string read. */
+  function section(title, body) {
+    return '<div class="dev-drawer-section">' +
+      '<h3>' + title + '</h3>' + body + '</div>';
+  }
+
+  function renderAspects(data, query) {
     var p = data.pack || {};
     var a = data.act || {};
     var rc = data.rune_cast || {};
@@ -2820,46 +2856,53 @@
       return '<div style="margin-bottom:0.3rem;"><code>' + t.at.slice(11, 19) + '</code> ' + t.route + ' (' + t.ms + 'ms)' + (t.speaker ? ' [' + t.speaker + ']' : '') + '</div>';
     }).join('');
 
-    content.innerHTML =
-      '<div class="dev-drawer-section">' +
-        '<h3>Pack &amp; Surface</h3>' +
+    var sections = [
+      section('Pack &amp; Surface',
         '<div class="dev-drawer-grid">' +
-          '<div class="dev-drawer-field"><span class="k">Pack Name</span><span class="v">' + (p.name || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Title</span><span class="v">' + (p.title || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Surface</span><span class="v">' + (p.surface || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Shape</span><span class="v">' + (p.shape || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Phases</span><span class="v">' + ((p.phases || []).join(', ') || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Gold Rule</span><span class="v">' + (p.gold_rule || 'None') + '</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="dev-drawer-section">' +
-        '<h3>Active Act &amp; Structure</h3>' +
+        '<div class="dev-drawer-field"><span class="k">Pack Name</span><span class="v">' + (p.name || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Title</span><span class="v">' + (p.title || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Surface</span><span class="v">' + (p.surface || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Shape</span><span class="v">' + (p.shape || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Phases</span><span class="v">' + ((p.phases || []).join(', ') || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Gold Rule</span><span class="v">' + (p.gold_rule || 'None') + '</span></div>' +
+        '</div>'),
+      section('Active Act &amp; Structure',
         '<div class="dev-drawer-grid">' +
-          '<div class="dev-drawer-field"><span class="k">Act ID</span><span class="v">' + (a.id || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Act Title</span><span class="v">' + (a.title || '-') + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Progress</span><span class="v">Act ' + ((a.index || 0) + 1) + ' of ' + (a.total_acts || 1) + '</span></div>' +
-          '<div class="dev-drawer-field"><span class="k">Enemies / Bosses</span><span class="v">' + (a.enemies || []).length + ' / ' + (a.bosses || []).length + '</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="dev-drawer-section">' +
-        '<h3>Regions</h3>' +
-        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (regRows || 'No regions') + '</div>' +
-      '</div>' +
-      '<div class="dev-drawer-section">' +
-        '<h3>Speakers Matrix</h3>' +
-        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (spkRows || 'No speakers') + '</div>' +
-      '</div>' +
-      '<div class="dev-drawer-section">' +
-        '<h3>Living Rune Cast</h3>' +
-        '<div style="font-size:0.88rem;display:flex;flex-direction:column;gap:0.3rem;">' + (runeRows || 'No cast') + '</div>' +
-      '</div>' +
-      '<div class="dev-drawer-section">' +
-        '<h3>Recent Trace Events</h3>' +
-        '<div class="dev-drawer-pre">' + (traceRows || 'No trace events') + '</div>' +
-      '</div>';
+        '<div class="dev-drawer-field"><span class="k">Act ID</span><span class="v">' + (a.id || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Act Title</span><span class="v">' + (a.title || '-') + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Progress</span><span class="v">Act ' + ((a.index || 0) + 1) + ' of ' + (a.total_acts || 1) + '</span></div>' +
+        '<div class="dev-drawer-field"><span class="k">Enemies / Bosses</span><span class="v">' + (a.enemies || []).length + ' / ' + (a.bosses || []).length + '</span></div>' +
+        '</div>'),
+      section('Regions',
+        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (regRows || 'No regions') + '</div>'),
+      section('Speakers Matrix',
+        '<div style="display:flex;flex-direction:column;gap:0.5rem;">' + (spkRows || 'No speakers') + '</div>'),
+      section('Living Rune Cast',
+        '<div style="font-size:0.88rem;display:flex;flex-direction:column;gap:0.3rem;">' + (runeRows || 'No cast') + '</div>'),
+      section('Recent Trace Events',
+        '<div class="dev-drawer-pre">' + (traceRows || 'No trace events') + '</div>')
+    ];
+
+    var q = (query || '').trim().toLowerCase();
+    var shown = 0;
+    content.innerHTML = sections
+      .filter(function (s) {
+        if (!q) return true;
+        var text = s.replace(/<[^>]+>/g, ' ').toLowerCase();
+        return text.indexOf(q) > -1;
+      })
+      .map(function (s) { shown++; return s; })
+      .join('')
+      || '<div style="color:var(--ink-dim);font-size:0.9rem;">no sections match.</div>';
+    if (filterCount) {
+      filterCount.textContent = q
+        ? shown + ' of ' + sections.length + ' sections match.'
+        : '';
+    }
   }
 
   function loadAspects() {
+    lastAspects = null;
     content.innerHTML = '<div style="color:var(--ink-dim);font-size:0.9rem;">Loading aspects...</div>';
     var statePhase = (window.VEFR_STATE && window.VEFR_STATE.get && window.VEFR_STATE.get().phase) || '';
     var url = '/api/builder/aspects' + (statePhase ? '?phase=' + encodeURIComponent(statePhase) : '');
@@ -2869,11 +2912,24 @@
         return r.json();
       })
       .then(function (data) {
-        renderAspects(data);
+        lastAspects = data;
+        renderAspects(data, filterInput ? filterInput.value : '');
       })
       .catch(function (err) {
+        lastAspects = null;
         content.innerHTML = '<div style="color:var(--destructive);font-size:0.9rem;">Failed to load aspects: ' + err.message + '</div>';
+        if (filterCount) filterCount.textContent = '';
       });
+  }
+
+  /* Filter-as-you-type: re-renders from the last payload, so the
+     drawer never refetches on a keystroke. An empty query restores
+     every section and clears the count. */
+  if (filterInput) {
+    filterInput.addEventListener('input', function () {
+      if (lastAspects) renderAspects(lastAspects, filterInput.value);
+      else if (filterCount) filterCount.textContent = '';
+    });
   }
 
   function openDrawer() {
