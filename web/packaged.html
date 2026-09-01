@@ -194,6 +194,12 @@ window.VEFR_VOICES = {{voices_json}};
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
 window.VEFR_POOL = {{pool_json}};
 
+// The offline whisper banks - per-speaker fragments written by the
+// author (voices/<name>.fragments.md). The composer's last resort
+// before honest silence: no pool at all, no model, but the pack's
+// own words. See composeFromFragments.
+window.VEFR_FRAGMENTS = {{fragments_json}};
+
 // ---- minimal state ----
 const STATE = (function () {
   var s = { phase: null, world: null };
@@ -410,11 +416,15 @@ function bindWhisper() {
     } catch (err) {
       // No live endpoint (or it failed): draw from the woven pool -
       // real model output, pre-generated at weave time. Pool spent?
-      // The composer re-weaves the pool's own cloth; with no cloth
-      // at all, the honest silence stays.
+      // The composer re-weaves the pool's own cloth. No pool cloth
+      // at all? The pack's own fragments speak. Nothing anywhere?
+      // The honest silence stays.
       var phaseKey = 'rumor:' + (STATE.get().phase || '');
       var pooled = poolDraw(phaseKey);
-      var card = pooled || composeWhisper(phaseKey);
+      var respliced = pooled ? null : composeWhisper(phaseKey);
+      var fromFragments = false;
+      var card = pooled || respliced;
+      if (!card) { card = whisperFromFragments(); fromFragments = true; }
       if (card) {
         var pempty = feed.querySelector('.empty'); if (pempty) pempty.remove();
         var pdiv = document.createElement('div');
@@ -423,7 +433,10 @@ function bindWhisper() {
           + '<p class="whisper">&ldquo;' + esc(card.whisper) + '&rdquo;</p>'
           + (card.is_true ? '' : '<p class="status">a lie, or close enough</p>');
         feed.insertBefore(pdiv, feed.firstChild);
-        status.textContent = pooled ? 'from the woven pool.' : "woven anew from the pool's cloth.";
+        status.textContent = pooled ? 'from the woven pool.'
+          : respliced ? "woven anew from the pool's cloth."
+          : fromFragments ? "from the pack's own fragments."
+          : 'nothing came back (' + (err.message || 'failed') + ').';
       } else {
         status.textContent = 'nothing came back (' + (err.message || 'failed') + ').';
       }
@@ -548,6 +561,44 @@ function composeLine(key, seedOverride) {
   return _compose(key, false, seedOverride);
 }
 
+// ---- the fragment banks ----
+// The composer's last resort before honest silence: when the pool
+// is absent entirely, re-splice the speaker's own hand-written
+// fragments (window.VEFR_FRAGMENTS). Every word is the author's.
+// A bank needs at least two lines to splice; fewer stays silent.
+function fragmentSpeakers() {
+  const bank = window.VEFR_FRAGMENTS || {};
+  return Object.keys(bank).filter(function (k) {
+    return (bank[k] || []).length >= 2;
+  });
+}
+
+function composeFromFragments(speaker, kind, seedOverride) {
+  const lines = ((window.VEFR_FRAGMENTS || {})[speaker] || []).slice();
+  if (lines.length < 2) return null;
+  const rng = mulberry32(seedOverride || (saveSeed() + nextDraw()));
+  let a = lines[Math.floor(rng() * lines.length)];
+  let b = lines[Math.floor(rng() * lines.length)];
+  for (let tries = 0; tries < 4 && String(a) === String(b); tries++) {
+    b = lines[Math.floor(rng() * lines.length)];
+  }
+  const woven = spliceCloth(a, b, rng);
+  if (!woven) return null;
+  const speakers = (window.VEFR_WORLD && window.VEFR_WORLD.speakers) || {};
+  const display = (speakers[speaker] && speakers[speaker].name) || speaker;
+  const card = { speaker: display };
+  if (kind === 'line') card.line = woven;
+  else { card.whisper = woven; card.is_true = true; }
+  return card;
+}
+
+function whisperFromFragments(seedOverride) {
+  const keys = fragmentSpeakers();
+  if (!keys.length) return null;
+  const rng = mulberry32(seedOverride || (saveSeed() + nextDraw()));
+  return composeFromFragments(keys[Math.floor(rng() * keys.length)], 'whisper', seedOverride);
+}
+
 // ---- town ----
 // Renders the static map grid and moves the hero around it. NPC clicks
 // fire a one-line ask to the same LLM with the active speaker's voice.
@@ -655,14 +706,16 @@ function setupTown() {
     }).catch(function () {
       var key = 'npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?');
       var pooled = poolDraw(key);
-      var card = pooled || composeLine(key);
+      var respliced = pooled ? null : composeLine(key);
+      var card = pooled || respliced || composeFromFragments(nearest.key, 'line');
       if (card) {
         document.getElementById('npc-name').textContent = card.speaker;
         document.getElementById('npc-line').textContent = card.line;
         document.getElementById('npc-box').hidden = false;
         document.getElementById('near').textContent = pooled
           ? ''
-          : "woven anew from the pool's cloth.";
+          : respliced ? "woven anew from the pool's cloth."
+          : "from their own fragments.";
       } else {
         document.getElementById('near').textContent = 'the voice did not answer.';
       }
