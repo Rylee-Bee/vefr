@@ -20,7 +20,7 @@ manually.
 | Mount | What it holds | Backed up by |
 |---|---|---|
 | `~/vefr/` | the engine checkout — `src/`, `web/`, `Containerfile`, the *template* `worlds/sample-world/` | `ferry deploy` rsyncs the engine checkout into here |
-| `~/vefr-worlds/` | the worlds *volume* — every pack currently loaded, plus the user's private canon (e.g. `private-canon/`) | manual rsync (this guide) |
+| `~/vefr-worlds/` | the worlds *volume* — every pack currently loaded, plus the user's private canon | manual rsync (this guide) |
 | `~/vefr-data/` | runtime state — `vault.json`, `journal.json`, `weave.jsonl`, `handoffs/` | `ferry carry` bundles to NAS |
 
 The container's `/app/worlds` is **bound to `~/vefr-worlds/`**, NOT
@@ -40,7 +40,7 @@ in use.
 
 ```sh
 # 1. rsync the engine-owned packs from the checkout to the bind mount.
-#    SKIP user-owned packs (private-canon and any private canon).
+#    SKIP user-owned packs (any private canon).
 rsync -a --delete \
   ~/projects/vefr/worlds/sample-world/ \
   bazzite:~/vefr-worlds/sample-world/
@@ -66,7 +66,7 @@ clean mirror of the engine template.
 
 ## What this guide does NOT cover
 
-- **User-owned packs** (e.g. `private-canon/`). These are *not* in
+- **User-owned packs** (private canon). These are *not* in
   the engine checkout; they live in the user's private repo and
   land on the bind mount via `ratatoskr ferry fetch` or by hand.
   Do not `--delete` them off the bind mount.

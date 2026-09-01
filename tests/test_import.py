@@ -165,7 +165,7 @@ def test_ssh_target_uses_ssh_not_local_subprocess(monkeypatch, no_validate):
     monkeypatch.setattr(cli, 'sh', fake_sh)
     monkeypatch.setattr(cli.subprocess, 'run', fake_run)
 
-    rc = cli.cmd_import(_args(name='private-canon', target='bazzite', pull=True))
+    rc = cli.cmd_import(_args(name='sample-world', target='bazzite', pull=True))
     assert rc == 0
     # First call should be ssh, never local git
     ssh_calls = [c for c in calls if c and c[0] == 'ssh']

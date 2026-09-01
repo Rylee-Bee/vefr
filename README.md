@@ -7,10 +7,9 @@
 
 Two entry points, `ratatoskr` and `norns`, live under this one umbrella -
 universal tooling that never references any specific game's name, so
-any story can be woven here. "Old Name" is Old Norse for memory and
-longing; it's also the title of the author's own game,
-`the private story repo`, which is built on this engine but lives in its
-own private repo and ships nothing here.
+any story can be woven here. `vefr` is Old Norse for the web - the
+woven thing; it's also the loom the author's own game is built on,
+which lives in its own private repo and ships nothing here.
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
@@ -116,7 +115,7 @@ systemctl --user restart vefr.service
 When you want to ship the game as your own thing:
 
 ```bash
-ratatoskr weave --pool 5 --pack private-canon   # one self-contained HTML
+ratatoskr weave --pool 5 --pack sample-world  # one self-contained HTML
 ```
 
 The packaged file is yours to release. The engine that built it
@@ -131,10 +130,10 @@ empty until a pack mounts.
 The engine's identity is *part of the skeleton*, not a flavor toggle.
 
 **The contract is airtight.** The engine never gates the player on
-HP, attack, or roll results. The Old Name way — what Private Canon does,
-what Emberfield does — has no failure state. The bell never rings
-bad, items can't be lost, NPCs always have a line. HP bars are a
-*costume*. Death is not on the table.
+HP, attack, or roll results. The vefr way — what Emberfield does —
+has no failure state. The bell never rings bad, items can't be
+lost, NPCs always have a line. HP bars are a *costume*. Death is
+not on the table.
 
 **The journey begins.** The engine's story structure is the
 **Hero's Journey** told through the **Elder Futhark** runes — a
@@ -302,7 +301,7 @@ entirely off the laptop, the cloud, and any LAN host.
 
 ```sh
 ratatoskr weave
-# -> dist/private-canon-2026-08-31.html  (one self-contained file)
+# -> dist/sample-world-<date>.html  (one self-contained file)
 ```
 
 The packaged file is the engine's `web/` UI with your world pack

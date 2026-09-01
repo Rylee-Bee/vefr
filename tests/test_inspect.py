@@ -47,6 +47,10 @@ def test_resolved_world_returns_acts_shape(sample_pack, monkeypatch):
         assert "surface" in resolved
         assert "name" in resolved
         assert "title" in resolved
+        # The offline whisper banks are engine-visible data: the
+        # resolved view must show them, not hide them.
+        assert "fragments" in resolved
+        assert resolved["fragments"].get("keeper"), "sample-world ships the canary bank"
     finally:
         world_mod.load_world.cache_clear()
 

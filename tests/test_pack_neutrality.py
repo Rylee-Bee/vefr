@@ -149,17 +149,24 @@ def test_engine_surfaces_carry_no_gendered_pronouns():
 
 def test_no_historical_package_names():
     """Anti-regression test: ensure legacy package names
-    do not reappear in src/, web/, or tests/."""
+    do not reappear in src/, web/, tests/, docs/, or the
+    root-level documents (README, AGENTS, ROADMAP, LICENSE,
+    GETTING_STARTED). The tree is scrubbed; this keeps it so."""
     failures = []
     # Build regex without naming historical literals directly in the source file
     bad_terms = ["m" + "unr", "s" + "midr"]
     pattern = re.compile(r"\b(" + "|".join(bad_terms) + r")\b", re.IGNORECASE)
-    for d in ["src", "web", "tests"]:
-        root = ROOT / d
+    roots = [ROOT / d for d in ["src", "web", "tests", "docs"]]
+    roots += [ROOT / n for n in
+              ("README.md", "AGENTS.md", "ROADMAP.md", "GETTING_STARTED.md", "LICENSE")]
+    for root in roots:
         if not root.exists():
             continue
-        for f in sorted(root.rglob("*")):
-            if not f.is_file() or f.suffix not in AUDIT_SUFFIXES:
+        files = (
+            root.rglob("*") if root.is_dir() else [root]
+        )
+        for f in sorted(files):
+            if not f.is_file() or f.suffix not in AUDIT_SUFFIXES | {""}:
                 continue
             if "vendor" in f.parts:
                 continue

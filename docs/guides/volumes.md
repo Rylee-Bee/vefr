@@ -6,7 +6,7 @@ capability boundary between them:
 | Mount | Read/Write | Holds | Updated by | Backed up by |
 |---|---|---|---|---|
 | `/app/worlds-template/` | **ro** | `lore/`, `sample-world/`, `poolworld/` — engine-owned templates | `ferry deploy` (image rebuild) | the engine image itself |
-| `/app/worlds/` | **rw** | User canon: `private-canon/`, anything `ferry fetch` lands, anything the author edits in place | `ferry fetch`, `volumes import`, manual `podman exec` | `ratatoskr volumes export` (host-side git) |
+| `/app/worlds/` | **rw** | User canon: private packs, anything `ferry fetch` lands, anything the author edits in place | `ferry fetch`, `volumes import`, manual `podman exec` | `ratatoskr volumes export` (host-side git) |
 | `/app/data/` | **rw** | `vault.json`, `journal.json`, `weave.jsonl`, `handoffs/`, `dist/` — per-session player data | runtime only | `ferry carry` to NAS + nightly cron |
 
 The rw canon wins on conflict: if a template and a canon share a
@@ -58,7 +58,7 @@ The migration classifies packs by name. The `ENGINE_PACKS` set in
 ENGINE_PACKS = {"lore", "sample-world", "poolworld"}
 ```
 
-Anything else under `~/vefr-worlds/` (e.g. `private-canon/`) is
+Anything else under `~/vefr-worlds/` (private canon) is
 treated as user canon and seeded into the rw volume. If you add
 a new engine template, edit `ENGINE_PACKS` *and* the `worlds/`
 dir in the engine repo, then `ferry deploy` carries the new
