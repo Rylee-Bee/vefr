@@ -97,3 +97,11 @@ def test_board_wired_into_chrome():
     assert (Path(__file__).resolve().parents[1] / "web" / "vendor" / "Sortable.min.js").exists(), (
         "vendored Sortable.min.js file missing"
     )
+    # The forge response doc must not name a pack's bond keys - the
+    # bonds belong to the pack (sample-world draws given/found/cold);
+    # the engine file stays neutral. (Found live 2026-09-01: the doc
+    # hardcoded a bond list sample-world has never heard of.)
+    board_src = BOARD_JS.read_text(encoding="utf-8")
+    assert "assigned | attuned" not in board_src, (
+        "board.js must not hardcode a pack's bond keys"
+    )
