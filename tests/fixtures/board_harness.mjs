@@ -1,0 +1,1 @@
+export const testSeed = (seed) => {const RNG = (s) => () => (s = (s * 9301 + 49297) % 233280) / 233280;const rng = RNG(seed);return rng() > 0;};export const testDrag = (card, column) => {return card.dataset.name && column.contains(card);}
