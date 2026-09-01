@@ -1,0 +1,1 @@
+import pytestimport vmfrom fixtures.board_harness import testSeed, testDragdef test_board_seed():assert testSeed(12345) is Truedef test_board_drag():card = {'dataset': {'name': 'Asa'}}column = {'contains': lambda x: True}assert testDrag(card, column) is True
