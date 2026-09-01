@@ -1218,8 +1218,8 @@ def cmd_scaffold(args) -> int:
             ('git', '-C', root.stdout.strip(), 'rev-parse', '--short', 'HEAD'),
             capture_output=True, text=True,
         )
-    if sha.returncode == 0:
-        engine_sha = sha.stdout.strip()
+        if sha.returncode == 0:
+            engine_sha = sha.stdout.strip()
 
     # The engine's home, derived from this checkout's own origin -
     # runtime identity, never a hardcoded one.
