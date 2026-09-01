@@ -333,4 +333,58 @@ function assert(cond, msg) {
   assert(worldCalls === 1, `lazy boot asks for the world exactly once (got ${worldCalls})`);
 }
 
+/* ---- 10. the draft to the smith: context, thread, honest offline ---- */
+{
+  /* online: the smith answers. board.js reads the global fetch at
+     call time, so re-stubbing the sandbox property after init works. */
+  const chatBodies = [];
+  const sOn = makeSandbox({}, undefined);
+  const B = run(sOn);
+  B.init();
+  await tick();
+  sOn.fetch = (url, opts) => {
+    if (url.indexOf('/api/builder/chat') > -1) {
+      chatBodies.push(JSON.parse(opts.body));
+      return Promise.resolve({ ok: true, json: async () => ({ reply: 'keep it short.' }) });
+    }
+    return Promise.resolve({ ok: true, json: async () => FAKE_WORLD });
+  };
+  const doc = sOn.document._registry;
+  const draftBox = sOn.document.getElementById('rail-draft');
+  const card = doc['board-whispers'].children[0];
+  card.click();
+  draftBox.value = 'make it about the harvest';
+  doc['rail-chat-send'].click();
+  await tick();
+  assert(doc['rail-chat-log'].textContent.includes('you: make it about the harvest'),
+    'draft logged as the author turn');
+  assert(doc['rail-chat-log'].textContent.includes('smith: keep it short.'),
+    'smith reply logged');
+  assert(draftBox.value === '', 'textarea cleared on success');
+  assert(B.state.threads[card.dataset.id].length === 2, 'thread holds both turns');
+  assert(chatBodies.length === 1, 'exactly one chat call');
+  assert(chatBodies[0].message.includes('[card]')
+    && chatBodies[0].message.includes(card.textContent.split(' \u2014 ')[0]),
+    'composed message carries the card context');
+  assert(chatBodies[0].message.includes('make it about the harvest'),
+    'composed message carries the draft');
+
+  /* offline: the turn comes back out of the thread, told honestly */
+  const sOff = makeSandbox({}, (url) => (url.indexOf('/api/builder/chat') > -1
+    ? Promise.reject(new Error('no engine'))
+    : Promise.resolve({ ok: true, json: async () => FAKE_WORLD })));
+  const BOff = run(sOff);
+  BOff.init();
+  await tick();
+  const dOff = sOff.document._registry;
+  dOff['board-whispers'].children[0].click();
+  sOff.document.getElementById('rail-draft').value = 'a question for later';
+  dOff['rail-chat-send'].click();
+  await tick();
+  assert(dOff['rail-chat-log'].textContent.includes('the draft stays yours'),
+    'offline draft says so plainly');
+  assert((BOff.state.threads[dOff['board-whispers'].children[0].dataset.id] || []).length === 0,
+    'failed turn leaves the thread empty');
+}
+
 console.log('ALL PASS');
