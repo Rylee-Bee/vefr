@@ -9,6 +9,10 @@ __pycache__/
 # rule named a specific pack; the convention is that any
 # non-shipped pack under worlds/ is author-canon and ignored.
 # the norns CLI uses `ferry fetch --pack <name>` to import.
+# local environment config - copied from example.env, per-machine.
+# never commit: the LAN leaves the source, runtime data not repo data.
+/.env
+
 # build output
 /dist/
 
