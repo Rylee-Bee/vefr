@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import json
 from pathlib import Path
 
-from . import combat, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
+from . import combat, enhance, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
 from .stefna import generate_letter
 from .export import export_story
 from .forge import forge_item, keep_item, list_vault
@@ -656,6 +656,39 @@ def builder_aspects(phase: str | None = None):
     speaker seed matrices, current rune cast, and recent trace events.
     """
     return inspect_mod.pack_aspects(phase=phase)
+
+
+@app.post("/api/builder/enhance/map")
+def builder_enhance_map(req: enhance.MapEnhanceRequest):
+    """Contextual AI Enhance for POI and map descriptions.
+
+    Enriches sensory descriptions and interactive details for a
+    point of interest or room using loaded pack canon and active tone.
+    """
+    with trace.span("/api/builder/enhance/map", region=req.region, poi=req.poi_name):
+        return enhance.enhance_map(req)
+
+
+@app.post("/api/builder/enhance/voice")
+def builder_enhance_voice(req: enhance.VoiceEnhanceRequest):
+    """Contextual AI Enhance for NPC voices and speech rules.
+
+    Drafts cadence rules, seed dialogue, and strike prompts for
+    world characters in the requested tone.
+    """
+    with trace.span("/api/builder/enhance/voice", speaker=req.speaker_name):
+        return enhance.enhance_voice(req)
+
+
+@app.post("/api/builder/enhance/item")
+def builder_enhance_item(req: enhance.ItemEnhanceRequest):
+    """Contextual AI Enhance for item flavor, enchants, and curses.
+
+    Crafts quiet enchantments and subtle, non-gory curses anchored
+    in the world's forge texture.
+    """
+    with trace.span("/api/builder/enhance/item", kind=req.kind, bond=req.bond):
+        return enhance.enhance_item(req)
 
 
 @app.post("/api/handoff")
