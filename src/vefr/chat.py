@@ -2,23 +2,34 @@
 
 Copies worlds/sample-world/ as a known-good scaffold, then interviews
 the author segment by segment (title, canon, theme colors, phases,
-bonds, the one speaker) and drafts prose with the local model.
+bonds, speakers) and drafts prose with the local model.
 
 The conversation's *shape* is deterministic Python, never the model's
 choice - which question comes next, whether a rename is structurally
 safe, whether the pack validates. The model only ever fills in prose
-inside a schema it cannot escape. Geometry (the map itself) is left
-untouched in v1; grow it afterward with `norns build-map --segments`.
+inside a schema it cannot escape.
+
+v2 grows the map and the town's people:
+
+  - the map: the model proposes run-length rows (build_map's own
+    format) at the scaffold's exact dimensions, using only the
+    scaffold's legend characters. The proposal never touches the
+    pack until maplab.validate() passes on a copy - two tries, then
+    the scaffold's proven layout stays and the author is told so.
+  - speakers: the town is no longer capped at one voice. Extra
+    speakers get model-drafted names-to-lines, but their tile is
+    chosen by deterministic code: reachable from the hero's start,
+    not on anyone's spot, not on flood ground. No tile, no speaker.
 
 Every write ends with maplab.validate() - the author never has to
 trust their own edits, the tool always checks.
 
-The new pack is written in the flat shape (single region, no acts).
-A flat pack is fully supported; the author can opt into the acts
-shape later by adding an `acts/` directory. The scaffold source
-can be either shape - maplab.load_pack unifies them on read.
+The new pack is written in the scaffold's shape (flat or acts).
+The scaffold source can be either shape - maplab.load_pack unifies
+them on read.
 """
 
+import copy
 import re
 import shutil
 from pathlib import Path
@@ -61,6 +72,15 @@ class Theme(BaseModel):
     bg: str
     hero_color: str
     deco_color: str
+
+
+class MapRows(BaseModel):
+    """Run-length rows in build_map's own format: [[["H", 4], ...], ...]."""
+
+    rows: list[list[list]]
+
+    def to_segments(self) -> list:
+        return [[list(part) for part in row] for row in self.rows]
 
 ASSISTANT_SYSTEM = (
     "You are a warm, curious world-building collaborator helping someone "
@@ -124,6 +144,183 @@ def draft_theme(mood: str) -> dict | None:
         except (httpx.HTTPError, ValidationError, KeyError, ValueError):
             continue
     return None
+
+
+MAP_SYSTEM = (
+    "You redesign a small game town map. The map is a grid drawn as "
+    "run-length rows: each row is a list of [character, count] pairs, "
+    "and the counts in a row must sum to the grid's width. You may only "
+    "use the legend characters you are given, with the meanings they "
+    "have there. Paths must stay connected: every speaker's spot, the "
+    "hero's start, and every door must be reachable through walkable "
+    "characters. Keep the same dimensions. Reply with only the JSON "
+    "object: rows."
+)
+
+
+def _map_schema(legend: dict) -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "rows": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": [
+                            {"type": "string", "enum": sorted(legend.keys())},
+                            {"type": "integer", "minimum": 1},
+                        ],
+                    },
+                },
+            }
+        },
+        "required": ["rows"],
+    }
+
+
+def propose_map(story: str, mood: str, w: dict, dest: Path) -> list[str] | None:
+    """The interview's map growth, gated hard.
+
+    The model proposes run-length rows at the scaffold's exact
+    dimensions using only the scaffold's legend characters. A proposal
+    is never returned until maplab.validate() passes on a deep copy
+    with it in place - geometry, reachability from the hero's start,
+    every speaker still on walkable ground. Two tries; then None, and
+    the caller keeps the scaffold's proven layout.
+    """
+    town = w["town"]
+    legend = town["legend"]
+    rows_n = len(town["map"])
+    cols = len(town["map"][0])
+    hero = town["hero_start"]
+    speakers = ", ".join(
+        f"{s['name']} at {tuple(s['at'])}" for s in w["speakers"].values()
+    )
+    pois = "; ".join(f"{town['pois'][k]} at ({k})" for k in town.get("pois", {}))
+    legend_text = "; ".join(
+        f"'{ch}': "
+        + ("solid" if e.get("solid") is True else "walkable" if e.get("solid") is False else "context")
+        for ch, e in sorted(legend.items())
+    )
+    prompt = (
+        f"The story: {story or 'unspecified'}. The town should feel: {mood}.\n"
+        f"Grid: exactly {rows_n} rows of width {cols}. Legend: {legend_text}.\n"
+        f"The hero starts at {tuple(hero)}. Speakers stand at: {speakers or 'none'}. "
+        f"Points of interest: {pois or 'none'}. "
+        f"The current map:\n" + "\n".join(town["map"]) + "\n"
+        f"Draw the town anew: same {rows_n} rows of width {cols}, legend "
+        f"characters only, walkable paths from the hero's start reaching "
+        f"every speaker, every point of interest, and every door. Keep at "
+        f"least one safe place. Reply with only the JSON object: rows."
+    )
+    payload = {
+        "model": generator.MODEL,
+        "system": MAP_SYSTEM,
+        "prompt": prompt,
+        "format": _map_schema(legend),
+        "stream": False,
+        "think": False,
+        "keep_alive": generator.KEEP_ALIVE,
+        "options": {"temperature": 0.8},
+    }
+    for _ in range(2):
+        try:
+            raw = generator._completion(payload)
+            rows = maplab.build_map(MapRows.model_validate_json(raw).to_segments())
+            if len(rows) != rows_n or len(rows[0]) != cols:
+                continue
+            if any(ch not in legend for ch in set("".join(rows))):
+                continue
+            candidate = {**copy.deepcopy(w), "town": {**town, "map": rows}}
+            # Geometry gate only: no pack_dir, so on-disk voice-file
+            # checks stay out of it - the interview's final validate
+            # (pack_dir=dest) is the full gate before anything ships.
+            if not maplab.validate(candidate):
+                return rows
+        except (httpx.HTTPError, ValidationError, KeyError, ValueError, SystemExit):
+            continue
+    return None
+
+
+def _pick_tile(w: dict) -> tuple[int, int] | None:
+    """Where a new townsperson stands, chosen by deterministic code.
+
+    Reachable from the hero's start, not on anyone's spot, not on
+    flood ground, and as far from the existing crowd as the town
+    allows - the closest tile at the widest spread band. None when
+    the town has no room left.
+    """
+    town = w["town"]
+    start = tuple(town["hero_start"])
+    flooded = {tuple(t) for t in town.get("flood_tiles", [])}
+    seen = sorted(maplab.reach(w, start, flooded=flooded or None))
+    taken = {start} | {tuple(s["at"]) for s in w["speakers"].values()}
+
+    def spread(t: tuple) -> int:
+        return min(abs(t[0] - a) + abs(t[1] - b) for a, b in taken)
+
+    for want in (3, 2, 1):
+        best = [t for t in seen if t not in taken and t not in flooded and spread(t) >= want]
+        if best:
+            return min(best, key=lambda t: (spread(t), t))
+    return None
+
+
+def _add_speaker(w: dict, dest: Path, name: str, personality: str) -> bool:
+    """One new town voice: deterministic tile, drafted words.
+
+    Returns False (and touches nothing) when the town has no free,
+    reachable tile for them.
+    """
+    tile = _pick_tile(w)
+    if tile is None:
+        return False
+    key = slugify(name)
+    n = 2
+    while key in w["speakers"]:
+        key = f"{slugify(name)}-{n}"
+        n += 1
+    near = draft(
+        f"{name} is: {personality}. Where do they stand in a small town? "
+        f"One short phrase, 2-4 words, like 'the gate' or 'the low wall'.",
+        system="You write tiny place descriptions. Two to four words.",
+    )
+    spec = {
+        "name": name,
+        "at": [tile[0], tile[1]],
+        "near": near or "nearby",
+        "voice_file": f"voices/{key}.md",
+        "seeds": {},
+    }
+    for phase_key in w["phases"]:
+        spec["seeds"][phase_key] = draft(
+            f"{name} is: {personality}. It's the '{phase_key}' phase. Write "
+            f"one short line they might say, unprompted, to someone passing by.",
+            system=(
+                "You write one short spoken line for an NPC, "
+                "in-character, no quotation marks, no attribution."
+            ),
+        )
+    voice_text = draft(
+        f"{name} is: {personality}. Write 3-5 short bullet rules for how "
+        f"they speak and what they know.",
+        system=(
+            "You write a short voice-and-rules file for an NPC: how "
+            "they talk, what they know, what they never say. Plain "
+            "markdown, no heading."
+        ),
+    )
+    voices_dir = dest / "voices"
+    voices_dir.mkdir(exist_ok=True)
+    (voices_dir / f"{key}.md").write_text(
+        f"# {name}\n\n{voice_text}\n", encoding="utf-8"
+    )
+    w["speakers"][key] = spec
+    return True
 
 
 def ask(prompt: str, default: str = "") -> str:
@@ -284,10 +481,37 @@ def run_interview(dest: Path, scaffold: Path) -> int:
             )
             w["bonds"][key] = {"card": card, "prompt": prompt_text}
 
+    map_mood = ask(
+        "In a few words, how should the town feel to walk? "
+        "(e.g. 'tight lanes around a well') - blank keeps the "
+        "scaffold's proven layout"
+    )
+    if map_mood:
+        print("\nthe model is drawing your town...")
+        rows = propose_map(premise or title, map_mood, w, dest)
+        if rows:
+            w["town"]["map"] = rows
+            print(f"  the map grew from your answer: {len(rows)} x {len(rows[0])}, validated.")
+        else:
+            print(
+                "  the map draft never validated twice - keeping the "
+                "scaffold's proven layout (always try: norns validate "
+                f"--pack {dest})"
+            )
+
+    speaker_count_raw = ask(
+        "\nHow many people stand in your town? (1-3, blank = 1)", "1"
+    )
+    try:
+        speaker_count = max(1, min(3, int(speaker_count_raw)))
+    except ValueError:
+        print("  1-3 people - keeping one for now")
+        speaker_count = 1
+
     speaker_key = next(iter(w["speakers"]))
     spec = w["speakers"][speaker_key]
     new_speaker_name = ask(
-        f"Your one town speaker is '{spec['name']}'. What should they be called?",
+        f"Your first townsperson is '{spec['name']}'. What should they be called?",
         spec["name"],
     )
     personality = ask(f"In a few words, who is {new_speaker_name}?")
@@ -316,6 +540,17 @@ def run_interview(dest: Path, scaffold: Path) -> int:
             f"# {new_speaker_name}\n\n{voice_text}\n", encoding="utf-8"
         )
 
+    for i in range(speaker_count - 1):
+        sp_name = ask(f"Who else stands there? ({i + 2} of {speaker_count}) - blank stops here")
+        if not sp_name:
+            break
+        sp_personality = ask(f"In a few words, who is {sp_name}?")
+        if _add_speaker(w, dest, sp_name, sp_personality):
+            print(f"  {sp_name} takes a spot on the map.")
+        else:
+            print("  no walkable, reachable tile left for them - the town stays as it is")
+            break
+
     maplab.write_pack(dest, w)
 
     print("\nchecking your world...")
@@ -335,7 +570,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     print(f"  VEFR_WORLD={dest.name} norns validate --pack {dest}")
     print(f"  VEFR_WORLD={dest.name} ratatoskr test")
     print(
-        "  grow the map with: norns build-map --segments <file> --pack "
-        f"{dest}"
+        "  reshape the map later with: norns build-map --segments <file> "
+        f"--pack {dest}"
     )
     return 0
