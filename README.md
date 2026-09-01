@@ -283,6 +283,15 @@ itself stays the scaffold's in v1; grow it after with
 - **API reference:** the running app serves interactive docs for
   free at `/docs` (e.g. `http://127.0.0.1:8820/docs`) - every route,
   every shape, try-it-out included. No separate file to keep in sync.
+- **Accessibility:** the Reading & sound panel (title-bar trigger,
+  English labels with Norse flavor) lets you set text size, line
+  spacing, font, contrast, colorblind-safe palette, motion, focus
+  ring, and density. Preferences live in localStorage; a
+  share-link button (`Deila`) gives you a URL you can paste into
+  another browser to apply them there. Idea credit: Fluid
+  Infusion (UI Options pattern), Atkinson Hyperlegible Next +
+  OpenDyslexic (SIL OFL, self-hosted under `web/fonts/`). See
+  `docs/guides/identity-terms-glossary.md` for the vocabulary.
 - **What's landed, what's next:** `ROADMAP.md`.
 
 ## The town
