@@ -269,7 +269,7 @@
   .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
   .tabs button[data-view="awed"][aria-selected="true"] { color: var(--accent); border-color: var(--accent); }
   .tabs button:hover { border-color: var(--accent); }
-  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tabs button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
   /* The three site areas. The zone row is always in the same place,
      and exactly one tablist is visible at a time - a hidden one
@@ -283,7 +283,7 @@
   }
   .zone-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
   .zone-btn:hover { border-color: var(--accent); }
-  .zone-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .zone-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
   .zone-nav { margin: 0.6rem 0 0; }
   .zone-nav[hidden] { display: none; }
   /* English leads, the Norse name rides along visibly. */
@@ -512,6 +512,9 @@
     border: 1px solid var(--border); border-radius: var(--radius-md);
     cursor: pointer; min-height: 44px; min-width: 44px;
   }
+  .rune-gallery-head button:focus-visible {
+    outline: 2px solid var(--ring); outline-offset: 2px;
+  }
   .rune-gallery-note {
     color: var(--ink-dim); font-size: 0.85rem; margin: 0 0 1rem;
     line-height: 1.5;
@@ -642,7 +645,6 @@
   .npc-box.sighting { border-color: var(--primary); }
   .npc-box.sighting .npc-line { color: var(--primary); }
 
-  @keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
   /* Title-row + preferences trigger.
@@ -1039,10 +1041,10 @@
       <button type="button" id="export-town-btn" data-export-tab="town" class="export-tab-btn">Export this tab</button>
     </div>
     <div class="dpad" id="dpad" aria-label="Move">
-      <button type="button" data-dir="up" style="grid-area:u">&#8593;</button>
-      <button type="button" data-dir="left" style="grid-area:l">&#8592;</button>
-      <button type="button" data-dir="down" style="grid-area:d">&#8595;</button>
-      <button type="button" data-dir="right" style="grid-area:r">&#8594;</button>
+      <button type="button" data-dir="up" style="grid-area:u" aria-label="Move up">&#8593;</button>
+      <button type="button" data-dir="left" style="grid-area:l" aria-label="Move left">&#8592;</button>
+      <button type="button" data-dir="down" style="grid-area:d" aria-label="Move down">&#8595;</button>
+      <button type="button" data-dir="right" style="grid-area:r" aria-label="Move right">&#8594;</button>
     </div>
     <div class="npc-box" id="npc-box" hidden>
       <p class="npc-name" id="npc-name"></p>
@@ -1278,6 +1280,7 @@
 <script src="/static/board.js"></script>
 <script>
 (function () {
+  'use strict';
   var STATE = window.VEFR_STATE;
   var tabs = document.querySelectorAll('.tabs button');
   var views = {
@@ -1840,7 +1843,6 @@
     if (typeof rail.focus === 'function') rail.focus();
     document.querySelectorAll('#view-wiki .wiki-entry').forEach(function (c) {
       c.setAttribute('aria-pressed', c === el ? 'true' : 'false');
-      c.classList.toggle('card-selected', c === el);
     });
     document.getElementById('wiki-rail-name').textContent =
       entry.name || (kind === 'relics' ? 'something' : 'a voice');
@@ -2348,12 +2350,10 @@
   function applyCastVisibility() {
     if (castVisible) {
       runeCard.classList.remove('rune-card-hidden');
-      runeCard.classList.add('rune-card-shown');
       // make the toggle's text reflect the *next* state
       var toggle = document.getElementById('rune-cast-toggle');
       if (toggle) toggle.textContent = 'hide';
     } else {
-      runeCard.classList.remove('rune-card-shown');
       runeCard.classList.add('rune-card-hidden');
       var toggle = document.getElementById('rune-cast-toggle');
       if (toggle) toggle.textContent = 'show';
@@ -2467,6 +2467,7 @@
  * fresh visit to that URL (or pasting it into another browser)
  * replays the settings through VEFR_PREFS.set(). */
 (function () {
+  'use strict';
   var PREFS = window.VEFR_PREFS;
   if (!PREFS) return;
 
