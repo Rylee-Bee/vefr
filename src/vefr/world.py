@@ -65,6 +65,12 @@ absent means "the pack's first declared voice"). Every voice declared
 in the pack must carry a non-empty `strike` string prompt for that
 letter.
 
+VOICES CONVENTION: flat packs place voice prompt files at pack-level
+`voices/<name>.md`. Acts-shaped packs place them at the region level
+under `acts/<id>/<region>/voices/<name>.md`, discovered by convention
+matching the file stem. Flat and acts resolution is unified via
+`resolve_voice_file()`.
+
 VISIBLE ENGINE: every load step is recorded to the weave log so the
 author can see exactly what the loader did. See weave.py.
 """
@@ -402,11 +408,12 @@ def resolve_voice_file(rel: str, world: dict | None = None) -> Path:
     The speaker's `voice_file` field is a short stem in the new
     shape ("voices/keeper.md" -> "keeper.md" in the region's
     voices dir). The fallback lets flat packs keep working
-    unchanged.
+    unchanged. Raises PackError if the file does not exist.
     """
     if world is None:
         world = load_world()
     act = current_act(world)
+    pack_name = world.get("name") or world.get("title") or "pack"
     pack = pack_dir(world["name"])
     basename = Path(rel).name
     acts_root = pack / "acts" / act["id"]
@@ -420,7 +427,7 @@ def resolve_voice_file(rel: str, world: dict | None = None) -> Path:
     legacy = pack / rel
     if legacy.exists():
         return legacy
-    return legacy
+    raise PackError(f"pack '{pack_name}' missing voice file for '{rel}' (looked in {acts_root} and {legacy})")
 
 
 def phase_tone(phase: str, world: dict | None = None) -> str:
