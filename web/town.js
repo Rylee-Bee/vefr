@@ -250,6 +250,23 @@
     }
   }
 
+  /* The road walked - one journal entry per change of place under
+     the hero. The route is pure bookkeeping (no model call); a
+     silent failure never stops the walk. */
+  var lastPlace = null;
+  function journalVisit() {
+    var place = poiAt(hero.x, hero.y);
+    if (place === lastPlace) return;
+    lastPlace = place;
+    var ask = { poi: place, x: hero.x, y: hero.y };
+    if (phase()) ask.phase = phase();
+    fetch(VEFR_SESSION.wrap('/api/journal/move'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ask)
+    }).catch(function () { /* the walk keeps its own counsel */ });
+  }
+
   /* Idempotent: sync() calls this on every state change, so the
      buttons are only rebuilt when the pack's phase list itself
      changed. Otherwise only the pressed one moves. A click writes to
@@ -287,6 +304,7 @@
     checkSighting();
     draw();
     hud();
+    journalVisit();
   }
 
   function checkSighting() {

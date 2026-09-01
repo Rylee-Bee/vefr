@@ -116,11 +116,17 @@ def _fork(e: dict) -> str:
     return f"{note}."
 
 
+def _move(e: dict) -> str:
+    poi = _para(e.get("poi") or "somewhere unnamed")
+    return f"the hero stood at {poi}"
+
+
 _RENDER = {
     "rumor": _rumor,
     "npc_line": _npc_line,
     "item_forged": _item_forged,
     "stefna_letter": _stefna_letter,
+    "move": _move,
     "fork": _fork,
 }
 
@@ -255,37 +261,51 @@ def _voices_section(entries: list[dict]) -> str:
 def _town_section(entries: list[dict]) -> str:
     """The Town tab: moves + sightings the journal can witness.
 
-    Today the engine doesn't journal town movement (a TODO from
-    earlier sessions - the move log lives only in the town's
-    transient state). What we CAN say: every npc_line has a phase
-    and that phase's `water_by_phase` was in effect. A minimal
-    faithful section is "the town was visited during these phases,
-    and the NPCs the player spoke to were near these places".
+    Since 2026-09-01 the town renderer journals one `move` entry per
+    change of place under the hero (a visit, not a footstep), so the
+    journey is on the record the same way whispers and lines are.
+    The section lists the road walked in order, then keeps the older
+    faithful witness: the phases the town was visited during, and
+    which NPCs the player spoke to near which of them.
     """
+    moves = [e for e in entries if e.get("kind") == "move"]
     npc_phases = [
         (e.get("phase"), e.get("speaker")) for e in entries
         if e.get("kind") == "npc_line" and e.get("phase")
     ]
-    if not npc_phases:
+    if not moves and not npc_phases:
         return ""
+    lines = ["## The Fen Walked", ""]
+    if moves:
+        lines.append("The road walked:")
+        lines.append("")
+        for e in moves:
+            when = e.get("at", "?")[:19]
+            poi = _para(e.get("poi") or "somewhere unnamed")
+            ph = e.get("phase")
+            step = f"- **{when}** {poi}"
+            if ph:
+                step += f" ({ph})"
+            lines.append(step)
+        lines.append("")
     phases_seen = []
     for ph, _ in npc_phases:
         if ph not in phases_seen:
             phases_seen.append(ph)
-    lines = ["## The Fen Walked", ""]
-    lines.append("The town was walked during these phases:")
-    lines.append("")
-    for ph in phases_seen:
-        lines.append(f"- **{ph}**")
-    npc_at_phase = {}
-    for ph, sp in npc_phases:
-        npc_at_phase.setdefault(ph, set()).add(sp)
-    if any(npc_at_phase.values()):
+    if phases_seen:
+        lines.append("The town was walked during these phases:")
         lines.append("")
-        lines.append("NPCs spoken to, by phase:")
-        for ph, names in npc_at_phase.items():
-            lines.append(f"- **{ph}**: {', '.join(sorted(names))}")
-    return "\n".join(lines)
+        for ph in phases_seen:
+            lines.append(f"- **{ph}**")
+        npc_at_phase = {}
+        for ph, sp in npc_phases:
+            npc_at_phase.setdefault(ph, set()).add(sp)
+        if any(npc_at_phase.values()):
+            lines.append("")
+            lines.append("NPCs spoken to, by phase:")
+            for ph, names in npc_at_phase.items():
+                lines.append(f"- **{ph}**: {', '.join(sorted(names))}")
+    return "\n".join(lines).rstrip()
 
 
 def _journal_section(entries: list[dict], exclude: set[str]) -> str:
@@ -306,7 +326,7 @@ def _journal_section(entries: list[dict], exclude: set[str]) -> str:
 
 # The kinds that have a dedicated tab section. Everything else goes
 # into the catch-all "Journal" tab at the end.
-_TAB_KINDS = {"rumor", "item_forged", "stefna_letter", "npc_line"}
+_TAB_KINDS = {"rumor", "item_forged", "stefna_letter", "npc_line", "move"}
 
 
 def export_story(world: str | None = None, sid: str | None = None) -> str:
