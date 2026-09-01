@@ -415,12 +415,16 @@
       `NpcLine` (L4), resilient FastAPI title & static mount handling (M5),
       and robust `app_home()` fallback guards for unbundled installs (M6).
 
+- [x] **contextual AI enhance** (2026-09-01, this session):
+      Scoped structured generation calls tailored to the active screen
+      and resource in authoring and dev views. Implemented `src/vefr/enhance.py`
+      with strict JSON schemas for map/POI descriptions, speaker voice prompts &
+      dialogue rules, and relic forge flavor/curses. Wired into FastAPI at
+      `POST /api/builder/enhance/{map,voice,item}` and integrated into the
+      Builder tab with accessible triggers and status reporting. Tested with
+      dedicated test suite (`tests/test_enhance.py`).
+
 ## Next
-- [ ] **contextual AI enhance**: scoped structured generation calls
-      tailored to the active screen/resource (improving map descriptions,
-      voice prompts, item curses). Acceptance: per-screen enhance button
-      POSTs to structured generation routes and returns schema-validated JSON.
-      (Existing machinery: `generator.py`, `saga.py`, `stefna.py`).
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
       Acceptance: persistent 6-turn chat in Builder tab successfully calls
