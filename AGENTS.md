@@ -64,7 +64,7 @@ kilo config - do not add personal files to this repo.
 # The gate - run before claiming anything is done
 uv sync --group test
 uv run --group test ruff check src tests
-uv run --group test pytest -q      # 171 passed, 2 skipped (2026-08-31)
+uv run --group test pytest -q      # 189 passed, 2 skipped (2026-09-01)
 
 # One-command session-start check (git, tree, tests, pack, live)
 uv run --group test norns doctor   # set VEFR_LIVE_URL to check a stack

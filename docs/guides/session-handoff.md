@@ -13,7 +13,7 @@ next agent wants fresh evidence, but don't assume it's drifted.
 | --------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Repo + working tree                           | `git status && git log --oneline -5`                                                  | clean, HEAD `add7a79`                                                |
 | All pushed                                    | `git log --oneline origin/main -5`                                                     | matches local                                                         |
-| Full test suite                               | `uv run --group test pytest -q`                                                        | **171 passed, 2 skipped**                                               |
+| Full test suite                               | `uv run --group test pytest -q`                                                        | **189 passed, 2 skipped**                                               |
 | DOM harness (route-aware)                     | `uv run --group test pytest tests/test_web_dom.py -q`                                 | green (route table from `app.routes` via `VEFR_ROUTES_JSON`)          |
 | Live bazzite health                           | `curl -s http://192.168.2.76:8820/api/health \| jq -c .`                              | `{"ok":true,"service":"vefr","purpose":"..."}`                        |
 | Live world payload                            | `curl -s http://192.168.2.76:8820/api/world \| jq '.hero_start'`                      | non-null string                                                       |

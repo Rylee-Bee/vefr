@@ -183,7 +183,10 @@ def q7_next(pack: Path) -> tuple:
     roadmap = root / 'ROADMAP.md'
     if not roadmap.exists():
         return 'unknown', 'no ROADMAP.md in this install'
-    nxt = roadmap.read_text(encoding='utf-8').split('## Next')[1].split('## ')[0]
+    text = roadmap.read_text(encoding='utf-8')
+    if '## Next' not in text:
+        return 'unknown', 'no ## Next section in ROADMAP.md'
+    nxt = text.split('## Next')[1].split('## ')[0]
     items = [ln.strip()[6:] for ln in nxt.splitlines() if ln.strip().startswith('- [ ]')]
     short = [i.split(':')[0].strip('**').strip() for i in items]
     return 'open', f'{len(items)} open: {"; ".join(short)}'
