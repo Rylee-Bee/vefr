@@ -148,3 +148,33 @@ def test_packaged_pool_draw_semantics(tmp_path, monkeypatch, canned_generators):
     assert result.returncode == 0, (
         f"pool harness failed:\n{result.stdout}\n{result.stderr}")
     assert "pool harness passed" in result.stdout
+
+
+def test_packaged_carries_the_surface_costume(tmp_path, monkeypatch, canned_generators):
+    """The combat costume rides in the packaged file too - the web UI
+    half landed in 06eed41; the packaged half was the gap. The built
+    file must carry the HP bar, the encounter prompt, the verb row,
+    and the data-surface branch that shows all of it only for
+    combat-surface packs."""
+    html = _build_packaged_file(tmp_path, monkeypatch)
+
+    # Markup.
+    assert 'id="hud-hp"' in html and 'id="hud-hp-fill"' in html
+    assert 'id="encounter-prompt"' in html
+    assert 'id="verb-row"' in html and 'data-verb="attack"' in html
+    # The surface comes from the pack at play time, not from the
+    # template - a plain pack never sees the costume.
+    assert "setAttribute('data-surface'" in html
+    assert 'body[data-surface="plain"] .hud-hp' in html
+    assert 'body[data-surface="investigation"] .verb-row' in html
+    # The verbs record honestly, locally - same no-failure contract
+    # as the server route, minus the server.
+    assert "localStorage.getItem(COMBAT_KEY" in html
+    # Engine neutrality: the costume never names a pack's phase
+    # vocabulary. (The live app once grew a lines dict keyed by the
+    # author's own phase names; the packaged file must not repeat it.)
+    template = (Path(__file__).resolve().parents[1] / "web" / "packaged.html").read_text(encoding="utf-8")
+    for phase_key in ("doubts", "feared", "awed"):
+        assert f"'{phase_key}'" not in template, (
+            f"packaged template must not hardcode phase name '{phase_key}'"
+        )
