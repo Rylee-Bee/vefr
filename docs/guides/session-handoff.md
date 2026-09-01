@@ -74,7 +74,7 @@ from scratch:
 | `src/vefr/forge.py`                     | Same per-session undo stash shape. `forge_roll()` is the route handler. |
 | `src/vefr/trace.py`                     | In-memory ring + JSONL trace (2 MB rotation). `trace.span(route, **detail)` context manager wraps model calls in `main.py`. |
 | `src/vefr/pool.py`                      | `build_pool(samples, specials, progress=None)`, `ensure_current_world(name)`. Visitor pattern: set `VEFR_WORLD` for the build, restore in `finally`. |
-| `src/vefr/stefna.py`                    | `stefna_voice_key()` config-driven, defaults `"mother"`. `Letter` model + `generate_letter()`. |
+| `src/vefr/stefna.py`                    | `stefna_voice_key()` config-driven, falls back to the pack's first declared voice. `Letter` model + `generate_letter()`. |
 | `src/vefr/export.py`                    | `_preface()` reads `logbok.md` + `lore-notes.md`; `refresh_living_tree(world, sid)`. Headings `## The Fen Walked`, `## The Whispers Heard`, `## Relics`, `## The Stefna`, `## The Voices Heard`, `## The Journal`. Includes a `fork` kind renderer. |
 | `src/vefr/cli.py`                       | `ratatoskr` + `norns` entry points. `cmd_weave` has `--pool N`. `cmd_scaffold` (`ferry scaffold`) copies a pack as standalone repo. `cmd_backup` rotation prunes both `vefr-*.bundle` AND `old-name-*.bundle` — leave that as-is until #4 above. |
 | `web/index.html` + `web/state.js`       | `window.VEFR_SESSION = { id, wrap, mint }`. Tab labels are Norse (Sagnir/Safn/Annall/Fræði/Spor/Old Name/Town). `data-view` keys kept stable — DOM harness depends on this. |
