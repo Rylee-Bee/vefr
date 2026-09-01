@@ -225,6 +225,30 @@
       scaffold README derives its engine link from the checkout's
       own `origin` at runtime. Runtime data, not repo data.
 
+- [x] **the reading row** (2026-08-31, this session): the
+      Reading & sound panel, opened from a 44px trigger in the
+      title bar, slides up as a bottom-sheet on mobile and a
+      centered dialog on desktop. Three columns named for the
+      three Norns: **Urd** (recalled settings, reset, share-link),
+      **Verdandi** (live controls - text size, line spacing,
+      font, contrast, colorblind-safe palette, motion, focus
+      ring, density), **Skuld** (live preview of how the page
+      reads right now). English labels lead; Norse names ride
+      visibly as a secondary line. The full contract:
+      `window.VEFR_PREFS.{get,set,preview,reset,on,shareLink,
+      applyFromUrl}`; persistence is localStorage under
+      `vefr-prefs`; cross-device sync is a base64-encoded URL
+      (`?prefs=...`) you copy via the **Deila** button. The
+      stylesheet keys off a single `<html data-prefs="...">`
+      attribute set on every set/preview, so adding a new
+      preference is one CSS rule and one `[data-pref-key]`
+      select. The always-layer's reading row is part of the
+      gate. Self-hosted Atkinson Hyperlegible Next + OpenDyslexic
+      woff2 tracked under `web/fonts/` (SIL OFL); until the
+      binaries are downloaded the @font-face rules 404 silently
+      and the body falls through to its system serif. See
+      `docs/guides/identity-terms-glossary.md` for the terms
+      the panel uses.
 - [x] **companion resources surveyed** (2026-08-31): a full
       CC0/MIT tool survey (engines, renderers, map authoring,
       narrative tools, art editors, audio, dev workflow) kept as a
@@ -404,6 +428,15 @@
       per the Game Accessibility Guidelines' Basic tier: control
       remapping (a keybinds map in localStorage, the cast_visible
       pattern) joins the reading row.
+
+      Chrome + 44px targets + luminance + keyboard + the reading
+      row all landed in this session's two-PR sequence (chrome in
+      #8, reading row above). Remaining: the keybinds remap (GAG
+      Basic, the cast_visible pattern, localStorage), the audio
+      pairing hooks when the bell's audio lands, and the GAG
+      Intermediate-tier features we haven't claimed yet (subtitles
+      hooks, colorblind-safe palette is shipped but motion-
+      sickness and wider UI Options can grow the panel further).
 
 ## The always-layer
 
