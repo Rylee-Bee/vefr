@@ -3,10 +3,12 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# the author's own story - lives in worlds/private-canon/ on disk,
-# tracked separately in the private the private story repo repo since
-# 2026-08-31. never committed here again.
-/worlds/private-canon/
+# engine-shipped worlds (sample-world, lore packs) are tracked.
+# any author-imported world pack is gitignored - the bones
+# stay empty until the author mounts a pack. Historically this
+# rule named a specific pack; the convention is that any
+# non-shipped pack under worlds/ is author-canon and ignored.
+# the norns CLI uses `ferry fetch --pack <name>` to import.
 # build output
 /dist/
 
