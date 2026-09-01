@@ -36,7 +36,10 @@ from .paths import world_name
 GITEA_BASE = os.environ.get('VEFR_GITEA_URL', 'http://localhost:3000')
 
 DEFAULT_URL = os.environ.get('VEFR_LIVE_URL', 'http://127.0.0.1:8820')
-DEFAULT_DEPLOY_HOST = os.environ.get('VEFR_DEFAULT_DEPLOY_HOST', 'bazzite')
+DEFAULT_DEPLOY_HOST = os.environ.get(
+    'VEFR_DEPLOY_HOST',
+    os.environ.get('VEFR_DEFAULT_DEPLOY_HOST', 'bazzite'),
+)
 DEFAULT_BACKUP_LOCATION = os.environ.get(
     'VEFR_DEFAULT_BACKUP_LOCATION', 'homelab-vm:/mnt/nas/shared/backups')
 DEFAULT_BACKUP_HOST, _, NAS_DIR = DEFAULT_BACKUP_LOCATION.partition(':')
@@ -640,17 +643,93 @@ def cmd_build_web(args) -> int:
     return 0
 
 def cmd_deploy(args) -> int:
+    """Ship this checkout to the deploy host.
+
+    Behavior, in order:
+
+      1. `--init` writes deploy.toml.example + the deploy guide,
+         then exits. Does not touch the deploy host.
+      2. Resolve the deploy host from --deploy-host / env. Refuse
+         to run with the silent 'bazzite' default; force the user
+         to declare their topology.
+      3. Pre-flight (unless --skip-tests): the pytest suite +
+         `norns validate --pack sample-world`. A broken main never
+         reaches bazzite.
+      4. rsync the checkout (DEPLOY_EXCLUDES hides .venv, caches,
+         .git).
+      5. `podman build` UNLESS the remote image's `vefr.engine_sha`
+         label already matches the local HEAD (--rebuild forces it).
+      6. `systemctl --user restart vefr` + ensure the ro/rw named
+         volumes exist.
+      7. /api/health probe + `maplab verify` (unless --no-health).
+
+    Image name is `VEFR_DEPLOY_IMAGE` (default `localhost/vefr:latest`).
+    The remote SHA check reads the `vefr.engine_sha` label that the
+    Containerfile writes so a no-op deploy is one rsync + one
+    restart, not a full image rebuild.
+    """
     root = need_repo()
+
+    if args.init:
+        return _deploy_init(root)
+
     host = args.deploy_host
+    if host == 'bazzite' and not os.environ.get('VEFR_DEPLOY_HOST'):
+        # The silent default of 'bazzite' was a leak: a fresh
+        # checkout would `ssh bazzite` and explode against a host
+        # it cannot resolve. Force the operator to declare.
+        print(
+            'refusing to deploy: VEFR_DEPLOY_HOST is not set.\n'
+            '\n'
+            '  export VEFR_DEPLOY_HOST=<your-host-or-ssh-alias>\n'
+            '  uv run ratatoskr ferry deploy\n'
+            '\n'
+            'First time?  `uv run ratatoskr ferry deploy --init` writes\n'
+            'deploy.toml.example + docs/guides/deploy.md to this checkout.'
+        )
+        return 2
+
     url = args.url
+    image = os.environ.get('VEFR_DEPLOY_IMAGE', 'localhost/vefr:latest')
+
+    if not args.skip_tests:
+        if sh(('uv', 'run', '--group', 'test', 'pytest', '-q')).returncode:
+            print('pre-flight: pytest failed; refusing to deploy')
+            return 1
+        if sh(('uv', 'run', '--group', 'test', 'norns', 'validate',
+               '--pack', 'sample-world')).returncode:
+            print('pre-flight: sample-world validate failed; refusing to deploy')
+            return 1
+
     excludes = []
     for e in DEPLOY_EXCLUDES:
         excludes += ['--exclude', e]
-    if sh(('rsync', '-a', '--delete', *excludes, f'{root}/', f'{host}:~/vefr/')).returncode:
+    if sh(('rsync', '-a', '--delete', *excludes, f'{root}/',
+           f'{host}:~/vefr/')).returncode:
         return 1
-    if sh(('ssh', host, 'cd ~/vefr && podman build -q -t localhost/vefr:latest . '
-                       '&& systemctl --user restart vefr')).returncode:
+
+    if not args.rebuild:
+        head_sha = subprocess.run(('git', '-C', str(root), 'rev-parse', 'HEAD'),
+                                  capture_output=True, text=True).stdout.strip()
+        inspect = subprocess.run(
+            ('ssh', host, f'podman inspect --format "{{{{index .Config.Labels \\"vefr.engine_sha\\"}}}}" {image}'),
+            capture_output=True, text=True)
+        remote_sha = inspect.stdout.strip()
+        if remote_sha and remote_sha == head_sha:
+            print(f'image {image} already at HEAD ({head_sha[:12]}); skipping build')
+        else:
+            args.rebuild = True  # fall through to build below
+
+    if args.rebuild:
+        head_sha = subprocess.run(('git', '-C', str(root), 'rev-parse', 'HEAD'),
+                                  capture_output=True, text=True).stdout.strip()
+        if sh(('ssh', host,
+               f'cd ~/vefr && podman build -q -t {image} '
+               f'--build-arg ENGINE_SHA={head_sha} .')).returncode:
+            return 1
+    if sh(('ssh', host, 'systemctl --user restart vefr')).returncode:
         return 1
+
     # The ro + rw volumes may not exist on a fresh deploy host. The
     # engine boots fine without them (the image ships the template
     # at /app/worlds-template/ and an empty /app/worlds/), but the
@@ -663,6 +742,11 @@ def cmd_deploy(args) -> int:
     sh(('ssh', host,
         'podman volume exists vefr-worlds 2>/dev/null || '
         'podman volume create vefr-worlds'))
+
+    if args.no_health:
+        print('deployed (health check skipped). <3')
+        return 0
+
     import time
     time.sleep(2)
     try:
@@ -675,6 +759,52 @@ def cmd_deploy(args) -> int:
     ok = maplab_main(['verify', '--url', url])
     print('deployed. <3' if ok == 0 else 'deployed, but map verify flagged problems.')
     return ok
+
+
+def _deploy_init(root: Path) -> int:
+    """Write deploy.toml.example + docs/guides/deploy.md scaffolding.
+
+    Idempotent: refuses to overwrite an existing deploy.toml.example
+    unless --force is passed (currently via the CLI). Prints the
+    next-step commands.
+    """
+    target = root / 'deploy.toml.example'
+    if target.exists():
+        print(f'{target} already exists; remove it first or pass --force.')
+        return 1
+    target.write_text(_DEPLOY_TOML_EXAMPLE, encoding='utf-8')
+    print(f'wrote {target}')
+    print('next:')
+    print(f'  cp {target} {root / "deploy.toml"}')
+    print(f'  edit {root / "deploy.toml"} to match your host')
+    print(f'  export VEFR_DEPLOY_HOST=$(grep ^host {root / "deploy.toml"} | cut -d\\" -f2)')
+    print('  uv run ratatoskr ferry deploy --skip-tests   # smoke test')
+    return 0
+
+
+_DEPLOY_TOML_EXAMPLE = '''\
+# vefr deploy configuration (example - rename to deploy.toml and edit)
+#
+# This file is read by YOU; ratatoskr ferry deploy reads from
+# environment variables. The convention below lets you keep your
+# host + image names in one place and export them with one shell
+# snippet. deploy.toml itself is gitignored.
+#
+# Required:
+#   host   - SSH alias or user@host reachable from this dev box.
+#            Must be reachable as `ssh <host>` without arguments.
+#   image  - the podman image name/tag the quadlet runs. Defaults
+#            to localhost/vefr:latest.
+#
+# Optional:
+#   url    - the engine's HTTP endpoint (used for /api/health +
+#            maplab verify after deploy). Defaults to
+#            http://<host>:8820.
+
+host  = "bazzite"
+image = "localhost/vefr:latest"
+url   = "http://bazzite:8820"
+'''
 
 
 # --------------------------------------------------------------- backup
@@ -989,7 +1119,28 @@ def ratatoskr_main() -> int:
                                 help='cd into the pack\'s volume path')
     volumes_shell.set_defaults(fn=cmd_volumes_shell)
 
-    fd = ferry_sub.add_parser('deploy', help='ship this checkout to --deploy-host')
+    fd = ferry_sub.add_parser(
+        'deploy',
+        help='ship this checkout to --deploy-host (build image + restart + healthcheck)',
+    )
+    fd.add_argument(
+        '--init', action='store_true',
+        help="write deploy.toml.example + docs/guides/deploy.md scaffolding; "
+             "does not contact the deploy host. Run once per checkout.",
+    )
+    fd.add_argument(
+        '--skip-tests', action='store_true',
+        help='skip the pytest + sample-world validate pre-flight gate',
+    )
+    fd.add_argument(
+        '--rebuild', action='store_true',
+        help='force `podman build` even when the image SHA matches the checkout '
+             'HEAD (default: skip the build when nothing changed)',
+    )
+    fd.add_argument(
+        '--no-health', action='store_true',
+        help='skip the post-deploy /api/health probe + maplab verify',
+    )
     fd.set_defaults(fn=cmd_deploy)
 
     fcp = ferry_sub.add_parser('carry', help='git bundle + play history -> --nas-host')
