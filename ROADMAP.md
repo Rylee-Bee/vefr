@@ -544,6 +544,37 @@
       files, not speakers; sample-world ships one speaker (The
       Keeper) and the default-speaker npc flow works live.
 
+- [x] **the packaged file wears the combat costume** (2026-09-01,
+      PR #36, `bb4a665`). The web-UI half of the surface work landed
+      in `06eed41`; this closes the packaged half. The weave
+      artifact's template now carries the HP bar, the encounter
+      prompt, and the verb row - data-surface comes from the pack at
+      play time (a plain pack never sees the costume), HP is the
+      same positional per-phase scale as combat.py inlined, the
+      prompt text never names a pack's phase vocabulary, and the
+      verbs record to a local localStorage journal - the same
+      no-failure contract as /api/combat/action, minus the server.
+      Test: builds a real packaged file through cmd_build_web and
+      asserts the costume shipped, with a phase-name neutrality
+      guard.
+
+- [x] **chat v2: the interview grows the map and the town's
+      people** (2026-09-01, PR #37, `59b3a25`). The interview is no
+      longer frozen at the scaffold's proven-valid layout. The map:
+      the model proposes run-length rows (build_map's own format) at
+      the scaffold's exact dimensions using only the scaffold's
+      legend characters; a proposal never touches the pack until
+      maplab.validate() passes on a deep copy - two tries, then the
+      proven layout stays and the author is told so. The gate is
+      geometry-only; the interview's final validate is the full
+      gate. Speakers: the town takes 1-3 voices (blank = 1) - extra
+      voices get drafted seeds and a voice file, but their tile is
+      deterministic code (reachable, unoccupied, unflooded,
+      widest-spread band); no tile, no speaker, said plainly. The
+      model call sits in chat.py's propose_map/_add_speaker;
+      deterministic surfaces stay deterministic. 7 new tests, suite
+      215 passed. Both changes live on bazzite after deploy.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
@@ -560,13 +591,6 @@
       Acceptance: `ratatoskr ferry scaffold --full` creates functional standalone
       repo with passing offline test suite.
       (Existing machinery: `cmd_scaffold`, pack contract loader).
-- [ ] **surface UI in the packaged file**: the web UI half landed
-      (`06eed41`, see Landed) but `web/packaged.html` - the
-      single-file weave artifact - still has no surface costume
-      (zero matches for hud-hp / data-surface / encounter-prompt /
-      verb-row). The weave template needs the same HP bar,
-      encounter prompt, and verb-row treatment before offline
-      packaged play shows the combat surface.
 - [ ] **Tiled map importer** (parked after the surface-UI work):
       `norns import-tiled map.json --pack X` reads Tiled's JSON
       export - visual map authoring, the storyteller-critical gap -
@@ -576,9 +600,6 @@
       1.10's JS scripting API could later host a one-click "export
       as vefr pack" from inside the editor. See
       `docs/guides/companion-resources.md`.
-- [ ] **`norns chat` v2**: let the interview grow the map itself
-      (currently frozen at the scaffold's proven-valid layout),
-      and add more than one speaker
 - [ ] **more lore packs**: worlds/lore/<new-flavor>/ directories.
       Adding one is data-only (mkdir + four markdown files); the
       engine discovers it. Future flavors: homeric, east-asian-
