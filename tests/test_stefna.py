@@ -1,9 +1,8 @@
 import json
 
-import pytest
 
 from vefr import stefna, generator
-from vefr.stefna import Letter, build_payload, generate_letter
+from vefr.stefna import build_payload, generate_letter
 
 
 GOOD = json.dumps({"letter": "Keep the door shut at night. The rest is yours. -m"})

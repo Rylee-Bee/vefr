@@ -56,7 +56,11 @@ kilo config - do not add personal files to this repo.
 ```bash
 # The gate - run before claiming anything is done
 uv sync --group test
+uv run --group test ruff check src tests
 uv run --group test pytest -q      # 171 passed, 2 skipped (2026-08-31)
+
+# One-command session-start check (git, tree, tests, pack, live)
+uv run --group test norns doctor   # set VEFR_LIVE_URL to check a stack
 
 # CLI references (canonical, always in sync with code)
 uv run ratatoskr --help            # ops: skipa, test, weave, ferry
@@ -76,7 +80,7 @@ uv run ratatoskr weave --pool 5
 
 | Severity  | Trigger                                                                                                                                                  |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Always    | `uv run --group test pytest -q` green before claiming done. Every claim about counts/results includes the exact command that produces the evidence.      |
+| Always    | `uv run --group test ruff check src tests && uv run --group test pytest -q` green before claiming done. Every claim about counts/results includes the exact command that produces the evidence.   |
 | Always    | Inclusive-forward is the design identity: every UI change answers the accessibility matrix - targets ≥44px, luminance over hue, plain-English first (Norse as flavor), motion off by default, reading load short, and when sound arrives, every sound paired with a visual event. |
 | Always    | `maplab.validate()` (via `norns validate`) after any world-pack write. The tool always checks; never trust a hand edit.                                   |
 | Always    | Keep deterministic surfaces deterministic: no model calls in `export.py`, `weave.py`, `maplab.py`, `journal.py`. The runes are the only stochastic surface. |

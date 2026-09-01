@@ -132,7 +132,6 @@ def walkable(w: dict, x: int, y: int, flooded: set | None = None) -> bool:
 def reach(w: dict, start: tuple, flooded: set | None = None) -> set:
     seen = {tuple(start)}
     stack = [tuple(start)]
-    m = w['town']['map']
     while stack:
         x, y = stack.pop()
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -382,7 +381,6 @@ def verify_live(url: str) -> tuple[bool, list[str]]:
     Used by both the maplab CLI ('verify') and the builder web UI
     ('/api/builder/verify'). Returns (ok, errors).
     """
-    import urllib.request
     with urllib.request.urlopen(f'{url.rstrip("/")}/api/world', timeout=15) as r:
         served = json.loads(r.read().decode('utf-8'))
     town_keys = ('tile', 'map', 'legend', 'pois', 'watch', 'sanctuary_tiles',

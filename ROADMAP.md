@@ -216,6 +216,27 @@
       with evidence (real pool weave landed, mem0 live again,
       `tests/test_web_packaged.py`); the next-move table repointed
       at the surface-UI continuation.
+- [x] **the LAN left the source** (2026-08-31): `VEFR_GITEA_URL`,
+      `VEFR_LIVE_URL`, `VEFR_DEFAULT_DEPLOY_HOST`, and
+      `VEFR_DEFAULT_BACKUP_LOCATION` (host:/path) replace the
+      hardcoded Gitea IP, the live-stack IP, and the SSH host
+      aliases - the engine source now carries neutral localhost
+      defaults and takes its identity from the environment. The
+      scaffold README derives its engine link from the checkout's
+      own `origin` at runtime. Runtime data, not repo data.
+
+- [x] **companion resources surveyed** (2026-08-31): a full
+      CC0/MIT tool survey (engines, renderers, map authoring,
+      narrative tools, art editors, audio, dev workflow) kept as a
+      local research note - gitignored, since the repo may publish
+      one day. Durable decisions: Kenney CC0 art ships as pack
+      data once the renderer grows sprite support; Tiled (then
+      LDtk) importers parked after the surface-UI work; rot.js
+      algorithms get borrowed for mapgen when `norns chat` v2
+      opens; frameworks skip (the custom renderer stays
+      canonical); the ebook export stays a stdlib writer; idea
+      credits for incompatible-but-borrowed sources live in
+      README's Attribution section.
 
 ## Next
 
@@ -263,6 +284,15 @@
       journal entry - none of those are wired yet. The
       `<body data-surface="...">` CSS hook is in place from the
       loader work; this is a HUD-only PR now.
+- [ ] **Tiled map importer** (parked after the surface-UI work):
+      `norns import-tiled map.json --pack X` reads Tiled's JSON
+      export - visual map authoring, the storyteller-critical gap -
+      and writes `map.md` + contract points through
+      `maplab.build_map` + `maplab.validate()`. Thin and optional;
+      text authoring stays canonical, no Tiled dependency. Tiled
+      1.10's JS scripting API could later host a one-click "export
+      as vefr pack" from inside the editor. See
+      `docs/guides/companion-resources.md`.
 - [ ] **v1.3 - the labyrinth (act II's door)**: the memory rooms in
       order - the heels, the sentence, the dictionary, the letter -
       one wall down per accepted thing, the empty room, the
@@ -347,6 +377,16 @@
       stays open; the pool covers the common case (author has a
       model, the friend does not).
 
+- [ ] **the marketplace**: a community place to share, search, and
+      rate engine add-ons - world packs, lore packs, sprites, map
+      recipes, and model settings ("local LLM packs": someone's
+      perfect llama.cpp + gpt-oss configuration for their exact
+      hardware, shareable as data). The distribution path already
+      exists (`ferry fetch --pull`, the Builder tab's import by
+      owner/name), so v1 is an index over plain git repos, not new
+      infrastructure - ratings live with the community, and
+      discovery may grow a `norns market` command. The always-
+      layer's "private until it isn't" made social.
 - [ ] **the reachable UI** (prerequisite of the dev menu): the
       header earns its title (vefr - a rumor engine for playable
       worlds), 9 flat tabs become 3 static zones (Play / World /
