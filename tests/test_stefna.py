@@ -1,33 +1,36 @@
 import json
 
+import pytest
 
 from vefr import stefna, generator
 from vefr.stefna import build_payload, generate_letter
 
 
-GOOD = json.dumps({"letter": "Keep the door shut at night. The rest is yours. -m"})
+GOOD = json.dumps({"letter": "Keep the door shut at night. The rest is yours."})
 
 
-def test_payload_asks_for_the_goodbye():
+def test_payload_asks_for_a_letter():
     p = build_payload()
     assert p["format"]["required"] == ["letter"]
-    assert "goodbye" in p["prompt"]
+    assert "letter" in p["prompt"]
     assert p["options"]["temperature"] == 0.8
 
 
-def test_stefna_voice_defaults_to_mother_for_older_packs(monkeypatch):
-    # A pack written before stefna_voice existed has no such key -
-    # the mechanic must still work without forcing a rename on disk.
-    monkeypatch.setattr(stefna, "load_world", lambda: {"voices": {"mother": {}}})
-    assert stefna.stefna_voice_key() == "mother"
-
-
-def test_stefna_voice_honors_the_pack_pointer(monkeypatch):
+def test_stefna_voice_falls_back_to_the_packs_first_voice(monkeypatch):
+    # A pack that never named its bell voice still works: the first
+    # declared voice takes the role. The engine holds no default -
+    # the pack declares itself.
     monkeypatch.setattr(
         stefna, "load_world",
-        lambda: {"stefna_voice": "keeper", "voices": {"keeper": {}}},
+        lambda: {"voices": {"keeper": {}, "other": {}}},
     )
     assert stefna.stefna_voice_key() == "keeper"
+
+
+def test_stefna_voice_refuses_a_voiceless_pack(monkeypatch):
+    monkeypatch.setattr(stefna, "load_world", lambda: {"voices": {}})
+    with pytest.raises(KeyError):
+        stefna.stefna_voice_key()
 
 
 def test_letter_parses(monkeypatch):
