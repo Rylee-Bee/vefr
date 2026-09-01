@@ -575,6 +575,35 @@
       deterministic surfaces stay deterministic. 7 new tests, suite
       215 passed. Both changes live on bazzite after deploy.
 
+- [x] **the dev box plays** (2026-09-01, this session): five
+      playability gaps closed as one bundle. (a) The model endpoint
+      is a variable, never a host: `example.env` (tracked, neutral
+      placeholders) copies to a gitignored `.env`, sourced before
+      any entry point - GETTING_STARTED shows the shape. (b) The
+      reading row's fonts ship: Atkinson Hyperlegible Next +
+      OpenDyslexic woff2 (latin 400/700, vendored from Fontsource,
+      SIL OFL) now tracked under `web/fonts/` with provenance - the
+      font and contrast choices stop 404ing and the packaged file
+      carries them from the first byte. (c) The road walked: journal
+      kind `move`, `POST /api/journal/move` (42 routes), `town.js`
+      posts one arrival per change of place (never per tile), the
+      packaged file keeps the same journal in localStorage, and the
+      export's "The Fen Walked" section witnesses the journey - the
+      export.py TODO from earlier sessions closed. (d) The pool
+      re-weaves: when the woven pool is spent, a small seeded
+      composer re-splices its cloth - every word is real model
+      output, whispers may cross combos (a rumor travels), npc lines
+      stay locked to their speaker's own words, the status line says
+      `woven anew from the pool's cloth.`, and with no pool at all
+      the honest silence holds. Deterministic per save (mulberry32
+      over a localStorage save-seed). The no-pool generator (pack-
+      supplied whisper fragments) stays on Next - it is a pack-
+      contract question. (e) The 76 runtime-state files under `data/`
+      plus `worlds/poolworld/world-tree.md` left the index (`git rm
+      -r --cached`); the gitignore rules hold alone and AGENTS.md's
+      known-drift note reads none. Gate: 221 passed, 2 skipped
+      (`uv run --group test pytest -q`), ruff clean.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
@@ -608,7 +637,11 @@
 - [ ] **research: offline/no-server generation fallback for shared
       packaged games**. Purpose-built small generators for a world
       with no precomputed pool. The pool covers the common case
-      (author has a model, friend does not).
+      (author has a model, friend does not). The spent-pool half
+      landed 2026-09-01 (the composer re-weaves the pool's cloth -
+      see the landed entry); what remains is the no-pool world,
+      which needs pack-supplied whisper fragments - an optional
+      pack-contract convention, so it stays a proposal.
 
 - [ ] **the marketplace**: a community place to share, search, and
       rate engine add-ons - world packs, lore packs, sprites, map
