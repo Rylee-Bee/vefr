@@ -71,7 +71,7 @@ clean mirror of the engine template.
   land on the bind mount via `ratatoskr ferry fetch` or by hand.
   Do not `--delete` them off the bind mount.
 - **Migrating a flat-shape user pack to the acts tree.** Use
-  `norns migrate --to-acts <name>` once on the dev box, then
+  `norns migrate --pack <name>` once on the dev box, then
   rsync the result. The migrator validates end-to-end before
   writing.
 - **The `data/` volume.** Backed up by `ferry carry` and the
