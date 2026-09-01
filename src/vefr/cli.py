@@ -15,8 +15,9 @@ same commands serve against the deployed world (deploy and
 backup need a git checkout, so they stay on the dev side).
 
 Your own game's name never appears here - that's the point. Whatever
-you build (Old Name, or anything else) sits in worlds/, and these two
-commands stay the same no matter whose story they're serving.
+story you point the engine at (your pack, someone else's, or none)
+sits in worlds/, and these two commands stay the same no matter
+whose story they're serving.
 """
 
 import argparse
@@ -628,6 +629,10 @@ def cmd_build_web(args) -> int:
             _forge_mod.VAULT = old_vault
             _journal_mod.JOURNAL = old_journal
 
+        # The scaffold tree file is written under the scaffold's
+        # historical default name; rename it to match the pack the
+        # scaffold just became. (Back-compat from before the engine
+        # knew about generic pack names.)
         bundle_path = out_path.with_name(
             out_path.stem.replace('private-canon', pack.name) + '.tree.md'
         )
