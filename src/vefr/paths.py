@@ -19,7 +19,7 @@ def app_home() -> Path:
         # lore + sample-world). The dev box has worlds/ at the top
         # of the checkout. Either one counts as "this is the engine
         # home."
-        if (cand / "worlds-template").is_dir() or (cand / "worlds").is_dir():
+        if (cand / "worlds-template").is_dir() or (cand / "worlds").is_dir() or (cand / "web").is_dir():
             return cand
     return dev
 

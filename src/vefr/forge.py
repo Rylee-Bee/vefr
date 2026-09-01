@@ -1,6 +1,5 @@
 import json
 import os
-import time
 from pathlib import Path
 
 import httpx
@@ -9,15 +8,20 @@ from pydantic import BaseModel, ValidationError
 from . import generator
 from .bonds import bond_keys, bond_prompt
 from .paths import app_home
-from .sessions import clean, derive
+from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 from .saga import system_prompt
 from .world import load_world
 
 VAULT = Path(os.environ.get("VEFR_VAULT", str(app_home() / "data" / "vault.json")))
 
-UNDO_WINDOW_S = 60
-_LAST_REMOVED: dict[str, dict] = {}
-_LAST_REMOVED_AT: dict[str, float] = {}
+_UNDO = UndoBuffer(UNDO_WINDOW_S)
+_LAST_REMOVED = _UNDO._stash
+_LAST_REMOVED_AT = _UNDO._stash_at
+
+
+def _sync_undo_stash() -> None:
+    _UNDO._stash = _LAST_REMOVED
+    _UNDO._stash_at = _LAST_REMOVED_AT
 
 
 def vault_path(sid: str | None = None) -> Path:
@@ -140,45 +144,22 @@ def remove(index: int, sid: str | None = None) -> dict | None:
     Vault items are the player's possessions, so removal is rarer
     than journal removal. Still: same single-slot, 60s undo window.
     """
-    key = clean(sid)
-    items = _load_vault(sid)
-    if index < 0 or index >= len(items):
-        return None
-    target = items[index]
-    del items[index]
-    path = vault_path(sid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
-    tmp.replace(path)
-    _LAST_REMOVED[key] = {"item": target, "index": index}
-    _LAST_REMOVED_AT[key] = time.monotonic()
-    _touch_living_tree(sid)
-    return target
+    _sync_undo_stash()
+    return _UNDO.remove(
+        index,
+        load_fn=_load_vault,
+        save_fn=set_vault,
+        sid=sid,
+        touch_fn=_touch_living_tree,
+    )
 
 
 def undo(sid: str | None = None) -> dict | None:
     """Restore the most recently removed vault item, if still in window."""
-    key = clean(sid)
-    stash = _LAST_REMOVED.get(key)
-    stash_at = _LAST_REMOVED_AT.get(key)
-    if stash is None or stash_at is None:
-        return None
-    if time.monotonic() - stash_at > UNDO_WINDOW_S:
-        _LAST_REMOVED.pop(key, None)
-        _LAST_REMOVED_AT.pop(key, None)
-        return None
-    item = stash["item"]
-    original_index = stash["index"]
-    items = _load_vault(sid)
-    insert_at = min(original_index, len(items))
-    items.insert(insert_at, item)
-    path = vault_path(sid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(items, indent=2), encoding="utf-8")
-    tmp.replace(path)
-    _LAST_REMOVED.pop(key, None)
-    _LAST_REMOVED_AT.pop(key, None)
-    _touch_living_tree(sid)
-    return item
+    _sync_undo_stash()
+    return _UNDO.undo(
+        load_fn=_load_vault,
+        save_fn=set_vault,
+        sid=sid,
+        touch_fn=_touch_living_tree,
+    )

@@ -81,6 +81,47 @@ def test_handoff_writes_a_readable_bundle(tmp_path, monkeypatch):
         weave_mod.reset_path_for_testing(None)
 
 
+def test_pack_aspects_returns_full_metadata(sample_pack, monkeypatch):
+    """The pack_aspects endpoint aggregates pack metadata, active act,
+    regions, speakers matrix, rune cast, and recent traces."""
+    from fastapi.testclient import TestClient
+    from vefr import inspect, main, world as world_mod
+    monkeypatch.setenv("VEFR_WORLD", "sample-world")
+    world_mod.load_world.cache_clear()
+    try:
+        aspects = inspect.pack_aspects()
+        assert "pack" in aspects
+        assert aspects["pack"]["name"] == "sample-world"
+        assert aspects["pack"]["title"] == "Emberfield"
+        assert "act" in aspects
+        assert aspects["act"]["id"] == "act-1"
+        assert "regions" in aspects
+        assert "town" in aspects["regions"]
+        assert "speakers" in aspects
+        assert "rune_cast" in aspects
+        assert len(aspects["rune_cast"]["positions"]) == 3
+        assert "recent_trace" in aspects
+
+        # Also verify via FastAPI TestClient
+        client = TestClient(main.app)
+        res = client.get("/api/builder/aspects")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["pack"]["name"] == "sample-world"
+        assert "speakers" in data
+        assert "rune_cast" in data
+    finally:
+        world_mod.load_world.cache_clear()
+
+
+def test_attach_journey_short_phases():
+    """Verify _attach_journey handles short phases without crashing or duplicating."""
+    from vefr import world as world_mod
+    w = {"phases": {"one": "desc"}, "_journey": None}
+    world_mod._attach_journey(w)
+    assert w["_journey"] == []
+
+
 @pytest.fixture
 def sample_pack():
     """The canary acts-shape pack (sample-world)."""

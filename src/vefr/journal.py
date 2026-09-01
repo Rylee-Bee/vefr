@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .paths import app_home
-from .sessions import clean, derive
+from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 
 JOURNAL = Path(
     os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
@@ -25,18 +25,19 @@ JOURNAL = Path(
 
 KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "fork")
 
-# How long a `remove()`'d entry stays recoverable. One minute gives
-# the player a real undo window for a fat-fingered delete, without
-# keeping dead state around forever. After UNDO_WINDOW_S the stash
-# is dropped on the next `undo()` call.
-UNDO_WINDOW_S = 60
-
 # Per-session stash of the most recently removed entry, keyed by the
 # cleaned session id. Single-slot per session is the design: undo is
 # "I just clicked the wrong button", not a full undo stack. A second
 # remove in the same session overwrites that session's stash.
-_LAST_REMOVED: dict[str, dict] = {}
-_LAST_REMOVED_AT: dict[str, float] = {}
+_UNDO = UndoBuffer(UNDO_WINDOW_S)
+_LAST_REMOVED = _UNDO._stash
+_LAST_REMOVED_AT = _UNDO._stash_at
+
+
+def _sync_undo_stash() -> None:
+    """Keep _LAST_REMOVED and _LAST_REMOVED_AT in sync with _UNDO in case monkeypatched."""
+    _UNDO._stash = _LAST_REMOVED
+    _UNDO._stash_at = _LAST_REMOVED_AT
 
 
 def journal_path(sid: str | None = None) -> Path:
@@ -104,7 +105,6 @@ def remove(index: int, sid: str | None = None) -> dict | None:
     Each remove() stashes exactly one entry; calling remove() again
     before the undo window expires overwrites the previous stash.
     """
-    key = clean(sid)
     entries = _load(sid)
     if index < 0 or index >= len(entries):
         return None
@@ -116,18 +116,14 @@ def remove(index: int, sid: str | None = None) -> dict | None:
             f"refusing to remove the last entry of kind {kind!r} - "
             f"use `clear()` for a full wipe, or star and edit by hand"
         )
-    del entries[index]
-    path = journal_path(sid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-    tmp.replace(path)
-    # Stash for undo - keep the original index so undo restores
-    # position too when possible, otherwise append to the end.
-    _LAST_REMOVED[key] = {"entry": target, "index": index}
-    _LAST_REMOVED_AT[key] = time.monotonic()
-    _touch_living_tree(sid)
-    return target
+    _sync_undo_stash()
+    return _UNDO.remove(
+        index,
+        load_fn=_load,
+        save_fn=_save,
+        sid=sid,
+        touch_fn=_touch_living_tree,
+    )
 
 
 def undo(sid: str | None = None) -> dict | None:
@@ -136,39 +132,26 @@ def undo(sid: str | None = None) -> dict | None:
     Returns the restored entry, or None if no remove has happened
     in the last UNDO_WINDOW_S seconds (or at all).
     """
-    key = clean(sid)
-    stash = _LAST_REMOVED.get(key)
-    stash_at = _LAST_REMOVED_AT.get(key)
-    if stash is None or stash_at is None:
-        return None
-    if time.monotonic() - stash_at > UNDO_WINDOW_S:
-        _LAST_REMOVED.pop(key, None)
-        _LAST_REMOVED_AT.pop(key, None)
-        return None
-    entry = stash["entry"]
-    original_index = stash["index"]
-    entries = _load(sid)
-    # Insert at the original index, clamped to the current length.
-    insert_at = min(original_index, len(entries))
-    entries.insert(insert_at, entry)
+    _sync_undo_stash()
+    return _UNDO.undo(
+        load_fn=_load,
+        save_fn=_save,
+        sid=sid,
+        touch_fn=_touch_living_tree,
+    )
+
+
+def _save(entries: list[dict], sid: str | None = None) -> None:
     path = journal_path(sid)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
     tmp.replace(path)
-    _LAST_REMOVED.pop(key, None)
-    _LAST_REMOVED_AT.pop(key, None)
-    _touch_living_tree(sid)
-    return entry
 
 
 def set_entries(entries: list[dict], sid: str | None = None) -> None:
     """Replace a session's whole journal - the fork's write path."""
-    path = journal_path(sid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
-    tmp.replace(path)
+    _save(entries, sid)
     _touch_living_tree(sid)
 
 
@@ -223,7 +206,6 @@ def clear(sid: str | None = None) -> None:
     path = journal_path(sid)
     if path.exists():
         path.unlink()
-    key = clean(sid)
-    _LAST_REMOVED.pop(key, None)
-    _LAST_REMOVED_AT.pop(key, None)
+    _sync_undo_stash()
+    _UNDO.clear(sid)
     _touch_living_tree(sid)

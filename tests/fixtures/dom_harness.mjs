@@ -201,6 +201,15 @@ const bForm = mk('form', 'builder-chat-form');
 mk('textarea', 'builder-chat-input', '', bForm);
 mk('button', 'builder-chat-send', '', bForm);
 
+// dev drawer stubs
+mk('div', 'dev-drawer-backdrop');
+const devDrawer = mk('div', 'dev-drawer');
+devDrawer.hidden = true;
+byId.get('dev-drawer-backdrop').hidden = true;
+mk('button', 'dev-drawer-trigger');
+mk('button', 'dev-drawer-close', '', devDrawer);
+mk('div', 'dev-drawer-content', '', devDrawer);
+
 // prefs panel stubs
 mk('div', 'prefs-backdrop');
 const prefsPanel = mk('div', 'prefs-panel');
@@ -390,6 +399,14 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
   if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'Old Sela' }] });
   if (url === '/api/weave') return ok({ events: [{ event: 'pack.load.end', at: 1234567890.0, pack: 'sample-world', acts: 1, shape: 'acts', surface: 'combat' }] });
+  if (url.startsWith('/api/builder/aspects')) return ok({
+    pack: { name: 'sample-world', title: 'Emberfield', surface: 'combat', shape: 'acts', phases: ['dusk', 'dawn'], gold_rule: '', journey: [] },
+    act: { id: 'act-1', title: 'Emberfield', index: 0, total_acts: 1, enemies: [], bosses: [], transitions: [] },
+    regions: { town: { title: 'town', has_map: true, pois: ['inn'], hero_start: [1, 1] } },
+    speakers: { smith: { name: 'The Smith', near: 'forge', voice_file: 'smith.md', seeds: { dusk: 'aye' } } },
+    rune_cast: { phase: 'dusk', seed: 1, iso_minute: '2026-08-31T11:06', positions: [{ position: 'what_was', name: 'Fehu', stave: '\u16A0', short: 'wealth' }] },
+    recent_trace: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 12.3, ok: true }],
+  });
   if (url === '/api/builder/resolved') return ok({ name: 'sample-world', title: 'Emberfield', _shape: 'acts', _current_act: 0, acts: [] });
   if (url === '/api/combat/action' && method === 'POST') return ok({ at: '2026-08-31T22:00:00Z', kind: body.kind, phase: body.phase, target: body.target });
   if (url === '/api/wiki') return ok({ characters: [{ key: 'sela', name: 'Old Sela', lines: 1, recent: [{ at: '2026-08-31T00:00:00Z', phase: 'whispers', line: 'the well remembers' }] }], relics: [{ name: 'knife', bond: 'assigned', lore: 'heavy' }], rumors: 1, letters: 0 });
@@ -655,6 +672,37 @@ check('reset restores defaults', afterReset.textSize === 'm' && afterReset.contr
 pShare.click();
 await tick();
 check('share button copies url', typeof sandbox._lastCopied === 'string' && sandbox._lastCopied.includes('?prefs='));
+
+/* ---------- dev overlay & aspect inspector flows ---------- */
+const dTrig = byId.get('dev-drawer-trigger');
+const dDrawer = byId.get('dev-drawer');
+const dBackdrop = byId.get('dev-drawer-backdrop');
+const dClose = byId.get('dev-drawer-close');
+const dContent = byId.get('dev-drawer-content');
+
+check('dev drawer initially hidden', dDrawer.hidden === true && dBackdrop.hidden === true);
+
+// 1. Trigger opens drawer & loads aspects
+dTrig.click();
+await tick();
+check('dev drawer opens on trigger click', dDrawer.hidden === false && dBackdrop.hidden === false && dTrig.getAttribute('aria-expanded') === 'true');
+check('dev drawer fetched /api/builder/aspects', calls.some((c) => c.url.startsWith('/api/builder/aspects')));
+check('dev drawer rendered aspect content', dContent.innerHTML.includes('Pack &amp; Surface') && dContent.innerHTML.includes('Emberfield'));
+
+// 2. Escape key closes drawer
+for (const fn of winListeners['keydown'] || []) fn({ key: 'Escape', preventDefault() {} });
+await tick();
+check('escape key closes dev drawer', dDrawer.hidden === true && dBackdrop.hidden === true && dTrig.getAttribute('aria-expanded') === 'false');
+
+// 3. Backtick key toggles drawer
+for (const fn of winListeners['keydown'] || []) fn({ key: '`', preventDefault() {}, target: { tagName: 'BODY' } });
+await tick();
+check('backtick key opens dev drawer', dDrawer.hidden === false && dBackdrop.hidden === false);
+
+// 4. Close button closes drawer
+dClose.click();
+await tick();
+check('close button closes dev drawer', dDrawer.hidden === true && dBackdrop.hidden === true);
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
 process.exit(fail.length ? 1 : 0);

@@ -261,11 +261,10 @@ def _attach_journey(world: dict) -> None:
     Packs that rename phases still get the engine's bones.
     """
     from .journey import DEFAULT_PHASES, PHASE_JOURNEY_RUNE
+    world["_journey"] = []
     phase_keys = list(world["phases"].keys())
     if len(phase_keys) < len(DEFAULT_PHASES):
-        world["_journey"] = []
         return
-    world["_journey"] = []
     for i, stage_key in enumerate(DEFAULT_PHASES):
         world["_journey"].append({
             "pack_phase": phase_keys[i],
