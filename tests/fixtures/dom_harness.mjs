@@ -451,7 +451,21 @@ sandbox.document = {
   dispatchEvent: (ev) => { for (const fn of winListeners[ev.type] || []) fn(ev); return true; },
   execCommand: (cmd) => true,
   body: root,
+  /* getComputedStyle: the dock controller reads the breakpoint CSS
+     variable here. The stub returns the property the test stored, or
+     '' for unknown keys. */
+  defaultView: sandbox,
 };
+sandbox.window.getComputedStyle = (el, pseudoEl) => ({
+  getPropertyValue: (name) => {
+    /* The dock controller only reads --free-dock-breakpoint. Tests
+       override it via setWinBreakpoint() when they need a different
+       value; default is '1180px' (matches the CSS variable
+       :root --free-dock-breakpoint). */
+    if (name === '--free-dock-breakpoint') return sandbox._breakpoint || '1180px';
+    return '';
+  },
+});
 sandbox.Event = class { constructor(t) { this.type = t; } };
 sandbox.window.addEventListener = (t, fn) => { (winListeners[t] ||= []).push(fn); };
 sandbox.window.dispatchEvent = (ev) => { for (const fn of winListeners[ev.type] || []) fn(ev); };

@@ -507,39 +507,6 @@
     --free-dock-breakpoint: 1180px;
   }
 
-  @media (min-width: var(--free-dock-breakpoint)) {
-    body[data-zone="play"][data-dock="free"] .play-workspace {
-      display: block;
-      position: relative;
-      min-height: 70vh;
-    }
-    body[data-zone="play"][data-dock="free"] .play-panel {
-      position: absolute;
-      margin: 0;
-      /* width/height/left/top are set inline by the dock controller
-         from the persisted dock state; sensible fallbacks below. */
-      width: 32rem;
-      min-width: 18rem;
-      max-width: calc(100% - 2rem);
-      min-height: 14rem;
-      /* The composed-shell sticky/overflow rules don't apply when the
-         panel is its own window - reset them so the inline height
-         wins. */
-      position: absolute;
-    }
-    body[data-zone="play"][data-dock="free"] #view-journal {
-      max-height: none;
-      overflow: visible;
-      position: absolute;
-    }
-    body[data-zone="play"][data-dock="free"] .play-panel.is-minimised {
-      height: auto !important;
-    }
-    body[data-zone="play"][data-dock="free"] .play-panel.is-minimised .panel-body {
-      display: none;
-    }
-  }
-
   /* The dock controller announces its state changes via a polite live
      region. Hidden visually but available to assistive tech. */
   .dock-status {

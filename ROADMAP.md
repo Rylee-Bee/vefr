@@ -697,7 +697,7 @@
       keep the composed shape (the inclusive-forward rule that says
       narrow gets a stable layout). Two commits:
       `wip: compose the play workspace` and
-      `feat: free-dock Play workspace`. Gate: 246 passed, 2 skipped
+      `feat: free-dock Play workspace`. Gate: 248 passed
       (`uv run --group test pytest -q`), ruff clean; 30+ new checks
       in `tests/fixtures/dom_harness.mjs`.
 
