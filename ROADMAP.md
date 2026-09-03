@@ -680,6 +680,27 @@
       section drops the export line. Gate: 247 passed
       (`uv run --group test pytest -q`), ruff clean.
 
+- [x] **the Play workspace can be composed OR free-docked** (2026-09-03):
+      the workspace is one responsive shell from 0 to 1179px (context left,
+      game centre, journal right on wide screens; Town spans the width
+      on medium; one panel at a time on narrow), and turns into a free
+      dock of five windows (Town / Whispers / Bell / Vault / Journal)
+      at >=1180px, matching the ChatGPT free-dock concept. Plain-English
+      panel names with Norse `.sub` tags in the title bars (matches the
+      existing tab-button convention), 44px drag/resize affordances,
+      luminance-only focus, `prefers-reduced-motion` zeroes every
+      transition, pointer drag throttled via rAF, localStorage
+      persistence under `vefr:dock:v1` (versioned + merge-back-from-
+      defaults on load). Keyboard parity: Enter/Space to grab, Arrow
+      keys to move, Escape to cancel. "Reset dock layout" lives in the
+      dev drawer so the player never sees it. Medium and narrow screens
+      keep the composed shape (the inclusive-forward rule that says
+      narrow gets a stable layout). Two commits:
+      `wip: compose the play workspace` and
+      `feat: free-dock Play workspace`. Gate: 246 passed, 2 skipped
+      (`uv run --group test pytest -q`), ruff clean; 30+ new checks
+      in `tests/fixtures/dom_harness.mjs`.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
