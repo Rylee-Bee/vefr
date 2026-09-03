@@ -716,11 +716,15 @@
       `min-height: 36px` on tabs / zone buttons / phase-rail buttons,
       which violates the Always-target >= 44px rule (AGENTS.md).
       Fix: drop only `min-height`, keep the `padding: 0.35rem 0.7rem`
-      trim (compact visually, contract intact). Added
+      trim (compact visually, contract intact). Adds
       `.gitattributes` stamping `text eol=lf` on `web/*.html`,
       `web/*.js`, `web/*.css`, `tests/**/*.mjs`, `tests/**/*.py`,
       `src/**/*.py`, `*.md` so Windows-checkout CRLF churn stops
-      polluting future diffs. New regression file
+      polluting future diffs - the actual normalization of existing
+      mixed-ending files is deferred to a separate maintenance PR
+      (mixing a 7000-line line-ending rewrite with a 20-line
+      functional UI fix is exactly the diff-hygiene failure this
+      guardrail exists to prevent). New regression file
       `tests/test_web_css_structure.py` (3 tests) catches: any
       `@media` condition using `var()`; drift between the CSS
       `--free-dock-breakpoint` value, the `@media` literal, and the
