@@ -1,0 +1,13 @@
+# Enforce LF endings in shipped text files. Editors on Windows
+# (the WSL2 dev box) commonly save CRLF; without this file,
+# future edits to web/ and the test fixtures repeat the
+# whitespace-churn-on-merge pattern that polluted the 2026-09-03
+# free-dock PR diff. Keep this list minimal - any file humans
+# edit benefits from a single canonical encoding.
+web/*.html text eol=lf
+web/*.js   text eol=lf
+web/*.css  text eol=lf
+tests/**/*.mjs text eol=lf
+tests/**/*.py  text eol=lf
+src/**/*.py   text eol=lf
+*.md   text eol=lf
