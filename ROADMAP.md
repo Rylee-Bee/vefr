@@ -701,6 +701,44 @@
       (`uv run --group test pytest -q`), ruff clean; 30+ new checks
       in `tests/fixtures/dom_harness.mjs`.
 
+- [x] **free-dock review fix-ups** (2026-09-03, this session): the
+      landing had two reviewable defects caught in a headless-Chrome
+      verification pass against the running engine. First: the
+      `@media (min-width: var(--free-dock-breakpoint))` block is invalid
+      CSS - browsers drop the whole rule when a `var()` appears in a
+      media-query condition, so the entire free-dock structural
+      enablement (window frames, drag handles, absolute positioning)
+      silently never applied. Fix: literal `1180px` in the media query;
+      the `--free-dock-breakpoint` custom property is kept on `:root`
+      for JS-side reads via `getComputedStyle`, and the comment header
+      on both declarations names the literal as the single source of
+      truth. Second: the `density=compact` pref was setting
+      `min-height: 36px` on tabs / zone buttons / phase-rail buttons,
+      which violates the Always-target >= 44px rule (AGENTS.md).
+      Fix: drop only `min-height`, keep the `padding: 0.35rem 0.7rem`
+      trim (compact visually, contract intact). Adds
+      `.gitattributes` stamping `text eol=lf` on `web/*.html`,
+      `web/*.js`, `web/*.css`, `tests/**/*.mjs`, `tests/**/*.py`,
+      `src/**/*.py`, `*.md` so Windows-checkout CRLF churn stops
+      polluting future diffs - the actual normalization of existing
+      mixed-ending files is deferred to a separate maintenance PR
+      (mixing a 7000-line line-ending rewrite with a 20-line
+      functional UI fix is exactly the diff-hygiene failure this
+      guardrail exists to prevent). New regression file
+      `tests/test_web_css_structure.py` (3 tests) catches: any
+      `@media` condition using `var()`; drift between the CSS
+      `--free-dock-breakpoint` value, the `@media` literal, and the
+      JS `FREE_BREAKPOINT` fallback (all must stay 1180); any compact-
+      density min-height below 44px. Browser-verified at 1280x800
+      (free-dock frames visible, all five panels with DRAG/snap/min
+      controls), 1100x900 (composed two-column, no free-dock leak),
+      760x900 (composed still engaged at the breakpoint edge),
+      700x900 (single active panel, no horizontal scroll, dock state
+      from earlier wide-viewport usage doesn't break narrow layout).
+      Live engine on bazzite (`192.168.2.76:8820`) independently
+      reproduced the pre-fix defect at 1280px. Gate: 251 passed
+      (`uv run --group test pytest -q`), ruff clean.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
