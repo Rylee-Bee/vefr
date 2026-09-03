@@ -243,11 +243,283 @@
     margin: -1px; padding: 0; overflow: hidden;
     clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  header { max-width: min(80rem, 100% - 2rem); margin: 0 auto; padding: 2.5rem 1rem 0; }
+  header { max-width: min(96rem, 100% - 1rem); margin: 0 auto; padding: 1rem 1rem 0; }
   header h1 { margin: 0; font-size: 1.5rem; font-weight: normal; letter-spacing: 0.12em; }
   header .tagline { color: var(--ink-dim); margin: 0.3rem 0 0; font-size: 0.95rem; }
 
-  main { max-width: min(80rem, 100% - 2rem); margin: 0 auto; padding: 0 1rem 3rem; }
+  main { max-width: min(96rem, 100% - 1rem); margin: 0 auto; padding: 0 1rem 3rem; }
+
+  /* The play workspace keeps the world in the middle and lets its
+     context stay within sight. These are the existing live views,
+     not read-only copies: whispering, forging, moving, and journal
+     actions keep their original handlers and shared state. */
+  .play-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .play-workspace[hidden] { display: none; }
+  .play-panel {
+    min-width: 0;
+    padding: 0.85rem;
+    background: color-mix(in srgb, var(--card) 76%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  }
+  .play-panel.is-active { border-color: var(--muted-foreground); }
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: -0.2rem 0 0.65rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted-foreground);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .panel-title::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border: 1px solid var(--primary);
+    border-radius: 50%;
+  }
+  body[data-zone="play"] .zone-nav[data-zone-nav="play"] {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 0.55rem 0;
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  @media (max-width: 759px) {
+    body[data-zone="play"] .play-panel:not(.is-active) { display: none; }
+    .play-panel { padding: 0.75rem; }
+  }
+
+  @media (min-width: 760px) {
+    .play-workspace {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+    #view-town { grid-column: 1 / -1; }
+    #view-rumors, #view-vault, #view-stefna, #view-journal { max-height: 34rem; overflow: auto; }
+  }
+
+  @media (min-width: 1180px) {
+    .play-workspace {
+      grid-template-columns: minmax(15rem, 0.72fr) minmax(32rem, 1.8fr) minmax(17rem, 0.82fr);
+      grid-template-areas:
+        "rumors town journal"
+        "vault town journal"
+        "vault stefna journal";
+    }
+    #view-rumors { grid-area: rumors; }
+    #view-vault { grid-area: vault; }
+    #view-town { grid-area: town; }
+    #view-stefna { grid-area: stefna; }
+    #view-journal { grid-area: journal; }
+    #view-rumors, #view-vault, #view-stefna, #view-journal { max-height: none; overflow: visible; }
+    #view-journal { max-height: calc(100vh - 12rem); overflow: auto; position: sticky; top: 8rem; }
+    #view-town { align-self: start; }
+  }
+
+  /* === Free-dock shell (wide viewports only) ===
+   *
+   * The composed three-column shell above is what every viewport sees
+   * by default. On viewports >=1180px, the same five panels gain a
+   * window frame (title bar + drag handle + resize handle + dock
+   * button) and become freely positionable inside the workspace.
+   * Below 1180px, the window frames are hidden and the composed grid
+   * takes over - so the narrow-screen experience stays predictable,
+   * which is the inclusive-forward rule the matrix calls out.
+   *
+   * Luminance carries rank: borders are dim by default and lighten on
+   * focus or hover. No hue is used to mark active panel; the focus
+   * ring is a thicker neutral outline. Motion is disabled by default;
+   * the only transitions are 80ms color/border changes, which the
+   * `prefers-reduced-motion` rule below kills entirely.
+   */
+  .panel-frame {
+    display: none;
+  }
+  .panel-title {
+    /* existing title row now doubles as the window's title bar */
+    cursor: default;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .panel-drag-handle {
+    /* drag handle is the title bar itself when docked; we still render
+       an explicit handle for keyboard users who don't want to grab
+       the whole title bar. Hit area is 44px high. */
+    display: none;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    color: var(--muted-foreground);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: grab;
+  }
+  .panel-drag-handle:focus-visible {
+    outline: 2px solid var(--muted-foreground);
+    outline-offset: 2px;
+  }
+  .panel-drag-handle:active { cursor: grabbing; }
+  .panel-controls {
+    display: none;
+    gap: 0.4rem;
+    margin-left: auto;
+  }
+  .panel-control-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .panel-control-btn:hover,
+  .panel-control-btn:focus-visible {
+    color: var(--foreground);
+    border-color: var(--muted-foreground);
+    outline: none;
+  }
+  .panel-control-btn:focus-visible {
+    outline: 2px solid var(--muted-foreground);
+    outline-offset: 2px;
+  }
+  .panel-resize-handle {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 44px;
+    height: 44px;
+    cursor: nwse-resize;
+    background:
+      linear-gradient(135deg, transparent 50%,
+        var(--muted-foreground) 50%,
+        var(--muted-foreground) 60%,
+        transparent 60%,
+        transparent 75%,
+        var(--muted-foreground) 75%,
+        var(--muted-foreground) 85%,
+        transparent 85%);
+    border: 0;
+    padding: 0;
+  }
+  .panel-resize-handle:focus-visible {
+    outline: 2px solid var(--muted-foreground);
+    outline-offset: 0;
+    padding: 0;
+  }
+  .play-panel.is-dragging,
+  .play-panel.is-resizing {
+    /* Lift the panel off the layout while it follows the pointer -
+       no layout shift for siblings, but the dragged panel reads as
+       "in hand". Pure border change, no transform, so reduced-motion
+       users see the same thing. */
+    border-color: var(--muted-foreground);
+    z-index: 5;
+  }
+  .play-panel.is-keyboard-moving {
+    border-color: var(--muted-foreground);
+  }
+
+  /* Free-dock mode: only on wide viewports. The window frames become
+     visible; the panel itself goes absolute-positioned inside its dock
+     area; the composed grid is suppressed because the absolute panels
+     don't need grid placement anymore. */
+  @media (min-width: var(--free-dock-breakpoint)) {
+    body[data-zone="play"][data-dock="free"] .panel-frame {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    body[data-zone="play"][data-dock="free"] .panel-drag-handle {
+      display: inline-flex;
+    }
+    body[data-zone="play"][data-dock="free"] .panel-controls {
+      display: inline-flex;
+    }
+    body[data-zone="play"][data-dock="free"] .panel-resize-handle {
+      display: block;
+    }
+    body[data-zone="play"][data-dock="free"] .play-workspace {
+      display: block;
+      position: relative;
+      min-height: 70vh;
+    }
+    body[data-zone="play"][data-dock="free"] .play-panel {
+      position: absolute;
+      margin: 0;
+      /* width/height/left/top are set inline by the dock controller
+         from the persisted dock state; sensible fallbacks below. */
+      width: 32rem;
+      min-width: 18rem;
+      max-width: calc(100% - 2rem);
+      min-height: 14rem;
+      /* The composed-shell sticky/overflow rules don't apply when the
+         panel is its own window - reset them so the inline height
+         wins. */
+      position: absolute;
+    }
+    body[data-zone="play"][data-dock="free"] #view-journal {
+      max-height: none;
+      overflow: visible;
+      position: absolute;
+    }
+    body[data-zone="play"][data-dock="free"] .play-panel.is-minimised {
+      height: auto !important;
+    }
+    body[data-zone="play"][data-dock="free"] .play-panel.is-minimised .panel-body {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition-duration: 0ms !important;
+    }
+    .play-panel,
+    .panel-control-btn,
+    .panel-drag-handle {
+      transition: none !important;
+    }
+  }
+
+  /* Synchronized breakpoint with JS */
+  :root {
+    --free-dock-breakpoint: 1180px;
+  }
+
+  /* The dock controller announces its state changes via a polite live
+     region. Hidden visually but available to assistive tech. */
+  .dock-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
   /* One shell width, every zone. The zone switch used to swap the
      page between a narrow reading column and a wide workbench -
@@ -1066,6 +1338,9 @@
     <input type="search" id="dev-drawer-filter" class="dev-drawer-input"
            placeholder="filter sections" aria-label="Filter inspector sections">
     <p class="dev-drawer-filter-count" id="dev-drawer-filter-count" aria-live="polite"></p>
+    <button type="button" id="dev-dock-reset" class="prefs-action"
+            aria-label="Reset play dock layout to defaults"
+            style="margin-left:auto;">Reset dock layout</button>
   </div>
   <div class="dev-drawer-content" id="dev-drawer-content" aria-live="polite">
     <div style="color:var(--ink-dim);font-size:0.9rem;">Loading aspects...</div>
@@ -1106,30 +1381,32 @@
   <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
 </header>
 <main>
-  <div class="zones" role="toolbar" aria-label="Site areas">
+  <div class="zones" role="toolbar" aria-label="Workspace modes">
     <button type="button" class="zone-btn" data-zone="play" aria-pressed="true">Play</button>
-    <button type="button" class="zone-btn" data-zone="world" aria-pressed="false">World</button>
-    <button type="button" class="zone-btn" data-zone="dev" aria-pressed="false">Dev</button>
+    <button type="button" class="zone-btn" data-zone="build" aria-pressed="false">Build</button>
+    <button type="button" class="zone-btn" data-zone="weave" aria-pressed="false">Weave</button>
   </div>
 
   <nav class="tabs zone-nav" data-zone-nav="play" role="tablist" aria-label="Play">
-    <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="false" aria-controls="view-town">Town</button>
-    <button type="button" role="tab" data-view="rumors" id="tab-rumors" aria-selected="true" aria-controls="view-rumors">Whispers <span class="sub">Sagnir</span></button>
+    <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="true" aria-controls="view-town">Town</button>
+    <button type="button" role="tab" data-view="rumors" id="tab-rumors" aria-selected="false" aria-controls="view-rumors">Whispers <span class="sub">Sagnir</span></button>
     <button type="button" role="tab" data-view="stefna" id="tab-stefna" aria-selected="false" aria-controls="view-stefna">Bell <span class="sub">Stefna</span></button>
     <button type="button" role="tab" data-view="vault" id="tab-vault" aria-selected="false" aria-controls="view-vault">Vault <span class="sub">Safn</span></button>
     <button type="button" role="tab" data-view="journal" id="tab-journal" aria-selected="false" aria-controls="view-journal">Journal <span class="sub">Annall</span></button>
   </nav>
-  <nav class="tabs zone-nav" data-zone-nav="world" role="tablist" aria-label="World" hidden>
+  <nav class="tabs zone-nav" data-zone-nav="build" role="tablist" aria-label="Build" hidden>
     <button type="button" role="tab" data-view="wiki" id="tab-wiki" aria-selected="false" aria-controls="view-wiki">Lore <span class="sub">Fr&aelig;&eth;i</span></button>
-  </nav>
-  <nav class="tabs zone-nav" data-zone-nav="dev" role="tablist" aria-label="Dev" hidden>
+    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder <span class="sub">Byggir</span></button>
     <button type="button" role="tab" data-view="board" id="tab-board" aria-selected="false" aria-controls="view-board">Board <span class="sub">Bor&eth;</span></button>
+  </nav>
+  <nav class="tabs zone-nav" data-zone-nav="weave" role="tablist" aria-label="Weave" hidden>
     <button type="button" role="tab" data-view="trace" id="tab-trace" aria-selected="false" aria-controls="view-trace">Trace <span class="sub">Spor</span></button>
     <button type="button" role="tab" data-view="weave" id="tab-weave" aria-selected="false" aria-controls="view-weave">Weave <span class="sub">Veft</span></button>
-    <button type="button" role="tab" data-view="builder" id="tab-builder" aria-selected="false" aria-controls="view-builder">Builder <span class="sub">Byggir</span></button>
   </nav>
 
-  <section id="view-rumors" class="view" role="tabpanel" aria-labelledby="tab-rumors">
+  <div id="play-workspace" class="play-workspace" aria-label="Play workspace">
+  <section id="view-rumors" class="view play-panel" role="tabpanel" aria-labelledby="tab-rumors">
+    <h2 class="panel-title" data-panel="rumors">Whispers <span class="sub" data-norse="Sagnir">Sagnir</span></h2>
     <!-- built from the pack's own phases, shared with the town's rail -->
     <div class="phase-rail" id="rumor-phase" role="group" aria-label="The world's tone"></div>
     <div class="controls">
@@ -1142,7 +1419,8 @@
     </section>
   </section>
 
-  <section id="view-vault" class="view" role="tabpanel" aria-labelledby="tab-vault" hidden>
+  <section id="view-vault" class="view play-panel" role="tabpanel" aria-labelledby="tab-vault">
+    <h2 class="panel-title" data-panel="vault">Vault <span class="sub" data-norse="Safn">Safn</span></h2>
     <div class="controls">
       <button type="button" id="forge-btn">Forge</button>
       <span class="note" id="forge-status" aria-live="polite"></span>
@@ -1153,7 +1431,8 @@
     <section id="vault-list" aria-live="polite"></section>
   </section>
 
-  <section id="view-stefna" class="view" role="tabpanel" aria-labelledby="tab-stefna" hidden>
+  <section id="view-stefna" class="view play-panel" role="tabpanel" aria-labelledby="tab-stefna">
+    <h2 class="panel-title" data-panel="stefna">Bell <span class="sub" data-norse="Stefna">Stefna</span></h2>
     <p class="note" id="stefna-flavor" aria-live="polite"></p>
     <div class="controls">
       <button type="button" id="strike-btn">strike the bell</button>
@@ -1163,7 +1442,8 @@
     <section id="letter-out" aria-live="polite"></section>
   </section>
 
-  <section id="view-town" class="view" role="tabpanel" aria-labelledby="tab-town" hidden>
+  <section id="view-town" class="view play-panel is-active" role="tabpanel" aria-labelledby="tab-town">
+    <h2 class="panel-title" data-panel="town">Town <span class="sub" data-norse="Bær">Bær</span></h2>
     <p class="note">walk with the pad or the arrow keys.</p>
     <div class="hud-hp" id="hud-hp" role="status" aria-live="polite">
       <span class="hud-hp-label">hp</span>
@@ -1199,7 +1479,8 @@
     <p class="note" id="watched" aria-live="polite"></p>
   </section>
 
-  <section id="view-journal" class="view" role="tabpanel" aria-labelledby="tab-journal" hidden>
+  <section id="view-journal" class="view play-panel" role="tabpanel" aria-labelledby="tab-journal">
+    <h2 class="panel-title" data-panel="journal">Journal <span class="sub" data-norse="Annall">Annall</span></h2>
     <p class="note">what happened, kept for you &mdash; so you don't have to hold it in your own memory.</p>
     <div class="controls">
       <button type="button" id="export-btn">Export whole story</button>
@@ -1209,6 +1490,7 @@
     <p class="note" id="journal-status">&nbsp;</p>
     <section id="journal-list" aria-live="polite"></section>
   </section>
+  </div>
 
   <section id="view-wiki" class="view" role="tabpanel" aria-labelledby="tab-wiki" hidden>
     <p class="note">the world's own wiki &mdash; who lives here, what they said this playthrough, what was carried. Auto-generated, never edited. Select an entry for the full record.</p>
@@ -1449,18 +1731,67 @@
     builder: document.getElementById('view-builder'),
     board: document.getElementById('view-board'),
   };
+
+  var playViews = ['town', 'rumors', 'stefna', 'vault', 'journal'];
+  var zoneViews = {
+    play: playViews,
+    build: ['wiki', 'builder', 'board'],
+    weave: ['trace', 'weave'],
+  };
+  var zoneDefaults = { play: 'town', build: 'wiki', weave: 'trace' };
+  var playWorkspace = document.getElementById('play-workspace');
+
+  function viewZone(view) {
+    for (var zone in zoneViews) {
+      if (zoneViews[zone].indexOf(view) !== -1) return zone;
+    }
+    return 'play';
+  }
+
+  function announceView(view) {
+    if (view === 'town') window.dispatchEvent(new Event('vefr:town'));
+    if (view === 'vault') window.dispatchEvent(new Event('vefr:vault'));
+    if (view === 'journal') window.dispatchEvent(new Event('vefr:journal'));
+    if (view === 'wiki') window.dispatchEvent(new Event('vefr:wiki'));
+    if (view === 'trace') window.dispatchEvent(new Event('vefr:trace'));
+    if (view === 'weave') window.dispatchEvent(new Event('vefr:weave'));
+    if (view === 'builder') window.dispatchEvent(new Event('vefr:builder'));
+    if (view === 'board') window.dispatchEvent(new Event('vefr:board'));
+  }
+
+  function showPlayWorkspace(activeView) {
+    if (playWorkspace) playWorkspace.hidden = false;
+    playViews.forEach(function (key) {
+      if (!views[key]) return;
+      views[key].hidden = false;
+      if (views[key].classList) {
+        if (key === activeView) views[key].classList.add('is-active');
+        else views[key].classList.remove('is-active');
+      }
+    });
+    Object.keys(views).forEach(function (key) {
+      if (playViews.indexOf(key) === -1 && views[key]) views[key].hidden = true;
+    });
+  }
+
+  function showSingleView(activeView) {
+    if (playWorkspace) playWorkspace.hidden = true;
+    for (var key in views) views[key].hidden = (key !== activeView);
+  }
+
+  function activateView(view) {
+    var zone = viewZone(view);
+    tabs.forEach(function (tab) {
+      tab.setAttribute('aria-selected', tab.dataset.view === view ? 'true' : 'false');
+    });
+    if (zone === 'play') showPlayWorkspace(view);
+    else showSingleView(view);
+    announceView(view);
+  }
+
   tabs.forEach(function (b) {
     b.addEventListener('click', function () {
-      tabs.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
-      for (var k in views) views[k].hidden = (k !== b.dataset.view);
-      if (b.dataset.view === 'town') window.dispatchEvent(new Event('vefr:town'));
-      if (b.dataset.view === 'vault') window.dispatchEvent(new Event('vefr:vault'));
-      if (b.dataset.view === 'journal') window.dispatchEvent(new Event('vefr:journal'));
-      if (b.dataset.view === 'wiki') window.dispatchEvent(new Event('vefr:wiki'));
-      if (b.dataset.view === 'trace') window.dispatchEvent(new Event('vefr:trace'));
-      if (b.dataset.view === 'weave') window.dispatchEvent(new Event('vefr:weave'));
-      if (b.dataset.view === 'builder') window.dispatchEvent(new Event('vefr:builder'));
-      if (b.dataset.view === 'board') window.dispatchEvent(new Event('vefr:board'));
+      activateView(b.dataset.view);
     });
   });
 
@@ -1469,16 +1800,480 @@
      the player is looking at. */
   var zoneBtns = document.querySelectorAll('.zone-btn');
   var zoneNavs = document.querySelectorAll('.zone-nav');
+  function activateZone(zone) {
+    document.body.dataset.zone = zone;
+    zoneBtns.forEach(function (button) {
+      button.setAttribute('aria-pressed', button.dataset.zone === zone ? 'true' : 'false');
+    });
+    zoneNavs.forEach(function (nav) {
+      nav.hidden = (nav.dataset.zoneNav !== zone);
+    });
+    activateView(zoneDefaults[zone]);
+  }
   zoneBtns.forEach(function (b) {
     b.addEventListener('click', function () {
-      zoneBtns.forEach(function (z) {
-        z.setAttribute('aria-pressed', z === b ? 'true' : 'false');
-      });
-      zoneNavs.forEach(function (n) {
-        n.hidden = (n.dataset.zoneNav !== b.dataset.zone);
-      });
+      activateZone(b.dataset.zone);
     });
   });
+
+  /* Desktop opens the full workspace; narrow screens show its active
+     panel. The same DOM and handlers power both shapes. */
+  activateZone('play');
+
+  /* The Play free-dock controller.
+   *
+   * On viewports >=1180px every panel becomes a window: a title bar
+   * that doubles as a drag handle, a 44px resize grip in the
+   * bottom-right corner, and dock/minimize controls. Positions and
+   * sizes persist to localStorage; the composed three-column shell
+   * stays the default for medium and narrow viewports, and the dock
+   * controller stays a no-op there (responsive gate at the bottom of
+   * this IIFE).
+   *
+   * Luminance-only focus, no hue for state; transitions are 80ms
+   * border-only and `prefers-reduced-motion: reduce` zeroes them.
+   * Keyboard parity: Tab walks the controls inside a panel,
+   * Alt+Arrow moves focus between panels, Enter/Space on the drag
+   * handle starts a keyboard drag, Arrow keys move the dragged
+   * panel, Escape cancels. */
+  (function () {
+    'use strict';
+    var DOCK_KEY = 'vefr:dock:v1';
+    /* Breakpoint synchronized with CSS variable --free-dock-breakpoint */
+    var FREE_BREAKPOINT = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--free-dock-breakpoint'), 10) || 1180;
+    var STORAGE_KEY = DOCK_KEY;
+    /* Default positions in the free dock - the wide-layout grid above
+       expressed as absolute coords over the workspace. The values
+       below are workspace-relative; the controller applies them
+       inside the workspace's bounding rect. */
+    var DEFAULT_LAYOUT = {
+      version: 1,
+      panels: {
+        town:    { x: 0.36, y: 0.02, w: 0.62, h: 0.96, area: 'center' },
+        rumors:  { x: 0.02, y: 0.02, w: 0.32, h: 0.48, area: 'left' },
+        vault:   { x: 0.02, y: 0.52, w: 0.32, h: 0.46, area: 'left' },
+        stefna:  { x: 0.68, y: 0.02, w: 0.30, h: 0.48, area: 'right' },
+        journal: { x: 0.68, y: 0.52, w: 0.30, h: 0.46, area: 'right' }
+      }
+    };
+    var PANEL_ORDER = ['town', 'rumors', 'vault', 'stefna', 'journal'];
+    var MIN_W = 320, MIN_H = 220;
+
+    function storageGet(key) {
+      try { return localStorage.getItem(key); } catch (_) { return null; }
+    }
+    function storageSet(key, value) {
+      try { localStorage.setItem(key, value); } catch (_) { /* private mode etc. */ }
+    }
+    function storageRemove(key) {
+      try { localStorage.removeItem(key); } catch (_) { /* private mode etc. */ }
+    }
+
+    function loadLayout() {
+      var raw = storageGet(STORAGE_KEY);
+      if (!raw) return clone(DEFAULT_LAYOUT);
+      try {
+        var parsed = JSON.parse(raw);
+        if (!parsed || parsed.version !== 1 || !parsed.panels) return clone(DEFAULT_LAYOUT);
+        /* Merge each panel back over defaults so a missing key still
+           resolves to the default position rather than NaN. Preserve
+           user-specific keys not present in defaults (e.g., zIndex). */
+        var out = clone(DEFAULT_LAYOUT);
+        Object.keys(DEFAULT_LAYOUT.panels).forEach(function (k) {
+          if (parsed.panels[k]) out.panels[k] = { ...DEFAULT_LAYOUT.panels[k], ...parsed.panels[k] };
+        });
+        return out;
+      } catch (_) { return clone(DEFAULT_LAYOUT); }
+    }
+    function saveLayout(layout) {
+      try {
+        storageSet(STORAGE_KEY, JSON.stringify(layout));
+      } catch (err) {
+        announce('Failed to save dock layout: ' + err.message);
+      }
+    }
+    function resetLayout() {
+      storageRemove(STORAGE_KEY);
+    }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+    var workspace = document.getElementById('play-workspace');
+    if (!workspace) return;
+
+    /* Inject window controls around each existing <h2.panel-title>.
+       Keeps the static markup minimal: one edit per panel would have
+       been five edits, and the harness would have to mirror all five. */
+    var panels = {};
+    PANEL_ORDER.forEach(function (key) {
+      var panel = document.getElementById('view-' + key);
+      if (!panel) return;
+      var title = panel.querySelector('.panel-title');
+      if (!title) return;
+      title.setAttribute('aria-label', title.textContent.trim());
+
+      /* The dock handle sits to the left of the title text and reads
+         "drag" - it is the keyboard-friendly grab point and the
+         pointer fallback if the title text itself isn't grabbable. */
+      var handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'panel-drag-handle';
+      handle.setAttribute('aria-label', 'Drag ' + title.textContent.trim() + ' panel');
+      handle.setAttribute('data-panel-control', 'drag');
+      handle.setAttribute('data-panel-key', key);
+      handle.textContent = 'drag';
+      title.insertBefore(handle, title.firstChild);
+
+      /* Control cluster: dock (snap back to default) + minimize. */
+      var controls = document.createElement('span');
+      controls.className = 'panel-controls';
+      controls.setAttribute('role', 'group');
+      controls.setAttribute('aria-label', title.textContent.trim() + ' window controls');
+
+      var dockBtn = document.createElement('button');
+      dockBtn.type = 'button';
+      dockBtn.className = 'panel-control-btn';
+      dockBtn.setAttribute('data-panel-control', 'dock');
+      dockBtn.setAttribute('data-panel-key', key);
+      dockBtn.setAttribute('aria-label', 'Snap ' + title.textContent.trim() + ' to default position');
+      dockBtn.textContent = 'snap';
+      controls.appendChild(dockBtn);
+
+      var minBtn = document.createElement('button');
+      minBtn.type = 'button';
+      minBtn.className = 'panel-control-btn';
+      minBtn.setAttribute('data-panel-control', 'minimize');
+      minBtn.setAttribute('data-panel-key', key);
+      minBtn.setAttribute('aria-label', 'Minimize ' + title.textContent.trim());
+      minBtn.setAttribute('aria-pressed', 'false');
+      minBtn.textContent = 'min';
+      controls.appendChild(minBtn);
+
+      title.appendChild(controls);
+
+      /* Resize grip. */
+      var resize = document.createElement('button');
+      resize.type = 'button';
+      resize.className = 'panel-resize-handle';
+      resize.setAttribute('aria-label', 'Resize ' + title.textContent.trim());
+      resize.setAttribute('data-panel-control', 'resize');
+      resize.setAttribute('data-panel-key', key);
+      resize.tabIndex = 0;
+      panel.appendChild(resize);
+
+      /* Wrap everything after the title in a .panel-body so minimize
+         can hide content without hiding the title. */
+      var body = document.createElement('div');
+      body.className = 'panel-body';
+      while (title.nextSibling) body.appendChild(title.nextSibling);
+      panel.appendChild(body);
+
+      panels[key] = { el: panel, title: title, handle: handle, dockBtn: dockBtn, minBtn: minBtn, resize: resize, body: body };
+    });
+
+    /* Optimization note for future sessions: Lazy-load non-critical dock logic
+       (z-index tracking, persistence) for mobile users to reduce initial load time. */
+
+    /* Polite live region for screen-reader announcements. */
+    var status = document.createElement('p');
+    status.className = 'dock-status';
+    status.setAttribute('aria-live', 'polite');
+    status.setAttribute('aria-atomic', 'true');
+    status.id = 'dock-status';
+    workspace.parentNode.insertBefore(status, workspace.nextSibling);
+
+    function announce(msg) {
+      if (!status) return;
+      status.textContent = '';
+      /* setTimeout so the change is always picked up by AT even when
+         the same message repeats. */
+      setTimeout(function () { status.textContent = msg; }, 30);
+    }
+
+    /* ----- geometry ----- */
+    function rect() { return workspace.getBoundingClientRect(); }
+    function clamp(value, lo, hi) { return Math.max(lo, Math.min(hi, value)); }
+    function layoutPanel(key, panel) {
+      var ws = rect();
+      var cfg = (currentLayout.panels && currentLayout.panels[key]) || DEFAULT_LAYOUT.panels[key];
+      var w = Math.max(MIN_W, cfg.w * ws.width);
+      var h = Math.max(MIN_H, cfg.h * ws.height);
+      var x = clamp(cfg.x * ws.width, 0, Math.max(0, ws.width - w));
+      var y = clamp(cfg.y * ws.height, 0, Math.max(0, ws.height - h));
+      panel.el.style.left = x + 'px';
+      panel.el.style.top = y + 'px';
+      panel.el.style.width = w + 'px';
+      panel.el.style.height = h + 'px';
+      /* z-index so the most-recently-touched panel wins. */
+      panel.el.style.zIndex = String(2 + (zOrder[key] || 0));
+    }
+
+    /* ----- pointer drag ----- */
+    var activeDrag = null;
+    function startDrag(key, pointerId, startX, startY, opts) {
+      opts = opts || {};
+      var panel = panels[key];
+      if (!panel) return;
+      panel.el.classList.add('is-dragging');
+      bumpZ(key);
+      var ws = rect();
+      var cfg = clone(currentLayout.panels[key] || DEFAULT_LAYOUT.panels[key]);
+      activeDrag = {
+        key: key, pointerId: pointerId,
+        startX: startX, startY: startY,
+        originX: cfg.x * ws.width, originY: cfg.y * ws.height,
+        originW: cfg.w * ws.width, originH: cfg.h * ws.height,
+        wsW: ws.width, wsH: ws.height,
+        mode: opts.mode || 'move'
+      };
+      announce((opts.mode === 'resize' ? 'Resizing ' : 'Dragging ') + panel.title.textContent.trim());
+    }
+    function moveDrag(pointerId, x, y) {
+      if (!activeDrag || activeDrag.pointerId !== pointerId) return;
+      var dx = x - activeDrag.startX;
+      var dy = y - activeDrag.startY;
+      var cfg = currentLayout.panels[activeDrag.key];
+      if (activeDrag.mode === 'move') {
+        var nx = clamp(activeDrag.originX + dx, 0, Math.max(0, activeDrag.wsW - MIN_W));
+        var ny = clamp(activeDrag.originY + dy, 0, Math.max(0, activeDrag.wsH - MIN_H));
+        cfg.x = nx / activeDrag.wsW;
+        cfg.y = ny / activeDrag.wsH;
+      } else if (activeDrag.mode === 'resize') {
+        var nw = clamp(activeDrag.originW + dx, MIN_W, activeDrag.wsW - activeDrag.originX);
+        var nh = clamp(activeDrag.originH + dy, MIN_H, activeDrag.wsH - activeDrag.originY);
+        cfg.w = nw / activeDrag.wsW;
+        cfg.h = nh / activeDrag.wsH;
+      } else if (activeDrag.mode === 'keyboard') {
+        /* step is 16px per Arrow press */
+        var step = 16;
+        if (x < 0) cfg.x = clamp(cfg.x * activeDrag.wsW + step, 0, Math.max(0, activeDrag.wsW - MIN_W)) / activeDrag.wsW;
+        if (x > 0) cfg.x = clamp(cfg.x * activeDrag.wsW - step, 0, Math.max(0, activeDrag.wsW - MIN_W)) / activeDrag.wsW;
+        if (y < 0) cfg.y = clamp(cfg.y * activeDrag.wsH + step, 0, Math.max(0, activeDrag.wsH - MIN_H)) / activeDrag.wsH;
+        if (y > 0) cfg.y = clamp(cfg.y * activeDrag.wsH - step, 0, Math.max(0, activeDrag.wsH - MIN_H)) / activeDrag.wsH;
+      }
+      layoutPanel(activeDrag.key, panels[activeDrag.key]);
+    }
+    function endDrag(pointerId) {
+      if (!activeDrag || activeDrag.pointerId !== pointerId) return;
+      var key = activeDrag.key;
+      panels[key].el.classList.remove('is-dragging');
+      panels[key].el.classList.remove('is-resizing');
+      panels[key].el.classList.remove('is-keyboard-moving');
+      saveLayout(currentLayout);
+      announce(panels[key].title.textContent.trim() + ' placed');
+      activeDrag = null;
+    }
+    function cancelDrag() {
+      if (!activeDrag) return;
+      var key = activeDrag.key;
+      /* revert to the persisted layout for that panel */
+      currentLayout.panels[key] = clone(DEFAULT_LAYOUT.panels[key]);
+      layoutPanel(key, panels[key]);
+      panels[key].el.classList.remove('is-dragging');
+      panels[key].el.classList.remove('is-resizing');
+      panels[key].el.classList.remove('is-keyboard-moving');
+      saveLayout(currentLayout);
+      announce('Move cancelled');
+      activeDrag = null;
+    }
+
+    /* Wire pointer events on every drag/resize affordance. We attach
+       to the title bar for move (most natural on desktop) and to the
+       resize grip for resize; the explicit "drag" handle is for
+       keyboard activation and pointer users who want a smaller grab
+       surface. */
+    Object.keys(panels).forEach(function (key) {
+      var panel = panels[key];
+      function onPointerDown(ev) {
+        if (!isFree()) return;
+        if (ev.button !== undefined && ev.button !== 0) return;
+        ev.preventDefault();
+        startDrag(key, ev.pointerId, ev.clientX, ev.clientY);
+      }
+      function onResizeDown(ev) {
+        if (!isFree()) return;
+        if (ev.button !== undefined && ev.button !== 0) return;
+        ev.preventDefault();
+        startDrag(key, ev.pointerId, ev.clientX, ev.clientY, { mode: 'resize' });
+        panel.el.classList.add('is-resizing');
+      }
+      panel.title.addEventListener('pointerdown', onPointerDown);
+      panel.handle.addEventListener('pointerdown', onPointerDown);
+      panel.resize.addEventListener('pointerdown', onResizeDown);
+    });
+    document.addEventListener('pointermove', function (ev) {
+      if (!activeDrag) return;
+      requestAnimationFrame(function () {
+        moveDrag(ev.pointerId, ev.clientX, ev.clientY);
+      });
+    });
+    document.addEventListener('pointerup', function (ev) {
+      if (!activeDrag) return;
+      endDrag(ev.pointerId);
+    });
+    document.addEventListener('pointercancel', function (ev) {
+      if (!activeDrag) return;
+      cancelDrag();
+    });
+
+    /* ----- keyboard ----- */
+    /* Drag handle: Enter/Space starts keyboard move, Arrow keys move
+       the panel, Escape cancels. The panel itself stays focused
+       throughout so AT can still read the content. */
+    Object.keys(panels).forEach(function (key) {
+      var panel = panels[key];
+      panel.handle.addEventListener('keydown', function (ev) {
+        if (!isFree()) return;
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          if (activeDrag && activeDrag.key === key) { endDrag(-1); return; }
+          panel.el.classList.add('is-keyboard-moving');
+          startDrag(key, -1, 0, 0, { mode: 'keyboard' });
+        } else if (ev.key === 'Escape' && activeDrag && activeDrag.key === key) {
+          ev.preventDefault();
+          cancelDrag();
+        } else if (activeDrag && activeDrag.key === key && activeDrag.mode === 'keyboard') {
+          var dx = 0, dy = 0;
+          if (ev.key === 'ArrowLeft') dx = -16;
+          else if (ev.key === 'ArrowRight') dx = 16;
+          else if (ev.key === 'ArrowUp') dy = -16;
+          else if (ev.key === 'ArrowDown') dy = 16;
+          else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); endDrag(-1); return; }
+          if (dx !== 0 || dy !== 0) {
+            ev.preventDefault();
+            moveDrag(-1, dx, dy);
+          }
+        }
+      });
+      /* Resize grip: same model, Arrow keys grow/shrink. */
+      panel.resize.addEventListener('keydown', function (ev) {
+        if (!isFree()) return;
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          if (activeDrag && activeDrag.key === key) { endDrag(-1); return; }
+          panel.el.classList.add('is-resizing');
+          startDrag(key, -1, 0, 0, { mode: 'resize-keyboard' });
+        } else if (ev.key === 'Escape' && activeDrag && activeDrag.key === key) {
+          ev.preventDefault();
+          cancelDrag();
+        } else if (activeDrag && activeDrag.key === key && activeDrag.mode === 'resize-keyboard') {
+          var dx = 0, dy = 0;
+          if (ev.key === 'ArrowLeft') dx = -16;
+          else if (ev.key === 'ArrowRight') dx = 16;
+          else if (ev.key === 'ArrowUp') dy = -16;
+          else if (ev.key === 'ArrowDown') dy = 16;
+          else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); endDrag(-1); return; }
+          if (dx !== 0 || dy !== 0) {
+            ev.preventDefault();
+            /* Reuse moveDrag for resize: dx/dy go straight into the
+               resize path because the active drag's mode is set. */
+            var cfg = currentLayout.panels[key];
+            var ws = rect();
+            var nw = clamp(cfg.w * ws.width + dx, MIN_W, ws.width);
+            var nh = clamp(cfg.h * ws.height + dy, MIN_H, ws.height);
+            cfg.w = nw / ws.width;
+            cfg.h = nh / ws.height;
+            layoutPanel(key, panel);
+          }
+        }
+      });
+      panel.dockBtn.addEventListener('click', function () {
+        currentLayout.panels[key] = clone(DEFAULT_LAYOUT.panels[key]);
+        layoutPanel(key, panel);
+        saveLayout(currentLayout);
+        announce(panel.title.textContent.trim() + ' snapped to default');
+      });
+      panel.minBtn.addEventListener('click', function () {
+        var isMin = panel.el.classList.toggle('is-minimised');
+        panel.minBtn.setAttribute('aria-pressed', isMin ? 'true' : 'false');
+        announce(panel.title.textContent.trim() + (isMin ? ' minimized' : ' restored'));
+      });
+    });
+
+    /* Alt+Arrow moves focus between panels in dock order. */
+    document.addEventListener('keydown', function (ev) {
+      if (!isFree()) return;
+      if (!ev.altKey) return;
+      var idx = -1;
+      var ae = document.activeElement;
+      Object.keys(panels).forEach(function (k, i) {
+        if (ae === panels[k].handle || ae === panels[k].resize ||
+            ae === panels[k].dockBtn || ae === panels[k].minBtn ||
+            ae === panels[k].title) idx = i;
+      });
+      if (idx === -1) return;
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight' ||
+          ev.key === 'ArrowUp' || ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        var next = (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp')
+          ? (idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length
+          : (idx + 1) % PANEL_ORDER.length;
+        var target = panels[PANEL_ORDER[next]];
+        if (target && target.handle) target.handle.focus();
+      } else if (ev.key === 'Escape' && activeDrag) {
+        ev.preventDefault();
+        cancelDrag();
+      }
+    });
+
+    /* ----- z-order ----- */
+    var zOrder = {};
+    function bumpZ(key) {
+      var max = 0;
+      Object.keys(zOrder).forEach(function (k) { if (zOrder[k] > max) max = zOrder[k]; });
+      zOrder[key] = max + 1;
+    }
+    Object.keys(panels).forEach(function (key) {
+      panels[key].el.addEventListener('pointerdown', function () { bumpZ(key); });
+      panels[key].el.addEventListener('focusin', function () { bumpZ(key); });
+    });
+
+    /* ----- responsive gate ----- */
+    var currentLayout = loadLayout();
+    function isFree() {
+      return window.innerWidth >= FREE_BREAKPOINT &&
+             document.body.dataset.zone === 'play';
+    }
+    function applyDockMode() {
+      if (isFree()) {
+        document.body.dataset.dock = 'free';
+        Object.keys(panels).forEach(function (k) { layoutPanel(k, panels[k]); });
+      } else {
+        document.body.dataset.dock = 'composed';
+        /* Let the composed-grid CSS take over: clear inline geometry. */
+        Object.keys(panels).forEach(function (k) {
+          var p = panels[k];
+          p.el.style.left = '';
+          p.el.style.top = '';
+          p.el.style.width = '';
+          p.el.style.height = '';
+        });
+      }
+    }
+    applyDockMode();
+    var rafId = null;
+    window.addEventListener('resize', function () {
+      if (rafId) return;
+      rafId = requestAnimationFrame(function () {
+        rafId = null;
+        applyDockMode();
+      });
+    });
+
+    /* Expose a reset hook so the dev drawer can find it. The dev
+       drawer adds a "Reset layout" action; the hook is on
+       window.VEFR_DOCK because the drawer is in a separate IIFE. */
+    window.VEFR_DOCK = {
+      reset: function () {
+        resetLayout();
+        currentLayout = loadLayout();
+        applyDockMode();
+        announce('Dock layout reset');
+      },
+      layout: function () { return currentLayout; },
+      isFree: isFree
+    };
+  })();
+
 
   /* The rumors rail. Same shared state as the town's rail, so the
      tone you set in one view is the tone the other opens in - and the
@@ -2963,6 +3758,19 @@
     filterInput.addEventListener('input', function () {
       if (lastAspects) renderAspects(lastAspects, filterInput.value);
       else if (filterCount) filterCount.textContent = '';
+    });
+  }
+
+  /* Dock layout reset. The dock controller exposes a reset() hook on
+     window.VEFR_DOCK; this button clears localStorage and re-applies
+     the default composed geometry. */
+  var dockResetBtn = document.getElementById('dev-dock-reset');
+  if (dockResetBtn) {
+    dockResetBtn.addEventListener('click', function () {
+      if (window.VEFR_DOCK && typeof window.VEFR_DOCK.reset === 'function') {
+        window.VEFR_DOCK.reset();
+        if (filterCount) filterCount.textContent = 'Dock layout reset.';
+      }
     });
   }
 
