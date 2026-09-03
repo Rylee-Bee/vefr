@@ -20,7 +20,31 @@ class El {
     this.type = '';
     this.dataset = {};
     this.attrs = {};
-    this.style = {};
+    /* style: an object whose keys are CSS property names in
+       camelCase (left, top, width, height). Setting `style.left =
+       '0px'` writes to this map; getBoundingClientRect() reads from
+       it so the dock controller can verify geometry. cssText exposes
+       the joined string for `el.style.cssText` style writes. */
+    this.style = {
+      _props: {},
+      _listeners: {},
+      set cssText(v) { this._props = {}; String(v).split(';').forEach((decl) => { const [k, val] = decl.split(':'); if (k && val) this[k.trim()] = val.trim(); }); },
+      get cssText() { return Object.entries(this._props).map(([k, v]) => k + ':' + v).join(';'); },
+    };
+    /* Make every style assignment route through a Proxy so
+       `el.style.left = '0px'` lands in the map. We re-create the
+       proxy on each property set to keep things simple. */
+    this.style = new Proxy(this.style, {
+      get(t, k) {
+        if (k === '_props' || k === '_listeners' || k === 'cssText') return t[k];
+        return t._props[k];
+      },
+      set(t, k, v) {
+        if (k === 'cssText') { t.cssText = v; return true; }
+        t._props[k] = String(v);
+        return true;
+      },
+    });
     this.children = [];
     this.parent = null;
     this.listeners = {};
@@ -28,12 +52,25 @@ class El {
     this.disabled = false;
     this._text = '';
     this._seq = nodeSeq++;
+    this._rect = { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
     this.classList = {
       _s: new Set(),
       add: (c) => this.classList._s.add(c),
       remove: (c) => this.classList._s.delete(c),
       contains: (c) => this.classList._s.has(c),
+      toggle: function (c, force) {
+        const has = this._s.has(c);
+        const next = (typeof force === 'boolean') ? force : !has;
+        if (next) this._s.add(c); else this._s.delete(c);
+        return next;
+      },
     };
+  }
+  getBoundingClientRect() {
+    /* The dock controller reads the workspace rect once per layout;
+       it expects width/height to drive absolute pixel math. Tests
+       set this rect on the workspace explicitly via the helper. */
+    return this._rect;
   }
   get textContent() {
     /* recursive like the real DOM: own _text + all descendants' _text */
@@ -44,11 +81,57 @@ class El {
   set textContent(v) { this._text = String(v); this.children = []; }
   set innerHTML(v) { this._html = String(v); if (v === '') this.children = []; }
   get innerHTML() { return this._html === undefined ? '' : this._html; }
-  setAttribute(k, v) { this.attrs[k] = String(v); }
+  setAttribute(k, v) {
+    this.attrs[k] = String(v);
+    /* Mirror data-* attributes into dataset so the controller can
+       read them back either way. A real DOM does this via a Proxy
+       on dataset; the harness just keeps them in sync. */
+    const m = String(k).match(/^data-([\w-]+)$/);
+    if (m) this.dataset[camel(m[1])] = String(v);
+  }
   getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
   get value() { return this._value || ''; }
   set value(v) { this._value = String(v); }
-  appendChild(c) { c.parent = this; this.children.push(c); return c; }
+  appendChild(c) {
+    /* Move semantics: detach from old parent first, then attach to
+       the new one. Real DOM `appendChild` moves a node; without
+       this, the dock controller's wrap-everything-after-the-title
+       loop re-appends the same resize handle forever. */
+    if (c.parent && c.parent !== this) {
+      const i = c.parent.children.indexOf(c);
+      if (i >= 0) c.parent.children.splice(i, 1);
+    }
+    c.parent = this;
+    this.children.push(c);
+    return c;
+  }
+  /* Minimal parentNode + insertBefore for the few spots in the page
+     that need them (e.g. the dock controller inserting its live
+     region just after the workspace). Behavior matches the real DOM
+     well enough for the harness: insertBefore(newChild, refChild)
+     places newChild directly before refChild in this.children. */
+  get parentNode() { return this.parent; }
+  insertBefore(newChild, refChild) {
+    newChild.parent = this;
+    if (!refChild) { this.children.push(newChild); return newChild; }
+    const i = this.children.indexOf(refChild);
+    if (i < 0) { this.children.push(newChild); return newChild; }
+    this.children.splice(i, 0, newChild);
+    return newChild;
+  }
+  /* nextSibling/previousSibling/nextElementSibling are used by the
+     dock controller when it wraps the existing panel content into
+     a .panel-body div. */
+  get nextSibling() {
+    if (!this.parent) return null;
+    const i = this.parent.children.indexOf(this);
+    return i >= 0 && i + 1 < this.parent.children.length ? this.parent.children[i + 1] : null;
+  }
+  get previousSibling() {
+    if (!this.parent) return null;
+    const i = this.parent.children.indexOf(this);
+    return i > 0 ? this.parent.children[i - 1] : null;
+  }
   focus() { /* focusable like the real element; harness tracks nothing */ }
   remove() {
     if (this.parent) this.parent.children = this.parent.children.filter((c) => c !== this);
@@ -68,6 +151,10 @@ class El {
       p = p.parent;
     }
   }
+  /* Pointer events are dispatched the same way as the regular ones;
+     the dock controller uses pointerId/clientX/clientY to track
+     drags, so we pass those through verbatim. */
+  pointer(type, extra = {}) { this.dispatch(type, extra); }
   querySelectorAll(sel) { return descendants(this).filter((e) => matchOne(e, sel)); }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
 }
@@ -88,6 +175,8 @@ function matchOne(el, sel) {
   if (m) return el.id === m[1];
   m = sel.match(/^\[data-([\w-]+)\]$/);
   if (m) return el.dataset && el.dataset[camel(m[1])] !== undefined;
+  m = sel.match(/^\[data-([\w-]+)="([^"]*)"\]$/);
+  if (m) return el.dataset && el.dataset[camel(m[1])] === m[2];
   m = sel.match(/^\.tabs button$/);
   if (m) return el.tagName === 'BUTTON' && isUnder(el, (a) => String(a.className).split(/\s+/).includes('tabs'));
   throw new Error('harness: unsupported selector ' + sel);
@@ -120,12 +209,48 @@ function mkBtnWithData(id, dataKey, dataVal) {
   var e = mk('button', id, '', root, { [dataKey]: dataVal });
   return e;
 }
-const tabsBox = mk('div', '', 'tabs');
 const TABVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal', 'wiki', 'trace', 'weave', 'builder', 'board'];
+const PLAYVIEWS = ['rumors', 'vault', 'stefna', 'town', 'journal'];
+const VIEWZONE = {
+  rumors: 'play', vault: 'play', stefna: 'play', town: 'play', journal: 'play',
+  wiki: 'build', builder: 'build', board: 'build', trace: 'weave', weave: 'weave',
+};
+const zonesBox = mk('div', '', 'zones');
+const zoneBtns = {};
+for (const zone of ['play', 'build', 'weave']) {
+  zoneBtns[zone] = mk('button', 'zone-' + zone, 'zone-btn', zonesBox, { zone });
+}
+const zoneNavs = {};
+for (const zone of ['play', 'build', 'weave']) {
+  zoneNavs[zone] = mk('nav', 'zone-nav-' + zone, 'tabs zone-nav', root, { zoneNav: zone });
+}
+const playWorkspace = mk('div', 'play-workspace', 'play-workspace');
+/* The dock controller reads getBoundingClientRect() to position the
+   panels; give the workspace a generous virtual size so absolute
+   pixel math produces visible coords. */
+playWorkspace._rect = { left: 0, top: 0, width: 1280, height: 800, right: 1280, bottom: 800 };
 const tabBtns = {};
 for (const v of TABVIEWS) {
-  tabBtns[v] = mk('button', 'tab-' + v, '', tabsBox, { view: v });
-  mk('section', 'view-' + v, 'view');
+  tabBtns[v] = mk('button', 'tab-' + v, '', zoneNavs[VIEWZONE[v]], { view: v });
+  const view = mk('section', 'view-' + v, PLAYVIEWS.includes(v) ? 'view play-panel' : 'view',
+    PLAYVIEWS.includes(v) ? playWorkspace : root);
+  /* The dock controller injects window controls around the existing
+     <h2 class="panel-title"> on each play panel. The real page has
+     one; the harness needs at least an empty one per panel so the
+     controller's querySelector finds it. The Norwegian subtitles
+     live in <span class="sub"> children in the real page but the
+     dock controller only reads textContent, so we keep them empty
+     here. */
+  if (PLAYVIEWS.includes(v)) {
+    const title = mk('h2', '', 'panel-title', view, { panel: v });
+    /* The dock controller reads title.textContent.trim() to build
+       aria-labels like "Drag Whispers panel". The harness titles
+       are empty by default; this map gives each one a readable
+       name without needing real <span class="sub"> markup. */
+    const NAMES = { town: 'Town', rumors: 'Whispers', vault: 'Vault', stefna: 'Bell', journal: 'Journal' };
+    title._text = NAMES[v] || v;
+    title.setAttribute('aria-label', title._text);
+  }
 }
 /* the dev board's holders - the lazy boot renders into these */
 mk('div', 'board-whispers');
@@ -211,6 +336,9 @@ mk('button', 'dev-drawer-close', '', devDrawer);
 mk('input', 'dev-drawer-filter', '', devDrawer);
 mk('p', 'dev-drawer-filter-count', '', devDrawer);
 mk('div', 'dev-drawer-content', '', devDrawer);
+/* Dock layout reset lives in the dev drawer filter bar; the dock
+   controller's reset hook lives on window.VEFR_DOCK. */
+mk('button', 'dev-dock-reset');
 
 // prefs panel stubs
 mk('div', 'prefs-backdrop');
@@ -259,10 +387,16 @@ canvas.getContext = () => ctx2d;
 
 const store = {};
 const winListeners = {};
+/* Window size is set by the dock tests via setWinSize(). 1200 keeps
+   the dock controller in free-dock mode for the existing tests. */
+let winWidth = 1200;
+let winHeight = 900;
 const sandbox = {
   console,
   setTimeout,
   clearTimeout,
+  requestAnimationFrame: (cb) => { cb(0); return 0; },
+  cancelAnimationFrame: () => {},
   Promise,
   Math,
   JSON,
@@ -298,6 +432,8 @@ const sandbox = {
     },
   },
   Blob: class { constructor(p) { this.parts = p; } },
+  get innerWidth() { return winWidth; },
+  get innerHeight() { return winHeight; },
 };
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
@@ -308,9 +444,28 @@ sandbox.document = {
   querySelectorAll: (s) => root.querySelectorAll(s),
   createElement: (t) => new El(t),
   addEventListener: (t, fn) => { (winListeners[t] ||= []).push(fn); },
+  /* Document-level pointer events fire here from the dock controller's
+     drag listeners. The pointermove/up/cancel handlers are registered
+     via addEventListener; firing through dispatchEvent walks the same
+     listener table. */
+  dispatchEvent: (ev) => { for (const fn of winListeners[ev.type] || []) fn(ev); return true; },
   execCommand: (cmd) => true,
   body: root,
+  /* getComputedStyle: the dock controller reads the breakpoint CSS
+     variable here. The stub returns the property the test stored, or
+     '' for unknown keys. */
+  defaultView: sandbox,
 };
+sandbox.window.getComputedStyle = (el, pseudoEl) => ({
+  getPropertyValue: (name) => {
+    /* The dock controller only reads --free-dock-breakpoint. Tests
+       override it via setWinBreakpoint() when they need a different
+       value; default is '1180px' (matches the CSS variable
+       :root --free-dock-breakpoint). */
+    if (name === '--free-dock-breakpoint') return sandbox._breakpoint || '1180px';
+    return '';
+  },
+});
 sandbox.Event = class { constructor(t) { this.type = t; } };
 sandbox.window.addEventListener = (t, fn) => { (winListeners[t] ||= []).push(fn); };
 sandbox.window.dispatchEvent = (ev) => { for (const fn of winListeners[ev.type] || []) fn(ev); };
@@ -504,6 +659,18 @@ check('rumor rail built from the pack', railOf('rumor-phase').join(',') === 'dus
 check('town rail built from the pack', railOf('town-phase').join(',') === 'dusk*,dawn', railOf('town-phase').join(','));
 check('one /api/world request only', calls.filter((c) => c.url === '/api/world').length === 1);
 check('canvas sized from the map', canvas.width === 5 * 32 && canvas.height === 3 * 32);
+check('play workspace is the initial mode', root.dataset.zone === 'play' && playWorkspace.hidden === false);
+check('desktop play context stays mounted', PLAYVIEWS.every((v) => byId.get('view-' + v).hidden === false));
+check('non-play views stay out of the play workspace', ['wiki', 'builder', 'board', 'trace', 'weave'].every((v) => byId.get('view-' + v).hidden === true));
+
+/* Mode switches collapse back to one view, then restore the composed
+   play workspace without losing state or handlers. */
+zoneBtns.build.click();
+await tick();
+check('build mode opens its default view', root.dataset.zone === 'build' && byId.get('view-wiki').hidden === false && playWorkspace.hidden === true);
+zoneBtns.play.click();
+await tick();
+check('returning to play restores every live panel', playWorkspace.hidden === false && PLAYVIEWS.every((v) => byId.get('view-' + v).hidden === false));
 
 /* the core desync case: set the phase from the RUMORS rail, and the
    TOWN rail must follow */
@@ -777,6 +944,164 @@ check('clearing the filter restores all sections',
   && dContent.innerHTML.includes('Recent Trace Events')
   && dCount.textContent === '');
 dClose.click();
+await tick();
+
+/* ---------- free-dock Play workspace ---------- */
+/* The dock controller injects window controls into every play panel
+   at boot; on a wide viewport, all five panels are positioned
+   absolutely inside the workspace. On a narrow viewport, the
+   composed grid takes over and the controls stay hidden via CSS. */
+
+const dockPlayViews = ['town', 'rumors', 'vault', 'stefna', 'journal'];
+
+check('dock controller exposed on window.VEFR_DOCK', typeof sandbox.window.VEFR_DOCK === 'object'
+  && typeof sandbox.window.VEFR_DOCK.reset === 'function'
+  && typeof sandbox.window.VEFR_DOCK.layout === 'function');
+check('window is wide enough for free-dock mode', sandbox.window.VEFR_DOCK.isFree() === true,
+  'innerWidth=' + sandbox.window.innerWidth);
+check('body dock attribute is free on a wide viewport', root.dataset.dock === 'free',
+  'data-dock=' + root.dataset.dock);
+
+for (const key of dockPlayViews) {
+  const view = byId.get('view-' + key);
+  /* The dock controller injects drag-handle + controls into the
+     title row, and the resize-handle into the panel root. */
+  const title = view.querySelector('.panel-title');
+  check(`panel ${key} rendered with a drag handle`,
+    !!title.querySelector('.panel-drag-handle'), key);
+  check(`panel ${key} rendered with a resize handle`,
+    !!view.querySelector('.panel-resize-handle'), key);
+  check(`panel ${key} rendered with a snap-to-default control`,
+    !!title.querySelector('[data-panel-control="dock"]'), key);
+  check(`panel ${key} rendered with a minimize control`,
+    !!title.querySelector('[data-panel-control="minimize"]'), key);
+  /* In free-dock mode every panel is positioned absolutely; the inline
+     style.left/top/width/height are set by the controller. */
+  check(`panel ${key} positioned absolutely`,
+    view.style._props.left
+    && view.style._props.top
+    && view.style._props.width
+    && view.style._props.height,
+    JSON.stringify(view.style._props));
+  check(`panel ${key} body wrapped for minimize`,
+    !!view.querySelector('.panel-body'), key);
+}
+
+/* Drag the Whispers panel: pointerdown on its drag handle, two
+   pointermoves, then a pointerup. The inline left coord must
+   increase by the second move's delta. */
+const whispersView = byId.get('view-rumors');
+const whispersHandle = whispersView.querySelector('.panel-title').querySelector('.panel-drag-handle');
+const startLeft = parseInt(whispersView.style._props.left, 10);
+const startTop = parseInt(whispersView.style._props.top, 10);
+const startWidth = parseInt(whispersView.style._props.width, 10);
+
+whispersHandle.pointer('pointerdown', { pointerId: 7, clientX: 100, clientY: 100 });
+sandbox.document.dispatchEvent({ type: 'pointermove', pointerId: 7, clientX: 200, clientY: 150 });
+sandbox.document.dispatchEvent({ type: 'pointermove', pointerId: 7, clientX: 250, clientY: 175 });
+sandbox.document.dispatchEvent({ type: 'pointerup',   pointerId: 7, clientX: 250, clientY: 175 });
+await tick();
+
+const afterLeft = parseInt(whispersView.style._props.left, 10);
+const afterTop = parseInt(whispersView.style._props.top, 10);
+check('drag moved the whispers panel right and down',
+  afterLeft > startLeft && afterTop > startTop,
+  `start=(${startLeft},${startTop}) after=(${afterLeft},${afterTop})`);
+check('drag persisted to localStorage',
+  typeof store['vefr:dock:v1'] === 'string'
+  && store['vefr:dock:v1'].includes('"rumors"'),
+  store['vefr:dock:v1'] || '(empty)');
+check('drag did not change the panel width',
+  parseInt(whispersView.style._props.width, 10) === startWidth,
+  'width ' + whispersView.style._props.width);
+
+/* Resize the Vault panel via its resize handle: drag the bottom-right
+   grip diagonally and verify the panel grew. */
+const vaultView = byId.get('view-vault');
+const vaultResize = vaultView.querySelector('.panel-resize-handle');
+const vStartW = parseInt(vaultView.style._props.width, 10);
+const vStartH = parseInt(vaultView.style._props.height, 10);
+vaultResize.pointer('pointerdown', { pointerId: 8, clientX: 300, clientY: 400 });
+sandbox.document.dispatchEvent({ type: 'pointermove', pointerId: 8, clientX: 360, clientY: 460 });
+sandbox.document.dispatchEvent({ type: 'pointerup',   pointerId: 8, clientX: 360, clientY: 460 });
+await tick();
+check('resize grew the vault panel',
+  parseInt(vaultView.style._props.width, 10) > vStartW
+  && parseInt(vaultView.style._props.height, 10) > vStartH,
+  `before=(${vStartW},${vStartH}) after=(${vaultView.style._props.width},${vaultView.style._props.height})`);
+
+/* Escape cancels an in-flight drag and reverts the panel geometry. */
+const bellView = byId.get('view-stefna');
+const bellResize = bellView.querySelector('.panel-resize-handle');
+const bellStart = { w: bellView.style._props.width, h: bellView.style._props.height };
+bellResize.pointer('pointerdown', { pointerId: 9, clientX: 200, clientY: 200 });
+sandbox.document.dispatchEvent({ type: 'pointermove', pointerId: 9, clientX: 260, clientY: 260 });
+for (const fn of winListeners['keydown'] || []) fn({ key: 'Escape', preventDefault() {}, target: { tagName: 'BUTTON' } });
+sandbox.document.dispatchEvent({ type: 'pointercancel', pointerId: 9, clientX: 260, clientY: 260 });
+await tick();
+check('escape cancels an in-flight resize',
+  bellView.style._props.width === bellStart.w
+  && bellView.style._props.height === bellStart.h,
+  `start=${JSON.stringify(bellStart)} after=${bellView.style._props.width}x${bellView.style._props.height}`);
+
+/* Snap-to-default control: clicking the dock button restores the
+   panel to the default coords (left=0.02 of 1280 = ~25px, etc.). */
+const beforeSnap = { l: whispersView.style._props.left, t: whispersView.style._props.top };
+const dockBtn = whispersView.querySelector('[data-panel-control="dock"]');
+dockBtn.click();
+await tick();
+const afterSnap = { l: whispersView.style._props.left, t: whispersView.style._props.top };
+check('snap-to-default moves the panel back to its default coords',
+  beforeSnap.l !== afterSnap.l || beforeSnap.t !== afterSnap.t,
+  `before=${JSON.stringify(beforeSnap)} after=${JSON.stringify(afterSnap)}`);
+
+/* Minimize control: clicking it toggles the is-minimised class. */
+const minBtn = byId.get('view-journal').querySelector('[data-panel-control="minimize"]');
+const journalView = byId.get('view-journal');
+check('journal panel starts unminimized', !journalView.classList.contains('is-minimised'));
+minBtn.click();
+await tick();
+check('minimize button toggles the is-minimised class',
+  journalView.classList.contains('is-minimised'));
+minBtn.click();
+await tick();
+check('second minimize click restores the panel',
+  !journalView.classList.contains('is-minimised'));
+
+/* Keyboard drag: Enter on the drag handle starts, ArrowRight moves,
+   Escape cancels, Enter commits. */
+const kbdView = byId.get('view-journal');
+const kbdHandle = kbdView.querySelector('.panel-title').querySelector('.panel-drag-handle');
+const kbdStartLeft = kbdView.style._props.left;
+for (const fn of winListeners['keydown'] || []) fn({ key: 'Enter', preventDefault() {}, target: { tagName: 'BUTTON' } });
+for (const fn of winListeners['keydown'] || []) fn({ key: 'ArrowLeft', preventDefault() {}, target: { tagName: 'BUTTON' } });
+for (const fn of winListeners['keydown'] || []) fn({ key: 'Escape', preventDefault() {}, target: { tagName: 'BUTTON' } });
+await tick();
+check('keyboard drag is no-op after Escape',
+  kbdView.style._props.left === kbdStartLeft,
+  `start=${kbdStartLeft} after=${kbdView.style._props.left}`);
+
+/* Reset hook: window.VEFR_DOCK.reset() clears the layout. */
+sandbox.window.VEFR_DOCK.reset();
+await tick();
+check('reset hook clears the dock layout', store['vefr:dock:v1'] === undefined,
+  'storage: ' + JSON.stringify(store['vefr:dock:v1']));
+
+/* Narrow viewport: dock disables and inline geometry is cleared. */
+winWidth = 900;
+sandbox.window.dispatchEvent({ type: 'resize' });
+await tick();
+check('narrow viewport disables free-dock mode',
+  root.dataset.dock === 'composed',
+  'data-dock=' + root.dataset.dock);
+check('narrow viewport clears inline geometry',
+  !whispersView.style._props.left
+  && !whispersView.style._props.top
+  && !whispersView.style._props.width,
+  JSON.stringify(whispersView.style._props));
+/* Restore wide viewport for any later checks. */
+winWidth = 1200;
+sandbox.window.dispatchEvent({ type: 'resize' });
 await tick();
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
