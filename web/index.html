@@ -218,10 +218,13 @@
 
   /* Density. Comfortable is the default; compact trims vertical
      padding on the zone buttons, tabs, and cards so the same screen
-     fits more. */
+     fits more - WITHOUT dropping min-height: 44px on the interactive
+     targets. The inclusive-forward contract (AGENTS.md, Always) keeps
+     every click target >= 44px; compact mode reduces visual density,
+     not hit-target geometry. */
   html[data-prefs~="density=compact"] .tabs button,
   html[data-prefs~="density=compact"] .zone-btn,
-  html[data-prefs~="density=compact"] .phase-rail button { padding: 0.35rem 0.7rem; min-height: 36px; }
+  html[data-prefs~="density=compact"] .phase-rail button { padding: 0.35rem 0.7rem; }
   html[data-prefs~="density=compact"] .card { padding: 0.7rem 0.9rem; }
 
   /* Caption / subtitle pairing. Captions are off by default until the
@@ -443,8 +446,17 @@
   /* Free-dock mode: only on wide viewports. The window frames become
      visible; the panel itself goes absolute-positioned inside its dock
      area; the composed grid is suppressed because the absolute panels
-     don't need grid placement anymore. */
-  @media (min-width: var(--free-dock-breakpoint)) {
+     don't need grid placement anymore.
+
+     The breakpoint is the literal 1180px (not `var(--free-dock-breakpoint)`)
+     because media-query conditions cannot use var() substitutions - all
+     browsers drop the entire rule when a var() appears there. The
+     --free-dock-breakpoint custom property on :root below keeps this
+     in sync with the JS dock controller (which reads it via
+     getComputedStyle), and the comment next to both declarations is
+     the single source of truth for the literal value. Tests assert
+     this literal stays in the @media condition. */
+  @media (min-width: 1180px) {
     body[data-zone="play"][data-dock="free"] .panel-frame {
       display: flex;
       align-items: center;
