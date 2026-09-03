@@ -7,6 +7,14 @@
 > inspector" and "produce a short design note only if the current
 > data model actually supports it." So no prototype - just the data
 > shape and where the joins already exist.
+>
+> **Bottom line:** the engine today has partial joins on
+> `(phase, at, speaker.key)` and exactly zero stable trace identity.
+> A complete Follow the Thread is blocked on a new `trace_event_id`
+> field; a partial "near this moment" client-only tool could exist
+> today and would say honestly what it cannot prove. See
+> "What can be done entirely in client today" for the caveats.
+
 
 ## What the concept wants
 
@@ -76,22 +84,44 @@ None of these touches pack contracts (`world.py` is unchanged).
 ## What can be done entirely in client today
 
 The wiki page's NPC row already links `name -> recent dialogue`;
-the journal's `when` field shows the timestamp; pressing `Enter`
-on a selected trace event could already scroll the wiki/wiki
-NPCs to the matching `speaker.key` row. The dev drawer's filter
-already does substring matching across sections. A minimal client-
-only "Follow the Thread" affordance would be:
+the journal's `when` field shows the timestamp; today's data model
+already supports partial joins via `(phase, at, speaker.key)` -
 
-- a shared selection state in `state.js` (single string, e.g.
-  `selectedContextId`)
-- the `Trace` list calls `state.set('selectedContextId', trace.id)`
-- the `Journal` list renders the selected trace id as a highlight
-- a small `state.subscribe` in `wiki.js` that scrolls the
-  matching NPC row into view
+- `phase` is a single string on every rumor, trace event, NPC
+  line, journal entry, and pack load
+- `at` (ISO timestamp) appears on trace + journal at second
+  resolution
+- `speaker.key` joins wiki NPCs and npc recent dialogue
 
-No server work needed for that minimum-viable version. It is the
-shape of the Ask, the Where, and the When without inventing a new
-inspector panel.
+A minimal **partial** "Follow the Thread" affordance using only
+what exists today, with its limits stated plainly:
+
+- shared selection state in `state.js` keyed by the existing
+  `(phase, at)` tuple (string, e.g. `"phase=whispers&at=2026-08-31T13:00:00Z"`)
+- the Trace list calls `state.set('selectedContext', {phase, at})`
+  on a row's keyboard activation
+- the Journal list highlights entries whose `(phase, at)` matches
+  the selection (a timestamp JOIN, not a stable id JOIN)
+- a `state.subscribe` in `wiki.js` highlights NPC recent lines
+  whose `(phase, at)` falls within a small window of the
+  selection
+
+**Limitations of the partial version, stated honestly:**
+
+- `(phase, at)` is a *probabilistic* join, not a guaranteed one.
+  Two unrelated events a second apart would collide.
+- No exact "this NPC call produced this rumor" guarantee exists
+  today; you can show "things near this moment" but not "this is
+  what produced that."
+- Selecting a forged item has no link back to the originating
+  forge call at all (see "what would require data-model changes"
+  above) - the partial version skips items.
+
+A complete version (exact trace->rumor->journal join, forge
+items linking back to their call, lore-pack fragments hashing
+back to output) requires the `trace_event_id` field described
+in the next section. The partial version is honest about what
+it cannot prove.
 
 ## Where this belongs
 
