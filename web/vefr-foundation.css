@@ -1,0 +1,154 @@
+/* =============================================================================
+   VEFR Foundation — Accessible Skeleton
+   =============================================================================
+ *
+ * The platform's structural guarantees. Every game on VEFR imports this file.
+ * It ensures the game is playable by anyone, anywhere, before a single brand
+ * color is chosen.
+ *
+ * Games provide their own skin file (palette, components, personality).
+ * The skin references the foundation — it never overrides it.
+ *
+ * Contract tokens (games MUST define these in their skin):
+ *   --bg, --card, --card-edge, --ink, --ink-dim, --accent, --ring
+ *   ...in three contrast tiers (standard, high, ultra)
+ *
+ * VEFR prefs.js contract:
+ *   contrast: 'm' | 'high' | 'ultra'
+ *   motion:   'off' | 'subtle' | 'full'
+ *   font:     'atkinson' | 'opendyslexic' | 'serif' | 'system'
+ *   focus:    'luminance' | 'accent'
+ *   density:  'comfortable' | 'compact'
+ *   text:     'xs' | 's' | 'm' | 'l' | 'xl' | '2xl'
+ *   spacing:  'tight' | 'm' | 'loose'
+ *
+ * made with care for whoever you are.
+ */
+
+
+/* ============================================================
+   1. INTERACTIVE TARGETS — 44px minimum (WCAG 2.5.8)
+   The first rule. No exceptions. Compact density reduces visual
+   padding, never hit-target geometry.
+   ============================================================ */
+button, [role="button"], [role="tab"], .tab, .toggle,
+select, input, textarea, summary,
+a[href], [tabindex="0"] {
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+}
+
+/* ============================================================
+   2. MOTION — off by default
+   Nothing moves until the player opts in. Critical for migraine
+   safety, vestibular disorders, and seizure prevention.
+   The OS-level override is the final word.
+   ============================================================ */
+html[data-prefs~="motion=off"] *,
+html[data-prefs~="motion=off"] *::before,
+html[data-prefs~="motion=off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-prefs~="motion=subtle"] *,
+html[data-prefs~="motion=subtle"] *::before,
+html[data-prefs~="motion=subtle"] *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 200ms !important;
+  transition-property: color, opacity, background-color, border-color !important;
+}
+/* OS-level override — always respected, regardless of saved prefs */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ============================================================
+   3. FOCUS RINGS — always visible, luminance by default
+   Keyboard navigation gets a clear ring on every interactive
+   element. Luminance-based by default so it works regardless
+   of the game's accent color or the player's color vision.
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--ring, currentColor);
+  outline-offset: 2px;
+}
+html[data-prefs~="focus=luminance"] { --ring: var(--ink, #E8E5DF); }
+html[data-prefs~="focus=accent"]   { --ring: var(--accent, #C9AD6B); }
+html[data-prefs~="contrast=ultra"] :focus-visible { outline-width: 3px; }
+
+/* ============================================================
+   4. TYPOGRAPHY FLOOR — Atkinson Hyperlegible, 14px minimum
+   The most legible body font available (SIL OFL licensed).
+   Player-facing text never drops below 14px. The type scale
+   responds to user preferences from xs through 2xl.
+   ============================================================ */
+body {
+  font-family: 'Atkinson Hyperlegible Next', Georgia, 'Times New Roman', serif;
+  font-size: 1rem;       /* 16px base */
+  line-height: 1.6;
+}
+
+/* Alternative font stacks — player's choice via prefs.js */
+html[data-prefs~="font=opendyslexic"] body {
+  font-family: 'OpenDyslexic', Georgia, serif;
+}
+html[data-prefs~="font=serif"] body {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+html[data-prefs~="font=system"] body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Text size scaling — matches VEFR prefs.js contract */
+html[data-prefs~="text=xs"]  body { font-size: 0.92rem; }
+html[data-prefs~="text=s"]   body { font-size: 0.96rem; }
+html[data-prefs~="text=m"]   body { font-size: 1rem; }
+html[data-prefs~="text=l"]   body { font-size: 1.08rem; }
+html[data-prefs~="text=xl"]  body { font-size: 1.16rem; }
+html[data-prefs~="text=2xl"] body { font-size: 1.28rem; }
+
+/* ============================================================
+   5. SPACING & DENSITY
+   Density controls visual padding. It NEVER reduces hit-target
+   geometry — the 44px minimum is structural, not cosmetic.
+   ============================================================ */
+html[data-prefs~="spacing=tight"] .card  { padding: 0.7rem 0.9rem; }
+html[data-prefs~="spacing=loose"] .card  { padding: 1.2rem 1.5rem; }
+
+html[data-prefs~="density=compact"] button,
+html[data-prefs~="density=compact"] .tab {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  /* min-height: 44px is NEVER reduced — inclusive-forward contract */
+}
+
+/* ============================================================
+   6. ULTRA CONTRAST — structural reinforcements
+   Ultra mode gets heavier borders and bolder text weight
+   regardless of the game's palette.
+   ============================================================ */
+html[data-prefs~="contrast=ultra"] body { font-weight: 550; }
+html[data-prefs~="contrast=ultra"] .card,
+html[data-prefs~="contrast=ultra"] .panel { border-width: 2px; }
+
+/* ============================================================
+   7. OS-LEVEL OVERRIDES
+   The operating system's accessibility settings are the final
+   word. These cannot be overridden by game preferences.
+   ============================================================ */
+@media (prefers-contrast: more) {
+  :root {
+    --card-edge: #FFFFFF;
+    --ink: #FFFFFF;
+  }
+}
+@media (forced-colors: active) {
+  :root {
+    color-scheme: dark;
+  }
+}
