@@ -1,0 +1,62 @@
+# Engine reference Storyteller Pack.
+#
+# This is NOT the recommended creative default - it is what the engine
+# used to hardcode before the storyteller provider boundary landed.
+# Kept verbatim so existing installs boot and existing tests still pass.
+#
+# Capabilities: text + structured output + tools (Tier 3 / agentic).
+# This is the "smart control" model for proposal generation, player
+# help, and the structured prose paths (rumors, npc lines, stefna
+# letters, lore previews).
+#
+# Player-facing impact: zero by default. To switch, install a creative
+# pack via `norns storyteller install gryphe-style-gemma-12b`.
+
+[storyteller]
+id = "gpt-oss-20b-reference"
+name = "gpt-oss 20b (engine reference)"
+version = "0.1.0"
+
+[model]
+provider = "openai-compatible"
+model = "gpt-oss-20b"
+source = "huggingface"
+context_window = 0
+
+[capabilities]
+text = true
+structured_output = true
+tools = true
+vision = false
+
+[sampling]
+temperature = 0.85
+
+[chat_template_kwargs]
+reasoning_effort = "low"
+
+# No [templates] block - engine callers supply their own system
+# prompt (voice files, phase tone, etc.). This pack does not override.
+
+[license]
+name = "gpt-oss"
+spdx = "Apache-2.0"
+source_url = "https://huggingface.co/openai/gpt-oss-20b"
+redistribution = "allowed"
+commercial_use = "allowed"
+attribution = "OpenAI gpt-oss 20b, Apache-2.0"
+notes = "Engine reference storyteller. Smart control, not the recommended creative default. Weights are not mirrored in this repo - fetch via llama.cpp or ollama."
+
+[notes]
+text = "Engine reference. Back-compat default for installs with no pack selected. Bundled; cannot be removed."
+
+[install]
+# Optional block. Empty values mean "the pack author doesn't ship a
+# download; bring your own weights". A pack author who wants the install
+# experience to point at a specific artifact fills these in.
+weights_source = "huggingface"
+weights_repo = "openai/gpt-oss-20b"
+recommended_quant = ""
+approx_disk_mb = 0
+fetch_command = ""
+attribution_url = "https://huggingface.co/openai/gpt-oss-20b"
