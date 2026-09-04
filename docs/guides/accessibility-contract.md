@@ -17,16 +17,39 @@ deep because it's woven into the mythology that matters.
 
 Three things ship on this platform:
 
-- **VEFR itself** — the creative tool that's also a game. You weave worlds
-  alongside an AI collaborator, and the weaving teaches you about story
-  structure, AI engineering, and yourself. The map menu, the forge, the
-  inspector — they should all feel fun, because they *are* the gameplay.
-- **Burrito Journalism** — the engine demo. Not one game but a showcase:
-  a food truck level, a Diablo-like dungeon, a journalism beat. Each one
-  proves a different VEFR capability. Silly, fun, approachable — the thing
-  you ship alongside VEFR so people can see what's possible.
-- **MUNR** — a personal RPG rooted in Norse myth. This is where the naming
-  goes deep because it's earned. More intimate, more direct, more yours.
+- **VEFR itself** — the workshop. A creative tool that's also a game. You
+  weave worlds alongside an AI collaborator, and the weaving teaches you
+  about story structure, AI engineering, and yourself. Three panels define
+  the workspace: *The Loom* (world builder — map tiles, NPCs, lore, all
+  transparent), *The Thread* (AI chat — pair-programming conversation with
+  keep/try-again/discard), and *The Journal* (history — git-like but human,
+  with rewind, fork, bookmark, and export-as-e-book). The palette is
+  restrained — warm grays, soft cream, calm teal accent. A place you'd
+  spend hours in without fatigue. Super useful, lots to find.
+- **Burrito Journalism** — the engine demo. You sell breakfast burritos
+  from a truck. You're good at it. You roll into a new town, people try
+  your food, you get popular, you get trusted — then they start asking for
+  help. Eventually you're delivering newspapers AND burritos. "The Daily
+  Hash(browns)." Different locations, different game styles (Diablo-like
+  dungeon, food truck sim, journalism beat), one voice, one story. Also
+  there are mutant water polo players who steal a printing press because
+  they think it's neat. It's weird. It's an apocalypse. It's fun. Super fun.
+- **MUNR** — a personal RPG rooted in Norse myth. Crafted. Starts as a
+  Castle of the Winds homage — monochrome, constrained, the UI looks like
+  every RPG you've ever played. But nothing is what it seems. The HP bar
+  is actually the journey phase (whispers → doubts → feared → awed). The
+  inventory items have bonds, not types — "given" (it fits badly), "cold"
+  (a tool that doesn't care), "found" (rare — made for waiting hands).
+  The quest log is actually starred whispers — moments you chose to
+  remember. The decorative runes in the corner are a live cast (what was,
+  what is, what asks). As you play, as the AI learns your story, the world
+  itself transforms from monochrome tradition into a colorful, living
+  place that's uniquely yours. The UI blooms alongside the world — because
+  the transformation IS the game. You start thinking you're the hero out
+  to save the world from monsters, but the world thinks YOU are the
+  monster. The real journey is learning there is good, and the old shell
+  and skeleton isn't true. Crafted, old RPG that slowly gives way to a
+  colorful, livid, living world.
 
 All three share the same accessible foundation. All three feel completely
 different. That's the point.
@@ -90,6 +113,16 @@ A story on VEFR doesn't end when you stop playing. It transforms.
    else's story, or your own sequel. The circle closes.
 
 Every story becomes the soil for the next.
+
+---
+
+## The Core Loop
+
+Everything hangs off five beats:
+
+**weave → play → understand → remember → grow**
+
+Make something → play with it → understand it → remember it → grow it.
 
 ---
 
@@ -349,6 +382,8 @@ The foundation comes first. Your identity follows.
 
 ### Layer 1 — The Skeleton (inherited from VEFR)
 
+Import `vefr-foundation.css` — it provides all of these out of the box:
+
 - [ ] All interactive elements have `min-height: 44px; min-width: 44px`
 - [ ] Motion defaults to `off` — verify nothing animates at default prefs
 - [ ] Focus rings visible on every interactive element via `:focus-visible`
@@ -377,14 +412,22 @@ The foundation comes first. Your identity follows.
 
 *vefr — weave your world tree. every story becomes the soil for the next.*
 
-*made with care for whoever you are.*
+*made with care for whoever you are, and the story only you can tell.*
 
 ---
 
 ## References
 
-- Engine CSS: `web/index.html` (`:root` tokens and accessibility rules)
+- Foundation CSS: `web/vefr-foundation.css` (shared accessible skeleton)
 - Preferences: `web/prefs.js` (contract, defaults, CSS integration)
 - Agent rules: `AGENTS.md` (boundary table, "Always" row)
 - Burrito tokens: `burgeswe/burrito-journalism/web/design-tokens.css`
-- Figma source: file `J0iRc8JElLGrJkvCz6L6fk`, foundation node `16:4`
+  (skin only — imports vefr-foundation.css)
+- Figma source: file `J0iRc8JElLGrJkvCz6L6fk`
+  - Foundation: node `16:4`
+  - Burrito gameplay: node `8:4`
+  - Burrito UI kit: node `8:401`
+  - AI chat concept: node `20:261`
+  - Roadmap: node `20:4`
+  - MUNR concept: node `23:4`
+  - VEFR workshop concept: node `25:244`
