@@ -2,9 +2,9 @@
 
 **Every story deserves every audience.**
 
-A game about building games. An AI pipeline you can play. Make a story,
-learn something about stories — and maybe about yourself. We build the
-bones so anyone can be part of that.
+Weave your world tree. An AI sits beside you — not above you — figuring
+it out together. Make a story, learn something about stories, and maybe
+about yourself. Then share it with anyone, anywhere.
 
 ---
 
@@ -17,10 +17,10 @@ deep because it's woven into the mythology that matters.
 
 Three things ship on this platform:
 
-- **VEFR itself** — the creative tool that's also a game. You build worlds,
-  and the building teaches you about story structure, AI engineering, and
-  yourself. The map menu, the forge, the inspector — they should all feel
-  fun, because they *are* the gameplay.
+- **VEFR itself** — the creative tool that's also a game. You weave worlds
+  alongside an AI collaborator, and the weaving teaches you about story
+  structure, AI engineering, and yourself. The map menu, the forge, the
+  inspector — they should all feel fun, because they *are* the gameplay.
 - **Burrito Journalism** — the engine demo. Not one game but a showcase:
   a food truck level, a Diablo-like dungeon, a journalism beat. Each one
   proves a different VEFR capability. Silly, fun, approachable — the thing
@@ -30,6 +30,66 @@ Three things ship on this platform:
 
 All three share the same accessible foundation. All three feel completely
 different. That's the point.
+
+---
+
+## Tone
+
+The platform has a voice. Here's how it sounds.
+
+### The AI is your pair programmer
+
+The LLM that helps you build your game isn't a tool you command — it's a
+collaborator you think alongside. The conversation is casual, back-and-
+forth, two people figuring something out together.
+
+**What this means for UI language:**
+
+| Instead of | Write |
+|---|---|
+| `GENERATE WORLD` | `let's build this` |
+| `EXECUTE` | `try it` |
+| `REVERT TO CHECKPOINT` | `go back to when...` |
+| `COMMIT` | `bookmark this moment` |
+| `INSPECT PIPELINE STATE` | `see how this works` |
+| `CONFIGURE PARAMETERS` | `set this up` |
+| `ERROR: INVALID INPUT` | `that didn't work — want to try something else?` |
+
+Buttons are invitations, not commands. The journal is a notebook, not
+version control. The inspector is curiosity, not debugging.
+
+### Every UI element is transparent
+
+Each panel, knob, and setting has a way to see what it calls and what it
+does under the hood. This isn't hidden developer tooling — it's part of
+the game. You're learning AI engineering by building a world, and the
+platform lets you peek at the wiring whenever you're curious.
+
+### The journal is git for your story
+
+The journal system uses git-like mechanics — rewind, fork, bookmark — but
+the language stays human. You're not managing branches and commits. You're
+exploring paths your story could take, bookmarking moments you want to
+remember, and forking timelines to see what happens if.
+
+---
+
+## The Story Lifecycle
+
+A story on VEFR doesn't end when you stop playing. It transforms.
+
+1. **Play it.** You and the AI weave a story together — making choices,
+   building the world, watching it grow.
+2. **Export it.** When the story is done, export it as an accessible
+   e-book. This is the Bilbo moment — closing the notebook, happy it
+   happened, a little sad it's over. *"There and back again."* The e-book
+   inherits the platform's accessibility: readable by anyone, on any
+   device, with the same contrast/font/motion preferences baked in.
+3. **Re-import it.** The exported story can be re-imported into the engine
+   as a lore pack — the world you built becomes the foundation for someone
+   else's story, or your own sequel. The circle closes.
+
+Every story becomes the soil for the next.
 
 ---
 
@@ -76,14 +136,14 @@ builders.
 | **Someone whose brain works differently** | Motion off by default. No strobing. Short reading load. Migraine-safe palettes. Collapsed complexity with optional depth. |
 | **Someone playing on the bus, in the sun, on mute** | Works on small screens. Readable in bright light. Fully playable without sound — captions and visual cues cover everything. |
 | **Someone who just wants to play** | It works. Right away. Without configuration. The defaults are already good. |
-| **Someone who just wants to build** | The creative tools feel like play. The AI pipeline is visible and fun to explore. You learn by doing, not by reading docs. |
+| **Someone who just wants to build** | The creative tools feel like play. The AI is right there beside you. You learn by doing, not by reading docs. |
 
 ---
 
 ## The Seven Rules
 
 Non-negotiable. Every game, every screen, every interactive element —
-including the engine's own builder UI.
+including the engine's own builder UI and the AI chat.
 
 ### 1. Targets ≥ 44px
 
@@ -297,6 +357,7 @@ The foundation comes first. Your identity follows.
 - [ ] No player-facing text below 14px
 - [ ] Captions and visual pairing on by default
 - [ ] Language is neutral, warm, and assumes nothing about the player
+- [ ] AI chat follows pair-programming tone — invitations, not commands
 
 ### Layer 2 — The Skin (owned by you)
 
@@ -310,10 +371,11 @@ The foundation comes first. Your identity follows.
       structure
 - [ ] Audit all player-facing text for inclusive language — no gendered
       defaults, no assumptions about identity or ability
+- [ ] Every panel has a "see how this works" path for the curious
 
 ---
 
-*vefr — a rumor engine for playable worlds. build something worth telling.*
+*vefr — weave your world tree. every story becomes the soil for the next.*
 
 *made with care for whoever you are.*
 
