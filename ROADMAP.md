@@ -739,6 +739,31 @@
       reproduced the pre-fix defect at 1280px. Gate: 251 passed
       (`uv run --group test pytest -q`), ruff clean.
 
+- [x] **Storyteller Pack provider seam + audition harness** (2026-09-04,
+      this session): the engine is now model-neutral. `Provider` enum
+      is two values (OLLAMA + OPENAI_COMPATIBLE; llama.cpp / LM Studio /
+      vLLM / LocalAI / TGI all hang off the latter as tested runtimes).
+      The Tier ladder (0 minimum → 1 small → 2 creative → 3 smart
+      control → 4 BYOM) is encoded in `[capabilities]` flags. New
+      `src/vefr/storyteller.py` resolves the active storyteller from
+      `VEFR_STORYTELLER` env, the `data/storytellers/active.toml`
+      marker, installed packs, bundled packs, or the engine reference
+      (gpt-oss-20b, kept for back-compat so existing tests still pass).
+      Five audition packs ship under `storyteller_packs/`
+      (gpt-oss-20b-reference, gryphe-style-gemma-12b creative ref,
+      gemma4-e2b / gemma4-e4b / ministral3-3b); Qwen2.5-3B-Instruct
+      sits under `data/storytellers/` as an evaluation-only candidate
+      (research-only license, never a shippable default). `ScenePacket`
+      + `norns storyteller-test --model/--matrix/--scene/--runs/--seed
+      /--blind` give Rylei a side-by-side audition harness with
+      artifacts saved to `artifacts/storyteller-tests/<ts>/{manifest.json,
+      <pack>.txt, blind_map.txt}`. Missing models SKIP cleanly, no
+      benchmark scores, no automatic judges. `/data/storytellers/`
+      gitignored per the existing runtime-state convention. Gate: 278
+      passed (`uv run --group test pytest -q`), ruff clean; the
+      pack-neutrality test caught a private-story leak in a docstring
+      and was fixed before merge.
+
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.

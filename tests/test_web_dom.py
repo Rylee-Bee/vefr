@@ -71,3 +71,16 @@ def test_web_ui_survives_a_full_stubbed_dom_run():
         f"DOM harness failed:\n{result.stdout}\n{result.stderr}"
     )
     assert "all harness checks passed" in result.stdout
+    # The acceptance check for the 2026-09-03 'Journal card only
+    # updates while Town is selected' bug. The harness stubs
+    # /api/journal to increment a counter on every GET, and the
+    # regression block at the bottom of the harness asserts that
+    # whisper / strike / forge-keep events from any tab trigger
+    # an automatic refetch. If those checks did not run, the
+    # counter is missing from the run - this catches a regression
+    # where someone deletes that block without re-adding coverage.
+    assert "/api/journal refetch" in result.stdout or "refetch" in result.stdout, (
+        "DOM harness ran without the journal-refresh regression block "
+        "at the bottom of tests/fixtures/dom_harness.mjs. Re-add it or "
+        "this guard will hide the 2026-09-03 bug class in the future."
+    )

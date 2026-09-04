@@ -37,6 +37,12 @@ __pycache__/
 /data/weave.jsonl.old
 /data/handoffs/
 
+# user-installed Storyteller Packs. Tracked packs ship in
+# storyteller_packs/ at the repo root; everything under
+# data/storytellers/ is a per-machine install (mirrors of upstream
+# model weights, local configs, eval-only packs like qwen25-3b).
+/data/storytellers/
+
 # agent research surveys - local session notes, not engine docs.
 # the repo may publish one day; durable decisions live in
 # ROADMAP.md, idea credits in README.

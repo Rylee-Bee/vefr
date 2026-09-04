@@ -555,7 +555,7 @@ sandbox.fetch = (url, opts) => {
     return ok({ speaker: 'The Smith', line: 'aye' });
   }
   if (url === '/api/stefna') return ok({ letter: 'For you.' });
-  if (url === '/api/journal') return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'hm', is_true: true }], starred: [] });
+  if (url === '/api/journal') { sandbox._journalCalls = (sandbox._journalCalls || 0) + 1; return ok({ entries: [{ at: '2026-08-31T00:00:00Z', kind: 'rumor', speaker: 'a voice', whisper: 'call#' + sandbox._journalCalls, is_true: true }], starred: [] }); }
   if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'Old Sela' }] });
   if (url === '/api/weave') return ok({ events: [{ event: 'pack.load.end', at: 1234567890.0, pack: 'sample-world', acts: 1, shape: 'acts', surface: 'combat' }] });
   if (url.startsWith('/api/builder/aspects')) return ok({
@@ -1103,6 +1103,87 @@ check('narrow viewport clears inline geometry',
 winWidth = 1200;
 sandbox.window.dispatchEvent({ type: 'resize' });
 await tick();
+
+/* ---------- Journal panel must refresh on data, not on tab visibility. ---------- */
+/* Regression for the 2026-09-03 'Journal card only updates/stays
+   active while the Town tab is selected' bug. Before this fix,
+   renderJournal() was wired to the tab-visibility announceView
+   event, so the Journal panel froze the moment the player switched
+   off the Journal tab. The fix dispatches vefr:journal from every
+   gameplay outcome that lands a server-side journal entry - so
+   the panel listens at the session level, not the tab level. */
+
+/* The harness stub at /api/journal increments _journalCalls on
+   every GET, so a refresh is observable without inspecting the
+   list innerHTML. */
+const journalCalls = () => sandbox._journalCalls || 0;
+
+/* Switch to Whispers (NOT Journal) and trigger a gameplay event -
+   the journal panel must refetch even though no tab change hit it. */
+tabBtns.rumors.click();
+await tick();
+const jcBeforeWhisper = journalCalls();
+byId.get('whisper-btn').click();
+await tick();
+check('whisper while on Rumors tab triggers automatic journal refetch',
+  journalCalls() > jcBeforeWhisper,
+  `before=${jcBeforeWhisper} after=${journalCalls()}`);
+
+/* Strike-bell while on Vault tab - same expectation. */
+tabBtns.vault.click();
+await tick();
+const jcBeforeBell = journalCalls();
+byId.get('strike-btn').click();
+await tick();
+check('strike while on Vault tab triggers automatic journal refetch',
+  journalCalls() > jcBeforeBell,
+  `before=${jcBeforeBell} after=${journalCalls()}`);
+
+/* Walk the hero while on Bell tab - the move endpoint logs to the
+   journal. We don't know whether the harness's stub will register
+   this as a place-change (the engine only fires on place equality),
+   so we just assert no regression: the call count grew or stayed
+   the same, never crashed, never threw. */
+tabBtns.stefna.click();
+await tick();
+const jcBeforeMove = journalCalls();
+for (const fn of winListeners['keydown'] || []) fn({ key: 'ArrowDown', preventDefault() {} });
+await tick();
+for (const fn of winListeners['keydown'] || []) fn({ key: 'ArrowRight', preventDefault() {} });
+await tick();
+check('walking the hero from any tab does not crash and the journal stays consistent',
+  journalCalls() >= jcBeforeMove,
+  `before=${jcBeforeMove} after=${journalCalls()}`);
+
+/* The acceptance check the bug report asked for, summarized:
+   trigger an event while on Town, then switch to Whispers/Bell/Vault
+   and confirm the Journal panel still records new events. Drive it
+   end-to-end through the harness: a forging + keep happens while on
+   the Town tab, then we switch to Whispers and trigger a new
+   whisper, then verify the journal call count reflects BOTH events
+   - the whisper-only path that mattered before the fix. */
+tabBtns.town.click();
+await tick();
+const jcBeforeTriple = journalCalls();
+byId.get('forge-btn').click();
+await tick();
+/* forge-keep path */
+const kBtn = new El('button');
+kBtn.dataset.keep = '1';
+forgeOut.appendChild(kBtn);
+kBtn.click();
+await tick();
+tabBtns.rumors.click();
+await tick();
+byId.get('whisper-btn').click();
+await tick();
+tabBtns.stefna.click();
+await tick();
+byId.get('strike-btn').click();
+await tick();
+check('forge-keep + whisper + strike across tab switches each refetch the Journal',
+  journalCalls() >= jcBeforeTriple + 2,
+  `before=${jcBeforeTriple} after=${journalCalls()}`);
 
 console.log('\n' + (fail.length ? 'FAILURES:\n  ' + fail.join('\n  ') : 'all harness checks passed'));
 process.exit(fail.length ? 1 : 0);

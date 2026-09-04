@@ -264,6 +264,11 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ask)
+    }).then(function (r) {
+      /* The journal is a session-spanning record, not scoped to the
+         Town tab. Tell the player it's been updated even when the
+         focused panel is Whispers / Bell / Vault / Journal. */
+      if (r && r.ok) window.dispatchEvent(new Event('vefr:journal'));
     }).catch(function () { /* the walk keeps its own counsel */ });
   }
 

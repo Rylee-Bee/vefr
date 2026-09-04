@@ -1,0 +1,74 @@
+# Gemma 4 E2B - Tier 0 minimum storyteller candidate.
+#
+# Per the 2026-09-04 VEFR AI direction, this is the candidate for the
+# smallest storyteller that VEFR should still try to support. 2.3B
+# effective parameters (5.1B with embeddings), 128K context, Apache-2.0
+# under Gemma 4 Terms of Use.
+#
+# Role: tiny/edge candidate. Question: "Is this enough storyteller for
+# the default lightweight experience?"
+#
+# Tier 0 = text only. The engine never asks this storyteller for JSON,
+# tools, or vision. That is intentional - Tier 0 lets us test the
+# harness quality on the smallest thing that still has a chance of
+# staying coherent.
+
+[storyteller]
+id = "gemma4-e2b"
+name = "Gemma 4 E2B"
+version = "0.1.0"
+
+[model]
+provider = "openai-compatible"
+model = "gemma-4-E2B-it"
+source = "huggingface"
+context_window = 131072
+
+[capabilities]
+text = true
+structured_output = false
+tools = false
+vision = false
+
+# Baseline shared with the other audition packs so comparison is fair.
+# Per-model overrides only where Gemma 4's published best practices
+# materially differ.
+[sampling]
+temperature = 0.8
+top_p = 0.9
+top_k = 64
+
+# Gemma 4 supports a thinking mode controlled by a <|think|> token in
+# the system prompt. Leaving it OFF for the audition - we want prose,
+# not reasoning traces, on small models.
+[chat_template_kwargs]
+
+[templates]
+system = "system.md"
+scene = "scene.md"
+character = "character.md"
+memory = "memory.md"
+
+[license]
+name = "Gemma 4 (Google DeepMind)"
+spdx = "Apache-2.0"
+source_url = "https://huggingface.co/google/gemma-4-E2B"
+redistribution = "allowed"
+commercial_use = "allowed"
+attribution = "Gemma 4 E2B by Google DeepMind, Apache-2.0 with Gemma Terms of Use"
+notes = "Gemma Terms of Use apply; see https://ai.google.dev/gemma/docs/gemma_4_license. Redistribution must flow the Gemma terms down."
+
+[install]
+weights_source = "huggingface"
+weights_repo = "google/gemma-4-E2B-it"
+recommended_quant = "Q4_K_M"
+approx_disk_mb = 2700
+fetch_command = "# ollama pull gemma-4-e2b  OR  llama.cpp from HF; see upstream"
+attribution_url = "https://huggingface.co/google/gemma-4-E2B"
+
+[notes]
+text = """
+Audition pack. Tier 0 floor. Runs almost anywhere with a small Q4
+quant. Creative-writing quality is unknown until we test it against
+the same VEFR scene the other tiers see.
+"""
