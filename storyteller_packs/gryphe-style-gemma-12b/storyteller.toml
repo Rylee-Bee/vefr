@@ -1,0 +1,80 @@
+# Creative Storyteller Pack candidate.
+#
+# Gryphe / Gemma-4-12B-StyleTune is the current creative candidate per
+# the 2026-09-04 VEFR AI direction. It is interesting because it is
+# explicitly oriented toward creative writing, roleplay, and reduced
+# cliché behaviour - closer to the role VEFR's storyteller layer needs
+# than a benchmark-leading generalist.
+#
+# This is a CANDIDATE, not a permanent dependency. If another model
+# later proves better, swap the manifest (or install a different pack).
+# No engine code change required.
+#
+# Capabilities: text only (Tier 1). The engine never asks this
+# storyteller for JSON, tools, or vision. That is intentional - Tier 1
+# lets us test the harness quality independently of the model's agent
+# features. A creative model that can't return schema-conformant JSON
+# is still a perfectly valid VEFR storyteller.
+
+[storyteller]
+id = "gryphe-style-gemma-12b"
+name = "Gemma 4 StyleTune"
+version = "0.1.0"
+
+[model]
+provider = "openai-compatible"
+model = "gemma-4-12b-styletune"
+source = "huggingface"
+context_window = 262144
+
+[capabilities]
+text = true
+structured_output = false
+tools = false
+vision = false
+
+[sampling]
+temperature = 0.9
+top_p = 0.95
+
+[templates]
+system = "system.md"
+scene = "scene.md"
+character = "character.md"
+memory = "memory.md"
+
+# Gemma-style chat templates do not honor reasoning_effort.
+[chat_template_kwargs]
+
+[license]
+# LICENSE STATUS: VERIFY BEFORE SHIPPING.
+# The 2026-09-04 direction document instructs us to record licensing
+# metadata for the recommended model. As of session time we have not
+# fetched the upstream license terms for Gryphe's Gemma-4-12B-StyleTune
+# derivative, so redistribution and commercial use are recorded as
+# UNKNOWN. Treat the pack as install-only: it points at the upstream
+# source and the user is responsible for confirming their rights
+# before redistributing a pack built around it.
+name = "Gemma (Gryphe StyleTune derivative)"
+spdx = "unknown"
+source_url = "https://huggingface.co/Gryphe/Gemma-4-12B-StyleTune"
+redistribution = "unknown"
+commercial_use = "unknown"
+attribution = "Gemma base model by Google; StyleTune derivative by Gryphe. Verify upstream license before redistribution."
+notes = "Candidate creative storyteller. License status pending verification of upstream terms; install-only until confirmed."
+
+[notes]
+text = """
+Creative reference. Pulls in the upstream weights on install; this
+pack ships zero bytes of model data. Templates ship as sibling files
+so a future pack can ship a different wrapper without touching engine
+code.
+"""
+
+[install]
+weights_source = "huggingface"
+weights_repo = "Gryphe/Gemma-4-12B-StyleTune"
+recommended_quant = "Q4_K_M"
+approx_disk_mb = 7900
+fetch_command = "# fetch via llama.cpp, ollama, or LM Studio; see upstream repo"
+attribution_url = "https://huggingface.co/Gryphe/Gemma-4-12B-StyleTune"
