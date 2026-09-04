@@ -2,16 +2,34 @@
 
 **Every story deserves every audience.**
 
-We build the bones so anyone can play. Then we make it look incredible.
+A game about building games. An AI pipeline you can play. Make a story,
+learn something about stories — and maybe about yourself. We build the
+bones so anyone can be part of that.
 
-Accessibility is not a feature of the VEFR platform. It is the architecture —
-the skeleton that every game inherits before a single brand color is chosen.
-Visual identity is the skin: the colors, textures, type personality, and
-decorative weirdness that make each game feel like *itself*.
+---
 
-This document is the platform contract. Every game built on VEFR — Burrito
-Journalism, MUNR, whatever you build next — gets these structural guarantees
-for free. Your job is to make it yours without breaking them.
+## What VEFR Is
+
+VEFR is an engine *and* a game. The building is the playing — when you're
+in the map editor placing tiles, tuning the forge, peeking at how the
+world's AI pipeline makes decisions, that's the game. The Norse naming runs
+deep because it's woven into the mythology that matters.
+
+Three things ship on this platform:
+
+- **VEFR itself** — the creative tool that's also a game. You build worlds,
+  and the building teaches you about story structure, AI engineering, and
+  yourself. The map menu, the forge, the inspector — they should all feel
+  fun, because they *are* the gameplay.
+- **Burrito Journalism** — the engine demo. Not one game but a showcase:
+  a food truck level, a Diablo-like dungeon, a journalism beat. Each one
+  proves a different VEFR capability. Silly, fun, approachable — the thing
+  you ship alongside VEFR so people can see what's possible.
+- **MUNR** — a personal RPG rooted in Norse myth. This is where the naming
+  goes deep because it's earned. More intimate, more direct, more yours.
+
+All three share the same accessible foundation. All three feel completely
+different. That's the point.
 
 ---
 
@@ -20,10 +38,10 @@ for free. Your job is to make it yours without breaking them.
 Before the rules, the why.
 
 VEFR is a platform designed for anyone to tell a story. That means
-the person playing could be anyone — any background, any identity, any
-body, any brain, any life situation. We don't know who's on the other
-side of the screen, and we don't need to. The platform works for them
-regardless.
+the person playing — or building — could be anyone. Any background, any
+identity, any body, any brain, any life situation. We don't know who's on
+the other side of the screen, and we don't need to. The platform works for
+them regardless.
 
 **What this means in practice:**
 
@@ -38,7 +56,7 @@ regardless.
 - **Fun is not optional.** If building with the engine doesn't feel like
   play, something is wrong. If playing a game on the engine doesn't make
   you want to keep going, something is wrong. Accessibility and joy are
-  the same design goal.
+  the same design goal — not competing priorities.
 - **No one has to explain themselves.** The settings panel doesn't ask
   *why* you want high contrast or motion off. It just lets you set it.
   Preferences are personal — the platform respects them without
@@ -48,7 +66,8 @@ regardless.
 
 ## Who This Is Really For
 
-Not edge cases. Not special accommodations. Your players.
+Not edge cases. Not special accommodations. Your players — and your
+builders.
 
 | Who shows up | What the platform does for them |
 |---|---|
@@ -57,12 +76,14 @@ Not edge cases. Not special accommodations. Your players.
 | **Someone whose brain works differently** | Motion off by default. No strobing. Short reading load. Migraine-safe palettes. Collapsed complexity with optional depth. |
 | **Someone playing on the bus, in the sun, on mute** | Works on small screens. Readable in bright light. Fully playable without sound — captions and visual cues cover everything. |
 | **Someone who just wants to play** | It works. Right away. Without configuration. The defaults are already good. |
+| **Someone who just wants to build** | The creative tools feel like play. The AI pipeline is visible and fun to explore. You learn by doing, not by reading docs. |
 
 ---
 
 ## The Seven Rules
 
-Non-negotiable. Every game, every screen, every interactive element.
+Non-negotiable. Every game, every screen, every interactive element —
+including the engine's own builder UI.
 
 ### 1. Targets ≥ 44px
 
@@ -84,7 +105,7 @@ vision reads the same hierarchy you designed.
 
 `prefs.motion` defaults to `'off'`. Nothing moves until the player says so.
 Subtle mode (≤200ms, color/opacity only) is the first opt-in. Full motion is
-never required for gameplay.
+never required for gameplay or building.
 
 The OS `prefers-reduced-motion: reduce` is the final word — it overrides
 everything, always.
