@@ -15,16 +15,48 @@ for free. Your job is to make it yours without breaking them.
 
 ---
 
-## Who This Is For
+## Values
 
-These are not edge cases. These are your players.
+Before the rules, the why.
 
-| Audience | What the platform guarantees |
+VEFR is a platform designed for anyone to tell a story. That means
+the person playing could be anyone — any background, any identity, any
+body, any brain, any life situation. We don't know who's on the other
+side of the screen, and we don't need to. The platform works for them
+regardless.
+
+**What this means in practice:**
+
+- **Language is neutral and warm.** No gendered defaults. No assumptions
+  about who the player is, what they look like, who they love, or what
+  they've been through. When we address the player, we say "you" — and
+  that "you" means whoever shows up.
+- **Defaults are the inclusive floor.** The out-of-box experience isn't
+  "normal mode" with accessibility bolted on. It *is* the accessible
+  experience. Players opt *up* into more motion, more density, more
+  complexity — never the reverse.
+- **Fun is not optional.** If building with the engine doesn't feel like
+  play, something is wrong. If playing a game on the engine doesn't make
+  you want to keep going, something is wrong. Accessibility and joy are
+  the same design goal.
+- **No one has to explain themselves.** The settings panel doesn't ask
+  *why* you want high contrast or motion off. It just lets you set it.
+  Preferences are personal — the platform respects them without
+  requiring justification.
+
+---
+
+## Who This Is Really For
+
+Not edge cases. Not special accommodations. Your players.
+
+| Who shows up | What the platform does for them |
 |---|---|
-| **Low vision & blind** | High contrast tiers, screen reader semantics, luminance-only hierarchy. Information never conveyed by color alone. |
-| **Motor & mobility** | 44px minimum targets on every interactive element. Keyboard-first navigation. No precision requirements. |
-| **Neurological & cognitive** | Motion OFF by default. Reduced visual complexity. Short reading load. Migraine-safe palettes. No strobing or flashing. |
-| **Situational & environmental** | Works on small screens. Works in bright sunlight (high contrast). Works without sound (captions + visual pairing). |
+| **Someone who can't see the screen clearly** | Three contrast tiers. Luminance-only hierarchy. Screen reader structure. Nothing relies on color alone. |
+| **Someone who navigates differently** | 44px targets everywhere. Full keyboard traversal. No precision requirements. Works with whatever input device they have. |
+| **Someone whose brain works differently** | Motion off by default. No strobing. Short reading load. Migraine-safe palettes. Collapsed complexity with optional depth. |
+| **Someone playing on the bus, in the sun, on mute** | Works on small screens. Readable in bright light. Fully playable without sound — captions and visual cues cover everything. |
+| **Someone who just wants to play** | It works. Right away. Without configuration. The defaults are already good. |
 
 ---
 
@@ -82,9 +114,10 @@ they miss atmosphere — never information.
 
 ### 7. Plain Language First
 
-Labels, instructions, and feedback in clear English. Flavor language — Norse
-terms in the engine, journalism jargon in Burrito, whatever vocabulary your
-game invents — is decoration. It's never the only path to understanding.
+Labels, instructions, and feedback in clear, warm language. Flavor text —
+Norse terms in the engine, journalism jargon in Burrito, whatever vocabulary
+your game invents — adds character. It's never the only path to
+understanding.
 
 ---
 
@@ -128,6 +161,10 @@ the engine handles the plumbing.
    `VEFR_PREFS.preview({ contrast: 'high' })` for live preview
    without saving.
 
+Your choices stick — they persist across sessions, travel via shareable
+URL, and always respect OS accessibility settings. Set it once, it follows
+you.
+
 ---
 
 ## The Contrast Ladder
@@ -157,13 +194,13 @@ html[data-prefs~="contrast=ultra"] {
 }
 ```
 
-### What Each Tier Means
+### What Each Tier Looks Like
 
-| Tier | Purpose | Guidance |
+| Tier | Feels like | Guidance |
 |---|---|---|
-| **Standard** | Comfortable for most. Warm, low-glare, readable. | ≥ WCAG AA (4.5:1 text, 3:1 UI) |
-| **High** | Sharper edges, brighter text, stronger borders. For low vision and bright environments. | ≥ WCAG AAA (7:1 text) |
-| **Ultra** | Maximum separation. Pure black, pure white, nothing hides. | Maximum achievable ratios |
+| **Standard** | Warm & easy. Comfortable, low-glare, readable. | ≥ WCAG AA (4.5:1 text, 3:1 UI) |
+| **High** | Bright & clear. Sharper edges, stronger borders. | ≥ WCAG AAA (7:1 text) |
+| **Ultra** | Nothing hides. Pure black, pure white, maximum separation. | Maximum achievable ratios |
 
 ### VEFR Engine Defaults
 
@@ -220,6 +257,8 @@ settings panel with its own personality. The panel must:
    the same rules it configures.
 5. **Default to the inclusive floor** — the panel opens showing the current
    saved state, not the "normal" state.
+6. **No justification required** — the panel doesn't ask *why* someone
+   wants high contrast or motion off. It just lets them set it.
 
 ---
 
@@ -236,6 +275,7 @@ The foundation comes first. Your identity follows.
 - [ ] All `data-prefs` CSS selectors from the engine are supported
 - [ ] No player-facing text below 14px
 - [ ] Captions and visual pairing on by default
+- [ ] Language is neutral, warm, and assumes nothing about the player
 
 ### Layer 2 — The Skin (owned by you)
 
@@ -244,13 +284,17 @@ The foundation comes first. Your identity follows.
 - [ ] Define `cb-safe` palette overrides for any hue-dependent tokens
 - [ ] Verify contrast ratios: standard ≥ AA, high ≥ AAA, ultra ≥ max
 - [ ] Build a settings panel calling `VEFR_PREFS.set/preview`
-- [ ] Make it look incredible — your identity references the foundation
+- [ ] Make it feel like play — your identity references the foundation
       tokens, never overrides target sizes, motion defaults, or reading
       structure
+- [ ] Audit all player-facing text for inclusive language — no gendered
+      defaults, no assumptions about identity or ability
 
 ---
 
 *vefr — a rumor engine for playable worlds. build something worth telling.*
+
+*made with care for whoever you are.*
 
 ---
 
