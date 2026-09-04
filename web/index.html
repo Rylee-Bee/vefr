@@ -2340,6 +2340,11 @@
       if (empty) empty.remove();
       feed.insertAdjacentHTML('afterbegin', whisperHTML(c, ph || ''));
       statusEl.textContent = 'whispered';
+      /* The whisper lands in the server-side journal. Refresh the
+         Journal panel now even if the user is still on another tab
+         - the journal is a session-spanning record, not a per-tab
+         view. */
+      window.dispatchEvent(new Event('vefr:journal'));
     } catch (err) {
       statusEl.textContent = 'nothing came back. is the model loaded?';
     } finally {
@@ -2423,12 +2428,13 @@
         if (!r.ok) throw new Error('combat ' + r.status);
         return r.json();
       }).then(function (entry) {
-        // Briefly show the journal just landed. The journal tab
-        // pulls the entry on next visit (it re-renders on
-        // vefr:journal). For the immediate feedback, flash the
-        // button's label.
+        /* Briefly show the journal just landed. The journal tab
+           now refreshes in the background (see dispatchEvent below)
+           regardless of which tab is selected. For the immediate
+           feedback, flash the button's label. */
         var orig = btn.textContent;
         btn.textContent = 'done';
+        window.dispatchEvent(new Event('vefr:journal'));
         setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 700);
       }).catch(function () {
         btn.disabled = false;
@@ -2469,6 +2475,11 @@
         body: JSON.stringify(lastForged)
       });
       var res = await r.json();
+      /* The server logs the kept item to the journal immediately.
+         Refresh the Journal panel in the background even if the
+         player is on Town / Whispers / Bell / Vault when they click
+         keep. The journal is session-spanning, not per-tab. */
+      window.dispatchEvent(new Event('vefr:journal'));
       forgeStatus.textContent = res.bond === 'attuned'
         ? 'it fits. it was always going to.'
         : res.bond === 'assigned'
@@ -2615,6 +2626,11 @@
         + '<p class="whisper" style="white-space:pre-line">' + esc(res.letter) + '</p>'
         + '</article>';
       stefnaStatus.textContent = 'awaiting your return.';
+      /* The letter lands in the server-side journal. Refresh the
+         Journal panel in the background so the record updates even
+         when the player is still on Town / Whispers / Bell / Vault
+         at the moment of the strike. */
+      window.dispatchEvent(new Event('vefr:journal'));
     } catch (err) {
       stefnaStatus.textContent = 'nothing came back. try again?';
       strikeBtn.disabled = false;

@@ -53,7 +53,7 @@ def build_payload(phase: str, key: str | None = None) -> dict:
     voice = resolve_voice_file(spec["voice_file"]).read_text(encoding="utf-8")
     seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
     return {
-        "model": generator.MODEL,
+        "model": generator._active_model(),
         "system": (
             voice
             + f"\n\nCURRENT PHASE: {phase_tone(phase)}\n"
