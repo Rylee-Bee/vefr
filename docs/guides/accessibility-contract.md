@@ -2,22 +2,22 @@
 
 **Every story deserves every audience.**
 
-Accessibility is not a feature of the VEFR platform. It is the architecture.
-Visual identity — the colors, textures, type personality, and decorative
-elements that make each game feel like *itself* — is the layer that sits on
-top. It never overrides the foundation.
+We build the bones so anyone can play. Then we make it look incredible.
+
+Accessibility is not a feature of the VEFR platform. It is the architecture —
+the skeleton that every game inherits before a single brand color is chosen.
+Visual identity is the skin: the colors, textures, type personality, and
+decorative weirdness that make each game feel like *itself*.
 
 This document is the platform contract. Every game built on VEFR — Burrito
-Journalism, MUNR, whatever comes next — inherits these structural guarantees
-before a single brand color is chosen.
-
-The rule: **playable by anyone, anywhere. No exceptions.**
+Journalism, MUNR, whatever you build next — gets these structural guarantees
+for free. Your job is to make it yours without breaking them.
 
 ---
 
-## Who This Serves
+## Who This Is For
 
-These are not edge cases. These are primary users.
+These are not edge cases. These are your players.
 
 | Audience | What the platform guarantees |
 |---|---|
@@ -30,14 +30,13 @@ These are not edge cases. These are primary users.
 
 ## The Seven Rules
 
-These are non-negotiable. They apply to every game, every screen, every
-interactive element on the platform.
+Non-negotiable. Every game, every screen, every interactive element.
 
 ### 1. Targets ≥ 44px
 
-Every interactive element — buttons, tabs, toggles, links, inputs — has a
-minimum hit target of 44×44px. Compact density mode reduces visual padding,
-**never** hit-target geometry.
+Every button, tab, toggle, link, and input has a minimum hit target of
+44×44px. Compact density mode makes things *look* tighter — it never shrinks
+what your finger or keyboard can reach.
 
 ```css
 button, [role="button"], .tab, .toggle, select, input { min-height: 44px; min-width: 44px; }
@@ -45,32 +44,31 @@ button, [role="button"], .tab, .toggle, select, input { min-height: 44px; min-wi
 
 ### 2. Luminance Carries Rank
 
-Information hierarchy is luminance-based. Hue is decorative — it adds
-personality, never structure. A player with any form of color vision can
-read the full hierarchy from luminance alone.
+Your hierarchy is built from light and dark, not color. Hue adds
+personality — it never carries meaning. A player with any form of color
+vision reads the same hierarchy you designed.
 
 ### 3. Motion OFF by Default
 
-`prefs.motion` defaults to `'off'`. Nothing moves until the player opts in.
-Subtle mode (≤200ms, color/opacity transitions only) is the first step. Full
-motion is never required for gameplay.
+`prefs.motion` defaults to `'off'`. Nothing moves until the player says so.
+Subtle mode (≤200ms, color/opacity only) is the first opt-in. Full motion is
+never required for gameplay.
 
-The OS-level `prefers-reduced-motion: reduce` is the final word — it
-overrides saved preferences and cannot be bypassed.
+The OS `prefers-reduced-motion: reduce` is the final word — it overrides
+everything, always.
 
 ### 4. Text ≥ 14px
 
-Player-facing text never drops below 14px (0.875rem). Body default is 16px.
-Developer/debug text may go to 12px. The type scale responds to user
-preferences from `xs` through `2xl`.
+Player-facing text never drops below 14px. Body default is 16px. Debug text
+can go to 12px. The type scale responds to player preferences from `xs`
+through `2xl`.
 
 ### 5. Focus Rings Always Visible
 
 Keyboard navigation gets a clear, luminance-based focus ring on every
-interactive element. 2px solid, 2px offset. The ring uses `--ink` (not
-`--accent`) by default so it works regardless of the game's color palette or
-the player's color vision. Players can switch to accent-colored rings via
-preferences.
+interactive element. 2px solid, 2px offset. Uses `--ink` by default so it
+works regardless of your game's palette or the player's color vision.
+Players can switch to accent-colored rings if they prefer.
 
 ```css
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -78,22 +76,22 @@ preferences.
 
 ### 6. Sound = Visual
 
-Every audio event has a visual counterpart. Captions are ON by default. The
-game is fully playable on mute. No information is conveyed by sound alone.
+Every audio event has a visual counterpart. Captions are ON by default.
+The game is fully playable on mute. If a player turns off their speakers,
+they miss atmosphere — never information.
 
 ### 7. Plain Language First
 
 Labels, instructions, and feedback in clear English. Flavor language — Norse
-terms in the engine, journalism jargon in Burrito, whatever vocabulary a
-future game invents — is decoration. It is never the only path to
-understanding.
+terms in the engine, journalism jargon in Burrito, whatever vocabulary your
+game invents — is decoration. It's never the only path to understanding.
 
 ---
 
 ## The Preference Engine (`prefs.js`)
 
-Every player controls their own experience. The engine ships the preference
-system; games inherit it and build their own settings panel UI.
+Every player controls their own experience. You build the settings panel;
+the engine handles the plumbing.
 
 ### Keys and Defaults
 
@@ -125,18 +123,18 @@ system; games inherit it and build their own settings panel UI.
    space-delimited token string (e.g.
    `text=m spacing=m font=atkinson contrast=m ...`).
 3. CSS selectors key off this attribute (`html[data-prefs~="..."]`)
-   to apply each setting — no JS state-reading needed in the stylesheet.
-4. Games call `VEFR_PREFS.set({ contrast: 'high' })` to persist,
+   — no JS needed in the stylesheet.
+4. Call `VEFR_PREFS.set({ contrast: 'high' })` to persist,
    `VEFR_PREFS.preview({ contrast: 'high' })` for live preview
-   without persisting.
+   without saving.
 
 ---
 
 ## The Contrast Ladder
 
-Three tiers. Every game defines its own color values using the same CSS
-custom property names. The prefs engine applies the tier; the game's tokens
-decide what it looks like.
+Three tiers. Your game defines its own colors using the same CSS custom
+property names. The engine applies the tier; your tokens decide what it
+looks like.
 
 ### Required Tokens
 
@@ -165,7 +163,7 @@ html[data-prefs~="contrast=ultra"] {
 |---|---|---|
 | **Standard** | Comfortable for most. Warm, low-glare, readable. | ≥ WCAG AA (4.5:1 text, 3:1 UI) |
 | **High** | Sharper edges, brighter text, stronger borders. For low vision and bright environments. | ≥ WCAG AAA (7:1 text) |
-| **Ultra** | Maximum separation. Pure black, pure white, thicker borders, heavier font weight. Nothing hides. | Maximum achievable ratios |
+| **Ultra** | Maximum separation. Pure black, pure white, nothing hides. | Maximum achievable ratios |
 
 ### VEFR Engine Defaults
 
@@ -193,8 +191,9 @@ html[data-prefs~="contrast=ultra"] {
 
 ## Colorblind-Safe Palette
 
-The `cb-safe` palette variant shifts hue-dependent distinctions to
-luminance-equivalent alternatives. Games define their own overrides:
+The `cb-safe` palette shifts hue-dependent distinctions to
+luminance-equivalent alternatives. Your game adds its own overrides for
+any game-specific hue use:
 
 ```css
 html[data-prefs~="palette=cb-safe"] {
@@ -202,21 +201,20 @@ html[data-prefs~="palette=cb-safe"] {
 }
 ```
 
-The engine handles phase colors (awed/feared) and bond colors. Games add
-their own for game-specific hue use (e.g. Burrito's stamina bar and NPC
-indicators).
+The engine handles phase colors (awed/feared) and bond colors. You handle
+yours (e.g. Burrito's stamina bar and NPC indicators).
 
 ---
 
 ## Building a Settings Panel
 
-The engine provides the preference contract. Each game builds its own
-settings panel with its own visual identity. The panel must:
+The engine provides the preference contract. Your game builds its own
+settings panel with its own personality. The panel must:
 
-1. **Show every preference key** — don't hide options. Let the player decide
-   what they need.
+1. **Show every preference key** — don't hide options. Let the player
+   decide what they need.
 2. **Use `VEFR_PREFS.preview(patch)` on change** — live preview without
-   persisting.
+   saving.
 3. **Use `VEFR_PREFS.set(patch)` on commit** — persist and notify.
 4. **Respect 44px targets** — every control in the panel itself must meet
    the same rules it configures.
@@ -225,12 +223,11 @@ settings panel with its own visual identity. The panel must:
 
 ---
 
-## Inheriting the Foundation — Checklist for New Games
+## Getting Started — Checklist for New Games
 
-When building a new game on VEFR, the foundation comes first. Identity
-follows.
+The foundation comes first. Your identity follows.
 
-### Layer 1 — Structural (inherited from VEFR)
+### Layer 1 — The Skeleton (inherited from VEFR)
 
 - [ ] All interactive elements have `min-height: 44px; min-width: 44px`
 - [ ] Motion defaults to `off` — verify nothing animates at default prefs
@@ -240,16 +237,20 @@ follows.
 - [ ] No player-facing text below 14px
 - [ ] Captions and visual pairing on by default
 
-### Layer 2 — Identity (owned by the game)
+### Layer 2 — The Skin (owned by you)
 
 - [ ] Define `--bg`, `--card`, `--card-edge`, `--ink`, `--ink-dim`,
       `--accent` in all three contrast tiers
 - [ ] Define `cb-safe` palette overrides for any hue-dependent tokens
 - [ ] Verify contrast ratios: standard ≥ AA, high ≥ AAA, ultra ≥ max
 - [ ] Build a settings panel calling `VEFR_PREFS.set/preview`
-- [ ] Visual identity (colors, textures, type personality) references the
-      foundation tokens — never overrides target sizes, motion defaults, or
-      reading structure
+- [ ] Make it look incredible — your identity references the foundation
+      tokens, never overrides target sizes, motion defaults, or reading
+      structure
+
+---
+
+*vefr — a rumor engine for playable worlds. build something worth telling.*
 
 ---
 
