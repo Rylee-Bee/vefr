@@ -44,8 +44,8 @@
       the self-hosted fonts for UI chrome; reading text stays on the
       prefs-driven fonts. packaged.html's inline palette realigned to
       the same primitives. Verified: ruff clean; pytest 307 passed
-      with the only failures pre-existing on the base commit (MUNR
-      doc leak in test_pack_neutrality + untracked npc_action WIP);
+      with the only failures pre-existing on the base commit (a doc
+      leak caught by test_pack_neutrality + untracked npc_action WIP);
       headless-browser pass at 1440/900px across all three themes,
       zones, prefs dialog, and a whisper round-trip with zero console
       errors and zero failed requests. Map: design/INTEGRATION.md.
@@ -827,7 +827,7 @@
       No automatic winner, no benchmark score, no LLM judge. Gate:
       293 passed (`uv run --group test pytest -q`), ruff clean; the
       pack-neutrality gate caught a gendered pronoun in a docstring
-      and was fixed before claim. (Pre-existing MUNR leak in
+      and was fixed before claim. (A pre-existing doc leak in
       `docs/guides/accessibility-contract.md` flagged for separate
       review.)
 
