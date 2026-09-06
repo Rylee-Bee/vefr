@@ -7,6 +7,32 @@
 
 ## Landed
 
+- [x] **the Figma design system integrated** (2026-09-06,
+      feat/figma-theme-integration): the condensed design docs
+      (design/) plus the full mockup export (design/mockups/, 36
+      frames) are the reference; `web/vefr-theme.css` is the code
+      home - every Figma primitive, the three semantic contrast
+      themes (Warm & Easy / Bright & Clear / Nothing Hides) as
+      `[data-theme]` blocks, spacing/radius/sizing scales, and the
+      legacy `--bg`/`--card`/... aliases that point at them so every
+      pre-existing rule themes itself. prefs.js derives `data-theme`
+      from the contrast pref (one control, both vocabularies); the
+      contrast option labels now carry the Figma theme names. Shell:
+      the header is the 72px top bar (brand leaf, live world/act
+      breadcrumbs from `/api/world`, engine StatusIndicator chip,
+      zone pills) per design/HANDOFF.md; tabs/zones are ModeTab
+      pills; primary actions are teal-fill `.btn-primary`; empty and
+      error states got the vefr-states treatment; panel titles are
+      the gold serif headers. Inter (variable woff2, SIL OFL) joined
+      the self-hosted fonts for UI chrome; reading text stays on the
+      prefs-driven fonts. packaged.html's inline palette realigned to
+      the same primitives. Verified: ruff clean; pytest 307 passed
+      with the only failures pre-existing on the base commit (MUNR
+      doc leak in test_pack_neutrality + untracked npc_action WIP);
+      headless-browser pass at 1440/900px across all three themes,
+      zones, prefs dialog, and a whisper round-trip with zero console
+      errors and zero failed requests. Map: design/INTEGRATION.md.
+
 - [x] **the engine's identity locked in** (2026-08-31, this session):
       Norse-coded + Hero's Journey as story structure + lore packs as
       data. The journey/rune anchors are in `src/vefr/journey.py`
@@ -763,6 +789,30 @@
       passed (`uv run --group test pytest -q`), ruff clean; the
       pack-neutrality test caught a private-story leak in a docstring
       and was fixed before merge.
+
+- [x] **storyteller capability benchmark (blind A/B/C/D)** (2026-09-04,
+      this session): the second-tier audition harness. Nine new
+      fixtures (`hidden-fact-trap`, `immediate-interruption`,
+      `old-promise`, `player-accusation`, `mythic-stranger`,
+      `neutral-quiet-scene`, `gameplay-help`, `ambiguous-clue`,
+      `player-surprising-action`) join the existing Rosa anchor for
+      ten total. Each tests one or two specific capabilities; each
+      carries an optional `forbidden_strings` list for deterministic
+      hard-fail detection. New `src/vefr/storyteller_benchmark.py`
+      assigns stable A/B/C/D labels (seeded, shuffled so position
+      reveals nothing), runs every fixture against every configured
+      pack N times, and writes a per-fixture blind review file plus
+      a private `identity.json` mapping. `norns
+      storyteller-benchmark {run,reveal,review}` exposes the three
+      modes. Reveal step merges identity with hard-fail counts and
+      pack metadata (license, quantization) so the reviewer can read
+      prose, write A/B/C/D rankings, then compare against model cost.
+      No automatic winner, no benchmark score, no LLM judge. Gate:
+      293 passed (`uv run --group test pytest -q`), ruff clean; the
+      pack-neutrality gate caught a gendered pronoun in a docstring
+      and was fixed before claim. (Pre-existing MUNR leak in
+      `docs/guides/accessibility-contract.md` flagged for separate
+      review.)
 
 ## Next
 - [ ] **interactive chat helper**: inline conversational assistant in
