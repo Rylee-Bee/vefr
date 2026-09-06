@@ -2,6 +2,15 @@
 
 > *A story opens, and a world grows out of it.*
 
+## Implementation
+
+The code-side home of this design system is **`web/vefr-theme.css`**
+(tokens, the three contrast themes, legacy aliases) plus
+**[INTEGRATION.md](./INTEGRATION.md)** — the map from Figma components
+to CSS, the decisions made while integrating, and the re-verification
+checklist. Reference mockups for every screen live in
+`design/mockups/`.
+
 ## Figma Source (canonical)
 
 **[Open in Figma →](https://www.figma.com/design/kRwOoUtrZsbmB4NfQzxXNR/)**
