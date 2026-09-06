@@ -29,6 +29,13 @@ app = FastAPI(title=_app_title(), version="2.0.0", description=PURPOSE.capitaliz
 WEB = app_home() / "web"
 if WEB.is_dir():
     app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
+# The reading row's "What does that mean?" link points at the
+# glossary under docs/guides/. Serve the guides read-only so the
+# link lands on the file instead of a 404 (dev checkouts + container
+# installs that ship docs/ alongside web/).
+DOCS = app_home() / "docs" / "guides"
+if DOCS.is_dir():
+    app.mount("/docs/guides", StaticFiles(directory=str(DOCS)), name="guides")
 
 
 class RumorRequest(BaseModel):

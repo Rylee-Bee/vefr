@@ -1706,7 +1706,6 @@ def _k2_health(host: str) -> str:
 def _quadlet_text(profile: dict, image: str) -> str:
     """The spark quadlet for one profile - CPU-only, loopback-only,
     pinned image, model-native template flags from spark.PROFILES."""
-    from . import spark as spark_mod
     kwargs = profile.get('chat_template_kwargs') or {}
     extra = ''
     if kwargs:

@@ -22,11 +22,17 @@ common options:
   engine's primary OpenAI-compatible path. Point it at
   `VEFR_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
 - **[Ollama](https://ollama.com)** — simpler to install on many
-  machines. Set `OLLAMA_URL=http://127.0.0.1:11434` and pull a model
-  first: `ollama pull qwen3:8b` (or any model you like - set
-  `VEFR_MODEL` to its name later).
+  machines. Set `VEFR_MODEL` to your pulled model's name and use
+  Ollama's OpenAI-compatible endpoint:
+  `VEFR_LLAMACPP_URL=http://127.0.0.1:11434/v1`.
 
 If both are set, `VEFR_LLAMACPP_URL` wins.
+
+> Which transport actually gets used? The active Storyteller Pack's
+> `[model].provider` decides (see `docs/guides/storyteller-packs.md`).
+> Every pack that ships with the engine is `openai-compatible`, so
+> `VEFR_LLAMACPP_URL` is the one that matters. `OLLAMA_URL` only
+> matters for a pack that explicitly declares `provider = "ollama"`.
 
 Tip: keep your endpoint config in one place. Copy `example.env`
 to `.env` (gitignored), fill in your host, and source it before
@@ -51,8 +57,18 @@ uv sync --group test
 
 ## 2. Run it
 
+Start a small model server, then start the engine against it:
+
 ```sh
-OLLAMA_URL=http://127.0.0.1:11434 uv run uvicorn vefr.main:app --app-dir src --port 8820
+# one terminal: a local OpenAI-compatible model server.
+# Ollama works too - it serves the same endpoint at /v1:
+OLLAMA_ORIGINS="*" ollama serve &
+ollama pull qwen3:8b
+# llama-server -m <your-model.gguf> --port 8081   # if you use llama.cpp
+
+# second terminal: the engine, pointed at it
+VEFR_LLAMACPP_URL=http://127.0.0.1:11434/v1 VEFR_MODEL=qwen3:8b \
+  uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```
 
 Then, in a browser: `http://127.0.0.1:8820`
@@ -62,6 +78,12 @@ to talk to whoever's near. Whichever world pack is present under
 `worlds/` loads automatically - if you cloned the story separately
 (see below), you'll see that; otherwise this is Emberfield, the
 demonstration world.
+
+> The engine boots fine with no model at all - the town walks, the
+> journal keeps, the vault stores. The model-backed beats (Whisper,
+> Forge, the Bell, NPC talk) answer with the model when it is
+> reachable; without one they say so ("is the model loaded?") and the
+> world stays playable.
 
 > **Note (2026-08-31):** the author's own story and game live in
 > their own private repo - they never ship inside a clone of this
