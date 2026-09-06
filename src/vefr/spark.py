@@ -56,6 +56,8 @@ class SparkMalformed(RuntimeError):
 # Spark's own endpoint. Unset -> the engine's LLAMACPP_URL, which on
 # bazzite is K2: a config that points Spark at the heavyweight is a
 # configuration error, not a feature, so keep the default honest.
+# Production wiring (2026-09-06) sets VEFR_SPARK_URL in the engine
+# quadlet to the transcode appliance: http://192.168.2.141:8082.
 SPARK_URL = os.environ.get("VEFR_SPARK_URL", "http://127.0.0.1:8082").rstrip("/")
 SPARK_PROFILE = os.environ.get("VEFR_SPARK_PROFILE", "quality")
 SPARK_TIMEOUT = float(os.environ.get("VEFR_SPARK_TIMEOUT", "180"))
