@@ -13,8 +13,9 @@ from pydantic import BaseModel, ValidationError
 # Single source of truth for which inference backend the engine talks to.
 # Precedence:
 #   VEFR_LLAMACPP_URL   llama.cpp's OpenAI-compatible /v1/chat/completions
-#                       endpoint (preferred, currently ~13x faster on
-#                       Bazzite's 6900XT than ollama with broken ROCm).
+#                       endpoint (preferred transport when present;
+#                       usually the simplest path for a local small
+#                       model on the same machine or nearby host).
 #   OLLAMA_URL          ollama's /api/generate endpoint (legacy fallback).
 #                       Empty string "" disables a backend; unset means use
 #                       the default.
@@ -101,7 +102,9 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
     fastest this model family supports - it has no true off (low/medium/
     high only, confirmed by llama.cpp maintainers; forcing lower breaks
     output). llama.cpp's jinja template honors it server-side; for
-    non-gpt-oss models the kwarg is ignored.
+    non-gpt-oss models the kwarg is ignored. The transport seam itself
+    stays provider-shaped, not model-family-shaped: a future small CPU
+    model or hosted endpoint still comes through this same boundary.
     """
     from .storyteller import Provider, resolve_active
 

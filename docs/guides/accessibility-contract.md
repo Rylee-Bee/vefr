@@ -34,7 +34,7 @@ Three things ship on this platform:
   dungeon, food truck sim, journalism beat), one voice, one story. Also
   there are mutant water polo players who steal a printing press because
   they think it's neat. It's weird. It's an apocalypse. It's fun. Super fun.
-- **MUNR** — a personal RPG rooted in Norse myth. Crafted. Starts as a
+- **VEFR** — a personal RPG rooted in Norse myth. Crafted. Starts as a
   Castle of the Winds homage — monochrome, constrained, the UI looks like
   every RPG you've ever played. But nothing is what it seems. The HP bar
   is actually the journey phase (whispers → doubts → feared → awed). The
@@ -429,5 +429,5 @@ Import `vefr-foundation.css` — it provides all of these out of the box:
   - Burrito UI kit: node `8:401`
   - AI chat concept: node `20:261`
   - Roadmap: node `20:4`
-  - MUNR concept: node `23:4`
+  - VEFR workshop concept: node `23:4`
   - VEFR workshop concept: node `25:244`
