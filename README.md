@@ -189,6 +189,32 @@ two free runes in every cast (what_is, what_asks) are the
 random cards the deterministic structure leaves room for. **The
 journey is the shape. The cast is the surprise inside the shape.**
 
+### Bring your own brain
+
+VEFR is not a game where the model owns the simulation.
+
+> **Bring your own brain. VEFR provides the world.**
+
+The world pack, the loader, the validator, the journal, and the
+export are the authority. A model may interpret the world's facts,
+propose an action, or help an author draft a change - but VEFR owns
+truth, validates mutations, and keeps the memory of what actually
+happened.
+
+That same rule applies on the builder side. The assistant may propose
+changes; VEFR validates them; the author approves what becomes canon.
+
+Provider and brain are also different concepts. A provider answers
+where inference comes from (local, hosted, custom endpoint). A brain
+answers what kind of cognition should operate here. VEFR should keep
+those seams open. See `docs/guides/brain-socket.md`.
+
+The practical direction right now is broad playability: the engine
+should run happily against a small local model on the player's own
+computer, even on CPU. The earlier bazzite/GPU benchmarking work was
+useful for learning the socket; it is not VEFR's required future, and
+no specific host or hardware class should become canonical.
+
 Same seed -> same cast. The player can replay a minute and find
 the same runes (within that minute). The author can name a moment
 in the logbok ("the morning of Woden's day") and the cast for that
@@ -254,9 +280,12 @@ curl -s http://127.0.0.1:8820/api/health
 The engine prefers `VEFR_LLAMACPP_URL` (llama.cpp's OpenAI-compatible
 `/v1/chat/completions` endpoint) and falls back to `OLLAMA_URL`
 (legacy ollama `/api/generate`). Set `OLLAMA_URL=""` to disable the
-fallback entirely. Model default: `gpt-oss-20b` (works with any
-llama.cpp model that supports the chat template; set `VEFR_MODEL`
-to change it; structured output via JSON schema with `strict: true`).
+fallback entirely. For the broadest "everyone gets to play" path,
+point either one at a small local model that can answer reliably on
+the machine in front of the player. Model default: `gpt-oss-20b`
+(works with any llama.cpp model that supports the chat template; set
+`VEFR_MODEL` to change it; structured output via JSON schema with
+`strict: true`).
 
 Other env vars the engine reads: `VEFR_VAULT` (path to `vault.json`,
 default `<home>/data/vault.json`) and `VEFR_KEEP_ALIVE` (ollama-only
@@ -339,6 +368,8 @@ itself stays the scaffold's in v1; grow it after with
   world, no story content required.
 - **CLI reference:** `ratatoskr --help` / `norns --help` - the full
   command list, always in sync with the code.
+- **Architecture:** `docs/guides/brain-socket.md` - VEFR owns reality,
+  brains are swappable, builder AI is proposal-only.
 - **API reference:** the running app serves interactive docs for
   free at `/docs` (e.g. `http://127.0.0.1:8820/docs`) - every route,
   every shape, try-it-out included. No separate file to keep in sync.

@@ -14,15 +14,17 @@ try it - a demonstration world (Emberfield) ships with the engine.
 | A pulled model | The thing the server runs | see below |
 
 The engine talks to any OpenAI-compatible `/v1/chat/completions`
-server. Two options:
+server. The practical target right now is a small local model that
+can run on the machine the player already has, even on CPU. Two
+common options:
 
-- **[llama.cpp](https://github.com/ggerganov/llama.cpp) (preferred)** —
-  faster, and what the engine is tuned for. Point it at
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)** — the
+  engine's primary OpenAI-compatible path. Point it at
   `VEFR_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
-- **[Ollama](https://ollama.com) (fallback)** — simpler to install.
-  Set `OLLAMA_URL=http://127.0.0.1:11434` and pull a model first:
-  `ollama pull qwen3:8b` (or any model you like - set `VEFR_MODEL` to
-  its name later).
+- **[Ollama](https://ollama.com)** — simpler to install on many
+  machines. Set `OLLAMA_URL=http://127.0.0.1:11434` and pull a model
+  first: `ollama pull qwen3:8b` (or any model you like - set
+  `VEFR_MODEL` to its name later).
 
 If both are set, `VEFR_LLAMACPP_URL` wins.
 
@@ -32,7 +34,7 @@ any entry point - the engine reads plain process env vars:
 
 ```sh
 cp example.env .env
-# edit .env - point VEFR_LLAMACPP_URL at your llama.cpp host
+# edit .env - point VEFR_LLAMACPP_URL / OLLAMA_URL at your local model
 set -a; source .env; set +a
 ```
 
@@ -84,8 +86,8 @@ Two ways in:
 uv run norns chat --name your-world
 ```
 
-An interview, run against your own Ollama: it asks about your
-story's canon, its color mood, its phases, its bonds, and one
+An interview, run against your own local model backend: it asks about
+your story's canon, its color mood, its phases, its bonds, and one
 speaker's voice - then drafts prose into `worlds/your-world/` and
 checks it with `norns validate` before it's done. You never have to
 trust your own edits; the tool always checks.
