@@ -23,6 +23,16 @@ Keep the two size comparisons distinct: Phi's **resident memory** is
 about 1.8x Qwen's (1.9 GiB vs 1.05 GiB); the **model file** itself is
 about 3x larger (2.49 GB vs 0.81 GB).
 
+Two memory numbers, two environments - both correct, do not overwrite:
+
+- **benchmark resident measurement**: ~1.9 GiB (podman stats at ctx
+  4096, benchmark harness, 2026-09-06)
+- **production observed steady state**: ~2.46 GB (quadlet service at
+  ctx 8192 under systemd, after the reboot test, 2026-09-06)
+
+The production figure runs slightly higher (8K context KV + grammar/
+state buffers); neither number is wrong - they are different stages.
+
 Why Phi won the default slot: the only 100/100 (perfect JSON, state
 edits, continuity, creativity, hallucination resistance, escalation
 judgment), in-voice dialogue, MIT license, and reading-speed
@@ -116,6 +126,13 @@ set the thinking behavior explicitly and re-run the smoke test** -
 never trust the model's default.
 
 ## Revalidation
+
+**Real path required.** The deployment pass caught two integration
+bugs (an unimported module in the health probe, a wrong HTTP verb)
+that the fully-passing mocked/unit suite never touched - the live-path
+probes found them within one run. **Any future model swap, runtime
+bump, or context change must pass the real Spark smoke/integration
+path below, not merely unit tests.**
 
 ```sh
 uv run ratatoskr spark status    # model verified? service active? health?
