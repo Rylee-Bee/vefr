@@ -44,3 +44,6 @@ __pycache__/
 
 # private canon-audit list - the gate enforces it locally, never ships
 tests/canon-strings.local.txt
+
+# JetBrains local project state - never part of the engine.
+.idea/
