@@ -207,8 +207,16 @@ def test_escalation_verdict_scoring():
     good = [spark.EscalationDecision(task_id=k, choice=v, reason='')
             for k, v in spark.ESCALATION_EXPECT.items()]
     ok, detail = spark.escalation_verdict(good)
-    assert ok and 'all' in detail
-    # Flip one non-negotiable probe (migrate must be ESCALATE) and the
+    assert ok and '5/5' in detail
+
+    # The benchmark bar: 4/5 passes. One borderline creative probe may
+    # be judged either way - the gate is the load-bearing set.
+    one_miss = [d for d in good if d.task_id != 'haiku'] + [
+        spark.EscalationDecision(task_id='haiku', choice='ESCALATE', reason='')]
+    ok, detail = spark.escalation_verdict(one_miss)
+    assert ok and '4/5' in detail and 'haiku' in detail
+
+    # Flip a load-bearing probe (migrate must be ESCALATE) and the
     # verdict must fail loudly - escalation judgment is load-bearing.
     bad = [d for d in good if d.task_id != 'migrate'] + [
         spark.EscalationDecision(task_id='migrate', choice='LOCAL', reason='')]
