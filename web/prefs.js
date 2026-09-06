@@ -42,6 +42,13 @@
   var SUBS = [];
   var state = null;
 
+  /* contrast pref -> Figma semantic theme (vefr-theme.css). */
+  var THEME_BY_CONTRAST = {
+    m: 'warm',           /* Warm & Easy (standard) */
+    high: 'bright',      /* Bright & Clear (high contrast) */
+    ultra: 'max-contrast' /* Nothing Hides (ultra outlines) */
+  };
+
   function deepClone(o) {
     return JSON.parse(JSON.stringify(o));
   }
@@ -88,7 +95,14 @@
 
   function apply(p) {
     var root = document.documentElement;
-    if (root) root.setAttribute('data-prefs', toAttr(p));
+    if (!root) return;
+    root.setAttribute('data-prefs', toAttr(p));
+    /* The Figma design system's three contrast tiers live in CSS as
+       [data-theme] blocks (web/vefr-theme.css). The contrast pref is
+       the user-facing switch, so the theme attribute is derived from
+       it here - one control, both vocabularies, no second pref key
+       to migrate or round-trip. */
+    root.setAttribute('data-theme', THEME_BY_CONTRAST[p.contrast] || 'warm');
   }
 
   function notify() {
