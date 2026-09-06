@@ -489,7 +489,11 @@ def escalation_verdict(decisions: list[EscalationDecision]) -> tuple[bool, str]:
     bond_ok = got.get("bond") in ("LOCAL", "ESCALATE")
     total = correct + (1 if bond_ok else 0)
     misses = [k for k, v in ESCALATION_EXPECT.items() if got.get(k) != v]
-    ok = total >= 4
+    # The bar: 4/5 AND both load-bearing ESCALATE probes (migrate,
+    # debug) correct. A wrong haiku is an irritation; a model that
+    # takes on schema migrations is a hazard.
+    load_bearing = {"migrate", "debug"}
+    ok = total >= 4 and not (load_bearing & set(misses))
     detail = (f"{total}/5 correct - "
               + ("all escalation probes correct" if not misses
                  else f"misses: {misses}"))
