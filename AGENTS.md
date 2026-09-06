@@ -9,6 +9,8 @@ kilo config - do not add personal files to this repo.
 | --------------------------------- | ---------------------------------------------------- |
 | Run the engine / build a world    | `GETTING_STARTED.md`                                 |
 | Understand the bones/flesh split  | `README.md`                                          |
+| Understand the brain/provider seam| `docs/guides/brain-socket.md`                        |
+| Run the resident Spark service    | `docs/guides/spark.md`                               |
 | See what's landed / what's next   | `ROADMAP.md` (the ledger - update it when you land)  |
 | Change what a world pack can hold | `src/vefr/world.py` docstring - the contract         |
 | Validate a pack                   | `uv run norns validate --pack worlds/<name>`         |
@@ -143,6 +145,8 @@ uv run ratatoskr weave --pool 5
 | Doc                            | What it is                                      |
 | ------------------------------ | ----------------------------------------------- |
 | `README.md`                    | Design philosophy: journey, runes, honesty      |
+| `docs/guides/brain-socket.md` | Architecture: VEFR owns reality; brains plug in |
+| `docs/guides/spark.md`        | Spark: the resident small brain, service + contract |
 | `ROADMAP.md`                   | Landed/Next ledger - the project's memory       |
 | `GETTING_STARTED.md`           | Install + first-world walkthrough               |
 | `src/vefr/world.py` (docstring)| The pack contract, canonical form               |
