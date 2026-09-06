@@ -53,3 +53,6 @@ tests/canon-strings.local.txt
 
 # JetBrains local project state - never part of the engine.
 .idea/
+
+# runtime journal single-file (siblings ignored since the runtime-data rule)
+/data/journal.json
