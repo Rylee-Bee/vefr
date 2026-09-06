@@ -434,7 +434,8 @@ BUILDER_SYSTEM = (
     "or one short list. If the author is stuck, ask a focused question. "
     "Stay grounded in the pack they're editing - if they reference "
     "a character or place by name, treat that as part of their canon. "
-    "Never invent facts about the story; when you don't know, ask."
+    "Never invent facts about the story; when you don't know, ask. "
+    "You propose edits and directions; you do not commit canon or mutate the pack."
 )
 
 
@@ -446,7 +447,7 @@ class BuilderChatTurn(BaseModel):
 
 @app.post("/api/builder/chat")
 def builder_chat(turn: BuilderChatTurn):
-    """One turn of the builder-mode chat. Stateless."""
+    """One turn of the builder-mode chat. Stateless, proposal-only."""
     from .chat import draft
     # Replay the history briefly so the model has context. We keep it
     # short - the page holds the long view.
@@ -460,21 +461,6 @@ def builder_chat(turn: BuilderChatTurn):
     if context:
         prompt = f"(recent conversation)\n{context}\n\nAuthor: {turn.message}"
     text = draft(prompt, system=BUILDER_SYSTEM)
-
-    # If the chat is about a lore pack, persist the response as a
-    # lore note. The author has been doing research and the engine
-    # has something to say - both should land in the pack so the
-    # export reads them later and the world knows itself better.
-    if turn.world:
-        from datetime import datetime, timezone
-        from .paths import pack_dir
-        pack = pack_dir(turn.world)
-        if pack.exists():
-            notes_path = pack / "lore-notes.md"
-            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
-            entry = f"\n## {ts} (lore: {turn.world})\n\n{text}\n"
-            with notes_path.open("a", encoding="utf-8") as f:
-                f.write(entry)
 
     return {"reply": text}
 

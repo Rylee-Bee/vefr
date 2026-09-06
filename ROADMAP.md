@@ -7,6 +7,37 @@
 
 ## Landed
 
+- [x] **bring your own brain - architecture note + builder boundary**
+      (2026-09-04, this session): the project thesis is now explicit
+      in `docs/guides/brain-socket.md` - VEFR owns reality; provider
+      and brain are different concepts; cognition is hot-swappable;
+      capability negotiation, brain packs, the Brain Garage, and
+      playful brain auditions are documented as future-facing seams,
+      not this pass's implementation burden. The note also records
+      where today's code already fits that shape (`world.py`,
+      `maplab.py`, `generator._completion()`, `chat.py`, `enhance.py`,
+      `journal.py`, `forge.py`, `sessions.py`, `export.py`) and names
+      the current limitation plainly: provider/model choice is still a
+      process-global setting, not a first-class brain object. Small
+      code correction to match the rule: `POST /api/builder/chat` is
+      now explicitly stateless and proposal-only; the route no longer
+      appends `lore-notes.md` behind the author's back. README and
+      AGENTS now link the architecture note so future contributors and
+      agents see the seam first.
+
+- [x] **local small-model playability is the current direction**
+      (2026-09-04, this session): docs and comments that still carried
+      the emotional center of the older bazzite/GPU path were updated
+      to tell the current truth instead. `README.md`,
+      `GETTING_STARTED.md`, `example.env`, and
+      `docs/guides/brain-socket.md` now frame VEFR's practical target
+      as a small local model on the player's own machine - including
+      CPU-only play where it is good enough - so more people can
+      actually run the engine. The stronger bazzite path remains a
+      useful lab backend and deploy target, not the canonical model
+      story. No runtime behavior changed; this pass preserves the seam
+      and corrects the promise.
+
 - [x] **the engine's identity locked in** (2026-08-31, this session):
       Norse-coded + Hero's Journey as story structure + lore packs as
       data. The journey/rune anchors are in `src/vefr/journey.py`
