@@ -1,0 +1,249 @@
+/* =============================================================================
+   VEFR Theme — the Figma design system, as tokens
+   =============================================================================
+ * The code-side half of design/ (README.md, tokens.md, HANDOFF.md):
+ * every color, radius, spacing step, and font the Figma file defines,
+ * as CSS custom properties, plus the three accessibility themes.
+ *
+ * Layering contract:
+ *   1. Primitives        -- the Figma brand ramp, raw values.
+ *   2. Semantic themes   -- [data-theme] on <html>; three contrast tiers.
+ *                           web/prefs.js writes data-theme from the
+ *                           contrast pref (m -> warm, high -> bright,
+ *                           ultra -> max-contrast), so the pref engine
+ *                           and the Figma themes are the same switch.
+ *   3. Legacy aliases    -- the engine's historical var names (--bg,
+ *                           --card, ...) now POINT AT the semantic
+ *                           tokens. Every existing rule keeps working
+ *                           and inherits the active theme for free.
+ *   4. Component tokens  -- fills, status colors, fonts. The named
+ *                           vocabulary the component specs use.
+ *
+ * Skin rules (vefr-foundation.css): the foundation never overrides
+ * this file; this file never overrides the foundation.
+ */
+
+/* ------------------------------------------------------------
+   0. UI font — Inter, self-hosted (see web/fonts/README.md).
+   One variable file carries weights 100-900.
+   ------------------------------------------------------------ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/static/fonts/Inter-Variable.woff2') format('woff2');
+}
+
+/* ------------------------------------------------------------
+   1. Primitives (Figma: VEFR Primitives collection)
+   ------------------------------------------------------------ */
+:root {
+  /* Charcoal - backgrounds, surfaces */
+  --color-charcoal-900: #131311;
+  --color-charcoal-800: #1D1B17;
+  --color-charcoal-700: #2A2E33;
+  --color-charcoal-600: #3A352C;
+  --color-charcoal-500: #5A5347;
+
+  /* Parchment - text, foreground */
+  --color-parchment-dim:   #A39E92;
+  --color-parchment-muted: #C2BDB0;
+  --color-parchment-100:   #E8E5DF;
+  --color-parchment-200:   #F5F3EC;
+  --color-parchment-300:   #FFFFFF;
+
+  /* Gold - accent, brand */
+  --color-gold-500: #C9AD6B;
+  --color-gold-400: #E1C282;
+  --color-gold-300: #FFD56B;
+
+  /* Teal - AI, primary action fill */
+  --color-teal-500: #5B8A72;
+  --color-teal-400: #6EA88A;
+  --color-teal-300: #8EC4A6;
+
+  /* Status */
+  --color-red-500:   #B8543F;
+  --color-red-400:   #D4644C;
+  --color-blue-500:  #6C8AA8;
+  --color-blue-400:  #8BA8C4;
+  --color-yellow-500: #C9A92E;
+  --color-green-500: #5FB85F;
+
+  /* Spacing (Figma: VEFR Spacing collection) */
+  --space-2xs: 2px;
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  12px;
+  --space-lg:  16px;
+  --space-xl:  24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 20px;
+
+  /* Sizing */
+  --size-target-min: 44px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+
+  /* Shell metrics (design/HANDOFF.md, Layout Shell) */
+  --topbar-h: 72px;
+  --loom-w: 280px;
+  --journal-w: 300px;
+}
+
+/* ------------------------------------------------------------
+   2. Semantic themes (Figma: VEFR Semantic collection)
+   ------------------------------------------------------------ */
+
+/* Theme: Warm & Easy (default) - WCAG AA, comfortable sessions. */
+:root,
+html[data-theme="warm"] {
+  --color-bg:          var(--color-charcoal-900);
+  --color-card:        var(--color-charcoal-800);
+  --color-card-edge:   var(--color-charcoal-600);
+  --color-ink:         var(--color-parchment-100);
+  --color-ink-dim:     var(--color-parchment-dim);
+  --color-accent:      var(--color-gold-500);
+  --color-church:      var(--color-charcoal-700);
+  --color-danger:      var(--color-red-500);
+  --color-teal:        var(--color-teal-500);
+  --color-success:     var(--color-green-500);
+  --color-ai-state:    var(--color-teal-500);
+  --color-focus-ring:  var(--color-parchment-100);
+}
+
+/* Theme: Bright & Clear - bumped contrast for bright rooms (WCAG AA+). */
+html[data-theme="bright"] {
+  --color-card-edge:  var(--color-charcoal-500);
+  --color-ink:        var(--color-parchment-200);
+  --color-ink-dim:    var(--color-parchment-muted);
+  --color-accent:     var(--color-gold-400);
+  --color-danger:     var(--color-red-400);
+  --color-teal:       var(--color-teal-400);
+  --color-ai-state:   var(--color-teal-400);
+  --color-focus-ring: var(--color-parchment-200);
+  --fill-primary:     var(--color-teal-400);
+  --fill-gold:        var(--color-gold-400);
+}
+
+/* Theme: Nothing Hides - maximum contrast, WCAG AAA target.
+   White borders, white text, bright gold. Fills brighten too so
+   primary actions keep their step up. */
+html[data-theme="max-contrast"] {
+  --color-card:       var(--color-charcoal-900);
+  --color-card-edge:  var(--color-parchment-300);
+  --color-ink:        var(--color-parchment-300);
+  --color-ink-dim:    var(--color-parchment-100);
+  --color-accent:     var(--color-gold-300);
+  --color-church:     var(--color-charcoal-900);
+  --color-danger:     var(--color-red-400);
+  --color-teal:       var(--color-teal-300);
+  --color-ai-state:   var(--color-teal-300);
+  --color-focus-ring: var(--color-parchment-300);
+  --fill-primary:     var(--color-teal-300);
+  --fill-gold:        var(--color-gold-300);
+}
+
+/* ------------------------------------------------------------
+   3. Legacy aliases - the engine's historical var names.
+   These MUST stay: every rule written before the Figma pass
+   (and the shadcn vocabulary below) reads them. They resolve
+   through the semantic tokens, so all three themes flow through.
+   ------------------------------------------------------------ */
+:root {
+  --bg:        var(--color-bg);
+  --card:      var(--color-card);
+  --card-edge: var(--color-card-edge);
+  --ink:       var(--color-ink);
+  --ink-dim:   var(--color-ink-dim);
+  --accent:    var(--color-accent);
+  --church:    var(--color-church);
+  --danger:    var(--color-danger);
+  --teal:      var(--color-teal);
+  --success:   var(--color-success);
+
+  /* The shadcn vocabulary, still derived (see the note it replaced:
+     it rides the theme engine for free). */
+  --background:         var(--color-bg);
+  --foreground:         var(--color-ink);
+  --card-foreground:    var(--color-ink);
+  --popover:            var(--color-card);
+  --popover-foreground: var(--color-ink);
+  --primary:            var(--color-accent);
+  --primary-foreground: var(--color-bg);
+  --secondary:          var(--color-card-edge);
+  --secondary-foreground: var(--color-ink);
+  --muted:              var(--color-church);
+  --muted-foreground:   var(--color-ink-dim);
+  --destructive:        var(--color-danger);
+  --border:             var(--color-card-edge);
+  --input:              var(--color-card-edge);
+  --ring:               var(--color-focus-ring);
+  /* The shadcn base radius plus the shared scale. The derived values
+     (8-4, 8-2, 8, 8+4) are exactly the Figma radius scale, so the
+     scale is now the definition and --radius is the shadcn alias. */
+  --radius:   var(--radius-lg);
+}
+
+/* Focus-ring pref overrides (prefs.js) - unchanged contract. */
+html[data-prefs~="focus=luminance"] { --ring: var(--color-ink); }
+html[data-prefs~="focus=accent"]    { --ring: var(--color-accent); }
+
+/* ------------------------------------------------------------
+   4. Component tokens (design/HANDOFF.md, Component Specs)
+   ------------------------------------------------------------ */
+:root {
+  /* Fonts. UI chrome is Inter; display headings keep the engine's
+     serif stack (the mockups' bookish headings); reading text stays
+     on the prefs-driven body font. */
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Button fills. The mockups render the primary action as a teal
+     fill (Keep Idea / Play Test / Continue Building); the HANDOFF's
+     older #6B4A52 plum is superseded by what the screens show.
+     Danger keeps the HANDOFF's dim red-brown fill. */
+  --fill-primary:       var(--color-teal-500);
+  --fill-primary-hover: var(--color-teal-400);
+  --fill-primary-ink:   #131311;
+  --fill-danger:        #6B3A3A;
+  --fill-danger-hover:  #7d4545;
+  --fill-danger-ink:    var(--color-parchment-100);
+  --fill-gold:          var(--color-gold-500);
+  --fill-gold-ink:      #131311;
+
+  /* NavItem selected state: the agent lavender at 15% (HANDOFF). */
+  --agent:            #80798E;
+  --agent-soft:       rgba(128, 121, 142, 0.15);
+  --agent-ghost:      rgba(128, 121, 142, 0.12);
+
+  /* StatusIndicator chips: each color at 12% for the chip bg. */
+  --status-online:       #6F8A6A;
+  --status-online-bg:    rgba(111, 138, 106, 0.12);
+  --status-warning:      #C9A06A;
+  --status-warning-bg:   rgba(201, 160, 106, 0.12);
+  --status-unavailable:  #C9A06A;
+  --status-unavailable-bg: rgba(201, 160, 106, 0.12);
+  --status-working:      #80798E;
+  --status-working-bg:   rgba(128, 121, 142, 0.12);
+}
+
+/* Colorblind-safe palette pref: phase hues shift to
+   luminance-equivalent blue/gray (unchanged contract, now
+   theme-aware values). */
+html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"]   { border-color: var(--color-blue-500); }
+html[data-prefs~="palette=cb-safe"] .card[data-phase="feared"] { border-color: #6b6b78; }
+html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] { border-color: var(--color-blue-500); }
+html[data-prefs~="palette=cb-safe"] .card[data-bond="assigned"]{ border-color: #6b6b78; }
+html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"] .speaker,
+html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] .speaker { color: var(--color-blue-400); }
