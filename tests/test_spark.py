@@ -206,6 +206,7 @@ def test_needs_escalation_deterministic_gate():
 def test_escalation_verdict_scoring():
     good = [spark.EscalationDecision(task_id=k, choice=v, reason='')
             for k, v in spark.ESCALATION_EXPECT.items()]
+    good.append(spark.EscalationDecision(task_id='bond', choice='LOCAL', reason=''))
     ok, detail = spark.escalation_verdict(good)
     assert ok and '5/5' in detail
 
