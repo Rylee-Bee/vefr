@@ -465,6 +465,122 @@ def builder_chat(turn: BuilderChatTurn):
     return {"reply": text}
 
 
+@app.post("/api/spark/health")
+def spark_health_route():
+    """Spark's liveness as VEFR sees it: up, down, or timed out.
+
+    A graded payload, never an exception - a dead Spark is a state of
+    the world the UI can show, not a 500. The probe also records the
+    round-trip so 'slow but alive' is distinguishable from 'gone'.
+    """
+    from . import spark as spark_mod
+    try:
+        probe = spark_mod.health()
+        return {"ok": True, "spark": "available", **probe,
+                "profile": spark_mod.profile()["key"],
+                "model": spark_mod.profile()["alias"]}
+    except Exception as exc:  # noqa: BLE001 - down is data, not a crash
+        return {"ok": False, "spark": "unavailable",
+                "url": spark_mod.spark_url(),
+                "error": f"{exc.__class__.__name__}: {exc}",
+                "profile": spark_mod.profile()["key"]}
+
+
+class SparkTaskRequest(BaseModel):
+    task: str  # a TASK_CONTRACTS key: npc, state_edit, dialogue, lore, narrate
+    user: str  # the task's own payload, in the task's language
+    speaker: str | None = None
+    state: dict | None = None
+    world: bool = True
+
+
+@app.post("/api/spark/task")
+def spark_task(req: SparkTaskRequest):
+    """The production Spark path: context in, validated result out.
+
+    Fail-closed by design - SparkUnreachable and schema failures come
+    back as graded payloads naming the escalation path, never as an
+    applied guess. The model proposes; this route validates; VEFR
+    applies. `escalated=true` names a response VEFR routed to K2
+    instead (the generator seam), so a Spark outage degrades to the
+    pre-Spark behavior rather than an error.
+    """
+    from . import spark as spark_mod
+    if req.task not in spark_mod.TASK_CONTRACTS:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=422,
+            detail=f"unknown spark task {req.task!r}; "
+                   f"known: {sorted(spark_mod.TASK_CONTRACTS)}",
+        )
+    try:
+        result, meta = spark_mod.spark_call(
+            req.task, req.user, speaker=req.speaker, state=req.state)
+        meta.pop("response", None)  # the debug view lives in inspect
+        return {"ok": True, "spark": "ok", "result": result, "meta": meta,
+                "escalated": False}
+    except spark_mod.SparkUnavailable as exc:
+        return {"ok": False, "spark": "unavailable",
+                "error": f"{exc.__class__.__name__}: {exc}",
+                "escalated": False, "hint": "escalate to K2 or degrade"}
+    except spark_mod.SparkMalformed as exc:
+        # Spark answered twice with garbage. That is data about Spark,
+        # not a license to apply an unvalidated proposal: fail closed,
+        # offer the K2 path.
+        return {"ok": False, "spark": "malformed",
+                "error": f"{exc}", "escalated": False}
+
+
+@app.get("/api/spark/inspect")
+def spark_inspect(task: str, user: str, speaker: str | None = None,
+                  call: bool = False):
+    """Development view of the Context Builder (read-only by default).
+
+    Shows the profile, model, context sections, approximate prompt
+    size, and the exact messages Spark would receive - the answer to
+    'did the model fail, or did VEFR give it bad context?'. With
+    call=true it also runs the task and returns the response plus the
+    validation result. Never mutates anything.
+    """
+    from . import spark as spark_mod
+    from fastapi import HTTPException
+    if task not in spark_mod.TASK_CONTRACTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"unknown spark task {task!r}; "
+                   f"known: {sorted(spark_mod.TASK_CONTRACTS)}",
+        )
+    view = spark_mod.inspect_context(task, user, speaker=speaker)
+    if not call:
+        return {"ok": True, **view}
+    try:
+        result, meta = spark_mod.spark_call(task, user, speaker=speaker)
+        return {"ok": True, **view, "validation": "ok",
+                "response": meta.get("response", "")}
+    except spark_mod.SparkUnavailable as exc:
+        return {"ok": False, **view, "validation": f"unavailable: {exc}"}
+    except spark_mod.SparkMalformed as exc:
+        return {"ok": False, **view, "validation": f"malformed: {exc}"}
+
+
+@app.post("/api/spark/escalate")
+def spark_escalate():
+    """Run the escalation self-check: the benchmark's fixed probes
+    through the live Spark, scored against known ground truth. The
+    integrated answer to 'does the resident model still know what is
+    not its job?' - and, transitively, whether the K2 path it names is
+    still the escalation target."""
+    from . import spark as spark_mod
+    try:
+        decisions = spark_mod.classify_escalation(spark_mod.ESCALATION_PROBES)
+        ok, detail = spark_mod.escalation_verdict(decisions)
+        return {"ok": ok, "escalation": detail,
+                "decisions": [d.model_dump() for d in decisions],
+                "escalation_target": "K2 via VEFR_LLAMACPP_URL"}
+    except spark_mod.SparkUnavailable as exc:
+        return {"ok": False, "error": f"{exc}", "decisions": []}
+
+
 @app.get("/api/runes")
 def runes_registry():
     """The full 24-rune Elder Futhark registry for the gallery view.
