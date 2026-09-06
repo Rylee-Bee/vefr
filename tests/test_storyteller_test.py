@@ -84,12 +84,14 @@ def test_manifest_parser_reads_bundled_packs():
     """Every tracked storyteller_packs/<name>/storyteller.toml must load."""
     packs = list_packs()
     ids = {p.id for p in packs}
-    # Five audition packs + Gryphe creative ref + engine reference
+    # Four audition packs + Gryphe creative ref + engine reference.
+    # qwen25-3b is an eval-only pack under data/storytellers/
+    # (gitignored, research-only license) - it is asserted separately,
+    # only when that per-machine install exists.
     assert "gpt-oss-20b-reference" in ids
     assert "gemma4-e2b" in ids
     assert "gemma4-e4b" in ids
     assert "ministral3-3b" in ids
-    assert "qwen25-3b" in ids
     assert "gryphe-style-gemma-12b" in ids
 
 
@@ -124,9 +126,12 @@ def test_license_metadata_recorded():
     assert gpt.license.spdx == "Apache-2.0"
     assert gpt.license.commercial_use == "allowed"
 
+    # The qwen eval pack is a per-machine install (data/storytellers/
+    # is gitignored - research-only license). When it is installed,
+    # the harness must surface its non-commercial terms.
     qwen = find_pack("qwen25-3b")
-    assert qwen is not None
-    # Qwen2.5 3B is non-commercial - the harness must surface that.
+    if qwen is None:
+        pytest.skip("qwen25-3b not installed on this machine (eval-only pack)")
     assert qwen.license.commercial_use == "no"
     assert "Research" in qwen.license.spdx or "research" in qwen.license.notes.lower()
 
@@ -300,10 +305,18 @@ def test_bundled_packs_have_per_pack_templates():
 
 
 def test_qwen_eval_pack_lives_under_data_not_tracked_packs():
-    """Qwen2.5-3B's research license means it must not ship as a default."""
+    """Qwen2.5-3B's research license means it must not ship as a default.
+
+    The pack is a per-machine eval install under data/storytellers/
+    (gitignored). Two invariants hold regardless of whether the
+    operator has pulled it: it is never bundled in storyteller_packs/,
+    and when it IS installed it lands under data/storytellers/.
+    """
     repo = Path(__file__).resolve().parents[1]
     assert not (repo / "storyteller_packs" / "qwen25-3b").is_dir()
-    assert (repo / "data" / "storytellers" / "qwen25-3b" / "storyteller.toml").is_file()
+    installed = repo / "data" / "storytellers" / "qwen25-3b" / "storyteller.toml"
+    if installed.is_file():
+        assert find_pack("qwen25-3b") is not None
 
 
 def test_gitignore_excludes_data_storytellers():
