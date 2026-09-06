@@ -4,49 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vefr</title>
+<link rel="stylesheet" href="/static/vefr-theme.css">
 <link rel="stylesheet" href="/static/board.css">
 <style>
-  :root {
-    --bg: #131311;
-    --card: #1d1b17;
-    --card-edge: #3a352c;
-    --ink: #e8e5df;
-    --ink-dim: #a39e92;
-    --accent: #c9ad6b;
-    --church: #2a2e33;
-    --danger: #b8543f;
-  }
-
-  /* The shadcn layer. shadcn/ui's design language is a vocabulary of
-     CSS custom properties; this maps that vocabulary onto the
-     engine's own luminance-first palette instead of adopting its
-     React/Tailwind stack. These are DERIVED tokens: each one
-     references a vefr var above, so the reading row's contrast and
-     palette overrides keep flowing through unchanged - the new
-     vocabulary rides the prefs engine for free. Radius follows
-     shadcn's scale (one base, derived sm/md/lg/xl). */
-  :root {
-    --background: var(--bg);
-    --foreground: var(--ink);
-    --card-foreground: var(--ink);
-    --popover: var(--card);
-    --popover-foreground: var(--ink);
-    --primary: var(--accent);
-    --primary-foreground: var(--bg);
-    --secondary: var(--card-edge);
-    --secondary-foreground: var(--ink);
-    --muted: var(--church);
-    --muted-foreground: var(--ink-dim);
-    --destructive: var(--danger);
-    --border: var(--card-edge);
-    --input: var(--card-edge);
-    --ring: var(--ink);
-    --radius: 0.5rem;
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-  }
+  /* Design tokens live in /static/vefr-theme.css (the Figma design
+     system: primitives, three [data-theme] contrast tiers, and the
+     legacy --bg/--card/... aliases that point at them). This block
+     is layout + component anatomy only; every color it uses resolves
+     through the theme file. */
 
   /* Component anatomy - one vocabulary for every interactive element.
      The outline variant is the default button; the solid variant is
@@ -60,7 +25,7 @@
       .dpad button, .export-tab-btn, .rune-gallery-btn, .npc-box button,
       .verb-row button, .undo-banner button, .builder-chat-form button,
       .prefs-trigger, .prefs-close, .prefs-action) {
-    font: inherit;
+    font-family: var(--font-ui);
     color: var(--foreground);
     background: transparent;
     border: 1px solid var(--border);
@@ -68,9 +33,6 @@
     min-height: 44px;
     min-width: 44px;
     cursor: pointer;
-  }
-  :is(.controls button, .dpad button, .prefs-trigger, .prefs-close) {
-    background: var(--card);
   }
   :is(.tabs button, .zone-btn, .phase-rail button, .controls button,
       .dpad button, .export-tab-btn, .rune-gallery-btn, .npc-box button,
@@ -84,6 +46,47 @@
       .prefs-trigger, .prefs-close, .prefs-action):focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+
+  /* Button fills (design Component Specs, Button). The outline
+     anatomy above IS the Secondary/Ghost variant - the default.
+     Fills are opt-in classes: primary (teal), danger (dim red),
+     gold (brand CTA). Same 44px geometry either way. */
+  :is(.controls button, .dpad button, .prefs-trigger, .prefs-close) {
+    background: var(--card);
+  }
+  .btn-primary:not(:disabled) {
+    background: var(--fill-primary);
+    border-color: transparent;
+    color: var(--fill-primary-ink);
+    font-weight: 600;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--fill-primary-hover);
+    border-color: transparent;
+  }
+  .btn-danger:not(:disabled) {
+    background: var(--fill-danger);
+    border-color: transparent;
+    color: var(--fill-danger-ink);
+    font-weight: 600;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--fill-danger-hover);
+    border-color: var(--destructive);
+  }
+  .btn-gold:not(:disabled) {
+    background: var(--fill-gold);
+    border-color: transparent;
+    color: var(--fill-gold-ink);
+    font-weight: 600;
+  }
+  .btn-gold:hover:not(:disabled) {
+    background: var(--color-gold-400);
+    border-color: transparent;
+  }
+  :is(.btn-primary, .btn-danger, .btn-gold):disabled {
+    opacity: 0.45;
   }
 
   /* Card anatomy - the one surface treatment, shared. Elements with
@@ -100,7 +103,8 @@
   /* Input anatomy - the one field treatment. */
   :is(.builder-section input[type="text"], .builder-section select,
       .pref-row select, .builder-chat-form textarea) {
-    font: inherit;
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
     color: var(--foreground);
     background: var(--background);
     border: 1px solid var(--input);
@@ -164,31 +168,19 @@
   html[data-prefs~="font=serif"]       body { font-family: Georgia, 'Times New Roman', serif; }
   html[data-prefs~="font=system"]      body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
 
-  html[data-prefs~="contrast=high"] {
-    --bg: #0d0d0b; --card: #18161200; --card-edge: #5a5347;
-    --ink: #f5f3ec; --ink-dim: #c2bdb0; --accent: #e1c282;
-  }
-  html[data-prefs~="contrast=ultra"] {
-    --bg: #000; --card: #000; --card-edge: #ffffff;
-    --ink: #ffffff; --ink-dim: #e8e8e8; --accent: #ffd56b;
-  }
+  /* Contrast themes. The three Figma tiers (Warm & Easy / Bright &
+     Clear / Nothing Hides) live in vefr-theme.css as [data-theme]
+     blocks; prefs.js derives data-theme from the contrast pref, so
+     the old hardcoded per-pref palette overrides are gone - the
+     values have one home now. Ultra keeps its structural
+     reinforcements here: */
   html[data-prefs~="contrast=ultra"] body { font-weight: 550; }
   html[data-prefs~="contrast=ultra"] .card { border-width: 2px; }
   html[data-prefs~="contrast=ultra"] .tabs button:focus-visible,
   html[data-prefs~="contrast=ultra"] .zone-btn:focus-visible,
   html[data-prefs~="contrast=ultra"] #prefs-trigger:focus-visible { outline-width: 3px; }
 
-  /* Colorblind-safe palette: shift the two phase hues (gold for
-     'awed', brown-red for 'feared') toward luminance-equivalent
-     blue/gray so they remain distinguishable for the most common
-     forms of CVD. The named hues stay; only the encoded values
-     change, and they stay high-contrast either way. */
-  html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"]   { border-color: #6c8aa8; }
-  html[data-prefs~="palette=cb-safe"] .card[data-phase="feared"] { border-color: #6b6b78; }
-  html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] { border-color: #6c8aa8; }
-  html[data-prefs~="palette=cb-safe"] .card[data-bond="assigned"]{ border-color: #6b6b78; }
-  html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"] .speaker,
-  html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] .speaker { color: #8ea7c4; }
+  /* Colorblind-safe phase hues moved to vefr-theme.css (one home). */
 
   /* Motion. The default is off; 'subtle' allows < 200ms transitions
      on color/opacity only; 'full' is the original transition budget. */
@@ -208,13 +200,8 @@
     *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
 
-  /* Focus ring. Luminance default (a soft white outline that doesn't
-     require the accent color); the accent variant is what we had.
-     The ring is a token (--ring), so the reading row switches it in
-     one place and EVERY element the anatomy styles follows - the
-     per-selector lists this used to need are gone. */
-  html[data-prefs~="focus=luminance"] { --ring: var(--ink); }
-  html[data-prefs~="focus=accent"] { --ring: var(--accent); }
+  /* Focus ring. Luminance default; the accent variant is what we
+     had. Both token rules live in vefr-theme.css now. */
 
   /* Density. Comfortable is the default; compact trims vertical
      padding on the zone buttons, tabs, and cards so the same screen
@@ -246,9 +233,104 @@
     margin: -1px; padding: 0; overflow: hidden;
     clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  header { max-width: min(96rem, 100% - 1rem); margin: 0 auto; padding: 1rem 1rem 0; }
-  header h1 { margin: 0; font-size: 1.5rem; font-weight: normal; letter-spacing: 0.12em; }
-  header .tagline { color: var(--ink-dim); margin: 0.3rem 0 0; font-size: 0.95rem; }
+  /* === Top bar (design/HANDOFF.md, Layout Shell) ===
+     72px, card background, bottom card-edge border. Brand left,
+     live world breadcrumb center, engine chip + workspace zones +
+     overlay triggers right. Below 1024px it wraps into two rows and
+     keeps every 44px target. */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    min-height: var(--topbar-h);
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-card);
+    border-bottom: 1px solid var(--color-card-edge);
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 0.65rem;
+    min-width: 0;
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; flex-shrink: 0;
+    color: var(--color-accent);
+  }
+  .brand-name {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 1.05rem; font-weight: 700; letter-spacing: 0.14em;
+    color: var(--color-ink);
+    line-height: 1.2;
+  }
+  .brand-sub {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 0.68rem; font-weight: 400; letter-spacing: 0.02em;
+    color: var(--color-ink-dim);
+    white-space: nowrap;
+  }
+  /* Breadcrumbs: live pack data (world title, act title) via
+     /api/world. Gold separation marks, dim labels, ink values. */
+  .crumbs {
+    display: flex; align-items: center; gap: 0.5rem;
+    flex-wrap: wrap;
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    min-width: 0;
+  }
+  .crumbs[hidden] { display: none; }
+  .crumb-label { color: var(--color-ink-dim); }
+  .crumb-value { color: var(--color-ink); overflow-wrap: anywhere; }
+  .crumb-sep { color: var(--color-accent); }
+  .top-bar-spacer { flex: 1 1 0; min-width: 0; }
+
+  /* StatusIndicator chip (design Component Specs): dot + label,
+     12% tinted background, 12px semibold Inter. The engine chip is
+     wired to /api/health - online when it answers, unavailable
+     when it does not. */
+  .status-chip {
+    display: inline-flex; align-items: center; gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.01em;
+    color: var(--status-online);
+    background: var(--status-online-bg);
+    white-space: nowrap;
+  }
+  .status-chip .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+  .status-chip.is-working { color: var(--status-working); background: var(--status-working-bg); }
+  .status-chip.is-warning { color: var(--status-warning); background: var(--status-warning-bg); }
+  .status-chip.is-down    { color: var(--status-unavailable); background: var(--status-unavailable-bg); }
+
+  /* The slim strip under the bar: engine voice + session note. */
+  .sub-bar {
+    max-width: none;
+    margin: 0;
+    padding: 0.55rem var(--space-xl) 0;
+  }
+  .sub-bar .tagline { color: var(--ink-dim); margin: 0; font-size: 0.95rem; }
+  .sub-bar .note { margin: 0.35rem 0 0; }
+  /* new-game sits inside the session note - same anatomy, smaller. */
+  #new-game-btn {
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    padding: 0.2rem 0.8rem;
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    min-height: 44px;
+    min-width: 44px;
+    cursor: pointer;
+  }
+  #new-game-btn:hover { border-color: var(--primary); color: var(--foreground); }
+  #new-game-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
   main { max-width: min(96rem, 100% - 1rem); margin: 0 auto; padding: 0 1rem 3rem; }
 
@@ -279,11 +361,20 @@
     margin: -0.2rem 0 0.65rem;
     padding-bottom: 0.55rem;
     border-bottom: 1px solid var(--border);
-    color: var(--muted-foreground);
-    font-size: 0.76rem;
+    /* The mockups' panel headers ("THE LOOM", "THE JOURNAL"): gold
+       serif caps, Norse sub-label in dim sans. */
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    font-size: 0.98rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
+  }
+  .panel-title .sub {
+    font-family: var(--font-ui);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    color: var(--color-ink-dim);
   }
   .panel-title::before {
     content: '';
@@ -545,10 +636,16 @@
     max-width: 46rem;
   }
 
+  /* ModeTab pills (design Component Specs): active = card fill +
+     edge border + ink text; inactive = transparent + dim text. */
   .tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1.6rem 0 0; padding-bottom: 1rem; border-bottom: 1px solid var(--card-edge); }
   .tabs button {
-    font-size: 0.88rem; padding: 0.5rem 1rem;
+    font-family: var(--font-ui);
+    font-size: 0.88rem; font-weight: 500;
+    padding: 0.35rem 1.25rem;
+    border-radius: var(--radius-pill);
     color: var(--muted-foreground);
+    background: transparent;
   }
   .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
   .tabs button[data-view="awed"][aria-selected="true"] { color: var(--accent); border-color: var(--accent); }
@@ -558,11 +655,13 @@
   /* The three site areas. The zone row is always in the same place,
      and exactly one tablist is visible at a time - a hidden one
      must never fall back to flex (the display:flex-defeats-hidden
-     bug class). */
-  .zones { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1.4rem 0 0.2rem; }
+     bug class). ModeTab pills, same shape as the tab strip. */
+  .zones { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; }
   .zone-btn {
-    font-size: 0.95rem;
-    padding: 0.5rem 1.1rem;
+    font-family: var(--font-ui);
+    font-size: 0.88rem; font-weight: 500;
+    padding: 0.35rem 1.25rem;
+    border-radius: var(--radius-pill);
     color: var(--muted-foreground);
   }
   .zone-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
@@ -589,10 +688,6 @@
   }
   .controls button[disabled] { opacity: 0.45; cursor: wait; }
   .note { color: var(--ink-dim); font-size: 0.88rem; font-style: italic; }
-  #app-title .title-tag {
-    font-size: 0.55em; font-weight: normal; color: var(--ink-dim);
-    letter-spacing: 0.02em; white-space: nowrap;
-  }
 
   #feed, #forge-out, #letter-out, #vault-list, #journal-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.4rem; }
   .card {
@@ -662,7 +757,12 @@
   /* builder mode - read the existing controls pattern, just give
      each section a heading and a little breathing room. */
   .builder-section { margin-top: 1.4rem; }
-  .builder-section .builder-h { font-weight: normal; font-size: 0.92rem; letter-spacing: 0.06em; color: var(--ink-dim); margin: 0 0 0.5rem; }
+  .builder-section .builder-h {
+    font-weight: 600; font-size: 0.78rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-accent); margin: 0 0 0.5rem;
+  }
   .builder-section .controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
   .builder-section input[type="text"] {
     padding: 0.45rem 0.6rem;
@@ -713,8 +813,9 @@
     margin-bottom: 0.5rem;
   }
   .rune-card-label {
-    color: var(--ink-dim); font-size: 0.78rem;
-    letter-spacing: 0.06em; text-transform: lowercase;
+    font-family: var(--font-mono);
+    color: var(--color-accent); font-size: 0.72rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
   }
   .rune-gallery-btn {
     font-size: 0.78rem; padding: 0.35rem 0.7rem;
@@ -835,8 +936,22 @@
   .card .when { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.04em; }
   .card blockquote { margin: 0.5rem 0 0; padding-left: 0.8rem; border-left: 1px solid var(--card-edge); color: var(--ink); white-space: pre-line; }
 
-  .empty { color: var(--ink-dim); font-style: italic; margin-top: 1.4rem; }
-  .error { color: var(--danger); margin-top: 1.4rem; }
+  /* Empty / error / working states (design vefr-states registry).
+     Empty: a quiet card with a dashed edge. Error: red-edged card.
+     Working: the AI-state lavender, per the StatusIndicator spec. */
+  .empty {
+    color: var(--ink-dim); font-style: italic; margin-top: 1.4rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px dashed var(--card-edge);
+    border-radius: var(--radius-lg);
+  }
+  .error {
+    color: var(--danger); margin-top: 1.4rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-lg);
+  }
+  #status.is-busy, .note.is-busy { color: var(--color-ai-state); font-style: italic; }
 
   #town-canvas { max-width: 100%; height: auto; border: 1px solid var(--card-edge); display: block; margin-top: 1rem; }
   .dpad { display: grid; grid-template-areas: ". u ." "l d r"; width: 132px; gap: 4px; margin: 1rem auto 0; }
@@ -931,15 +1046,9 @@
 
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-  /* Title-row + preferences trigger.
-     The header used to be a single h1; now it carries a 44x44
-     button to the right edge. English label leads, Norse rides
-     visibly as a secondary line - matching the tab/zone pattern. */
-  .title-row {
-    display: flex; align-items: flex-end; justify-content: space-between;
-    gap: 1rem; flex-wrap: wrap;
-  }
-  .title-row h1 { margin: 0; }
+  /* Preferences trigger + dialog chrome. English label leads,
+     Norse rides visibly as a secondary line - matching the
+     tab/zone pattern. */
   .prefs-trigger {
     padding: 0.45rem 0.9rem;
     display: inline-flex; align-items: center; gap: 0.55rem;
@@ -990,6 +1099,7 @@
   .prefs-header h2 {
     margin: 0; font-size: 1.15rem; font-weight: normal; letter-spacing: 0.04em;
     display: flex; flex-direction: column; line-height: 1.15;
+    font-family: var(--font-display);
   }
   .prefs-title-en    { font-size: 1.15rem; }
   .prefs-title-norse { font-size: 0.75rem; color: var(--ink-dim); letter-spacing: 0.06em; }
@@ -1016,9 +1126,12 @@
     padding: 0 0.4rem;
     display: flex; flex-direction: column; line-height: 1.2;
   }
+  /* The Norn headers, per the settings mockup: gold mono caps with
+     the section tag, English description underneath. */
   .col-norse {
-    font-size: 0.66rem; letter-spacing: 0.08em;
-    color: var(--ink-dim); text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-size: 0.72rem; letter-spacing: 0.08em;
+    color: var(--color-accent); text-transform: uppercase;
   }
   .col-en { font-size: 0.98rem; }
   .col-note {
@@ -1157,6 +1270,10 @@
   .dev-drawer-trigger {
     padding: 0.45rem 0.8rem;
     display: inline-flex; align-items: center; gap: 0.45rem;
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
   }
   .dev-drawer-trigger kbd {
     font-size: 0.72rem; padding: 0.1rem 0.35rem;
@@ -1263,11 +1380,11 @@
       </div>
 
       <div class="pref-row">
-        <label for="pref-contrast">Contrast <span class="sub">Andstæða</span></label>
+        <label for="pref-contrast">Contrast theme <span class="sub">Andstæða</span></label>
         <select id="pref-contrast" data-pref-key="contrast">
-          <option value="m">medium (default)</option>
-          <option value="high">high</option>
-          <option value="ultra">ultra (maximum)</option>
+          <option value="m">Warm &amp; Easy (standard)</option>
+          <option value="high">Bright &amp; Clear (high contrast)</option>
+          <option value="ultra">Nothing Hides (ultra outlines)</option>
         </select>
       </div>
 
@@ -1275,7 +1392,7 @@
         <label for="pref-palette">Color palette <span class="sub">Litir</span></label>
         <select id="pref-palette" data-pref-key="palette">
           <option value="standard">standard</option>
-          <option value="cb-safe">colorblind-safe</option>
+          <option value="cb-safe">colorblind-safe (blue-shift)</option>
         </select>
       </div>
 
@@ -1360,9 +1477,41 @@
 </div>
 
 <header>
-  <div class="title-row">
-    <h1 id="app-title">vefr <span class="title-tag">a rumor engine for playable worlds</span></h1>
+  <div class="top-bar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <!-- the brand leaf: a single gold leaf, currentColor so the
+             theme always drives it. -->
+        <svg viewBox="0 0 24 24" width="26" height="26" focusable="false">
+          <path d="M12 21c-4.5-1.2-7.5-4.8-7.5-9.4C4.5 6.2 8 3 12.6 2.5c.6 3.2.4 5.6-.4 8.1-.8 2.6-2.3 4.4-4.6 6.1 2.8-1 5-2.7 6.4-5.2.9-1.6 1.4-3.4 1.6-5.5 2.5 1.9 4 4.6 4 7.4 0 4-3.1 6.9-7.6 7.6Z"
+                fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <h1 class="brand-name" id="app-title">VEFR
+        <span class="brand-sub" id="brand-sub">a rumor engine for playable worlds</span>
+      </h1>
+    </div>
+
+    <p class="crumbs" id="crumbs" hidden>
+      <span class="crumb-label">world:</span>
+      <span class="crumb-value" id="crumb-world"></span>
+      <span class="crumb-sep" aria-hidden="true">&#8250;</span>
+      <span class="crumb-label">act:</span>
+      <span class="crumb-value" id="crumb-act"></span>
+    </p>
+
+    <div class="top-bar-spacer"></div>
+
     <div style="display:inline-flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+      <span class="status-chip is-warning" id="engine-chip" role="status">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="engine-chip-label">engine&hellip;</span>
+      </span>
+      <div class="zones" role="toolbar" aria-label="Workspace modes">
+        <button type="button" class="zone-btn" data-zone="play" aria-pressed="true">Play</button>
+        <button type="button" class="zone-btn" data-zone="build" aria-pressed="false">Build</button>
+        <button type="button" class="zone-btn" data-zone="weave" aria-pressed="false">Weave</button>
+      </div>
       <button type="button" id="dev-drawer-trigger" class="dev-drawer-trigger"
               aria-haspopup="dialog" aria-controls="dev-drawer" aria-expanded="false"
               aria-label="Open development overlay and aspect inspector">
@@ -1389,15 +1538,13 @@
       </button>
     </div>
   </div>
-  <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
-  <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
+  <div class="sub-bar">
+    <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
+    <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
+  </div>
 </header>
 <main>
-  <div class="zones" role="toolbar" aria-label="Workspace modes">
-    <button type="button" class="zone-btn" data-zone="play" aria-pressed="true">Play</button>
-    <button type="button" class="zone-btn" data-zone="build" aria-pressed="false">Build</button>
-    <button type="button" class="zone-btn" data-zone="weave" aria-pressed="false">Weave</button>
-  </div>
+
 
   <nav class="tabs zone-nav" data-zone-nav="play" role="tablist" aria-label="Play">
     <button type="button" role="tab" data-view="town" id="tab-town" aria-selected="true" aria-controls="view-town">Town</button>
@@ -1422,7 +1569,7 @@
     <!-- built from the pack's own phases, shared with the town's rail -->
     <div class="phase-rail" id="rumor-phase" role="group" aria-label="The world's tone"></div>
     <div class="controls">
-      <button type="button" id="whisper-btn">Whisper</button>
+      <button type="button" id="whisper-btn" class="btn-primary">Whisper</button>
       <span class="note" id="status" aria-live="polite"></span>
       <button type="button" id="export-rumors-btn" data-export-tab="rumors" class="export-tab-btn">Export this tab</button>
     </div>
@@ -1434,7 +1581,7 @@
   <section id="view-vault" class="view play-panel" role="tabpanel" aria-labelledby="tab-vault">
     <h2 class="panel-title" data-panel="vault">Vault <span class="sub" data-norse="Safn">Safn</span></h2>
     <div class="controls">
-      <button type="button" id="forge-btn">Forge</button>
+      <button type="button" id="forge-btn" class="btn-primary">Forge</button>
       <span class="note" id="forge-status" aria-live="polite"></span>
       <button type="button" id="export-vault-btn" data-export-tab="vault" class="export-tab-btn">Export this tab</button>
     </div>
@@ -1447,7 +1594,7 @@
     <h2 class="panel-title" data-panel="stefna">Bell <span class="sub" data-norse="Stefna">Stefna</span></h2>
     <p class="note" id="stefna-flavor" aria-live="polite"></p>
     <div class="controls">
-      <button type="button" id="strike-btn">strike the bell</button>
+      <button type="button" id="strike-btn" class="btn-primary">strike the bell</button>
       <span class="note" id="stefna-status" aria-live="polite"></span>
       <button type="button" id="export-stefna-btn" data-export-tab="stefna" class="export-tab-btn">Export this tab</button>
     </div>
@@ -1598,7 +1745,7 @@
       <section id="builder-chat-log" aria-live="polite" class="builder-chat-log"></section>
       <form id="builder-chat-form" class="builder-chat-form" autocomplete="off">
         <textarea id="builder-chat-input" rows="2" placeholder="what are you trying to figure out?"></textarea>
-        <button type="submit" id="builder-chat-send">send</button>
+        <button type="submit" id="builder-chat-send" class="btn-primary">send</button>
       </form>
     </div>
   </section>
@@ -1730,6 +1877,36 @@
 (function () {
   'use strict';
   var STATE = window.VEFR_STATE;
+
+  /* Top-bar live data. Both bits ride the ONE /api/world fetch
+     state.js already makes: a resolved payload proves the engine is
+     answering (StatusIndicator: online) and fills the breadcrumbs;
+     a rejection is the unavailable state. Status chrome must never
+     block or break play. */
+  (function () {
+    var chip = document.getElementById('engine-chip');
+    var chipLabel = document.getElementById('engine-chip-label');
+    var crumbs = document.getElementById('crumbs');
+    var worldEl = document.getElementById('crumb-world');
+    var actEl = document.getElementById('crumb-act');
+    function setChip(cls, text) {
+      if (!chip || !chipLabel) return;
+      chip.classList.remove('is-warning', 'is-working', 'is-down');
+      if (cls) chip.classList.add(cls);
+      chipLabel.textContent = text;
+    }
+    setChip('is-working', 'engine waking\u2026');
+    STATE.world().then(function (w) {
+      setChip('', 'engine online');
+      if (crumbs && w) {
+        worldEl.textContent = w.title || 'the world';
+        actEl.textContent = (w.act && w.act.title) || '';
+        crumbs.hidden = false;
+      }
+    }).catch(function () {
+      setChip('is-down', 'engine unreachable');
+    });
+  })();
   var tabs = document.querySelectorAll('.tabs button');
   var views = {
     rumors: document.getElementById('view-rumors'),
