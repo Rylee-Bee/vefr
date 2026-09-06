@@ -1,10 +1,23 @@
 # web/fonts/
 
-Self-hosted reading fonts for the Reading & sound preferences
-panel. The four woff2 files below are tracked in git (SIL OFL 1.1
-permits redistribution with the license notice; see each family's
-license link) so a fresh clone and the `ratatoskr weave` packaged
-file both work offline from the first byte.
+Self-hosted fonts: the UI font for the Figma-derived design system
+(`Inter-Variable.woff2`) plus the reading fonts for the Reading &
+sound preferences panel. All woff2 files below are tracked in git
+(SIL OFL 1.1 permits redistribution with the license notice; see each
+family's license link) so a fresh clone and the `ratatoskr weave`
+packaged file both work offline from the first byte.
+
+## Inter (UI font)
+
+- Source: https://rsms.me/inter/ (served via Google Fonts v20)
+- License: SIL Open Font License 1.1
+- Web file needed: `Inter-Variable.woff2` (one variable file,
+  weights 100-900)
+- Vendored: 2026-09-06, latin subset, from the `Inter` Google Fonts
+  CSS2 endpoint with a browser UA (single variable woff2).
+- Used by: `web/vefr-theme.css` (`--font-ui`). The design system
+  (design/HANDOFF.md, Typography) names Inter as the one UI family.
+  Body/reading text stays on the prefs-driven reading font below.
 
 ## Atkinson Hyperlegible Next
 

@@ -6,29 +6,33 @@
 <title>{{title}}</title>
 <style>
   /* the packaged game UI - the bones, on a phone. Color and layout
-     match the engine's web/ style: dark, low-saturation, rank by
-     luminance not hue, WCAG 2.5.5 tap targets. Inlined into one
-     file at `ratatoskr weave` time, with the world's pack baked in. */
+     match the engine's web/ style and the Figma design system
+     (design/tokens.md): charcoal surfaces, parchment ink, gold
+     accent, rank by luminance not hue, 44px tap targets, the
+     4/6/8/12 radius scale. Inlined into one file at `ratatoskr
+     weave` time, with the world's pack baked in. Values kept in
+     step with web/vefr-theme.css (this file is standalone, so the
+     primitives are spelled out here). */
   :root {
-    --bg: #131311;
-    --card: #1a1a18;
-    --card-edge: #2a2a26;
-    --ink: #e8e5df;
-    --ink-dim: #8b939c;
-    --accent: #c9ad6b;
-    --danger: #b87060;
-    --church: #4a4a72;
+    --bg: #131311;        /* charcoal/900 */
+    --card: #1D1B17;      /* charcoal/800 */
+    --card-edge: #3A352C; /* charcoal/600 */
+    --ink: #E8E5DF;       /* parchment/100 */
+    --ink-dim: #A39E92;   /* parchment/dim */
+    --accent: #C9AD6B;    /* gold/500 */
+    --danger: #B8543F;    /* red/500 */
+    --church: #2A2E33;    /* charcoal/700 */
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #e8e5df;
-      --card: #d4d1cb;
-      --card-edge: #a8a59f;
-      --ink: #1a1a18;
-      --ink-dim: #4a4a48;
+      --bg: #E8E5DF;
+      --card: #F5F3EC;
+      --card-edge: #A39E92;
+      --ink: #1D1B17;
+      --ink-dim: #5A5347;
       --accent: #8a6a30;
       --danger: #6a3020;
-      --church: #3a3a52;
+      --church: #2A2E33;
     }
   }
   body {
@@ -47,7 +51,7 @@
     font: inherit; font-size: 0.92rem; padding: 0.6rem 0.9rem;
     min-height: 44px; min-width: 44px;
     background: transparent; color: var(--ink-dim);
-    border: 1px solid var(--card-edge); border-radius: 3px;
+    border: 1px solid var(--card-edge); border-radius: 6px;
     cursor: pointer; text-transform: lowercase;
   }
   .phase-rail button[aria-pressed="true"] {
@@ -58,7 +62,7 @@
     font: inherit; font-size: 0.95rem; padding: 0.65rem 1.1rem;
     min-height: 44px; min-width: 88px;
     background: transparent; color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 3px;
+    border: 1px solid var(--card-edge); border-radius: 6px;
     cursor: pointer;
   }
   button.primary:hover, button.primary:focus-visible {
@@ -76,7 +80,7 @@
   .status { color: var(--ink-dim); font-size: 0.85rem; margin-top: 0.6rem; }
   .npc-box {
     background: var(--card); border: 1px solid var(--card-edge);
-    border-radius: 3px; padding: 1rem 1.1rem; margin-top: 1rem;
+    border-radius: 6px; padding: 1rem 1.1rem; margin-top: 1rem;
   }
   .npc-line { margin: 0.4rem 0 0.9rem; }
   /* The surface costume - hp bar, encounter prompt, verbs. Only a
@@ -84,7 +88,7 @@
      never do. Mirrors web/index.html's costume. */
   .hud-hp { display: flex; align-items: center; gap: 0.6rem; margin: 0.8rem 0 0; }
   .hud-hp-label { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  .hud-hp-bar { flex: 1; max-width: 220px; height: 10px; background: var(--bg); border: 1px solid var(--card-edge); border-radius: 2px; }
+  .hud-hp-bar { flex: 1; max-width: 220px; height: 10px; background: var(--bg); border: 1px solid var(--card-edge); border-radius: 4px; }
   .hud-hp-fill { height: 100%; background: var(--accent); width: 100%; }
   .hud-hp-value { color: var(--ink-dim); font-size: 0.82rem; }
   body[data-surface="plain"] .hud-hp,
@@ -99,7 +103,7 @@
     font: inherit; font-size: 0.92rem; padding: 0.55rem 0.9rem;
     min-height: 44px; min-width: 44px;
     background: transparent; color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--card-edge); border-radius: 6px; cursor: pointer;
   }
   .verb-row button:hover, .verb-row button:focus-visible { border-color: var(--accent); outline: none; }
   .verb-row button:disabled { opacity: 0.45; cursor: wait; }
@@ -112,13 +116,13 @@
   #town-canvas { max-width: 100%; height: auto; border: 1px solid var(--card-edge); display: block; margin: 0.6rem 0; }
   #config {
     margin: 1rem 0; padding: 0.8rem 1rem; background: var(--card);
-    border: 1px dashed var(--card-edge); border-radius: 4px;
+    border: 1px dashed var(--card-edge); border-radius: 6px;
   }
   #config label { display: block; margin: 0.4rem 0 0.2rem; color: var(--ink-dim); font-size: 0.85rem; }
   #config input {
     width: 100%; box-sizing: border-box; font: inherit; padding: 0.5rem 0.6rem;
     background: var(--bg); color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 3px; min-height: 44px;
+    border: 1px solid var(--card-edge); border-radius: 6px; min-height: 44px;
   }
   #config .hint { color: var(--ink-dim); font-size: 0.82rem; margin: 0.4rem 0 0; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
