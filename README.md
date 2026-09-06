@@ -277,15 +277,17 @@ podman run -d --name vefr -p 8820:8820 \
 curl -s http://127.0.0.1:8820/api/health
 ```
 
-The engine prefers `VEFR_LLAMACPP_URL` (llama.cpp's OpenAI-compatible
-`/v1/chat/completions` endpoint) and falls back to `OLLAMA_URL`
-(legacy ollama `/api/generate`). Set `OLLAMA_URL=""` to disable the
-fallback entirely. For the broadest "everyone gets to play" path,
-point either one at a small local model that can answer reliably on
-the machine in front of the player. Model default: `gpt-oss-20b`
-(works with any llama.cpp model that supports the chat template; set
-`VEFR_MODEL` to change it; structured output via JSON schema with
-`strict: true`).
+The active Storyteller Pack's `[model].provider` picks the transport
+(see `docs/guides/storyteller-packs.md`). Every pack that ships with
+the engine is `openai-compatible`, so `VEFR_LLAMACPP_URL`
+(llama.cpp's `/v1/chat/completions` endpoint) is the one that matters
+by default. `OLLAMA_URL` (legacy ollama `/api/generate`) is only
+consulted by a pack that declares `provider = "ollama"`. For the
+broadest "everyone gets to play" path, point the active transport at
+a small local model that can answer reliably on the machine in front
+of the player. Model default: `gpt-oss-20b` (works with any
+llama.cpp model that supports the chat template; set `VEFR_MODEL` to
+change it; structured output via JSON schema with `strict: true`).
 
 Other env vars the engine reads: `VEFR_VAULT` (path to `vault.json`,
 default `<home>/data/vault.json`) and `VEFR_KEEP_ALIVE` (ollama-only
