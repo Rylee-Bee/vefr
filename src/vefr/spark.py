@@ -467,9 +467,12 @@ def classify_escalation(tasks: list[dict], *, url: str | None = None) -> list[Es
     integrated check has a fixed reference shape.
     """
     listing = "\n".join(f"task_id={t['task_id']}: {t['desc']}" for t in tasks)
-    user = (f"For each task below, decide LOCAL or ESCALATE for Spark.\n"
-            f"{listing}\n\nOne decision object per task, in order.")
-    result, meta = spark_call("classify", user, world=False, url=url)
+    user = (f"For each task below, decide whether Spark should handle it "
+            f"locally (LOCAL) or hand it to the stronger resident model "
+            f"(ESCALATE).\n{listing}\n\nOne decision object per task, in order.")
+    # World context included: the probes name world objects (the Hollow
+    # Lamp) and the benchmark measured classification WITH that context.
+    result, meta = spark_call("classify", user, world=True, url=url)
     return result.decisions
 
 
