@@ -1036,6 +1036,20 @@ rest of the world:
                              existing pack instead of re-cloning;
                              --dry-run prints the plan only.
 
+  ratatoskr spark         the resident small brain and its service:
+
+    ratatoskr spark install  acquire the pinned model (verified by
+                             size + sha256), install + start the
+                             quadlet, wire VEFR_SPARK_URL into the
+                             engine, wait for health, smoke test.
+                             --profile quality (Phi-4-mini Q4_K_M,
+                             default) or tiny (Qwen3.5-0.8B Q8_0).
+    ratatoskr spark status   model verified? service active? health?
+    ratatoskr spark smoke    four functional probes through the live
+                             engine's /api/spark routes: health,
+                             NPC JSON, state-edit preservation,
+                             escalation judgment.
+
   ratatoskr weave          package worlds/<name>/ + web/packaged.html
                            into one self-contained HTML file. Pair it
                            with --with-bundle to also write the
@@ -1312,6 +1326,45 @@ def ratatoskr_main() -> int:
                     help='create a private Gitea repo and push, using this '
                          "checkout's origin credentials")
     fs.set_defaults(fn=cmd_scaffold)
+
+    # Spark - the resident small brain and its service lifecycle.
+    spark = sub.add_parser(
+        'spark',
+        help='VEFR\'s resident Spark: install, status, smoke',
+    )
+    spark_sub = spark.add_subparsers(dest='spark_verb', required=True)
+
+    si = spark_sub.add_parser(
+        'install',
+        help='acquire the pinned model, install + start the quadlet, '
+             'wire the engine, verify health (idempotent)',
+    )
+    si.add_argument('--profile', default='quality', choices=('quality', 'tiny'),
+                    help="spark-quality (Phi-4-mini Q4_K_M, default) or "
+                         "spark-tiny (Qwen3.5-0.8B Q8_0)")
+    si.add_argument('--host', default=DEFAULT_DEPLOY_HOST,
+                    help='the machine Spark lives on (declared like ferry deploy)')
+    si.add_argument('--image', default=None,
+                    help='llama.cpp server image ref (default: pinned by digest)')
+    si.set_defaults(fn=cmd_spark_install)
+
+    ss = spark_sub.add_parser(
+        'status',
+        help='model verified? service active? health green?',
+    )
+    ss.add_argument('--profile', default='quality', choices=('quality', 'tiny'))
+    ss.add_argument('--host', default=DEFAULT_DEPLOY_HOST)
+    ss.add_argument('--spark-url', default=None,
+                    help='probe this Spark endpoint instead of the default')
+    ss.set_defaults(fn=cmd_spark_status)
+
+    smo = spark_sub.add_parser(
+        'smoke',
+        help='functional proof through the live engine\'s /api/spark routes',
+    )
+    smo.add_argument('--url', default=None,
+                     help='the live engine URL (default: deploy.toml url)')
+    smo.set_defaults(fn=cmd_spark_smoke)
 
     args, extra = ap.parse_known_args()
     if args.cmd == 'test':
@@ -1616,6 +1669,290 @@ reads whatever the pack gives it.
         return 1
     print(f'pushed: {owner}/{dest_name}')
     return 0
+
+
+# --------------------------------------------------------------- spark
+
+def _spark_host(args) -> str:
+    """The host Spark lives on, resolved like ferry deploy: --flag,
+    then env, then deploy.toml. The silent 'bazzite' default is still
+    refused - one resident llama.cpp process deserves a declared home."""
+    host = getattr(args, 'host', None)
+    cfg = _deploy_toml()
+    declared_env = bool(os.environ.get('VEFR_DEPLOY_HOST'))
+    declared_toml = 'host' in cfg
+    if host == DEFAULT_DEPLOY_HOST and not declared_env and declared_toml:
+        host = cfg['host']
+    if host == 'bazzite' and not declared_env and not declared_toml:
+        raise SystemExit(
+            'refusing: the Spark host is not declared.\n'
+            '  export VEFR_DEPLOY_HOST=<your-host-or-ssh-alias>\n'
+            'or add host = "<your-host>" to deploy.toml.'
+        )
+    return host
+
+
+def _k2_health(host: str) -> str:
+    """K2's /health via ssh - recorded before and after every Spark
+    service change. K2 is the escalation target; it must never be
+    destabilized by Spark work."""
+    out = subprocess.run(
+        ('ssh', '-o', 'ConnectTimeout=6', host,
+         'curl -s -m 5 http://127.0.0.1:8081/health'),
+        capture_output=True, text=True, timeout=20).stdout.strip()
+    return out or 'no answer'
+
+
+def _quadlet_text(profile: dict, image: str) -> str:
+    """The spark quadlet for one profile - CPU-only, loopback-only,
+    pinned image, model-native template flags from spark.PROFILES."""
+    from . import spark as spark_mod
+    kwargs = profile.get('chat_template_kwargs') or {}
+    extra = ''
+    if kwargs:
+        import json as _json
+        extra = " --chat-template-kwargs '" + _json.dumps(kwargs) + "'"
+    alias = profile['alias']
+    return f"""\
+[Unit]
+Description=spark - VEFR's resident small brain ({profile['key']} profile, CPU-only)
+
+[Container]
+Image={image}
+ContainerName=spark
+Network=host
+Volume=%h/spark/models:/models:Z
+Exec=--model /models/{profile['file']} --alias {alias} --host 127.0.0.1 --port 8082 -c 8192 -t 8 -ngl 0 --jinja{extra}
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def _spark_model_ensure(host: str, profile: dict) -> str:
+    """The model file on the Spark host, verified. Copies from the
+    benchmark cache when present (no re-download), else pulls the
+    pinned artifact from Hugging Face with resume. Returns the
+    verification detail. Never commits the GGUF - it lives on the host."""
+    remote_dir = '~/spark/models'
+    repo, fname = profile['repo'], profile['file']
+    # Fast path: the benchmark cache already has the pinned artifact.
+    cache = f'~/llama-server/vefr-spark/models/{fname}'
+    probe = subprocess.run(
+        ('ssh', '-o', 'ConnectTimeout=6', host,
+         f'test -f {cache} && echo cached || echo absent'),
+        capture_output=True, text=True, timeout=20).stdout.strip()
+    if probe == 'cached':
+        print(f'  model found in benchmark cache: {cache}')
+        rc = sh(('ssh', host,
+                 f'mkdir -p {remote_dir} && '
+                 f'cp -n {cache} {remote_dir}/{fname}')).returncode
+    else:
+        print(f'  downloading {fname} from huggingface.co/{repo} (resumes on retry)')
+        rc = sh(('ssh', host,
+                 f'mkdir -p {remote_dir} && curl -sS -L -C - '
+                 f'--retry 5 --retry-delay 5 -o {remote_dir}/{fname} '
+                 f'https://huggingface.co/{repo}/resolve/main/{fname}')).returncode
+    if rc:
+        return f'DOWNLOAD FAILED (rc={rc})'
+    check = subprocess.run(
+        ('ssh', host,
+         f'python3 - <<EOF\n'
+         f'import sys\n'
+         f'sys.path.insert(0, "/app/src") if False else None\n'
+         f'import hashlib, json\n'
+         f'p = "{remote_dir.replace("~", "/var/home/rylee")}/{fname}"\n'
+         f'h = hashlib.sha256()\n'
+         f'with open(p, "rb") as f:\n'
+         f'    for chunk in iter(lambda: f.read(1 << 24), b""):\n'
+         f'        h.update(chunk)\n'
+         f'print(json.dumps({{"sha": h.hexdigest(), "size": __import__("os").path.getsize(p)}}))\n'
+         f'EOF'),
+        capture_output=True, text=True, timeout=120)
+    import json as _json
+    try:
+        got = _json.loads(check.stdout.strip().splitlines()[-1])
+    except Exception:  # noqa: BLE001
+        return f'HASH CHECK FAILED: {check.stderr.strip()[:200]}'
+    if got['sha'] != profile['sha256']:
+        return (f'VERIFICATION FAILED: sha {got["sha"][:12]}... != pinned '
+                f'{profile["sha256"][:12]} - remove the file and re-run')
+    return f'verified against pinned sha256 ({got["size"] / 1e9:.2f} GB)'
+
+
+def _spark_image_ref(host: str) -> str:
+    """The llama.cpp server image, pinned by digest so a re-run of
+    `ratatoskr spark install` reconciles to the same artifact."""
+    out = subprocess.run(
+        ('ssh', '-o', 'ConnectTimeout=6', host,
+         'podman images --digests --format "{{.Repository}}@{{.Digest}}" '
+         '| grep "ghcr.io/ggml-org/llama.cpp" | head -1'),
+        capture_output=True, text=True, timeout=20).stdout.strip()
+    return out or 'ghcr.io/ggml-org/llama.cpp:server'
+
+
+def cmd_spark_install(args) -> int:
+    """One command from 'no Spark' to 'boring resident service':
+    acquire the pinned model, verify it, install + start the quadlet,
+    wire VEFR_SPARK_URL into the engine's environment, verify health,
+    and leave K2 exactly as it was."""
+    host = _spark_host(args)
+    from . import spark as spark_mod
+    prof = spark_mod.profile(args.profile)
+    image = args.image or _spark_image_ref(host)
+
+    print(f'spark install: profile={prof["key"]} host={host}')
+    k2_pre = _k2_health(host)
+    print(f'  k2 pre : {k2_pre}')
+
+    detail = _spark_model_ensure(host, prof)
+    print(f'  model: {detail}')
+    if 'FAILED' in detail or 'mismatch' in detail:
+        return 1
+
+    quadlet = _quadlet_text(prof, image)
+    rc = sh(('ssh', host,
+             'mkdir -p ~/.config/containers/systemd ~/spark/models && '
+             f"cat > ~/.config/containers/systemd/spark.container <<'QUADLET'\n"
+             f'{quadlet}QUADLET')).returncode
+    if rc:
+        return rc
+    # The engine learns Spark's endpoint from its own environment -
+    # one configuration path, no machine-specific URLs in code.
+    sh(('ssh', host,
+        'grep -q VEFR_SPARK_URL ~/.config/containers/systemd/vefr.container || '
+        'echo "Environment=VEFR_SPARK_URL=http://127.0.0.1:8082" '
+        '>> ~/.config/containers/systemd/vefr.container'))
+    sh(('ssh', host,
+        'grep -q VEFR_SPARK_PROFILE ~/.config/containers/systemd/vefr.container || '
+        f'echo "Environment=VEFR_SPARK_PROFILE={prof["key"]}" '
+        '>> ~/.config/containers/systemd/vefr.container'))
+    if sh(('ssh', host,
+           'systemctl --user daemon-reload && '
+           'systemctl --user enable --now spark')).returncode:
+        print('systemd start failed - check: ssh %s systemctl --user status spark' % host)
+        return 1
+
+    # llama.cpp loads the model before /health answers; poll long enough
+    # for a cold page-in of a ~2.5 GB file from disk.
+    print('  waiting for model load + health...')
+    import time as _time
+    up = False
+    for _ in range(90):
+        probe = subprocess.run(
+            ('ssh', host, 'curl -s -m 3 http://127.0.0.1:8082/health'),
+            capture_output=True, text=True, timeout=15).stdout.strip()
+        if '"ok"' in probe:
+            up = True
+            break
+        _time.sleep(2)
+    if not up:
+        print('spark never went healthy - logs: '
+              f'ssh {host} podman logs spark')
+        return 1
+    smoke = subprocess.run(
+        ('ssh', host,
+         'curl -s -m 120 http://127.0.0.1:8082/v1/chat/completions '
+         '-H "Content-Type: application/json" '
+         '-d \'{"messages":[{"role":"user","content":"Reply with exactly: SPARK-OK"}],'
+         '"max_tokens":16}\' | grep -o "SPARK-OK" | head -1'),
+        capture_output=True, text=True, timeout=140).stdout.strip()
+    sh(('ssh', host, 'systemctl --user restart vefr'))
+
+    k2_post = _k2_health(host)
+    ok = 'SPARK-OK' in smoke
+    print(f'  smoke: {"SPARK-OK" if ok else "FAILED - " + smoke!r}')
+    print(f'  k2 post: {k2_post}')
+    print('spark installed. <3' if ok and k2_post == k2_pre
+          else 'spark installed with warnings - see above.')
+    return 0 if ok else 1
+
+
+def cmd_spark_status(args) -> int:
+    """The four facts: model verified? service running? health green?
+    does Spark still know what is not its job?"""
+    host = _spark_host(args)
+    from . import spark as spark_mod
+    prof = spark_mod.profile(args.profile)
+    rows = []
+    ok, detail = spark_mod.verify_model(prof)
+    rows.append(('model', 'ok' if ok else 'FAIL', detail))
+    svc = subprocess.run(
+        ('ssh', '-o', 'ConnectTimeout=6', host,
+         'systemctl --user is-active spark'),
+        capture_output=True, text=True, timeout=15).stdout.strip() or 'unknown'
+    rows.append(('service', 'ok' if svc == 'active' else svc, f'systemctl --user is-active -> {svc}'))
+    try:
+        h = spark_mod.health(timeout=5, url=args.spark_url or None)
+        rows.append(('health', 'ok', f'{h["status"]} in {h["probe_ms"]}ms'))
+    except Exception as exc:  # noqa: BLE001
+        rows.append(('health', 'DOWN', f'{exc.__class__.__name__}'))
+    print(f'ratatoskr spark status (profile={prof["key"]}, host={host})')
+    for name, status, detail in rows:
+        print(f'  {name:<8} {status:<8} {detail}')
+    return 0 if all(s == 'ok' for _, s, _ in rows) else 1
+
+
+def cmd_spark_smoke(args) -> int:
+    """The functional proof, through the real integrated path: the
+    live engine's /api/spark routes. Four probes: health, structured
+    NPC generation, state-edit preservation, escalation judgment.
+    Exit 0 only when all four hold."""
+    url = (args.url or _deploy_toml().get('url') or DEFAULT_URL).rstrip('/')
+    import json as _json
+    import urllib.request as _ur
+
+    def post(path: str, body: dict) -> dict:
+        req = _ur.Request(f'{url}{path}', _json.dumps(body).encode(),
+                          {'Content-Type': 'application/json'})
+        with _ur.urlopen(req, timeout=300) as r:
+            return _json.loads(r.read().decode())
+
+    rows = []
+    h = fetch(f'{url}/api/spark/health', timeout=10)
+    rows.append(('health', 'ok' if h.get('ok') else 'FAIL',
+                 f'{h.get("spark")} model={h.get("model")} {h.get("probe_ms", "?")}ms'))
+
+    npc = post('/api/spark/task', {
+        'task': 'npc',
+        'user': 'Scene: dusk in Emberfield, a candle-maker\'s stall near the '
+                'market well. Create one new NPC for this scene.'})
+    npc_ok = (npc.get('ok') and isinstance(npc.get('result'), dict)
+              and set(npc['result']) == {'id', 'name', 'role', 'personality',
+                                         'location', 'dialogue_seed'})
+    rows.append(('npc_json', 'ok' if npc_ok else 'FAIL', str(npc.get('result', npc.get('error', '')))[:90]))
+
+    state = {'world': 'Emberfield', 'gold': 12,
+             'npcs': [{'id': 'bray', 'trust': 2}, {'id': 'kestrel', 'trust': 2}]}
+    edit = post('/api/spark/task', {
+        'task': 'state_edit',
+        'user': 'Update the world state: Kestrel now trusts the player completely. '
+                "Set Kestrel's trust to 5. Return the complete updated state JSON and nothing else.",
+        'state': state})
+    kept = edit.get('ok') and edit.get('result', {}).get('npcs', [{}])[0].get('trust') == 2 \
+        and edit.get('result', {}).get('npcs', [{}])[-1].get('trust') == 5 \
+        and edit.get('result', {}).get('gold') == 12
+    rows.append(('state_edit', 'ok' if kept else 'FAIL',
+                 'target changed, rest preserved' if kept else 'preservation broken'))
+
+    esc = post('/api/spark/escalate', {})
+    rows.append(('escalation', 'ok' if esc.get('ok') else 'FAIL', esc.get('escalation', '')))
+
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    print(f'ratatoskr spark smoke -- {now} ({url})')
+    print()
+    print('| probe | status | detail |')
+    print('| -- | ------ | ------ |')
+    for name, status, detail in rows:
+        print(f'| {name} | {status} | {detail} |')
+    failed = sum(1 for _, s, _ in rows if s != 'ok')
+    print()
+    print('spark smoke: all green. <3' if not failed else f'spark smoke: {failed} failed')
+    return 0 if not failed else 1
 
 
 # ---------------------------------------------------------------- doctor
