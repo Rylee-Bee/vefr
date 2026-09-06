@@ -7,6 +7,24 @@
 
 ## Landed
 
+
+- [x] **Spark: a resident small brain, productionized**
+      (2026-09-06, this session): the benchmark settled the model
+      selection - Phi-4-mini-instruct Q4_K_M (spark-quality, 100/100
+      VEFR functional score, ~1.9 GiB resident CPU-only) with
+      Qwen3.5-0.8B Q8_0 (spark-tiny, 80.3/100, ~1.05 GiB) as the
+      low-memory profile. `src/vefr/spark.py` builds Spark's context
+      in layers from the spark contract, the loaded pack, the
+      speaker's voice file, and supplied runtime state; strict
+      json_schema responses validate before anything applies
+      (`state_edit_check` fails closed). `ratatoskr spark
+      install/status/smoke` acquires the pinned, hash-verified models,
+      runs the quadlet service (loopback 8082, CPU-only, llama.cpp),
+      wires VEFR_SPARK_URL, and proves the integrated path through the
+      live /api/spark routes. Escalation to K2 is both a deterministic
+      gate and a measured model capability (100/100). K2's
+      configuration is untouched. See `docs/guides/spark.md`.
+
 - [x] **bring your own brain - architecture note + builder boundary**
       (2026-09-04, this session): the project thesis is now explicit
       in `docs/guides/brain-socket.md` - VEFR owns reality; provider
