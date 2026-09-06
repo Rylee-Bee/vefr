@@ -60,28 +60,36 @@ Full hashes and sizes live in `src/vefr/spark.py` (`PROFILES`) and are
 verified on every install. GGUFs are never committed to the repo; they
 live on the deploy host at `~/spark/models/`.
 
-## The service (bazzite)
+## The service (transcode appliance)
 
-`ratatoskr spark install` deploys everything: model acquisition +
-verification, the quadlet, the engine wiring, health, and a smoke
-test. Idempotent - re-run to reconcile. It records K2's health before
-and after and refuses to finish if K2 was disturbed.
+Spark runs as a **compose service on the transcode host** (192.168.2.141)
+as of 2026-09-06 — deliberately host-segregated from Bazzite so the
+game's core AI survives Bazzite being off. The full appliance doc lives
+in the homelab repo: `docs/spark-appliance.md` (compose service,
+rebuild steps, benchmarks, isolation proofs).
 
-- Quadlet: `~/.config/containers/systemd/spark.container` (user
-  service `spark.service`, `Restart=on-failure`, `WantedBy=default.target`)
+- Compose: `homelab-transcode` project, service `spark`
+  (compose/transcode.yml in rylee/homelab; deploy via
+  `scripts/deploy-transcode.sh`)
+- Model: `/opt/spark/models/Phi-4-mini-instruct-Q4_K_M.gguf`
+  (sha256 verified on copy; bazzite keeps a fallback copy at
+  `~/spark/models/`)
 - Image: `ghcr.io/ggml-org/llama.cpp:server`, pinned by digest
-- Flags: `-ngl 0 -c 8192 -t 8 --jinja` - CPU-only, 8 threads (the box
-  runs 8 cores, SMT off), 8K context, native chat template
-- Bound to `127.0.0.1:8082` - loopback only, never exposed to the LAN
-- Logs: `journalctl --user -u spark` (or `podman logs spark`)
-- Restart: `systemctl --user restart spark`
-- Profile switch: `ratatoskr spark install --profile tiny` (re-renders
-  the quadlet and restarts; one resident model at a time by design)
+- Flags: `-ngl 0 -c 8192 -t 4 --jinja` - CPU-only, 4 threads (the
+  transcode box runs a 4C/8T i7-6770HQ), 8K context, native chat
+  template, `reasoning_effort: low` via env var
+- Bound to `0.0.0.0:8082` on the transcode LAN (no Traefik route on
+  purpose - the engine reaches it over the LAN; gatus probes it direct)
+- Measured there: 9.6 tok/s, TTFT 0.1-0.25 s short prompts, ~32 tok/s
+  prefill (Skylake CPU - long-prompt prefill is the host's weak spot;
+  heavier work escalates to K2)
+- Logs: `ssh rylee@192.168.2.141 'docker logs spark'`
+- Restart: `ssh rylee@192.168.2.141 'docker restart spark'`
 
 VEFR talks to Spark through one seam: `VEFR_SPARK_URL`
-(default `http://127.0.0.1:8082`, set in the engine's quadlet
-environment). The escalation target is `VEFR_LLAMACPP_URL`, which
-remains K2 and is never modified by Spark work.
+(= `http://192.168.2.141:8082`, set in the engine's quadlet
+environment on bazzite). The escalation target is `VEFR_LLAMACPP_URL`
+(K2, same host as the engine), never modified by Spark work.
 
 ## The context contract
 
@@ -147,8 +155,9 @@ the harness in `~/llama-server/vefr-spark/scripts/` on the deploy host.
 
 ## Rollback
 
-`systemctl --user disable --now spark` and remove
-`~/.config/containers/systemd/spark.container`: the engine keeps
+Stop the `spark` compose service on the transcode host
+(`ssh rylee@192.168.2.141 'docker compose -p homelab-transcode
+-f /opt/compose/transcode.yml stop spark'`): the engine keeps
 working exactly as before Spark - every generator path is unchanged
 and every Spark route degrades to a graded payload. VEFR_LLAMACPP_URL
 (K2) was never modified. The model files in `~/spark/models/` are
