@@ -1,0 +1,66 @@
+# Gemma 4 E4B - Tier 1 small recommended storyteller candidate.
+#
+# Per the 2026-09-04 VEFR AI direction, Tier 1 is the "interesting
+# balance" tier - more capable than Tier 0, still practical for
+# ordinary machines. 4.5B effective parameters (8B with embeddings),
+# 128K context, Apache-2.0 under Gemma 4 Terms of Use.
+#
+# Role: small step-up. Question: "If E2B almost works, does E4B cross
+# the quality threshold?"
+#
+# Same capability profile as E2B (text only). If E4B reads noticeably
+# more alive in the audition, the cliff lives between E2B and E4B.
+
+[storyteller]
+id = "gemma4-e4b"
+name = "Gemma 4 E4B"
+version = "0.1.0"
+
+[model]
+provider = "openai-compatible"
+model = "gemma-4-E4B-it"
+source = "huggingface"
+context_window = 131072
+
+[capabilities]
+text = true
+structured_output = false
+tools = false
+vision = false
+
+[sampling]
+temperature = 0.8
+top_p = 0.9
+top_k = 64
+
+[chat_template_kwargs]
+
+[templates]
+system = "system.md"
+scene = "scene.md"
+character = "character.md"
+memory = "memory.md"
+
+[license]
+name = "Gemma 4 (Google DeepMind)"
+spdx = "Apache-2.0"
+source_url = "https://huggingface.co/google/gemma-4-E4B-it"
+redistribution = "allowed"
+commercial_use = "allowed"
+attribution = "Gemma 4 E4B by Google DeepMind, Apache-2.0 with Gemma Terms of Use"
+notes = "Gemma Terms of Use apply; see https://ai.google.dev/gemma/docs/gemma_4_license."
+
+[install]
+weights_source = "huggingface"
+weights_repo = "google/gemma-4-E4B-it"
+recommended_quant = "Q4_K_M"
+approx_disk_mb = 4500
+fetch_command = "# ollama pull gemma-4-e4b  OR  llama.cpp from HF; see upstream"
+attribution_url = "https://huggingface.co/google/gemma-4-E4B-it"
+
+[notes]
+text = """
+Audition pack. Tier 1 small recommended. Same family as the Tier 0
+floor so we can isolate 'bigger model within a family' from
+'completely different model'.
+"""

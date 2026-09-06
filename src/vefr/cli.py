@@ -2030,6 +2030,95 @@ def cmd_doctor(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_storyteller_test(args) -> int:
+    """norns storyteller-test - run a scene through one or all packs.
+
+    Single-model: --model <id>
+    Matrix: --matrix
+    """
+    from .storyteller import find_pack, list_packs
+    from .storyteller_test import (
+        audition_one,
+        build_blind_map,
+        list_fixtures,
+        load_fixture,
+        write_artifacts,
+    )
+
+    scene_id = getattr(args, "scene", None) or "rosa-after-close"
+    available = list_fixtures()
+    if scene_id not in available:
+        print(f"unknown scene {scene_id!r}. available:")
+        for sid in available:
+            print(f"  - {sid}")
+        return 1
+    scene = load_fixture(scene_id)
+
+    runs_per = max(1, int(getattr(args, "runs", 1) or 1))
+    seed = getattr(args, "seed", None)
+    if seed is not None:
+        seed = int(seed)
+    blind = bool(getattr(args, "blind", False))
+
+    if getattr(args, "matrix", False):
+        packs = list_packs()
+    else:
+        target = getattr(args, "model", None)
+        if not target:
+            print("--model <pack_id> is required (or pass --matrix)")
+            return 1
+        pack = find_pack(target)
+        if pack is None:
+            print(f"unknown storyteller pack {target!r}.")
+            print("available packs:")
+            for p in list_packs():
+                print(f"  - {p.id} ({p.model})")
+            return 1
+        packs = [pack]
+
+    print("=== STORYTELLER AUDITION ===")
+    print(f"scene: {scene_id} v{scene.version}")
+    print(f"runs per pack: {runs_per}")
+    print(f"packs: {len(packs)}")
+    print()
+
+    results = []
+    for pack in packs:
+        for n in range(1, runs_per + 1):
+            label = pack.id
+            print(f"--- {label} | run {n}/{runs_per} ---")
+            result = audition_one(pack, scene, run_number=n, seed=seed)
+            results.append(result)
+            if result.status == "ok":
+                preview = result.response.strip().splitlines()
+                for line in preview[:6]:
+                    print(f"  {line}")
+                if len(preview) > 6:
+                    print(f"  ... ({len(preview) - 6} more lines)")
+                print(f"  [{result.latency_s:.2f}s]")
+            elif result.status == "skipped":
+                print(f"  SKIPPED - {result.skip_reason}")
+            else:
+                print(f"  ERROR - {result.error}")
+            print()
+
+    out_dir = write_artifacts(results)
+
+    if blind:
+        bmap = build_blind_map(results)
+        (out_dir / "blind_map.txt").write_text(
+            "\n".join(f"{v} -> {k}" for k, v in bmap.items()),
+            encoding="utf-8",
+        )
+
+    print(f"saved: {out_dir}")
+    failed = sum(1 for r in results if r.status == "error")
+    skipped = sum(1 for r in results if r.status == "skipped")
+    ok = sum(1 for r in results if r.status == "ok")
+    print(f"summary: {ok} ok, {skipped} skipped, {failed} error")
+    return 1 if failed else 0
+
+
 def norns_main() -> int:
     ap = argparse.ArgumentParser(
         prog='norns', description=NORNS_HELP,
@@ -2079,6 +2168,24 @@ def norns_main() -> int:
     )
     md.add_argument('--pack', default=None)
     md.set_defaults(fn=cmd_doctor)
+
+    mt = craft.add_parser(
+        'storyteller-test',
+        help='run a VEFR scene through one or all Storyteller Packs',
+    )
+    mt.add_argument('--model', default=None,
+                    help='pack id or model name to run (mutually exclusive with --matrix)')
+    mt.add_argument('--matrix', action='store_true',
+                    help='run the scene through every installed pack')
+    mt.add_argument('--scene', default=None,
+                    help='scene fixture id (default: rosa-after-close)')
+    mt.add_argument('--runs', type=int, default=1,
+                    help='repetitions per pack (default: 1; 3 recommended for creative models)')
+    mt.add_argument('--seed', type=int, default=None,
+                    help='record a seed for reproducibility (informational; providers that support it will)')
+    mt.add_argument('--blind', action='store_true',
+                    help='label outputs Storyteller A/B/C and write a blind_map.txt for later reveal')
+    mt.set_defaults(fn=cmd_storyteller_test)
 
     args = ap.parse_args()
     # validate / build-map / verify / doctor default --pack to the
