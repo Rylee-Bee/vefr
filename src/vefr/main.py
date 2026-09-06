@@ -465,7 +465,7 @@ def builder_chat(turn: BuilderChatTurn):
     return {"reply": text}
 
 
-@app.post("/api/spark/health")
+@app.get("/api/spark/health")
 def spark_health_route():
     """Spark's liveness as VEFR sees it: up, down, or timed out.
 
