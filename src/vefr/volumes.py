@@ -352,8 +352,12 @@ def export_pack(
                   "if you want version control.")
             return dest
         _run(["git", "-C", str(dest), "add", "-A"], check=True)
+        # Inline identity: the exported repo is fresh, and the exporting
+        # machine (or CI runner) may have no global git config. Scoped
+        # via -c so we never touch the user's real config.
         _run([
-            "git", "-C", str(dest), "commit", "-m",
+            "git", "-C", str(dest), "-c", "user.name=vefr export",
+            "-c", "user.email=vefr@scaffold.local", "commit", "-m",
             f"export {pack} from vefr engine ({layout} shape)",
         ], check=True)
         print(f"exported {pack} to {dest} (git repo, {layout} shape)")
