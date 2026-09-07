@@ -7,6 +7,25 @@
 
 ## Landed
 
+- [x] **Truth-repair: canonical checkout documented, stale handoffs
+      archived, CI added** (2026-09-07, truth-repair epoch): the
+      canonical checkout is `/mnt/c/Users/ryleeb/projects/vefr`
+      (tracks origin/main); the kilo2 checkout is the preserved
+      Storyteller WIP lane — documented in AGENTS.md with a
+      do-not-commit-its-WIP rule. Dated session snapshots
+      (`session-handoff.md` 2026-08-31, two `handoff-snapshot-*`
+      2026-09-01 files) moved under `docs/guides/archive/` with a
+      README marking them non-current; `deploy.md`'s reference
+      repointed to the current `handoff.md`. The hard-coded pytest
+      count in AGENTS.md was removed (it had drifted 200 → 307 →
+      reality); the gate comment now says paste your own run's
+      summary line and find verified counts in this ledger. New
+      `.gitea/workflows/validate.yml` (first CI on this repo): ruff +
+      pytest on PRs and main pushes, plus a pack-validation job that
+      runs `norns validate` over every `worlds/*/world.json` pack.
+      Verified: `uv run --group test pytest -q` → 296 passed,
+      2 skipped, 1 warning (0:03:35); `norns validate --pack
+      worlds/sample-world` → ok.
 - [x] **Spark: a resident small brain, productionized**
       (2026-09-06, this session): the benchmark settled the model
       selection - Phi-4-mini-instruct Q4_K_M (spark-quality, 100/100
