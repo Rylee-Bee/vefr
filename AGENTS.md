@@ -15,6 +15,24 @@ kilo config - do not add personal files to this repo.
 | Change what a world pack can hold | `src/vefr/world.py` docstring - the contract         |
 | Validate a pack                   | `uv run norns validate --pack worlds/<name>`         |
 
+## Canonical checkout (2026-09-07)
+
+There are **two checkouts** of this repo on the dev box:
+
+- **`/mnt/c/Users/ryleeb/projects/vefr` — canonical.** Tracks
+  `origin/main` (Gitea `rylee/vefr`, mirrored to GitHub
+  `burgeswe/vefr`). Run tests, open PRs, and land work here.
+- **`/mnt/c/Users/ryleeb/projects/kilo2/vefr` — Storyteller WIP lane.**
+  Deliberately behind `origin/main` with uncommitted work
+  (`src/vefr/npc_action*.py`, `storyteller_benchmark.py`, modified
+  `cli.py`/`generator.py`/`storyteller_test.py`). **Do not "help" this
+  checkout by committing, stashing, cleaning, or rebasing its WIP** —
+  it is preserved lane state awaiting the story-team design
+  (homelab issue rylee/vefr#50). If you must sync it, ask Rylee first.
+
+A fresh agent: work in the `projects/vefr` checkout. If you find
+yourself in the kilo2 one, `cd` out rather than committing there.
+
 ## What this repo is
 
 - The **engine** only ("the bones"): FastAPI + any OpenAI-compatible
@@ -66,7 +84,11 @@ kilo config - do not add personal files to this repo.
 # The gate - run before claiming anything is done
 uv sync --group test
 uv run --group test ruff check src tests
-uv run --group test pytest -q      # 200 passed, 2 skipped (2026-09-01)
+# The pass/skip count is NOT recorded here - it drifted twice
+# (200 vs 307 vs reality). Paste the pytest summary line from YOUR
+# run with any done claim; the verified count per epoch lives in
+# ROADMAP.md (the ledger), not in this file.
+uv run --group test pytest -q
 
 # One-command session-start check (git, tree, tests, pack, live)
 uv run --group test norns doctor   # set VEFR_LIVE_URL to check a stack

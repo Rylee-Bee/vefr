@@ -1,0 +1,70 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv==0.11.28
+      - name: Sync deps
+        run: uv sync --frozen --group test
+      - name: Ruff
+        run: uv run --group test ruff check src tests
+      - name: Pytest
+        # No --timeout: vefr's pyproject does not pin pytest-timeout and
+        # the suite's slowest legitimate tests (Spark round-trips) run
+        # minutes, not seconds. CI gets the same command the local gate
+        # uses; a hang fails the job on the runner's own 6h ceiling.
+        run: uv run --group test pytest -q
+
+  pack-validation:
+    # Engine truth beyond unit tests: every world pack in worlds/ must
+    # pass `norns validate`. Catches contract drift between world.py
+    # and pack data without needing a live model.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv==0.11.28
+      - name: Sync deps
+        run: uv sync --frozen --group test
+      - name: Validate every shipped pack
+        run: |
+          set -e
+          failed=0
+          # A pack is a directory with world.json (the manifest norns
+          # validate consumes). worlds/lore/* are lore-data subtrees,
+          # not packs, and are skipped by this glob.
+          for pack in worlds/*/world.json; do
+            [ -e "$pack" ] || { echo "no packs found; nothing to validate"; exit 0; }
+            name=$(dirname "$pack")
+            echo "=== pack: $name ==="
+            if ! uv run --group test norns validate --pack "$name"; then
+              failed=1
+              echo "FAILED: $name"
+            fi
+          done
+          exit $failed
