@@ -122,4 +122,4 @@ clean on the next un-skipped deploy.
 - [volumes.md](volumes.md) — the ro/rw volume split on the deploy host.
 - [deploy-rsync-dance.md](deploy-rsync-dance.md) — legacy bind-mount path, kept for old hosts.
 - [volumes-export.md](volumes-export.md) — exporting a pack to a host-side git repo for editing.
-- [session-handoff.md](session-handoff.md) — the bundle a session-end handoff should include.
+- [handoff.md](handoff.md) — the bundle a session-end handoff should include (dated session snapshots live under `archive/`).
