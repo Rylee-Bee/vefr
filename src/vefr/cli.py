@@ -1614,7 +1614,11 @@ reads whatever the pack gives it.
         print('git init failed - the files are copied; init by hand')
         return 1
     sh(('git', '-C', str(dest), 'add', '-A'))
-    if sh(('git', '-C', str(dest), 'commit', '-m',
+    # Inline identity: the scaffolded repo is a fresh export, and the
+    # exporting machine (or CI runner) may have no global git config.
+    # Scoped via -c so we never touch the user's real config.
+    if sh(('git', '-C', str(dest), '-c', 'user.name=vefr scaffold',
+           '-c', 'user.email=vefr@scaffold.local', 'commit', '-m',
            f'world pack {name}, exported from vefr {engine_sha}')).returncode:
         print('commit failed - files are staged; commit by hand')
         return 1
