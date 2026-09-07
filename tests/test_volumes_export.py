@@ -137,7 +137,10 @@ def test_export_refuses_to_overwrite_existing_git_repo(sample_pack_root, tmp_pat
                    capture_output=True, text=True, check=True)
     (dest / "WIP.md").write_text("in progress", encoding="utf-8")
     subprocess_run(["git", "-C", str(dest), "add", "-A"], check=True)
-    subprocess_run(["git", "-C", str(dest), "commit", "-m", "wip"],
+    # Inline identity: CI runner images have no global git config.
+    subprocess_run(["git", "-C", str(dest), "-c", "user.name=test",
+                    "-c", "user.email=test@example.test", "commit",
+                    "-m", "wip"],
                    capture_output=True, text=True, check=True)
 
     # The export should not clobber the existing repo.
