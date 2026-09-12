@@ -5,7 +5,7 @@
 | Area | Status | Evidence |
 |---|---|---|
 | Repository | healthy, working-tree dirty | `git status` shows M on `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
-| Last commit | `1d4df1f` 2026-09-12 "chore(readme): add Play-Nice section; refresh CURRENT last-commit row" | `git log -1` |
+| Last commit | `f2a6a9e` 2026-09-12 "chore(play-nice): align VEFR project authority and correct CURRENT" | `git log -1` |
 | Active rule surface | AGENTS.md, AGENT_POLICY.md | project-specific engine/world-pack truth |
 | Play-Nice adoption | adopted | `.project/contracts/adoption.yaml` pinned to `21b6841` |
 
@@ -36,6 +36,14 @@
 | `AGENTS.md`, `AGENT_POLICY.md` | unchanged (engine-specific kernels preserved) |
 | `src/**`, `docs/**`, `deploy/**` | unchanged (uncommitted WIP untouched) |
 
+## What changed in the propagation pass (`f2a6a9e`)
+
+| Path | Change |
+|---|---|
+| `.project/CURRENT.md` | refreshed Last-commit row from `1d4df1f` → `f2a6a9e` (this pass) |
+| `AGENTS.md` | origin-remote claim updated (Gitea retired; GitHub is current); `src/vefr/` count corrected (25 → 30 tracked + Storyteller WIP); added two `.project/` pointer rows |
+| `src/**`, `docs/**`, `deploy/**` | unchanged (Storyteller WIP preserved) |
+
 ## Unknown / Deferred
 
 - The uncommitted WIP in this kilo2 checkout belongs to the Storyteller
@@ -44,4 +52,5 @@
 
 ## NEXT
 
-Nothing required (rule-wise). Storyteller WIP remains for Rylee's session.
+Nothing required (rule-wise). Storyteller WIP remains for Rylee's session;
+Play-Nice adoption state and the Gitea/GitHub authority statement now agree.
