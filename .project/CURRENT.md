@@ -5,7 +5,7 @@
 | Area | Status | Evidence |
 |---|---|---|
 | Repository | healthy, working-tree dirty | `git status` shows M on `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
-| Last commit | `d929b0a` 2026-09-07 merge PR 51 ("docs: canonical checkout, archive stale handoffs, add CI") | `git log -1` |
+| Last commit | `378427f` 2026-09-12 "adopt(play-nice): pin contracts library 21b6841 as shared behavioral authority" | `git log -1` |
 | Active rule surface | AGENTS.md, AGENT_POLICY.md | project-specific engine/world-pack truth |
 | Play-Nice adoption | adopted | `.project/contracts/adoption.yaml` pinned to `21b6841` |
 
