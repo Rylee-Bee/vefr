@@ -1,0 +1,29 @@
+schema: play-nice/project-v1
+id: vefr
+name: vefr — a rumor engine for playable worlds
+purpose_summary: >-
+  The engine only (the bones). FastAPI + any OpenAI-compatible LLM backend;
+  maplab validator; ratatoskr (ops) and norns (craft) CLIs. World packs
+  live as data in separate repos (Emberfield ships here; burrito-journalism
+  and munr-story live in their own repos).
+ownership:
+  human: rylee
+  role: owner
+pointers:
+  adoption_manifest: .project/contracts/adoption.yaml
+  canonical_agent_rules: AGENTS.md
+  agent_policy: AGENT_POLICY.md
+  getting_started: GETTING_STARTED.md
+  roadmap: ROADMAP.md
+  current_state: .project/CURRENT.md
+  decisions: .project/DECISIONS.md
+  brain_socket: docs/guides/brain-socket.md
+  spark: docs/guides/spark.md
+status_vocabulary: [healthy, working, waiting, blocked, unknown, complete, deferred]
+canonical_status: observed
+canonical_status_observed_at: 2026-09-12
+no_secrets: true
+notes: >-
+  This is the kilo2/vefr working checkout. The canonical checkout is
+  /mnt/c/Users/ryleeb/projects/vefr per AGENTS.md. This checkout is a
+  Storyteller WIP lane; rule surfaces here mirror the canonical checkout.

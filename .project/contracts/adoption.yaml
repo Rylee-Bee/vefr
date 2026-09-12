@@ -1,0 +1,87 @@
+schema: play-nice/adoption-v1
+project: vefr
+source:
+  repository: Rylee-Bee/play-nice-contracts
+  revision: 21b6841a50a1b0d459a760861385e99679852430
+
+always:
+  - ask-for-help
+  - participation-and-contribution
+  - mutual-contribution
+  - collaborative-good-faith
+  - truth-and-evidence
+  - human-reliability
+  - recovery-and-reversibility
+  - provenance-and-audit
+  - explicit-state
+  - stable-truth-replaceable-machinery
+  - deterministic-first
+
+triggers:
+  human-facing:
+    - accessibility-floor
+    - attention-and-focus
+    - copy-and-language
+  ui:
+    - web-ui
+    - motion-and-feedback
+    - visual-fidelity-and-composition
+  design:
+    - design-source-and-fidelity
+    - visual-fidelity-and-composition
+  api:
+    - api
+    - versioning-and-compatibility
+    - failure-and-degradation
+    - machine-readable-output
+    - human-and-machine-parity
+  external-api:
+    - capability-first
+    - friendly-api-client
+    - provider-neutrality
+    - discovery-and-negotiation
+    - idempotency
+    - polling-webhooks-and-caching
+    - external-mutations
+    - model-routing
+  portability:
+    - portability-and-ownership
+  agent:
+    - agent-behavior
+    - bounded-work
+    - orchestration
+    - worker-contract
+    - review-and-integration
+    - handoff
+    - contract-attestation
+    - model-routing
+  engineering:
+    - deterministic-first
+    - search-before-inventing
+    - testing-and-verification
+    - dependency-discipline
+    - git-and-worktrees
+    - documentation-and-continuity
+    - migrations
+    - observability
+  security:
+    - secrets
+    - authorization
+    - authentication
+    - least-privilege
+    - data-classification
+    - public-private-boundaries
+  operations:
+    - failure-and-degradation
+    - quiet-when-healthy
+    - observability
+
+notes: >-
+  VEFR remains its own architecture: bring-your-own-brain, worlds as data,
+  maplab as the geometry/contract validator. Behavioral authority resolves
+  to Play-Nice. Project-specific truth (world-pack shape, brain-socket seam,
+  ratatoskr/norns CLIs, deterministic loading, sample-world pack) lives in
+  the repo and remains untouched by this adoption. World/content/game-
+  specific contracts stay local. VEFR does NOT inherit Personal World's
+  visual design — its own accessibility contract and parchment aesthetic
+  govern locally.
