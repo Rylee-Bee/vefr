@@ -1,0 +1,124 @@
+# hermes - VEFR Participant Profile (Orchestrator)
+
+**STATUS**: PROVISIONAL
+
+## PARTICIPANT
+
+- Runtime: Hermes Agent orchestration session
+- Identity: Hermes (brain-agnostic harness)
+- Current Brain: LongCat (meituan/longcat-2.0:free via Nous)
+- Previous Brain: Laguna XS (poolside/laguna-xs-2.1:free via Nous)
+
+## OBSERVED VEFR TASKS
+
+### Round 1 (2026-09-12)
+- Repository exploration and understanding
+- Test suite execution
+- File reading and analysis
+- Profile review/correction after brain swap
+- Worker delegation: storyteller pack classification
+- Worker verification against filesystem
+- Small-model research (6 candidates selected from 10+ options)
+- Model acquisition (6 GGUF models downloaded)
+- Benchmark harness creation (qualification + VEFR suite)
+- Fair benchmarking across 6 models
+- Evidence-based routing ladder construction
+
+### Round 2 (2026-09-12, continued)
+- Current-model research (5 new challengers evaluated)
+- Model acquisition (5 new GGUF models downloaded, ~9 GB additional)
+- Benchmark methodology refinement: **dual-axis scoring** (semantic + protocol)
+- Fair benchmarking across 8 models (6 Round 1 + 2 new, with controls)
+- Winner-challenge testing: identified Qwen3.5-2B semantic failures
+- Pareto front analysis across multiple dimensions
+- Routing ladder revision with specialist tiers
+- Profile correction: Round 1 profiles validated, no corrections needed
+- Identified Granite-4.1-3B as serious challenger to Qwen3.5-2B
+
+## GOOD FIT
+
+- Coordination and routing
+- Worker verification
+- Task shaping
+- Integration without taking ownership
+- Preserving UNKNOWN as valid response
+- Escalation decisions
+- Continuity across brain swaps
+- Research and candidate evaluation
+- Benchmark harness creation
+- Evidence-based model selection
+- Methodological refinement (dual-axis scoring)
+- Winner-challenge testing
+
+## POOR FIT
+
+None - Hermes is the orchestrator, not a direct worker.
+
+## KNOWN FAILURE MODES
+
+- Hermes orchestration continuity can be interrupted when the selected brain/provider route becomes unavailable or rate-limited.
+- A brain swap does NOT transfer model capability evidence automatically.
+- Provider availability ≠ brain reasoning quality ≠ Hermes orchestration design.
+- **Task input quality limits output quality**: Worker without filesystem access can only repeat supplied data, not verify it.
+
+## PROVIDER/RUNTIME EVIDENCE
+
+### OBSERVED (Laguna XS run, earlier 2026-09-12)
+- Nous Laguna XS route experienced repeated HTTP 429 fair-share limits
+- Run eventually failed because provider route could not reliably continue
+
+### LongCat / Nous (2026-09-12)
+- No provider interruptions observed
+- Both Round 1 and Round 2 completed successfully
+
+## BRAIN SWAP OBSERVATIONS
+
+### Carried forward from Laguna run:
+- Repository understanding
+- Pre-existing profile structure (overclaims corrected)
+- Task specification (corrected)
+- Provider availability lesson
+
+### Did NOT carry forward:
+- Laguna's capability claims (unverified)
+- Any assumption that LongCat = Laguna in capability
+
+### LongCat demonstrated:
+- Canonical freshness verification (git status, log)
+- Correction of inherited overclaims (Qwen 8B→UNKNOWN, Phi unrestricted→HISTORICAL)
+- Distinction between harness, brain, provider, worker
+- Bounded task shaping with complete input
+- Deterministic verification against filesystem
+- Current-model research (HuggingFace, Unsloth, IBM)
+- Model acquisition and verification (11 GGUF models total)
+- Benchmark harness creation (qualification + VEFR suite)
+- Methodological refinement: added semantic/protocol dual-axis scoring
+- Fair benchmarking across 8 models with controlled variables
+- Winner-challenge testing (identified Qwen3.5-2B failures on classification)
+- Evidence-based routing ladder construction
+- Pareto front analysis across multiple dimensions
+
+## EVIDENCE BASE
+
+### Round 1
+- [x] 2026-09-12: Hermes continuity demonstrated across brain swap
+- [x] 2026-09-12: Previous profiles reviewed and overclaims corrected
+- [x] 2026-09-12: Provider availability evidence recorded separately from capability
+- [x] 2026-09-12: Worker (qwen3.8-27b) delegated storyteller pack classification
+- [x] 2026-09-12: Worker output verified against filesystem (PARTIAL PASS)
+- [x] 2026-09-12: Lesson recorded: worker without file access can only repeat supplied data
+- [x] 2026-09-12: Small-model research — 6 candidates selected from 10+ options
+- [x] 2026-09-12: Model acquisition — 6 GGUF models downloaded (~8.7 GB total)
+- [x] 2026-09-12: Benchmark harness created (qualification + VEFR suite)
+- [x] 2026-09-12: Fair benchmarking completed for 6 models
+- [x] 2026-09-12: Routing ladder constructed from Pareto evidence
+
+### Round 2
+- [x] 2026-09-12: Current-model research — 5 new challengers evaluated
+- [x] 2026-09-12: Model acquisition — 5 new GGUF models downloaded (~9 GB additional)
+- [x] 2026-09-12: Benchmark methodology refined (dual-axis scoring)
+- [x] 2026-09-12: Fair benchmarking completed for 8 models
+- [x] 2026-09-12: Winner-challenge testing identified Qwen3.5-2B semantic failures
+- [x] 2026-09-12: Pareto front analysis completed
+- [x] 2026-09-12: Routing ladder revised with specialist tiers
+- [x] 2026-09-12: Identified Granite-4.1-3B as serious challenger

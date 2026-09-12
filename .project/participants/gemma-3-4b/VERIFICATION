@@ -1,0 +1,62 @@
+# gemma-3-4b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session, Round 2)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: Gemma 3 4B (Q4_K_M quantization, ~2.49 GB)
+- Source: unsloth/gemma-3-4b-it-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks, Round 2 dual-axis)
+
+| Task | Semantic | Protocol | Notes |
+|------|----------|----------|-------|
+| NPC JSON Creation | PASS | FAIL | Markdown fences |
+| Bounded State Edit | PASS | PASS | Correct edit |
+| Escalation Judgment | PASS | FAIL | Markdown fences |
+| Lore Generation | PASS | FAIL | Markdown fences |
+| World Data Extraction | PASS | FAIL | Markdown fences |
+| Rune/Phase Classification | FAIL | FAIL | Wrong runes, fences |
+| Instruction Scope Discipline | PASS | FAIL | Markdown fences |
+| UNKNOWN Preservation | PASS | FAIL | Markdown fences |
+
+## VEFR SCORE: 87.5% semantic, 12.5% protocol
+
+## GOOD FIT (OBSERVED)
+
+- Tasks where markdown fences are acceptable and post-processing is available
+- Complex classification (when fences are stripped)
+- UNKNOWN preservation (content is correct, just fenced)
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Tasks requiring raw JSON output (87.5% protocol failure)
+- Direct API consumption without post-processing
+
+## KNOWN FAILURE MODES
+
+- Wraps ALL JSON in ```json markdown fences (7/8 tasks)
+- Similar to Gemma 3 1B but with better semantic correctness
+
+## PERFORMANCE
+
+- Average TTFT: 1,660ms
+- Average Total: 12,057ms
+- Model size: 2.49 GB
+
+## COMPARISON TO GEMMA 3 1B (ROUND 1)
+
+| Metric | Gemma 3 1B | Gemma 3 4B |
+|--------|------------|------------|
+| Semantic | 62.5% | 87.5% |
+| Protocol | 12.5% | 12.5% |
+| Size | 806 MB | 2.49 GB |
+
+Gemma 3 4B fixes the semantic issues but not the protocol issues. The markdown fence behavior is family-wide.
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Round 2 VEFR benchmark (87.5% semantic, 12.5% protocol)

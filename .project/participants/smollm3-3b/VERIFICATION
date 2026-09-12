@@ -1,0 +1,54 @@
+# smollm3-3b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session, Round 2)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: SmolLM3-3B (Q4_K_M quantization, ~1.92 GB)
+- Source: bartowski/HuggingFaceTB_SmolLM3-3B-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks, Round 2 dual-axis)
+
+| Task | Semantic | Protocol | Notes |
+|------|----------|----------|-------|
+| NPC JSON Creation | PASS | FAIL | Markdown fences |
+| Bounded State Edit | PASS | PASS | Correct edit |
+| Escalation Judgment | FAIL | FAIL | Misclassified, prose output |
+| Lore Generation | FAIL | FAIL | Prose output |
+| World Data Extraction | PASS | FAIL | Markdown fences |
+| Rune/Phase Classification | FAIL | FAIL | Wrong runes, fences |
+| Instruction Scope Discipline | PASS | PASS | Correct |
+| UNKNOWN Preservation | PASS | FAIL | Markdown fences |
+
+## VEFR SCORE: 62.5% semantic, 25% protocol
+
+## GOOD FIT (OBSERVED)
+
+- Simple structured tasks (state edit, scope discipline)
+- Tasks where markdown fences are acceptable
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Most tasks requiring raw JSON output (75% protocol failure)
+- Escalation judgment
+- Classification tasks
+
+## KNOWN FAILURE MODES
+
+- Wraps JSON in markdown fences (6/8 tasks)
+- Returns prose instead of structured JSON for creative tasks
+- Misclassifies load-bearing tasks
+
+## PERFORMANCE
+
+- Average TTFT: 1,051ms
+- Average Total: 7,977ms
+- Model size: 1.92 GB
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Round 2 VEFR benchmark (62.5% semantic, 25% protocol)
+- [ ] Not recommended for retention
