@@ -21,7 +21,7 @@ There are **two checkouts** of this repo on the dev box:
 
 - **`/mnt/c/Users/ryleeb/projects/vefr` — canonical.** Tracks
   `origin/main` (Gitea `rylee/vefr`, mirrored to GitHub
-  `burgeswe/vefr`). Run tests, open PRs, and land work here.
+  `Rylee-Bee/vefr`). Run tests, open PRs, and land work here.
 - **`/mnt/c/Users/ryleeb/projects/kilo2/vefr` — Storyteller WIP lane.**
   Deliberately behind `origin/main` with uncommitted work
   (`src/vefr/npc_action*.py`, `storyteller_benchmark.py`, modified
