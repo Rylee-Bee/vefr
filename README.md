@@ -21,6 +21,33 @@ It is an honesty contract rendered as a game: the world's claims
 live in the pack, the engine's rules are tested, and every name
 spoken must be true.
 
+## A Play-Nice project
+
+This repository adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts)
+as its shared cooperation and engineering constitution.
+
+Here, Play-Nice governs how humans, agents, providers, and tools
+cooperate **around** the engine: truth and evidence before generating
+content, explicit state, asking instead of guessing, provenance on
+consequential acts, recoverable mistakes, accessibility floors,
+bounded work, and collaborative good faith.
+
+VEFR itself stays authoritative for everything that makes it the
+engine it is: the authoritative world state and its loaders, the
+brain-pack seam ("bring your own brain; VEFR provides the world"),
+action validation through `maplab`, the world-pack shape (data only;
+engine doesn't reach into pack contents), engine architecture and
+the `ratatoskr` and `norns` CLIs, the deterministic/generative
+boundary (deterministic everywhere except explicit generative
+edges), and runtime/performance contracts. Project-specific rules in
+[`AGENTS.md`](AGENTS.md) and [`AGENT_POLICY.md`](AGENT_POLICY.md)
+remain local.
+
+Canonical adoption lives at
+[`.project/contracts/adoption.yaml`](.project/contracts/adoption.yaml);
+canonical current state at [`.project/CURRENT.md`](.project/CURRENT.md);
+durable decisions at [`.project/DECISIONS.md`](.project/DECISIONS.md).
+
 ## The bones and the flesh
 
 ```
