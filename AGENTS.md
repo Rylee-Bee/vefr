@@ -14,14 +14,16 @@ kilo config - do not add personal files to this repo.
 | See what's landed / what's next   | `ROADMAP.md` (the ledger - update it when you land)  |
 | Change what a world pack can hold | `src/vefr/world.py` docstring - the contract         |
 | Validate a pack                   | `uv run norns validate --pack worlds/<name>`         |
+| Find current truth / decisions    | `.project/CURRENT.md` / `.project/DECISIONS.md`      |
+| See Play-Nice behavioral authority| `.project/contracts/adoption.yaml` (pinned revision) |
 
 ## Canonical checkout (2026-09-07)
 
 There are **two checkouts** of this repo on the dev box:
 
 - **`/mnt/c/Users/ryleeb/projects/vefr` — canonical.** Tracks
-  `origin/main` (Gitea `rylee/vefr`, mirrored to GitHub
-  `burgeswe/vefr`). Run tests, open PRs, and land work here.
+  `origin/main` (GitHub `Rylee-Bee/vefr`; Gitea is retired as source
+  control). Run tests, open PRs, and land work here.
 - **`/mnt/c/Users/ryleeb/projects/kilo2/vefr` — Storyteller WIP lane.**
   Deliberately behind `origin/main` with uncommitted work
   (`src/vefr/npc_action*.py`, `storyteller_benchmark.py`, modified
@@ -68,7 +70,7 @@ yourself in the kilo2 one, `cd` out rather than committing there.
 
 | Path                  | Purpose                                                        |
 | --------------------- | -------------------------------------------------------------- |
-| `src/vefr/` (25)      | The engine. `world.py` is the only seam between engine + story |
+| `src/vefr/` (30 tracked + Storyteller WIP per "Canonical checkout" above) | The engine. `world.py` is the only seam between engine + story |
 | `web/`                | Parchment UI + canvas town; `state.js` is the one client state |
 | `worlds/sample-world/`| Playable demo pack, acts shape, validates green            |
 | `worlds/lore/`        | Three lore packs (norse, historical-event, norse-runes)        |
