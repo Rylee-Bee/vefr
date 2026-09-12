@@ -1,0 +1,101 @@
+# qwen3.5-0.8b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: Qwen3.5-0.8B (Q4_K_M quantization, ~533 MB)
+- Source: unsloth/Qwen3.5-0.8B-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks)
+
+| Task | Result | Notes |
+|------|--------|-------|
+| NPC JSON Creation | PASS | Correct schema, valid output |
+| Bounded State Edit | PASS | Exact edit, preserved unrelated state |
+| Escalation Judgment | FAIL | Misclassified load-bearing tasks |
+| Lore Generation | PASS | Appropriate length, in-tone |
+| World Data Extraction | PASS | Correct fields, valid JSON |
+| Rune/Phase Classification | FAIL | Confused Fehu/Kenaz |
+| Instruction Scope Discipline | PASS | Exact output, no scope expansion |
+| UNKNOWN Preservation | FAIL | Hallucinated "Djibouti" for unknown |
+
+### Qualification Battery (6 tests)
+
+| Test | Result |
+|------|--------|
+| Strict JSON Schema | PASS |
+| UNKNOWN/Hallucination Probe | FAIL |
+| Exact String Handling | PASS |
+| Enum Selection | PASS |
+| Multi-Step Reasoning | PASS |
+| Bounded Extraction | PASS |
+
+## VEFR SCORE: 5/8
+
+## GOOD FIT (OBSERVED)
+
+- Exact string handling (deterministic output)
+- Simple JSON with clear schema
+- Bounded extraction from supplied text
+- Multi-step reasoning with clear instructions
+- Tasks with explicit, simple requirements
+
+## GOOD WITH VERIFICATION
+
+- State manipulation (passes when changes are explicit)
+- NPC creation (correct schema, but verify fields)
+- World data extraction (verify values)
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Escalation judgment (misclassifies load-bearing tasks)
+- Classification requiring domain knowledge (runes)
+- Tasks requiring UNKNOWN preservation
+- Multi-step reasoning beyond 3-4 steps
+
+## KNOWN FAILURE MODES
+
+- Hallucinates when uncertain (instead of returning UNKNOWN)
+- Struggles with classification tasks requiring domain knowledge
+- May return markdown fences on JSON output (observed in qual)
+
+## INPUT REQUIREMENTS
+
+- System prompt should explicitly say "Output ONLY JSON, no markdown"
+- Provide complete context (no file system access)
+- Explicit enumeration helps ("from [A, B, C]")
+
+## ASK FOR HELP WHEN
+
+- Task requires domain knowledge not in prompt
+- Classification task with many similar options
+- State edit requiring multi-step reasoning
+
+## PERFORMANCE
+
+- Average TTFT: 518ms
+- Average Total: 1,783ms
+- Model size: 533 MB
+- Architecture: Qwen
+
+## AUTHORITY
+
+- Can classify and report observations
+- Cannot make consequential changes
+- Must be verified by Hermes before integration
+
+## UNKNOWN
+
+- Performance on creative prose longer than 1 paragraph
+- Performance on tasks >4 steps
+- Long-context behavior (>4K tokens)
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Qualification battery (5/6)
+- [x] 2026-09-12: Full VEFR benchmark (5/8)
+- [x] 2026-09-12: Storyteller pack classification (5/6 categories)

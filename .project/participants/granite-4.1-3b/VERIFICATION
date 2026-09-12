@@ -1,0 +1,65 @@
+# granite-4.1-3b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session, Round 2)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: Granite 4.1 3B (Q4_K_M quantization, ~1.95 GB)
+- Source: ibm-granite/granite-4.1-3b-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks, Round 2 dual-axis)
+
+| Task | Semantic | Protocol | Notes |
+|------|----------|----------|-------|
+| NPC JSON Creation | PASS | PASS | Correct schema, valid output |
+| Bounded State Edit | PASS | PASS | Exact edit, preserved unrelated state |
+| Escalation Judgment | FAIL | PASS | Misclassified ambiguous item case as LOCAL |
+| Lore Generation | PASS | PASS | Appropriate length, in-tone |
+| World Data Extraction | PASS | PASS | Correct fields, valid JSON |
+| Rune/Phase Classification | PASS | PASS | All 4 runes correctly mapped |
+| Instruction Scope Discipline | PASS | PASS | Exact output, no scope expansion |
+| UNKNOWN Preservation | PASS | PASS | Correct UNKNOWN handling |
+
+## VEFR SCORE: 87.5% semantic, 100% protocol
+
+## GOOD FIT (OBSERVED)
+
+- Enterprise-grade instruction following
+- Tasks requiring perfect protocol compliance
+- Structured output with exact schema
+- UNKNOWN preservation
+- Multi-step reasoning with clear instructions
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Escalation judgment on ambiguous cases (should ESCALATE when uncertain)
+
+## KNOWN FAILURE MODES
+
+- Misclassifies ambiguous-but-load-bearing tasks as LOCAL instead of ESCALATE
+
+## PERFORMANCE
+
+- Average TTFT: 1,489ms
+- Average Total: 7,720ms
+- Model size: 1.95 GB
+
+## COMPARISON
+
+| Metric | Qwen3.5-2B | Granite-4.1-3B |
+|--------|------------|----------------|
+| Semantic | 75% | 87.5% |
+| Protocol | 100% | 100% |
+| Size | 1.28 GB | 1.95 GB |
+| Speed | ~6.5s | ~7.7s |
+| Rune Classification | FAIL | PASS |
+| Escalation Judgment | FAIL | FAIL |
+
+Granite-4.1-3B outperforms Qwen3.5-2B on semantic correctness while maintaining perfect protocol compliance. It's 50% larger but handles complex classification better.
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Round 2 VEFR benchmark (87.5% semantic, 100% protocol)

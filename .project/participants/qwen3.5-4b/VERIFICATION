@@ -1,0 +1,65 @@
+# qwen3.5-4b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session, Round 2)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: Qwen3.5-4B (Q4_K_M quantization, ~2.74 GB)
+- Source: unsloth/Qwen3.5-4B-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks, Round 2 dual-axis)
+
+| Task | Semantic | Protocol | Notes |
+|------|----------|----------|-------|
+| NPC JSON Creation | PASS | PASS | Correct schema |
+| Bounded State Edit | PASS | PASS | Exact edit |
+| Escalation Judgment | PASS | PASS | Correctly classified all 5 tasks |
+| Lore Generation | FAIL | FAIL | Returned prose, not JSON |
+| World Data Extraction | PASS | PASS | Correct fields |
+| Rune/Phase Classification | PASS | PASS | All 4 runes correct |
+| Instruction Scope Discipline | PASS | PASS | Exact output |
+| UNKNOWN Preservation | PASS | PASS | Correct UNKNOWN handling |
+
+## VEFR SCORE: 87.5% semantic, 87.5% protocol
+
+## GOOD FIT (OBSERVED)
+
+- Complex classification (rune mapping, escalation judgment)
+- Structured output with correct schema
+- UNKNOWN preservation
+- Multi-step reasoning
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Creative prose generation (returned prose instead of JSON wrapper)
+
+## KNOWN FAILURE MODES
+
+- May return prose instead of JSON for creative tasks
+- Lore generation semantic failure (text too long or off-tone)
+
+## PERFORMANCE
+
+- Average TTFT: 3,011ms
+- Average Total: 12,039ms
+- Model size: 2.74 GB
+
+## COMPARISON TO QWEN3.5-2B
+
+| Metric | Qwen3.5-2B | Qwen3.5-4B |
+|--------|------------|------------|
+| Semantic | 75% | 87.5% |
+| Protocol | 100% | 87.5% |
+| Size | 1.28 GB | 2.74 GB |
+| Speed | ~6.5s | ~12.0s |
+| Rune Classification | FAIL | PASS |
+| Escalation Judgment | FAIL | PASS |
+
+Qwen3.5-4B is better at complex reasoning but larger, slower, and less protocol-compliant.
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Round 2 VEFR benchmark (87.5% semantic, 87.5% protocol)

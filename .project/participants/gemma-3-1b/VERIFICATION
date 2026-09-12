@@ -1,0 +1,68 @@
+# gemma-3-1b - VEFR Participant Profile
+
+**STATUS**: PROVISIONAL (Evidence: 1 session)
+
+## PARTICIPANT
+
+- Runtime: llama.cpp server at http://127.0.0.1:8083
+- Model Identity: Gemma 3 1B (Q4_K_M quantization, ~806 MB)
+- Source: unsloth/gemma-3-1b-it-GGUF
+
+## OBSERVED VEFR TASKS
+
+### Full VEFR Benchmark (8 tasks)
+
+| Task | Result | Notes |
+|------|--------|-------|
+| NPC JSON Creation | PASS | Correct schema, valid output |
+| Bounded State Edit | PASS | Exact edit, preserved unrelated state |
+| Escalation Judgment | FAIL | Misclassified load-bearing tasks |
+| Lore Generation | PASS | Appropriate length, in-tone |
+| World Data Extraction | PASS | Correct fields, valid JSON |
+| Rune/Phase Classification | FAIL | Confused Fehu/Kenaz |
+| Instruction Scope Discipline | PASS | Exact output, no scope expansion |
+| UNKNOWN Preservation | FAIL | Invented values for unknown fields |
+
+### Qualification Battery (6 tests)
+
+| Test | Result |
+|------|--------|
+| Strict JSON Schema | FAIL (markdown fences) |
+| UNKNOWN/Hallucination Probe | FAIL (markdown fences) |
+| Exact String Handling | PASS |
+| Enum Selection | FAIL (markdown fences) |
+| Multi-Step Reasoning | FAIL (markdown fences) |
+| Bounded Extraction | FAIL (markdown fences) |
+
+## VEFR SCORE: 5/8
+
+## GOOD FIT (OBSERVED)
+
+- Exact string handling
+- Simple extraction tasks
+- Tasks where markdown fences can be stripped
+
+## POOR FIT / ROUTE ELSEWHERE FIRST
+
+- Tasks requiring raw JSON output (wraps in markdown fences)
+- UNKNOWN preservation (invents values)
+- Classification tasks requiring domain knowledge
+- Escalation judgment
+
+## KNOWN FAILURE MODES
+
+- Wraps JSON in ```json markdown fences (5/6 qual failures)
+- Invents values for unknown fields
+- Misclassifies load-bearing tasks
+- Confuses similar classification categories
+
+## PERFORMANCE
+
+- Average TTFT: 634ms
+- Average Total: 3,680ms
+- Model size: 806 MB
+
+## EVIDENCE BASE
+
+- [x] 2026-09-12: Qualification battery (1/6)
+- [x] 2026-09-12: Full VEFR benchmark (5/8)
