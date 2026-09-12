@@ -17,23 +17,27 @@ kilo config - do not add personal files to this repo.
 | Find current truth / decisions    | `.project/CURRENT.md` / `.project/DECISIONS.md`      |
 | See Play-Nice behavioral authority| `.project/contracts/adoption.yaml` (pinned revision) |
 
-## Canonical checkout (2026-09-07)
+## Active checkout and Storyteller WIP (2026-09-12)
 
-There are **two checkouts** of this repo on the dev box:
+`origin` is GitHub: `https://github.com/Rylee-Bee/vefr.git`. Gitea is
+retired as source control; historical references remain where truthful
+(see `docs/guides/archive/` and `ROADMAP.md` 2026-09-07 entry).
 
-- **`/mnt/c/Users/ryleeb/projects/vefr` — canonical.** Tracks
-  `origin/main` (GitHub `Rylee-Bee/vefr`; Gitea is retired as source
-  control). Run tests, open PRs, and land work here.
-- **`/mnt/c/Users/ryleeb/projects/kilo2/vefr` — Storyteller WIP lane.**
-  Deliberately behind `origin/main` with uncommitted work
-  (`src/vefr/npc_action*.py`, `storyteller_benchmark.py`, modified
-  `cli.py`/`generator.py`/`storyteller_test.py`). **Do not "help" this
-  checkout by committing, stashing, cleaning, or rebasing its WIP** —
-  it is preserved lane state awaiting the story-team design
-  (homelab issue rylee/vefr#50). If you must sync it, ask Rylee first.
+The repo's working tree is **deliberately dirty on this checkout** —
+Storyteller capability work is in flight:
 
-A fresh agent: work in the `projects/vefr` checkout. If you find
-yourself in the kilo2 one, `cd` out rather than committing there.
+| State | Paths |
+|---|---|
+| Modified (5) | `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
+| Untracked (20) | `src/vefr/npc_action.py`, `src/vefr/npc_action_scenarios.py`, `src/vefr/storyteller_benchmark.py`, `storyteller_packs/{qwen3-0.6b,qwen3-1.7b,qwen3-4b,smollm2-135m,smollm2-360m}/`, `tests/fixtures/storyteller/*.json`, `tests/test_npc_action.py`, `tests/test_storyteller_benchmark.py`, `artifacts/` |
+| Protected as Storyteller WIP until the story-team design lands (homelab issue rylee/vefr#50). | The five modified files; the 20 untracked files; the ten `tests/fixtures/storyteller/*.json` fixtures (one of which is `rosa-after-close.json`). |
+
+**Do not stage, commit, stash, or rebase any of the above as part of
+ordinary engine work.** If a refinement pass needs to touch the same
+files, surface the conflict first.
+
+Live Git truth wins — run `agent-sync status` whenever "current" is
+in doubt; do not maintain duplicate copies of remote SHA here.
 
 ## What this repo is
 
@@ -138,8 +142,8 @@ uv run ratatoskr weave --pool 5
 
 ## Repo conventions
 
-- **Branch model:** `main` <- PR <- `feat/*`. PRs via `tea` against
-  `rylee/vefr`. No CI on this repo yet - the local pytest gate above
+- **Branch model:** `main` <- PR <- `feat/*`. PRs target GitHub
+  `Rylee-Bee/vefr`. No CI on this repo yet - the local pytest gate above
   is the whole gate, so run it.
 - **Honesty contract:** this repo's own design ethos applies to its
   process too - every name spoken must be true, every claim has a
