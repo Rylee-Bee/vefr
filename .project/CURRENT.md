@@ -1,56 +1,74 @@
 # CURRENT — vefr
 
-## State
+> **Live truth lives in `agent-sync status` and `git log`.** This
+> file is orientation, not a mirror of HEAD. Refresh the orientation
+> when the *phase* changes; let Git tell you the SHA.
 
-| Area | Status | Evidence |
+## Phase
+
+Refinement pass after Play-Nice adoption. Engine rules and Play-Nice
+cooperation boundaries are settled; the Storyteller capability work is
+in flight and preserved as WIP. Engine is *not* in active feature
+development.
+
+## Active WIP (intentionally preserved)
+
+Storyteller capability: benchmark harness, NPC action schemas, fixture
+scenarios, and a second storyteller pack set covering small language
+models. See AGENTS.md "Active checkout and Storyteller WIP" for the
+exact protected-file list and the rule against staging them.
+
+## Known protected work
+
+| Item | Path / scope | Source of truth |
 |---|---|---|
-| Repository | healthy, working-tree dirty | `git status` shows M on `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
-| Last commit | `f2a6a9e` 2026-09-12 "chore(play-nice): align VEFR project authority and correct CURRENT" | `git log -1` |
-| Active rule surface | AGENTS.md, AGENT_POLICY.md | project-specific engine/world-pack truth |
-| Play-Nice adoption | adopted | `.project/contracts/adoption.yaml` pinned to `21b6841` |
+| Storyteller capability WIP | 5 modified + 20 untracked files | AGENTS.md "Active checkout" |
+| Play-Nice adoption pin | `21b6841a50a1b0d459a760861385e99679852430` | `.project/contracts/adoption.yaml` |
+| Sample world pack (Emberfield) | `worlds/sample-world/` | `worlds/sample-world/` |
+| Three lore packs | `worlds/lore/{norse,historical-event,norse-runes}/` | each pack's `LICENSE.md` |
 
-## VEFR-specific truth (preserved)
+## Next decision
 
-- **Engine only.** VEFR owns the pack loader, journal, forge, vault,
-  session/fork mechanics, inference-backend plumbing, and the maplab
-  validator. World packs (Emberfield ships here; burrito-journalism and
-  munr-story live in their own repos) are data-only.
-- **Two CLIs:** `ratatoskr` (ops: skipa, test, weave, ferry) and `norns`
-  (craft: chat, validate, build-map, verify). Both share one
-  geometry/contract validator (`src/vefr/maplab.py`).
-- **Bring-your-own-brain.** Any OpenAI-compatible LLM backend. Brain seam
-  lives at `docs/guides/brain-socket.md`.
-- **World packs are data.** `mkdir worlds/<name>` + four markdown files
-  (or the acts shape). A pack author writes data, not code.
-- **Deterministic surfaces stay deterministic.** World validation, map
-  transforms, exports. Models operate at explicit generative edges.
+Storyteller architecture (how Rosa/taqueria fixtures move between
+engine / pack / harness — see "Deferred" below). Do not begin without
+Rylee's design call.
 
-## What changed in the adoption pass
+## Deferred architecture
 
-| Path | Change |
+- **Storyteller fixture placement.** The current Storyteller benchmark
+  includes a single anchor scenario (`rosa-after-close`) that carries
+  private-pack flavor (`Rosa`, `Mateo`, the taqueria, the
+  transmitter). The engine's `AGENTS.md` "Never" rule says the engine
+  must not name any specific game. Possible structural directions:
+  A. fixture stays in engine but becomes engine-neutral; B. fixture
+  becomes pack-supplied; C. scenario/tests move into the specific world
+  pack; D. evidence insufficient. **Classification: D** — the
+  Storyteller WIP itself acknowledges the question
+  (`tests/test_npc_action.py:243-250`) but has not settled it. Do not
+  restructure as part of a refinement pass.
+
+## Verification entry points
+
+```bash
+# Gate - run before any "done" claim
+uv run --group test ruff check src tests
+uv run --group test pytest -q
+
+# Pack integrity
+uv run --group test norns validate --pack worlds/sample-world
+
+# Session-start health
+uv run --group test norns doctor   # set VEFR_LIVE_URL to check a stack
+
+# Authority check
+cat .project/contracts/adoption.yaml | head -10
+```
+
+## Ad-hoc state (refresh when phase changes)
+
+| Item | Value |
 |---|---|
-| `.project/project.yaml` | new — manifest |
-| `.project/contracts/adoption.yaml` | new — Play-Nice bundle pin |
-| `.project/CURRENT.md` | new — this file |
-| `.project/DECISIONS.md` | new — adoption decision |
-| `AGENTS.md`, `AGENT_POLICY.md` | unchanged (engine-specific kernels preserved) |
-| `src/**`, `docs/**`, `deploy/**` | unchanged (uncommitted WIP untouched) |
-
-## What changed in the propagation pass (`f2a6a9e`)
-
-| Path | Change |
-|---|---|
-| `.project/CURRENT.md` | refreshed Last-commit row from `1d4df1f` → `f2a6a9e` (this pass) |
-| `AGENTS.md` | origin-remote claim updated (Gitea retired; GitHub is current); `src/vefr/` count corrected (25 → 30 tracked + Storyteller WIP); added two `.project/` pointer rows |
-| `src/**`, `docs/**`, `deploy/**` | unchanged (Storyteller WIP preserved) |
-
-## Unknown / Deferred
-
-- The uncommitted WIP in this kilo2 checkout belongs to the Storyteller
-  lane and is intentionally preserved per AGENTS.md "Canonical checkout"
-  note. Deferred to the next storyteller design session.
-
-## NEXT
-
-Nothing required (rule-wise). Storyteller WIP remains for Rylee's session;
-Play-Nice adoption state and the Gitea/GitHub authority statement now agree.
+| Working tree | dirty (Storyteller WIP, see above) |
+| Active checkout | the checkout registered for VEFR in `agent-sync` (this file lives there) |
+| Origin | `https://github.com/Rylee-Bee/vefr.git` |
+| Last commit at write time | `b47886f` — see `git log -1` for the current SHA |
