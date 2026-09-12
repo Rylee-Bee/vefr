@@ -87,9 +87,9 @@ demonstration world.
 
 > **Note (2026-08-31):** the author's own story and game live in
 > their own private repo - they never ship inside a clone of this
-> engine repo. This repo (`rylee/vefr`) is the shareable tooling
-> only; it doesn't know or need to know any specific game's name
-> to run it.
+> engine repo. This repo ([`Rylee-Bee/vefr`](https://github.com/Rylee-Bee/vefr))
+> is the shareable tooling only; it doesn't know or need to know any
+> specific game's name to run it.
 
 ## 3. Check the engine is sound
 

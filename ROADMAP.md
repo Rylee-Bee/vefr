@@ -8,24 +8,54 @@
 ## Landed
 
 - [x] **Truth-repair: canonical checkout documented, stale handoffs
-      archived, CI added** (2026-09-07, truth-repair epoch): the
-      canonical checkout is `/mnt/c/Users/ryleeb/projects/vefr`
-      (tracks origin/main); the kilo2 checkout is the preserved
-      Storyteller WIP lane — documented in AGENTS.md with a
-      do-not-commit-its-WIP rule. Dated session snapshots
-      (`session-handoff.md` 2026-08-31, two `handoff-snapshot-*`
-      2026-09-01 files) moved under `docs/guides/archive/` with a
-      README marking them non-current; `deploy.md`'s reference
-      repointed to the current `handoff.md`. The hard-coded pytest
-      count in AGENTS.md was removed (it had drifted 200 → 307 →
-      reality); the gate comment now says paste your own run's
-      summary line and find verified counts in this ledger. New
-      `.gitea/workflows/validate.yml` (first CI on this repo): ruff +
-      pytest on PRs and main pushes, plus a pack-validation job that
-      runs `norns validate` over every `worlds/*/world.json` pack.
-      Verified: `uv run --group test pytest -q` → 296 passed,
-      2 skipped, 1 warning (0:03:35); `norns validate --pack
-      worlds/sample-world` → ok.
+      archived, CI added** (2026-09-07, truth-repair epoch): two
+      checkouts on the dev box were documented in AGENTS.md with a
+      do-not-commit-the-WIP rule for the kilo2 lane. Dated session
+      snapshots (`session-handoff.md` 2026-08-31, two
+      `handoff-snapshot-*` 2026-09-01 files) moved under
+      `docs/guides/archive/` with a README marking them non-current;
+      `deploy.md`'s reference repointed to the current `handoff.md`.
+      The hard-coded pytest count in AGENTS.md was removed (it had
+      drifted 200 → 307 → reality); the gate comment now says paste
+      your own run's summary line and find verified counts in this
+      ledger. New `.gitea/workflows/validate.yml` (first CI on this
+      repo): ruff + pytest on PRs and main pushes, plus a
+      pack-validation job that runs `norns validate` over every
+      `worlds/*/world.json` pack. Verified: `uv run --group test
+      pytest -q` → 296 passed, 2 skipped, 1 warning (0:03:35);
+      `norns validate --pack worlds/sample-world` → ok. The
+      machine-specific canonical-checkout path documented here was
+      later corrected in the refinement pass below — the
+      authoritative phrasing now lives in AGENTS.md "Active checkout
+      and Storyteller WIP".
+- [x] **Refinement pass: honest orientation, source-control truth,
+      Trusted Translation pointer** (2026-09-12, refinement epoch):
+      AGENTS.md "Canonical checkout" replaced with "Active checkout
+      and Storyteller WIP" using portable language ("the checkout
+      registered for VEFR in `agent-sync`") instead of the
+      machine-specific path that no longer exists on the active
+      checkout; the Gitea PR/tea claim corrected to GitHub
+      `Rylee-Bee/vefr`; `.project/CURRENT.md` rewritten to lead with
+      *phase* (refinement pass) and durable pointers, with SHA
+      surfaced as `git log -1` rather than mirrored; `README.md`
+      gains a concise pointer to Play-Nice's
+      [Trusted Translation](https://github.com/Rylee-Bee/play-nice-contracts/blob/main/docs/principles/trusted-translation.md)
+      philosophy (link, not copy); `GETTING_STARTED.md` Gitea-style
+      `rylee/vefr` repo reference replaced with the public GitHub
+      URL. CLI help subcommand counts (`norns` Four→Nine,
+      `ratatoskr` Three→Six) are deferred — they live in
+      `src/vefr/cli.py`, which is part of the protected Storyteller
+      WIP; the Storyteller team should land them alongside their
+      work. Play-Nice adoption pin remained
+      `21b6841a50a1b0d459a760861385e99679852430` (no contract
+      semantics changed in the new Play-Nice revision; only
+      documentation did). Storyteller WIP (5 modified + 20 untracked
+      files) untouched; nothing in the protected set was staged.
+      Verified: `uv run --group test ruff check src tests` → All
+      checks passed; `uv run --group test pytest -q
+      --ignore=tests/test_npc_action.py
+      --ignore=tests/test_storyteller_benchmark.py` → 298 passed
+      in 266.61s; `norns validate --pack worlds/sample-world` → ok.
 - [x] **Spark: a resident small brain, productionized**
       (2026-09-06, this session): the benchmark settled the model
       selection - Phi-4-mini-instruct Q4_K_M (spark-quality, 100/100

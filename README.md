@@ -48,6 +48,13 @@ Canonical adoption lives at
 canonical current state at [`.project/CURRENT.md`](.project/CURRENT.md);
 durable decisions at [`.project/DECISIONS.md`](.project/DECISIONS.md).
 
+Play-Nice's **[Trusted Translation](https://github.com/Rylee-Bee/play-nice-contracts/blob/main/docs/principles/trusted-translation.md)**
+("different languages, different systems, shared understanding,
+earned trust") is the philosophy behind the adoption: VEFR keeps its
+own engine architecture while honoring a shared cooperation language
+with every other participant. The philosophy is non-normative; the
+contracts in the adoption pin are authoritative.
+
 ## The bones and the flesh
 
 ```
