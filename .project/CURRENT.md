@@ -5,7 +5,7 @@
 | Area | Status | Evidence |
 |---|---|---|
 | Repository | healthy, working-tree dirty | `git status` shows M on `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
-| Last commit | `378427f` 2026-09-12 "adopt(play-nice): pin contracts library 21b6841 as shared behavioral authority" | `git log -1` |
+| Last commit | `1d4df1f` 2026-09-12 "chore(readme): add Play-Nice section; refresh CURRENT last-commit row" | `git log -1` |
 | Active rule surface | AGENTS.md, AGENT_POLICY.md | project-specific engine/world-pack truth |
 | Play-Nice adoption | adopted | `.project/contracts/adoption.yaml` pinned to `21b6841` |
 
