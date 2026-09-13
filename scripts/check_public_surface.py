@@ -131,6 +131,14 @@ def should_skip(path: str) -> bool:
         return True
     if any(path.startswith(p) or path == p.rstrip("/") for p in STORYTELLER_WIP_PATHS):
         return True
+    # The guard names its own patterns in regex literals and example
+    # payloads, and its test module pins each pattern with a synthetic
+    # leak string. Skip the guard and its own tests; the test module
+    # explicitly verifies the patterns fire on those payloads.
+    if path == "scripts/check_public_surface.py":
+        return True
+    if path == "tests/test_public_surface.py":
+        return True
     return False
 
 
