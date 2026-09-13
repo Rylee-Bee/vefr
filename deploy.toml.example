@@ -16,6 +16,6 @@
 #            maplab verify after deploy). Defaults to
 #            http://<host>:8820.
 
-host  = "bazzite"
+host  = "deploy-host"
 image = "localhost/vefr:latest"
-url   = "http://bazzite:8820"
+url   = "http://deploy-host:8820"

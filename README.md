@@ -245,7 +245,7 @@ those seams open. See `docs/guides/brain-socket.md`.
 
 The practical direction right now is broad playability: the engine
 should run happily against a small local model on the player's own
-computer, even on CPU. The earlier bazzite/GPU benchmarking work was
+computer, even on CPU. The earlier small-model benchmarking work was
 useful for learning the socket; it is not VEFR's required future, and
 no specific host or hardware class should become canonical.
 
