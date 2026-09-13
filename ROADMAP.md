@@ -259,9 +259,10 @@
       of the wire layer, so backend swaps stay test-clean. Two btrfs-
       on-Fedora-Atomic gotchas hit along the way (documented in
       `~/llama-server/run-gptoss.sh`): podman bind sources MUST go
-      through `/var/home/rylee` not `/home/rylee` (the `/home`
-      symlink to `/var/home` confuses rootless-podman statfs on the
-      btrfs subvol); `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
+      through the operator's real `$HOME` and not a `/home`
+      symlink (the `/home` -> `/var/home` symlink confuses
+      rootless-podman statfs on the btrfs subvol);
+      `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
       for the 6900XT (RDNA2/gfx1030) since llama.cpp's compiled
       runtime only recognizes gfx900/1030/1100/1200. The deploy
       quadlet was updated in place.
