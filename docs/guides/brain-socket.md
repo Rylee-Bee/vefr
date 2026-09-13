@@ -194,14 +194,14 @@ But that remains a future UX layer, not a requirement for this pass.
 
 ## Current local-model direction
 
-The current project direction is not "VEFR requires the bazzite box"
+The current project direction is not "VEFR requires one specific host"
 or "VEFR requires a GPU host."
 
 The important shift is toward a small local model that can run on the
 player's own machine, including CPU-only setups, so more people can
 actually play.
 
-The earlier bazzite-based benchmarking work stays useful as research:
+The earlier benchmarking work stays useful as research:
 
 - it taught us about latency and structured-output reliability
 - it exercised the provider seam under a stronger local backend

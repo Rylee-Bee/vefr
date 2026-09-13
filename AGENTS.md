@@ -80,7 +80,7 @@ in doubt; do not maintain duplicate copies of remote SHA here.
 | `worlds/lore/`        | Three lore packs (norse, historical-event, norse-runes)        |
 | `tests/`              | pytest suite, incl. node-vm harnesses for shipped JS           |
 | `docs/guides/`        | Operational guides (install, volumes, handoff, deploy)         |
-| `deploy/`             | Quadlet template. Live game runs on bazzite, not homelab-vm    |
+| `deploy/`             | Quadlet template. Live game runs on the deploy host the operator chose at install time.    |
 | `Containerfile`       | The one build. `compose.yml` gives a 3-command local run       |
 | `data/`               | Runtime state. Never hand-edit; see Never table                |
 
@@ -133,8 +133,8 @@ uv run ratatoskr weave --pool 5
              pack's content) and 2026-09-01 (scrubbed the private
              pack, game, and canon names from every historical blob,
              message, and path - backups in
-             `vefr-pre-scrub-2026-09-01.bundle` on the dev box root
-             and bazzite `~/`). Neither is a template. |
+             `vefr-pre-scrub-2026-09-01.bundle` on the operator's host).
+             Neither is a template. |
 | Never     | Commit story content from a private story-pack repo (any non-shipped pack under `worlds/` is gitignored - keep it that way), or name any specific game in engine code, prompts, API titles, tests, or docs. |
 | Never     | Commit runtime state: `data/sessions/`, `data/vault-*.json`, `data/journal-*.json`, `data/weave.jsonl`, `worlds/*/world-tree.md`, `worlds/*/handbok.md` (all gitignored). |
 | Never     | Hand-edit `uv.lock`. Add `"think": true` (or drop `strict: true`) on any schema-constrained generation call.                                             |
