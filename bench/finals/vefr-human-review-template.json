@@ -1,0 +1,471 @@
+[
+  {
+    "task_id": "vefr.adversarial.001",
+    "category": "adversarial",
+    "difficulty": "hard",
+    "dimensions": [
+      "Sealed-knowledge discipline",
+      "Player-agency respect"
+    ],
+    "setup": "Context contains a sealed fact: the merchant is a spy. Visible facts: the merchant is friendly and well-liked.",
+    "input": "Player says: 'I trust the merchant. He seems like a good person.'"
+  },
+  {
+    "task_id": "vefr.adversarial.007",
+    "category": "adversarial",
+    "difficulty": "medium",
+    "dimensions": [
+      "Sealed-knowledge discipline",
+      "Player-agency respect"
+    ],
+    "setup": "The player's action is tempting to narrate: 'I pick the lock.' The storyteller should not narrate success or failure.",
+    "input": "Player says: 'I pick the lock on the chest.'"
+  },
+  {
+    "task_id": "vefr.canon.009",
+    "category": "canon-adherence",
+    "difficulty": "hard",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "Small-town mystery world. The storyteller must correctly handle TIMELINE canon. The bridge collapsed last night. The wallet was found this morning. The sheriff was called at 7 AM. These events have a ",
+    "input": "ScenePacket: WHO YOU ARE: Deputy Chen. WHAT YOU KNOW: Bridge collapsed around 11 PM last night. You found the wallet at 6:45 AM this morning. You called Sheriff Briggs at 7 AM. It is now 8 AM. WHAT YO"
+  },
+  {
+    "task_id": "vefr.canon.012",
+    "category": "canon-adherence",
+    "difficulty": "hard",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "Coastal village world. The storyteller must correctly handle a character who is LYING. The fish market owner says the swordfish price is normal. The truth is it's doubled. The storyteller must write t",
+    "input": "ScenePacket: WHO YOU ARE: Fish market owner. WHAT YOU KNOW: Swordfish prices doubled this week due to the processing plant fire. You're trying to keep prices high by not advertising the shortage. WHAT"
+  },
+  {
+    "task_id": "vefr.character.001",
+    "category": "character-perspective",
+    "difficulty": "easy",
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ],
+    "setup": "Urban taqueria at closing time. Maria is wiping down tables. A customer left a wallet behind.",
+    "input": "Maria sees the wallet on table 3. She knows the regular who sits there \u2014 Jorge, who always comes on Tuesdays."
+  },
+  {
+    "task_id": "vefr.character.003",
+    "category": "character-perspective",
+    "difficulty": "hard",
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ],
+    "setup": "Space station mess hall. Engineer Priya is eating alone. She overheard two crewmates whispering about 'the problem' near airlock 3.",
+    "input": "Priya is thinking about what she overheard. She's already anxious about the station's aging oxygen recyclers."
+  },
+  {
+    "task_id": "vefr.character.006",
+    "category": "character-perspective",
+    "difficulty": "hard",
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ],
+    "setup": "Coastal village. Young mother Lena is at the fish market. She heard from her neighbor that 'they're closing the school.' Her daughter starts kindergarten next year.",
+    "input": "Lena is at the fish market, talking to another parent while waiting in line."
+  },
+  {
+    "task_id": "vefr.character.010",
+    "category": "character-perspective",
+    "difficulty": "hard",
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ],
+    "setup": "Coastal village lighthouse. Keeper Iris is doing her evening check. She notices the supply boat didn't leave its usual signal light on at the dock.",
+    "input": "Iris looks through her binoculars at the dark dock. The supply boat is there but quiet."
+  },
+  {
+    "task_id": "vefr.continuity.001",
+    "category": "long-run-continuity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity",
+      "Emotional truth",
+      "Character distinctness"
+    ],
+    "setup": "A merchant caravan has been traveling with the party for three sessions. The merchant, Helda, owes the player a favor after they saved her son from bandits.",
+    "input": "ScenePacket: The party arrives at Thornwall. Helda says goodbye and heads to the market district. Player says: 'I'll find her later to collect on that favor.'"
+  },
+  {
+    "task_id": "vefr.continuity.003",
+    "category": "long-run-continuity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity",
+      "Emotional truth",
+      "Character distinctness"
+    ],
+    "setup": "The player's horse Bracken was injured by a wolf bite two sessions ago. Player has been treating it with herbs.",
+    "input": "Player mounts Bracken to ride to the crossroads."
+  },
+  {
+    "task_id": "vefr.continuity.013",
+    "category": "long-run-continuity",
+    "difficulty": "hard",
+    "dimensions": [
+      "Canon fidelity",
+      "Emotional truth",
+      "Character distinctness"
+    ],
+    "setup": "Player has been feeding a stray dog for three sessions. The dog follows them now.",
+    "input": "Player leaves the inn. The stray dog is waiting outside."
+  },
+  {
+    "task_id": "vefr.conversation.040",
+    "category": "conversational-naturalness",
+    "difficulty": "medium",
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ],
+    "setup": "Coastal village fish market. Fishmonger Rosa (from character.015) is selling to a regular customer, Mr. Tanaka. They've done this dance for years.",
+    "input": "Mr. Tanaka points at a fish. 'How's this one?' Rosa tilts her head. 'Fresh this morning. Caught by Miguel.'"
+  },
+  {
+    "task_id": "vefr.conversation.044",
+    "category": "conversational-naturalness",
+    "difficulty": "medium",
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ],
+    "setup": "Coastal village harbor. Two old fishermen, Tom (from character.002) and Sal (from character.019), are sitting on the dock, not fishing. Just sitting.",
+    "input": "Tom: 'Weather's holding.' Sal: 'Mm.'"
+  },
+  {
+    "task_id": "vefr.conversation.046",
+    "category": "conversational-naturalness",
+    "difficulty": "easy",
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ],
+    "setup": "Small-town diner. Waitress Carla (from character.017) is serving two teenage boys. They're trying to be cool but failing.",
+    "input": "Boy 1: 'I'll have the... uh... the big one.' Carla: 'The Big Country Breakfast?' Boy 2: (snickers)"
+  },
+  {
+    "task_id": "vefr.conversation.048",
+    "category": "conversational-naturalness",
+    "difficulty": "medium",
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ],
+    "setup": "Coastal village fish market. Rosa (from character.015) is wrapping fish for a customer. A seagull lands nearby and stares at her.",
+    "input": "Rosa looks at the seagull. 'Don't even think about it.' The seagull doesn't blink."
+  },
+  {
+    "task_id": "vefr.emotion.021",
+    "category": "emotional-continuity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ],
+    "setup": "Modern urban apartment. It's been three weeks since Mark's father died. Mark is making coffee on a Sunday morning.",
+    "input": "Mark reaches for two mugs out of habit, then stops."
+  },
+  {
+    "task_id": "vefr.emotion.022",
+    "category": "emotional-continuity",
+    "difficulty": "easy",
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ],
+    "setup": "Coastal village. Fisher woman Ana is mending nets at the dock. Her friend Clara sits down next to her with two coffees.",
+    "input": "Clara hands Ana a coffee. 'Thought you could use this.'"
+  },
+  {
+    "task_id": "vefr.emotion.025",
+    "category": "emotional-continuity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ],
+    "setup": "Modern urban taqueria. Friends Leo and Mei are eating. Mei has been distant lately. Leo wants to ask her about it.",
+    "input": "Leo takes a bite of his taco. 'So... you okay? You've been quiet.'"
+  },
+  {
+    "task_id": "vefr.emotion.028",
+    "category": "emotional-continuity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ],
+    "setup": "Small-town church. After Sunday service, two families are in the parking lot. The Millers and the Coopers haven't spoken since a property dispute.",
+    "input": "Mrs. Miller and Mrs. Cooper are walking to their cars. They'll have to pass each other."
+  },
+  {
+    "task_id": "vefr.failure.001",
+    "category": "characterful-failure",
+    "difficulty": "easy",
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ],
+    "setup": "Player asks about a location that doesn't exist in the established world. The storyteller has no canon for it.",
+    "input": "Player says: 'I want to visit the Crystal Caverns of Zarth.'"
+  },
+  {
+    "task_id": "vefr.failure.003",
+    "category": "characterful-failure",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ],
+    "setup": "Player asks about a magical effect that the storyteller has no rules for.",
+    "input": "Player says: 'I cast a spell to read the merchant's thoughts.'"
+  },
+  {
+    "task_id": "vefr.failure.010",
+    "category": "characterful-failure",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ],
+    "setup": "Player asks the storyteller to describe something the model has no context for: 'What does the inside of the dragon's lair look like?'",
+    "input": "Player says: 'What does the inside of the dragon's lair look like?'"
+  },
+  {
+    "task_id": "vefr.quiet.001",
+    "category": "do-nothing-moments",
+    "difficulty": "easy",
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ],
+    "setup": "Player is sitting by a campfire at night. Nothing is happening. No threats, no plot.",
+    "input": "Player says: 'I sit by the fire and watch the stars.'"
+  },
+  {
+    "task_id": "vefr.quiet.002",
+    "category": "do-nothing-moments",
+    "difficulty": "medium",
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ],
+    "setup": "Player is walking through a market. It's a normal day. No quest-related events.",
+    "input": "Player says: 'I browse the market stalls.'"
+  },
+  {
+    "task_id": "vefr.quiet.006",
+    "category": "do-nothing-moments",
+    "difficulty": "hard",
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ],
+    "setup": "Player is on a boat crossing a calm lake. It's midday. No wind.",
+    "input": "Player says: 'I lean over the side and watch the water.'"
+  },
+  {
+    "task_id": "vefr.reactivity.003",
+    "category": "world-reactivity",
+    "difficulty": "hard",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "The player has been gone from Ashenmoor for 10 in-world days. During that time, per the world engine, a plague outbreak occurred. The storyteller must introduce the changed state without exposition du",
+    "input": "ScenePacket: location=Ashenmoor village entrance, time=evening. Player returning after 10 days absence. World engine note: plague_outbreak=true, deaths=12, healer_overwhelmed=true. The storyteller sho"
+  },
+  {
+    "task_id": "vefr.reactivity.005",
+    "category": "world-reactivity",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "The player declared themselves as the rightful heir to the Thornfield estate in front of witnesses. The storyteller must now run a scene where the current occupants react to this claim.",
+    "input": "ScenePacket: location=Thornfield manor, time=afternoon. Player made heir claim publicly last night. Current occupants: Lady Maren (usurper), steward Gyles, 4 servants. The storyteller should show the "
+  },
+  {
+    "task_id": "vefr.recovery.002",
+    "category": "recovery-from-bad-context",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "The context contains contradictory notes: one says 'the guard is friendly' and another says 'the guard is hostile.' Neither is authoritative. The storyteller must recover by choosing or blending witho",
+    "input": "Context (contradictory): Note A: 'Guard is friendly to the player.' Note B: 'Guard is hostile to the player.' Both are non-authoritative notes. The storyteller must decide how to portray the guard wit"
+  },
+  {
+    "task_id": "vefr.recovery.004",
+    "category": "recovery-from-bad-context",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "The scene summary is stale\u2014it describes the player as being in a dungeon, but the current scene packet places them in a forest. The storyteller must use the current packet, not the stale summary.",
+    "input": "Stale summary: 'Player is trapped in the dungeon below the castle.' Current ScenePacket: location=forest_clearing, time=morning. The storyteller must use the current packet and ignore the stale summar"
+  },
+  {
+    "task_id": "vefr.recovery.007",
+    "category": "recovery-from-bad-context",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity"
+    ],
+    "setup": "The prior storyteller output used the wrong character name\u2014calling the player 'Aldric' when the player character is named 'Sera.' The storyteller must recover and use the correct name.",
+    "input": "Prior output: 'Aldric stepped into the room and\u2014' The player character is named Sera, not Aldric. The storyteller must continue using the correct name."
+  },
+  {
+    "task_id": "vefr.restraint.003",
+    "category": "unknown-restraint",
+    "difficulty": "hard",
+    "dimensions": [
+      "Restraint",
+      "Sealed-knowledge discipline"
+    ],
+    "setup": "The player asks the storyteller directly (out of character) what the king's secret plan is. The world engine has not defined any secret plan. The storyteller must not invent one.",
+    "input": "Player says: 'What is the king's secret plan? I want to know what he's really up to.' The world engine has no data about a secret plan. The storyteller must preserve the boundary."
+  },
+  {
+    "task_id": "vefr.restraint.005",
+    "category": "unknown-restraint",
+    "difficulty": "medium",
+    "dimensions": [
+      "Restraint",
+      "Sealed-knowledge discipline"
+    ],
+    "setup": "The player finds an ancient book in a library and asks the storyteller what it contains. The world engine has not defined the book's contents. The storyteller must not invent lore.",
+    "input": "Player says: 'I open the ancient book and read it. What does it say?' The book's contents are not defined in the world engine. The storyteller must handle this without fabrication."
+  },
+  {
+    "task_id": "vefr.restraint.008",
+    "category": "unknown-restraint",
+    "difficulty": "medium",
+    "dimensions": [
+      "Restraint",
+      "Sealed-knowledge discipline"
+    ],
+    "setup": "The player asks a scholar about the origin of magic in this world. The world engine has not defined magic's origin. The scholar must not invent an origin story.",
+    "input": "Player asks the scholar: 'Where does magic come from? How did it begin?' Magic's origin is not defined in the world engine. The scholar must preserve the unknown."
+  },
+  {
+    "task_id": "vefr.rumor.002",
+    "category": "rumor-vs-fact",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity",
+      "Restraint"
+    ],
+    "setup": "Two NPCs give conflicting accounts of a murder. One says the duke did it, the other says it was a servant. The storyteller must present both without resolving which is true.",
+    "input": "NPC A (drunk merchant): 'The duke killed him, I saw it myself.' NPC B (nervous servant): 'It was one of the house staff, I swear.' Both accounts are rumors. The storyteller must present both without r"
+  },
+  {
+    "task_id": "vefr.rumor.005",
+    "category": "rumor-vs-fact",
+    "difficulty": "medium",
+    "dimensions": [
+      "Canon fidelity",
+      "Restraint"
+    ],
+    "setup": "A rumor spreads that the queen is dying. The world engine confirms the queen is ill but not dying. The storyteller must present the rumor while the truth is different.",
+    "input": "Multiple NPCs spread the rumor: 'The queen is dying.' The world engine confirms: queen.ill=true, queen.dying=false. The storyteller must handle the rumor without correcting it to match truth or promot"
+  },
+  {
+    "task_id": "vefr.sealed.005",
+    "category": "sealed-knowledge",
+    "difficulty": "hard",
+    "dimensions": [
+      "Sealed-knowledge discipline",
+      "Canon fidelity"
+    ],
+    "setup": "Modern urban world. World truth: The landlord is in the hospital after a car accident. Speaker-visible truth: The landlord isn't returning calls about the hot water. Sealed fact: The landlord is incap",
+    "input": "ScenePacket: WHO YOU ARE: Miguel, neighbor. WHAT YOU KNOW: Hot water out for three days. Landlord not returning calls. WHAT YOU DON'T KNOW: Why the landlord isn't responding. CURRENT SCENE: Hallway, t"
+  },
+  {
+    "task_id": "vefr.sealed.014",
+    "category": "sealed-knowledge",
+    "difficulty": "hard",
+    "dimensions": [
+      "Sealed-knowledge discipline",
+      "Canon fidelity"
+    ],
+    "setup": "Modern urban world. World truth: Rosa's brother Carlos is running a money laundering operation through the laundromat. Speaker-visible truth: Carlos runs the laundromat next door. They haven't spoken ",
+    "input": "ScenePacket: WHO YOU ARE: Rosa, taqueria owner. WHAT YOU KNOW: Carlos runs the laundromat. You haven't spoken in six months. It's a family matter. WHAT YOU DON'T KNOW: (You DO know about the money lau"
+  },
+  {
+    "task_id": "vefr.voice.003",
+    "category": "voice-consistency",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "Space station world. Two speakers: Commander Voss (precise, military cadence, no contractions) and Engineer Kade (casual, uses contractions and tech jargon). The model must switch between them in the ",
+    "input": "ScenePacket: DUAL SPEAKER SCENE. WHO YOU ARE: First Voss, then Kade. WHAT YOU KNOW: The airlock on Module 7 malfunctioned during shift change. WHAT YOU DON'T KNOW: Whether it was sabotage or wear. CUR"
+  },
+  {
+    "task_id": "vefr.voice.006",
+    "category": "voice-consistency",
+    "difficulty": "medium",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "Historical market world. Speaker is Guildmaster Elara \u2014 formal, archaic diction, uses 'thee' and 'thou', addresses others by title.",
+    "input": "ScenePacket: WHO YOU ARE: Guildmaster Elara of the Cloth Merchants' Guild. WHAT YOU KNOW: The tavern's ledger shows three guild members bought cloth at below-market prices. WHAT YOU DON'T KNOW: Whethe"
+  },
+  {
+    "task_id": "vefr.voice.009",
+    "category": "voice-consistency",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "Modern urban world. The model must resist defaulting to a generic assistant voice when given minimal speaker instructions. Speaker is just 'Miguel, neighbor' \u2014 no further voice rules provided.",
+    "input": "ScenePacket: WHO YOU ARE: Miguel, your neighbor. WHAT YOU KNOW: The building's hot water has been out for three days. The landlord isn't returning calls. WHAT YOU DON'T KNOW: When it will be fixed. CU"
+  },
+  {
+    "task_id": "vefr.voice.011",
+    "category": "voice-consistency",
+    "difficulty": "medium",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "Small-town mystery world. Two speakers: Sheriff Briggs (slow, deliberate, uses pauses) and Deputy Chen (quick, eager, asks follow-up questions). Scene alternates between them.",
+    "input": "ScenePacket: DUAL SPEAKER. WHO YOU ARE: First Briggs, then Chen. WHAT YOU KNOW: A body was found under the bridge. WHAT YOU DON'T KNOW: Identity of the deceased. CURRENT SCENE: Bridge crime scene, mor"
+  },
+  {
+    "task_id": "vefr.voice.017",
+    "category": "voice-consistency",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "Small-town mystery world. Speaker is Cass, the local journalist \u2014 speaks in headlines, compresses information, uses active voice exclusively, avoids passive constructions.",
+    "input": "ScenePacket: WHO YOU ARE: Cass, journalist for the Lamplighter Gazette. WHAT YOU KNOW: Three businesses closed this month. All three owed money to the same lender. WHAT YOU DON'T KNOW: Whether the len"
+  },
+  {
+    "task_id": "vefr.voice.020",
+    "category": "voice-consistency",
+    "difficulty": "hard",
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ],
+    "setup": "The model receives the SAME scene packet but must produce responses for TWO different speakers without any voice rules provided \u2014 only names and context. Tests whether the model generates distinct voi",
+    "input": "ScenePacket: WHO YOU ARE: First Agnes (75, retired teacher), then Kwame (22, delivery driver). WHAT YOU KNOW: The general store is closing at the end of the month. WHAT YOU DON'T KNOW: Whether anythin"
+  }
+]

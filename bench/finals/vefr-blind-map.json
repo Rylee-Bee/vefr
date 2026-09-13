@@ -1,0 +1,185 @@
+{
+  "vefr.quiet.002": {
+    "batch": 1,
+    "position_in_batch": 1,
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ]
+  },
+  "vefr.quiet.001": {
+    "batch": 1,
+    "position_in_batch": 2,
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ]
+  },
+  "vefr.character.006": {
+    "batch": 1,
+    "position_in_batch": 3,
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ]
+  },
+  "vefr.failure.010": {
+    "batch": 1,
+    "position_in_batch": 4,
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ]
+  },
+  "vefr.conversation.044": {
+    "batch": 1,
+    "position_in_batch": 5,
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ]
+  },
+  "vefr.failure.003": {
+    "batch": 1,
+    "position_in_batch": 6,
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ]
+  },
+  "vefr.quiet.006": {
+    "batch": 1,
+    "position_in_batch": 7,
+    "dimensions": [
+      "Restraint",
+      "Natural conversation"
+    ]
+  },
+  "vefr.failure.001": {
+    "batch": 1,
+    "position_in_batch": 8,
+    "dimensions": [
+      "Voice consistency",
+      "Restraint"
+    ]
+  },
+  "vefr.voice.017": {
+    "batch": 2,
+    "position_in_batch": 1,
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ]
+  },
+  "vefr.conversation.046": {
+    "batch": 2,
+    "position_in_batch": 2,
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ]
+  },
+  "vefr.emotion.022": {
+    "batch": 2,
+    "position_in_batch": 3,
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ]
+  },
+  "vefr.character.003": {
+    "batch": 2,
+    "position_in_batch": 4,
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ]
+  },
+  "vefr.restraint.003": {
+    "batch": 2,
+    "position_in_batch": 5,
+    "dimensions": [
+      "Restraint",
+      "Sealed-knowledge discipline"
+    ]
+  },
+  "vefr.emotion.028": {
+    "batch": 2,
+    "position_in_batch": 6,
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ]
+  },
+  "vefr.emotion.025": {
+    "batch": 2,
+    "position_in_batch": 7,
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ]
+  },
+  "vefr.voice.009": {
+    "batch": 2,
+    "position_in_batch": 8,
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ]
+  },
+  "vefr.conversation.040": {
+    "batch": 3,
+    "position_in_batch": 1,
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ]
+  },
+  "vefr.reactivity.003": {
+    "batch": 3,
+    "position_in_batch": 2,
+    "dimensions": [
+      "Canon fidelity"
+    ]
+  },
+  "vefr.conversation.048": {
+    "batch": 3,
+    "position_in_batch": 3,
+    "dimensions": [
+      "Natural conversation",
+      "Voice consistency"
+    ]
+  },
+  "vefr.emotion.021": {
+    "batch": 3,
+    "position_in_batch": 4,
+    "dimensions": [
+      "Emotional truth",
+      "Natural conversation"
+    ]
+  },
+  "vefr.character.001": {
+    "batch": 3,
+    "position_in_batch": 5,
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ]
+  },
+  "vefr.character.010": {
+    "batch": 3,
+    "position_in_batch": 6,
+    "dimensions": [
+      "Character distinctness",
+      "Emotional truth"
+    ]
+  },
+  "vefr.voice.006": {
+    "batch": 3,
+    "position_in_batch": 7,
+    "dimensions": [
+      "Voice consistency",
+      "Character distinctness"
+    ]
+  }
+}
