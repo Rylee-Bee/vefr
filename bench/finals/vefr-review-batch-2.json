@@ -1,0 +1,96 @@
+{
+  "batch_id": 2,
+  "total_batches": 3,
+  "tasks_in_batch": 8,
+  "instructions": "For each task below, you will see Response A and Response B (model identity hidden). Rate each on the listed dimensions (1-5), then indicate your preference: A / B / TIE.\n\n1 = Poor, 2 = Below average, 3 = Adequate, 4 = Good, 5 = Excellent\n\nDo NOT try to guess which model produced which response.",
+  "items": [
+    {
+      "task_id": "vefr.voice.017",
+      "category": "voice-consistency",
+      "difficulty": "hard",
+      "dimensions": [
+        "Voice consistency",
+        "Character distinctness"
+      ],
+      "setup_preview": "Small-town mystery world. Speaker is Cass, the local journalist \u2014 speaks in headlines, compresses information, uses active voice exclusively, avoids p...",
+      "input_preview": "ScenePacket: WHO YOU ARE: Cass, journalist for the Lamplighter Gazette. WHAT YOU KNOW: Three businesses closed this month. All three owed money to the..."
+    },
+    {
+      "task_id": "vefr.conversation.046",
+      "category": "conversational-naturalness",
+      "difficulty": "easy",
+      "dimensions": [
+        "Natural conversation",
+        "Voice consistency"
+      ],
+      "setup_preview": "Small-town diner. Waitress Carla (from character.017) is serving two teenage boys. They're trying to be cool but failing.",
+      "input_preview": "Boy 1: 'I'll have the... uh... the big one.' Carla: 'The Big Country Breakfast?' Boy 2: (snickers)"
+    },
+    {
+      "task_id": "vefr.emotion.022",
+      "category": "emotional-continuity",
+      "difficulty": "easy",
+      "dimensions": [
+        "Emotional truth",
+        "Natural conversation"
+      ],
+      "setup_preview": "Coastal village. Fisher woman Ana is mending nets at the dock. Her friend Clara sits down next to her with two coffees.",
+      "input_preview": "Clara hands Ana a coffee. 'Thought you could use this.'"
+    },
+    {
+      "task_id": "vefr.character.003",
+      "category": "character-perspective",
+      "difficulty": "hard",
+      "dimensions": [
+        "Character distinctness",
+        "Emotional truth"
+      ],
+      "setup_preview": "Space station mess hall. Engineer Priya is eating alone. She overheard two crewmates whispering about 'the problem' near airlock 3.",
+      "input_preview": "Priya is thinking about what she overheard. She's already anxious about the station's aging oxygen recyclers."
+    },
+    {
+      "task_id": "vefr.restraint.003",
+      "category": "unknown-restraint",
+      "difficulty": "hard",
+      "dimensions": [
+        "Restraint",
+        "Sealed-knowledge discipline"
+      ],
+      "setup_preview": "The player asks the storyteller directly (out of character) what the king's secret plan is. The world engine has not defined any secret plan. The stor...",
+      "input_preview": "Player says: 'What is the king's secret plan? I want to know what he's really up to.' The world engine has no data about a secret plan. The storytelle..."
+    },
+    {
+      "task_id": "vefr.emotion.028",
+      "category": "emotional-continuity",
+      "difficulty": "medium",
+      "dimensions": [
+        "Emotional truth",
+        "Natural conversation"
+      ],
+      "setup_preview": "Small-town church. After Sunday service, two families are in the parking lot. The Millers and the Coopers haven't spoken since a property dispute.",
+      "input_preview": "Mrs. Miller and Mrs. Cooper are walking to their cars. They'll have to pass each other."
+    },
+    {
+      "task_id": "vefr.emotion.025",
+      "category": "emotional-continuity",
+      "difficulty": "medium",
+      "dimensions": [
+        "Emotional truth",
+        "Natural conversation"
+      ],
+      "setup_preview": "Modern urban taqueria. Friends Leo and Mei are eating. Mei has been distant lately. Leo wants to ask her about it.",
+      "input_preview": "Leo takes a bite of his taco. 'So... you okay? You've been quiet.'"
+    },
+    {
+      "task_id": "vefr.voice.009",
+      "category": "voice-consistency",
+      "difficulty": "hard",
+      "dimensions": [
+        "Voice consistency",
+        "Character distinctness"
+      ],
+      "setup_preview": "Modern urban world. The model must resist defaulting to a generic assistant voice when given minimal speaker instructions. Speaker is just 'Miguel, ne...",
+      "input_preview": "ScenePacket: WHO YOU ARE: Miguel, your neighbor. WHAT YOU KNOW: The building's hot water has been out for three days. The landlord isn't returning cal..."
+    }
+  ]
+}
