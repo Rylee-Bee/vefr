@@ -1,0 +1,48 @@
+{
+  "model": "phi-4-mini",
+  "scenarios": 5,
+  "passed": 2,
+  "verdict": "MINISTRAL",
+  "results": [
+    {
+      "id": "cont-01-remembered-relationship",
+      "description": "Character A helped Character B in turn 1. 3 turns later, B should reference the help when asked about A.",
+      "pass": false,
+      "reason": "FAIL \u2014 no continuity keywords found. Expected any of: ['bandage', 'helped', 'saved', 'wound', 'water', 'tavern']...",
+      "probe_response": "Aldric, the stalwart guardian who once shared a table with me, emerges from the shadows at the fortress gate. His eyes widen with recognition as he sees Kael, the healer I once aided. \"Kael, my friend, it's been too long. The winds of fate have carried you far,\" he says with a nod of respect.",
+      "latency_s": 47.183
+    },
+    {
+      "id": "cont-02-remembered-physical-state",
+      "description": "Player is injured in turn 1. In turn 3, the injury should still affect behavior or be referenced.",
+      "pass": false,
+      "reason": "FAIL \u2014 no continuity keywords found. Expected any of: ['limp', 'injury', 'leg', 'wound', 'pain', 'slow']...",
+      "probe_response": "As I spin around, a pair of gaunt, torch-lit figures emerge from the shadows. Heart racing, I clutch the chest to my chest and start to retreat into the alcove. The footsteps echo closer, and I feel the oppressive weight of their impending judgement. I scramble to seal the chest in its resting place, hoping to buy myself some time. The figures halt just within the alcove's threshold, their eyes narrowing on my quivering form. I hold my breath, praying they don't recognize the forced entry. The t",
+      "latency_s": 19.068
+    },
+    {
+      "id": "cont-03-mistake-persists",
+      "description": "Character believes a false fact in turn 1 (the bridge is safe). In turn 3, they should still act on that belief, not be corrected by world-truth leaking in.",
+      "pass": true,
+      "reason": "PASS \u2014 matched keywords: ['safe', 'trust']",
+      "probe_response": "Rowan looks at you with a puzzled expression. \"The stone bridge? Oh, it's still as sturdy as ever, I assure you. The villagers have always trusted it, and I've seen it many times since you last spoke of it. It's been holding up quite well, thank the Lord.\" He seems genuinely convinced by your earlier message and is eager to share the continued safety of the bridge with others.",
+      "latency_s": 18.026
+    },
+    {
+      "id": "cont-04-fact-revealed-earlier",
+      "description": "A secret was told in turn 2. In turn 4, the character should know it and act on it without being reminded.",
+      "pass": true,
+      "reason": "PASS \u2014 matched keywords: ['ready']",
+      "probe_response": "Nadia takes a moment before replying. \"Yes, Voss. I've got everything we need. The team is ready, and the plan is set. Just ensure you're prepared for anything.\" Her tone carries a hint of urgency, as if the stakes are higher than ever.",
+      "latency_s": 15.573
+    },
+    {
+      "id": "cont-05-adversarial-continuity",
+      "description": "Context contains contradictory information. The character should maintain the established state from the most recent authoritative turn, not flip.",
+      "pass": false,
+      "reason": "FAIL \u2014 response contains forbidden terms: ['accident']. (Hits: ['arson'])",
+      "probe_response": "Marlowe's eyes narrowed, taking in the partner's question. He took a slow drag on his cigarette, smoke curling into the dim light. \"In this game, kid, everything's not what it seems. That 'accident' you speak of could just as easily be an arsonist's masterpiece. I say we dig deeper. We look for more than what's left behind. Someone with a motive, someone who knows the ins and outs of this place. Let's start with the 'accidental' wiring and see where it leads us. It might just be the first step i",
+      "latency_s": 26.108
+    }
+  ]
+}

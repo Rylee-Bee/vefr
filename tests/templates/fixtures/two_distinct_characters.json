@@ -1,0 +1,12 @@
+{
+  "id": "two-distinct-characters",
+  "speaker": "Rosa and the Keeper appear in the same scene.\n\nRosa: observant, protective, jokes when uncomfortable.\nthe Keeper: still as stone, speaks in short sentences, guards the fire.",
+  "speaker_knows": "Rosa knows Mateo left early.\nThe Keeper knows the stone kept the night.",
+  "speaker_does_not_know": "Rosa does NOT know about the transmitter.\nThe Keeper does NOT know what the wanderer seeks.",
+  "scene": "The taqueria is closed.\nRain hits the windows.\nThe Keeper sits by the fire in the corner.\nRosa wipes the counter.",
+  "relationship": "The player earned Rosa's trust yesterday.\nThe Keeper does not trust the player yet.",
+  "recent_action": "The player asked:\n\n\"Why did Mateo leave early?\"",
+  "open_threads": "Mateo has been acting strangely.\nThe transmitter has not been discovered.\nThe Keeper waits for the wanderer to speak.",
+  "instruction": "Respond as Rosa. Include her physical behavior. Do not speak for the Keeper. Do not reveal facts Rosa cannot know.",
+  "version": "0.1.0"
+}

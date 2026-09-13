@@ -1,0 +1,48 @@
+{
+  "model": "phi-4-mini",
+  "scenarios": 5,
+  "passed": 2,
+  "verdict": "MINISTRAL",
+  "results": [
+    {
+      "id": "cont-01-remembered-relationship",
+      "description": "Character A helped Character B in turn 1. 3 turns later, B should reference the help when asked about A.",
+      "pass": true,
+      "reason": "PASS \u2014 matched keywords: ['friend']",
+      "probe_response": "Aldric: \"Kael? Is that you? My friend, I didn't think I'd see you again like this.\" He steps forward, a look of surprise and relief washing over his face. \"I've come a long way, not just with distance, but in life. The road's taken its toll, but seeing you... it's as if the weight's lifted off my shoulders.\"",
+      "latency_s": 37.458
+    },
+    {
+      "id": "cont-02-remembered-physical-state",
+      "description": "Player is injured in turn 1. In turn 3, the injury should still affect behavior or be referenced.",
+      "pass": false,
+      "reason": "FAIL \u2014 no continuity keywords found. Expected any of: ['limp', 'injury', 'leg', 'wound', 'pain', 'slow']...",
+      "probe_response": "Mira spins around, her heart hammering in her chest. A shadowy figure looms at the doorway, its eyes glowing with malevolent intent. She takes a defensive stance, readying herself for confrontation. The figure steps into the light, revealing a twisted, undead creature - a sentinel guarding the temple's secrets. Mira's breathing quickens as she gauges her options. She can attempt to fight, hide, or make a desperate dash for the nearest exit. Her fate hinges on this moment.",
+      "latency_s": 70.467
+    },
+    {
+      "id": "cont-03-mistake-persists",
+      "description": "Character believes a false fact in turn 1 (the bridge is safe). In turn 3, they should still act on that belief, not be corrected by world-truth leaking in.",
+      "pass": false,
+      "reason": "FAIL \u2014 response contains forbidden terms: ['careful']. (Hits: ['safe'])",
+      "probe_response": "Rowan looks at you, a frown creasing his weathered face. \"I see now that the bridge may not be as sturdy as I once thought. The villagers' safety is my deepest concern, and I wish I had known sooner. We must tread carefully,\" he says, his voice carrying a weight of regret for not seeing the signs myself. \"Let us hope that the repairs held strong through the night.\"",
+      "latency_s": 43.457
+    },
+    {
+      "id": "cont-04-fact-revealed-earlier",
+      "description": "A secret was told in turn 2. In turn 4, the character should know it and act on it without being reminded.",
+      "pass": false,
+      "reason": "FAIL \u2014 no continuity keywords found. Expected any of: ['locker', '7', 'train station', '4-19-32', 'code', 'package']...",
+      "probe_response": "Nadia's voice comes through, calm and collected as always. \"Voss, I have all the resources you need. I have the team ready, the intel is up to date, and everything else is in place. We're as prepared as we can be.\" I take a moment to appreciate the level of coordination and professionalism. \"Thanks, Nadia. I couldn't ask for more.\" She laughs softly, a sound that's become increasingly rare. \"Just do what you have to do, Voss. We'll be here when you need us. Remember, the goal is to protect, not ",
+      "latency_s": 147.176
+    },
+    {
+      "id": "cont-05-adversarial-continuity",
+      "description": "Context contains contradictory information. The character should maintain the established state from the most recent authoritative turn, not flip.",
+      "pass": true,
+      "reason": "PASS \u2014 maintains arson conclusion despite mention of 'accident'. Arson evidence: ['arson', 'gas can', 'timer', 'evidence']",
+      "probe_response": "\"Let's not jump to conclusions just yet,\" I say, tapping my cigarette against the case file. \"I think we've got enough to suggest foul play. The nervousness of that witness, the hidden timer, and the conveniently misplaced gas can \u2014 it's all pointing to arson. But until we find more concrete evidence, we can't rule out the possibility of an accident. We'll dig deeper, ask more questions, and see where the truth leads us. But for now, I'm not convinced by the 'accident' story.\"",
+      "latency_s": 77.575
+    }
+  ]
+}
