@@ -42,7 +42,7 @@ in doubt; do not maintain duplicate copies of remote SHA here.
 ## What this repo is
 
 - The **engine** only ("the bones"): FastAPI + any OpenAI-compatible
-  LLM backend. MIT-licensed, shareable, may go public someday.
+  LLM backend. MPL-2.0-licensed, shareable, may go public someday.
 - Two CLI entry points: `ratatoskr` (ops: skipa, test, weave, ferry)
   and `norns` (craft: chat, validate, build-map, verify). Both share
   one geometry/contract validator: `src/vefr/maplab.py`.
