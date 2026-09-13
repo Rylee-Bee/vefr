@@ -35,6 +35,12 @@ COPY worlds ./worlds-template
 RUN mkdir -p /app/worlds /app/data
 VOLUME ["/app/worlds-template", "/app/worlds", "/app/data"]
 
+# Run as non-root. The engine only writes to /app/data/ and
+# /app/worlds/ (both volumes); no root privileges are needed.
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin vefr \
+    && chown -R vefr:vefr /app/data /app/worlds
+USER vefr
+
 # Stamp the build with the engine source SHA so `ratatoskr ferry deploy`
 # can skip a no-op `podman build` when the remote image already matches
 # the checkout HEAD. Falls back to a build-time `git rev-parse`; if the
