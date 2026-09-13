@@ -76,7 +76,7 @@ def test_doctor_live_down_is_reported_not_failed(monkeypatch, tmp_path,
 def test_doctor_live_ok_when_stack_answers(monkeypatch, tmp_path, capsys):
     args = _patch(monkeypatch, tmp_path,
                   fetch=lambda url, timeout=8: {'ok': True})
-    monkeypatch.setenv('VEFR_LIVE_URL', 'http://bazzite:8820')
+    monkeypatch.setenv('VEFR_LIVE_URL', 'http://deploy-host:8820')
     rc = cli.cmd_doctor(args)
     out = capsys.readouterr().out
     assert rc == 0

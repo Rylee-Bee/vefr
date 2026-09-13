@@ -38,10 +38,10 @@ GITEA_BASE = os.environ.get('VEFR_GITEA_URL', 'http://localhost:3000')
 DEFAULT_URL = os.environ.get('VEFR_LIVE_URL', 'http://127.0.0.1:8820')
 DEFAULT_DEPLOY_HOST = os.environ.get(
     'VEFR_DEPLOY_HOST',
-    os.environ.get('VEFR_DEFAULT_DEPLOY_HOST', 'bazzite'),
+    os.environ.get('VEFR_DEFAULT_DEPLOY_HOST', ''),
 )
 DEFAULT_BACKUP_LOCATION = os.environ.get(
-    'VEFR_DEFAULT_BACKUP_LOCATION', 'homelab-vm:/mnt/nas/shared/backups')
+    'VEFR_DEFAULT_BACKUP_LOCATION', '')
 DEFAULT_BACKUP_HOST, _, NAS_DIR = DEFAULT_BACKUP_LOCATION.partition(':')
 
 # Engine-shipped pack names: when one of these sits in the deploy
@@ -68,8 +68,12 @@ def _deploy_toml(root: Path | None = None) -> dict:
         return tomllib.loads(p.read_text(encoding='utf-8'))
     except Exception:  # noqa: BLE001 - broken config, not a broken deploy
         return {}
-if not NAS_DIR:  # a location without a path still needs somewhere to land
-    DEFAULT_BACKUP_HOST, NAS_DIR = DEFAULT_BACKUP_LOCATION, '/mnt/nas/shared/backups'
+if not DEFAULT_BACKUP_LOCATION:
+    # No silent defaults. Carry refuses to ssh an empty host and the
+    # operator must declare VEFR_DEFAULT_BACKUP_LOCATION or pass
+    # --nas-host + --backup-path. The deploy wrapper has the same
+    # fail-closed shape (see cmd_deploy near line 747).
+    DEFAULT_BACKUP_HOST, NAS_DIR = '', ''
 BUNDLE_KEEP = 2
 DEPLOY_EXCLUDES = ('.venv', '__pycache__', '.pytest_cache', '*.egg-info', '.git')
 
@@ -744,7 +748,7 @@ def cmd_deploy(args) -> int:
     if host == DEFAULT_DEPLOY_HOST and not declared_env and declared_toml:
         # --flag and env are silent: deploy.toml is the third voice.
         host = cfg['host']
-    if host == 'bazzite' and not declared_env and not declared_toml:
+    if not host and not declared_env and not declared_toml:
         # The silent default of 'bazzite' was a leak: a fresh
         # checkout would `ssh bazzite` and explode against a host
         # it cannot resolve. Force the operator to declare.
@@ -924,9 +928,9 @@ _DEPLOY_TOML_EXAMPLE = '''\
 #            maplab verify after deploy). Defaults to
 #            http://<host>:8820.
 
-host  = "bazzite"
+host  = "deploy-host"
 image = "localhost/vefr:latest"
-url   = "http://bazzite:8820"
+url   = "http://deploy-host:8820"
 '''
 
 
@@ -2122,6 +2126,123 @@ def cmd_storyteller_test(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_storyteller_benchmark(args) -> int:
+    """norns storyteller-benchmark - blind A/B/C/D capability review.
+
+    Three modes:
+      run       - execute the full benchmark, write blind review files
+      reveal    - print the identity mapping + tech context for an existing run
+      review    - print the blank review worksheet for an existing run
+    """
+    from .storyteller import find_pack, list_packs
+    from .storyteller_benchmark import (
+        default_packs,
+        list_default_fixtures,
+        render_reveal,
+        run_benchmark,
+    )
+
+    mode = getattr(args, "benchmark_cmd", "run")
+
+    if mode == "reveal":
+        out_dir = Path(getattr(args, "out_dir", ""))
+        if not out_dir.is_dir():
+            print(f"not a directory: {out_dir}")
+            return 1
+        # Build pack-context strings from the current pack list so the
+        # reveal can show model + license + quant next to each label.
+        extra: dict[str, str] = {}
+        for pack in list_packs():
+            lic = pack.license
+            spdx = (lic.spdx if lic else "") or "?"
+            comm = (lic.commercial_use if lic else "") or "?"
+            quant = (pack.install.recommended_quant if pack.install else "") or "?"
+            extra[pack.id] = (
+                f"model={pack.model}  quant={quant}  "
+                f"license={spdx}  commercial_use={comm}"
+            )
+        print(render_reveal(out_dir, extra_context=extra))
+        return 0
+
+    if mode == "review":
+        out_dir = Path(getattr(args, "out_dir", ""))
+        worksheet = out_dir / "review" / "WORKSHEET.txt"
+        if not worksheet.is_file():
+            print(f"no worksheet at {worksheet}")
+            return 1
+        print(worksheet.read_text(encoding="utf-8"))
+        return 0
+
+    # mode == "run"
+    fixtures = list_default_fixtures()
+    if not fixtures:
+        print("no benchmark fixtures found under tests/fixtures/storyteller/")
+        return 1
+
+    if getattr(args, "pack", None):
+        packs = []
+        for name in args.pack:
+            pack = find_pack(name)
+            if pack is None:
+                print(f"unknown storyteller pack {name!r}")
+                return 1
+            packs.append(pack)
+    elif getattr(args, "model", None):
+        pack = find_pack(getattr(args, "model"))
+        if pack is None:
+            print(f"unknown storyteller pack {getattr(args, 'model')!r}")
+            return 1
+        packs = [pack]
+    else:
+        packs = default_packs()
+        if getattr(args, "exclude", None):
+            packs = [p for p in packs if p.id not in set(args.exclude)]
+
+    if not packs:
+        print("no storyteller packs configured; install one under data/storytellers/")
+        return 1
+
+    runs_per = max(1, int(getattr(args, "runs", 3) or 3))
+    seed = getattr(args, "seed", None)
+    if seed is not None:
+        seed = int(seed)
+
+    print("=== STORYTELLER CAPABILITY BENCHMARK ===")
+    print(f"fixtures: {len(fixtures)}")
+    print(f"packs: {len(packs)}")
+    print(f"runs per (fixture, pack): {runs_per}")
+    print(f"blind mapping seed: {seed if seed is not None else 'system-random'}")
+    print()
+
+    def progress(fixture_id: str, pack_id: str, run_number: int, status: str) -> None:
+        marker = {"ok": ".", "skipped": "S", "error": "E"}.get(status, "?")
+        print(f"  {fixture_id:24s} {pack_id:24s} run {run_number}: {marker}")
+
+    out_dir, mapping = run_benchmark(
+        packs,
+        fixtures,
+        runs_per=runs_per,
+        seed=seed,
+        progress=progress,
+    )
+
+    review_dir = out_dir / "review"
+    print()
+    print(f"saved blind review: {review_dir}")
+    print(f"identity mapping (PRIVATE): {out_dir / 'identity.json'}")
+    print()
+    print("review order:")
+    for f in sorted(review_dir.glob("[0-9][0-9]-*.txt")):
+        print(f"  {f.name}")
+    print()
+    print(
+        "open the review files in order. read prose. write your rankings "
+        "in review/WORKSHEET.txt. do not open identity.json until you "
+        "are done."
+    )
+    return 0
+
+
 def norns_main() -> int:
     ap = argparse.ArgumentParser(
         prog='norns', description=NORNS_HELP,
@@ -2189,6 +2310,39 @@ def norns_main() -> int:
     mt.add_argument('--blind', action='store_true',
                     help='label outputs Storyteller A/B/C and write a blind_map.txt for later reveal')
     mt.set_defaults(fn=cmd_storyteller_test)
+
+    mb = craft.add_parser(
+        'storyteller-benchmark',
+        help='run the blind A/B/C/D story capability benchmark',
+    )
+    bench = mb.add_subparsers(dest='benchmark_cmd')
+    bench.required = True
+
+    mb_run = bench.add_parser('run', help='execute the full benchmark and write blind review files')
+    mb_run.add_argument('--model', default=None,
+                        help='benchmark only this pack (default: every installed pack)')
+    mb_run.add_argument('--pack', action='append', default=None,
+                        help='restrict to one or more pack ids; may be repeated. '
+                             'Overrides --model if both are passed.')
+    mb_run.add_argument('--exclude', action='append', default=None,
+                        help='drop these pack ids from the default roster; may be repeated.')
+    mb_run.add_argument('--runs', type=int, default=3,
+                        help='repetitions per (fixture, pack) (default: 3)')
+    mb_run.add_argument('--seed', type=int, default=None,
+                        help='seed the blind label assignment so mapping is reproducible (default: system-random)')
+    mb_run.set_defaults(fn=cmd_storyteller_benchmark)
+
+    mb_reveal = bench.add_parser('reveal',
+                                 help='print identity mapping + tech context for an existing run')
+    mb_reveal.add_argument('--out-dir', required=True,
+                           help='the artifact directory the benchmark run wrote to')
+    mb_reveal.set_defaults(fn=cmd_storyteller_benchmark)
+
+    mb_review = bench.add_parser('review',
+                                 help='print the blank review worksheet for an existing run')
+    mb_review.add_argument('--out-dir', required=True,
+                           help='the artifact directory the benchmark run wrote to')
+    mb_review.set_defaults(fn=cmd_storyteller_benchmark)
 
     args = ap.parse_args()
     # validate / build-map / verify / doctor default --pack to the

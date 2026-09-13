@@ -1,6 +1,7 @@
-"""`ratatoskr ferry deploy` refuses the silent bazzite default and can
+"""`ratatoskr ferry deploy` refuses the silent host default and can
 generate a deploy.toml.example via --init. The full live-deploy path
-needs an SSH-reachable host and is exercised by hand against bazzite."""
+needs an SSH-reachable host and is exercised by hand against the
+operator's deploy host."""
 
 import importlib
 
@@ -20,11 +21,11 @@ def fresh_cli(monkeypatch):
 
 def test_deploy_refuses_silent_bazzite_default(fresh_cli, tmp_path, monkeypatch, capsys):
     """A fresh checkout with no VEFR_DEPLOY_HOST and no deploy.toml
-    must NOT ssh bazzite."""
+    must NOT ssh the silent default host."""
     monkeypatch.setattr(fresh_cli, 'need_repo', lambda: tmp_path)
     args = fresh_cli.argparse.Namespace(
         init=False, skip_tests=True, rebuild=False, no_health=True,
-        deploy_host=fresh_cli.DEFAULT_DEPLOY_HOST,  # 'bazzite' with env unset
+        deploy_host=fresh_cli.DEFAULT_DEPLOY_HOST,  # the silent default
         url=fresh_cli.DEFAULT_URL,
     )
     rc = fresh_cli.cmd_deploy(args)
@@ -60,7 +61,7 @@ def test_deploy_init_writes_toml_example(fresh_cli, tmp_path, monkeypatch, capsy
     monkeypatch.setattr(fresh_cli, 'need_repo', lambda: tmp_path)
     args = fresh_cli.argparse.Namespace(
         init=True, skip_tests=False, rebuild=False, no_health=False,
-        deploy_host='bazzite', url='http://bazzite:8820',
+        deploy_host='deploy-host', url='http://deploy-host:8820',
     )
     rc = fresh_cli.cmd_deploy(args)
     assert rc == 0
@@ -80,7 +81,7 @@ def test_deploy_init_refuses_to_overwrite(fresh_cli, tmp_path, monkeypatch, caps
     (tmp_path / 'deploy.toml.example').write_text('existing content')
     args = fresh_cli.argparse.Namespace(
         init=True, skip_tests=False, rebuild=False, no_health=False,
-        deploy_host='bazzite', url='http://bazzite:8820',
+        deploy_host='deploy-host', url='http://deploy-host:8820',
     )
     rc = fresh_cli.cmd_deploy(args)
     assert rc == 1

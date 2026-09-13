@@ -24,6 +24,8 @@ canonical_status: observed
 canonical_status_observed_at: 2026-09-12
 no_secrets: true
 notes: >-
-  This is the kilo2/vefr working checkout. The canonical checkout is
-  /mnt/c/Users/ryleeb/projects/vefr per AGENTS.md. This checkout is a
-  Storyteller WIP lane; rule surfaces here mirror the canonical checkout.
+  The canonical checkout is the GitHub repository `Rylee-Bee/vefr`.
+  Working copies elsewhere follow AGENTS.md and this manifest. Any
+  feature work that touches Storyteller capability stays in a WIP lane
+  until the story-team design lands; rule surfaces here mirror the
+  canonical checkout.

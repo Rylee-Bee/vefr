@@ -108,8 +108,8 @@ builder section heads).
   pre-existing on the base commit (the `MUNR` doc leak in
   `test_pack_neutrality`, and `test_npc_action.py` WIP that isn't
   part of this branch). Evidence and baseline run in the PR.
-- Headless Chromium (kilo-browser) against the dev server on
-  `homelab-dev`: 1440px play/build/weave zones, prefs dialog,
+- Headless Chromium (kilo-browser) against the dev server:
+  1440px play/build/weave zones, prefs dialog,
   tablet-width 900px, all three contrast themes, whisper round-trip —
   zero console errors, zero failed requests, zero 4xx/5xx.
 - Static-asset checks: `/static/vefr-theme.css`,

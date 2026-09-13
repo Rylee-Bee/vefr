@@ -1,0 +1,19 @@
+name: security
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-surface:
+    name: public-surface guard (manual)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync test deps
+        run: uv sync --group test
+      - name: Public-surface guard
+        run: python3 scripts/check_public_surface.py

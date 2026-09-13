@@ -5,11 +5,7 @@
 >
 > **It gives the hellos that never happened.**
 
-Two entry points, `ratatoskr` and `norns`, live under this one umbrella -
-universal tooling that never references any specific game's name, so
-any story can be woven here. `vefr` is Old Norse for the web - the
-woven thing; it's also the loom the author's own game is built on,
-which lives in its own private repo and ships nothing here.
+**Bring your own brain. VEFR provides the world.**
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
@@ -20,6 +16,31 @@ their own flesh.
 It is an honesty contract rendered as a game: the world's claims
 live in the pack, the engine's rules are tested, and every name
 spoken must be true.
+
+## First 60 seconds
+
+```sh
+# 1. Get the engine.
+git clone https://github.com/Rylee-Bee/vefr.git
+cd vefr
+uv sync --group test
+
+# 2. Bring any OpenAI-compatible LLM endpoint.
+#    llama.cpp, Ollama, LM Studio, a phone running a local server,
+#    or any hosted endpoint that speaks /v1/chat/completions.
+export VEFR_LLAMACPP_URL=http://127.0.0.1:8081
+export VEFR_MODEL=gpt-oss-20b
+
+# 3. Run with the bundled sample world (Emberfield).
+uv run --group test norns validate --pack worlds/sample-world
+uv run uvicorn vefr.main:app --app-dir src --port 8820
+# -> open http://127.0.0.1:8820
+```
+
+Three commands, one engine, one world. To swap in your own world,
+see [Make your own world](#make-your-own-world). To play on a
+phone or ship a single-file HTML, see [Quickstart](#quickstart-container)
+below.
 
 ## A Play-Nice project
 
@@ -47,6 +68,8 @@ Canonical adoption lives at
 [`.project/contracts/adoption.yaml`](.project/contracts/adoption.yaml);
 canonical current state at [`.project/CURRENT.md`](.project/CURRENT.md);
 durable decisions at [`.project/DECISIONS.md`](.project/DECISIONS.md).
+The pinned adoption revision is the source of truth — do not
+re-pin without an explicit discussion.
 
 Play-Nice's **[Trusted Translation](https://github.com/Rylee-Bee/play-nice-contracts/blob/main/docs/principles/trusted-translation.md)**
 ("different languages, different systems, shared understanding,
@@ -136,15 +159,9 @@ user/story-repo/             # your story repo (private, the flesh)
 ```
 
 You develop the engine here. You write the game there. When you
-want to play:
-
-```bash
-# on the deploy host
-ssh deploy-host
-cd ~/vefr                            # the engine checkout
-ferry fetch --pull user/story-repo   # your pack lands in worlds/your-world/
-systemctl --user restart vefr.service
-```
+want to play, drop the pack into `worlds/<name>/` (or `ferry fetch`
+it) and set `VEFR_WORLD=<name>` (or `--pull` the existing one).
+Restart the engine so the loader re-reads the worlds dir.
 
 When you want to ship the game as your own thing:
 
@@ -245,7 +262,7 @@ those seams open. See `docs/guides/brain-socket.md`.
 
 The practical direction right now is broad playability: the engine
 should run happily against a small local model on the player's own
-computer, even on CPU. The earlier bazzite/GPU benchmarking work was
+computer, even on CPU. The earlier small-model benchmarking work was
 useful for learning the socket; it is not VEFR's required future, and
 no specific host or hardware class should become canonical.
 
@@ -418,6 +435,12 @@ itself stays the scaffold's in v1; grow it after with
   Infusion (UI Options pattern), Atkinson Hyperlegible Next +
   OpenDyslexic (SIL OFL, self-hosted under `web/fonts/`). See
   `docs/guides/identity-terms-glossary.md` for the vocabulary.
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) - the gate
+  commands, the architectural principles, the Storyteller-WIP
+  do-not-touch summary.
+- **Security & private reporting:** [SECURITY.md](SECURITY.md) -
+  private vulnerability reporting, leaked-credential handling,
+  threat model, public-private boundary.
 - **What's landed, what's next:** `ROADMAP.md`.
 
 ## The town
@@ -451,6 +474,14 @@ when the world is kind.
 
 ```sh
 uv sync --group test
-uv run --group test ruff check src tests
+uv run --group test ruff check src tests scripts
 uv run --group test pytest -q
+uv run --group test norns validate --pack worlds/sample-world
+python3 scripts/check_public_surface.py
 ```
+
+The last command is the **public-surface guard** — it fails the
+build if the tracked tree contains private LAN IPs, real hostnames,
+the operator's SSH user, private filesystem paths, or obvious
+credential formats. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+[SECURITY.md](SECURITY.md) for the contract.

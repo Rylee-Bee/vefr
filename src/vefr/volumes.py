@@ -299,8 +299,8 @@ def export_pack(
     commits, and `volumes import` reads back.
 
     On the dev box, worlds_root defaults to the engine
-    checkout's worlds/. On bazzite (or any deploy host), it
-    defaults to ~/vefr-worlds/ - the rw canon bind mount.
+    checkout's worlds/. On the deploy host, it defaults to
+    ~/vefr-worlds/ - the rw canon bind mount.
 
     If the destination already exists and is a non-empty git
     repo, the export is a no-op (the author probably has
