@@ -318,31 +318,79 @@ RPG-looking panels.
 ## Quickstart (container)
 
 ```sh
-podman build -t localhost/vefr:latest .
+# From the published image (GHCR):
 mkdir -p ~/vefr-data
 podman run -d --name vefr -p 8820:8820 \
   -v ~/vefr-data:/app/data \
   -e VEFR_LLAMACPP_URL=http://127.0.0.1:8081 \
   -e VEFR_MODEL=gpt-oss-20b \
-  localhost/vefr:latest
+  ghcr.io/rylee-bee/vefr:latest
 curl -s http://127.0.0.1:8820/api/health
+
+# Or build locally:
+podman build -t localhost/vefr:latest .
+podman run -d --name vefr -p 8820:8820 \
+  -v ~/vefr-data:/app/data \
+  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8081 \
+  localhost/vefr:latest
 ```
 
-The active Storyteller Pack's `[model].provider` picks the transport
-(see `docs/guides/storyteller-packs.md`). Every pack that ships with
-the engine is `openai-compatible`, so `VEFR_LLAMACPP_URL`
-(llama.cpp's `/v1/chat/completions` endpoint) is the one that matters
-by default. `OLLAMA_URL` (legacy ollama `/api/generate`) is only
-consulted by a pack that declares `provider = "ollama"`. For the
-broadest "everyone gets to play" path, point the active transport at
-a small local model that can answer reliably on the machine in front
-of the player. Model default: `gpt-oss-20b` (works with any
-llama.cpp model that supports the chat template; set `VEFR_MODEL` to
-change it; structured output via JSON schema with `strict: true`).
+### Container images
 
-Other env vars the engine reads: `VEFR_VAULT` (path to `vault.json`,
-default `<home>/data/vault.json`) and `VEFR_KEEP_ALIVE` (ollama-only
-model keep-alive window, e.g. `1m`).
+Published images live at
+`ghcr.io/rylee-bee/vefr`. Tags:
+
+| Tag | Meaning |
+|---|---|
+| `:latest` | Current `main`, advances on every successful publish |
+| `:sha-<full SHA>` | Immutable; the documented rollback handle |
+
+Images are built automatically from `main` after CI passes. The
+image contains the engine, web UI, and sample world — no model
+weights. Bring your own LLM endpoint.
+
+### Model configuration
+
+VEFR speaks `/v1/chat/completions` to any OpenAI-compatible
+endpoint. Point it at llama.cpp, Ollama, LM Studio, or a phone
+running a local server.
+
+| Env var | Purpose | Default |
+|---|---|---|
+| `VEFR_LLAMACPP_URL` | llama.cpp endpoint (preferred) | — |
+| `OLLAMA_URL` | Ollama endpoint (fallback) | — |
+| `VEFR_MODEL` | Model name sent to the endpoint | `gpt-oss-20b` |
+| `VEFR_KEEP_ALIVE` | Ollama model keep-alive window | `1m` |
+| `VEFR_HOME` | Engine root directory | `/app` |
+| `VEFR_VAULT` | Path to vault.json | `<VEFR_HOME>/data/vault.json` |
+| `VEFR_JOURNAL` | Path to journal.json | `<VEFR_HOME>/data/journal.json` |
+| `VEFR_WORLD` | World pack name | `sample-world` |
+
+The active Storyteller Pack's `[model].provider` picks the
+transport (see `docs/guides/storyteller-packs.md`). Every pack
+that ships with the engine is `openai-compatible`, so
+`VEFR_LLAMACPP_URL` is the one that matters by default.
+`OLLAMA_URL` is only consulted by a pack that declares
+`provider = "ollama"`.
+
+### Health and degraded state
+
+`GET /api/health` returns `{"ok": true, "service": "vefr", "purpose": "..."}` when
+the engine is running. The health check does **not** require a
+model — the engine boots and serves the UI without one. Model-backed
+endpoints (`/api/rumor`, `/api/forge`, `/api/npc`, `/api/stefna`)
+return errors when no endpoint is configured. The model is
+replaceable machinery; the world is authoritative.
+
+### Compose
+
+```sh
+# Portable (pulls published image):
+podman compose up -d
+
+# Local development (builds from source):
+podman compose -f compose.yml -f compose.dev.yaml up --build
+```
 
 ### Use your own pack
 

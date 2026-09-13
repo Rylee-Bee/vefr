@@ -1,0 +1,33 @@
+.git
+.venv
+venv
+**/__pycache__
+**/*.egg-info
+.pytest_cache
+.idea/
+
+# build output
+dist/
+
+# runtime state — never part of the image
+data/
+worlds/*/world-tree.md
+worlds/*/handbok.md
+
+# environment and deploy config — secrets live on the host
+.env
+.env.*
+deploy.toml
+
+# Storyteller WIP and benchmark scratch — not engine runtime
+bench/
+experiments/
+storyteller_packs/
+data/storytellers/
+
+# CI / editor metadata
+.github/
+.gitea/
+.gitleaks.toml
+.project/
+*.log

@@ -7,6 +7,33 @@
 
 ## Landed
 
+- [x] **Container/registry: GHCR publication, .containerignore,
+      compose split** (2026-09-13): VEFR images now publish to
+      `ghcr.io/rylee-bee/vefr` automatically from `main` after CI
+      passes. New `.github/workflows/publish-image.yml` follows the
+      Worlds pattern: `workflow_run` gate on `ci` success, SHA +
+      `latest` tags, OCI labels (title, description, source, license,
+      revision, created), Docker Buildx, provenance disabled. New
+      `.containerignore` excludes `.git`, venvs, `__pycache__`,
+      `data/`, `bench/`, `experiments/`, `storyteller_packs/`,
+      `.github/`, `.project/`, and env/deploy config from the build
+      context. `compose.yml` restructured as portable base (pulls
+      published GHCR image, `pull_policy: always`); new
+      `compose.dev.yaml` for local source-tree builds
+      (`podman compose -f compose.yaml -f compose.dev.yaml up --build`).
+      `compose.yml` exposes `VEFR_IMAGE` env var for pinning to a
+      known-good `:sha-...` tag for rollback. Health endpoint
+      (`GET /api/health`) already existed; documented that it does not
+      require a model — engine boots and serves UI without one.
+      README updated: container quickstart references GHCR, new
+      "Container images" / "Model configuration" / "Health and
+      degraded state" / "Compose" sections. Public-surface guard
+      updated to skip `bench/` (internal benchmark research, not
+      public engine surface). Verified: `ruff check src tests scripts`
+      clean; `pytest -q` 346 passed, 2 skipped; `norns validate
+      --pack worlds/sample-world` ok; `check_public_surface.py` clean
+      (1362 tracked files scanned).
+
 - [x] **Public-release hardening pass** (2026-09-13,
       public-release epoch): tree sanitized of environment-specific
       references; `docs/guides/archive/` handoffs and host-specific

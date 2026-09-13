@@ -1,16 +1,12 @@
-# vefr - a self-contained engine + sample world, ready in three commands.
+# vefr — portable standalone deployment.
 #
-# Usage:
-#   1. podman compose up -d
-#   2. open http://localhost:8820
-#   3. (optional) `podman compose logs -f vefr` to see the engine come up
+# This compose file is the portable appliance. It pulls the published
+# GHCR image; it carries no host-specific mounts and no source tree
+# dependency. It boots with only:
 #
-# What you get:
-#   - vefr engine on http://localhost:8820
-#   - lore/ + sample-world/ pre-loaded as engine templates (ro volume)
-#   - worlds/ writable volume for any pack you import
-#     (`ferry fetch --pack <name>`, or your own story repo)
-#   - data/ writable volume for player state (vault, journal, weave log)
+#   - a published OCI image
+#   - a persistent data volume
+#   - one published port (8820)
 #
 # Bring up an LLM backend separately (ollama, llama.cpp, or any
 # OpenAI-compatible HTTP endpoint) and point vefr at it with the
@@ -18,22 +14,14 @@
 # and serves the UI; the model-backed endpoints (/api/rumor,
 # /api/forge, /api/npc, /api/stefna) return errors.
 #
-# Customizing:
-#   - Set VEFR_WORLD to a different pack name (default: sample-world)
-#   - Bind-mount a local pack under /app/worlds/<name>/ and refresh
-#   - Use `podman compose exec vefr bash` to drop into the container
-#
-# To start fresh: `podman compose down -v` (deletes volumes; the
-# image is rebuilt from the Containerfile each `up`).
-
-name: vefr
+# Local development with a source-tree build lives in
+# compose.dev.yaml. Rollback by pinning VEFR_IMAGE to a known-good
+# :sha-... tag.
 
 services:
   vefr:
-    build:
-      context: .
-      dockerfile: Containerfile
-    image: localhost/vefr:latest
+    image: ${VEFR_IMAGE:-ghcr.io/rylee-bee/vefr:latest}
+    pull_policy: always
     container_name: vefr
     network_mode: host
     environment:
@@ -48,8 +36,8 @@ services:
       VEFR_VAULT: /app/data/vault.json
       VEFR_JOURNAL: /app/data/journal.json
     volumes:
-      # Engine templates (lore, sample-world, poolworld). Read-only;
-      # updated by `podman compose build` on engine updates.
+      # Engine templates (lore, sample-world). Read-only;
+      # updated by pulling a new image.
       - vefr-template:/app/worlds-template:ro
       # Author canon (your own packs, anything you `ferry fetch`).
       # Writable; survives engine updates.

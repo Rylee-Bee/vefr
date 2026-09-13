@@ -100,6 +100,7 @@ FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
 SKIP_PATH_PREFIXES: tuple[str, ...] = (
     "data/",          # runtime state, gitignored in spirit
     "artifacts/",     # local eval artifacts
+    "bench/",         # internal benchmark research, not public engine surface
     ".git/",
 )
 
