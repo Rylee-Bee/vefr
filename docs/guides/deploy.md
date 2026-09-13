@@ -35,8 +35,8 @@ restart, not a full rebuild.
 
 ## First-time setup on a new host
 
-The wrapper refuses to run with the silent `bazzite` default — that
-was a leak that bit every fresh checkout. To get started:
+The wrapper refuses to run with any silent default — a leaked default
+host has bitten every fresh checkout. To get started:
 
 ```sh
 # 1. Generate the example config + this guide (idempotent — refuses
@@ -66,7 +66,7 @@ uv run ratatoskr ferry deploy
 | `VEFR_DEPLOY_IMAGE` | podman image name/tag the quadlet runs | `localhost/vefr:latest` |
 | `VEFR_LIVE_URL` | engine URL for post-deploy health check | `http://127.0.0.1:8820` |
 | `VEFR_GITEA_URL` | Gitea base for `ferry fetch` shorthand | `http://localhost:3000` |
-| `VEFR_DEFAULT_BACKUP_LOCATION` | `host:/path` for `ferry carry` | `homelab-vm:/mnt/nas/shared/backups` |
+| `VEFR_DEFAULT_BACKUP_LOCATION` | `host:/path` for `ferry carry` | unset — set per operator |
 
 All five are runtime data, not repo data. They live in your shell,
 your direnv, or your secret store — never in a commit.
@@ -111,7 +111,7 @@ clean on the next un-skipped deploy.
 | Symptom | Likely cause |
 |---|---|
 | `refusing to deploy: VEFR_DEPLOY_HOST is not set` | Env var missing. Run `export VEFR_DEPLOY_HOST=...` or `ferry deploy --init`. |
-| `ssh: Could not resolve hostname bazzite` | The leaked default bit you. Set `VEFR_DEPLOY_HOST` explicitly. |
+| `ssh: Could not resolve hostname ...` | The SSH alias used as `VEFR_DEPLOY_HOST` is not configured on this dev box. Use a host the local SSH config can resolve, or pass `user@host` directly. |
 | `pre-flight: pytest failed` | `uv run --group test pytest -q` to see why; fix; retry. |
 | `pre-flight: sample-world validate failed` | `uv run --group test norns validate --pack sample-world` for details. |
 | `health check failed: ...` | Container started but `/api/health` did not return 200 within 2s. `ssh $VEFR_DEPLOY_HOST podman logs vefr` for the cause. |

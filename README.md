@@ -5,11 +5,7 @@
 >
 > **It gives the hellos that never happened.**
 
-Two entry points, `ratatoskr` and `norns`, live under this one umbrella -
-universal tooling that never references any specific game's name, so
-any story can be woven here. `vefr` is Old Norse for the web - the
-woven thing; it's also the loom the author's own game is built on,
-which lives in its own private repo and ships nothing here.
+**Bring your own brain. VEFR provides the world.**
 
 A rumor engine for playable worlds. The engine holds the rules:
 phases, whispers, the forge, the vault, a walkable town under a
@@ -20,6 +16,31 @@ their own flesh.
 It is an honesty contract rendered as a game: the world's claims
 live in the pack, the engine's rules are tested, and every name
 spoken must be true.
+
+## First 60 seconds
+
+```sh
+# 1. Get the engine.
+git clone https://github.com/Rylee-Bee/vefr.git
+cd vefr
+uv sync --group test
+
+# 2. Bring any OpenAI-compatible LLM endpoint.
+#    llama.cpp, Ollama, LM Studio, a phone running a local server,
+#    or any hosted endpoint that speaks /v1/chat/completions.
+export VEFR_LLAMACPP_URL=http://127.0.0.1:8081
+export VEFR_MODEL=gpt-oss-20b
+
+# 3. Run with the bundled sample world (Emberfield).
+uv run --group test norns validate --pack worlds/sample-world
+uv run uvicorn vefr.main:app --app-dir src --port 8820
+# -> open http://127.0.0.1:8820
+```
+
+Three commands, one engine, one world. To swap in your own world,
+see [Make your own world](#make-your-own-world). To play on a
+phone or ship a single-file HTML, see [Quickstart](#quickstart-container)
+below.
 
 ## A Play-Nice project
 
@@ -47,6 +68,8 @@ Canonical adoption lives at
 [`.project/contracts/adoption.yaml`](.project/contracts/adoption.yaml);
 canonical current state at [`.project/CURRENT.md`](.project/CURRENT.md);
 durable decisions at [`.project/DECISIONS.md`](.project/DECISIONS.md).
+The pinned adoption revision is the source of truth — do not
+re-pin without an explicit discussion.
 
 Play-Nice's **[Trusted Translation](https://github.com/Rylee-Bee/play-nice-contracts/blob/main/docs/principles/trusted-translation.md)**
 ("different languages, different systems, shared understanding,
@@ -58,7 +81,7 @@ contracts in the adoption pin are authoritative.
 ## The bones and the flesh
 
 ```
-src/vefr/           the engine (MIT)
+src/vefr/           the engine (MPL-2.0)
   paths.py           where things live (VEFR_HOME, VEFR_WORLD)
   world.py           the pack loader - the only seam
   saga.py            the storytelling layer (prompts, voices, ledger)
@@ -98,8 +121,8 @@ worlds/<name>/       a world pack - a story
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
 
-worlds/sample-world/ Emberfield - the teaching example (MIT, ships
-                     with the engine so it's shareable end to end)
+worlds/sample-world/ Emberfield - the teaching example (CC0 1.0,
+                     ships with the engine so it's shareable end to end)
 
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks
@@ -125,7 +148,7 @@ The repo split is the contract. The engine knows:
 What this looks like in practice:
 
 ```
-user/vefr/                   # this repo (MIT, the bones)
+user/vefr/                   # this repo (MPL-2.0, the bones)
 user/story-repo/             # your story repo (private, the flesh)
   worlds/your-world/         # the pack, lives in the story repo
     world.json               # phases: dusk / dawn, voices, bonds
@@ -136,15 +159,9 @@ user/story-repo/             # your story repo (private, the flesh)
 ```
 
 You develop the engine here. You write the game there. When you
-want to play:
-
-```bash
-# on the deploy host
-ssh deploy-host
-cd ~/vefr                            # the engine checkout
-ferry fetch --pull user/story-repo   # your pack lands in worlds/your-world/
-systemctl --user restart vefr.service
-```
+want to play, drop the pack into `worlds/<name>/` (or `ferry fetch`
+it) and set `VEFR_WORLD=<name>` (or `--pull` the existing one).
+Restart the engine so the loader re-reads the worlds dir.
 
 When you want to ship the game as your own thing:
 
@@ -245,7 +262,7 @@ those seams open. See `docs/guides/brain-socket.md`.
 
 The practical direction right now is broad playability: the engine
 should run happily against a small local model on the player's own
-computer, even on CPU. The earlier bazzite/GPU benchmarking work was
+computer, even on CPU. The earlier small-model benchmarking work was
 useful for learning the socket; it is not VEFR's required future, and
 no specific host or hardware class should become canonical.
 
@@ -418,6 +435,12 @@ itself stays the scaffold's in v1; grow it after with
   Infusion (UI Options pattern), Atkinson Hyperlegible Next +
   OpenDyslexic (SIL OFL, self-hosted under `web/fonts/`). See
   `docs/guides/identity-terms-glossary.md` for the vocabulary.
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) - the gate
+  commands, the architectural principles, the Storyteller-WIP
+  do-not-touch summary.
+- **Security & private reporting:** [SECURITY.md](SECURITY.md) -
+  private vulnerability reporting, leaked-credential handling,
+  threat model, public-private boundary.
 - **What's landed, what's next:** `ROADMAP.md`.
 
 ## The town
@@ -441,16 +464,31 @@ when the world is kind.
   prompting the render-target contract - any future renderer reads
   `/api/world`; ink + inkjs (MIT) for the authored-branching idea
   shelved for packs.
-- Engine license: MIT (see LICENSE) - covers `src/`, `web/`, `tests/`,
-  `deploy/`, `Containerfile`, and `worlds/sample-world/` (the teaching
-  example). Any other world pack dropped into `worlds/<name>/` locally
-  is that pack's own author's property - the engine grants no license
+- Engine license: MPL-2.0 (see `LICENSE`) for the engine source
+  under `src/`, `web/`, `tests/`, `scripts/`, `docs/`, `deploy/`,
+  and `Containerfile`. Sample world (`worlds/sample-world/`) is
+  CC0 1.0 (see its `LICENSE`). Lore mood-boards under
+  `worlds/lore/` are CC BY-SA 4.0 (see each pack's `LICENSE.md`).
+  Any other world pack dropped into `worlds/<name>/` locally is
+  that pack's own author's property - the engine grants no license
   to story content, and carries none in this repo.
+- See `THIRD_PARTY_NOTICES.md` for bundled web fonts (SIL OFL 1.1)
+  and third-party dependency notices.
+- See `TRADEMARKS.md` for fork-naming guidance; project-identity
+  rules are descriptive, not a legal grant.
 
 ## Development
 
 ```sh
 uv sync --group test
-uv run --group test ruff check src tests
+uv run --group test ruff check src tests scripts
 uv run --group test pytest -q
+uv run --group test norns validate --pack worlds/sample-world
+python3 scripts/check_public_surface.py
 ```
+
+The last command is the **public-surface guard** — it fails the
+build if the tracked tree contains private LAN IPs, real hostnames,
+the operator's SSH user, private filesystem paths, or obvious
+credential formats. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+[SECURITY.md](SECURITY.md) for the contract.

@@ -1,0 +1,31 @@
+# gitleaks configuration for VEFR
+#
+# Two files are allow-listed because they intentionally contain
+# pattern fragments that trigger gitleaks's default rules:
+#
+# - .gitleaks-baseline.json: this file is the gitleaks baseline
+#   itself. It stores prior findings including the RuleID strings
+#   ("github-pat", "aws-access-token", etc.), the matched-value
+#   strings, and the originating commit metadata. Recursively
+#   scanning it produces 32+ self-referential findings per
+#   regeneration. Excluding it from the scan is the standard
+#   gitleaks pattern.
+#
+# - tests/test_public_surface.py: contains synthetic credential-
+#   shape fixtures (runtime-concatenated, not literals) that
+#   prove the public-surface guard's regex catches each rule.
+#   The public-surface guard is the source of truth for this
+#   category of leak; gitleaks source-file scanning the test
+#   module would double-flag the same proof.
+
+title = "vefr gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Files that intentionally contain pattern fragments"
+paths = [
+  '''.gitleaks-baseline\.json''',
+  '''tests/test_public_surface\.py''',
+]
