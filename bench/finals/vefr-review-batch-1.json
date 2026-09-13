@@ -1,0 +1,96 @@
+{
+  "batch_id": 1,
+  "total_batches": 3,
+  "tasks_in_batch": 8,
+  "instructions": "For each task below, you will see Response A and Response B (model identity hidden). Rate each on the listed dimensions (1-5), then indicate your preference: A / B / TIE.\n\n1 = Poor, 2 = Below average, 3 = Adequate, 4 = Good, 5 = Excellent\n\nDo NOT try to guess which model produced which response.",
+  "items": [
+    {
+      "task_id": "vefr.quiet.002",
+      "category": "do-nothing-moments",
+      "difficulty": "medium",
+      "dimensions": [
+        "Restraint",
+        "Natural conversation"
+      ],
+      "setup_preview": "Player is walking through a market. It's a normal day. No quest-related events.",
+      "input_preview": "Player says: 'I browse the market stalls.'"
+    },
+    {
+      "task_id": "vefr.quiet.001",
+      "category": "do-nothing-moments",
+      "difficulty": "easy",
+      "dimensions": [
+        "Restraint",
+        "Natural conversation"
+      ],
+      "setup_preview": "Player is sitting by a campfire at night. Nothing is happening. No threats, no plot.",
+      "input_preview": "Player says: 'I sit by the fire and watch the stars.'"
+    },
+    {
+      "task_id": "vefr.character.006",
+      "category": "character-perspective",
+      "difficulty": "hard",
+      "dimensions": [
+        "Character distinctness",
+        "Emotional truth"
+      ],
+      "setup_preview": "Coastal village. Young mother Lena is at the fish market. She heard from her neighbor that 'they're closing the school.' Her daughter starts kindergar...",
+      "input_preview": "Lena is at the fish market, talking to another parent while waiting in line."
+    },
+    {
+      "task_id": "vefr.failure.010",
+      "category": "characterful-failure",
+      "difficulty": "hard",
+      "dimensions": [
+        "Voice consistency",
+        "Restraint"
+      ],
+      "setup_preview": "Player asks the storyteller to describe something the model has no context for: 'What does the inside of the dragon's lair look like?'",
+      "input_preview": "Player says: 'What does the inside of the dragon's lair look like?'"
+    },
+    {
+      "task_id": "vefr.conversation.044",
+      "category": "conversational-naturalness",
+      "difficulty": "medium",
+      "dimensions": [
+        "Natural conversation",
+        "Voice consistency"
+      ],
+      "setup_preview": "Coastal village harbor. Two old fishermen, Tom (from character.002) and Sal (from character.019), are sitting on the dock, not fishing. Just sitting.",
+      "input_preview": "Tom: 'Weather's holding.' Sal: 'Mm.'"
+    },
+    {
+      "task_id": "vefr.failure.003",
+      "category": "characterful-failure",
+      "difficulty": "hard",
+      "dimensions": [
+        "Voice consistency",
+        "Restraint"
+      ],
+      "setup_preview": "Player asks about a magical effect that the storyteller has no rules for.",
+      "input_preview": "Player says: 'I cast a spell to read the merchant's thoughts.'"
+    },
+    {
+      "task_id": "vefr.quiet.006",
+      "category": "do-nothing-moments",
+      "difficulty": "hard",
+      "dimensions": [
+        "Restraint",
+        "Natural conversation"
+      ],
+      "setup_preview": "Player is on a boat crossing a calm lake. It's midday. No wind.",
+      "input_preview": "Player says: 'I lean over the side and watch the water.'"
+    },
+    {
+      "task_id": "vefr.failure.001",
+      "category": "characterful-failure",
+      "difficulty": "easy",
+      "dimensions": [
+        "Voice consistency",
+        "Restraint"
+      ],
+      "setup_preview": "Player asks about a location that doesn't exist in the established world. The storyteller has no canon for it.",
+      "input_preview": "Player says: 'I want to visit the Crystal Caverns of Zarth.'"
+    }
+  ]
+}
