@@ -1,0 +1,12 @@
+{
+  "id": "player-choice-pending",
+  "speaker": "The merchant.\n\nYou are a traveling merchant.\nYou have offered the player a deal.\nYou are waiting for their answer.",
+  "speaker_knows": "You offered the player a choice: the map or the compass.\nYou cannot give both.\nYou are patient.",
+  "speaker_does_not_know": "You do NOT know which the player will choose.\nYou do NOT know what the player plans to do with either.",
+  "scene": "The market stall. Midday.\nThe sun is hot.\nThe map and the compass sit side by side on the table.\nThe player is looking at both.",
+  "relationship": "",
+  "recent_action": "The player has not answered yet. They are thinking.",
+  "open_threads": "The player must choose.\nThe merchant is waiting.\nNeither option is obviously better.",
+  "instruction": "Respond as the merchant. The player has NOT chosen yet. Do NOT choose for them. Do NOT say 'you pick up the map' or 'you decide on the compass.' Describe what the merchant does while waiting. Let the silence be part of the scene.",
+  "version": "0.1.0"
+}
