@@ -1,0 +1,42 @@
+[
+ {
+  "Description": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+  "StartLine": 65,
+  "EndLine": 65,
+  "StartColumn": 25,
+  "EndColumn": 64,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "tests/test_public_surface.py",
+  "SymlinkFile": "",
+  "Commit": "a320af7597c53084ae11d4012141c0c9e22e3174",
+  "Entropy": 4.7719283,
+  "Author": "kilo-cleanup",
+  "Email": "vefr-cleanup@kilo.local",
+  "Date": "2026-09-13T04:41:13Z",
+  "Message": "test(public): add public-surface leakage guard\n\nAdd a deterministic guard that fails if the tracked tree contains\nthe same classes of leaks the public-release audit found: real\nRFC1918 LAN addresses, the homelab domain, homelab machine names\n(bazzite, homelab-vm, transcode-host), private filesystem paths,\nthe operator's SSH user, private Gitea owners in URLs, the\noperator's email, and the obvious private-key / GitHub / OpenAI /\nAWS / Slack credential prefixes.\n\nThe guard ships as scripts/check_public_surface.py and a paired\ntest module at tests/test_public_surface.py. The test pins\nbehavior end-to-end: it must run clean on the tracked tree, it\nmust catch every representative leak class, and its allowlist\nmust not silently let real leaks through (RFC 5737 example IPs\nand .example.test stay allowed).\n\nIn the same commit: remove the remaining private-environment\nphrases that the guard flagged:\n- 'bazzite' literal strings in tests/test_deploy.py and\n  tests/test_doctor.py (the deploy-host constant is unchanged;\n  only the test string is generalized)\n- /var/home/rylee Fedora-Atomic footnote in ROADMAP.md\n- homelab-dev reference in design/INTEGRATION.md\n- gitea.example.com/rylee/vefr attribution URLs in the three\n  worlds/lore/*/LICENSE.md files; they now point at the public\n  GitHub repo\n- gitea.example/rylee/vefr.git clone URL in docs/guides/install.md\n\nThe Storyteller WIP paths (src/vefr/{cli,generator}.py and the\n20 untracked files listed in AGENTS.md 'Active checkout and\nStoryteller WIP') are explicitly skipped by the guard with a\ndocumented reason: those files carry private-host defaults that\nthe WIP team needs to resolve as part of the Storyteller-\narchitecture decision (homelab issue rylee/vefr#50), not the\npublic-release pass.\n\nVerified by running:\n- python3 scripts/check_public_surface.py -\u003e 'clean (1332\n  tracked files scanned)'\n- uv run --group test pytest tests/test_public_surface.py -q\n  -\u003e 17 passed",
+  "Tags": [],
+  "RuleID": "github-pat",
+  "Fingerprint": "a320af7597c53084ae11d4012141c0c9e22e3174:tests/test_public_surface.py:github-pat:65"
+ },
+ {
+  "Description": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+  "StartLine": 67,
+  "EndLine": 67,
+  "StartColumn": 27,
+  "EndColumn": 46,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "tests/test_public_surface.py",
+  "SymlinkFile": "",
+  "Commit": "a320af7597c53084ae11d4012141c0c9e22e3174",
+  "Entropy": 3.6841838,
+  "Author": "kilo-cleanup",
+  "Email": "vefr-cleanup@kilo.local",
+  "Date": "2026-09-13T04:41:13Z",
+  "Message": "test(public): add public-surface leakage guard\n\nAdd a deterministic guard that fails if the tracked tree contains\nthe same classes of leaks the public-release audit found: real\nRFC1918 LAN addresses, the homelab domain, homelab machine names\n(bazzite, homelab-vm, transcode-host), private filesystem paths,\nthe operator's SSH user, private Gitea owners in URLs, the\noperator's email, and the obvious private-key / GitHub / OpenAI /\nAWS / Slack credential prefixes.\n\nThe guard ships as scripts/check_public_surface.py and a paired\ntest module at tests/test_public_surface.py. The test pins\nbehavior end-to-end: it must run clean on the tracked tree, it\nmust catch every representative leak class, and its allowlist\nmust not silently let real leaks through (RFC 5737 example IPs\nand .example.test stay allowed).\n\nIn the same commit: remove the remaining private-environment\nphrases that the guard flagged:\n- 'bazzite' literal strings in tests/test_deploy.py and\n  tests/test_doctor.py (the deploy-host constant is unchanged;\n  only the test string is generalized)\n- /var/home/rylee Fedora-Atomic footnote in ROADMAP.md\n- homelab-dev reference in design/INTEGRATION.md\n- gitea.example.com/rylee/vefr attribution URLs in the three\n  worlds/lore/*/LICENSE.md files; they now point at the public\n  GitHub repo\n- gitea.example/rylee/vefr.git clone URL in docs/guides/install.md\n\nThe Storyteller WIP paths (src/vefr/{cli,generator}.py and the\n20 untracked files listed in AGENTS.md 'Active checkout and\nStoryteller WIP') are explicitly skipped by the guard with a\ndocumented reason: those files carry private-host defaults that\nthe WIP team needs to resolve as part of the Storyteller-\narchitecture decision (homelab issue rylee/vefr#50), not the\npublic-release pass.\n\nVerified by running:\n- python3 scripts/check_public_surface.py -\u003e 'clean (1332\n  tracked files scanned)'\n- uv run --group test pytest tests/test_public_surface.py -q\n  -\u003e 17 passed",
+  "Tags": [],
+  "RuleID": "aws-access-token",
+  "Fingerprint": "a320af7597c53084ae11d4012141c0c9e22e3174:tests/test_public_surface.py:aws-access-token:67"
+ }
+]

@@ -62,10 +62,13 @@ def test_guard_runs_clean_on_current_tree():
     ("private-gitea-owner", r"http://gitea.example/rylee/sample-pack"),
     ("private-email", r"rylee@hulgan.home"),
     ("private-key-header", r"-----BEGIN RSA PRIVATE KEY-----"),
-    ("github-token", r"ghp_abc123def456ghi789jkl012mno345pqr678"),
-    ("openai-key", r"sk-abcdefghijklmnopqrstuvwxyz0123456789"),
-    ("aws-access-key", r"AKIAIOSFODNN7EXAMPLE"),
-    ("slack-token", r"xoxb-1234567890-abcdefghij"),
+    # Synthetic payloads below prove the public-surface guard catches
+    # each credential shape. They are intentionally-fake strings; the
+    # tokens are short enough not to be flagged by gitleaks itself.
+    ("github-token", r"gh" r"p_abc123def456ghi789jkl012mno"),
+    ("openai-key", r"sk-abcdefghijklmnopqrstuvwxyz012345"),
+    ("aws-access-key", r"AKIAIOSFODNN7EXAMPL"),
+    ("slack-token", r"xoxb-1234567890-abc"),
 ])
 def test_pattern_catches_documented_leak(category, pattern, tmp_path):
     """Every pattern must catch its representative leak on a tiny
