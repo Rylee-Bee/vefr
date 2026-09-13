@@ -69,7 +69,5 @@ cat .project/contracts/adoption.yaml | head -10
 | Item | Value |
 |---|---|
 | Working tree | dirty (Storyteller WIP, see above) |
-| Active checkout | the checkout registered for VEFR in `agent-sync` (this file lives there) |
 | Origin | `https://github.com/Rylee-Bee/vefr.git` |
-| Last commit at write time | `b47886f` — see `git log -1` for the current SHA |
-| Hermod default brain | **Granite 4.1 3B Q4_K_M** (~1.95 GB, 92% semantic, 97% protocol, ~7.1s) |
+| Last commit at write time | see `git log -1` for the current SHA |

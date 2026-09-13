@@ -7,6 +7,70 @@
 
 ## Landed
 
+- [x] **Public-release hardening pass** (2026-09-13,
+      public-release epoch): tree sanitized of environment-specific
+      references; `docs/guides/archive/` handoffs and host-specific
+      `.project/` evidence deleted; `src/vefr/cli.py`'s last private
+      defaults (`VEFR_DEFAULT_DEPLOY_HOST`, `VEFR_DEFAULT_BACKUP_LOCATION`)
+      set to `''` with the deploy wrapper's silent-default guard
+      rewritten to match; `web/packaged.html` real IP generalized;
+      `--init` template host generalized to `deploy-host`. Storyteller
+      WIP preserved byte-for-byte. New `scripts/check_public_surface.py`
+      + `tests/test_public_surface.py` (17 tests) tripwire on
+      RFC1918, homelab hostnames, private Gitea domains, the operator's
+      SSH user, private paths, and obvious credential shapes. New
+      GitHub Actions: `ci.yml` (ruff + blocking pytest with
+      Storyteller WIP `--ignore`'d + informational WIP step +
+      sample-world validate + public-surface guard), `secret-scan.yml`
+      (gitleaks working-tree scan with `[allowlist]` for the test
+      fixtures), `security.yml` (manual re-run). New `SECURITY.md`,
+      `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/ISSUE_TEMPLATE/`
+      (`bug_report.yml`, `feature_request.yml`), `.github/pull_request_template.md`.
+      Branch protection on `main`: require PR, require `ci` +
+      `secret-scan`, block force-push, block deletion, conversation
+      resolution. Secret scanning + push protection + Dependabot
+      alerts + Dependabot security updates enabled on the public
+      repo. CodeQL default-setup enabled across actions / js / py.
+      PR #2 merged at `eba9980`. Repo flipped to public. Final gates:
+      `uv run --group test ruff check src tests scripts` all checks
+      passed; `python3 scripts/check_public_surface.py` clean (1345
+      tracked files scanned); `uv run --group test pytest
+      tests/test_public_surface.py -q` 17 passed; `uv run --group test
+      norns validate --pack worlds/sample-world` ok; `uv run
+      --group test pytest -q --ignore=tests/test_npc_action.py
+      --ignore=tests/test_storyteller_benchmark.py` 315 passed, 0
+      failed; gitleaks 230 commits scanned, no leaks found.
+
+- [x] **License + project identity + Actions hardening** (2026-09-13,
+      same public-release epoch): engine source/tooling relicensed
+      from MIT to MPL-2.0 (file-level copyleft preserves improvements
+      without forcing downstream applications to be MPL); worlds/
+      sample-world/ (Emberfield) dedicated to the public domain under
+      CC0 1.0; worlds/lore/<flavor>/ unchanged at CC BY-SA 4.0; web
+      fonts retain SIL OFL 1.1 with attribution in
+      `web/fonts/README.md`. New `TRADEMARKS.md` (descriptive, not a
+      legal grant — "vefr" is not a registered trademark; forks
+      welcome under the license, please use a distinct name for
+      substantially modified versions); new `THIRD_PARTY_NOTICES.md`
+      (FastAPI/Uvicorn/httpx BSD-3, Pydantic MIT, fonts SIL OFL 1.1).
+      Actions hardening: third-party actions pinned to commit SHAs
+      (`actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`
+      = v4.2.2; `astral-sh/setup-uv@0c5e2b8115b80b4c7c5ddf6ffdd634974642d182`
+      = v5.4.1) with version comment for human-readable reference.
+      New `.github/CODEOWNERS` expressing "sensitive paths require
+      maintainer review" (informational; branch protection enforces
+      the rule). Verified gates: `uv run --group test ruff check src
+      tests scripts` all checks passed; `python3
+      scripts/check_public_surface.py` clean (1345 tracked files
+      scanned); `uv run --group test pytest
+      tests/test_public_surface.py -q` 17 passed; `uv run --group
+      test pytest -q --ignore=tests/test_npc_action.py
+      --ignore=tests/test_storyteller_benchmark.py` 315 passed, 0
+      failed. The historical "license split: engine MIT" entry
+      above remains in the ledger as the original decision;
+      relicense landed via `LICENSE` file change, not by rewriting
+      history.
+
 - [x] **Truth-repair: canonical checkout documented, stale handoffs
       archived, CI added** (2026-09-07, truth-repair epoch): two
       checkouts on the dev box were documented in AGENTS.md with a
@@ -112,12 +176,12 @@
       and copies it into any LLM.
 
 - [x] **v0.1 - the skeleton**: FastAPI + ollama structured output,
-      parchment UI, quadlet deploy on bazzite
+      parchment UI, quadlet deploy on the deploy host
 - [x] **v0.2 - the ledger**: collected whispers become the engine's
       voice anchors (Rylee curates; the cadence compounds)
 - [x] **v0.3 - the forge & the vault**: items with three bonds -
       assigned (church-blue), attuned (gold, rare on purpose), cold
-      (grey). Offer your hand. Kept items persist on bazzite.
+      (grey). Offer your hand. Kept items persist on the deploy host.
 - [x] **v0.4 - the bell**: the bog at night, one ring per visit, the
       mother's chore-note in her voice - headed "For you."
 - [x] **the canon**: the archive, the hero, the bell, the
@@ -241,7 +305,7 @@
 - [x] **inference backend: ollama -> llama.cpp on the 6900XT** (2026-08-31).
       Wall time on the live `vefr` went from ~27.6s per rumor/bell
       to ~2-5s end-to-end (curl + SSH overhead included). Root cause
-      of the old slowness: the ollama container on bazzite was the
+      of the old slowness: the ollama container on the deploy host was the
       correct `ollama/ollama:rocm` image, but `podman inspect ollama`
       showed `Devices=[]` - no `/dev/kfd` or `/dev/dri` passed
       through, so a dense 27B Qwen was running on CPU the whole time.
@@ -259,11 +323,12 @@
       of the wire layer, so backend swaps stay test-clean. Two btrfs-
       on-Fedora-Atomic gotchas hit along the way (documented in
       `~/llama-server/run-gptoss.sh`): podman bind sources MUST go
-      through `/var/home/rylee` not `/home/rylee` (the `/home`
-      symlink to `/var/home` confuses rootless-podman statfs on the
-      btrfs subvol); `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
+      through the operator's real `$HOME` and not a `/home`
+      symlink (the `/home` -> `/var/home` symlink confuses
+      rootless-podman statfs on the btrfs subvol);
+      `HSA_OVERRIDE_GFX_VERSION=10.3.0` is required
       for the 6900XT (RDNA2/gfx1030) since llama.cpp's compiled
-      runtime only recognizes gfx900/1030/1100/1200. The bazzite
+      runtime only recognizes gfx900/1030/1100/1200. The deploy
       quadlet was updated in place.
 
 - [x] **the always-array world loader + the visible engine**
@@ -497,7 +562,7 @@
       `/api/world` payload at load. HP is synthesized per-phase by
       `combat.hp_for_pack()`, so packs need no hp data of their
       own; plain/investigation surfaces hide the whole costume
-      via CSS. Verified live on bazzite (2026-09-01): `/api/world`
+      via CSS. Verified live on the deploy host (2026-09-01): `/api/world`
       serves `surface: combat` + `hp: {current: 4, max: 4,
       per_phase: {dusk: 3, dawn: 4}}`. The packaged half landed
       the same day (see the packaged-costume entry).
@@ -532,8 +597,8 @@
       dedicated test suite (`tests/test_enhance.py`).
 
 - [x] **`ferry deploy` hardened as the single ship button** (2026-09-01,
-      this session). `ratatoskr ferry deploy` now owns the bazzite
-      deploy path end-to-end: pre-flight gate (`pytest -q` +
+      this session). `ratatoskr ferry deploy` now owns the deploy
+      path end-to-end: pre-flight gate (`pytest -q` +
       `norns validate --pack sample-world`, `--skip-tests` to bypass),
       rsync the checkout, skip `podman build` when the remote image's
       `vefr.engine_sha` label already matches the local HEAD
@@ -541,7 +606,7 @@
       ensure the `vefr-{template,worlds}` named volumes exist,
       post-deploy `/api/health` + `maplab verify` (`--no-health` to
       bypass). `--init` writes `deploy.toml.example` + the README
-      path; the wrapper refuses to run with the silent `bazzite`
+      path; the wrapper refuses to run with any silent host
       default and points operators at `--init` (a fresh clone
       without a host should explode loudly, not `ssh` a hostname
       that resolves to nothing). `Containerfile` stamps
@@ -560,8 +625,8 @@
       now resolves bare names through `pack_root()` the way
       `handbok`/`doctor`/`export` already did (3 tests in
       `tests/test_validate_pack_path.py`). And the post-deploy
-      health probe hit `127.0.0.1` on the dev box (its `bazzite`
-      SSH alias resolves to the wrong host) and gave up after one
+      health probe hit `127.0.0.1` on the dev box (its SSH alias
+      resolved to the wrong host) and gave up after one
       fixed 2-second sleep - it now probes through an SSH
       port-forward with a 20-attempt x 1.5s retry loop.
 
@@ -583,12 +648,11 @@
       bugs the harnesses caught before any human did: the smith
       paragraph was classed `board-chat-assistant` (the CSS and the
       claim say smith), and the filter read `.html` off a string.
-      Live on bazzite after deploy (`526e06c`): served index.html
+      Live on the deploy host after deploy (`526e06c`): served index.html
       carries the new ids, served board.css carries the grabbing
       cursor. Discovered and fixed along the way: the dev-box
-      `bazzite`       SSH alias is now correct (user `rylee` @
-      `192.168.2.76`), so `VEFR_DEPLOY_HOST=bazzite` is the right
-      value - a bare IP literal drops the user and rsync fails.
+      SSH alias resolves correctly and matches `VEFR_DEPLOY_HOST`,
+      so a bare IP literal is not needed.
 
 - [x] **reading row: Urd/Verdandi/Skuld live readbacks** (2026-09-01,
       PR #33, `a579d90`). The Skuld empty-state honesty check the
@@ -601,7 +665,7 @@
       min-height. The fake phase/speaker line is gone. Sound
       controls deliberately absent - no sound engine exists; sliders
       for silence would be dishonest UI. Harness checks cover change
-      + reset on both readouts. Live on bazzite after deploy
+      + reset on both readouts. Live on the deploy host after deploy
       (`a579d90`).
 
 - [x] **api manner: honest 422/404s + the route guide tells the
@@ -620,7 +684,7 @@
       the enhance trio, aspects, the journal/vault index routes).
       Regenerated from `app.routes`, dated. 4 new tests
       (`tests/test_api_manner.py`), suite 207 passed. Live-verified
-      on bazzite after deploy.
+      on the deploy host after deploy.
 
 - [x] **block 5: sample-world polish - the pack stays neutral about
       bonds** (2026-09-01, PR #35, `041b77d`). Playing the pack live
@@ -664,7 +728,7 @@
       widest-spread band); no tile, no speaker, said plainly. The
       model call sits in chat.py's propose_map/_add_speaker;
       deterministic surfaces stay deterministic. 7 new tests, suite
-      215 passed. Both changes live on bazzite after deploy.
+      215 passed. Both changes live on the deploy host after deploy.
 
 - [x] **the dev box plays** (2026-09-01, this session): five
       playability gaps closed as one bundle. (a) The model endpoint
@@ -739,7 +803,7 @@
 - [x] **the deploy button** (2026-09-01, this session):
       deploy.toml scaffolding landed (`--init` writes it; the
       per-host twin is gitignored like `.env`; the dev box's copy
-      points at bazzite and `.env` carries `VEFR_DEPLOY_HOST`) -
+      points at the deploy host and `.env` carries `VEFR_DEPLOY_HOST`) -
       and the deploy it drove surfaced a real wrinkle: the live
       quadlet's rw bind (`~/vefr-worlds/`) shadowed the engine's
       own sample-world with a pre-acts stale copy, so rebuilt
@@ -827,7 +891,7 @@
       760x900 (composed still engaged at the breakpoint edge),
       700x900 (single active panel, no horizontal scroll, dock state
       from earlier wide-viewport usage doesn't break narrow layout).
-      Live engine on bazzite (`192.168.2.76:8820`) independently
+      Live engine on the deploy host (`deploy-host:8820`) independently
       reproduced the pre-fix defect at 1280px. Gate: 251 passed
       (`uv run --group test pytest -q`), ruff clean.
 
