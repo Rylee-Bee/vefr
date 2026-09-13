@@ -43,17 +43,17 @@ in use.
 #    SKIP user-owned packs (any private canon).
 rsync -a --delete \
   ~/projects/vefr/worlds/sample-world/ \
-  bazzite:~/vefr-worlds/sample-world/
+  ${VEFR_DEPLOY_HOST}:~/vefr-worlds/sample-world/
 rsync -a --delete \
   ~/projects/vefr/worlds/lore/ \
-  bazzite:~/vefr-worlds/lore/
+  ${VEFR_DEPLOY_HOST}:~/vefr-worlds/lore/
 
 # 2. restart the container so the loader re-reads the bind mount.
-ssh bazzite "systemctl --user restart vefr"
+ssh ${VEFR_DEPLOY_HOST} "systemctl --user restart vefr"
 
 # 3. verify
-curl -s http://192.168.2.76:8820/api/world | jq '.title, .act'
-curl -s http://192.168.2.76:8820/api/weave | jq '.events[] | {event, shape, act}'
+curl -s ${VEFR_LIVE_URL:-http://127.0.0.1:8820}/api/world | jq '.title, .act'
+curl -s ${VEFR_LIVE_URL:-http://127.0.0.1:8820}/api/weave | jq '.events[] | {event, shape, act}'
 ```
 
 ## Why `--delete`
