@@ -81,7 +81,7 @@ contracts in the adoption pin are authoritative.
 ## The bones and the flesh
 
 ```
-src/vefr/           the engine (MIT)
+src/vefr/           the engine (MPL-2.0)
   paths.py           where things live (VEFR_HOME, VEFR_WORLD)
   world.py           the pack loader - the only seam
   saga.py            the storytelling layer (prompts, voices, ledger)
@@ -121,8 +121,8 @@ worlds/<name>/       a world pack - a story
   map.md             the story's geometry, source of truth
   voices/*.md        sealed voices (rules only; knowing stays sealed)
 
-worlds/sample-world/ Emberfield - the teaching example (MIT, ships
-                     with the engine so it's shareable end to end)
+worlds/sample-world/ Emberfield - the teaching example (CC0 1.0,
+                     ships with the engine so it's shareable end to end)
 
 web/                 parchment UI + canvas town (world-driven)
 tests/               pytest - pack contract, schemas, fallbacks
@@ -148,7 +148,7 @@ The repo split is the contract. The engine knows:
 What this looks like in practice:
 
 ```
-user/vefr/                   # this repo (MIT, the bones)
+user/vefr/                   # this repo (MPL-2.0, the bones)
 user/story-repo/             # your story repo (private, the flesh)
   worlds/your-world/         # the pack, lives in the story repo
     world.json               # phases: dusk / dawn, voices, bonds
@@ -464,11 +464,18 @@ when the world is kind.
   prompting the render-target contract - any future renderer reads
   `/api/world`; ink + inkjs (MIT) for the authored-branching idea
   shelved for packs.
-- Engine license: MIT (see LICENSE) - covers `src/`, `web/`, `tests/`,
-  `deploy/`, `Containerfile`, and `worlds/sample-world/` (the teaching
-  example). Any other world pack dropped into `worlds/<name>/` locally
-  is that pack's own author's property - the engine grants no license
+- Engine license: MPL-2.0 (see `LICENSE`) for the engine source
+  under `src/`, `web/`, `tests/`, `scripts/`, `docs/`, `deploy/`,
+  and `Containerfile`. Sample world (`worlds/sample-world/`) is
+  CC0 1.0 (see its `LICENSE`). Lore mood-boards under
+  `worlds/lore/` are CC BY-SA 4.0 (see each pack's `LICENSE.md`).
+  Any other world pack dropped into `worlds/<name>/` locally is
+  that pack's own author's property - the engine grants no license
   to story content, and carries none in this repo.
+- See `THIRD_PARTY_NOTICES.md` for bundled web fonts (SIL OFL 1.1)
+  and third-party dependency notices.
+- See `TRADEMARKS.md` for fork-naming guidance; project-identity
+  rules are descriptive, not a legal grant.
 
 ## Development
 
