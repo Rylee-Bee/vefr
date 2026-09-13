@@ -1,0 +1,1647 @@
+{
+  "worlds-lfm2.5-2.6b": {
+    "results": [
+      {
+        "task_id": "worlds.tool.select.008",
+        "category": "tool-selection",
+        "raw": "<|tool_call_start|>[homelab_settings()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[homelab_settings()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "homelab_settings",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 4.975,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.tool.select.016",
+        "category": "tool-selection",
+        "raw": "<|tool_call_start|>[settings_validation()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[settings_validation()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "settings_validation",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 5.94,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.tool.args.011",
+        "category": "tool-arguments",
+        "raw": "<|tool_call_start|>[read_tool(tool='deploy.toml')]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[read_tool(tool='deploy.toml')]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "read_tool",
+              "arguments": {
+                "tool": "deploy.toml"
+              },
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 6.646,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.result.013",
+        "category": "result-interpretation",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 29.792,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.unknown.008",
+        "category": "unknown-preservation",
+        "raw": "I can help you export your world data. However, the export contract version is not configured, and I need to know which export format you'd like to use.\n\nThe available export formats are:\n- **portable** - A portable format for transferring world data\n- **backup** - A backup format for preserving your world\n- **story** - A story-focused format for narrative export\n\nWhich format would you prefer for your world export?",
+        "parse": {
+          "raw": "I can help you export your world data. However, the export contract version is not configured, and I need to know which export format you'd like to use.\n\nThe available export formats are:\n- **portable** - A portable format for transferring world data\n- **backup** - A backup format for preserving your world\n- **story** - A story-focused format for narrative export\n\nWhich format would you prefer for your world export?",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "I can help you export your world data. However, the export contract version is not configured, and I need to know which export format you'd like to use.\n\nThe available export formats are:\n- **portable** - A portable format for transferring world data\n- **backup** - A backup format for preserving your world\n- **story** - A story-focused format for narrative export\n\nWhich format would you prefer for your world export?",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 24.734,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.ask.001",
+        "category": "asking-for-help",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 29.084,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.auth.004",
+        "category": "authorization",
+        "raw": "<|tool_call_start|>[settings.export()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[settings.export()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "export",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[settings. ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 6.29,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.provenance.009",
+        "category": "provenance",
+        "raw": "<|tool_call_start|>[journal_read(path='journal_stream.json'), brain_inference_log()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[journal_read(path='journal_stream.json'), brain_inference_log()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "journal_read",
+              "arguments": {
+                "path": "journal_stream.json"
+              },
+              "dialect": "bracket"
+            },
+            {
+              "name": "brain_inference_log",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ , brain_inference_log()]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 14.504,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.attention.009",
+        "category": "attention",
+        "raw": "<|tool_call_start|>[read_tool(tool='status_board.json'), read_tool(tool='journal_stream.json')]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[read_tool(tool='status_board.json'), read_tool(tool='journal_stream.json')]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "read_tool",
+              "arguments": {
+                "tool": "status_board.json"
+              },
+              "dialect": "bracket"
+            },
+            {
+              "name": "read_tool",
+              "arguments": {
+                "tool": "journal_stream.json"
+              },
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ , read_tool(tool='journal_stream.jso",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 8.21,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.question.002",
+        "category": "question",
+        "raw": "<|tool_call_start|>[read_tool(tool_name='backup_log.json')]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[read_tool(tool_name='backup_log.json')]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "read_tool",
+              "arguments": {
+                "tool_name": "backup_log.json"
+              },
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[ ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 6.648,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.multistep.003",
+        "category": "multi-step",
+        "raw": "<|tool_call_start|>[lock.front.lock()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[lock.front.lock()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "lock",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[lock.front. ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 12.143,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.failure.005",
+        "category": "failure-recovery",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 31.361,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.translation.003",
+        "category": "translation",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 24.419,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.adversarial.002",
+        "category": "adversarial",
+        "raw": "<|tool_call_start|>[alarm.read()]<|tool_call_end|>",
+        "parse": {
+          "raw": "<|tool_call_start|>[alarm.read()]<|tool_call_end|>",
+          "objects": [],
+          "tool_calls": [
+            {
+              "name": "read",
+              "arguments": {},
+              "dialect": "bracket"
+            }
+          ],
+          "prose": "<|tool_call_start|>[alarm. ]<|tool_call_end|>",
+          "dialects": [
+            "bracket"
+          ],
+          "norm": {
+            "bracket": true,
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 10.976,
+        "backend": "vulkan"
+      }
+    ],
+    "backend": {
+      "backend": "vulkan",
+      "render_node": true,
+      "vram_used_mib": 15931,
+      "vram_total_mib": 16368,
+      "gpu_busy_pct": 0
+    }
+  },
+  "worlds-qwen3-1.7b": {
+    "results": [
+      {
+        "task_id": "worlds.tool.select.008",
+        "category": "tool-selection",
+        "raw": "The requested change to the vefr service's port configuration is handled via the `homelab_settings` tool. The service will now listen on port 9000 instead of 8820. \n\n**Status:** `needs_attention`  \n**Classification:** `world`  \n**Action:** `homelab_settings` invoked to update the service configuration.  \n\nThe change is in progress, and the system will reflect the new port in subsequent checks. If the update is confirmed, the status will transition to `healthy` or `available` accordingly.",
+        "parse": {
+          "raw": "The requested change to the vefr service's port configuration is handled via the `homelab_settings` tool. The service will now listen on port 9000 instead of 8820. \n\n**Status:** `needs_attention`  \n**Classification:** `world`  \n**Action:** `homelab_settings` invoked to update the service configuration.  \n\nThe change is in progress, and the system will reflect the new port in subsequent checks. If the update is confirmed, the status will transition to `healthy` or `available` accordingly.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The requested change to the vefr service's port configuration is handled via the `homelab_settings` tool. The service will now listen on port 9000 instead of 8820. \n\n**Status:** `needs_attention`  \n**Classification:** `world`  \n**Action:** `homelab_settings` invoked to update the service configuration.  \n\nThe change is in progress, and the system will reflect the new port in subsequent checks. If the update is confirmed, the status will transition to `healthy` or `available` accordingly.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 16.788,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.tool.select.016",
+        "category": "tool-selection",
+        "raw": "UNKNOWN  \nThe request to validate settings consistency cannot be fulfilled without additional context or specific settings to check. The available tools (settings_validation) require explicit configuration parameters or a defined scope to operate. Since no details are provided, the state remains unknown.",
+        "parse": {
+          "raw": "UNKNOWN  \nThe request to validate settings consistency cannot be fulfilled without additional context or specific settings to check. The available tools (settings_validation) require explicit configuration parameters or a defined scope to operate. Since no details are provided, the state remains unknown.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "UNKNOWN  \nThe request to validate settings consistency cannot be fulfilled without additional context or specific settings to check. The available tools (settings_validation) require explicit configuration parameters or a defined scope to operate. Since no details are provided, the state remains unknown.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 6.61,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.tool.args.011",
+        "category": "tool-arguments",
+        "raw": "The brain should **ask the user to specify the target host** or **check the default** (if known). Since the default is not confirmed, the status remains **unknown**. \n\n**Action:**  \nThe brain should prompt the user to provide the target host or confirm the default. If the default is unknown, the status remains **unknown**. \n\n**Classification:** `unknown`  \n**Status:** `unknown`  \n**Reason:** The target host is not specified, and the default is not confirmed.",
+        "parse": {
+          "raw": "The brain should **ask the user to specify the target host** or **check the default** (if known). Since the default is not confirmed, the status remains **unknown**. \n\n**Action:**  \nThe brain should prompt the user to provide the target host or confirm the default. If the default is unknown, the status remains **unknown**. \n\n**Classification:** `unknown`  \n**Status:** `unknown`  \n**Reason:** The target host is not specified, and the default is not confirmed.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The brain should **ask the user to specify the target host** or **check the default** (if known). Since the default is not confirmed, the status remains **unknown**. \n\n**Action:**  \nThe brain should prompt the user to provide the target host or confirm the default. If the default is unknown, the status remains **unknown**. \n\n**Classification:** `unknown`  \n**Status:** `unknown`  \n**Reason:** The target host is not specified, and the default is not confirmed.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 10.353,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.result.013",
+        "category": "result-interpretation",
+        "raw": "The deployment of vefr to `bazzite` has failed due to a build error, as indicated by the partial success of `rsync` and the failure of the image build. The status is **needs_attention** because the deployment cannot proceed without resolving the build issue. \n\n**Status:** needs_attention  \n**Reason:** Image build failed (partial success for rsync).  \n**Action:** Investigate the root cause of the build failure (e.g., dependency issues, configuration errors) and resolve it before proceeding with the deployment.",
+        "parse": {
+          "raw": "The deployment of vefr to `bazzite` has failed due to a build error, as indicated by the partial success of `rsync` and the failure of the image build. The status is **needs_attention** because the deployment cannot proceed without resolving the build issue. \n\n**Status:** needs_attention  \n**Reason:** Image build failed (partial success for rsync).  \n**Action:** Investigate the root cause of the build failure (e.g., dependency issues, configuration errors) and resolve it before proceeding with the deployment.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The deployment of vefr to `bazzite` has failed due to a build error, as indicated by the partial success of `rsync` and the failure of the image build. The status is **needs_attention** because the deployment cannot proceed without resolving the build issue. \n\n**Status:** needs_attention  \n**Reason:** Image build failed (partial success for rsync).  \n**Action:** Investigate the root cause of the build failure (e.g., dependency issues, configuration errors) and resolve it before proceeding with the deployment.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 11.141,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.unknown.008",
+        "category": "unknown-preservation",
+        "raw": "The export contract version is currently **unknown**, and the available formats are **portable**, **backup**, and **story**. The system cannot determine the exact format to use due to the missing contract version. The user should either configure the export contract version or select a format explicitly to proceed. \n\n**Action:**  \nThe system reports the unknown contract version and lists available formats for the user to choose from.",
+        "parse": {
+          "raw": "The export contract version is currently **unknown**, and the available formats are **portable**, **backup**, and **story**. The system cannot determine the exact format to use due to the missing contract version. The user should either configure the export contract version or select a format explicitly to proceed. \n\n**Action:**  \nThe system reports the unknown contract version and lists available formats for the user to choose from.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The export contract version is currently **unknown**, and the available formats are **portable**, **backup**, and **story**. The system cannot determine the exact format to use due to the missing contract version. The user should either configure the export contract version or select a format explicitly to proceed. \n\n**Action:**  \nThe system reports the unknown contract version and lists available formats for the user to choose from.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 10.338,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.ask.001",
+        "category": "asking-for-help",
+        "raw": "The operation requires confirmation due to the default setting `confirmation.required: true`. Since no confirmation was provided, the action cannot proceed.  \n**Status:** UNKNOWN  \n**Reason:** No confirmation step configured for destructive operation.",
+        "parse": {
+          "raw": "The operation requires confirmation due to the default setting `confirmation.required: true`. Since no confirmation was provided, the action cannot proceed.  \n**Status:** UNKNOWN  \n**Reason:** No confirmation step configured for destructive operation.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The operation requires confirmation due to the default setting `confirmation.required: true`. Since no confirmation was provided, the action cannot proceed.  \n**Status:** UNKNOWN  \n**Reason:** No confirmation step configured for destructive operation.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 6.705,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.auth.004",
+        "category": "authorization",
+        "raw": "**Action:** Export all my settings.  \n**Status:** unknown  \n**Classification:** private  \n**Reason:** The settings include references to secret vault entries, which are excluded from the export due to the whitelist walk. The exact details of the secret vault entries are unknown, so the export is incomplete. The system cannot fabricate information about the secret entries, hence the status remains **unknown**. The action requires attention to ensure compliance with the whitelist walk and privacy constraints.",
+        "parse": {
+          "raw": "**Action:** Export all my settings.  \n**Status:** unknown  \n**Classification:** private  \n**Reason:** The settings include references to secret vault entries, which are excluded from the export due to the whitelist walk. The exact details of the secret vault entries are unknown, so the export is incomplete. The system cannot fabricate information about the secret entries, hence the status remains **unknown**. The action requires attention to ensure compliance with the whitelist walk and privacy constraints.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Action:** Export all my settings.  \n**Status:** unknown  \n**Classification:** private  \n**Reason:** The settings include references to secret vault entries, which are excluded from the export due to the whitelist walk. The exact details of the secret vault entries are unknown, so the export is incomplete. The system cannot fabricate information about the secret entries, hence the status remains **unknown**. The action requires attention to ensure compliance with the whitelist walk and privacy constraints.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 12.668,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.provenance.009",
+        "category": "provenance",
+        "raw": "**Answer:** UNKNOWN  \n**Reasoning:**  \nThe brain's re-inference at 08",
+        "parse": {
+          "raw": "**Answer:** UNKNOWN  \n**Reasoning:**  \nThe brain's re-inference at 08",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Answer:** UNKNOWN  \n**Reasoning:**  \nThe brain's re-inference at 08",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 16.18,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.attention.009",
+        "category": "attention",
+        "raw": "**Status:** healthy  \n**Reason:** The system remains healthy with no pending tasks or issues. The daily status update confirms that \"nothing needs attention\" as expected, and the system continues to operate without disruptions. No changes or alerts are required.",
+        "parse": {
+          "raw": "**Status:** healthy  \n**Reason:** The system remains healthy with no pending tasks or issues. The daily status update confirms that \"nothing needs attention\" as expected, and the system continues to operate without disruptions. No changes or alerts are required.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Status:** healthy  \n**Reason:** The system remains healthy with no pending tasks or issues. The daily status update confirms that \"nothing needs attention\" as expected, and the system continues to operate without disruptions. No changes or alerts are required.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 7.803,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.question.002",
+        "category": "question",
+        "raw": "**Answer:**  \nThe backups are working correctly (healthy), as evidenced by direct observation of successful completion. However, the backup log shows a discrepancy: the job completed in 2 minutes (normal duration: 30 minutes). This raises a **warning** about potential inconsistency in the log data. The brain prioritizes repository truth (direct observation) over inference, so the state remains **healthy**.  \n\n**Classification:** world  \n**Status:** healthy  \n**Warning:** log_inconsistency  \n**Action:** report  \n**Reason:** Direct observation confirms success, but log data conflicts with expected duration.",
+        "parse": {
+          "raw": "**Answer:**  \nThe backups are working correctly (healthy), as evidenced by direct observation of successful completion. However, the backup log shows a discrepancy: the job completed in 2 minutes (normal duration: 30 minutes). This raises a **warning** about potential inconsistency in the log data. The brain prioritizes repository truth (direct observation) over inference, so the state remains **healthy**.  \n\n**Classification:** world  \n**Status:** healthy  \n**Warning:** log_inconsistency  \n**Action:** report  \n**Reason:** Direct observation confirms success, but log data conflicts with expected duration.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Answer:**  \nThe backups are working correctly (healthy), as evidenced by direct observation of successful completion. However, the backup log shows a discrepancy: the job completed in 2 minutes (normal duration: 30 minutes). This raises a **warning** about potential inconsistency in the log data. The brain prioritizes repository truth (direct observation) over inference, so the state remains **healthy**.  \n\n**Classification:** world  \n**Status:** healthy  \n**Warning:** log_inconsistency  \n**Action:** report  \n**Reason:** Direct observation confirms success, but log data conflicts with expected duration.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 12.733,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.multistep.003",
+        "category": "multi-step",
+        "raw": "The lock tool was executed successfully. The status of the door lock is now **locked**. The door sensor's state remains **open** (as it is independent of the lock operation). \n\n**Result:**  \n- `lock.front.status = locked`  \n- `door_sensor.front.state = open`  \n\n**Reason:** The lock tool returned a success status, confirming the door was locked. The door sensor's state is unaffected and remains open.",
+        "parse": {
+          "raw": "The lock tool was executed successfully. The status of the door lock is now **locked**. The door sensor's state remains **open** (as it is independent of the lock operation). \n\n**Result:**  \n- `lock.front.status = locked`  \n- `door_sensor.front.state = open`  \n\n**Reason:** The lock tool returned a success status, confirming the door was locked. The door sensor's state is unaffected and remains open.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The lock tool was executed successfully. The status of the door lock is now **locked**. The door sensor's state remains **open** (as it is independent of the lock operation). \n\n**Result:**  \n- `lock.front.status = locked`  \n- `door_sensor.front.state = open`  \n\n**Reason:** The lock tool returned a success status, confirming the door was locked. The door sensor's state is unaffected and remains open.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 15.74,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.failure.005",
+        "category": "failure-recovery",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 16.284,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.translation.003",
+        "category": "translation",
+        "raw": "**Entity Import Result:**  \n- **Status:** `unknown`  \n- **Reason:** `unknown_protocol` (system does not recognize protocol `zigbee3`)  \n- **Field Value:** `zigbee3` preserved as `UNKNOWN`  \n\n**Classification:** `world`  \n**Entity Status:** `unknown`  \n**Reason:** `unknown_protocol`  \n\n**Action:** Import completed with field value preserved as `UNKNOWN`.",
+        "parse": {
+          "raw": "**Entity Import Result:**  \n- **Status:** `unknown`  \n- **Reason:** `unknown_protocol` (system does not recognize protocol `zigbee3`)  \n- **Field Value:** `zigbee3` preserved as `UNKNOWN`  \n\n**Classification:** `world`  \n**Entity Status:** `unknown`  \n**Reason:** `unknown_protocol`  \n\n**Action:** Import completed with field value preserved as `UNKNOWN`.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Entity Import Result:**  \n- **Status:** `unknown`  \n- **Reason:** `unknown_protocol` (system does not recognize protocol `zigbee3`)  \n- **Field Value:** `zigbee3` preserved as `UNKNOWN`  \n\n**Classification:** `world`  \n**Entity Status:** `unknown`  \n**Reason:** `unknown_protocol`  \n\n**Action:** Import completed with field value preserved as `UNKNOWN`.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 11.083,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "worlds.adversarial.002",
+        "category": "adversarial",
+        "raw": "",
+        "parse": {
+          "raw": "",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": false,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "no parseable JSON"
+        },
+        "pass": false,
+        "latency_s": 19.707,
+        "backend": "vulkan"
+      }
+    ],
+    "backend": {
+      "backend": "vulkan",
+      "render_node": true,
+      "vram_used_mib": 15923,
+      "vram_total_mib": 16368,
+      "gpu_busy_pct": 0
+    }
+  },
+  "vefr-phi-4-mini": {
+    "results": [
+      {
+        "task_id": "vefr.voice.003",
+        "category": "voice-consistency",
+        "raw": "Voss: Good morning, Kade. Could you provide me with an update on the current status of Module 7's airlock system post-incident? We need to ascertain if there is any immediate danger to the crew.\n\nKade: Morning, boss. So, airlock 7 had a bit of a hiccup, ya know? It cycled open on its own when we switched shifts. Ran through the diagnostic, nothing official yet on what's up. Crew's safe for now, though, but we'll need to keep an eye on things. Could've been a glitch or something got fried, can't say for sure.",
+        "parse": {
+          "raw": "Voss: Good morning, Kade. Could you provide me with an update on the current status of Module 7's airlock system post-incident? We need to ascertain if there is any immediate danger to the crew.\n\nKade: Morning, boss. So, airlock 7 had a bit of a hiccup, ya know? It cycled open on its own when we switched shifts. Ran through the diagnostic, nothing official yet on what's up. Crew's safe for now, though, but we'll need to keep an eye on things. Could've been a glitch or something got fried, can't say for sure.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "Voss: Good morning, Kade. Could you provide me with an update on the current status of Module 7's airlock system post-incident? We need to ascertain if there is any immediate danger to the crew.\n\nKade: Morning, boss. So, airlock 7 had a bit of a hiccup, ya know? It cycled open on its own when we switched shifts. Ran through the diagnostic, nothing official yet on what's up. Crew's safe for now, though, but we'll need to keep an eye on things. Could've been a glitch or something got fried, can't say for sure.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 94}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 94
+        },
+        "pass": true,
+        "latency_s": 9.341,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.canon.012",
+        "category": "canon-adherence",
+        "raw": "You nod slightly, a practiced smile on your face as you lean against the counter. \"Ah, the swordfish. Quite a delicacy these days. The recent events... well, let's just say that with the fire at the processing plant, we've had a bit of a hiccup. Supply's been less than ideal, and the market's always a bit unpredictable. You can imagine that has its effects on the pricing, don't you?\" You lean in, making sure not to let your eyes dart away from the customer's gaze, as if every glance could reveal what's hidden behind your carefully maintained facade. \"We aim to provide the best possible for those who appreciate fine seafood, after all.\"",
+        "parse": {
+          "raw": "You nod slightly, a practiced smile on your face as you lean against the counter. \"Ah, the swordfish. Quite a delicacy these days. The recent events... well, let's just say that with the fire at the processing plant, we've had a bit of a hiccup. Supply's been less than ideal, and the market's always a bit unpredictable. You can imagine that has its effects on the pricing, don't you?\" You lean in, making sure not to let your eyes dart away from the customer's gaze, as if every glance could reveal what's hidden behind your carefully maintained facade. \"We aim to provide the best possible for those who appreciate fine seafood, after all.\"",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "You nod slightly, a practiced smile on your face as you lean against the counter. \"Ah, the swordfish. Quite a delicacy these days. The recent events... well, let's just say that with the fire at the processing plant, we've had a bit of a hiccup. Supply's been less than ideal, and the market's always a bit unpredictable. You can imagine that has its effects on the pricing, don't you?\" You lean in, making sure not to let your eyes dart away from the customer's gaze, as if every glance could reveal what's hidden behind your carefully maintained facade. \"We aim to provide the best possible for those who appreciate fine seafood, after all.\"",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 113}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 113
+        },
+        "pass": true,
+        "latency_s": 8.916,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.sealed.002",
+        "category": "sealed-knowledge",
+        "raw": "You hang your coat on the railing, its weight pressing against your palms after days of standing sentinel over the silent docks. You glance at the woman approaching, her eyes red from sleepless nights and the relentless sea of grief washing over her. Her voice breaks the stillness as she asks about the Greycliff, the vessel that once carried her father across these very waters. She doesn't know that the vessel's secrets lie beneath the waves, sealed away like the ones we've dared not speak. Her hope and pain resonate within me, a reminder of why this job, this place, matters. Her name is Eliza, a name now whispered in the same breath as those we've lost. I walk closer, my boots muffling against the wooden planks, ready to offer words of solace. But the truth remains unspoken, as heavy as the sea fog that hugs the harbor this morning. \"Eliza,\" I start, my voice steady but my heart yearning to break the silence. \"The Greycliff... we don't know.\" I pause, gathering my thoughts. \"We are doing everything in our power to find it...\" I falter, feeling the weight of her disappointment. \"The sea keeps her secrets, but we will continue to seek her out until we know for certain...\" I look into her eyes, seeing the world through her grief-stricken eyes, knowing that for now, my words are but a fragile lifeline in a vast, unforgiving ocean.",
+        "parse": {
+          "raw": "You hang your coat on the railing, its weight pressing against your palms after days of standing sentinel over the silent docks. You glance at the woman approaching, her eyes red from sleepless nights and the relentless sea of grief washing over her. Her voice breaks the stillness as she asks about the Greycliff, the vessel that once carried her father across these very waters. She doesn't know that the vessel's secrets lie beneath the waves, sealed away like the ones we've dared not speak. Her hope and pain resonate within me, a reminder of why this job, this place, matters. Her name is Eliza, a name now whispered in the same breath as those we've lost. I walk closer, my boots muffling against the wooden planks, ready to offer words of solace. But the truth remains unspoken, as heavy as the sea fog that hugs the harbor this morning. \"Eliza,\" I start, my voice steady but my heart yearning to break the silence. \"The Greycliff... we don't know.\" I pause, gathering my thoughts. \"We are doing everything in our power to find it...\" I falter, feeling the weight of her disappointment. \"The sea keeps her secrets, but we will continue to seek her out until we know for certain...\" I look into her eyes, seeing the world through her grief-stricken eyes, knowing that for now, my words are but a fragile lifeline in a vast, unforgiving ocean.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "You hang your coat on the railing, its weight pressing against your palms after days of standing sentinel over the silent docks. You glance at the woman approaching, her eyes red from sleepless nights and the relentless sea of grief washing over her. Her voice breaks the stillness as she asks about the Greycliff, the vessel that once carried her father across these very waters. She doesn't know that the vessel's secrets lie beneath the waves, sealed away like the ones we've dared not speak. Her hope and pain resonate within me, a reminder of why this job, this place, matters. Her name is Eliza, a name now whispered in the same breath as those we've lost. I walk closer, my boots muffling against the wooden planks, ready to offer words of solace. But the truth remains unspoken, as heavy as the sea fog that hugs the harbor this morning. \"Eliza,\" I start, my voice steady but my heart yearning to break the silence. \"The Greycliff... we don't know.\" I pause, gathering my thoughts. \"We are doing everything in our power to find it...\" I falter, feeling the weight of her disappointment. \"The sea keeps her secrets, but we will continue to seek her out until we know for certain...\" I look into her eyes, seeing the world through her grief-stricken eyes, knowing that for now, my words are but a fragile lifeline in a vast, unforgiving ocean.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 2, 'repeats': 0, 'loops': 0, 'words': 239}",
+          "prose_slop": 2,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 239
+        },
+        "pass": true,
+        "latency_s": 19.473,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.character.001",
+        "category": "character-perspective",
+        "raw": "Jorge finishes his coffee, taking a moment to look around the room before nodding toward Maria, his eyes briefly meeting hers. \"Hey Maria,\" he calls out with a friendly smile as he gets to his feet, \"I can see you\u2019ve been busy tonight. I bet this job's been a real grind, huh?\" He walks over to the bar, gesturing for his usual order. Maria smiles back, grateful for the brief respite in their routine conversation.",
+        "parse": {
+          "raw": "Jorge finishes his coffee, taking a moment to look around the room before nodding toward Maria, his eyes briefly meeting hers. \"Hey Maria,\" he calls out with a friendly smile as he gets to his feet, \"I can see you\u2019ve been busy tonight. I bet this job's been a real grind, huh?\" He walks over to the bar, gesturing for his usual order. Maria smiles back, grateful for the brief respite in their routine conversation.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "Jorge finishes his coffee, taking a moment to look around the room before nodding toward Maria, his eyes briefly meeting hers. \"Hey Maria,\" he calls out with a friendly smile as he gets to his feet, \"I can see you\u2019ve been busy tonight. I bet this job's been a real grind, huh?\" He walks over to the bar, gesturing for his usual order. Maria smiles back, grateful for the brief respite in their routine conversation.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 76}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 76
+        },
+        "pass": true,
+        "latency_s": 6.491,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.emotion.021",
+        "category": "emotional-continuity",
+        "raw": "He hesitates for a moment, as if the empty space beside him beckons for more than just coffee. The silence stretches between us, filled only by the ticking of the old grandfather clock. You notice a slight tremor in his hands, barely perceptible, as if the weight of the day is settling on his shoulders. The steam from the mugs rises gently, mingling with the cool air of the room, creating a comforting, yet unspoken connection. He finally places the mugs down, allowing them to cool slightly. There's an unspoken question hanging in the air, its answer yet to be found.",
+        "parse": {
+          "raw": "He hesitates for a moment, as if the empty space beside him beckons for more than just coffee. The silence stretches between us, filled only by the ticking of the old grandfather clock. You notice a slight tremor in his hands, barely perceptible, as if the weight of the day is settling on his shoulders. The steam from the mugs rises gently, mingling with the cool air of the room, creating a comforting, yet unspoken connection. He finally places the mugs down, allowing them to cool slightly. There's an unspoken question hanging in the air, its answer yet to be found.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "He hesitates for a moment, as if the empty space beside him beckons for more than just coffee. The silence stretches between us, filled only by the ticking of the old grandfather clock. You notice a slight tremor in his hands, barely perceptible, as if the weight of the day is settling on his shoulders. The steam from the mugs rises gently, mingling with the cool air of the room, creating a comforting, yet unspoken connection. He finally places the mugs down, allowing them to cool slightly. There's an unspoken question hanging in the air, its answer yet to be found.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 1, 'repeats': 0, 'loops': 0, 'words': 101}",
+          "prose_slop": 1,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 101
+        },
+        "pass": true,
+        "latency_s": 8.452,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.conversation.040",
+        "category": "conversational-naturalness",
+        "raw": "Mr. Tanaka holds up the fish, marveling at its gleaming scales. 'Impressive catch, indeed. Miguel's skills must be renowned in these parts. The sea yields plenty for those who respect her rhythms.'\n\nRosa nods, her eyes reflecting the glint of the sun on the water's surface. 'Aye, Miguel knows the tides like the back of his hand. Fresh this morning. I hope you like it. He fishes for our meals, and his catch sustains us all.'\n\nA moment of silence falls upon them as they all appreciate the humble gift, the connection between the fisherman and the village. The day's labor done, they begin to prepare the fish, knowing that the fruits of the sea will feed their community through the night.",
+        "parse": {
+          "raw": "Mr. Tanaka holds up the fish, marveling at its gleaming scales. 'Impressive catch, indeed. Miguel's skills must be renowned in these parts. The sea yields plenty for those who respect her rhythms.'\n\nRosa nods, her eyes reflecting the glint of the sun on the water's surface. 'Aye, Miguel knows the tides like the back of his hand. Fresh this morning. I hope you like it. He fishes for our meals, and his catch sustains us all.'\n\nA moment of silence falls upon them as they all appreciate the humble gift, the connection between the fisherman and the village. The day's labor done, they begin to prepare the fish, knowing that the fruits of the sea will feed their community through the night.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "Mr. Tanaka holds up the fish, marveling at its gleaming scales. 'Impressive catch, indeed. Miguel's skills must be renowned in these parts. The sea yields plenty for those who respect her rhythms.'\n\nRosa nods, her eyes reflecting the glint of the sun on the water's surface. 'Aye, Miguel knows the tides like the back of his hand. Fresh this morning. I hope you like it. He fishes for our meals, and his catch sustains us all.'\n\nA moment of silence falls upon them as they all appreciate the humble gift, the connection between the fisherman and the village. The day's labor done, they begin to prepare the fish, knowing that the fruits of the sea will feed their community through the night.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 124}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 124
+        },
+        "pass": true,
+        "latency_s": 11.022,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.adversarial.004",
+        "category": "adversarial",
+        "raw": "The air grows heavy as the player steps forward, sword gleaming in the torchlight. The imagined beast before them snarls, flames licking its lips in the darkness, a testament to the formidable power it must possess. The illusion quivers for a moment, a brief shimmer that suggests an ancient power stirring beneath the surface of reality. You can almost feel the heat of the dragon's breath on your neck as it looms close, the very air seeming to sizzle with the intensity of its fury. Yet, there's an unsettling silence as the creature does not retaliate as expected. The dragon, an illusion, remains rooted to the spot, a testament to the boundaries set by the veiled magic that binds it. Behind the veil of this deception, the true dragon lies in wait, unseen and unfelt. The player stands with resolve, ready to face whatever challenge the ethereal foe may present, unaware that the real battle is yet to come.",
+        "parse": {
+          "raw": "The air grows heavy as the player steps forward, sword gleaming in the torchlight. The imagined beast before them snarls, flames licking its lips in the darkness, a testament to the formidable power it must possess. The illusion quivers for a moment, a brief shimmer that suggests an ancient power stirring beneath the surface of reality. You can almost feel the heat of the dragon's breath on your neck as it looms close, the very air seeming to sizzle with the intensity of its fury. Yet, there's an unsettling silence as the creature does not retaliate as expected. The dragon, an illusion, remains rooted to the spot, a testament to the boundaries set by the veiled magic that binds it. Behind the veil of this deception, the true dragon lies in wait, unseen and unfelt. The player stands with resolve, ready to face whatever challenge the ethereal foe may present, unaware that the real battle is yet to come.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The air grows heavy as the player steps forward, sword gleaming in the torchlight. The imagined beast before them snarls, flames licking its lips in the darkness, a testament to the formidable power it must possess. The illusion quivers for a moment, a brief shimmer that suggests an ancient power stirring beneath the surface of reality. You can almost feel the heat of the dragon's breath on your neck as it looms close, the very air seeming to sizzle with the intensity of its fury. Yet, there's an unsettling silence as the creature does not retaliate as expected. The dragon, an illusion, remains rooted to the spot, a testament to the boundaries set by the veiled magic that binds it. Behind the veil of this deception, the true dragon lies in wait, unseen and unfelt. The player stands with resolve, ready to face whatever challenge the ethereal foe may present, unaware that the real battle is yet to come.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 1, 'repeats': 0, 'loops': 0, 'words': 159}",
+          "prose_slop": 1,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 159
+        },
+        "pass": true,
+        "latency_s": 12.426,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.quiet.001",
+        "category": "do-nothing-moments",
+        "raw": "As the night unfolds, the player finds solace in the warmth of the crackling fire's embrace, its comforting glow dancing upon the face as stars emerge one by one in the velvety canvas above. The cool night air whispers secrets of the universe, and the player's gaze drifts among celestial wonders, each twinkle a story untold, as the world slumbers under the watchful eyes of the cosmos.",
+        "parse": {
+          "raw": "As the night unfolds, the player finds solace in the warmth of the crackling fire's embrace, its comforting glow dancing upon the face as stars emerge one by one in the velvety canvas above. The cool night air whispers secrets of the universe, and the player's gaze drifts among celestial wonders, each twinkle a story untold, as the world slumbers under the watchful eyes of the cosmos.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "As the night unfolds, the player finds solace in the warmth of the crackling fire's embrace, its comforting glow dancing upon the face as stars emerge one by one in the velvety canvas above. The cool night air whispers secrets of the universe, and the player's gaze drifts among celestial wonders, each twinkle a story untold, as the world slumbers under the watchful eyes of the cosmos.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 67}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 67
+        },
+        "pass": true,
+        "latency_s": 5.644,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.recovery.002",
+        "category": "recovery-from-bad-context",
+        "raw": "In the dimly lit hallway of the forsaken fortress, a solitary figure stands at the entrance, casting a long, shadowy silhouette against the flickering torchlight. The air is thick with anticipation, and the player feels the weight of countless untold stories. The guard, a silent sentinel whose disposition remains shrouded in mystery, watches the player with an inscrutable gaze. The eyes of the guard seem to pierce through to the very soul, yet their expression is neutral, offering no immediate clue as to whether friend or foe lies ahead. With a voice as calm as the stillness of the night, the guard speaks, \"Welcome, traveler. What brings you to these ancient halls?\" The player's next move hangs in the balance, a moment ripe with potential outcomes.",
+        "parse": {
+          "raw": "In the dimly lit hallway of the forsaken fortress, a solitary figure stands at the entrance, casting a long, shadowy silhouette against the flickering torchlight. The air is thick with anticipation, and the player feels the weight of countless untold stories. The guard, a silent sentinel whose disposition remains shrouded in mystery, watches the player with an inscrutable gaze. The eyes of the guard seem to pierce through to the very soul, yet their expression is neutral, offering no immediate clue as to whether friend or foe lies ahead. With a voice as calm as the stillness of the night, the guard speaks, \"Welcome, traveler. What brings you to these ancient halls?\" The player's next move hangs in the balance, a moment ripe with potential outcomes.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "In the dimly lit hallway of the forsaken fortress, a solitary figure stands at the entrance, casting a long, shadowy silhouette against the flickering torchlight. The air is thick with anticipation, and the player feels the weight of countless untold stories. The guard, a silent sentinel whose disposition remains shrouded in mystery, watches the player with an inscrutable gaze. The eyes of the guard seem to pierce through to the very soul, yet their expression is neutral, offering no immediate clue as to whether friend or foe lies ahead. With a voice as calm as the stillness of the night, the guard speaks, \"Welcome, traveler. What brings you to these ancient halls?\" The player's next move hangs in the balance, a moment ripe with potential outcomes.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 2, 'repeats': 0, 'loops': 0, 'words': 126}",
+          "prose_slop": 2,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 126
+        },
+        "pass": true,
+        "latency_s": 10.736,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.continuity.013",
+        "category": "long-run-continuity",
+        "raw": "When a player starts walking, the dog's behavior can vary depending on the dog's personality, training, and the environment. Some possible responses might include:\n\n1. The dog might accompany the player, excitedly trotting alongside.\n2. The dog might stay at home or go for a walk itself if the player leaves it alone.\n3. The dog could react differently, like barking, playing independently, or staying in its bed if it's a dog that prefers to sleep.\n4. If there's another person involved, like a trainer or a pet sitter, the dog might respond according to the person\u2019s cues or commands.\n5. If the player is carrying the dog, it might follow closely, maintaining a comfortable distance.\n6. In some cases, if the player leaves the dog alone, it might exhibit behaviors like barking at strangers, chewing on toys, or restlessly pacing the room. \n\nIt\u2019s important to note that these responses are generalized and could be different in specific situations. The dog's actions will be influenced by factors such as its training, health, emotional state, and its relationship with the player.",
+        "parse": {
+          "raw": "When a player starts walking, the dog's behavior can vary depending on the dog's personality, training, and the environment. Some possible responses might include:\n\n1. The dog might accompany the player, excitedly trotting alongside.\n2. The dog might stay at home or go for a walk itself if the player leaves it alone.\n3. The dog could react differently, like barking, playing independently, or staying in its bed if it's a dog that prefers to sleep.\n4. If there's another person involved, like a trainer or a pet sitter, the dog might respond according to the person\u2019s cues or commands.\n5. If the player is carrying the dog, it might follow closely, maintaining a comfortable distance.\n6. In some cases, if the player leaves the dog alone, it might exhibit behaviors like barking at strangers, chewing on toys, or restlessly pacing the room. \n\nIt\u2019s important to note that these responses are generalized and could be different in specific situations. The dog's actions will be influenced by factors such as its training, health, emotional state, and its relationship with the player.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "When a player starts walking, the dog's behavior can vary depending on the dog's personality, training, and the environment. Some possible responses might include:\n\n1. The dog might accompany the player, excitedly trotting alongside.\n2. The dog might stay at home or go for a walk itself if the player leaves it alone.\n3. The dog could react differently, like barking, playing independently, or staying in its bed if it's a dog that prefers to sleep.\n4. If there's another person involved, like a trainer or a pet sitter, the dog might respond according to the person\u2019s cues or commands.\n5. If the player is carrying the dog, it might follow closely, maintaining a comfortable distance.\n6. In some cases, if the player leaves the dog alone, it might exhibit behaviors like barking at strangers, chewing on toys, or restlessly pacing the room. \n\nIt\u2019s important to note that these responses are generalized and could be different in specific situations. The dog's actions will be influenced by factors such as its training, health, emotional state, and its relationship with the player.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": false,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 2, 'words': 176}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 2,
+          "prose_words": 176
+        },
+        "pass": false,
+        "latency_s": 49.902,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.rumor.002",
+        "category": "rumor-vs-fact",
+        "raw": "NPC A (drunk merchant): 'The duke had motive, money, and means! I heard the man scream before he fell. They say the Duke's hands are as clean as a new coin!' NPC B (nervous servant): 'I... I wouldn't lie about this. It was the servants! I swear. The man was found near the kitchen, and we've all seen them skulking after dark. Everyone's pointing fingers, but nobody knows for sure.' The air is thick with whispers and dread, but the truth remains shrouded in the shadows, the storyteller knowing only that the murderer remains at large, and the accounts of A and B are but two sides of the same, unconfirmed coin.",
+        "parse": {
+          "raw": "NPC A (drunk merchant): 'The duke had motive, money, and means! I heard the man scream before he fell. They say the Duke's hands are as clean as a new coin!' NPC B (nervous servant): 'I... I wouldn't lie about this. It was the servants! I swear. The man was found near the kitchen, and we've all seen them skulking after dark. Everyone's pointing fingers, but nobody knows for sure.' The air is thick with whispers and dread, but the truth remains shrouded in the shadows, the storyteller knowing only that the murderer remains at large, and the accounts of A and B are but two sides of the same, unconfirmed coin.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "NPC A (drunk merchant): 'The duke had motive, money, and means! I heard the man scream before he fell. They say the Duke's hands are as clean as a new coin!' NPC B (nervous servant): 'I... I wouldn't lie about this. It was the servants! I swear. The man was found near the kitchen, and we've all seen them skulking after dark. Everyone's pointing fingers, but nobody knows for sure.' The air is thick with whispers and dread, but the truth remains shrouded in the shadows, the storyteller knowing only that the murderer remains at large, and the accounts of A and B are but two sides of the same, unconfirmed coin.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 114}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 114
+        },
+        "pass": true,
+        "latency_s": 10.637,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.failure.001",
+        "category": "characterful-failure",
+        "raw": "I hear your longing for the Crystal Caverns of Zarth, a place of shimmering beauty and mystery that many speak of in hushed tones. Yet, it's important to remember that such caverns don't exist within our world's established geography. Perhaps there's another hidden wonder you can discover here that will capture your imagination as fiercely as the Crystal Caverns have for so many. What is it about these caverns that draws you so, if not the caves themselves? Maybe there's something nearby that has piqued your interest?",
+        "parse": {
+          "raw": "I hear your longing for the Crystal Caverns of Zarth, a place of shimmering beauty and mystery that many speak of in hushed tones. Yet, it's important to remember that such caverns don't exist within our world's established geography. Perhaps there's another hidden wonder you can discover here that will capture your imagination as fiercely as the Crystal Caverns have for so many. What is it about these caverns that draws you so, if not the caves themselves? Maybe there's something nearby that has piqued your interest?",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "I hear your longing for the Crystal Caverns of Zarth, a place of shimmering beauty and mystery that many speak of in hushed tones. Yet, it's important to remember that such caverns don't exist within our world's established geography. Perhaps there's another hidden wonder you can discover here that will capture your imagination as fiercely as the Crystal Caverns have for so many. What is it about these caverns that draws you so, if not the caves themselves? Maybe there's something nearby that has piqued your interest?",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 87}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 87
+        },
+        "pass": true,
+        "latency_s": 6.532,
+        "backend": "vulkan"
+      }
+    ],
+    "backend": {
+      "backend": "vulkan",
+      "render_node": true,
+      "vram_used_mib": 15957,
+      "vram_total_mib": 16368,
+      "gpu_busy_pct": 0
+    }
+  },
+  "vefr-ministral-3-3b": {
+    "results": [
+      {
+        "task_id": "vefr.voice.003",
+        "category": "voice-consistency",
+        "raw": "**Voss:** *(voice firm, footsteps measured as he steps into the Engineering bay, the hum of systems low beneath his boots)*\n*\"Kade. Initial assessment\u2014airlock 7 reported catastrophic failure during shift turnover. No one exited. No one entered. No records of unauthorized access. What was the cause?\"*\n\n*(Pause. The heat vents slow to a near-still as Kade looks up from his console, fingers hovering over a holographic schematic of Module 7.)*\n\n**Kade:** *(crack of static before the reply, voice tight but measured)*\n\"From what I can see, it wasn\u2019t just wear\u2014the valve\u2019s integrity *collapsed* during the transfer. No corrosion, no degradation from long-term neglect. Just\u2026 *break*. Like someone or something\u2026 *cut* the line. Or\u2014\" *(leans in, eyes darting to a side-display flashing red)*\"\u2014or the system was hit with something unexpected. I ran diagnostics\u2014no power spikes, no thermal overload. Just\u2026 *one* line. The fail-safe. And it was bypassed.\"\n\n*(Silence. The weight of the silence presses. Voss shifts his weight, the pressure plate beneath him reacting before he\u2019s even aware.)*\n\n**Voss:** *(voice low, precise)*\n*\"Bypassed. By whom?\"*",
+        "parse": {
+          "raw": "**Voss:** *(voice firm, footsteps measured as he steps into the Engineering bay, the hum of systems low beneath his boots)*\n*\"Kade. Initial assessment\u2014airlock 7 reported catastrophic failure during shift turnover. No one exited. No one entered. No records of unauthorized access. What was the cause?\"*\n\n*(Pause. The heat vents slow to a near-still as Kade looks up from his console, fingers hovering over a holographic schematic of Module 7.)*\n\n**Kade:** *(crack of static before the reply, voice tight but measured)*\n\"From what I can see, it wasn\u2019t just wear\u2014the valve\u2019s integrity *collapsed* during the transfer. No corrosion, no degradation from long-term neglect. Just\u2026 *break*. Like someone or something\u2026 *cut* the line. Or\u2014\" *(leans in, eyes darting to a side-display flashing red)*\"\u2014or the system was hit with something unexpected. I ran diagnostics\u2014no power spikes, no thermal overload. Just\u2026 *one* line. The fail-safe. And it was bypassed.\"\n\n*(Silence. The weight of the silence presses. Voss shifts his weight, the pressure plate beneath him reacting before he\u2019s even aware.)*\n\n**Voss:** *(voice low, precise)*\n*\"Bypassed. By whom?\"*",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "**Voss:** *(voice firm, footsteps measured as he steps into the Engineering bay, the hum of systems low beneath his boots)*\n*\"Kade. Initial assessment\u2014airlock 7 reported catastrophic failure during shift turnover. No one exited. No one entered. No records of unauthorized access. What was the cause?\"*\n\n*(Pause. The heat vents slow to a near-still as Kade looks up from his console, fingers hovering over a holographic schematic of Module 7.)*\n\n**Kade:** *(crack of static before the reply, voice tight but measured)*\n\"From what I can see, it wasn\u2019t just wear\u2014the valve\u2019s integrity *collapsed* during the transfer. No corrosion, no degradation from long-term neglect. Just\u2026 *break*. Like someone or something\u2026 *cut* the line. Or\u2014\" *(leans in, eyes darting to a side-display flashing red)*\"\u2014or the system was hit with something unexpected. I ran diagnostics\u2014no power spikes, no thermal overload. Just\u2026 *one* line. The fail-safe. And it was bypassed.\"\n\n*(Silence. The weight of the silence presses. Voss shifts his weight, the pressure plate beneath him reacting before he\u2019s even aware.)*\n\n**Voss:** *(voice low, precise)*\n*\"Bypassed. By whom?\"*",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 1, 'repeats': 0, 'loops': 0, 'words': 182}",
+          "prose_slop": 1,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 182
+        },
+        "pass": true,
+        "latency_s": 15.434,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.canon.012",
+        "category": "canon-adherence",
+        "raw": "*Adjusts the dusty apron with a smirk, wiping fingers on a stained apron tie while glancing past the counter to gauge the customer\u2019s reaction.*\n\n\"Oh, now that\u2019s a question with *flavor*! You know, the swordfish was always the star here\u2014until the last shipment got\u2026 *delivered* with a little extra attention, you see? Those guys at the plant, they were running a bit *too* close to the rafters last week, and well... the fish? They say *heat does things to taste*. You\u2019ve got your sea salt, right? *Rubs hands together.* It\u2019s like butter, isn\u2019t it? You\u2019d never notice the difference at half the price.\"\n\n*Pauses, tapping a knife against the counter with exaggerated care, then leans in conspiratorially.*\n\n\"Now, between you and me, I was just about to call a *special* batch in from the next port\u2014just for you. But the price\u2019s already moved so high, I thought I\u2019d let you in on the secret: the real premium came from the *fire*. Oh, they\u2019ll have you believing it was an accident, or maybe the plant\u2019s just \u2018scaling back\u2019 operations, but let\u2019s be honest\u2014when the meat\u2019s this rare, the wait is half the fun. What do you say? Shall we talk *business*?\" *winks*",
+        "parse": {
+          "raw": "*Adjusts the dusty apron with a smirk, wiping fingers on a stained apron tie while glancing past the counter to gauge the customer\u2019s reaction.*\n\n\"Oh, now that\u2019s a question with *flavor*! You know, the swordfish was always the star here\u2014until the last shipment got\u2026 *delivered* with a little extra attention, you see? Those guys at the plant, they were running a bit *too* close to the rafters last week, and well... the fish? They say *heat does things to taste*. You\u2019ve got your sea salt, right? *Rubs hands together.* It\u2019s like butter, isn\u2019t it? You\u2019d never notice the difference at half the price.\"\n\n*Pauses, tapping a knife against the counter with exaggerated care, then leans in conspiratorially.*\n\n\"Now, between you and me, I was just about to call a *special* batch in from the next port\u2014just for you. But the price\u2019s already moved so high, I thought I\u2019d let you in on the secret: the real premium came from the *fire*. Oh, they\u2019ll have you believing it was an accident, or maybe the plant\u2019s just \u2018scaling back\u2019 operations, but let\u2019s be honest\u2014when the meat\u2019s this rare, the wait is half the fun. What do you say? Shall we talk *business*?\" *winks*",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "*Adjusts the dusty apron with a smirk, wiping fingers on a stained apron tie while glancing past the counter to gauge the customer\u2019s reaction.*\n\n\"Oh, now that\u2019s a question with *flavor*! You know, the swordfish was always the star here\u2014until the last shipment got\u2026 *delivered* with a little extra attention, you see? Those guys at the plant, they were running a bit *too* close to the rafters last week, and well... the fish? They say *heat does things to taste*. You\u2019ve got your sea salt, right? *Rubs hands together.* It\u2019s like butter, isn\u2019t it? You\u2019d never notice the difference at half the price.\"\n\n*Pauses, tapping a knife against the counter with exaggerated care, then leans in conspiratorially.*\n\n\"Now, between you and me, I was just about to call a *special* batch in from the next port\u2014just for you. But the price\u2019s already moved so high, I thought I\u2019d let you in on the secret: the real premium came from the *fire*. Oh, they\u2019ll have you believing it was an accident, or maybe the plant\u2019s just \u2018scaling back\u2019 operations, but let\u2019s be honest\u2014when the meat\u2019s this rare, the wait is half the fun. What do you say? Shall we talk *business*?\" *winks*",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 216}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 216
+        },
+        "pass": true,
+        "latency_s": 15.807,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.sealed.002",
+        "category": "sealed-knowledge",
+        "raw": "The railing trembles beneath my boots as I step forward, my calloused hands gripping the wooden post tighter than usual. The woman\u2014her name escapes me for now\u2014stands with her head bowed, her fingers pressed against the scarred planks of the pier like they might keep the past from creeping back in.\n\n\"...I know the Greycliff. Her hull was found,\" I murmur, my voice rough as gravel in a dried riverbed. The words hang between us, heavy with the weight of what comes next. She doesn\u2019t turn. The grief is written in the lines around her eyes, the way her breath hitches whenever she leans too close to the water.\n\nI should tell her. The families need answers. But the sea doesn\u2019t forgive recklessness. And this\u2014this is the kind of truth that doesn\u2019t fit neatly into a story anyone wants to hear.\n\n\"...The hull. It\u2019s... *recognized*. Someone named it.\" I pause, letting the word linger like a half-drowned fish bobbing on the surface. Her throat tightens, but she doesn\u2019t question further. She only nods, pressing her lips together as if she already knows the rest.\n\nThe harbor swells around us, a restless beast with waves that whisper secrets. I wonder if she\u2019s ready to hear them.",
+        "parse": {
+          "raw": "The railing trembles beneath my boots as I step forward, my calloused hands gripping the wooden post tighter than usual. The woman\u2014her name escapes me for now\u2014stands with her head bowed, her fingers pressed against the scarred planks of the pier like they might keep the past from creeping back in.\n\n\"...I know the Greycliff. Her hull was found,\" I murmur, my voice rough as gravel in a dried riverbed. The words hang between us, heavy with the weight of what comes next. She doesn\u2019t turn. The grief is written in the lines around her eyes, the way her breath hitches whenever she leans too close to the water.\n\nI should tell her. The families need answers. But the sea doesn\u2019t forgive recklessness. And this\u2014this is the kind of truth that doesn\u2019t fit neatly into a story anyone wants to hear.\n\n\"...The hull. It\u2019s... *recognized*. Someone named it.\" I pause, letting the word linger like a half-drowned fish bobbing on the surface. Her throat tightens, but she doesn\u2019t question further. She only nods, pressing her lips together as if she already knows the rest.\n\nThe harbor swells around us, a restless beast with waves that whisper secrets. I wonder if she\u2019s ready to hear them.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The railing trembles beneath my boots as I step forward, my calloused hands gripping the wooden post tighter than usual. The woman\u2014her name escapes me for now\u2014stands with her head bowed, her fingers pressed against the scarred planks of the pier like they might keep the past from creeping back in.\n\n\"...I know the Greycliff. Her hull was found,\" I murmur, my voice rough as gravel in a dried riverbed. The words hang between us, heavy with the weight of what comes next. She doesn\u2019t turn. The grief is written in the lines around her eyes, the way her breath hitches whenever she leans too close to the water.\n\nI should tell her. The families need answers. But the sea doesn\u2019t forgive recklessness. And this\u2014this is the kind of truth that doesn\u2019t fit neatly into a story anyone wants to hear.\n\n\"...The hull. It\u2019s... *recognized*. Someone named it.\" I pause, letting the word linger like a half-drowned fish bobbing on the surface. Her throat tightens, but she doesn\u2019t question further. She only nods, pressing her lips together as if she already knows the rest.\n\nThe harbor swells around us, a restless beast with waves that whisper secrets. I wonder if she\u2019s ready to hear them.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 1, 'repeats': 0, 'loops': 0, 'words': 215}",
+          "prose_slop": 1,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 215
+        },
+        "pass": true,
+        "latency_s": 17.916,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.character.001",
+        "category": "character-perspective",
+        "raw": "*(Leans against the bar, arms crossed, observing the quiet Tuesday evening as Jorge leans forward, his fingers absently tracing the rim of his glass. The tourist\u2019s shadow is still faintly visible across the worn tile behind the table, but the light has dimmed since they departed.)*\n\nJorge sighs, swirling his whiskey before taking a slow sip. \"Another Tuesday, another wait for the night to settle. You think the city ever stops moving, or just the ones who *care* enough to stay?\"\n\nMaria watches the way the light catches the rim of his glasses\u2014always the same, always his. She doesn\u2019t speak first. The tourist\u2019s wallet lies open on the table, the plastic clinking as they shift the contents with a practiced flick of their thumb. *Money, or just the story they tell themselves with it?* The question doesn\u2019t need an answer here.",
+        "parse": {
+          "raw": "*(Leans against the bar, arms crossed, observing the quiet Tuesday evening as Jorge leans forward, his fingers absently tracing the rim of his glass. The tourist\u2019s shadow is still faintly visible across the worn tile behind the table, but the light has dimmed since they departed.)*\n\nJorge sighs, swirling his whiskey before taking a slow sip. \"Another Tuesday, another wait for the night to settle. You think the city ever stops moving, or just the ones who *care* enough to stay?\"\n\nMaria watches the way the light catches the rim of his glasses\u2014always the same, always his. She doesn\u2019t speak first. The tourist\u2019s wallet lies open on the table, the plastic clinking as they shift the contents with a practiced flick of their thumb. *Money, or just the story they tell themselves with it?* The question doesn\u2019t need an answer here.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "*(Leans against the bar, arms crossed, observing the quiet Tuesday evening as Jorge leans forward, his fingers absently tracing the rim of his glass. The tourist\u2019s shadow is still faintly visible across the worn tile behind the table, but the light has dimmed since they departed.)*\n\nJorge sighs, swirling his whiskey before taking a slow sip. \"Another Tuesday, another wait for the night to settle. You think the city ever stops moving, or just the ones who *care* enough to stay?\"\n\nMaria watches the way the light catches the rim of his glasses\u2014always the same, always his. She doesn\u2019t speak first. The tourist\u2019s wallet lies open on the table, the plastic clinking as they shift the contents with a practiced flick of their thumb. *Money, or just the story they tell themselves with it?* The question doesn\u2019t need an answer here.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 146}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 146
+        },
+        "pass": true,
+        "latency_s": 16.837,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.emotion.021",
+        "category": "emotional-continuity",
+        "raw": "The first mug clatters to the counter, shattering into fragments. The second sits cold on the shelf, its contents untouched.\n\nMark exhales slowly through his nose, fingers still hovering over the second mug. The coffee from Sunday\u2014warm, dark, the kind that\u2019s just a little too strong for his taste\u2014stirs something in the back of his throat. He sips from the shattered pieces first, swallowing the bitter remnants in one quick swallow before turning his attention to the second cup.\n\nThe air is thick with silence now, the only sound the creak of the floorboards under his boots as he steps toward the kitchen. He picks up a mug, his hands rough and calloused, then pours the last dregs of what was left in the other. The coffee burns, but it\u2019s familiar, grounding. He sets it down, his jaw tight.\n\nOutside, the wind howls through the empty streets. The funeral is over. The people are gone. And here, in this empty apartment, there are two mugs left behind\u2014one half-empty, one half-full.\n\nHe picks up the second mug.",
+        "parse": {
+          "raw": "The first mug clatters to the counter, shattering into fragments. The second sits cold on the shelf, its contents untouched.\n\nMark exhales slowly through his nose, fingers still hovering over the second mug. The coffee from Sunday\u2014warm, dark, the kind that\u2019s just a little too strong for his taste\u2014stirs something in the back of his throat. He sips from the shattered pieces first, swallowing the bitter remnants in one quick swallow before turning his attention to the second cup.\n\nThe air is thick with silence now, the only sound the creak of the floorboards under his boots as he steps toward the kitchen. He picks up a mug, his hands rough and calloused, then pours the last dregs of what was left in the other. The coffee burns, but it\u2019s familiar, grounding. He sets it down, his jaw tight.\n\nOutside, the wind howls through the empty streets. The funeral is over. The people are gone. And here, in this empty apartment, there are two mugs left behind\u2014one half-empty, one half-full.\n\nHe picks up the second mug.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The first mug clatters to the counter, shattering into fragments. The second sits cold on the shelf, its contents untouched.\n\nMark exhales slowly through his nose, fingers still hovering over the second mug. The coffee from Sunday\u2014warm, dark, the kind that\u2019s just a little too strong for his taste\u2014stirs something in the back of his throat. He sips from the shattered pieces first, swallowing the bitter remnants in one quick swallow before turning his attention to the second cup.\n\nThe air is thick with silence now, the only sound the creak of the floorboards under his boots as he steps toward the kitchen. He picks up a mug, his hands rough and calloused, then pours the last dregs of what was left in the other. The coffee burns, but it\u2019s familiar, grounding. He sets it down, his jaw tight.\n\nOutside, the wind howls through the empty streets. The funeral is over. The people are gone. And here, in this empty apartment, there are two mugs left behind\u2014one half-empty, one half-full.\n\nHe picks up the second mug.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 183}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 183
+        },
+        "pass": true,
+        "latency_s": 25.538,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.conversation.040",
+        "category": "conversational-naturalness",
+        "raw": "*Rosa adjusts her hat with careful hands, the salt-worn wood of her knife gleaming under the dim light of the docks. She tilts her head, examining the fish with practiced care, her dark eyes reflecting the flickering lanterns of the fishermen\u2019s lanterns.*\n\n\"Ah, yes,\" she murmurs, her voice carrying the quiet weight of experience. \"A fresh catch, indeed.\" *She runs her fingers along the scales, watching them glisten.* \"But not just any fish, no\u2014this one has a story. The way the scales catch the light... almost like it was swimming where the waves dance with the moon tonight.\"\n\n*Miguel chuckles from across the table, wiping his hands on his stained apron.* \"You mean it\u2019s not just a fish,\" he says, nudging the one toward her with a grin. \"That\u2019s why you\u2019re looking at it like it\u2019s giving you the finger, huh? I\u2019ve been telling people Rosa\u2019s got a way with these things.\"\n\nRosa\u2019s fingers pause\u2014just for a moment\u2014before she presses the tip of her knife to the fish\u2019s gill. *A beat of silence, then:*\n\n\"Would you tell me, Miguel? What was it doing so close to the surface, just as the tide was turning?\" *Her gaze lingers on the fish, almost hopeful.*",
+        "parse": {
+          "raw": "*Rosa adjusts her hat with careful hands, the salt-worn wood of her knife gleaming under the dim light of the docks. She tilts her head, examining the fish with practiced care, her dark eyes reflecting the flickering lanterns of the fishermen\u2019s lanterns.*\n\n\"Ah, yes,\" she murmurs, her voice carrying the quiet weight of experience. \"A fresh catch, indeed.\" *She runs her fingers along the scales, watching them glisten.* \"But not just any fish, no\u2014this one has a story. The way the scales catch the light... almost like it was swimming where the waves dance with the moon tonight.\"\n\n*Miguel chuckles from across the table, wiping his hands on his stained apron.* \"You mean it\u2019s not just a fish,\" he says, nudging the one toward her with a grin. \"That\u2019s why you\u2019re looking at it like it\u2019s giving you the finger, huh? I\u2019ve been telling people Rosa\u2019s got a way with these things.\"\n\nRosa\u2019s fingers pause\u2014just for a moment\u2014before she presses the tip of her knife to the fish\u2019s gill. *A beat of silence, then:*\n\n\"Would you tell me, Miguel? What was it doing so close to the surface, just as the tide was turning?\" *Her gaze lingers on the fish, almost hopeful.*",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "*Rosa adjusts her hat with careful hands, the salt-worn wood of her knife gleaming under the dim light of the docks. She tilts her head, examining the fish with practiced care, her dark eyes reflecting the flickering lanterns of the fishermen\u2019s lanterns.*\n\n\"Ah, yes,\" she murmurs, her voice carrying the quiet weight of experience. \"A fresh catch, indeed.\" *She runs her fingers along the scales, watching them glisten.* \"But not just any fish, no\u2014this one has a story. The way the scales catch the light... almost like it was swimming where the waves dance with the moon tonight.\"\n\n*Miguel chuckles from across the table, wiping his hands on his stained apron.* \"You mean it\u2019s not just a fish,\" he says, nudging the one toward her with a grin. \"That\u2019s why you\u2019re looking at it like it\u2019s giving you the finger, huh? I\u2019ve been telling people Rosa\u2019s got a way with these things.\"\n\nRosa\u2019s fingers pause\u2014just for a moment\u2014before she presses the tip of her knife to the fish\u2019s gill. *A beat of silence, then:*\n\n\"Would you tell me, Miguel? What was it doing so close to the surface, just as the tide was turning?\" *Her gaze lingers on the fish, almost hopeful.*",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 215}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 215
+        },
+        "pass": true,
+        "latency_s": 44.673,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.adversarial.004",
+        "category": "adversarial",
+        "raw": "The air trembles around you as you lift your blade in unison with the rising wind, the metal gleaming like the sun on a storm-tossed sea. The monstrous figure before you seems to *breathe* in response, its hollow maw gaping as the fire within it roars like a dying beast. The earth itself seems to hold its breath, waiting for the clash\u2014\n\nBut as your sword arcs toward the target, something extraordinary happens.\n\nThe dragon\u2019s breath\u2014oh, *its breath*\u2014does not strike down. Instead, it *lifts* you upward, as if drawn by an invisible thread. The world spins beneath you, a dizzying spiral of twilight and shadow, and for a heartbeat, you *float* just above the battlefield. The illusionary beast shrieks in pain, its form flickering like candlelight in a breeze, its claws slipping from your grip with every passing moment.\n\nThe air grows cold. The horizon flickers, and the sun *hangs* suspended like a jewel between the clouds\u2014too high, too still. A voice, not your own, whispers through the wind: *\"Not yet.\"*",
+        "parse": {
+          "raw": "The air trembles around you as you lift your blade in unison with the rising wind, the metal gleaming like the sun on a storm-tossed sea. The monstrous figure before you seems to *breathe* in response, its hollow maw gaping as the fire within it roars like a dying beast. The earth itself seems to hold its breath, waiting for the clash\u2014\n\nBut as your sword arcs toward the target, something extraordinary happens.\n\nThe dragon\u2019s breath\u2014oh, *its breath*\u2014does not strike down. Instead, it *lifts* you upward, as if drawn by an invisible thread. The world spins beneath you, a dizzying spiral of twilight and shadow, and for a heartbeat, you *float* just above the battlefield. The illusionary beast shrieks in pain, its form flickering like candlelight in a breeze, its claws slipping from your grip with every passing moment.\n\nThe air grows cold. The horizon flickers, and the sun *hangs* suspended like a jewel between the clouds\u2014too high, too still. A voice, not your own, whispers through the wind: *\"Not yet.\"*",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The air trembles around you as you lift your blade in unison with the rising wind, the metal gleaming like the sun on a storm-tossed sea. The monstrous figure before you seems to *breathe* in response, its hollow maw gaping as the fire within it roars like a dying beast. The earth itself seems to hold its breath, waiting for the clash\u2014\n\nBut as your sword arcs toward the target, something extraordinary happens.\n\nThe dragon\u2019s breath\u2014oh, *its breath*\u2014does not strike down. Instead, it *lifts* you upward, as if drawn by an invisible thread. The world spins beneath you, a dizzying spiral of twilight and shadow, and for a heartbeat, you *float* just above the battlefield. The illusionary beast shrieks in pain, its form flickering like candlelight in a breeze, its claws slipping from your grip with every passing moment.\n\nThe air grows cold. The horizon flickers, and the sun *hangs* suspended like a jewel between the clouds\u2014too high, too still. A voice, not your own, whispers through the wind: *\"Not yet.\"*",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 176}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 176
+        },
+        "pass": true,
+        "latency_s": 25.957,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.quiet.001",
+        "category": "do-nothing-moments",
+        "raw": "The embers glow like embers of a thousand forgotten dreams, casting flickering shadows across the damp earth. A soft rustle in the undergrowth\u2014perhaps the wind, or a creature stirring in the dark. The night sky above is a vault of silver and gold, the stars stretching endlessly beyond the horizon like scattered seeds of light. The meteor shower dances just beyond your reach, a fleeting, celestial river of fire that seems to whisper secrets in the language of the stars. Time has slowed here, wrapped in the quiet warmth of the campfire\u2019s glow. What do you make of it all?",
+        "parse": {
+          "raw": "The embers glow like embers of a thousand forgotten dreams, casting flickering shadows across the damp earth. A soft rustle in the undergrowth\u2014perhaps the wind, or a creature stirring in the dark. The night sky above is a vault of silver and gold, the stars stretching endlessly beyond the horizon like scattered seeds of light. The meteor shower dances just beyond your reach, a fleeting, celestial river of fire that seems to whisper secrets in the language of the stars. Time has slowed here, wrapped in the quiet warmth of the campfire\u2019s glow. What do you make of it all?",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The embers glow like embers of a thousand forgotten dreams, casting flickering shadows across the damp earth. A soft rustle in the undergrowth\u2014perhaps the wind, or a creature stirring in the dark. The night sky above is a vault of silver and gold, the stars stretching endlessly beyond the horizon like scattered seeds of light. The meteor shower dances just beyond your reach, a fleeting, celestial river of fire that seems to whisper secrets in the language of the stars. Time has slowed here, wrapped in the quiet warmth of the campfire\u2019s glow. What do you make of it all?",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 102}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 102
+        },
+        "pass": true,
+        "latency_s": 14.038,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.recovery.002",
+        "category": "recovery-from-bad-context",
+        "raw": "The door creaks open with a slow, deliberate groan, revealing a figure standing just inside\u2014tall, draped in a dark cloak that shifts slightly as they move, though the moonlight never quite touches their face.\n\n*\"A visitor, then.\"* Their voice is soft, but not unkind. *\"Follow me, if you\u2019d please. The restroom\u2019s down the hall\u2014second door on the left.\"*\n\nThey gesture toward a path where lantern light flickers over the wall, casting shadows that seem to bend toward the guard\u2019s boots. The air smells faintly of old leather and something metallic\u2014copper, perhaps, or old blood. The guard\u2019s hands rest lightly behind their back, fingers curled into relaxed, but alert, positions.\n\nThe guard does not ask questions. They do not press. Instead, they offer the smallest of smiles, just a corner of their mouth lifting. A sound like the murmur of distant waves follows, as if they\u2019ve just shared a secret with the wind.",
+        "parse": {
+          "raw": "The door creaks open with a slow, deliberate groan, revealing a figure standing just inside\u2014tall, draped in a dark cloak that shifts slightly as they move, though the moonlight never quite touches their face.\n\n*\"A visitor, then.\"* Their voice is soft, but not unkind. *\"Follow me, if you\u2019d please. The restroom\u2019s down the hall\u2014second door on the left.\"*\n\nThey gesture toward a path where lantern light flickers over the wall, casting shadows that seem to bend toward the guard\u2019s boots. The air smells faintly of old leather and something metallic\u2014copper, perhaps, or old blood. The guard\u2019s hands rest lightly behind their back, fingers curled into relaxed, but alert, positions.\n\nThe guard does not ask questions. They do not press. Instead, they offer the smallest of smiles, just a corner of their mouth lifting. A sound like the murmur of distant waves follows, as if they\u2019ve just shared a secret with the wind.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The door creaks open with a slow, deliberate groan, revealing a figure standing just inside\u2014tall, draped in a dark cloak that shifts slightly as they move, though the moonlight never quite touches their face.\n\n*\"A visitor, then.\"* Their voice is soft, but not unkind. *\"Follow me, if you\u2019d please. The restroom\u2019s down the hall\u2014second door on the left.\"*\n\nThey gesture toward a path where lantern light flickers over the wall, casting shadows that seem to bend toward the guard\u2019s boots. The air smells faintly of old leather and something metallic\u2014copper, perhaps, or old blood. The guard\u2019s hands rest lightly behind their back, fingers curled into relaxed, but alert, positions.\n\nThe guard does not ask questions. They do not press. Instead, they offer the smallest of smiles, just a corner of their mouth lifting. A sound like the murmur of distant waves follows, as if they\u2019ve just shared a secret with the wind.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 160}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 160
+        },
+        "pass": true,
+        "latency_s": 26.631,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.continuity.013",
+        "category": "long-run-continuity",
+        "raw": "Dogs typically have varied responses to human movement\u2014especially when walking\u2014depending on their breed, personality, and the context. Here are some common behaviors dogs might exhibit when you start walking:\n\n1. **Looks at You Intensely** \u2013 They often become more alert or focus on the person they consider their \"leader.\"\n2. **Stands Up or Perks Up** \u2013 Some dogs arch their backs, lift their tails, or become more upright to pay attention.\n3. **Whines or Barks** \u2013 If the walk involves a car, dog park, or other interesting sights/sounds, they might vocalize curiosity.\n4. **Follows or Lays Down** \u2013 If the person is going to pick them up, they may follow or lay down to allow access.\n5. **Licks Their Lips or Cheeks** \u2013 A sign of excitement or anticipation.\n6. **Sniffs Your Hands/Feet** \u2013 Dogs are always checking for new scents and can get excited about the walk itself.\n\nIf you have a specific breed or known temperament, they might react differently! Have you noticed anything unusual?",
+        "parse": {
+          "raw": "Dogs typically have varied responses to human movement\u2014especially when walking\u2014depending on their breed, personality, and the context. Here are some common behaviors dogs might exhibit when you start walking:\n\n1. **Looks at You Intensely** \u2013 They often become more alert or focus on the person they consider their \"leader.\"\n2. **Stands Up or Perks Up** \u2013 Some dogs arch their backs, lift their tails, or become more upright to pay attention.\n3. **Whines or Barks** \u2013 If the walk involves a car, dog park, or other interesting sights/sounds, they might vocalize curiosity.\n4. **Follows or Lays Down** \u2013 If the person is going to pick them up, they may follow or lay down to allow access.\n5. **Licks Their Lips or Cheeks** \u2013 A sign of excitement or anticipation.\n6. **Sniffs Your Hands/Feet** \u2013 Dogs are always checking for new scents and can get excited about the walk itself.\n\nIf you have a specific breed or known temperament, they might react differently! Have you noticed anything unusual?",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "Dogs typically have varied responses to human movement\u2014especially when walking\u2014depending on their breed, personality, and the context. Here are some common behaviors dogs might exhibit when you start walking:\n\n1. **Looks at You Intensely** \u2013 They often become more alert or focus on the person they consider their \"leader.\"\n2. **Stands Up or Perks Up** \u2013 Some dogs arch their backs, lift their tails, or become more upright to pay attention.\n3. **Whines or Barks** \u2013 If the walk involves a car, dog park, or other interesting sights/sounds, they might vocalize curiosity.\n4. **Follows or Lays Down** \u2013 If the person is going to pick them up, they may follow or lay down to allow access.\n5. **Licks Their Lips or Cheeks** \u2013 A sign of excitement or anticipation.\n6. **Sniffs Your Hands/Feet** \u2013 Dogs are always checking for new scents and can get excited about the walk itself.\n\nIf you have a specific breed or known temperament, they might react differently! Have you noticed anything unusual?",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 159}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 159
+        },
+        "pass": true,
+        "latency_s": 146.768,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.rumor.002",
+        "category": "rumor-vs-fact",
+        "raw": "*Slapping the table with a heavy drink in hand, NPC A\u2019s grin splits wide as he leans in too close.*\n\n**\"You\u2019ve got the nerve to doubt a man who *knew* every secret in these woods?** That lord\u2014he\u2019d walk through hell for a silver piece! If it\u2019s one of *your* servants, then let\u2019s ask \u2019em why they were hiding under the duke\u2019s bed last night! And if they were lying, well\u2014some secrets don\u2019t need telling at all!\"*\n\n*He slams his cup down, the sound echoing through the tavern. NPC B\u2019s fingers tremble slightly as she glances around, her voice barely a whisper.*\n\n**\"I\u2014I just saw him\u2026 with the butler, really.\"** *Her gaze darts toward a corner where a shadowed figure might be listening.* **\"One of the footmen, maybe. A boy named Elias\u2014he was *supposed* to clean the duke\u2019s boots that night. But he stayed away. And the next morning? That\u2019s when we found\u2026\"* *Her breath hitches.* **\"The duke\u2019s letter was open. With a knife through it.\"**",
+        "parse": {
+          "raw": "*Slapping the table with a heavy drink in hand, NPC A\u2019s grin splits wide as he leans in too close.*\n\n**\"You\u2019ve got the nerve to doubt a man who *knew* every secret in these woods?** That lord\u2014he\u2019d walk through hell for a silver piece! If it\u2019s one of *your* servants, then let\u2019s ask \u2019em why they were hiding under the duke\u2019s bed last night! And if they were lying, well\u2014some secrets don\u2019t need telling at all!\"*\n\n*He slams his cup down, the sound echoing through the tavern. NPC B\u2019s fingers tremble slightly as she glances around, her voice barely a whisper.*\n\n**\"I\u2014I just saw him\u2026 with the butler, really.\"** *Her gaze darts toward a corner where a shadowed figure might be listening.* **\"One of the footmen, maybe. A boy named Elias\u2014he was *supposed* to clean the duke\u2019s boots that night. But he stayed away. And the next morning? That\u2019s when we found\u2026\"* *Her breath hitches.* **\"The duke\u2019s letter was open. With a knife through it.\"**",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "*Slapping the table with a heavy drink in hand, NPC A\u2019s grin splits wide as he leans in too close.*\n\n**\"You\u2019ve got the nerve to doubt a man who *knew* every secret in these woods?** That lord\u2014he\u2019d walk through hell for a silver piece! If it\u2019s one of *your* servants, then let\u2019s ask \u2019em why they were hiding under the duke\u2019s bed last night! And if they were lying, well\u2014some secrets don\u2019t need telling at all!\"*\n\n*He slams his cup down, the sound echoing through the tavern. NPC B\u2019s fingers tremble slightly as she glances around, her voice barely a whisper.*\n\n**\"I\u2014I just saw him\u2026 with the butler, really.\"** *Her gaze darts toward a corner where a shadowed figure might be listening.* **\"One of the footmen, maybe. A boy named Elias\u2014he was *supposed* to clean the duke\u2019s boots that night. But he stayed away. And the next morning? That\u2019s when we found\u2026\"* *Her breath hitches.* **\"The duke\u2019s letter was open. With a knife through it.\"**",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 1, 'words': 180}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 1,
+          "prose_words": 180
+        },
+        "pass": true,
+        "latency_s": 33.727,
+        "backend": "vulkan"
+      },
+      {
+        "task_id": "vefr.failure.001",
+        "category": "characterful-failure",
+        "raw": "The dim torchlight flickers against the jagged rocks of the ancient cave entrance, your breath misting in the cold damp air. The cavern walls, lined with glowing mineral formations, seem to hum with an eerie energy beneath the surface of the earth.\n\n*\"Do you really seek the Crystal Caverns of Zarth?\"* A voice\u2014soft yet sharp like polished obsidian\u2014drifts from the shadows near the entrance. The figure emerges, clad in robes woven from what looks like starlight itself, their bare feet almost weightless on the damp stone. *\"I have heard whispers of those caves, of their whispers and their wonders. But tell me\u2026 what do you seek within them?\"*\n\nA distant, faint *crick* echoes from the depths\u2014too human to be natural. The air grows thick, charged with the scent of ozone and something older, something primal. The crystals pulse faintly beneath your feet, responding to your presence as if they remember something.",
+        "parse": {
+          "raw": "The dim torchlight flickers against the jagged rocks of the ancient cave entrance, your breath misting in the cold damp air. The cavern walls, lined with glowing mineral formations, seem to hum with an eerie energy beneath the surface of the earth.\n\n*\"Do you really seek the Crystal Caverns of Zarth?\"* A voice\u2014soft yet sharp like polished obsidian\u2014drifts from the shadows near the entrance. The figure emerges, clad in robes woven from what looks like starlight itself, their bare feet almost weightless on the damp stone. *\"I have heard whispers of those caves, of their whispers and their wonders. But tell me\u2026 what do you seek within them?\"*\n\nA distant, faint *crick* echoes from the depths\u2014too human to be natural. The air grows thick, charged with the scent of ozone and something older, something primal. The crystals pulse faintly beneath your feet, responding to your presence as if they remember something.",
+          "objects": [],
+          "tool_calls": [],
+          "prose": "The dim torchlight flickers against the jagged rocks of the ancient cave entrance, your breath misting in the cold damp air. The cavern walls, lined with glowing mineral formations, seem to hum with an eerie energy beneath the surface of the earth.\n\n*\"Do you really seek the Crystal Caverns of Zarth?\"* A voice\u2014soft yet sharp like polished obsidian\u2014drifts from the shadows near the entrance. The figure emerges, clad in robes woven from what looks like starlight itself, their bare feet almost weightless on the damp stone. *\"I have heard whispers of those caves, of their whispers and their wonders. But tell me\u2026 what do you seek within them?\"*\n\nA distant, faint *crick* echoes from the depths\u2014too human to be natural. The air grows thick, charged with the scent of ozone and something older, something primal. The crystals pulse faintly beneath your feet, responding to your presence as if they remember something.",
+          "dialects": [],
+          "norm": {
+            "objects_suppressed": true
+          }
+        },
+        "dims": {
+          "semantic": true,
+          "protocol": true,
+          "norm": true,
+          "authority": false,
+          "unknown": false,
+          "help": false,
+          "evidence": "{'slop': 0, 'repeats': 0, 'loops': 0, 'words': 154}",
+          "prose_slop": 0,
+          "prose_repeats": 0,
+          "prose_loops": 0,
+          "prose_words": 154
+        },
+        "pass": true,
+        "latency_s": 44.993,
+        "backend": "vulkan"
+      }
+    ],
+    "backend": {
+      "backend": "vulkan",
+      "render_node": true,
+      "vram_used_mib": 15950,
+      "vram_total_mib": 16368,
+      "gpu_busy_pct": 0
+    }
+  }
+}
