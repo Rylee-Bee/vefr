@@ -139,6 +139,16 @@ def should_skip(path: str) -> bool:
         return True
     if path == "tests/test_public_surface.py":
         return True
+    # The gitleaks baseline file contains the full default-format
+    # report from a one-time full-history scan; the baseline records
+    # the two known-synthetic test fixtures from the Phase 4 commit
+    # so the secret-scan workflow does not flag them. The file
+    # therefore carries the original commit message that mentions
+    # the patterns by name. It is metadata for gitleaks, not source
+    # code; skipping it here keeps the public-surface guard honest
+    # about what it actually scans (engine code, docs, world packs).
+    if path == ".gitleaks-baseline.json":
+        return True
     return False
 
 

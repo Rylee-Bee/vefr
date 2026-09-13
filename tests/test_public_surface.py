@@ -63,12 +63,14 @@ def test_guard_runs_clean_on_current_tree():
     ("private-email", r"rylee@hulgan.home"),
     ("private-key-header", r"-----BEGIN RSA PRIVATE KEY-----"),
     # Synthetic payloads below prove the public-surface guard catches
-    # each credential shape. They are intentionally-fake strings; the
-    # tokens are short enough not to be flagged by gitleaks itself.
-    ("github-token", r"gh" r"p_abc123def456ghi789jkl012mno"),
-    ("openai-key", r"sk-abcdefghijklmnopqrstuvwxyz012345"),
-    ("aws-access-key", r"AKIAIOSFODNN7EXAMPL"),
-    ("slack-token", r"xoxb-1234567890-abc"),
+    # each credential shape. They are short by design: long enough
+    # for the public-surface guard's regex (>=20 chars after the
+    # prefix) but short enough that gitleaks's entropy / minimum-
+    # length rules do not flag them as real credentials.
+    ("github-token", r"ghp_aaaaaaaaaaaaa1234567"),
+    ("openai-key", r"sk-aaaaaaaaaaaaaaaaaaaaaaa"),
+    ("aws-access-key", r"AKIATESTONLY00000000"),
+    ("slack-token", r"xoxb-aaaaaaaaaaaa"),
 ])
 def test_pattern_catches_documented_leak(category, pattern, tmp_path):
     """Every pattern must catch its representative leak on a tiny
