@@ -1,0 +1,43 @@
+name: Feature request
+description: You want VEFR to grow a new capability.
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are welcome. The clearest ones describe
+        the *user-visible* problem, not the implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      placeholder: |
+        What you tried to do with VEFR, and what stopped you.
+    validations:
+      required: true
+  - type: textarea
+    id: ideal
+    attributes:
+      label: The shape of the ideal
+      placeholder: |
+        Sketch the smallest change that would solve this for you.
+        Links, mockups, or example commands are all welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you considered instead
+      placeholder: |
+        Other approaches you weighed, and why they didn't fit.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      placeholder: |
+        Related issues, relevant engine surfaces
+        (`worlds/`, `docs/guides/brain-socket.md`, etc.).
+    validations:
+      required: false

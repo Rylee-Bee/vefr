@@ -1,0 +1,15 @@
+# gitleaks configuration for VEFR
+#
+# Two known-synthetic test fixtures in tests/test_public_surface.py
+# are allow-listed via the baseline file. The baseline records the
+# current commit + file + rule for those two lines; future scans
+# compare new findings against the baseline and flag only what is
+# actually new. The fixtures exist solely to prove the public-
+# surface guard's regex catches each credential shape.
+
+# Standard rule set is fine for VEFR. We extend:
+title = "vefr gitleaks config"
+
+[extend]
+# Use the default rules; no allowlists inline.
+useDefault = true

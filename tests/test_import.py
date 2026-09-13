@@ -17,18 +17,18 @@ from vefr import cli
 
 def test_import_url_shorthand():
     assert cli._import_url(
-        'http://192.168.2.216:3000', 'rylee/sample-pack'
-    ) == 'http://192.168.2.216:3000/rylee/sample-pack.git'
+        'http://198.51.100.10:3000', 'example/sample-pack'
+    ) == 'http://198.51.100.10:3000/example/sample-pack.git'
 
 
 def test_import_url_shorthand_trims_trailing_slash():
     assert cli._import_url(
-        'http://192.168.2.216:3000/', 'rylee/sample-pack'
-    ) == 'http://192.168.2.216:3000/rylee/sample-pack.git'
+        'http://198.51.100.10:3000/', 'example/sample-pack'
+    ) == 'http://198.51.100.10:3000/example/sample-pack.git'
 
 
 def test_import_url_full_https_passthrough():
-    url = 'https://gitea.hulganfamily.duckdns.org/rylee/sample-pack.git'
+    url = 'https://gitea.example.test/example/sample-pack.git'
     assert cli._import_url('http://wrong.base', url) == url
 
 
@@ -52,8 +52,8 @@ def test_import_target_local_returns_pack_root(tmp_path, monkeypatch):
 
 
 def test_import_target_ssh_returns_vefr_layout():
-    host, worlds_dir = cli._import_target(_args(target='bazzite'))
-    assert host == 'bazzite'
+    host, worlds_dir = cli._import_target(_args(target='ssh-host'))
+    assert host == 'ssh-host'
     assert worlds_dir == '~/vefr/worlds'
 
 
@@ -61,9 +61,9 @@ def test_import_target_ssh_returns_vefr_layout():
 
 class _Args:
     def __init__(self, **kw):
-        self.repo = 'rylee/sample-pack'
+        self.repo = 'example/sample-pack'
         self.name = None
-        self.base = 'http://192.168.2.216:3000'
+        self.base = 'http://198.51.100.10:3000'
         self.target = 'local'
         self.pull = False
         self.dry_run = False
@@ -96,7 +96,7 @@ def test_dry_run_returns_zero_without_subprocess(monkeypatch, capsys, tmp_path):
     assert rc == 0
     captured = capsys.readouterr().out
     assert 'dry-run: would' in captured
-    assert 'clone http://192.168.2.216:3000/rylee/sample-pack.git' in captured
+    assert 'clone http://198.51.100.10:3000/example/sample-pack.git' in captured
     assert calls == [], 'dry-run must not invoke git'
 
 
@@ -165,7 +165,7 @@ def test_ssh_target_uses_ssh_not_local_subprocess(monkeypatch, no_validate):
     monkeypatch.setattr(cli, 'sh', fake_sh)
     monkeypatch.setattr(cli.subprocess, 'run', fake_run)
 
-    rc = cli.cmd_import(_args(name='sample-world', target='bazzite', pull=True))
+    rc = cli.cmd_import(_args(name='sample-world', target='ssh-host', pull=True))
     assert rc == 0
     # First call should be ssh, never local git
     ssh_calls = [c for c in calls if c and c[0] == 'ssh']

@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in VEFR is wrong and you want it fixed.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. The more context you give, the
+        faster a maintainer can reproduce it.
+
+        **Do not paste real secrets, tokens, or your private
+        world content here.** Use the private channel in
+        `SECURITY.md` for those.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      placeholder: |
+        What you did, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: |
+        - OS / distro / kernel
+        - Python version (`uv python list`)
+        - VEFR commit SHA or release tag
+        - LLM backend (`VEFR_LLAMACPP_URL` etc., hostnames only —
+          no tokens)
+        - World pack name and version
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / trace / screenshot
+      description: |
+        Paste relevant lines, redact anything sensitive first.
+        If the issue is a leak of *your* infrastructure, file it
+        via the private channel in SECURITY.md instead.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      placeholder: |
+        Workarounds you've tried, related issues, screenshots
+        (drag and drop into the editor).
+    validations:
+      required: false

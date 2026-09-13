@@ -1,7 +1,7 @@
 """Spark - the resident intelligence.
 
 Spark is VEFR's small, always-available local brain. The benchmark
-(2026-09-06, bazzite, CPU-only llama.cpp b10818) settled the shape:
+(current scoring on a CPU-only llama.cpp build) settled the shape:
 
   spark-quality  Phi-4-mini-instruct Q4_K_M   100/100 VEFR suite,
                  ~1.9 GiB resident, ~21 tok/s, ~635 ms TTFT
@@ -53,19 +53,19 @@ class SparkMalformed(RuntimeError):
 
 # --- configuration -----------------------------------------------------
 
-# Spark's own endpoint. Unset -> the engine's LLAMACPP_URL, which on
-# bazzite is K2: a config that points Spark at the heavyweight is a
-# configuration error, not a feature, so keep the default honest.
-# Production wiring (2026-09-06) sets VEFR_SPARK_URL in the engine
-# quadlet to the transcode appliance: http://192.168.2.141:8082.
+# Spark's own endpoint. Unset -> the engine's LLAMACPP_URL, which on a
+# shared engine/LLM host is the heavyweight: a config that points Spark
+# at the heavyweight is a configuration error, not a feature, so keep
+# the default honest. Production wiring sets VEFR_SPARK_URL in the
+# engine's quadlet/unit to wherever the operator deployed Spark.
 SPARK_URL = os.environ.get("VEFR_SPARK_URL", "http://127.0.0.1:8082").rstrip("/")
 SPARK_PROFILE = os.environ.get("VEFR_SPARK_PROFILE", "quality")
 SPARK_TIMEOUT = float(os.environ.get("VEFR_SPARK_TIMEOUT", "180"))
 SPARK_MODELS = Path(os.environ.get("VEFR_SPARK_MODELS", "~/spark/models")).expanduser()
 
 # Pinned artifacts: exact repo, file, size, sha256 - no floating tags.
-# Hashes computed from the benchmark copies on bazzite (2026-09-06);
-# verify_model() re-checks size and hash on every acquire.
+# Hashes come from the operator's benchmark copies; verify_model()
+# re-checks size and hash on every acquire.
 PROFILES: dict[str, dict] = {
     "quality": {
         "repo": "unsloth/Phi-4-mini-instruct-GGUF",
