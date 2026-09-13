@@ -26,6 +26,28 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 GUARD = REPO_ROOT / "scripts" / "check_public_surface.py"
 
 
+def _init_repo(work: Path) -> None:
+    """git init + identity so commits work in any environment.
+
+    CI runners do not always inherit a global git identity; without
+    it, `git commit` returns exit 128. Tests that build temp repos
+    use this helper so they pass locally AND on CI.
+    """
+    subprocess.run(["git", "init", "--quiet"], cwd=work, check=True,
+                   capture_output=True)
+    subprocess.run(["git", "config", "user.email", "probe@local"],
+                   cwd=work, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.name", "probe"],
+                   cwd=work, check=True, capture_output=True)
+
+
+def _commit(work: Path, paths: list[str], message: str = "probe") -> None:
+    subprocess.run(["git", "add", *paths], cwd=work, check=True,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "--quiet", "-m", message],
+                   cwd=work, check=True, capture_output=True)
+
+
 def _load_guard():
     spec = importlib.util.spec_from_file_location("check_public_surface", GUARD)
     assert spec and spec.loader, "guard module spec"
@@ -81,17 +103,9 @@ def test_pattern_catches_documented_leak(category, pattern, tmp_path):
     # Build a one-file git repo containing the leak pattern.
     work = tmp_path / "guard_probe"
     work.mkdir()
-    subprocess.run(["git", "init", "--quiet"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "config", "user.email", "probe@local"], cwd=work,
-                   check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "probe"], cwd=work,
-                   check=True, capture_output=True)
+    _init_repo(work)
     (work / "leak.txt").write_text(pattern + "\n", encoding="utf-8")
-    subprocess.run(["git", "add", "leak.txt"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "commit", "--quiet", "-m", "probe"],
-                   cwd=work, check=True, capture_output=True)
+    _commit(work, ["leak.txt"])
     # Run the guard against the temp repo.
     hits = mod.scan_file("leak.txt", work)
     matched = [h for h in hits if h[0] == category]
@@ -106,17 +120,13 @@ def test_allowlist_lets_example_domains_through(tmp_path):
     mod = _load_guard()
     work = tmp_path / "guard_probe"
     work.mkdir()
-    subprocess.run(["git", "init", "--quiet"], cwd=work, check=True,
-                   capture_output=True)
+    _init_repo(work)
     (work / "clean.txt").write_text(
         "Try http://192.0.2.10:8081 or http://198.51.100.10:3000.\n"
         "Or https://gitea.example.test/owner/repo.\n",
         encoding="utf-8",
     )
-    subprocess.run(["git", "add", "clean.txt"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "commit", "--quiet", "-m", "probe"],
-                   cwd=work, check=True, capture_output=True)
+    _commit(work, ["clean.txt"])
     hits = mod.scan_file("clean.txt", work)
     assert hits == [], (
         f"guard flagged a clean example as a leak: {hits!r}"
@@ -127,14 +137,10 @@ def test_skip_path_prefixes_skip_data_artifacts_git(tmp_path):
     mod = _load_guard()
     work = tmp_path / "guard_probe"
     work.mkdir()
-    subprocess.run(["git", "init", "--quiet"], cwd=work, check=True,
-                   capture_output=True)
+    _init_repo(work)
     (work / "data").mkdir()
     (work / "data" / "leak.jsonl").write_text("192.168.2.42\n", encoding="utf-8")
-    subprocess.run(["git", "add", "data/leak.jsonl"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "commit", "--quiet", "-m", "probe"],
-                   cwd=work, check=True, capture_output=True)
+    _commit(work, ["data/leak.jsonl"])
     assert mod.should_skip("data/leak.jsonl") is True
 
 
@@ -149,15 +155,7 @@ def test_scan_empty_repo_returns_no_hits(tmp_path):
     mod = _load_guard()
     work = tmp_path / "empty"
     work.mkdir()
-    subprocess.run(["git", "init", "--quiet"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "config", "user.email", "e@l"], cwd=work,
-                   check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "e"], cwd=work,
-                   check=True, capture_output=True)
+    _init_repo(work)
     (work / "readme.md").write_text("hello\n", encoding="utf-8")
-    subprocess.run(["git", "add", "readme.md"], cwd=work, check=True,
-                   capture_output=True)
-    subprocess.run(["git", "commit", "--quiet", "-m", "init"], cwd=work,
-                   check=True, capture_output=True)
+    _commit(work, ["readme.md"], message="init")
     assert mod.scan_file("readme.md", work) == []
