@@ -34,13 +34,30 @@ jobs:
       - name: Ruff
         run: uv run --group test ruff check src tests scripts
 
-      - name: Pytest
-        run: uv run --group test pytest -q
-        # The Storyteller WIP lane carries known-in-flight failures
-        # in tests/test_npc_action.py; do not let them fail CI for
-        # unrelated PRs. The guard in tests/test_npc_action.py is
-        # gated separately when the WIP lands.
+      - name: Pytest (public - blocks CI)
+        # The Storyteller WIP lane (homelab issue rylee/vefr#50)
+        # carries known-in-flight failures in tests/test_npc_action.py
+        # and tests/test_storyteller_benchmark.py. Those modules are
+        # in the AGENTS.md "Active checkout and Storyteller WIP"
+        # protected list and stay off the public-release branch until
+        # the story-team design lands. The CI pytest run below is
+        # the *public* suite and is blocking - any genuine regression
+        # fails the build. When Storyteller lands, remove both
+        # --ignore lines from this command in the same PR that
+        # introduces the Storyteller test files.
+        run: |
+          uv run --group test pytest -q \
+            --ignore=tests/test_npc_action.py \
+            --ignore=tests/test_storyteller_benchmark.py
+
+      - name: Pytest (informational - WIP-known-failures)
+        # Full pytest run as informational only. Reports the current
+        # status of the Storyteller WIP test set without blocking
+        # CI. When the WIP team flips these to green, drop this
+        # informational step and the --ignore flags above.
+        if: always()
         continue-on-error: true
+        run: uv run --group test pytest -q tests/test_npc_action.py tests/test_storyteller_benchmark.py
 
       - name: Validate sample-world
         run: uv run --group test norns validate --pack worlds/sample-world
