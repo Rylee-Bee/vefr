@@ -1,0 +1,84 @@
+{
+  "batch_id": 3,
+  "total_batches": 3,
+  "tasks_in_batch": 7,
+  "instructions": "For each task below, you will see Response A and Response B (model identity hidden). Rate each on the listed dimensions (1-5), then indicate your preference: A / B / TIE.\n\n1 = Poor, 2 = Below average, 3 = Adequate, 4 = Good, 5 = Excellent\n\nDo NOT try to guess which model produced which response.",
+  "items": [
+    {
+      "task_id": "vefr.conversation.040",
+      "category": "conversational-naturalness",
+      "difficulty": "medium",
+      "dimensions": [
+        "Natural conversation",
+        "Voice consistency"
+      ],
+      "setup_preview": "Coastal village fish market. Fishmonger Rosa (from character.015) is selling to a regular customer, Mr. Tanaka. They've done this dance for years.",
+      "input_preview": "Mr. Tanaka points at a fish. 'How's this one?' Rosa tilts her head. 'Fresh this morning. Caught by Miguel.'"
+    },
+    {
+      "task_id": "vefr.reactivity.003",
+      "category": "world-reactivity",
+      "difficulty": "hard",
+      "dimensions": [
+        "Canon fidelity"
+      ],
+      "setup_preview": "The player has been gone from Ashenmoor for 10 in-world days. During that time, per the world engine, a plague outbreak occurred. The storyteller must...",
+      "input_preview": "ScenePacket: location=Ashenmoor village entrance, time=evening. Player returning after 10 days absence. World engine note: plague_outbreak=true, death..."
+    },
+    {
+      "task_id": "vefr.conversation.048",
+      "category": "conversational-naturalness",
+      "difficulty": "medium",
+      "dimensions": [
+        "Natural conversation",
+        "Voice consistency"
+      ],
+      "setup_preview": "Coastal village fish market. Rosa (from character.015) is wrapping fish for a customer. A seagull lands nearby and stares at her.",
+      "input_preview": "Rosa looks at the seagull. 'Don't even think about it.' The seagull doesn't blink."
+    },
+    {
+      "task_id": "vefr.emotion.021",
+      "category": "emotional-continuity",
+      "difficulty": "medium",
+      "dimensions": [
+        "Emotional truth",
+        "Natural conversation"
+      ],
+      "setup_preview": "Modern urban apartment. It's been three weeks since Mark's father died. Mark is making coffee on a Sunday morning.",
+      "input_preview": "Mark reaches for two mugs out of habit, then stops."
+    },
+    {
+      "task_id": "vefr.character.001",
+      "category": "character-perspective",
+      "difficulty": "easy",
+      "dimensions": [
+        "Character distinctness",
+        "Emotional truth"
+      ],
+      "setup_preview": "Urban taqueria at closing time. Maria is wiping down tables. A customer left a wallet behind.",
+      "input_preview": "Maria sees the wallet on table 3. She knows the regular who sits there \u2014 Jorge, who always comes on Tuesdays."
+    },
+    {
+      "task_id": "vefr.character.010",
+      "category": "character-perspective",
+      "difficulty": "hard",
+      "dimensions": [
+        "Character distinctness",
+        "Emotional truth"
+      ],
+      "setup_preview": "Coastal village lighthouse. Keeper Iris is doing her evening check. She notices the supply boat didn't leave its usual signal light on at the dock.",
+      "input_preview": "Iris looks through her binoculars at the dark dock. The supply boat is there but quiet."
+    },
+    {
+      "task_id": "vefr.voice.006",
+      "category": "voice-consistency",
+      "difficulty": "medium",
+      "dimensions": [
+        "Voice consistency",
+        "Character distinctness"
+      ],
+      "setup_preview": "Historical market world. Speaker is Guildmaster Elara \u2014 formal, archaic diction, uses 'thee' and 'thou', addresses others by title.",
+      "input_preview": "ScenePacket: WHO YOU ARE: Guildmaster Elara of the Cloth Merchants' Guild. WHAT YOU KNOW: The tavern's ledger shows three guild members bought cloth a..."
+    }
+  ]
+}
