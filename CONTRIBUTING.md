@@ -7,7 +7,7 @@ PR.
 ## What the project is
 
 - The **engine** ("the bones"). FastAPI + any OpenAI-compatible
-  LLM. MIT-licensed, shareable. This is the only thing in this
+  LLM. MPL-2.0-licensed, shareable. This is the only thing in this
   repository.
 - **World packs** ("the flesh"). Data. Lives in
   `worlds/<name>/`. The shipped packs are `sample-world` (Emberfield,
@@ -146,4 +146,7 @@ This project follows the Contributor Covenant. See
 ## License
 
 By contributing, you agree that your contributions are licensed
-under the same MIT terms as the project. See [`LICENSE`](LICENSE).
+under the same MPL-2.0 terms as the project for source/tooling
+(see [`LICENSE`](LICENSE)). Contributions to world packs follow
+that pack's license (CC0 1.0 for `sample-world`, CC BY-SA 4.0 for
+the lore mood-boards). See each pack's `LICENSE` or `LICENSE.md`.

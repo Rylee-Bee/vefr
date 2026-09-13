@@ -7,6 +7,70 @@
 
 ## Landed
 
+- [x] **Public-release hardening pass** (2026-09-13,
+      public-release epoch): tree sanitized of environment-specific
+      references; `docs/guides/archive/` handoffs and host-specific
+      `.project/` evidence deleted; `src/vefr/cli.py`'s last private
+      defaults (`VEFR_DEFAULT_DEPLOY_HOST`, `VEFR_DEFAULT_BACKUP_LOCATION`)
+      set to `''` with the deploy wrapper's silent-default guard
+      rewritten to match; `web/packaged.html` real IP generalized;
+      `--init` template host generalized to `deploy-host`. Storyteller
+      WIP preserved byte-for-byte. New `scripts/check_public_surface.py`
+      + `tests/test_public_surface.py` (17 tests) tripwire on
+      RFC1918, homelab hostnames, private Gitea domains, the operator's
+      SSH user, private paths, and obvious credential shapes. New
+      GitHub Actions: `ci.yml` (ruff + blocking pytest with
+      Storyteller WIP `--ignore`'d + informational WIP step +
+      sample-world validate + public-surface guard), `secret-scan.yml`
+      (gitleaks working-tree scan with `[allowlist]` for the test
+      fixtures), `security.yml` (manual re-run). New `SECURITY.md`,
+      `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/ISSUE_TEMPLATE/`
+      (`bug_report.yml`, `feature_request.yml`), `.github/pull_request_template.md`.
+      Branch protection on `main`: require PR, require `ci` +
+      `secret-scan`, block force-push, block deletion, conversation
+      resolution. Secret scanning + push protection + Dependabot
+      alerts + Dependabot security updates enabled on the public
+      repo. CodeQL default-setup enabled across actions / js / py.
+      PR #2 merged at `eba9980`. Repo flipped to public. Final gates:
+      `uv run --group test ruff check src tests scripts` all checks
+      passed; `python3 scripts/check_public_surface.py` clean (1345
+      tracked files scanned); `uv run --group test pytest
+      tests/test_public_surface.py -q` 17 passed; `uv run --group test
+      norns validate --pack worlds/sample-world` ok; `uv run
+      --group test pytest -q --ignore=tests/test_npc_action.py
+      --ignore=tests/test_storyteller_benchmark.py` 315 passed, 0
+      failed; gitleaks 230 commits scanned, no leaks found.
+
+- [x] **License + project identity + Actions hardening** (2026-09-13,
+      same public-release epoch): engine source/tooling relicensed
+      from MIT to MPL-2.0 (file-level copyleft preserves improvements
+      without forcing downstream applications to be MPL); worlds/
+      sample-world/ (Emberfield) dedicated to the public domain under
+      CC0 1.0; worlds/lore/<flavor>/ unchanged at CC BY-SA 4.0; web
+      fonts retain SIL OFL 1.1 with attribution in
+      `web/fonts/README.md`. New `TRADEMARKS.md` (descriptive, not a
+      legal grant — "vefr" is not a registered trademark; forks
+      welcome under the license, please use a distinct name for
+      substantially modified versions); new `THIRD_PARTY_NOTICES.md`
+      (FastAPI/Uvicorn/httpx BSD-3, Pydantic MIT, fonts SIL OFL 1.1).
+      Actions hardening: third-party actions pinned to commit SHAs
+      (`actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683`
+      = v4.2.2; `astral-sh/setup-uv@0c5e2b8115b80b4c7c5ddf6ffdd634974642d182`
+      = v5.4.1) with version comment for human-readable reference.
+      New `.github/CODEOWNERS` expressing "sensitive paths require
+      maintainer review" (informational; branch protection enforces
+      the rule). Verified gates: `uv run --group test ruff check src
+      tests scripts` all checks passed; `python3
+      scripts/check_public_surface.py` clean (1345 tracked files
+      scanned); `uv run --group test pytest
+      tests/test_public_surface.py -q` 17 passed; `uv run --group
+      test pytest -q --ignore=tests/test_npc_action.py
+      --ignore=tests/test_storyteller_benchmark.py` 315 passed, 0
+      failed. The historical "license split: engine MIT" entry
+      above remains in the ledger as the original decision;
+      relicense landed via `LICENSE` file change, not by rewriting
+      history.
+
 - [x] **Truth-repair: canonical checkout documented, stale handoffs
       archived, CI added** (2026-09-07, truth-repair epoch): two
       checkouts on the dev box were documented in AGENTS.md with a

@@ -1,0 +1,30 @@
+# Dependabot configuration for VEFR
+#
+# VEFR's runtime deps are short: fastapi, uvicorn, httpx, pydantic
+# (see pyproject.toml). GitHub Actions are pinned by SHA in
+# .github/workflows/*.yml. Dependabot checks both.
+
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      runtime:
+        patterns:
+          - "fastapi"
+          - "uvicorn"
+          - "httpx"
+          - "pydantic"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns:
+          - "*"
