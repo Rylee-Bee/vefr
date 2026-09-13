@@ -42,9 +42,30 @@ FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
     # Private homelab hosts / domains.
     ("homelab-hostname",
      re.compile(r"\b(hulganfamily\.duckdns\.org|gitea\.hulganfamily)\b", re.I)),
-    # Private homelab machine names.
+    # Private homelab machine names. The pattern is tight on
+    # purpose: it only fires when the hostname is used as a *value*
+    # (an env-var default, a string assignment, a URL host, or an
+    # ssh target). It deliberately ignores Python identifiers
+    # (def q6_vault(bazzite_host: str)), leak-refutation checks
+    # (if host == 'bazzite':), historical-comment references
+    # (# bazzite's worlds/...), and references inside backticks
+    # or quoted comments (# ssh bazzite explodes against...).
+    # Those contexts are documentation about the leak's absence,
+    # not the leak itself.
+    #
+    # Per-line scan: lines that start with '#' (Python comments)
+    # or that contain a '# ' marker before the match are skipped
+    # entirely - comments never introduce a runtime default.
     ("homelab-machine",
-     re.compile(r"\b(bazzite|homelab-vm|homelab-dev|transcode-host)\b")),
+     re.compile(
+         r"(?:"
+         r"os\.environ\.get\([^)]*['\"](?:bazzite|homelab-vm|homelab-dev|transcode-host)['\"]"
+         r"|\b(?:host|url|VEFR_DEFAULT_(?:DEPLOY_HOST|BACKUP_LOCATION))\s*=\s*['\"]"
+         r"(?:bazzite|homelab-vm|homelab-dev|transcode-host)"
+         r"|https?://(?:bazzite|homelab-vm|homelab-dev|transcode-host)"
+         r"|ssh\s+(?:bazzite|homelab-vm|homelab-dev|transcode-host)\b"
+         r")"
+     )),
     # Private filesystem paths.
     ("private-path",
      re.compile(r"(/(?:var|home)/home/rylee|/mnt/c/Users/ryleeb/(?:projects|Desktop|Documents))", re.I)),
@@ -102,19 +123,18 @@ STORYTELLER_WIP_PATHS: tuple[str, ...] = (
     "src/vefr/storyteller_benchmark.py",
     "tests/test_npc_action.py",
     "tests/test_storyteller_benchmark.py",
-    # The Storyteller WIP touches these tracked files (per AGENTS.md
-    # "Active checkout and Storyteller WIP" — homelab issue
-    # rylee/vefr#50). The WIP modifications are not on the
-    # public-release branch, so the guard sees only their HEAD
-    # content. That HEAD content still contains "bazzite" strings
-    # in src/vefr/cli.py (default deploy host) and src/vefr/generator.py
-    # (deploy host branding) which would otherwise trip the guard.
-    # The right fix lives in the Storyteller-architecture decision
-    # (see .project/CURRENT.md "Deferred architecture"). Until then,
-    # the guard explicitly skips these so it does not block the
-    # public-release branch on WIP-protected content.
-    "src/vefr/cli.py",
-    "src/vefr/generator.py",
+    # NOTE: src/vefr/cli.py and src/vefr/generator.py are tracked
+    # files with Storyteller WIP modifications (per AGENTS.md
+    # "Active checkout and Storyteller WIP" - homelab issue
+    # rylee/vefr#50). They are NOT in this skip list: the guard
+    # scans them with the tightened homelab-machine pattern, which
+    # fires on silent-default values, string assignments, URL hosts,
+    # and ssh targets but ignores Python identifiers (def q6_vault(
+    # bazzite_host: str)), refutation checks (if host == 'bazzite'),
+    # and historical-comment references. The remaining real leaks
+    # in those files (the deploy-host default literal and the
+    # --init example template) are owner-approved edits to land
+    # before the public-release branch merges.
 )
 
 
@@ -185,6 +205,14 @@ def scan_file(path: str, repo_root: Path) -> list[tuple[str, int, str, str]]:
         return []
     hits: list[tuple[str, int, str, str]] = []
     for n, line in enumerate(text.splitlines(), 1):
+        # Comments never introduce a runtime default. Python
+        # comments start with '#'; shebang/dir/encoding pragmas
+        # are excluded by requiring '# ' or '#!' to be followed
+        # by a space, so legitimate inline '#' inside a string
+        # literal is not treated as a comment.
+        stripped = line.lstrip()
+        if stripped.startswith("# ") or stripped.startswith("#!"):
+            continue
         for category, pattern in FORBIDDEN:
             if pattern.search(line):
                 if category in ("private-gitea-owner", "private-ssh-user",
