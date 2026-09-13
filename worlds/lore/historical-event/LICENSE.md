@@ -72,7 +72,7 @@ If you publish a world you built using this lore pack, please
 say something like:
 
 > Built with the **historical-event** lore pack from the
-> [vefr engine](https://gitea.example.com/rylee/vefr), licensed
+> [vefr engine](https://github.com/Rylee-Bee/vefr), licensed
 > CC BY-SA 4.0.
 
 That sentence - or one like it - is the license's gift in return.
