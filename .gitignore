@@ -26,8 +26,8 @@ __pycache__/
 /worlds/*/handbok.md
 
 # runtime state - per-session journals/vaults and fork metadata.
-# never commit: these are session data, not engine code, and the
-# live bazzite stack writes them under VEFR_HOME/data.
+# never commit: these are session data, not engine code. The runtime
+# writes them under VEFR_HOME/data on the deploy host.
 /data/sessions/
 /data/vault-*.json
 /data/journal-*.json
