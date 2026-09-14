@@ -41,6 +41,11 @@ __pycache__/
 # session data under VEFR_HOME/data, never part of the engine.
 /data/lore/
 
+# runtime interface translator log - evidence-first capture from the
+# fleet's tiny intent brain. Private runtime state, never tracked.
+/data/interface.jsonl
+/data/interface.jsonl.old
+
 # user-installed Storyteller Packs. Tracked packs ship in
 # storyteller_packs/ at the repo root; everything under
 # data/storytellers/ is a per-machine install (mirrors of upstream
