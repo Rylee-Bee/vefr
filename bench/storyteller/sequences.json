@@ -1,0 +1,224 @@
+{
+  "sequences": [
+    {
+      "id": "s1_injured_leg_persists",
+      "note": "The strike grazes the guard's leg on turn 2; the injury must persist in narration from turn 3 onward. The Storyteller is stateless; each turn re-states facts via the envelope. Non-contradiction is gated; re-naming is a craft metric.",
+      "carry": [
+        {"name": "injury", "family": ["leg", "wound", "graze", "injured", "bleed", "hurt"], "from_turn": 3}
+      ],
+      "turns": [
+        {
+          "envelope": {
+            "player_intent": "I swing at the guard's left leg",
+            "action": "strike",
+            "target": "the guard's left leg",
+            "action_result": {"success": false, "outcome": "the blow misses as the guard shifts his weight"},
+            "scene_location": "the gatehouse yard",
+            "visible_entities": ["the guard", "the gatehouse doors"]
+          },
+          "must": ["miss", "bites air", "passes empty", "empty air", "wide", "shift", "beyond", "gone", "grins", "turning"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I try again, low this time",
+            "action": "strike",
+            "target": "the guard's left leg",
+            "action_result": {"success": true, "outcome": "the strike grazes the guard's left leg, a painful shallow wound"},
+            "scene_location": "the gatehouse yard",
+            "visible_entities": ["the guard"]
+          },
+          "must": ["leg", "graze", "wound", "cut", "shallow", "knee"],
+          "must_not": ["fist"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I back away to keep distance",
+            "action": "move",
+            "action_result": {"success": true, "outcome": "you step back; the guard favors his wounded left leg and does not follow"},
+            "scene_location": "the gatehouse yard",
+            "visible_entities": ["the guard"],
+            "relevant_lore": [{"text": "the guard favors his injured left leg", "source": "observed", "score": 0.8}]
+          },
+          "must": ["leg", "favor", "back", "retreat", "step"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I hold my ground and watch",
+            "action": "observe",
+            "action_result": {"success": true, "outcome": "the guard stays on his feet, left leg still wounded, watching you"},
+            "scene_location": "the gatehouse yard",
+            "visible_entities": ["the guard"]
+          },
+          "must": ["leg", "wound", "guard", "watch"],
+          "must_not": ["unharmed", "no scratch", "as good as new"]
+        }
+      ]
+    },
+    {
+      "id": "s2_lock_stays_shut",
+      "note": "A failed unlock must not later become a success, and the lock must not pop open on its own.",
+      "carry": [
+        {"name": "locked", "family": ["lock", "locked", "shut", "stuck", "won't", "closed"], "from_turn": 2}
+      ],
+      "turns": [
+        {
+          "envelope": {
+            "player_intent": "I try the iron key in the lock",
+            "action": "use",
+            "action_result": {"success": false, "outcome": "the key turns but the lock stays shut"},
+            "scene_location": "the tower room",
+            "visible_entities": ["the chest", "the lock", "the iron key"]
+          },
+          "must": ["key", "lock", "shut"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I try a different angle",
+            "action": "use",
+            "action_result": {"success": false, "outcome": "the lock still will not turn open"},
+            "scene_location": "the tower room",
+            "visible_entities": ["the chest", "the lock", "the iron key"]
+          },
+          "must": ["lock", "will not", "refuse", "stuck", "still"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I kick the chest in frustration",
+            "action": "strike",
+            "target": "the chest",
+            "action_result": {"success": false, "outcome": "the chest rocks on its feet but the lock holds"},
+            "scene_location": "the tower room",
+            "visible_entities": ["the chest", "the locked lid"]
+          },
+          "must": ["lock", "holds", "shut", "closed"]
+        }
+      ]
+    },
+    {
+      "id": "s3_librarian_facts_persist",
+      "note": "Two facts carry: the page was torn before the flood; the culprit is unknown. The Storyteller must not invent the culprit's identity.",
+      "carry": [
+        {"name": "torn_flood", "family": ["torn", "ripped", "missing", "empty", "gone", "tore", "flood", "water"], "from_turn": 1},
+        {"name": "culprit_unknown", "family": ["unknown", "nobody", "doesn't know", "no one", "who"], "from_turn": 2}
+      ],
+      "turns": [
+        {
+          "envelope": {
+            "player_intent": "I ask what is missing from the archive book",
+            "action": "speak",
+            "target": "the librarian",
+            "action_result": {"success": true, "outcome": "the page was torn out before the flood; who did it is unknown"},
+            "scene_location": "the archive room",
+            "visible_entities": ["the librarian", "bookshelves"]
+          },
+          "must": ["page", "flood", "torn", "missing"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I ask who could have torn it",
+            "action": "speak",
+            "target": "the librarian",
+            "action_result": {"success": false, "outcome": "the librarian has no idea who tore the page out"},
+            "scene_location": "the archive room",
+            "visible_entities": ["the librarian"]
+          },
+          "must": ["no", "unknown", "cannot", "nobody", "don't", "doesn't", "who", "idea"],
+          "must_not": ["the baker", "the keeper", "the monk", "the thief took"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I ask about the flood",
+            "action": "speak",
+            "target": "the librarian",
+            "action_result": {"success": true, "outcome": "she confirms again the page was torn before the flood"},
+            "scene_location": "the archive room",
+            "visible_entities": ["the librarian"]
+          },
+          "must": ["flood", "page", "torn", "ripped", "tore", "water", "before"]
+        }
+      ]
+    },
+    {
+      "id": "s4_lantern_position_persists",
+      "note": "A placed object stays on the left peg; it must not silently migrate to the right peg.",
+      "carry": [
+        {"name": "lantern_left", "family": ["left", "peg", "lantern", "stays"], "from_turn": 2}
+      ],
+      "turns": [
+        {
+          "envelope": {
+            "player_intent": "I hang the lantern on the left-hand peg",
+            "action": "move",
+            "action_result": {"success": true, "outcome": "the lantern hangs on the left-hand peg"},
+            "scene_location": "the stable",
+            "visible_entities": ["the left-hand peg", "the right-hand peg", "the lantern"]
+          },
+          "must": ["left", "peg", "lantern"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I step back to make room",
+            "action": "move",
+            "action_result": {"success": true, "outcome": "you step back; the lantern still hangs on the left-hand peg"},
+            "scene_location": "the stable",
+            "visible_entities": ["the lantern", "the right-hand peg"]
+          },
+          "must": ["lantern", "stays", "hangs", "left"],
+          "must_not": ["on the right", "hangs on the right", "moved to the right", "right peg now", "right-hand peg. The lantern"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I take my horse out",
+            "action": "move",
+            "action_result": {"success": true, "outcome": "you lead the horse out past the stable door; the lantern hangs where you left it"},
+            "scene_location": "the stable yard",
+            "visible_entities": ["the horse", "the stable door"]
+          },
+          "must": ["lantern", "left", "hangs", "stays"],
+          "must_not": ["lantern hangs on the right", "moved to the right", "right-hand peg. The lantern"]
+        }
+      ]
+    },
+    {
+      "id": "s5_key_no_resurrection",
+      "note": "A found-and-used key must not reappear as a new find; a forced-open chest stays open.",
+      "carry": [
+        {"name": "chest_open", "family": ["open", "empty", "chest"], "from_turn": 2}
+      ],
+      "turns": [
+        {
+          "envelope": {
+            "player_intent": "I search the drawer",
+            "action": "observe",
+            "action_result": {"success": true, "outcome": "you find a small iron key in the drawer"},
+            "scene_location": "the study",
+            "visible_entities": ["a desk", "a drawer"]
+          },
+          "must": ["key"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I use the iron key on the chest",
+            "action": "use",
+            "target": "the chest",
+            "action_result": {"success": true, "outcome": "the key turns, the chest opens empty"},
+            "scene_location": "the study",
+            "visible_entities": ["the chest", "the key in your hand"]
+          },
+          "must": ["chest", "open", "empty", "key"]
+        },
+        {
+          "envelope": {
+            "player_intent": "I check the drawer once more for anything missed",
+            "action": "observe",
+            "action_result": {"success": true, "outcome": "the drawer is empty now, the key already used"},
+            "scene_location": "the study",
+            "visible_entities": ["the desk", "the open drawer"]
+          },
+          "must": ["empty", "drawer"],
+          "must_not": ["another key", "spare key", "second key"]
+        }
+      ]
+    }
+  ]
+}
