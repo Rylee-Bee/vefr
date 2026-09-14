@@ -46,6 +46,11 @@ __pycache__/
 /data/interface.jsonl
 /data/interface.jsonl.old
 
+# runtime storyteller log - bounded narrative prose + evidence metadata.
+# Story text is private story content; never tracked.
+/data/storyteller.jsonl
+/data/storyteller.jsonl.old
+
 # user-installed Storyteller Packs. Tracked packs ship in
 # storyteller_packs/ at the repo root; everything under
 # data/storytellers/ is a per-machine install (mirrors of upstream
