@@ -139,10 +139,13 @@ def test_timeout_fails_honestly(env, monkeypatch):
 def test_template_loads_as_data(env):
     tpl = load_template()
     assert tpl["schema_version"] == "interface-intent-v1"
-    assert len(tpl["examples"]) == 5
+    assert 5 <= len(tpl["examples"]) <= 12
+    inputs = [e["input"] for e in tpl["examples"]]
+    assert any("go north" in s for s in inputs)  # move exemplar present
+    assert any("attack" in s for s in inputs)    # attack exemplar present
     assert {a["name"] for a in tpl["actions"]} == set(ACTIONS)
     from vefr.interface import build_fewshot
-    assert len(build_fewshot(tpl)) == 10  # 5 user/assistant pairs
+    assert len(build_fewshot(tpl)) == 2 * len(tpl["examples"])
 
 
 def test_template_missing_fails_loudly(env, monkeypatch):
@@ -221,6 +224,43 @@ def test_loopback_default_not_localhost(monkeypatch):
     assert interface.interface_url() == "http://127.0.0.1:8085"
     assert "localhost" not in interface.interface_url()
     assert "::1" not in interface.interface_url()
+
+
+def test_routed_intent_drops_commentary_clarification(env, monkeypatch):
+    """A routed action may carry stray commentary in the clarification
+    slot (the 1.5B model does this eagerly). The deterministic layer
+    drops it - the flag is the only clarification authority, and prose
+    never rides a routed action."""
+    monkeypatch.setattr(interface, "_completion", _fake(
+        '{"action": "observe", "confidence": 0.9, "needs_clarification": false, '
+        '"clarification": "I can only observe the world as it is. What would '
+        'you like to look at?"}'))
+    intent, meta = translate("look around")
+    assert intent.action == "observe"
+    assert intent.needs_clarification is False
+    assert intent.clarification is None
+    assert meta["validation"] == "ok"
+
+
+def test_empty_optional_strings_normalized_to_none(env, monkeypatch):
+    """llama.cpp strict grammar can fill optional string slots with "" -
+    the deterministic cleanup must read that as absent."""
+    monkeypatch.setattr(interface, "_completion", _fake(
+        '{"action": "speak", "target": "the innkeeper", "topic": "", '
+        '"direction": "", "confidence": 0.9, "needs_clarification": false, '
+        '"clarification": ""}'))
+    intent, _ = translate("ask the innkeeper")
+    assert intent.target == "the innkeeper"
+    assert intent.topic is None
+    assert intent.direction is None
+    assert intent.clarification is None
+    with pytest.raises(InterfaceMalformed):
+        # Clarification with nothing to say is still rejected: a model
+        # that needs clarification must actually say what it needs.
+        monkeypatch.setattr(interface, "_completion", _fake(
+            '{"action": "observe", "confidence": 0.5, '
+            '"needs_clarification": true, "clarification": ""}'))
+        translate("ambiguous")
 
 
 def test_cli_clarification_demo(env, monkeypatch, capsys):
