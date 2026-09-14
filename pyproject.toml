@@ -34,6 +34,7 @@ ratatoskr = "vefr.cli:ratatoskr_main"
 norns = "vefr.cli:norns_main"
 vefr-lore = "vefr.lore_shell:main"
 vefr-interface = "vefr.interface:main"
+vefr-story = "vefr.narrate:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vefr"]
