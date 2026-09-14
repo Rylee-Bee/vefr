@@ -31,9 +31,16 @@ Config (plain process env, repo convention; loopback ONLY):
     VEFR_INTERFACE_URL       llama.cpp /v1/chat/completions endpoint
                              (default http://127.0.0.1:8085)
     VEFR_INTERFACE_MODEL     alias/model sent to the endpoint
-                             (default qwen2.5-1.5b-instruct-q4)
+                             (default qwen3.5-9b-mtp)
     VEFR_INTERFACE_TIMEOUT   seconds for one completion (default 60)
     VEFR_INTERFACE_TEMPLATE  override the templates/interface/intent.json
+
+Selected model: qwen3.5-9b-mtp won the bench/interface benchmark. The
+tiny candidates (Qwen2.5-1.5B Q4, Qwen3.5-0.8B Q4) reach 100% schema
+validity but fail the boundary - they route unsupported, injected, and
+fabricated instructions as actions (48-55% safe, ~12 unsafe false
+positives each). The 9B shard holds 100% / 100% / zero across the same
+29 deterministic cases.
 
 Port note: 8085 is the translator's unambiguous default - 8081 is the
 engine's llama.cpp default, 8082 is Spark's default AND the live
@@ -77,12 +84,14 @@ REQUIRED_BY_ACTION = {
     "observe": (),
 }
 
-# Grammar-compatible strict schema: `action` is always a real verb
-# (no null union - llama.cpp strict json_schema handles plain enums
-# far more reliably). A clarification intent is expressed as
-# needs_clarification=true + clarification text; the deterministic
-# cleanup then nulls routed fields to keep the canonical envelope
-# shape. Optional string fields are absent-when-unset, never null.
+# Grammar-compatible strict schema. Every field is REQUIRED so the
+# llmama.cpp strict grammar forces the model to emit real content for
+# every slot (with optional slots the tiny models shortcut them to
+# ""). `action` is always a real verb (no null union - plain enums
+# work far more reliably); a clarification intent is expressed as
+# needs_clarification=true + clarification text, and the deterministic
+# cleanup then nulls every routed field so the canonical envelope is
+# reached before validation. Empty fields are normalized to None.
 _ENVELOPE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -94,7 +103,10 @@ _ENVELOPE_SCHEMA = {
         "needs_clarification": {"type": "boolean"},
         "clarification": {"type": "string"},
     },
-    "required": ["action", "confidence", "needs_clarification"],
+    "required": [
+        "action", "target", "topic", "direction",
+        "confidence", "needs_clarification", "clarification",
+    ],
     "additionalProperties": False,
 }
 
@@ -161,7 +173,7 @@ def interface_url() -> str:
 
 
 def interface_model() -> str:
-    return os.environ.get("VEFR_INTERFACE_MODEL", "qwen2.5-1.5b-instruct-q4")
+    return os.environ.get("VEFR_INTERFACE_MODEL", "qwen3.5-9b-mtp")
 
 
 def interface_timeout() -> float:
@@ -280,6 +292,10 @@ def _completion(messages: list[dict], *, url: str | None = None,
         "stream": False,
         "temperature": gen.get("temperature", temperature),
         "max_tokens": gen.get("max_tokens", max_tokens),
+        # Thinking models (Qwen3.x) must never reason here: the budget is
+        # tiny and their reasoning would consume it all. Qwen2.x ignores
+        # this key, so it is safe to send on every schema call.
+        "chat_template_kwargs": {"enable_thinking": False},
     }
     try:
         r = httpx.post(f"{base}/v1/chat/completions", json=body,
@@ -294,13 +310,25 @@ def _completion(messages: list[dict], *, url: str | None = None,
 
 
 def _cleanup_clarification(raw: dict) -> dict:
-    """Deterministic pass: when the model says it cannot map an intent,
-    the result must leave every routed field null. Never force an action."""
+    """Deterministic pass over the model's strict-schema object. Optional
+    string fields may arrive as "" (llama.cpp strict grammar fills the
+    whitespace slots the schema left open) - normalize to None so the
+    canonical envelope stays honest: absent means absent. When the model
+    says it cannot map an intent, every routed field must be null -
+    never force an action."""
+    for key in ("target", "topic", "direction", "clarification"):
+        if isinstance(raw.get(key), str):
+            raw[key] = raw[key].strip() or None
     if raw.get("needs_clarification"):
         raw["action"] = None
         raw["target"] = None
         raw["topic"] = None
         raw["direction"] = None
+    else:
+        # A routed action's clarification slot must stay empty: any text
+        # the model left there is commentary, not a state change. The
+        # needs_clarification flag is the ONLY clarification authority.
+        raw["clarification"] = None
     return raw
 
 
