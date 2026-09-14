@@ -37,6 +37,10 @@ __pycache__/
 /data/weave.jsonl.old
 /data/handoffs/
 
+# runtime lore - the Lorekeeper store (facts + derived vector index).
+# session data under VEFR_HOME/data, never part of the engine.
+/data/lore/
+
 # user-installed Storyteller Packs. Tracked packs ship in
 # storyteller_packs/ at the repo root; everything under
 # data/storytellers/ is a per-machine install (mirrors of upstream
