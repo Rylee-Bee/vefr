@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="warm">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vefr · the workshop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/static/vefr-theme.css">
+  <link rel="stylesheet" href="/static/vefr-foundation.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="vefr-shell">
+
+    <!-- ══ The Room — a place you step into ═══════════════ -->
+    <div class="vefr-room" id="room" data-phase="dawn">
+
+      <!-- The hanging sign over the door -->
+      <header class="room-sign" id="room-sign">
+        <span class="room-sign__rope room-sign__rope--l" aria-hidden="true"></span>
+        <span class="room-sign__rope room-sign__rope--r" aria-hidden="true"></span>
+        <div class="room-sign__board">
+          <div class="room-sign__row">
+            <h1 class="room-sign__title" id="rs-title">The Desk</h1>
+            <span class="room-sign__world" id="rs-world"></span>
+          </div>
+          <span class="room-sign__subtitle" id="rs-subtitle">where worlds begin</span>
+        </div>
+      </header>
+
+      <!-- A whisper from the world itself -->
+      <div class="mood-note" id="mood-note" aria-hidden="true"></div>
+
+      <!-- A note from the ferry, pinned where you'll see it -->
+      <div class="ferry-note" id="ferry-note" role="status" aria-live="polite"></div>
+
+      <!-- The scene works here -->
+      <main class="main" id="main"></main>
+
+      <!-- The lantern — lit when the storyteller is reachable -->
+      <div class="lantern" id="lantern" role="status" aria-live="polite">
+        <span class="lantern__flame" id="lantern-flame" aria-hidden="true"></span>
+        <span class="lantern__wick" aria-hidden="true"></span>
+        <span class="lantern__label" id="lantern-label"></span>
+      </div>
+    </div>
+
+    <!-- Candlelight against the walls -->
+    <div class="vignette" aria-hidden="true"></div>
+
+    <!-- ══ The Shelf — a low shelf of carved placards ═════ -->
+    <nav class="shelf" id="shelf" aria-label="Rooms of the workshop">
+
+      <button class="placard placard--active" data-screen="launcher" aria-current="page"
+        aria-label="The Foyer, the door into the house">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        <span class="placard__name">The Foyer</span>
+        <span class="placard__sub">the door into the house</span>
+      </button>
+
+      <button class="placard" data-screen="workshop" aria-label="The Desk, where worlds begin">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span class="placard__name">The Desk</span>
+        <span class="placard__sub">where worlds begin</span>
+      </button>
+
+      <button class="placard" data-screen="map" aria-label="The Map Room, the world laid out">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        <span class="placard__name">Map Room</span>
+        <span class="placard__sub">the world laid out</span>
+      </button>
+
+      <button class="placard" data-screen="characters" aria-label="The Folks, who lives here">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="placard__name">The Folks</span>
+        <span class="placard__sub">who lives here</span>
+      </button>
+
+      <button class="placard" data-screen="items" aria-label="The Vault, what you have gathered">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+        <span class="placard__name">The Vault</span>
+        <span class="placard__sub">what you've gathered</span>
+      </button>
+
+      <button class="placard" data-screen="journal" aria-label="The Chronicle, what has happened">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span class="placard__name">Chronicle</span>
+        <span class="placard__sub">what has happened</span>
+      </button>
+
+      <button class="placard" data-screen="runes" aria-label="The Casting Table, the elder futhark">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        <span class="placard__name">Casting Table</span>
+        <span class="placard__sub">the elder futhark</span>
+      </button>
+
+      <button class="placard" data-screen="evidence" aria-label="The Archives, descending through truth">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="placard__name">Archives</span>
+        <span class="placard__sub">descending through truth</span>
+      </button>
+
+      <button class="placard" data-screen="hall" aria-label="The Hall, what you have kept">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></svg>
+        <span class="placard__name">The Hall</span>
+        <span class="placard__sub">what you've kept</span>
+      </button>
+
+      <button class="placard placard--plain" data-screen="settings" aria-label="Settings, the boiler room">
+        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="placard__name">Settings</span>
+        <span class="placard__sub">the boiler room</span>
+      </button>
+
+    </nav>
+  </div>
+
+  <script src="/static/state.js"></script>
+  <script src="/static/prefs.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

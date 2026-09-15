@@ -6,7 +6,17 @@ from pydantic import BaseModel
 import json
 from pathlib import Path
 
-from . import combat, enhance, forge, inspect as inspect_mod, journal, lore, sessions, starred, trace
+from . import (
+    combat,
+    enhance,
+    forge,
+    inspect as inspect_mod,
+    journal,
+    lore,
+    sessions,
+    starred,
+    trace,
+)
 from .stefna import generate_letter
 from .export import export_story
 from .forge import ItemCard, forge_item, keep_item, list_vault
@@ -27,8 +37,25 @@ def _app_title() -> str:
 
 app = FastAPI(title=_app_title(), version="2.0.0", description=PURPOSE.capitalize())
 WEB = app_home() / "web"
+
+
+class _WebStatics(StaticFiles):
+    """Serve web/ assets with revalidate-on-every-use.
+
+    The plain StaticFiles mount ships ETags but no Cache-Control, so
+    browsers heuristic-cache the UI and serve stale HTML/CSS/JS while
+    we iterate. "no-cache" keeps 304 revalidation (fast) but never a
+    stale 200.
+    """
+
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 if WEB.is_dir():
-    app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
+    app.mount("/static", _WebStatics(directory=str(WEB)), name="static")
 # The reading row's "What does that mean?" link points at the
 # glossary under docs/guides/. Serve the guides read-only so the
 # link lands on the file instead of a 404 (dev checkouts + container
@@ -83,9 +110,7 @@ def vault_keep(item: ItemCard, session: str = ""):
     result = keep_item(item, sid=session)
     # Only a kept item is journalled - a forge roll nobody took is a
     # thing that never happened.
-    journal.log(
-        "item_forged", sid=session, name=item.name, bond=item.bond, lore=item.lore
-    )
+    journal.log("item_forged", sid=session, name=item.name, bond=item.bond, lore=item.lore)
     return result
 
 
@@ -99,6 +124,7 @@ def vault_list(session: str = ""):
 def vault_star(index: int, session: str = ""):
     """Star a kept vault item - same shape as the journal star route."""
     from fastapi import HTTPException
+
     items = list_vault()
     if index < 0 or index >= len(items):
         raise HTTPException(status_code=404, detail=f"no vault item at index {index}")
@@ -116,6 +142,7 @@ def vault_star(index: int, session: str = ""):
 def vault_remove(index: int, session: str = ""):
     """Drop a kept item from the vault; undoable for 60s."""
     from fastapi import HTTPException
+
     removed = forge.remove(index, sid=session)
     if removed is None:
         raise HTTPException(status_code=404, detail=f"no vault item at index {index}")
@@ -126,12 +153,13 @@ def vault_remove(index: int, session: str = ""):
 def vault_undo(session: str = ""):
     """Restore the most recently removed vault item."""
     from fastapi import HTTPException
+
     restored = forge.undo(sid=session)
     if restored is None:
         raise HTTPException(
             status_code=400,
             detail="nothing to undo - either nothing was removed, "
-                   f"or the {forge.UNDO_WINDOW_S}s window has elapsed",
+            f"or the {forge.UNDO_WINDOW_S}s window has elapsed",
         )
     return {"restored": True, "item": restored}
 
@@ -156,9 +184,7 @@ def npc(req: NpcRequest, session: str = ""):
             sp.set(speaker=spoken.speaker)
     except RuntimeError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    journal.log(
-        "npc_line", sid=session, phase=req.phase, speaker=spoken.speaker, line=spoken.line
-    )
+    journal.log("npc_line", sid=session, phase=req.phase, speaker=spoken.speaker, line=spoken.line)
     return spoken
 
 
@@ -177,16 +203,22 @@ def combat_action(req: CombatAction, session: str = ""):
     the engine doesn't change any game state. The surface is
     a costume, the costume is the point.
     """
-    with trace.span("/api/combat/action", kind=req.kind,
-                     phase=req.phase or "default",
-                     session=session or "default"):
+    with trace.span(
+        "/api/combat/action",
+        kind=req.kind,
+        phase=req.phase or "default",
+        session=session or "default",
+    ):
         try:
             entry = combat.record_combat_action(
-                kind=req.kind, phase=req.phase, target=req.target,
+                kind=req.kind,
+                phase=req.phase,
+                target=req.target,
                 session=session,
             )
         except ValueError as e:
             from fastapi import HTTPException
+
             raise HTTPException(status_code=400, detail=str(e))
     return entry
 
@@ -274,6 +306,7 @@ def journal_star(index: int, session: str = ""):
     entries = journal.list_entries(sid=session)
     if index < 0 or index >= len(entries):
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail=f"no journal entry at index {index}")
     return starred.star(entries[index])
 
@@ -286,6 +319,7 @@ def journal_remove(index: int, session: str = ""):
     /api/journal/undo within that window to bring it back.
     """
     from fastapi import HTTPException
+
     try:
         removed = journal.remove(index, sid=session)
     except ValueError as e:
@@ -299,12 +333,13 @@ def journal_remove(index: int, session: str = ""):
 def journal_undo(session: str = ""):
     """Restore the most recently removed entry, if still in the undo window."""
     from fastapi import HTTPException
+
     restored = journal.undo(sid=session)
     if restored is None:
         raise HTTPException(
             status_code=400,
             detail="nothing to undo - either nothing was removed, "
-                   f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
+            f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
         )
     return {"restored": True, "entry": restored}
 
@@ -368,6 +403,7 @@ def journal_rewind(req: RewindRequest, session: str = ""):
     cut, and the UI confirms before calling.
     """
     from fastapi import HTTPException
+
     result = journal.rewind(req.at, sid=session)
     if result is None:
         raise HTTPException(status_code=404, detail=f"nothing to rewind at {req.at}")
@@ -379,12 +415,13 @@ def journal_rewind(req: RewindRequest, session: str = ""):
 def journal_rewind_undo(session: str = ""):
     """Bring back the tail of the most recent rewind, within the window."""
     from fastapi import HTTPException
+
     restored = journal.rewind_undo(sid=session)
     if restored is None:
         raise HTTPException(
             status_code=400,
             detail="nothing to undo - either nothing was rewound, "
-                   f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
+            f"or the {journal.UNDO_WINDOW_S}s window has elapsed",
         )
     return restored
 
@@ -456,6 +493,7 @@ class BuilderChatTurn(BaseModel):
 def builder_chat(turn: BuilderChatTurn):
     """One turn of the builder-mode chat. Stateless, proposal-only."""
     from .chat import draft
+
     # Replay the history briefly so the model has context. We keep it
     # short - the page holds the long view.
     context_lines = []
@@ -481,16 +519,24 @@ def spark_health_route():
     round-trip so 'slow but alive' is distinguishable from 'gone'.
     """
     from . import spark as spark_mod
+
     try:
         probe = spark_mod.health()
-        return {"ok": True, "spark": "available", **probe,
-                "profile": spark_mod.profile()["key"],
-                "model": spark_mod.profile()["alias"]}
+        return {
+            "ok": True,
+            "spark": "available",
+            **probe,
+            "profile": spark_mod.profile()["key"],
+            "model": spark_mod.profile()["alias"],
+        }
     except Exception as exc:  # noqa: BLE001 - down is data, not a crash
-        return {"ok": False, "spark": "unavailable",
-                "url": spark_mod.spark_url(),
-                "error": f"{exc.__class__.__name__}: {exc}",
-                "profile": spark_mod.profile()["key"]}
+        return {
+            "ok": False,
+            "spark": "unavailable",
+            "url": spark_mod.spark_url(),
+            "error": f"{exc.__class__.__name__}: {exc}",
+            "profile": spark_mod.profile()["key"],
+        }
 
 
 class SparkTaskRequest(BaseModel):
@@ -513,34 +559,37 @@ def spark_task(req: SparkTaskRequest):
     pre-Spark behavior rather than an error.
     """
     from . import spark as spark_mod
+
     if req.task not in spark_mod.TASK_CONTRACTS:
         from fastapi import HTTPException
+
         raise HTTPException(
             status_code=422,
-            detail=f"unknown spark task {req.task!r}; "
-                   f"known: {sorted(spark_mod.TASK_CONTRACTS)}",
+            detail=f"unknown spark task {req.task!r}; known: {sorted(spark_mod.TASK_CONTRACTS)}",
         )
     try:
         result, meta = spark_mod.spark_call(
-            req.task, req.user, speaker=req.speaker, state=req.state)
+            req.task, req.user, speaker=req.speaker, state=req.state
+        )
         meta.pop("response", None)  # the debug view lives in inspect
-        return {"ok": True, "spark": "ok", "result": result, "meta": meta,
-                "escalated": False}
+        return {"ok": True, "spark": "ok", "result": result, "meta": meta, "escalated": False}
     except spark_mod.SparkUnavailable as exc:
-        return {"ok": False, "spark": "unavailable",
-                "error": f"{exc.__class__.__name__}: {exc}",
-                "escalated": False, "hint": "escalate to K2 or degrade"}
+        return {
+            "ok": False,
+            "spark": "unavailable",
+            "error": f"{exc.__class__.__name__}: {exc}",
+            "escalated": False,
+            "hint": "escalate to K2 or degrade",
+        }
     except spark_mod.SparkMalformed as exc:
         # Spark answered twice with garbage. That is data about Spark,
         # not a license to apply an unvalidated proposal: fail closed,
         # offer the K2 path.
-        return {"ok": False, "spark": "malformed",
-                "error": f"{exc}", "escalated": False}
+        return {"ok": False, "spark": "malformed", "error": f"{exc}", "escalated": False}
 
 
 @app.get("/api/spark/inspect")
-def spark_inspect(task: str, user: str, speaker: str | None = None,
-                  call: bool = False):
+def spark_inspect(task: str, user: str, speaker: str | None = None, call: bool = False):
     """Development view of the Context Builder (read-only by default).
 
     Shows the profile, model, context sections, approximate prompt
@@ -551,19 +600,18 @@ def spark_inspect(task: str, user: str, speaker: str | None = None,
     """
     from . import spark as spark_mod
     from fastapi import HTTPException
+
     if task not in spark_mod.TASK_CONTRACTS:
         raise HTTPException(
             status_code=422,
-            detail=f"unknown spark task {task!r}; "
-                   f"known: {sorted(spark_mod.TASK_CONTRACTS)}",
+            detail=f"unknown spark task {task!r}; known: {sorted(spark_mod.TASK_CONTRACTS)}",
         )
     view = spark_mod.inspect_context(task, user, speaker=speaker)
     if not call:
         return {"ok": True, **view}
     try:
         result, meta = spark_mod.spark_call(task, user, speaker=speaker)
-        return {"ok": True, **view, "validation": "ok",
-                "response": meta.get("response", "")}
+        return {"ok": True, **view, "validation": "ok", "response": meta.get("response", "")}
     except spark_mod.SparkUnavailable as exc:
         return {"ok": False, **view, "validation": f"unavailable: {exc}"}
     except spark_mod.SparkMalformed as exc:
@@ -578,12 +626,16 @@ def spark_escalate():
     not its job?' - and, transitively, whether the K2 path it names is
     still the escalation target."""
     from . import spark as spark_mod
+
     try:
         decisions = spark_mod.classify_escalation(spark_mod.ESCALATION_PROBES)
         ok, detail = spark_mod.escalation_verdict(decisions)
-        return {"ok": ok, "escalation": detail,
-                "decisions": [d.model_dump() for d in decisions],
-                "escalation_target": "K2 via VEFR_LLAMACPP_URL"}
+        return {
+            "ok": ok,
+            "escalation": detail,
+            "decisions": [d.model_dump() for d in decisions],
+            "escalation_target": "K2 via VEFR_LLAMACPP_URL",
+        }
     except spark_mod.SparkUnavailable as exc:
         return {"ok": False, "error": f"{exc}", "decisions": []}
 
@@ -598,6 +650,7 @@ def runes_registry():
     can see all 24 staves + meanings at a glance.
     """
     from .runes import RUNES, PHASE_ANCHOR
+
     return {
         "runes": [
             {
@@ -640,8 +693,7 @@ def runes_cast(phase: str | None = None):
         "seed": seed,
         "iso_minute": iso_minute,
         "positions": [
-            {"position": pos, "name": r.name, "stave": r.stave,
-             "short": r.short, "long": r.long}
+            {"position": pos, "name": r.name, "stave": r.stave, "short": r.short, "long": r.long}
             for pos, r in cast_result
         ],
         "prompt_block": render_for_prompt(cast_result),
@@ -659,6 +711,7 @@ def builder_lore(req: lore.LorePreviewRequest):
     """
     from fastapi import HTTPException
     from .lore import preview_lore
+
     try:
         result = preview_lore(req)
     except FileNotFoundError as e:
@@ -672,6 +725,7 @@ def builder_lore(req: lore.LorePreviewRequest):
 def builder_lore_list():
     """Every lore pack with a manifest of files."""
     from .lore import list_lore
+
     return [_e.model_dump() for _e in list_lore()]
 
 
@@ -685,6 +739,7 @@ def builder_worlds():
     tab.
     """
     from .world import discover_packs
+
     out = []
     for entry in discover_packs():
         p = Path(entry["path"])
@@ -701,13 +756,15 @@ def builder_worlds():
                     speakers.extend(act_w.get("speakers", {}).keys())
             else:
                 speakers = list(w.get("speakers", {}).keys())
-            out.append({
-                "name": entry["name"],
-                "title": w.get("title", entry["name"]),
-                "phases": list(w.get("phases", {}).keys()),
-                "speakers": speakers,
-                "source": entry["source"],
-            })
+            out.append(
+                {
+                    "name": entry["name"],
+                    "title": w.get("title", entry["name"]),
+                    "phases": list(w.get("phases", {}).keys()),
+                    "speakers": speakers,
+                    "source": entry["source"],
+                }
+            )
         except (json.JSONDecodeError, OSError):
             continue
     return {"worlds": out}
@@ -754,6 +811,7 @@ def builder_validate(payload: dict):
 def builder_verify(payload: dict):
     """Verify the live deployment's served world against the live URL."""
     from .maplab import verify_live
+
     url = payload.get("url", "http://127.0.0.1:8820")
     ok, errors = verify_live(url)
     return {"ok": bool(ok), "errors": errors, "url": url}
@@ -822,6 +880,119 @@ def builder_enhance_map(req: enhance.MapEnhanceRequest):
         return enhance.enhance_map(req)
 
 
+@app.post("/api/builder/map/propose")
+def builder_map_propose(payload: dict):
+    """The storyteller's pen - the model proposes a validated town redraw.
+
+    Same machinery as the `norns chat` interview (chat.propose_map):
+    run-length rows at the current map's exact dimensions, legend
+    characters only, gated by maplab.validate's geometry and
+    reachability checks before anything is returned. This route never
+    writes to the pack - the web room treats the result as a sketch
+    the author can paint over and keep as a keepsake.
+    """
+    from . import chat
+    from .maplab import load_pack
+    from .paths import pack_dir
+
+    name = payload.get("name") or None
+    story = (payload.get("story") or "").strip()
+    mood = (payload.get("mood") or "").strip() or "quiet"
+    try:
+        pack = pack_dir(name)
+        w = load_pack(pack)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "reason": f"couldn\u2019t open the pack: {e}"}
+    town = w.get("town") or {}
+    if not town.get("map") or not town.get("legend"):
+        return {"ok": False, "reason": "this world has no map to sketch yet"}
+    try:
+        rows = chat.propose_map(story or w.get("title", ""), mood, w, pack)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "reason": f"the surveyor couldn\u2019t reach a pen: {e}"}
+    if not rows:
+        return {
+            "ok": False,
+            "reason": "the surveyor drew nothing usable \u2014 describe it differently, or paint it yourself",
+        }
+    return {
+        "ok": True,
+        "grid": rows,
+        "legend": town.get("legend", {}),
+        "dimensions": [len(rows), len(rows[0])],
+    }
+
+
+@app.post("/api/builder/map/check")
+def builder_map_check(payload: dict):
+    """The engine checks a storyteller's sketch before it's kept.
+
+    Purely deterministic: the draft grid is swapped into a copy of
+    the unified pack and run through the same maplab.validate gate
+    as `norns validate` - shape, legend coverage, hero placement,
+    reachability of every door, poi and speaker. Never writes.
+    """
+    from .maplab import load_pack, validate
+    from .paths import pack_dir
+
+    name = payload.get("name") or None
+    grid = payload.get("grid") or []
+    if not isinstance(grid, list) or not grid or not all(isinstance(r, str) for r in grid):
+        return {"ok": False, "errors": ["the sketch needs a rectangular grid of text rows"]}
+    try:
+        pack = pack_dir(name)
+        w = load_pack(pack)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "errors": [f"couldn\u2019t open the pack: {e}"]}
+    town = w.get("town") or {}
+    if not town.get("map") or not town.get("legend"):
+        return {"ok": False, "errors": ["this world has no map to check yet"]}
+    # The sketch replaces only the ground; everything else is the
+    # pack's own proven content.
+    w["town"]["map"] = grid
+    errors = validate(w)
+    return {"ok": not errors, "errors": errors}
+
+
+@app.post("/api/builder/face/roll")
+def builder_face_roll(payload: dict):
+    """Invite a new face: model-drafted, engine-placed, never written.
+
+    The model only suggests prose (name, role, seed line); where
+    they stand comes from the interview's own deterministic rule
+    (reachable from the hero's start, not on anyone's spot, not on
+    flood ground). The web room keeps the card as a vault item
+    (kind "face") only when the storyteller says so.
+    """
+    from . import chat
+    from .maplab import load_pack
+    from .paths import pack_dir
+
+    name = payload.get("name") or None
+    mood = (payload.get("mood") or "").strip() or "quiet"
+    try:
+        pack = pack_dir(name)
+        w = load_pack(pack)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "reason": f"couldn\u2019t open the pack: {e}"}
+    town = w.get("town") or {}
+    if not town.get("map") or not town.get("legend"):
+        return {"ok": False, "reason": "this world has no map to place anyone on yet"}
+    tile = chat._pick_tile(w)
+    if tile is None:
+        return {"ok": False, "reason": "there is nowhere left to stand in this world"}
+    try:
+        face = chat.propose_face(w.get("title", ""), mood, w)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "reason": f"the keeper couldn\u2019t reach a pen: {e}"}
+    if not face:
+        return {
+            "ok": False,
+            "reason": "the keeper drew nothing usable \u2014 try again, or write the face yourself",
+        }
+    return {"ok": True, "face": {**face, "at": list(tile)}}
+
+
 @app.post("/api/builder/enhance/voice")
 def builder_enhance_voice(req: enhance.VoiceEnhanceRequest):
     """Contextual AI Enhance for NPC voices and speech rules.
@@ -856,6 +1027,7 @@ def handoff_create():
     """
     inspect_mod._ensure_data_dir()
     from .paths import app_home
+
     out_dir = app_home() / "data" / "handoffs"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = inspect_mod.build_handoff(out_dir)
@@ -879,29 +1051,32 @@ def wiki(session: str = ""):
     for e in entries:
         if e.get("kind") == "npc_line":
             by_speaker.setdefault(e.get("speaker") or "a voice", []).append(
-                {"at": e.get("at", ""), "phase": e.get("phase", ""),
-                 "line": e.get("line", "")}
+                {"at": e.get("at", ""), "phase": e.get("phase", ""), "line": e.get("line", "")}
             )
     characters = []
     for key, spec in speakers.items():
         spoken = by_speaker.get(spec["name"], [])
-        characters.append({
-            "key": key,
-            "name": spec["name"],
-            "lines": len(spoken),
-            "recent": spoken[-3:],
-        })
+        characters.append(
+            {
+                "key": key,
+                "name": spec["name"],
+                "lines": len(spoken),
+                "recent": spoken[-3:],
+            }
+        )
     # A journal speaker the canon doesn't name still belongs here -
     # generated whispers sometimes speak through strangers.
     known = {spec["name"] for spec in speakers.values()}
     for speaker, spoken in by_speaker.items():
         if speaker not in known:
-            characters.append({
-                "key": "",
-                "name": speaker,
-                "lines": len(spoken),
-                "recent": spoken[-3:],
-            })
+            characters.append(
+                {
+                    "key": "",
+                    "name": speaker,
+                    "lines": len(spoken),
+                    "recent": spoken[-3:],
+                }
+            )
     return {
         "characters": characters,
         "relics": forge.list_vault(sid=session),
@@ -938,6 +1113,7 @@ def export_tab(name: str, session: str = ""):
     """
     from fastapi import HTTPException
     from .export import export_tab as render_tab, _TAB_NAMES
+
     if name not in _TAB_NAMES:
         raise HTTPException(
             status_code=404,
@@ -948,7 +1124,10 @@ def export_tab(name: str, session: str = ""):
 
 @app.get("/")
 def index():
-    idx = WEB / "index.html"
+    # Primary UI: the workshop shell (app.html). The historical Board
+    # shell lives on as /static/index.html (and as the canonical
+    # board markup the shipped-JS tests lock in).
+    idx = WEB / "app.html"
     if idx.is_file():
-        return FileResponse(idx)
+        return FileResponse(idx, headers={"Cache-Control": "no-cache"})
     return PlainTextResponse("vefr engine running (web UI unbundled)", status_code=200)

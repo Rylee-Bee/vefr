@@ -1,0 +1,3079 @@
+/* VEFR — the workshop.
+ *
+ * A Norse game studio, well used and well loved.
+ * Not a dashboard. A place. Games don't have chrome — they have rooms.
+ *
+ * The household lives here. One engine, many faces:
+ *   The Desk     → The Storyteller    The Chronicle → Urðr
+ *   The Map Room → The Cartographer   The Casting   → The Rune-Carver
+ *   The Folks    → The Keeper of Faces The Archives  → Skuld
+ *   The Vault    → The Hoard-Keeper   The Hall      → Ratatoskr, the ferry
+ *
+ * Every resident is the same model wearing a different face, with its
+ * little toolkit of role templates. The squirrel is always watching.
+ */
+
+(function () {
+  'use strict';
+
+  var API = window.VEFR_API;
+  var main = document.getElementById('main');
+  var room = document.getElementById('room');
+  var screens = {};
+  var currentId = null;
+  var currentScreen = null;
+
+  /* ── Helpers ──────────────────────────────────────────── */
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function truncate(s, n) {
+    if (!s) return '';
+    return s.length > n ? s.slice(0, n) + '\u2026' : s;
+  }
+
+  function formatTime(t) {
+    if (!t) return '';
+    try {
+      var d = new Date(t);
+      if (isNaN(d.getTime())) return String(t);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return String(t); }
+  }
+
+  function h(tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'className') e.className = attrs[k];
+      else if (k === 'textContent') e.textContent = attrs[k];
+      else if (k === 'innerHTML') e.innerHTML = attrs[k];
+      else if (k === 'hidden') e.hidden = attrs[k];
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+      else if (k === 'ariaExpanded') e.setAttribute('aria-expanded', attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    });
+    if (children) {
+      if (typeof children === 'string') e.innerHTML = children;
+      else if (Array.isArray(children)) children.forEach(function (c) { if (c) e.appendChild(c); });
+      else e.appendChild(children);
+    }
+    return e;
+  }
+
+  /* ── The workshop knows what you're building ──────────── */
+
+  var SURFACE_MOOD = {
+    combat:     { whisper: 'the air is tense',        accent: 'rgba(184, 84, 63, 0.06)' },
+    mystery:    { whisper: 'something is hidden here', accent: 'rgba(108, 138, 168, 0.06)' },
+    exploration:{ whisper: 'there is more to find',   accent: 'rgba(91, 138, 114, 0.06)' },
+    survival:   { whisper: 'every choice matters',    accent: 'rgba(201, 169, 46, 0.06)' },
+    social:     { whisper: 'someone is watching',     accent: 'rgba(181, 127, 139, 0.06)' },
+    quiet:      { whisper: 'the world is resting',    accent: 'rgba(145, 133, 168, 0.04)' }
+  };
+
+  // The phase of the world becomes the light in the room.
+  var PHASE_LIGHT = { dawn: 'dawn', dusk: 'dusk', day: 'day', night: 'night' };
+
+  function phaseFor(phases) {
+    if (!phases || !phases.length) return 'dawn';
+    return PHASE_LIGHT[phases[0]] || 'dawn';
+  }
+
+  function inhabitWorld(world) {
+    if (!world) return;
+
+    // The world's name hangs under the room sign
+    var worldSign = document.getElementById('rs-world');
+    if (worldSign) worldSign.textContent = world.title || '';
+
+    // The world's whisper is pinned to the wall
+    var whisper = document.getElementById('mood-note');
+    if (whisper) {
+      var mood = SURFACE_MOOD[world.surface] || SURFACE_MOOD.quiet;
+      whisper.textContent = '\u2726 ' + mood.whisper;
+    }
+
+    // The world's phase lights the room
+    if (room) room.setAttribute('data-phase', phaseFor(world.phases));
+
+    // The surface mood adds a subtle warmth to the work surface
+    if (main) {
+      var m = SURFACE_MOOD[world.surface] || SURFACE_MOOD.quiet;
+      main.style.background = m.accent
+        ? 'linear-gradient(180deg, ' + m.accent + ' 0%, transparent 240px)'
+        : '';
+    }
+
+    // The lantern burns: the storyteller is reachable
+    setLantern(true, 'the lantern burns warm');
+  }
+
+  function setLantern(lit, text) {
+    var lantern = document.getElementById('lantern');
+    var label = document.getElementById('lantern-label');
+    if (!lantern || !label) return;
+    lantern.classList.toggle('lantern--cold', !lit);
+    label.textContent = text || '';
+  }
+
+  /* A note from the ferry — pinned where you'll see it */
+  var ferryTimer = null;
+  function ferryNote(text) {
+    var el = document.getElementById('ferry-note');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('ferry-note--show');
+    clearTimeout(ferryTimer);
+    ferryTimer = setTimeout(function () {
+      el.classList.remove('ferry-note--show');
+    }, 4200);
+  }
+
+  /* ── States — honest and warm ─────────────────────────── */
+
+  function emptyState(text, hint, squirrel) {
+    var children = [];
+    if (squirrel) children.push(h('div', { className: 'empty__squirrel', textContent: '\u{1F43F}\uFE0F' }));
+    children.push(h('p', { className: 'empty__text', textContent: text }));
+    if (hint) children.push(h('p', { className: 'empty__hint', textContent: hint }));
+    return h('div', { className: 'empty', role: 'status' }, children);
+  }
+
+  var FERRY_LINES = [
+    'the squirrel is ferrying that up the tree\u2026',
+    'the squirrel is checking the branches\u2026',
+    'the squirrel is on the way\u2026',
+    'the squirrel has middens to consult\u2026'
+  ];
+  var ferry_i = 0;
+  function ferryLine() {
+    var line = FERRY_LINES[ferry_i % FERRY_LINES.length];
+    ferry_i++;
+    return line;
+  }
+
+  function loadingState(text) {
+    return h('div', { className: 'loading', role: 'status', 'aria-live': 'polite' },
+      [
+        h('span', { className: 'loading__squirrel', 'aria-hidden': 'true', textContent: '\u{1F43F}\uFE0F' }),
+        h('span', { textContent: text || ferryLine() })
+      ]
+    );
+  }
+
+  /* ── The rooms ────────────────────────────────────────── */
+
+  var SCREEN_TITLES = {
+    launcher:   'The Foyer',
+    workshop:   'The Desk',
+    map:        'The Map Room',
+    characters: 'The Folks',
+    items:      'The Vault',
+    journal:    'The Chronicle',
+    runes:      'The Casting Table',
+    evidence:   'The Archives',
+    hall:       'The Hall',
+    settings:   'Settings'
+  };
+
+  var SCREEN_SUBTITLES = {
+    launcher:   'come in, sit by the fire',
+    workshop:   'where worlds begin',
+    map:        'the world laid out',
+    characters: 'who lives here',
+    items:      'what you\u2019ve gathered',
+    journal:    'what has happened',
+    runes:      'the elder futhark',
+    evidence:   'descending through truth',
+    hall:       'what you\u2019ve kept',
+    settings:   'the boiler room'
+  };
+
+  // Each room has a quiet sound — a diegetic line, never a claim
+  // about engine state. It just tells you the room is lived in.
+  var AMBIENCE = {
+    launcher:   'the fire settles in the grate',
+    workshop:   'the ink is still wet on the map',
+    map:        'a compass needle wavers in the drawer',
+    characters: 'a chair by the window is still warm',
+    items:      'the tray of keepsakes catches the lamplight',
+    journal:    'the pages smell of beeswax',
+    runes:      'rune dust flecks the cloth',
+    evidence:   'the stairs creak, one at a time',
+    hall:       'the walls remember every kept thing',
+    settings:   'the boiler hums a steady note'
+  };
+
+  function ambienceNode(id) {
+    if (!AMBIENCE[id]) return null;
+    return h('p', { className: 'room-ambience', textContent: AMBIENCE[id] });
+  }
+
+  /* ── Sound — the hearth, always paired with what you can see ──
+     Off by default (the prefs contract starts at silence). Every
+     sound fires alongside a visible event: the clank lands with the
+     ferry note, the squeak lands with the whisper row, the hearth
+     crackle is the room itself. */
+  var studioAudio = (function () {
+    var ctx = null;
+    var ambGain = null;
+    var unlocked = false;
+    function soundPrefs() {
+      var P = window.VEFR_PREFS;
+      var s = (P && P.get) ? (P.get().sound || {}) : {};
+      return { fx: (s.effects || 0) > 0, amb: (s.ambience || 0) > 0 };
+    }
+    function ensure() {
+      if (!ctx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try { ctx = new AC(); } catch (e) { return null; }
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    }
+    function ambient(on) {
+      var st = soundPrefs();
+      if (!st.amb) {
+        if (ambGain) { try { ambGain.gain.value = 0; } catch (e) {} }
+        return;
+      }
+      var c = ensure();
+      if (!c) return;
+      if (ambGain) { ambGain.gain.value = on ? 0.06 : 0; return; }
+      var len = c.sampleRate * 2;
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      var last = 0;
+      for (var i = 0; i < len; i++) {
+        last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+        data[i] = last * 3.5;
+      }
+      var src = c.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      var filter = c.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 150;
+      var g = c.createGain();
+      g.gain.value = on ? 0.06 : 0;
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(c.destination);
+      try { src.start(); } catch (e) { return; }
+      ambGain = g;
+    }
+    function blip(freq0, freq1, dur, vol, type) {
+      var st = soundPrefs();
+      if (!st.fx) return;
+      var c = ensure();
+      if (!c) return;
+      var t0 = c.currentTime;
+      var osc = c.createOscillator();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq0, t0);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(freq1, 1), t0 + dur);
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    }
+    function clank() { blip(220, 180, 0.16, 0.12, 'triangle'); blip(330, 300, 0.12, 0.07, 'square'); }
+    function squeak() { blip(980, 1500, 0.12, 0.06, 'sine'); }
+    function unlock() {
+      if (unlocked) return;
+      unlocked = true;
+      var c = ensure();
+      if (c) ambient(true);
+    }
+    return { ambient: ambient, clank: clank, squeak: squeak, unlock: unlock, on: function () { var s = soundPrefs(); return s.amb || s.fx; } };
+  })();
+
+  /* The folio remembers — each resident's conversation persists,
+     so the Cartographer still knows what you asked two visits ago. */
+  function saveHistories() {
+    try { window.localStorage.setItem('vefr.histories', JSON.stringify(histories)); } catch (e) {}
+  }
+  function loadHistories() {
+    try {
+      var raw = window.localStorage && localStorage.getItem('vefr.histories');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          Object.keys(parsed).forEach(function (k) {
+            if (Array.isArray(parsed[k])) histories[k] = parsed[k].slice(-40);
+          });
+        }
+      }
+    } catch (e) {}
+  }
+
+  /* The studio listens — real engine events, carried to the hall.
+     Every whisper is a traced event that actually ran; nothing is
+     invented. New ones arrive slowly, honestly, and are echoed. */
+  var watch = { seen: {}, buffer: [], strip: null, timer: null };
+  function routeVerb(route) {
+    var known = {
+      '/api/forge': 'the forge was asked',
+      '/api/rumor': 'a rumor was drawn',
+      '/api/npc': 'a voice spoke',
+      '/api/stefna': 'a bond was traced',
+      '/api/runes/cast': 'a rune was cast',
+      '/api/builder/chat': 'someone asked the household',
+      '/api/builder/enhance/map': 'a landmark was deepened',
+      '/api/builder/enhance/item': 'a keepsake was deepened',
+      '/api/builder/map/propose': 'new land was sketched',
+      '/api/builder/map/check': 'a sketch was checked',
+      '/api/builder/face/roll': 'a new face was invited',
+      '/api/spark/task': 'the resident spark stirred'
+    };
+    return known[route] || 'the engine stirred';
+  }
+  function watchNew(events) {
+    var added = [];
+    (events || []).forEach(function (e) {
+      if (!e || !e.at || !e.route) return;
+      var key = e.at + '|' + e.route;
+      if (watch.seen[key]) return;
+      watch.seen[key] = true;
+      added.push(e);
+    });
+    var keys = Object.keys(watch.seen);
+    if (keys.length > 400) {
+      keys.slice(0, keys.length - 200).forEach(function (k) { delete watch.seen[k]; });
+    }
+    return added;
+  }
+  function pushWhisper(e) {
+    var ok = e.ok !== false;
+    var row = h('div', { className: 'watch-whisper' + (ok ? '' : ' watch-whisper--flat'), role: 'status' });
+    row.appendChild(h('span', { className: 'watch-whisper__time', textContent: formatTime(e.at) || 'just now' }));
+    row.appendChild(h('span', { className: 'watch-whisper__word',
+      textContent: routeVerb(e.route) + (ok ? '' : ' \u2014 it didn\u2019t land') }));
+    watch.buffer.push({ at: e.at, el: row });
+    while (watch.buffer.length > 8) watch.buffer.shift();
+    if (watch.strip) {
+      watch.strip.appendChild(row);
+      while (watch.strip.childElementCount > 8) watch.strip.removeChild(watch.strip.firstChild);
+      if (ok) studioAudio.squeak();
+    }
+  }
+  function startWatch() {
+    if (watch.timer) return;
+    watch.timer = setInterval(function () {
+      if (document.hidden) return;
+      API.trace().catch(function () { return { events: [] }; }).then(function (res) {
+        watchNew((res && res.events) || []).forEach(pushWhisper);
+      });
+    }, 10000);
+  }
+
+  /* The first walk — a hand on the latch. On a first visit
+     Ratatoskr pins a short note under the sign: five real actions,
+     one in each room, each checked off only when it truly happens.
+     Skipping is one press; the walk can be re-run any time from
+     Settings, and the "how to read this house" sheet stays on
+     paper always. Nothing here is invented — a step completes only
+     when the real button really fires. */
+  var WALK_STEPS = [
+    { id: 'bell', screen: 'workshop', room: 'The Desk', do: 'Ring the bell.', for: 'the house answers.' },
+    { id: 'map', screen: 'map', room: 'The Map Room', do: 'Press the ground once.', for: 'the land says what it is.' },
+    { id: 'chronicle', screen: 'journal', room: 'The Chronicle', do: 'Press a leaf.', for: 'what mattered stays.' },
+    { id: 'folks', screen: 'characters', room: 'The Folks', do: 'Open a face.', for: 'people are doors.' },
+    { id: 'hall', screen: 'hall', room: 'The Hall', do: 'Look out the window.', for: 'what you kept is waiting.' }
+  ];
+  var WALK_KEY = 'vefr.walk';
+  var walk = { state: null, rail: null, sheet: null, sheetOpener: null, pendingGo: null, timer: null };
+  function walkLoad() {
+    try {
+      var raw = window.localStorage && localStorage.getItem(WALK_KEY);
+      walk.state = raw ? JSON.parse(raw) : null;
+    } catch (e) { walk.state = null; }
+    if (!walk.state) walk.state = { steps: {}, skipped: false, done: false };
+  }
+  function walkSave() {
+    try { localStorage.setItem(WALK_KEY, JSON.stringify(walk.state)); } catch (e) {}
+  }
+  function walkRows() {
+    return WALK_STEPS.map(function (s) {
+      return { step: s, done: !!(walk.state && walk.state.steps[s.id]) };
+    });
+  }
+  function walkCurrent() {
+    var rows = walkRows();
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i].done) return rows[i];
+    }
+    return null;
+  }
+  function walkComplete() { return !walkCurrent(); }
+  function walkAttempt(id) {
+    if (!walk.state || walk.state.skipped || walk.state.done) return;
+    if (walk.state.steps[id]) return;
+    walk.state.steps[id] = true;
+    if (walkComplete()) walk.state.done = true;
+    walkSave();
+    walkRender();
+    try { studioAudio.squeak(); } catch (e) {}
+    walkGo();
+  }
+  /* The walk walks you — after each step, Ratatoskr tugs your
+     sleeve toward the next room. If the folio is open (the bell
+     and the faces open it), the walk waits for you to close it,
+     then sets off. Nothing here invents progress: the tug only
+     follows a step the real action really completed. */
+  function walkGo() {
+    if (!walk.state || walk.state.done || walk.state.skipped) return;
+    var cur = walkCurrent();
+    if (!cur || !cur.step.screen) return;
+    walk.pendingGo = cur.step.screen;
+    clearTimeout(walk.timer);
+    walk.timer = setTimeout(function () {
+      if (!walk.pendingGo) return;
+      if (folioOpen()) return; // closing the folio carries us
+      var go = walk.pendingGo;
+      walk.pendingGo = null;
+      navigate(go);
+      ferryNote('Ratatoskr tugs your sleeve \u2014 onward to ' + walkRoomName(go) + '\u2026');
+    }, 650);
+  }
+  function walkRoomName(screen) {
+    var s = null;
+    WALK_STEPS.forEach(function (x) { if (!s && x.screen === screen) s = x.room; });
+    return s || 'the next room';
+  }
+  function folioOpen() {
+    return !!(folio && folio.classList && folio.classList.contains('folio--open'));
+  }
+  function walkSkip() {
+    if (!walk.state) return;
+    walk.state.skipped = true;
+    walkSave();
+    if (walk.rail) walk.rail.hidden = true;
+  }
+  function walkReset() {
+    try { localStorage.removeItem(WALK_KEY); } catch (e) {}
+    walk.state = null;
+    walkStart();
+  }
+  function walkRender() {
+    if (!walk.rail) return;
+    walk.rail.innerHTML = '';
+    var head = h('div', { className: 'walk-rail__head' });
+    head.appendChild(h('h2', { className: 'walk-rail__title', id: 'walk-title', textContent: 'the first walk' }));
+    head.appendChild(h('p', { className: 'walk-rail__byline', textContent: 'a note pinned under the sign by Ratatoskr' }));
+    walk.rail.appendChild(head);
+
+    if (walkComplete() && walk.state && walk.state.done) {
+      var done = h('div', { className: 'walk-rail__done', role: 'status', 'aria-live': 'polite' });
+      done.appendChild(h('p', { className: 'walk-rail__done-line', textContent: 'the house knows you now.' }));
+      done.appendChild(h('p', { className: 'walk-rail__done-sub',
+        textContent: 'Go gently \u2014 everything you keep stays in the rooms, and this sheet stays under Settings any time you want it back.' }));
+      var acts = h('div', { className: 'walk-rail__acts' });
+      var keepSheet = h('button', { className: 'walk-rail__btn', type: 'button', textContent: 'keep this sheet' });
+      keepSheet.addEventListener('click', walkOpenSheet);
+      var foldBtn = h('button', { className: 'walk-rail__btn walk-rail__btn--ghost', type: 'button', textContent: 'fold the note away' });
+      foldBtn.addEventListener('click', function () { if (walk.rail) walk.rail.hidden = true; });
+      acts.appendChild(keepSheet);
+      acts.appendChild(foldBtn);
+      done.appendChild(acts);
+      walk.rail.appendChild(done);
+      return;
+    }
+
+    var cur = walkCurrent();
+    var ol = h('ol', { className: 'walk-rail__steps' });
+    walkRows().forEach(function (row) {
+      var now = cur && cur.step.id === row.step.id;
+      var li = h('li', { className: 'walk-rail__step'
+        + (row.done ? ' walk-rail__step--done' : '')
+        + (now ? ' walk-rail__step--now' : '') });
+      if (now) li.setAttribute('aria-current', 'step');
+      li.appendChild(h('span', { className: 'walk-rail__tick', textContent: row.done ? '\u2713' : '\u00B7' }));
+      li.appendChild(h('span', { className: 'walk-rail__room', textContent: row.step.room }));
+      li.appendChild(h('span', { className: 'walk-rail__do', textContent: row.step.do }));
+      ol.appendChild(li);
+    });
+    walk.rail.appendChild(ol);
+
+    var live = h('p', { className: 'walk-rail__live', role: 'status', 'aria-live': 'polite' });
+    live.appendChild(h('strong', { textContent: cur.step.do + ' ' }));
+    live.appendChild(document.createTextNode(cur.step.for));
+    walk.rail.appendChild(live);
+
+    // A hand on your shoulder — one press, and Ratatoskr walks you
+    // to where the current step takes place (hidden when you're there)
+    if (cur.step.screen && currentId !== cur.step.screen && screens[cur.step.screen]) {
+      var goNow = h('button', { className: 'walk-rail__btn walk-rail__go', type: 'button',
+        textContent: 'walk me to ' + cur.step.room + ' \u2192' });
+      goNow.addEventListener('click', function () {
+        walk.pendingGo = null;
+        navigate(cur.step.screen);
+        ferryNote('Ratatoskr walks you to ' + cur.step.room + '\u2026');
+      });
+      walk.rail.appendChild(goNow);
+    }
+
+    var acts = h('div', { className: 'walk-rail__acts' });
+    var skipBtn = h('button', { className: 'walk-rail__btn', type: 'button', textContent: 'skip \u2014 I know this house' });
+    skipBtn.addEventListener('click', walkSkip);
+    var sheetBtn = h('button', { className: 'walk-rail__btn walk-rail__btn--ghost', type: 'button', textContent: 'how to read this house' });
+    sheetBtn.addEventListener('click', walkOpenSheet);
+    acts.appendChild(skipBtn);
+    acts.appendChild(sheetBtn);
+    walk.rail.appendChild(acts);
+  }
+  function walkStart() {
+    if (!window.localStorage) return;
+    walkLoad();
+    if (walk.state.skipped || walk.state.done) return;
+    if (!walk.rail) {
+      walk.rail = h('section', { className: 'walk-rail', 'aria-labelledby': 'walk-title' });
+      room.appendChild(walk.rail);
+    }
+    walk.rail.hidden = false;
+    walkRender();
+  }
+  function walkOpenSheet() {
+    if (!walk.sheet) walkBuildSheet();
+    walk.sheetOpener = document.activeElement;
+    walk.sheet.hidden = false;
+    if (walk.sheet.querySelector) walk.sheet.querySelector('.sheet__close').focus();
+  }
+  function walkCloseSheet() {
+    if (!walk.sheet) return;
+    walk.sheet.hidden = true;
+    if (walk.sheetOpener && walk.sheetOpener.focus) walk.sheetOpener.focus();
+  }
+  function walkBuildSheet() {
+    walk.sheet = h('div', { className: 'sheet', role: 'dialog', 'aria-modal': 'true',
+      'aria-labelledby': 'sheet-title', hidden: true });
+    var paper = h('div', { className: 'sheet__paper' });
+    paper.appendChild(h('h2', { id: 'sheet-title', textContent: 'How to read this house' }));
+    paper.appendChild(h('p', { className: 'sheet__byline',
+      textContent: 'a broadsheet from Ratatoskr \u2014 one room, one thing to try' }));
+    var rooms = [
+      ['The Desk', 'where the Storyteller works. Ring the bell; ask what to build.'],
+      ['The Map Room', 'where the Cartographer keeps the land. Press the ground; keep a sketch.'],
+      ['The Folks', 'where the Keeper of Faces keeps the people. Meet a face; invite a new one.'],
+      ['The Chronicle', 'where Ur\u00F0r writes what happened. Press a leaf; keep what mattered.'],
+      ['The Hall', 'what Ratatoskr carried up. Look out the window; keep what you love.'],
+      ['The Vault', 'where the Hoard-Keeper keeps your hoard. Deepen a keepsake.'],
+      ['The Casting Room', 'where the Rune-Carver cuts the runes. Cast one; let it be.'],
+      ['The Archives', 'where Skuld shelves the stories. Browse the evidence.'],
+      ['The Boiler Room', 'the Settings. Plain pipes; sound, light, and motion live here.']
+    ];
+    var dl = h('dl', { className: 'sheet__rows' });
+    rooms.forEach(function (r) {
+      var row = h('div', { className: 'sheet__row' });
+      row.appendChild(h('dt', { className: 'sheet__room', textContent: r[0] }));
+      row.appendChild(h('dd', { className: 'sheet__how', textContent: r[1] }));
+      dl.appendChild(row);
+    });
+    paper.appendChild(dl);
+    paper.appendChild(h('p', { className: 'sheet__rules',
+      textContent: 'three rules of the house \u2014 every mark is yours; nothing is invented; the engine checks the ground before anything is kept.' }));
+    var close = h('button', { className: 'sheet__close', type: 'button', textContent: 'close the sheet' });
+    close.addEventListener('click', walkCloseSheet);
+    paper.appendChild(close);
+    walk.sheet.appendChild(paper);
+    room.appendChild(walk.sheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && walk.sheet && !walk.sheet.hidden) walkCloseSheet();
+    });
+  }
+  var firstWalk = { start: walkStart, attempt: walkAttempt, reset: walkReset, openSheet: walkOpenSheet };
+
+  function navigate(id) {
+    if (!screens[id] || currentId === id) return;
+    if (currentScreen && currentScreen.leave) currentScreen.leave();
+    var prev = main.querySelector('.screen--active');
+    if (prev) prev.classList.remove('screen--active');
+    currentId = id;
+    currentScreen = screens[id];
+    if (!currentScreen._init) {
+      currentScreen.init();
+      currentScreen._init = true;
+    }
+    var s = main.querySelector('#screen-' + id);
+    if (s) s.classList.add('screen--active');
+    currentScreen.enter();
+    updateRoom(id);
+    closeFolio();
+    try { localStorage.setItem('vefr-screen', id); } catch (e) {}
+    history.replaceState(null, '', '#' + id);
+  }
+
+  function updateRoom(id) {
+    document.querySelectorAll('.placard').forEach(function (item) {
+      var active = item.dataset.screen === id;
+      item.classList.toggle('placard--active', active);
+      item.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+    document.getElementById('rs-title').textContent = SCREEN_TITLES[id] || '';
+    document.getElementById('rs-subtitle').textContent = SCREEN_SUBTITLES[id] || '';
+  }
+
+  /* ══════════════════════════════════════════════════════
+     THE HOUSEHOLD — the residents and the speaking folio
+     ══════════════════════════════════════════════════════ */
+
+  var RESIDENTS = {
+    workshop: {
+      name: 'The Storyteller', mark: '\u270E',
+      craft: 'holds the current world',
+      greeting: 'I was mid-thought when you rang. What are we making today?',
+      roles: [
+        'Draft a rumor for this world',
+        'What happens next?',
+        'Suggest a quiet beat',
+        'Open the next act'
+      ]
+    },
+    map: {
+      name: 'The Cartographer', mark: '\u2727',
+      craft: 'draws the world as it is found',
+      greeting: 'The map answers when you ask it something specific. Where should we look?',
+      roles: [
+        'Describe this region as a place, not a grid',
+        'Name an unexplored region',
+        'What would a traveler notice first?',
+        'Sketch a rumor that leads somewhere new'
+      ]
+    },
+    characters: {
+      name: 'The Keeper of Faces', mark: '\u2766',
+      craft: 'tends the people of this world',
+      greeting: 'Who are we meeting? Tell me who you want beside you.',
+      roles: [
+        'Propose a character who belongs here',
+        'Give a person a want and a fear',
+        'Who should appear next?',
+        'Make a stranger who changes the mood'
+      ]
+    },
+    items: {
+      name: 'The Hoard-Keeper', mark: '\u2726',
+      craft: 'minds what you\u2019ve gathered',
+      greeting: 'Show me what you found. I can tell you whether it\u2019s worth keeping.',
+      roles: [
+        'Suggest a keepsake worth keeping',
+        'What should this item mean to its holder?',
+        'Forge a small object with a story',
+        'What belongs on the shelf here?'
+      ]
+    },
+    journal: {
+      name: 'Ur\u00F0r', mark: '\u2767',
+      craft: 'writes what has happened',
+      greeting: 'Ask me what has happened. I keep the ledgers honest.',
+      roles: [
+        'What have we done so far?',
+        'Summarize the arc in one breath',
+        'Which moment should we honor?',
+        'What threads are still open?'
+      ]
+    },
+    runes: {
+      name: 'The Rune-Carver', mark: '\u16B1',
+      craft: 'consults the stones',
+      greeting: 'Cast in your mind, then ask. The stones will not flatter you.',
+      roles: [
+        'Cast a rune and read it',
+        'What does this rune ask of us?',
+        'Interpret the last cast honestly',
+        'Which rune suits this moment?'
+      ]
+    },
+    evidence: {
+      name: 'Skuld', mark: '\u2B21',
+      craft: 'keeps the truth beneath',
+      greeting: 'Ask what lies beneath. I answer in plain terms.',
+      roles: [
+        'What is beneath this?',
+        'Question an assumption',
+        'What are we avoiding?',
+        'Show me what the evidence contradicts'
+      ]
+    },
+    hall: {
+      name: 'Ratatoskr', mark: '\u{1F43F}\uFE0F',
+      craft: 'the ferry; runs between every room',
+      greeting: 'I\u2019m on the move, but I can carry a message. What should the tree hear?',
+      roles: [
+        'What have we kept?',
+        'Find something worth keeping',
+        'What did the tree whisper today?',
+        'Carry a rumor to the storyteller'
+      ]
+    },
+    settings: {
+      name: 'V\u00F6lundr', mark: '\u2699',
+      craft: 'minds the works behind the rooms',
+      greeting: 'The pipes answered when you came down. Tell me how this studio should feel, and I\u2019ll turn the knobs.',
+      roles: [
+        'Which reading mode should I pick?',
+        'Walk me through the motion setting',
+        'What does each switch here change?',
+        'Set this studio up for an easier day'
+      ]
+    }
+  };
+
+  /* The speaking folio — one place to talk to the household */
+  var folio = null;
+  var folioLog = null;
+  var folioInput = null;
+  var folioSend = null;
+  var folioStatus = null;
+  var histories = {};
+  var folioResident = null;
+  var folioOpener = null;
+  var folioPending = false;
+
+  function initFolio() {
+    folio = h('div', { className: 'folio', role: 'dialog', 'aria-label': 'Ask a resident' });
+    folio.innerHTML = ''
+      + '<div class="folio__card">'
+      + '  <div class="folio__mark" id="folio-mark"></div>'
+      + '  <div class="folio__who">'
+      + '    <div class="folio__name"><span id="folio-name"></span><span class="folio__craft" id="folio-craft"></span></div>'
+      + '    <div class="folio__honest">one engine, many faces \u00B7 speaking through the model</div>'
+      + '  </div>'
+      + '  <button class="folio__close" id="folio-close" aria-label="Close">\u00D7</button>'
+      + '</div>'
+      + '<div class="folio__roles" id="folio-roles" aria-label="Things you can ask"></div>'
+      + '<div class="folio__log" id="folio-log" aria-live="polite"></div>'
+      + '<div class="folio__composer">'
+      + '  <textarea class="folio__input" id="folio-input" rows="1" placeholder="Ask the household\u2026" aria-label="Your message"></textarea>'
+      + '  <button class="folio__send" id="folio-send">Ask</button>'
+      + '  <button class="folio__forget" id="folio-forget" title="Forget this conversation">forget this talk</button>'
+      + '</div>';
+
+    folioLog = folio.querySelector('#folio-log');
+    folioInput = folio.querySelector('#folio-input');
+    folioSend = folio.querySelector('#folio-send');
+    folioStatus = folioLog;
+
+    folio.querySelector('#folio-close').addEventListener('click', closeFolio);
+    folioSend.addEventListener('click', folioSendMessage);
+    folioInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        folioSendMessage();
+      }
+    });
+    folio.querySelector('#folio-forget').addEventListener('click', function () {
+      if (!folioResident) return;
+      histories[folioResident] = [];
+      saveHistories();
+      openFolio(folioResident, folioOpener);
+    });
+
+    room.appendChild(folio);
+  }
+
+  function openFolio(screenId, opener) {
+    var resident = RESIDENTS[screenId];
+    if (!resident) return;
+    if (!folio) initFolio();
+
+    folioResident = screenId;
+    folioOpener = opener || null;
+
+    folio.querySelector('#folio-mark').textContent = resident.mark;
+    folio.querySelector('#folio-name').textContent = resident.name;
+    folio.querySelector('#folio-craft').textContent = resident.craft;
+
+    // Role templates — the resident's little toolkits
+    var rolesWrap = folio.querySelector('#folio-roles');
+    rolesWrap.innerHTML = '';
+    resident.roles.forEach(function (role) {
+      var b = h('button', { className: 'folio__role', textContent: role });
+      b.addEventListener('click', function () {
+        folioInput.value = role;
+        folioInput.focus();
+      });
+      rolesWrap.appendChild(b);
+    });
+
+    // The conversation so far (or the greeting, if we're starting fresh)
+    var history = histories[screenId] || [];
+    folioLog.innerHTML = '';
+    if (!history.length) {
+      folioLog.appendChild(h('div', { className: 'folio__msg folio__msg--resident', textContent: resident.greeting }));
+    } else {
+      history.forEach(function (turn) {
+        var cls = turn.role === 'user' ? 'folio__msg--user' : 'folio__msg--resident';
+        folioLog.appendChild(h('div', { className: 'folio__msg ' + cls, textContent: turn.content }));
+      });
+    }
+
+    folioInput.value = '';
+    folioInput.placeholder = 'Ask ' + resident.name + '\u2026';
+    folioInput.disabled = false;
+    folioSend.disabled = false;
+    folioPending = false;
+    folio.classList.add('folio--open');
+    folioInput.focus();
+  }
+
+  function closeFolio(returnFocus) {
+    if (!folio || !folio.classList.contains('folio--open')) return;
+    folio.classList.remove('folio--open');
+    if (returnFocus && folioOpener) {
+      var opener = folioOpener;
+      folioOpener = null;
+      try { opener.focus(); } catch (e) {}
+    }
+    folioResident = null;
+    folioPending = false;
+
+    // The walk waits for the folio — now that it's closed, onward
+    if (walk.pendingGo) {
+      var go = walk.pendingGo;
+      walk.pendingGo = null;
+      navigate(go);
+      ferryNote('Ratatoskr tugs your sleeve \u2014 onward to ' + walkRoomName(go) + '\u2026');
+    }
+  }
+
+  function folioSendMessage() {
+    if (!folioResident || folioPending) return;
+    var text = folioInput.value.trim();
+    if (!text) return;
+
+    folioPending = true;
+    folioSend.disabled = true;
+    folioInput.disabled = true;
+
+    folioLog.appendChild(h('div', { className: 'folio__msg folio__msg--user', textContent: text }));
+    var status = h('div', { className: 'folio__status', role: 'status', 'aria-live': 'polite', textContent: ferryLine() });
+    folioLog.appendChild(status);
+    folioLog.scrollTop = folioLog.scrollHeight;
+
+    var history = histories[folioResident] || [];
+    var requestHist = history.concat([{ role: 'user', content: text }]);
+
+    API.chat({ message: text, history: requestHist })
+      .then(function (data) {
+        var reply = (data && data.reply) ? data.reply : '';
+        if (status.parentNode) status.parentNode.removeChild(status);
+        if (!reply) {
+          folioLog.appendChild(h('div', { className: 'folio__error', role: 'status',
+            textContent: 'The resident drew nothing usable \u2014 ask again, or keep your own words.' }));
+          return;
+        }
+        histories[folioResident] = requestHist.concat([{ role: 'assistant', content: reply }]);
+        saveHistories();
+        var box = h('div', { className: 'folio__msg folio__msg--resident' });
+        box.appendChild(h('div', { textContent: reply }));
+        var keep = h('button', { className: 'folio__keep', type: 'button', textContent: 'keep this note' });
+        keep.addEventListener('click', function () {
+          keep.disabled = true;
+          var name = truncate(reply, 42) || 'a note from the household';
+          API.vaultKeep({ name: name, kind: 'note', bond: 'tended', lore: reply })
+            .then(function () {
+              studioAudio.clank();
+              ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 32) + '\u201d into the vault\u2026');
+            })
+            .catch(function () { keep.disabled = false; });
+        });
+        box.appendChild(keep);
+        folioLog.appendChild(box);
+        folioLog.scrollTop = folioLog.scrollHeight;
+      })
+      .catch(function () {
+        if (status.parentNode) status.parentNode.removeChild(status);
+        folioLog.appendChild(h('div', { className: 'folio__error', role: 'status',
+          textContent: 'The resident couldn\u2019t reach you just now. Your words are still on the page \u2014 ask again.' }));
+      })
+      .finally(function () {
+        folioPending = false;
+        folioSend.disabled = false;
+        folioInput.disabled = false;
+        folioInput.value = '';
+        folioInput.focus();
+      });
+  }
+
+  // Escape closes the folio
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && folio && folio.classList.contains('folio--open')) {
+      closeFolio(true);
+    }
+  });
+
+  /* A quiet line in each room: who tends it, how to ask, and the
+     room's own sound. Returns a fragment so one append gets both. */
+  function residentLine(screenId) {
+    var resident = RESIDENTS[screenId];
+    if (!resident) return null;
+    var frag = document.createDocumentFragment();
+    var line = h('div', { className: 'resident-line' });
+    line.appendChild(h('span', { className: 'resident-line__who',
+      textContent: 'tended by ' + resident.name + ' \u2014 ' + resident.craft }));
+    var btn = h('button', { className: 'resident-line__btn',
+      textContent: 'Ask ' + resident.name });
+    btn.addEventListener('click', function () { openFolio(screenId, btn); });
+    line.appendChild(btn);
+    frag.appendChild(line);
+    var amb = ambienceNode(screenId);
+    if (amb) frag.appendChild(amb);
+    return frag;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     THE DESK — the writing desk where worlds are made
+     ══════════════════════════════════════════════════════ */
+
+  screens.launcher = (function () {
+    // The foyer — the first room you step into. A launcher like a
+    // game's: the project on the table, every other pack in the
+    // pantry, what the house remembers, and the quick options at
+    // the mantel. Everything is real — packs from /api/builder/worlds,
+    // keepsakes from the vault, stars from the journal, threads the
+    // house has already heard. Nothing is invented.
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-launcher' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="foyer" id="foyer-content"></div>';
+      var c = el_screen.querySelector('#foyer-content');
+
+      c.appendChild(h('div', { className: 'archives-intro',
+        textContent: 'The foyer. Come in, sit by the fire \u2014 the house is glad you\u2019re back.' }));
+
+      var hearth = section(c, 'foyer-hearth', 'The project on the table');
+      var pantry = section(c, 'foyer-pantry', 'The pantry');
+      var mems = section(c, 'foyer-memories', 'What the house remembers');
+      c.appendChild(optionsPanel());
+
+      // Table + pantry from the same two real calls
+      Promise.all([API.world(), API.builderWorlds()])
+        .then(function (rs) { renderProjects(hearth, pantry, rs[0], (rs[1] && rs[1].worlds) || []); })
+        .catch(function () {
+          setSection(hearth, emptyState('the house can\u2019t find the project right now', 'check that the house is running'));
+          setSection(pantry, emptyState('the shelves wouldn\u2019t open', 'try again in a moment'));
+        });
+
+      // Memories — what was kept, starred, and spoken, from real books
+      Promise.all([API.vault(), API.journal()])
+        .then(function (rs) { renderMemories(mems, rs[0], rs[1]); })
+        .catch(function () {
+          setSection(mems, emptyState('the house is still waking up', 'the shelves open in a moment'));
+        });
+    }
+
+    function section(c, cls, title) {
+      var id = 'foyer-' + cls.replace('foyer-', '');
+      var s = h('section', { className: cls, 'aria-labelledby': id });
+      s.appendChild(h('h2', { className: 'foyer-h2', id: id, textContent: title }));
+      var holder = h('div', { className: 'foyer-holder' });
+      holder.appendChild(loadingState('the house is looking\u2026'));
+      s.appendChild(holder);
+      c.appendChild(s);
+      return s;
+    }
+    function setSection(s, node) {
+      var holder = s.querySelector('.foyer-holder');
+      if (!holder) return;
+      holder.innerHTML = '';
+      holder.appendChild(node);
+    }
+
+    function renderProjects(hearth, pantry, w, packs) {
+      var currentName = null;
+      if (w && w.title) {
+        packs.forEach(function (p) {
+          if (currentName === null && p.title === w.title) currentName = p.name;
+        });
+      }
+      setSection(hearth, projectTable(w));
+      setSection(pantry, pantryGrid(packs, currentName));
+    }
+    function projectTable(w) {
+      if (!w || !w.title) return emptyState('the house doesn\u2019t know its project yet', 'check that a world is mounted');
+      var card = h('div', { className: 'project-card project-card--table' });
+      card.appendChild(h('div', { className: 'project-card__title', textContent: w.title }));
+      var meta = [];
+      if (w.act && w.act.title) meta.push(w.act.title);
+      if (w.phases && w.phases.length) meta.push(w.phases.join(' \u00B7 '));
+      if (meta.length) card.appendChild(h('div', { className: 'project-card__meta', textContent: meta.join('  \u2014  ') }));
+      var enter = h('button', { className: 'btn btn--warm project-card__enter', type: 'button', textContent: 'enter the house \u2192' });
+      enter.addEventListener('click', function () { navigate('workshop'); });
+      card.appendChild(enter);
+      return card;
+    }
+    function pantryGrid(packs, currentName) {
+      var others = packs.filter(function (p) { return p.name !== currentName; });
+      if (!others.length) return emptyState('the pantry is bare', 'every pack you have is already on the table');
+      var wrap = h('div', { className: 'foyer-pantry__grid' });
+      others.forEach(function (p) {
+        var card = h('div', { className: 'project-card project-card--pantry' });
+        card.appendChild(h('div', { className: 'project-card__title', textContent: p.title || p.name }));
+        var bits = [];
+        if (p.phases && p.phases.length) bits.push(p.phases.join(' \u00B7 '));
+        if (p.speakers) bits.push(p.speakers.length + ' speaker' + (p.speakers.length !== 1 ? 's' : ''));
+        if (bits.length) card.appendChild(h('div', { className: 'project-card__meta', textContent: bits.join(' \u00B7 ') }));
+        card.appendChild(h('p', { className: 'project-card__pantry-note',
+          textContent: 'In the pantry \u2014 ask the keeper to set VEFR_WORLD to \u201C' + p.name + '\u201D when the house starts.' }));
+        wrap.appendChild(card);
+      });
+      return wrap;
+    }
+
+    function renderMemories(mems, vaultRes, journalRes) {
+      var keeps = (vaultRes && (vaultRes.items || vaultRes.keepsakes)) || (Array.isArray(vaultRes) ? vaultRes : []);
+      var entries = (journalRes && journalRes.entries) || (Array.isArray(journalRes) ? journalRes : []);
+      var starred = entries.filter(function (e) { return e.starred || e.star; }).slice(0, 3);
+
+      var colKeep = h('div', { className: 'foyer-mem' });
+      colKeep.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'kept lately' }));
+      if (!keeps.length) colKeep.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'nothing kept yet \u2014 the walls are bare' }));
+      keeps.slice(-3).reverse().forEach(function (k) {
+        colKeep.appendChild(h('p', { className: 'foyer-mem__line', textContent: truncate(k.name || 'a keepsake', 34) }));
+      });
+
+      var colStar = h('div', { className: 'foyer-mem' });
+      colStar.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'starred lately' }));
+      if (!starred.length) colStar.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'no leaves pressed yet' }));
+      starred.forEach(function (e) {
+        colStar.appendChild(h('p', { className: 'foyer-mem__line',
+          textContent: truncate(e.text || e.content || e.event || e.whisper || 'a starred line', 34) }));
+      });
+
+      var colTalk = h('div', { className: 'foyer-mem' });
+      colTalk.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'spoken lately' }));
+      var whisper = watch.buffer && watch.buffer[watch.buffer.length - 1];
+      var thread = lastThread();
+      if (thread) colTalk.appendChild(h('p', { className: 'foyer-mem__line', textContent: thread }));
+      else if (whisper && whisper.el) colTalk.appendChild(h('p', { className: 'foyer-mem__line',
+        textContent: truncate(whisper.el.textContent || 'the house stirred', 34) }));
+      else colTalk.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'the house is quiet tonight' }));
+
+      var wrap = h('div', { className: 'foyer-memories__row' });
+      wrap.appendChild(colKeep);
+      wrap.appendChild(colStar);
+      wrap.appendChild(colTalk);
+      setSection(mems, wrap);
+    }
+    function lastThread() {
+      var keys = Object.keys(histories || {});
+      if (!keys.length) return null;
+      var msgs = histories[keys[keys.length - 1]];
+      var last = msgs && msgs[msgs.length - 1];
+      return last ? truncate(String(last.content || last.text || '').replace(/\s+/g, ' '), 44) : null;
+    }
+
+    function optionsPanel() {
+      // Quick options at the mantel — the same contracts the boiler
+      // room owns: sound and motion via VEFR_PREFS, the walk and the
+      // sheet via the first walk, the rest by walking through doors.
+      var P = window.VEFR_PREFS;
+      var current = (P && P.get) ? P.get() : {};
+      var panel = h('section', { className: 'foyer-options', 'aria-labelledby': 'foyer-options-title' });
+      panel.appendChild(h('h2', { className: 'foyer-h2', id: 'foyer-options-title', textContent: 'At the mantel' }));
+      var optCard = h('div', { className: 'settings-card' });
+
+      var soundRow = h('div', { className: 'settings-row' });
+      soundRow.appendChild(h('span', { className: 'settings-row__label', textContent: 'Hearth sound' }));
+      var soundOpts = h('div', { className: 'settings-row__options' });
+      var snd = current.sound || {};
+      var soundOn = (snd.effects || 0) > 0 || (snd.ambience || 0) > 0;
+      [{ label: 'Off', on: false }, { label: 'On', on: true }].forEach(function (o) {
+        var b = h('button', { className: 'settings-option' + (soundOn === o.on ? ' settings-option--active' : ''), textContent: o.label });
+        b.addEventListener('click', function () {
+          if (P && P.set) {
+            P.set({ sound: o.on ? { effects: 0.7, ambience: 0.5, speech: 0.8 } : { effects: 0, ambience: 0, speech: 0 } });
+          }
+          soundOpts.querySelectorAll('.settings-option').forEach(function (x) { x.classList.remove('settings-option--active'); });
+          b.classList.add('settings-option--active');
+          if (o.on && studioAudio) { studioAudio.unlock(); studioAudio.ambient(true); }
+          if (!o.on && studioAudio) studioAudio.ambient(false);
+        });
+        soundOpts.appendChild(b);
+      });
+      soundRow.appendChild(soundOpts);
+      optCard.appendChild(soundRow);
+
+      var motRow = h('div', { className: 'settings-row' });
+      motRow.appendChild(h('span', { className: 'settings-row__label', textContent: 'Motion' }));
+      var motOpts = h('div', { className: 'settings-row__options' });
+      [{ label: 'Off', value: 'off' }, { label: 'Subtle', value: 'subtle' }, { label: 'Full', value: 'full' }].forEach(function (o) {
+        var b = h('button', { className: 'settings-option' + ((current.motion || 'off') === o.value ? ' settings-option--active' : ''), textContent: o.label });
+        b.addEventListener('click', function () {
+          if (P && P.set) P.set({ motion: o.value });
+          motOpts.querySelectorAll('.settings-option').forEach(function (x) { x.classList.remove('settings-option--active'); });
+          b.classList.add('settings-option--active');
+        });
+        motOpts.appendChild(b);
+      });
+      motRow.appendChild(motOpts);
+      optCard.appendChild(motRow);
+
+      var doorsRow = h('div', { className: 'settings-row' });
+      doorsRow.appendChild(h('span', { className: 'settings-row__label', textContent: 'Doorways' }));
+      var doorOpts = h('div', { className: 'settings-row__options' });
+      var walkBtn = h('button', { className: 'btn btn--warm settings-row__btn', type: 'button', textContent: 'walk the house again' });
+      walkBtn.addEventListener('click', function () { if (firstWalk) firstWalk.reset(); });
+      var sheetBtn = h('button', { className: 'btn btn--warm settings-row__btn', type: 'button', textContent: 'how to read this house' });
+      sheetBtn.addEventListener('click', function () { if (firstWalk) firstWalk.openSheet(); });
+      var boilerBtn = h('button', { className: 'btn btn--ghost settings-row__btn', type: 'button', textContent: 'the boiler room \u2192' });
+      boilerBtn.addEventListener('click', function () { navigate('settings'); });
+      doorOpts.appendChild(walkBtn);
+      doorOpts.appendChild(sheetBtn);
+      doorOpts.appendChild(boilerBtn);
+      doorsRow.appendChild(doorOpts);
+      optCard.appendChild(doorsRow);
+
+      panel.appendChild(optCard);
+      return panel;
+    }
+
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  screens.workshop = (function () {
+    var el_screen, world = null, journal = [];
+
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-workshop' });
+      el_screen.innerHTML = ''
+        + '<div class="workshop">'
+        + '  <div class="workshop__story">'
+        + '    <div class="workshop__story-header">'
+        + '      <h2 class="workshop__chapter" id="ws-chapter"></h2>'
+        + '      <div class="workshop__meta" id="ws-meta"></div>'
+        + '    </div>'
+        + '    <div class="workshop__body"><div class="workshop__content" id="ws-content"></div></div>'
+        + '    <div class="workshop__footer">'
+        + '      <button class="btn btn--bell" id="ws-bell">\u{1F514} Ring for the Storyteller</button>'
+        + '      <button class="btn btn--ghost" id="ws-continue" aria-label="Continue the story">What happens next?</button>'
+        + '      <button class="btn btn--ghost" id="ws-toggle-ctx" aria-expanded="true" aria-label="Toggle context">Notes</button>'
+        + '    </div>'
+        + '  </div>'
+        + '  <aside class="workshop__context" id="ws-context" role="complementary" aria-label="What the world knows">'
+        + '    <div class="context__section">'
+        + '      <h3 class="context__heading">What the world knows</h3>'
+        + '      <div id="ws-ctx-items"></div>'
+        + '    </div>'
+        + '    <div class="context__section">'
+        + '      <h3 class="context__heading">Recent</h3>'
+        + '      <div id="ws-ctx-recent"></div>'
+        + '    </div>'
+        + '    <div class="context__section">'
+        + '      <button class="context__link" id="ws-evidence">Descend into the archives \u2192</button>'
+        + '    </div>'
+        + '  </aside>'
+        + '</div>';
+
+      el_screen.querySelector('#ws-bell').addEventListener('click', function (e) {
+        firstWalk.attempt('bell');
+        openFolio('workshop', e.currentTarget);
+      });
+      el_screen.querySelector('#ws-continue').addEventListener('click', continueStory);
+      el_screen.querySelector('#ws-toggle-ctx').addEventListener('click', toggleContext);
+      el_screen.querySelector('#ws-evidence').addEventListener('click', function () { navigate('evidence'); });
+      main.appendChild(el_screen);
+    }
+
+    function enter() { load(); }
+    function leave() {}
+
+    function load() {
+      setContent(loadingState('The storyteller is considering it\u2026'));
+      Promise.all([API.world(), API.journal().catch(function () { return { entries: [] }; })])
+        .then(function (results) {
+          world = results[0];
+          journal = Array.isArray(results[1]) ? results[1] : (results[1].entries || []);
+          render();
+          inhabitWorld(world);
+        })
+        .catch(function () {
+          world = null;
+          journal = [];
+          render();
+          setLantern(false, 'the storyteller can\u2019t be reached');
+        });
+    }
+
+    function render() {
+      renderChapter();
+      renderContent();
+      renderMeta();
+      renderContextItems();
+      renderRecent();
+    }
+
+    function renderChapter() {
+      var ch = el_screen.querySelector('#ws-chapter');
+      if (!world) { ch.textContent = ''; return; }
+      var act = world.act;
+      ch.textContent = (act && typeof act === 'object') ? act.title : (act || world.title || '');
+    }
+
+    function renderMeta() {
+      var m = el_screen.querySelector('#ws-meta');
+      if (!world) { m.innerHTML = ''; return; }
+      var parts = [];
+      if (world.surface) parts.push('<span>' + esc(world.surface) + '</span>');
+      if (world.phases && world.phases.length) parts.push('<span>' + esc(world.phases.join(' \u00b7 ')) + '</span>');
+      m.innerHTML = parts.join('');
+    }
+
+    function renderContent() {
+      var c = el_screen.querySelector('#ws-content');
+      if (!world) {
+        c.innerHTML = '';
+        c.appendChild(emptyState(
+          'The world is quiet.\nThat\u2019s not the same as empty.',
+          'Continue the story to see what happens.',
+          true
+        ));
+        return;
+      }
+
+      var parts = [];
+
+      // The room's quiet sound — pinned at the top of the desk
+      parts.push('<p class="room-ambience">' + esc(AMBIENCE.workshop) + '</p>');
+
+      // The gold rule — cast in brass above the desk
+      if (world.gold_rule) {
+        parts.push('<p class="workshop__gold-rule">' + esc(world.gold_rule) + '</p>');
+      }
+
+      // The map — a scrap pinned to the desk
+      if (world.map && world.map.length) {
+        parts.push('<div class="workshop__map">' + esc(world.map.join('\n')) + '</div>');
+      }
+
+      // Status — the instruments on the desk
+      if (world.phases || world.hp) {
+        parts.push('<div class="workshop__status">');
+        if (world.phases && world.phases.length) {
+          parts.push('<div class="workshop__status-item">'
+            + '<span class="workshop__status-label">The world turns between</span>'
+            + '<span class="workshop__status-value">' + esc(world.phases.join(' and ')) + '</span>'
+            + '</div>');
+        }
+        if (world.hp) {
+          var hearts = '';
+          for (var i = 0; i < world.hp.max; i++) {
+            hearts += i < world.hp.current ? '\u2764\uFE0F' : '\u{1F90D}';
+          }
+          parts.push('<div class="workshop__status-item">'
+            + '<span class="workshop__status-label">You have</span>'
+            + '<span class="workshop__status-value workshop__status-hearts">' + hearts + '</span>'
+            + '</div>');
+        }
+        parts.push('</div>');
+      }
+
+      c.innerHTML = parts.join('\n');
+    }
+
+    function renderContextItems() {
+      var container = el_screen.querySelector('#ws-ctx-items');
+      if (!world) {
+        container.innerHTML = '<div class="context__empty">The world is quiet.</div>';
+        return;
+      }
+      var items = [];
+      if (world.phases && world.phases.length)
+        items.push({ label: 'Phases', value: world.phases.join(', ') });
+      if (world.surface)
+        items.push({ label: 'Surface', value: world.surface });
+      if (world.gold_rule)
+        items.push({ label: 'Gold Rule', value: world.gold_rule });
+      if (world.hp)
+        items.push({ label: 'HP', value: world.hp.current + '/' + world.hp.max });
+
+      if (!items.length) {
+        container.innerHTML = '<div class="context__empty">The world is quiet.</div>';
+        return;
+      }
+      container.innerHTML = items.map(function (item) {
+        return '<div class="context__item">'
+          + '<span class="context__item-label">' + esc(item.label) + '</span>'
+          + '<span class="context__item-value">' + esc(item.value) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    function renderRecent() {
+      var container = el_screen.querySelector('#ws-ctx-recent');
+      if (!journal.length) {
+        container.innerHTML = '<div class="context__empty">Nothing yet. The chronicle is waiting.</div>';
+        return;
+      }
+      container.innerHTML = journal.slice(-5).reverse().map(function (entry) {
+        var text = entry.text || entry.content || entry.event || entry.whisper || '';
+        var time = entry.timestamp || entry.time || entry.at || '';
+        return '<div class="context__event">'
+          + '<span class="context__event-time">' + esc(formatTime(time)) + '</span>'
+          + '<span class="context__event-text">' + esc(truncate(text, 80)) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    function setContent(node) {
+      var c = el_screen.querySelector('#ws-content');
+      c.innerHTML = '';
+      c.appendChild(node);
+    }
+
+    function continueStory() {
+      var btn = el_screen.querySelector('#ws-continue');
+      btn.disabled = true;
+      btn.textContent = 'the storyteller is considering it\u2026';
+      API.rumor()
+        .then(function () { load(); })
+        .catch(function (err) { console.error('[desk] rumor failed:', err); })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'What happens next?';
+        });
+    }
+
+    function toggleContext() {
+      var btn = el_screen.querySelector('#ws-toggle-ctx');
+      var ctx = el_screen.querySelector('#ws-context');
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      ctx.style.display = open ? 'none' : '';
+      el_screen.querySelector('.workshop').classList.toggle('workshop--no-context', open);
+    }
+
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE MAP ROOM — spatial, the world laid out
+     ══════════════════════════════════════════════════════ */
+
+  screens.map = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-map' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="map-room" id="map-content"></div>';
+      var container = el_screen.querySelector('#map-content');
+      container.appendChild(loadingState('The map is drawing itself\u2026'));
+
+      Promise.all([
+        API.world().catch(function () { return null; }),
+        API.validate().catch(function () { return { ok: false, errors: ['the pack won\u2019t answer'] }; })
+      ]).then(function (results) {
+        var data = results[0];
+        var packCheck = results[1];
+        container.innerHTML = '';
+        if (!data) {
+          container.appendChild(emptyState(
+            'Couldn\u2019t reach the map room.',
+            'The world might not be ready yet.'
+          ));
+          return;
+        }
+        container.appendChild(h('div', { className: 'map-room__heading',
+          textContent: 'The world laid out' }));
+        var rl = residentLine('map');
+        if (rl) container.appendChild(rl);
+
+        var regions = data.regions || {};
+        var names = Object.keys(regions);
+        if (!names.length) {
+          container.appendChild(emptyState(
+            'The map is blank.\nBut every world starts somewhere.',
+            'Regions appear as you explore.',
+            true
+          ));
+          return;
+        }
+
+        var bench = h('div', { className: 'map-bench' });
+        var wrap = h('div', { className: 'map-regions' });
+        names.forEach(function (name) { wrap.appendChild(regionCard(name, regions[name])); });
+        bench.appendChild(wrap);
+        bench.appendChild(packCheckRow(packCheck));
+        container.appendChild(bench);
+        container.appendChild(drawingTable(data));
+      });
+    }
+
+    /* The survey — real numbers read off the map itself */
+    function surveyOf(mapText) {
+      var rows = mapText.length;
+      var cols = 0;
+      var census = {};
+      mapText.forEach(function (ln) {
+        if (ln.length > cols) cols = ln.length;
+        ln.split('').forEach(function (ch) {
+          if (ch === ' ' || ch === '\n' || ch === '\r') return;
+          census[ch] = (census[ch] || 0) + 1;
+        });
+      });
+      return { rows: rows, cols: cols, census: census };
+    }
+
+    function regionCard(name, region) {
+      var mapText = (region && region.map_text) || [];
+      var card = h('section', { className: 'map-region' });
+      card.appendChild(h('h3', { className: 'map-region__name', textContent: name }));
+      if (!mapText.length) return card;
+
+      var survey = surveyOf(mapText);
+      var kinds = Object.keys(survey.census).length;
+      card.appendChild(h('p', { className: 'map-region__survey',
+        textContent: 'a ' + survey.cols + '\u00d7' + survey.rows + ' stretch \u00b7 '
+          + kinds + ' kind' + (kinds === 1 ? '' : 's') + ' of ground' }));
+      card.appendChild(h('pre', { className: 'map-region__grid', textContent: mapText.join('\n') }));
+
+      /* Each kind of ground is a door — press it and ask what lives there */
+      var marks = h('div', { className: 'map-marks' });
+      marks.appendChild(h('span', { className: 'map-marks__label',
+        textContent: 'press a mark to ask what lives under it' }));
+      Object.keys(survey.census).forEach(function (ch) {
+        var chip = h('button', { className: 'map-mark', type: 'button',
+          textContent: '\u201c' + ch + '\u201d \u00b7 ' + survey.census[ch] });
+        chip.addEventListener('click', function () {
+          openFolio('map', chip);
+          folioInput.value = 'What is the mark \u201c' + ch + '\u201d in ' + name + '? What lives under it?';
+          folioInput.focus();
+        });
+        marks.appendChild(chip);
+      });
+      card.appendChild(marks);
+
+      card.appendChild(deepenTool(name));
+      return card;
+    }
+
+    /* Deepen a landmark — the surveyor walks the ground (real enhance) */
+    function deepenTool(name) {
+      var div = h('div', { className: 'map-deepen' });
+      div.appendChild(h('span', { className: 'map-deepen__label', textContent: 'deepen a landmark' }));
+      var row = h('div', { className: 'map-deepen__row' });
+      var inp = h('input', { className: 'map-deepen__input', type: 'text',
+        placeholder: 'e.g. the old mill', 'aria-label': 'Landmark to deepen in ' + name });
+      var btn = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Deepen' });
+      var out = h('div', { className: 'map-deepen__out' });
+      function run() {
+        var poi = inp.value.trim();
+        if (!poi) { inp.focus(); return; }
+        btn.disabled = true;
+        out.innerHTML = '';
+        out.appendChild(loadingState('the surveyor is walking that ground\u2026'));
+        API.enhanceMap({ region: name, poi_name: poi })
+          .then(function (res) {
+            out.innerHTML = '';
+            var box = h('div', { className: 'map-enhance' });
+            box.appendChild(h('div', { className: 'map-enhance__title', textContent: res.title || poi }));
+            if (res.description) {
+              box.appendChild(h('p', { className: 'map-enhance__desc', textContent: res.description }));
+            }
+            if (res.details && res.details.length) {
+              var ul = h('ul', { className: 'map-enhance__details' });
+              res.details.forEach(function (d) { ul.appendChild(h('li', { textContent: d })); });
+              box.appendChild(ul);
+            }
+            out.appendChild(box);
+          })
+          .catch(function () {
+            out.innerHTML = '';
+            out.appendChild(h('p', { className: 'map-deepen__err',
+              textContent: 'the surveyor couldn\u2019t reach that ground \u2014 ask again, or name it differently' }));
+          })
+          .finally(function () { btn.disabled = false; });
+      }
+      btn.addEventListener('click', run);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+      row.appendChild(inp);
+      row.appendChild(btn);
+      div.appendChild(row);
+      div.appendChild(out);
+      return div;
+    }
+
+    /* The pack's own word — real validation, shown plainly */
+    function packCheckRow(first) {
+      var row = h('div', { className: 'map-check' });
+      row.appendChild(h('span', { className: 'map-check__label', textContent: 'the pack' }));
+      var val = h('span', { className: 'map-check__value', role: 'status' });
+      var btn = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'check the pack' });
+      function paint(res) {
+        if (!res) {
+          val.textContent = 'didn\u2019t answer';
+          val.className = 'map-check__value map-check__value--warn';
+          return;
+        }
+        var ok = !!res.ok;
+        val.textContent = ok
+          ? 'holds \u2014 nothing to fix'
+          : ((res.errors && res.errors.length) ? res.errors.join(' \u00b7 ') : 'has things to fix');
+        val.className = 'map-check__value' + (ok ? ' map-check__value--ok' : ' map-check__value--warn');
+      }
+      paint(first);
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        val.textContent = 'checking\u2026';
+        API.validate().catch(function () { return null; }).then(paint)
+          .finally(function () { btn.disabled = false; });
+      });
+      row.appendChild(val);
+      row.appendChild(btn);
+      return row;
+    }
+
+    /* ── The drawing table — a map maker with no markdown ── */
+    function drawingTable(data) {
+      var regions = data.regions || {};
+      var names = Object.keys(regions);
+      var useName = names.indexOf('town') !== -1 ? 'town' : (names[0] || 'town');
+      var region = regions[useName] || {};
+      var legend = data.legend || {};
+      var sanctuary = data.sanctuary_tiles || [];
+      var packLines = (region.map_text && region.map_text.length)
+        ? region.map_text.slice()
+        : (data.map || []).slice();
+      var legendKeys = Object.keys(legend);
+
+      var section = h('section', { className: 'map-draw' });
+      section.appendChild(h('h3', { className: 'map-draw__title', textContent: 'The drawing table' }));
+      section.appendChild(h('p', { className: 'map-draw__hint',
+        textContent: 'No markdown here \u2014 dip a brush and press the ground. The engine checks every sketch; only you decide what\u2019s kept.' }));
+
+      if (!legendKeys.length || !packLines.length) {
+        section.appendChild(h('p', { className: 'map-draw__note',
+          textContent: 'This world has no ink yet \u2014 there is nothing to sketch until the pack names a map and its marks.' }));
+        return section;
+      }
+
+      var grid = packLines.map(function (ln) { return ln.split(''); });
+      var rows = grid.length;
+      var cols = grid[0] ? grid[0].length : 0;
+      var brush = legendKeys.indexOf('.') !== -1 ? '.' : legendKeys[0];
+      var dirty = false;
+      var tool = 'brush';                // the hand at the table: brush | bucket
+      var undoStack = [];
+      var MAX_UNDO = 40;
+      function snapshot() {
+        undoStack.push(grid.map(function (r) { return r.slice().join(''); }));
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        if (undoBtn) undoBtn.hidden = false;
+      }
+      function undo() {
+        if (!undoStack.length) return;
+        grid = undoStack.pop().map(function (ln) { return ln.split(''); });
+        saveSketch();
+        render();
+        if (undoBtn) undoBtn.hidden = undoStack.length === 0;
+      }
+      var sketchKey = 'vefr.sketch.' + String(data.title || 'world')
+        .replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.' + useName;
+      try {
+        var saved = window.localStorage && localStorage.getItem(sketchKey);
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.grid) && parsed.grid.length === rows &&
+              parsed.grid.every(function (r) { return Array.isArray(r) && r.length === cols; })) {
+            grid = parsed.grid.map(function (r) { return r.slice(); });
+            if (parsed.brush && legend[parsed.brush]) brush = parsed.brush;
+            dirty = true;
+          }
+        }
+      } catch (e) {}
+
+      var canvas = h('div', { className: 'map-canvas', role: 'grid', tabindex: '0',
+        'aria-label': 'Map of ' + useName + ' \u2014 press the arrows to move, Enter to ink' });
+      var inkLine = h('p', { className: 'map-draw__ink', role: 'status' });
+      var focusR = 0, focusC = 0, cells = [];
+
+      function cellColor(ch) {
+        var spec = legend[ch];
+        if (!spec || !spec.base || !spec.base.length) return '';
+        return spec.base[0];
+      }
+      function cellSolid(ch) {
+        var s = legend[ch];
+        return !!(s && s.solid === true);
+      }
+      function saveSketch() {
+        try {
+          window.localStorage.setItem(sketchKey, JSON.stringify({
+            grid: grid.map(function (r) { return r.slice(); }), brush: brush }));
+        } catch (e) {}
+      }
+      function census() {
+        var chr = {};
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var ch = grid[r][c];
+            if (ch && ch !== ' ') chr[ch] = (chr[ch] || 0) + 1;
+          }
+        }
+        var parts = Object.keys(chr).map(function (k) { return '\u201c' + k + '\u201d \u00d7 ' + chr[k]; });
+        inkLine.textContent = rows + ' rows \u00d7 ' + cols + ' cols \u00b7 '
+          + (parts.length ? parts.join(', ') : 'nothing inked yet');
+      }
+      function paint(r, c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+        var cell = cells[r] && cells[r][c];
+        if (!cell) return;
+        if (grid[r][c] === brush) return;
+        snapshot();
+        grid[r][c] = brush;
+        cell.textContent = brush;
+        cell.style.background = cellColor(brush) || 'transparent';
+        cell.classList.toggle('map-cell--solid', cellSolid(brush));
+        cell.classList.toggle('map-cell--marked', !!(legend[brush] && legend[brush].deco));
+        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 \u201c' + brush + '\u201d';
+        dirty = true;
+        saveSketch();
+        census();
+        cansBtn.hidden = false;
+        btnKeep.disabled = false;
+        firstWalk.attempt('map');
+      }
+      function floodFill(r, c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+        var target = grid[r][c];
+        if (target === brush) return;
+        snapshot();
+        var open = [[r, c]];
+        var seen = {};
+        seen[r * cols + c] = true;
+        while (open.length) {
+          var cur = open.pop();
+          var cr = cur[0], cc = cur[1];
+          grid[cr][cc] = brush;
+          var cell = cells[cr] && cells[cr][cc];
+          if (cell) {
+            cell.textContent = brush;
+            cell.style.background = cellColor(brush) || 'transparent';
+            cell.classList.toggle('map-cell--solid', cellSolid(brush));
+            cell.classList.toggle('map-cell--marked', !!(legend[brush] && legend[brush].deco));
+            cell.title = 'row ' + (cr + 1) + ', column ' + (cc + 1) + ' \u00B7 \u201C' + brush + '\u201D';
+          }
+          var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          for (var d = 0; d < 4; d++) {
+            var nr = cr + dirs[d][0], nc = cc + dirs[d][1];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols &&
+                !seen[nr * cols + nc] && grid[nr][nc] === target) {
+              seen[nr * cols + nc] = true;
+              open.push([nr, nc]);
+            }
+          }
+        }
+        dirty = true;
+        saveSketch();
+        census();
+        cansBtn.hidden = false;
+        btnKeep.disabled = false;
+        firstWalk.attempt('map');
+      }
+      function focusCell(r, c) {
+        var old = cells[focusR] && cells[focusR][focusC];
+        if (old) old.tabIndex = -1;
+        focusR = r; focusC = c;
+        var cell = cells[r] && cells[r][c];
+        if (cell) {
+          cell.tabIndex = 0;
+          cell.focus();
+        }
+      }
+      function makeCell(r, c) {
+        var ch = grid[r][c];
+        var cell = h('div', { className: 'map-cell' + (cellSolid(ch) ? ' map-cell--solid' : ''),
+          role: 'gridcell', tabindex: '-1', textContent: ch,
+          'data-xy': String(r * cols + c) });
+        var bg = cellColor(ch);
+        if (bg) cell.style.background = bg;
+        if (legend[ch] && legend[ch].deco) cell.classList.add('map-cell--marked');
+        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 \u201c' + ch + '\u201d';
+        cell.addEventListener('click', function () {
+          var idx = Number(cell.getAttribute('data-xy'));
+          var rr = Math.floor(idx / cols), cc = idx % cols;
+          if (tool === 'bucket') floodFill(rr, cc); else paint(rr, cc);
+          focusCell(rr, cc);
+        });
+        return cell;
+      }
+      function render() {
+        var hadFocus = canvas.contains(document.activeElement);
+        canvas.innerHTML = '';
+        cells = [];
+        focusR = Math.min(focusR, rows - 1);
+        focusC = Math.min(focusC, cols - 1);
+        for (var r = 0; r < rows; r++) {
+          cells.push([]);
+          var rowEl = h('div', { className: 'map-canvas__row', role: 'row' });
+          for (var c = 0; c < cols; c++) {
+            var cell = makeCell(r, c);
+            if (r === focusR && c === focusC) cell.tabIndex = 0;
+            cells[r].push(cell);
+            rowEl.appendChild(cell);
+          }
+          canvas.appendChild(rowEl);
+        }
+        census();
+        if (hadFocus) focusCell(focusR, focusC);
+      }
+      canvas.addEventListener('keydown', function (e) {
+        var r = focusR, c = focusC;
+        if (e.key === 'ArrowUp') r = Math.max(0, r - 1);
+        else if (e.key === 'ArrowDown') r = Math.min(rows - 1, r + 1);
+        else if (e.key === 'ArrowLeft') c = Math.max(0, c - 1);
+        else if (e.key === 'ArrowRight') c = Math.min(cols - 1, c + 1);
+        else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); paint(r, c); return; }
+        else return;
+        e.preventDefault();
+        focusCell(r, c);
+      });
+
+      /* Drag to paint with the brush — press, sweep, lift */
+      var dragging = false;
+      canvas.addEventListener('pointerdown', function (e) {
+        var cell = e.target.closest && e.target.closest('.map-cell');
+        if (!cell) return;
+        dragging = true;
+        var idx = Number(cell.getAttribute('data-xy'));
+        var rr = Math.floor(idx / cols), cc = idx % cols;
+        if (tool === 'bucket') floodFill(rr, cc); else paint(rr, cc);
+      });
+      canvas.addEventListener('pointerover', function (e) {
+        if (!dragging || tool !== 'brush') return;
+        var cell = e.target.closest && e.target.closest('.map-cell');
+        if (!cell) return;
+        var idx = Number(cell.getAttribute('data-xy'));
+        var rr = Math.floor(idx / cols), cc = idx % cols;
+        paint(rr, cc);
+      });
+      document.addEventListener('pointerup', function () { dragging = false; });
+
+      /* The ink pots — one brush per mark the pack really knows */
+      var pots = h('div', { className: 'map-pots', role: 'group',
+        'aria-label': 'Ink pots \u2014 one brush per mark' });
+      function potLabel(ch) {
+        var spec = legend[ch] || {};
+        if (spec.solid === true) return 'solid';
+        if (sanctuary.indexOf(ch) !== -1) return 'sanctuary';
+        if (spec.deco) return 'marked';
+        return 'open ground';
+      }
+      function paintPots() {
+        pots.innerHTML = '';
+        legendKeys.forEach(function (ch) {
+          var b = h('button', { className: 'map-inked' + (brush === ch ? ' map-inked--active' : ''),
+            type: 'button', 'aria-pressed': String(brush === ch) });
+          b.appendChild(h('span', { className: 'map-inked__char', textContent: ch }));
+          b.appendChild(h('span', { className: 'map-inked__label', textContent: potLabel(ch) }));
+          var bg = cellColor(ch);
+          if (bg) b.style.setProperty('--ink', bg);
+          b.addEventListener('click', function () {
+            brush = ch;
+            paintPots();
+            if (dirty) { cansBtn.hidden = false; btnKeep.disabled = false; }
+          });
+          pots.appendChild(b);
+        });
+      }
+
+      /* The tools — brush, bucket, undo */
+      var tools = h('div', { className: 'map-draw__tools', role: 'group', 'aria-label': 'Table tools' });
+      var brushTool = h('button', { className: 'map-tool map-tool--active', type: 'button',
+        'aria-pressed': 'true', textContent: 'brush' });
+      var bucketTool = h('button', { className: 'map-tool', type: 'button',
+        'aria-pressed': 'false', textContent: 'fill' });
+      var undoBtn = h('button', { className: 'map-tool map-tool--undo', type: 'button',
+        textContent: 'undo', hidden: true });
+      function setTool(t) {
+        tool = t;
+        brushTool.classList.toggle('map-tool--active', t === 'brush');
+        bucketTool.classList.toggle('map-tool--active', t === 'bucket');
+        brushTool.setAttribute('aria-pressed', String(t === 'brush'));
+        bucketTool.setAttribute('aria-pressed', String(t === 'bucket'));
+      }
+      brushTool.addEventListener('click', function () { setTool('brush'); });
+      bucketTool.addEventListener('click', function () { setTool('bucket'); });
+      undoBtn.addEventListener('click', function () {
+        undo();
+        undoBtn.hidden = undoStack.length === 0;
+      });
+      tools.appendChild(brushTool);
+      tools.appendChild(bucketTool);
+      tools.appendChild(undoBtn);
+
+      /* Sketches kept from this very table, pinned by the ferry */
+      var pinned = h('div', { className: 'map-draw__pinned' });
+      API.vault().catch(function () { return { items: [] }; }).then(function (v) {
+        var sketches = ((v && v.items) || []).filter(function (i) { return i.kind === 'sketch'; });
+        if (!sketches.length) return;
+        pinned.appendChild(h('h4', { className: 'map-draw__pinned-title', textContent: 'sketches pinned from this table' }));
+        var shelf = h('div', { className: 'folks-shelf' });
+        sketches.forEach(function (s) {
+          var card = h('button', { className: 'pinned-card', type: 'button',
+            'aria-label': 'Ask about ' + (s.name || 'a sketch') });
+          card.appendChild(h('span', { className: 'pinned-card__name', textContent: s.name || 'a sketch' }));
+          card.appendChild(h('span', { className: 'pinned-card__lore', textContent: truncate(s.lore || '', 90) }));
+          card.addEventListener('click', function () {
+            openFolio('map', card);
+            folioInput.value = 'Tell me about \u201C' + (s.name || 'this sketch') + '\u201D \u2014 what does the land want?';
+            folioInput.focus();
+          });
+          shelf.appendChild(card);
+        });
+        pinned.appendChild(shelf);
+      });
+
+      /* The actions — reset, sketch new land, keep, ask */
+      var actions = h('div', { className: 'map-draw__row' });
+      var cansBtn = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'reset the ink', hidden: true });
+      var sketchBtn = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'sketch new land' });
+      var keepName = h('input', { className: 'map-draw__keep-name', type: 'text',
+        value: 'map sketch of ' + useName + ' (hand-inked)',
+        'aria-label': 'Name for the kept sketch' });
+      var btnKeep = h('button', { className: 'btn btn--bell', type: 'button', textContent: 'keep this sketch', disabled: true });
+      var keepWrap = h('div', { className: 'map-draw__keep' });
+      keepWrap.appendChild(keepName);
+      keepWrap.appendChild(btnKeep);
+      actions.appendChild(cansBtn);
+      actions.appendChild(sketchBtn);
+      actions.appendChild(keepWrap);
+
+      var askBtn = h('button', { className: 'btn btn--ghost', type: 'button',
+        textContent: 'ask the Cartographer about it' });
+      actions.appendChild(askBtn);
+      var checkBtn = h('button', { className: 'btn btn--ghost', type: 'button',
+        textContent: 'check the ground' });
+      actions.appendChild(checkBtn);
+      var checkNote = h('p', { className: 'map-draw__check', role: 'status',
+        'aria-live': 'polite', hidden: true });
+      checkBtn.addEventListener('click', function () {
+        checkBtn.disabled = true;
+        checkNote.hidden = false;
+        checkNote.textContent = 'the engine is pacing the ground\u2026';
+        checkNote.classList.remove('map-draw__check--good', 'map-draw__check--bad');
+        API.mapCheck({ grid: grid.map(function (r) { return r.join(''); }) })
+          .then(function (res) {
+            if (res && res.ok) {
+              checkNote.textContent = 'the engine holds your sketch \u2014 every path reaches, every door is heard.';
+              checkNote.classList.add('map-draw__check--good');
+              studioAudio.squeak();
+            } else {
+              var errs = (res && res.errors && res.errors.length)
+                ? res.errors.join(' \u00B7 ')
+                : 'something in this sketch doesn\u2019t hold \u2014 the pack won\u2019t walk it';
+              checkNote.textContent = errs;
+              checkNote.classList.add('map-draw__check--bad');
+            }
+          })
+          .catch(function () {
+            checkNote.textContent = 'the engine couldn\u2019t pace the ground just now \u2014 try again';
+            checkNote.classList.add('map-draw__check--bad');
+          })
+          .finally(function () {
+            checkBtn.disabled = false;
+            checkNote.hidden = false;
+          });
+      });
+
+      cansBtn.addEventListener('click', function () {
+        grid = packLines.map(function (ln) { return ln.split(''); });
+        dirty = false;
+        saveSketch();
+        render();
+        cansBtn.hidden = true;
+        btnKeep.disabled = true;
+      });
+
+      btnKeep.addEventListener('click', function () {
+        if (!dirty) return;
+        btnKeep.disabled = true;
+        var name = keepName.value.trim() || ('map sketch of ' + useName);
+        var marks = {};
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var ch = grid[r][c];
+            if (ch && ch !== ' ') marks[ch] = (marks[ch] || 0) + 1;
+          }
+        }
+        var lore = 'A hand-inked map sketch of ' + useName + ' kept from the drawing table \u2014 '
+          + (Object.keys(marks).map(function (k) { return '\u201c' + k + '\u201d \u00d7 ' + marks[k]; }).join(', ') || 'nothing inked');
+        API.vaultKeep({ name: name, kind: 'sketch', bond: 'assigned', lore: lore })
+          .then(function () {
+            studioAudio.clank();
+            ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 36) + '\u201d into the vault\u2026');
+          })
+          .catch(function () {
+            btnKeep.disabled = false;
+            ferryNote('the vault turned the sketch away \u2014 try again');
+          });
+      });
+
+      /* Sketch new land — the surveyor proposes, the engine checks */
+      var sketchRow = h('div', { className: 'map-sketch', hidden: true });
+      var sketchInp = h('input', { className: 'map-sketch__input', type: 'text',
+        placeholder: 'what should the land feel like? e.g. a hollow with one path and a standing stone',
+        'aria-label': 'Describe the new land' });
+      var sketchGo = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Sketch it' });
+      var sketchErr = h('p', { className: 'map-sketch__err', role: 'status', hidden: true });
+      sketchRow.appendChild(sketchInp);
+      sketchRow.appendChild(sketchGo);
+      sketchRow.appendChild(sketchErr);
+      sketchBtn.addEventListener('click', function () {
+        sketchRow.hidden = !sketchRow.hidden;
+        if (!sketchRow.hidden) sketchInp.focus();
+      });
+      function runSketch() {
+        var story = sketchInp.value.trim();
+        if (!story) { sketchInp.focus(); return; }
+        sketchGo.disabled = true;
+        sketchErr.hidden = true;
+        API.mapPropose({ story: story })
+          .then(function (res) {
+            if (!res || !res.ok || !res.grid || !res.grid.length) {
+              sketchErr.textContent = (res && res.reason) || 'the surveyor drew nothing usable \u2014 paint it yourself';
+              sketchErr.hidden = false;
+              return;
+            }
+            grid = res.grid.map(function (ln) { return ln.split(''); });
+            rows = grid.length;
+            cols = grid[0] ? grid[0].length : 0;
+            if (res.legend && Object.keys(res.legend).length) {
+              legend = res.legend;
+              legendKeys = Object.keys(legend);
+              if (!legend[brush]) brush = legendKeys.indexOf('.') !== -1 ? '.' : legendKeys[0];
+              paintPots();
+            }
+            dirty = true;
+            saveSketch();
+            render();
+            cansBtn.hidden = false;
+            btnKeep.disabled = false;
+            ferryNote('the surveyor sketched \u201c' + truncate(story, 42) + '\u201d into new land\u2026');
+          })
+          .catch(function () {
+            sketchErr.textContent = 'the surveyor couldn\u2019t reach a pen just now \u2014 paint it yourself';
+            sketchErr.hidden = false;
+          })
+          .finally(function () { sketchGo.disabled = false; });
+      }
+      sketchGo.addEventListener('click', runSketch);
+      sketchInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') runSketch(); });
+
+      askBtn.addEventListener('click', function () {
+        openFolio('map', askBtn);
+        folioInput.value = 'Tell me about the map I just sketched \u2014 '
+          + (sketchInp.value.trim() || 'a place I painted by hand');
+        folioInput.focus();
+      });
+
+      section.appendChild(pots);
+      section.appendChild(inkLine);
+      section.appendChild(tools);
+      section.appendChild(canvas);
+      section.appendChild(sketchRow);
+      section.appendChild(actions);
+      section.appendChild(checkNote);
+      section.appendChild(pinned);
+      paintPots();
+      render();
+      cansBtn.hidden = !dirty;
+      btnKeep.disabled = !dirty;
+      return section;
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE FOLKS — people, not records
+     ══════════════════════════════════════════════════════ */
+
+  screens.characters = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-characters' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="folks-room" id="folks-content"></div>';
+      var container = el_screen.querySelector('#folks-content');
+      container.appendChild(loadingState('Looking for familiar faces\u2026'));
+
+      Promise.all([
+        API.wiki().catch(function () { return { characters: [] }; }),
+        API.world().catch(function () { return { speakers: [], phases: [] }; }),
+        API.vault().catch(function () { return { items: [] }; })
+      ]).then(function (results) {
+        container.innerHTML = '';
+        var worldChars = (results[0] && results[0].characters) || [];
+        var packSpeakers = (results[1] && results[1].speakers) || [];
+        var phases = (results[1] && results[1].phases) || [];
+        var keptFaces = ((results[2] && results[2].items) || []).filter(function (i) {
+          return i.kind === 'face';
+        });
+
+        var heading = h('div', { className: 'folks-room__heading', textContent: 'The people of this world' });
+        container.appendChild(heading);
+        var rl = residentLine('characters');
+        if (rl) container.appendChild(rl);
+
+        /* The bench — a new face can join by hand */
+        container.appendChild(inviteBench());
+
+        /* The pack's voices, as living cards: where they stand,
+           what they say, what they've already said */
+        var byName = {};
+        packSpeakers.forEach(function (s) { byName[s.name] = s; });
+        worldChars.forEach(function (c) {
+          var k = c.name || c.key;
+          if (!k) return;
+          if (!byName[k]) byName[k] = { name: k, key: c.key || k };
+          byName[k].lines = c.lines;
+          if (!byName[k].key) byName[k].key = c.key || k;
+        });
+        var voices = Object.keys(byName).map(function (k) { return byName[k]; });
+
+        if (voices.length) {
+          container.appendChild(h('h3', { className: 'folks-room__sub', textContent: 'the pack\u2019s voices' }));
+          var grid = h('div', { className: 'folks-grid' });
+          voices.forEach(function (v) {
+            grid.appendChild(voiceCard(v, phases));
+          });
+          container.appendChild(grid);
+        } else {
+          container.appendChild(h('p', { className: 'folks-room__quiet',
+            textContent: 'The world hasn\u2019t named its people yet \u2014 invite the first one above.' }));
+        }
+
+        /* Faces the storyteller kept — the household grew by hand */
+        if (keptFaces.length) {
+          container.appendChild(h('h3', { className: 'folks-room__sub', textContent: 'faces you\u2019ve invited' }));
+          var shelf = h('div', { className: 'folks-shelf' });
+          keptFaces.forEach(function (f) { shelf.appendChild(faceCard(f)); });
+          container.appendChild(shelf);
+        }
+      })
+      .catch(function () {
+        container.innerHTML = '';
+        container.appendChild(emptyState(
+          'Couldn\u2019t find the folks.',
+          'The storyteller might be resting.'
+        ));
+      });
+    }
+
+    function voiceCard(v, phases) {
+      var card = h('div', { className: 'folk-card', role: 'button', tabindex: '0',
+        'aria-label': 'Ask about ' + v.name });
+      var initial = v.name.charAt(0).toUpperCase();
+      card.appendChild(h('div', { className: 'folk-card__portrait', textContent: initial }));
+      var who = h('div', { className: 'folk-card__who' });
+      who.appendChild(h('div', { className: 'folk-card__name', textContent: v.name }));
+      var bits = [];
+      if (v.at) bits.push('stands at ' + v.at[0] + ', ' + v.at[1]);
+      if (v.near) bits.push('near ' + v.near);
+      if (v.lines !== undefined) bits.push(v.lines + ' line' + (v.lines !== 1 ? 's' : ''));
+      who.appendChild(h('div', { className: 'folk-card__bits', textContent: bits.join(' \u00B7 ') }));
+      if (v.seeds && typeof v.seeds === 'object') {
+        var keys = Object.keys(v.seeds);
+        var seed = keys.length ? v.seeds[phases[0]] || v.seeds[keys[0]] : null;
+        if (seed) who.appendChild(h('div', { className: 'folk-card__seed', textContent: '\u201C' + seed + '\u201D' }));
+      }
+      card.appendChild(who);
+      card.addEventListener('click', function () {
+        firstWalk.attempt('folks');
+        openFolio('characters', card);
+        folioInput.value = 'Tell me about ' + v.name + ' \u2014 who are they, and what do they want?';
+        folioInput.focus();
+      });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+      });
+      return card;
+    }
+
+    function faceCard(f) {
+      var card = h('div', { className: 'folk-card folk-card--invited' });
+      var initial = (f.name || '?').charAt(0).toUpperCase();
+      card.appendChild(h('div', { className: 'folk-card__portrait', textContent: initial }));
+      var who = h('div', { className: 'folk-card__who' });
+      who.appendChild(h('div', { className: 'folk-card__name', textContent: f.name || 'The new face' }));
+      if (f.lore) who.appendChild(h('div', { className: 'folk-card__bits', textContent: truncate(f.lore, 140) }));
+      var btn = h('button', { className: 'folk-card__ask', type: 'button', textContent: 'Ask about them' });
+      btn.addEventListener('click', function () {
+        firstWalk.attempt('folks');
+        openFolio('characters', btn);
+        folioInput.value = 'Meet ' + (f.name || 'the new face') + ': ' + truncate(f.lore || '', 180);
+        folioInput.focus();
+      });
+      who.appendChild(btn);
+      card.appendChild(who);
+      return card;
+    }
+
+    function inviteBench() {
+      var bench = h('section', { className: 'folk-invite' });
+      bench.appendChild(h('h3', { className: 'map-draw__title', textContent: 'Invite a new face' }));
+      bench.appendChild(h('p', { className: 'map-draw__hint',
+        textContent: 'Ask the Keeper to name someone who belongs here. They stand on real ground \u2014 reachable, unclaimed, dry \u2014 and they only join the house when you keep them.' }));
+      var row = h('div', { className: 'forge__row' });
+      var rollBtn = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Ask the Keeper for a new face' });
+      var result = h('div', { className: 'folk-invite__result', role: 'status', 'aria-live': 'polite' });
+      rollBtn.addEventListener('click', function () {
+        rollBtn.disabled = true;
+        rollBtn.textContent = 'the Keeper is sharpening a quill\u2026';
+        result.innerHTML = '';
+        API.faceRoll({}).then(function (data) {
+          rollBtn.disabled = false;
+          rollBtn.textContent = 'Ask the Keeper for a new face';
+          if (!data || !data.ok || !data.face) {
+            result.appendChild(h('p', { className: 'folk-invite__cold',
+              textContent: (data && data.reason) || 'the Keeper drew nothing usable \u2014 maybe the inkmill is cold. Try again, or write the face yourself.' }));
+            return;
+          }
+          result.appendChild(faceDraft(data.face));
+        }).catch(function () {
+          rollBtn.disabled = false;
+          rollBtn.textContent = 'Ask the Keeper for a new face';
+          result.appendChild(h('p', { className: 'folk-invite__cold',
+            textContent: 'the Keeper couldn\u2019t reach a pen just now \u2014 try again.' }));
+        });
+      });
+      row.appendChild(rollBtn);
+      bench.appendChild(row);
+      bench.appendChild(result);
+      return bench;
+    }
+
+    function faceDraft(f) {
+      var panel = h('div', { className: 'face-draft', role: 'group', 'aria-label': 'Draft of the new face' });
+      var nameF = h('input', { className: 'draft__field', type: 'text', id: 'face-name', value: f.name || '', 'aria-label': 'Name' });
+      var roleF = h('input', { className: 'draft__field', type: 'text', id: 'face-role', value: f.role || '', 'aria-label': 'What they do' });
+      var seedF = h('input', { className: 'draft__field', type: 'text', id: 'face-seed', value: f.seed || '', 'aria-label': 'What they first say' });
+      var err = h('p', { className: 'draft__error', role: 'status', hidden: true });
+      var at = f.at ? ('at ' + f.at[0] + ', ' + f.at[1]) : 'somewhere reachable';
+      var row = h('div', { className: 'forge__row' });
+      var keepBtn = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Keep this face' });
+      row.appendChild(keepBtn);
+
+      function label(forId, text) {
+        var l = h('label', { className: 'face-draft__label', textContent: text });
+        l.setAttribute('for', forId);
+        return l;
+      }
+
+      keepBtn.addEventListener('click', function () {
+        var name = nameF.value.trim();
+        var role = roleF.value.trim();
+        var seed = seedF.value.trim();
+        if (!name || !role || !seed) {
+          err.textContent = 'a face needs a name, a role, and one line to say';
+          err.hidden = false;
+          return;
+        }
+        keepBtn.disabled = true;
+        API.vaultKeep({
+          name: name,
+          kind: 'face',
+          bond: 'invited',
+          lore: 'Role: ' + role + '. First words: \u201C' + seed + '\u201D. The Keeper stands them ' + at + '.'
+        }).then(function () {
+          studioAudio.clank();
+          ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 32) + '\u201D to the people\u2026');
+          enter();
+        }).catch(function () {
+          err.textContent = 'the vault turned the face away \u2014 try again';
+          err.hidden = false;
+          keepBtn.disabled = false;
+        });
+      });
+
+      panel.appendChild(label('face-name', 'name'));
+      panel.appendChild(nameF);
+      panel.appendChild(label('face-role', 'what they do'));
+      panel.appendChild(roleF);
+      panel.appendChild(label('face-seed', 'what they first say'));
+      panel.appendChild(seedF);
+      panel.appendChild(h('p', { className: 'face-draft__at', textContent: 'The Keeper stands them ' + at + '.' }));
+      panel.appendChild(row);
+      panel.appendChild(err);
+      return panel;
+    }
+
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE VAULT — kept objects on a tray
+     ══════════════════════════════════════════════════════ */
+
+  screens.items = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-items' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="vault-room" id="vault-content"></div>';
+      var container = el_screen.querySelector('#vault-content');
+      container.appendChild(loadingState('Checking the vault\u2026'));
+
+      /* The anvil — one shared place to shape a keepsake */
+      var draft = draftArea(refresh);
+
+      function askForge() {
+        API.forge({}).catch(function () { return null; }).then(function (card) {
+          if (!card || !card.name) {
+            draft.show({}, true, 'the forge is cold just now \u2014 no fire to draw on. shape the card yourself and keep it.');
+            return;
+          }
+          ferryNote('Ratatoskr is carrying a draft from the fire\u2026');
+          draft.show(card, true);
+        });
+      }
+      draft.setReroll(askForge);
+
+      API.vault()
+        .then(function (data) {
+          container.innerHTML = '';
+          var items = (data && data.items) || [];
+          var heading = h('div', { className: 'vault-room__heading', textContent: 'What you\u2019ve gathered' });
+          container.appendChild(heading);
+          var rl = residentLine('items');
+          if (rl) container.appendChild(rl);
+
+          /* The forge — the fire has a draft for you; shape it, keep it */
+          var forgeWrap = h('div', { className: 'forge' });
+          forgeWrap.appendChild(h('div', { className: 'forge__title', textContent: 'The forge' }));
+          forgeWrap.appendChild(h('p', { className: 'forge__hint',
+            textContent: 'Ask the fire for a keepsake the world would offer \u2014 then shape it by hand and keep it. The vault remembers everything it\u2019s given.' }));
+          var askRow = h('div', { className: 'forge__row' });
+          var askBtn = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Ask the forge for a keepsake' });
+          askBtn.addEventListener('click', function () {
+            askBtn.disabled = true;
+            askBtn.textContent = 'the fire is puffing\u2026';
+            askForge().finally(function () {
+              askBtn.disabled = false;
+              askBtn.textContent = 'Ask the forge for a keepsake';
+            });
+          });
+          askRow.appendChild(askBtn);
+          forgeWrap.appendChild(askRow);
+          container.appendChild(forgeWrap);
+          container.appendChild(draft.panel);
+
+          if (!items.length) {
+            container.appendChild(emptyState(
+              'The vault is empty.\nBut the forge is warm.',
+              'Ask the fire for a keepsake above \u2014 then shape it and keep it.',
+              true
+            ));
+            return;
+          }
+          var tray = h('div', { className: 'vault-tray' });
+          items.forEach(function (item, i) { tray.appendChild(vaultObject(item, i, draft)); });
+          container.appendChild(tray);
+        })
+        .catch(function () {
+          container.innerHTML = '';
+          container.appendChild(emptyState(
+            'Couldn\u2019t reach the vault.',
+            'The world might not be ready yet.'
+          ));
+        });
+    }
+
+    function refresh() { enter(); }
+
+    /* The anvil itself — editable fields, one obeyable action */
+    function draftArea(refresh) {
+      var panel = h('div', { className: 'draft', hidden: true });
+      panel.appendChild(h('div', { className: 'draft__title', textContent: 'On the anvil' }));
+
+      function field(cls, label, type) {
+        return h('input', { className: cls, type: type || 'text', placeholder: label, 'aria-label': label });
+      }
+      var nameF = field('draft__name', 'Name', 'text');
+      var kindF = field('draft__kind', 'Kind', 'text');
+      var bondF = field('draft__bond', 'Bond', 'text');
+      var loreF = h('textarea', { className: 'draft__lore', rows: '3',
+        placeholder: 'Lore \u2014 why it matters', 'aria-label': 'Lore' });
+      var enF = field('draft__enchant', 'Enchant (optional)', 'text');
+      var cuF = field('draft__curse', 'Curse (optional)', 'text');
+
+      var err = h('p', { className: 'draft__err', role: 'status', hidden: true });
+      var row = h('div', { className: 'draft__row' });
+      var keepBtn = h('button', { className: 'btn btn--bell', type: 'button', textContent: 'Keep it' });
+      var againBtn = h('button', { className: 'btn btn--ghost', type: 'button',
+        textContent: 'the fire wants another try', hidden: true });
+      row.appendChild(keepBtn);
+      row.appendChild(againBtn);
+
+      function show(card, rerollable, note) {
+        var c = card || {};
+        nameF.value = c.name || '';
+        kindF.value = c.kind || 'relic';
+        bondF.value = c.bond || 'assigned';
+        loreF.value = c.lore || '';
+        enF.value = c.enchant || '';
+        cuF.value = c.curse || '';
+        againBtn.hidden = !rerollable;
+        if (note) { err.textContent = note; err.hidden = false; }
+        else { err.hidden = true; }
+        panel.hidden = false;
+        panel.scrollIntoView({ block: 'nearest' });
+        nameF.focus();
+      }
+
+      function keep() {
+        var name = nameF.value.trim();
+        var lore = loreF.value.trim();
+        if (!name || !lore) {
+          err.textContent = 'the fire needs a name and a reason';
+          err.hidden = false;
+          return;
+        }
+        keepBtn.disabled = true;
+        var card = {
+          name: name,
+          kind: kindF.value.trim() || 'relic',
+          bond: bondF.value.trim() || 'assigned',
+          lore: lore
+        };
+        if (enF.value.trim()) card.enchant = enF.value.trim();
+        if (cuF.value.trim()) card.curse = cuF.value.trim();
+        API.vaultKeep(card)
+          .then(function () {
+            studioAudio.clank();
+            ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 32) + '\u201d into the vault\u2026');
+            refresh();
+          })
+          .catch(function () {
+            err.textContent = 'the vault turned it away \u2014 check the fields and try again';
+            err.hidden = false;
+            keepBtn.disabled = false;
+          });
+      }
+      keepBtn.addEventListener('click', keep);
+      [nameF, kindF, bondF, enF, cuF].forEach(function (f) {
+        f.addEventListener('keydown', function (e) { if (e.key === 'Enter') keep(); });
+      });
+
+      panel.appendChild(nameF);
+      var slim = h('div', { className: 'draft__slim' });
+      slim.appendChild(kindF);
+      slim.appendChild(bondF);
+      panel.appendChild(slim);
+      panel.appendChild(loreF);
+      panel.appendChild(enF);
+      panel.appendChild(cuF);
+      panel.appendChild(row);
+      panel.appendChild(err);
+
+      return {
+        panel: panel,
+        show: show,
+        setReroll: function (fn) { againBtn.addEventListener('click', fn); }
+      };
+    }
+
+    function vaultObject(item, i, draft) {
+      var starred = item.starred || item.star;
+      var obj = h('div', { className: 'vault-object' + (starred ? ' vault-object--starred' : '') });
+      obj.appendChild(h('span', { className: 'vault-object__icon', textContent: '\u{1F4E6}' }));
+      obj.appendChild(h('span', { className: 'vault-object__name',
+        textContent: item.name || item.title || 'Something treasured' }));
+      obj.appendChild(h('span', { className: 'vault-object__kind',
+        textContent: item.kind || 'relic' }));
+      var starBtn = h('button', { className: 'vault-object__star',
+        'aria-label': starred ? 'Unstar' : 'Star',
+        textContent: starred ? '\u2B50' : '\u2606' });
+      starBtn.addEventListener('click', function () {
+        if (starred) {
+          ferryNote('that one is already hanging in the hall\u2026');
+        } else {
+          var name = item.name || item.title || 'that';
+          studioAudio.squeak();
+          ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 36) + '\u201d to the hall\u2026');
+        }
+        API.vaultStar(i).then(function () { enter(); });
+      });
+      obj.appendChild(starBtn);
+      var deepenBtn = h('button', { className: 'vault-deepen', type: 'button', textContent: 'deepen' });
+      deepenBtn.addEventListener('click', function () {
+        deepenBtn.disabled = true;
+        deepenBtn.textContent = 'asking the hoard-keeper\u2026';
+        API.enhanceItem({
+          base_name: item.name || item.title,
+          kind: item.kind || 'relic',
+          intent: 'deepen its story, and any quiet curse it might carry'
+        }).catch(function () { return null; }).then(function (res) {
+          deepenBtn.disabled = false;
+          deepenBtn.textContent = 'deepen';
+          if (!res || !res.name) {
+            draft.show({}, false, 'the hoard-keeper couldn\u2019t deepen it just now \u2014 try again later');
+            return;
+          }
+          ferryNote('the hoard-keeper brought a deepening draft\u2026');
+          draft.show(res, false);
+        });
+      });
+      obj.appendChild(deepenBtn);
+      return obj;
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE CHRONICLE — written over time
+     ══════════════════════════════════════════════════════ */
+
+  screens.journal = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-journal' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="chronicle-room" id="chronicle-content"></div>';
+      var container = el_screen.querySelector('#chronicle-content');
+      container.appendChild(loadingState('Opening the chronicle\u2026'));
+      API.journal()
+        .then(function (data) {
+          container.innerHTML = '';
+          var entries = Array.isArray(data) ? data : ((data && data.entries) || []);
+          if (!entries.length) {
+            container.appendChild(emptyState(
+              'The chronicle is waiting\nfor its first entry.',
+              'Every story leaves traces.',
+              true
+            ));
+            return;
+          }
+          var heading = h('div', { className: 'chronicle-room__heading', textContent: 'What has happened' });
+          container.appendChild(heading);
+          var rl = residentLine('journal');
+          if (rl) container.appendChild(rl);
+          var list = h('div', { className: 'chronicle-entries' });
+          entries.slice(-30).reverse().forEach(function (entry, i) {
+            var text = entry.text || entry.content || entry.event || entry.whisper || '';
+            var time = entry.timestamp || entry.time || entry.at || '';
+            var starred = entry.starred || entry.star;
+            var row = h('div', { className: 'chronicle-entry' + (starred ? ' chronicle-entry--starred' : '') });
+            row.appendChild(h('span', { className: 'chronicle-entry__time', textContent: formatTime(time) }));
+            row.appendChild(h('span', { className: 'chronicle-entry__text', textContent: text }));
+            var starBtn = h('button', { className: 'chronicle-entry__star',
+              'aria-label': starred ? 'Unstar' : 'Star',
+              textContent: starred ? '\u2B50' : '\u2606' });
+            starBtn.addEventListener('click', function () {
+              if (starred) {
+                ferryNote('those leaves are already pressed into the hall wall\u2026');
+              } else {
+                var textName = truncate(text || 'this moment', 36);
+                studioAudio.squeak();
+                firstWalk.attempt('chronicle');
+                ferryNote('Ratatoskr is pressing \u201c' + textName + '\u201d into the hall\u2026');
+              }
+              API.journalStar(entries.length - 1 - i).then(function () { enter(); });
+            });
+            row.appendChild(starBtn);
+            list.appendChild(row);
+          });
+          container.appendChild(list);
+        })
+        .catch(function () {
+          container.innerHTML = '';
+          container.appendChild(emptyState(
+            'Couldn\u2019t open the chronicle.',
+            'The pages might be elsewhere.'
+          ));
+        });
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE CASTING TABLE — tactile objects for examination
+     ══════════════════════════════════════════════════════ */
+
+  screens.runes = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-runes' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="casting-room" id="casting-content"></div>';
+      var container = el_screen.querySelector('#casting-content');
+      container.appendChild(loadingState('The runes are settling\u2026'));
+      API.runes()
+        .then(function (data) {
+          container.innerHTML = '';
+          var runes = (data && data.runes) || [];
+          if (!runes.length) {
+            container.appendChild(emptyState(
+              'The casting table is bare.',
+              'The elder futhark awaits.'
+            ));
+            return;
+          }
+          var heading = h('div', { className: 'casting-room__heading', textContent: 'The elder futhark' });
+          container.appendChild(heading);
+          var rl = residentLine('runes');
+          if (rl) container.appendChild(rl);
+          var scatter = h('div', { className: 'rune-scatter' });
+          runes.forEach(function (rune) {
+            var stone = h('div', { className: 'rune-stone', tabindex: '0', role: 'button',
+              'aria-label': rune.name + ': ' + rune.short,
+              'ariaExpanded': 'false' });
+            stone.appendChild(h('div', { className: 'rune-stone__stave', textContent: rune.stave }));
+            stone.appendChild(h('div', { className: 'rune-stone__name', textContent: rune.name }));
+            stone.appendChild(h('div', { className: 'rune-stone__short', textContent: rune.short }));
+            if (rune.long) stone.appendChild(h('div', { className: 'rune-stone__long', textContent: rune.long }));
+            stone.addEventListener('click', function () {
+              var expanded = stone.classList.toggle('rune-stone--expanded');
+              stone.setAttribute('aria-expanded', String(expanded));
+            });
+            stone.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                var expanded = stone.classList.toggle('rune-stone--expanded');
+                stone.setAttribute('aria-expanded', String(expanded));
+              }
+            });
+            scatter.appendChild(stone);
+          });
+          container.appendChild(scatter);
+        })
+        .catch(function () {
+          container.innerHTML = '';
+          container.appendChild(emptyState(
+            'Couldn\u2019t reach the casting table.',
+            'The runes might need a moment.'
+          ));
+        });
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE ARCHIVES — descending through truth
+     ══════════════════════════════════════════════════════ */
+
+  screens.evidence = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-evidence' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="archives-room" id="archives-content"></div>';
+      var container = el_screen.querySelector('#archives-content');
+      container.appendChild(loadingState('Descending into the archives\u2026'));
+
+      Promise.all([
+        API.world().catch(function () { return null; }),
+        API.aspects().catch(function () { return null; }),
+        API.resolved().catch(function () { return null; }),
+        API.weave().catch(function () { return { events: [] }; }),
+        API.trace().catch(function () { return { events: [] }; }),
+        API.sparkHealth().catch(function () { return { ok: false, spark: 'unavailable' }; })
+      ]).then(function (results) {
+        container.innerHTML = '';
+        var world = results[0], aspects = results[1], resolved = results[2],
+            weave = results[3], trace = results[4], spark = results[5];
+
+        var heading = h('div', { className: 'archives-room__heading', textContent: 'The evidence beneath' });
+        container.appendChild(heading);
+        var rl = residentLine('evidence');
+        if (rl) container.appendChild(rl);
+
+        var intro = h('div', { className: 'archives-intro',
+          textContent: 'Each layer descends further into truth. Start at the surface. Go as deep as you need.' });
+        container.appendChild(intro);
+
+        addLevel(container, 'What is true', function (box) {
+          if (world && world.title) {
+            box.innerHTML = '<p style="font-family:Spectral,serif;font-size:17px;color:var(--gold,#C9AD6B);margin-bottom:8px">'
+              + esc(world.title) + '</p>';
+            if (world.gold_rule) {
+              box.innerHTML += '<p style="font-family:Spectral,serif;font-style:italic;color:var(--text-muted,#C2BDB0)">'
+                + esc(world.gold_rule) + '</p>';
+            }
+          } else {
+            box.innerHTML = '<p style="color:var(--text-dim,#A39E92)">No world loaded.</p>';
+          }
+        });
+
+        addLevel(container, 'Where this comes from', function (box) {
+          var parts = [];
+          if (aspects && aspects.pack) parts.push('Pack: ' + esc(aspects.pack.name));
+          if (aspects && aspects.act) parts.push('Act: ' + esc(aspects.act.title || aspects.act.id));
+          if (world && world.phases) parts.push('Phases: ' + esc(world.phases.join(', ')));
+          if (world && world.surface) parts.push('Surface: ' + esc(world.surface));
+          box.innerHTML = parts.length
+            ? parts.map(function (p) { return '<p style="margin-bottom:4px">' + p + '</p>'; }).join('')
+            : '<p style="color:var(--text-dim,#A39E92)">No context available.</p>';
+        });
+
+        addLevel(container, 'The evidence', function (box) {
+          var parts = [];
+          if (resolved && resolved.description) parts.push('<p><strong>Description:</strong> ' + esc(resolved.description) + '</p>');
+          if (resolved && resolved.phases) {
+            Object.keys(resolved.phases).forEach(function (k) {
+              parts.push('<p><strong>' + esc(k) + ':</strong> ' + esc(resolved.phases[k]) + '</p>');
+            });
+          }
+          if (weave && weave.events && weave.events.length) {
+            parts.push('<p><strong>Weave events:</strong> ' + weave.events.length + '</p>');
+          }
+          box.innerHTML = parts.length ? parts.join('')
+            : '<p style="color:var(--text-dim,#A39E92)">No evidence yet.</p>';
+        });
+
+        addLevel(container, 'The engine', function (box) {
+          var parts = [];
+          parts.push('<p><strong>Spark:</strong> ' + esc(spark.spark || 'unknown') + '</p>');
+          if (spark.url) parts.push('<p><strong>Spark URL:</strong> ' + esc(spark.url) + '</p>');
+          if (spark.profile) parts.push('<p><strong>Profile:</strong> ' + esc(spark.profile) + '</p>');
+          if (trace && trace.events && trace.events.length) parts.push('<p><strong>Trace events:</strong> ' + trace.events.length + '</p>');
+          box.innerHTML = parts.join('');
+        });
+
+        addLevel(container, 'Raw truth', function (box) {
+          var raw = { world: world, aspects: aspects, resolved: resolved, spark: spark };
+          box.innerHTML = '<pre>' + esc(JSON.stringify(raw, null, 2)) + '</pre>';
+        });
+      });
+    }
+
+    function addLevel(container, title, renderFn) {
+      var section = h('div', { className: 'evidence-level' });
+      section.appendChild(h('h3', { className: 'evidence-level__heading', textContent: title }));
+      var content = h('div', { className: 'evidence-level__content' });
+      renderFn(content);
+      section.appendChild(content);
+      container.appendChild(section);
+    }
+
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE HALL — a keepsake wall of what you have kept
+     ══════════════════════════════════════════════════════ */
+
+  screens.hall = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-hall' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="hall-room" id="hall-content"></div>';
+      firstWalk.attempt('hall');
+      var container = el_screen.querySelector('#hall-content');
+      container.appendChild(loadingState('The ferry is bringing the keepsakes\u2026'));
+
+      Promise.all([
+        API.world().catch(function () { return null; }),
+        API.journal().catch(function () { return { entries: [] }; }),
+        API.vault().catch(function () { return { items: [], starred: [] }; }),
+        API.starred().catch(function () { return { starred: [] }; })
+      ]).then(function (results) {
+        container.innerHTML = '';
+        var world = results[0], journalData = results[1], vaultData = results[2], starredData = results[3];
+
+        var heading = h('div', { className: 'hall-room__heading', textContent: 'What you\u2019ve kept' });
+        container.appendChild(heading);
+        var rl = residentLine('hall');
+        if (rl) container.appendChild(rl);
+
+        // The gold rule — framed above the studio door
+        var rule = (world && (world.gold_rule || world.title)) || '';
+        if (rule) {
+          container.appendChild(h('div', { className: 'hall-plaque', textContent: rule }));
+        }
+
+        // The world behind the glass — the town as it really stands
+        var win = worldWindow(world);
+        if (win) container.appendChild(win);
+
+        // The fire keeps watch — real engine events, echoed quietly
+        container.appendChild(watchStrip());
+
+        var anyKept = false;
+
+        // Keepsakes the ferry brought in
+        var ferried = (starredData && starredData.starred) || [];
+        if (ferried.length) {
+          anyKept = true;
+          container.appendChild(keepsakeShelf(
+            'what the ferry brought in',
+            ferried.map(function (k) {
+              return { name: k.name || 'Something kept', note: k.lore || k.kind || '' };
+            }),
+            '\u2726'
+          ));
+        }
+
+        // Pressed leaves from the chronicle
+        var entries = Array.isArray(journalData) ? journalData : ((journalData && journalData.entries) || []);
+        var pressed = entries.filter(function (e) { return e.starred || e.star; });
+        if (pressed.length) {
+          anyKept = true;
+          container.appendChild(keepsakeShelf(
+            'pressed leaves from the chronicle',
+            pressed.map(function (e) {
+              return { name: truncate((e.text || e.content || e.event || e.whisper || ''), 60), note: formatTime(e.timestamp || e.time || e.at) };
+            }),
+            '\u2767'
+          ));
+        }
+
+        // Keepsakes on the shelf
+        var kept = ((vaultData && vaultData.items) || []).filter(function (item) { return item.starred || item.star; });
+        if (!kept.length && vaultData && vaultData.starred && vaultData.starred.length) {
+          kept = vaultData.starred.map(function (k) {
+            return { name: k.name || 'Something kept', lore: k.lore || '' };
+          });
+        }
+        if (kept.length) {
+          anyKept = true;
+          container.appendChild(keepsakeShelf(
+            'keepsakes on the shelf',
+            kept.map(function (k) { return { name: k.name || k.title || 'Something kept', note: k.lore || '' }; }),
+            '\u2726'
+          ));
+        }
+
+        if (!anyKept) {
+          container.appendChild(emptyState(
+            'The hall is quiet.\nBut it remembers what you love.',
+            'Star something you\u2019ve made \u2014 the ferry will bring it here.',
+            true
+          ));
+        }
+
+        // The household — who lives here
+        var house = h('div', { className: 'hall-household' });
+        house.appendChild(h('div', { className: 'hall-household__heading', textContent: 'The household' }));
+        house.appendChild(h('p', { className: 'hall-household__note',
+          textContent: 'One engine, many faces. Each room is tended by someone who knows its craft.' }));
+        var list = h('div', { className: 'hall-household__list' });
+        Object.keys(RESIDENTS).forEach(function (key) {
+          var res = RESIDENTS[key];
+          var row = h('button', { className: 'hall-household__r', type: 'button' });
+          row.appendChild(h('span', { className: 'hall-household__name', textContent: res.name }));
+          row.appendChild(h('span', { className: 'hall-household__craft', textContent: res.craft }));
+          // Each face is a door into their room's folio
+          row.addEventListener('click', function () { openFolio(key, row); });
+          list.appendChild(row);
+        });
+        house.appendChild(list);
+        container.appendChild(house);
+      });
+    }
+
+    function worldWindow(w) {
+      if (!w || !w.map || !w.map.length || !w.legend) return null;
+      var phase = (w.phases && w.phases.length) ? w.phases[0] : 'dusk';
+      var glass = h('div', { className: 'hall-window hall-window--' + phase });
+      glass.appendChild(h('div', { className: 'hall-window__title', textContent: 'the town, at ' + phase }));
+      var cols = w.map[0] ? w.map[0].length : 0;
+      var frame = h('div', { className: 'hall-window__scene', role: 'img',
+        'aria-label': 'A framed window looking out at ' + (w.title || 'this world')
+          + ' at ' + phase + ' \u2014 ' + w.map.length + ' rows by ' + cols + ' columns' });
+      var hero = w.hero_start || [1, 1];
+      var speakers = w.speakers || [];
+      var sanctuary = w.sanctuary_tiles || [];
+      w.map.forEach(function (ln, r) {
+        var row = h('div', { className: 'hall-window__row' });
+        ln.split('').forEach(function (ch, c) {
+          var t = h('span', { className: 'hall-window__tile'
+            + (sanctuary.indexOf(ch) !== -1 ? ' hall-window__tile--holy' : '') });
+          var spec = w.legend[ch] || {};
+          if (spec.base && spec.base.length) t.style.background = spec.base[0];
+          if (spec.solid === true) t.classList.add('hall-window__tile--solid');
+          if (hero && hero[0] === c && hero[1] === r) {
+            t.appendChild(h('span', { className: 'hall-window__dot hall-window__dot--hero' }));
+          }
+          row.appendChild(t);
+        });
+        frame.appendChild(row);
+      });
+      speakers.forEach(function (s) {
+        var at = s.at;
+        if (!at || at.length < 2) return;
+        var row = frame.childNodes[at[1]];
+        if (!row) return;
+        var tile = row.childNodes[at[0]];
+        if (tile) tile.appendChild(h('span', { className: 'hall-window__dot hall-window__dot--speaker' }));
+      });
+      glass.appendChild(frame);
+      glass.appendChild(h('p', { className: 'hall-window__caption',
+        textContent: (w.title || 'the town') + ' \u2014 where the story is walked, not drawn' }));
+      return glass;
+    }
+
+    function watchStrip() {
+      var sec = h('section', { className: 'watch-strip' });
+      sec.appendChild(h('h3', { className: 'watch-strip__title', textContent: 'the fire keeps watch' }));
+      sec.appendChild(h('p', { className: 'watch-strip__hint',
+        textContent: 'A quiet echo of what actually ran \u2014 each whisper is a true engine event, carried here by the squirrel.' }));
+      var list = h('div', { className: 'watch-strip__list' });
+      watch.strip = list;
+      watch.buffer.forEach(function (b) { list.appendChild(b.el); });
+      sec.appendChild(list);
+      return sec;
+    }
+
+    function keepsakeShelf(label, items, mark) {
+      var shelf = h('div', { className: 'hall-shelf' });
+      shelf.appendChild(h('div', { className: 'hall-shelf__label', textContent: label }));
+      var row = h('div', { className: 'hall-row' });
+      items.forEach(function (item) {
+        var k = h('button', { className: 'hall-keepsake', type: 'button' });
+        k.appendChild(h('span', { className: 'hall-keepsake__mark', 'aria-hidden': 'true', textContent: mark }));
+        var body = h('div', { className: 'hall-keepsake__body' });
+        body.appendChild(h('span', { className: 'hall-keepsake__name', textContent: item.name }));
+        if (item.note) body.appendChild(h('span', { className: 'hall-keepsake__note', textContent: item.note }));
+        k.appendChild(body);
+        // A kept thing is a door: press it and ask the ferry about it
+        k.addEventListener('click', function () {
+          openFolio('hall', k);
+          folioInput.value = 'Tell me about ' + item.name + '.';
+          folioInput.focus();
+        });
+        row.appendChild(k);
+      });
+      shelf.appendChild(row);
+      return shelf;
+    }
+
+    function leave() {
+      watch.strip = null;
+    }
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     SETTINGS — the boiler room (plain is kindness)
+     ══════════════════════════════════════════════════════ */
+
+  screens.settings = (function () {
+    // VEFR_PREFS is the one canonical voice for how the studio reads
+    // and moves: it writes the data-prefs tokens the foundation and
+    // theme branch on. The boiler room just points at it.
+    var el_screen,
+        P = window.VEFR_PREFS,
+        current = (P && P.get) ? P.get() : { contrast: 'm', font: 'atkinson', motion: 'off' };
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-settings' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="settings-room" id="settings-content"></div>';
+      var container = el_screen.querySelector('#settings-content');
+
+      container.appendChild(h('div', { className: 'archives-intro',
+        textContent: 'The boiler room. Even a loved studio keeps its pipes plain.' }));
+      var rl = residentLine('settings');
+      if (rl) container.appendChild(rl);
+
+      // Appearance — one voice for all of it: the prefs engine
+      current = (P && P.get) ? P.get() : current;
+
+      var themeCard = makeCard('How it feels');
+      addOptionRow(themeCard, 'Mood', [
+        { label: 'Warm & Easy', value: 'm' },
+        { label: 'Bright & Clear', value: 'high' },
+        { label: 'Nothing Hides', value: 'ultra' }
+      ], 'contrast');
+      container.appendChild(themeCard);
+
+      // Reading
+      var fontCard = makeCard('How it reads');
+      addOptionRow(fontCard, 'Font', [
+        { label: 'Atkinson', value: 'atkinson' },
+        { label: 'OpenDyslexic', value: 'opendyslexic' },
+        { label: 'Serif', value: 'serif' },
+        { label: 'System', value: 'system' }
+      ], 'font');
+      container.appendChild(fontCard);
+
+      // Motion
+      var motionCard = makeCard('How it moves');
+      addOptionRow(motionCard, 'Motion', [
+        { label: 'Off', value: 'off' },
+        { label: 'Subtle', value: 'subtle' },
+        { label: 'Full', value: 'full' }
+      ], 'motion');
+      container.appendChild(motionCard);
+
+      // Sound — off by default; every sound pairs with a visible event
+      var soundCard = makeCard('How it sounds');
+      var soundOn = !!(current.sound && (current.sound.effects > 0 || current.sound.ambience > 0));
+      var soundRow = h('div', { className: 'settings-row' });
+      soundRow.appendChild(h('span', { className: 'settings-row__label', textContent: 'Hearth sound' }));
+      var soundOpts = h('div', { className: 'settings-row__options' });
+      [{ label: 'Off', on: false }, { label: 'On', on: true }].forEach(function (opt) {
+        var btn = h('button', {
+          className: 'settings-option' + (soundOn === opt.on ? ' settings-option--active' : ''),
+          textContent: opt.label
+        });
+        btn.addEventListener('click', function () {
+          if (P && P.set) {
+            var s = opt.on ? { effects: 0.7, ambience: 0.5, speech: 0.8 } : { effects: 0, ambience: 0, speech: 0 };
+            P.set({ sound: s });
+            current = P.get();
+          }
+          soundOpts.querySelectorAll('.settings-option').forEach(function (b) { b.classList.remove('settings-option--active'); });
+          btn.classList.add('settings-option--active');
+          if (opt.on && studioAudio) { studioAudio.unlock(); studioAudio.ambient(true); }
+          if (!opt.on && studioAudio) studioAudio.ambient(false);
+        });
+        soundOpts.appendChild(btn);
+      });
+      soundRow.appendChild(soundOpts);
+      soundCard.appendChild(soundRow);
+      soundCard.appendChild(h('p', { className: 'settings-card__note',
+        textContent: 'Every sound is paired with something you can see \u2014 the clank with the ferry note, the squeak with a whisper. Off until you say otherwise.' }));
+      container.appendChild(soundCard);
+
+      // Learning — the walk and the sheet stay callable any time
+      var learnCard = makeCard('The house, on paper');
+      var learnA = h('div', { className: 'settings-row' });
+      learnA.appendChild(h('span', { className: 'settings-row__label', textContent: 'The first walk' }));
+      var learnAOpts = h('div', { className: 'settings-row__options' });
+      var walkBtn = h('button', { className: 'btn btn--warm settings-row__btn', type: 'button',
+        textContent: 'walk the house again' });
+      walkBtn.addEventListener('click', function () { if (firstWalk) firstWalk.reset(); });
+      learnAOpts.appendChild(walkBtn);
+      learnA.appendChild(learnAOpts);
+      learnCard.appendChild(learnA);
+      var learnB = h('div', { className: 'settings-row' });
+      learnB.appendChild(h('span', { className: 'settings-row__label', textContent: 'How to read this house' }));
+      var learnBOpts = h('div', { className: 'settings-row__options' });
+      var sheetBtn = h('button', { className: 'btn btn--warm settings-row__btn', type: 'button',
+        textContent: 'open the sheet' });
+      sheetBtn.addEventListener('click', function () { if (firstWalk) firstWalk.openSheet(); });
+      learnBOpts.appendChild(sheetBtn);
+      learnB.appendChild(learnBOpts);
+      learnCard.appendChild(learnB);
+      container.appendChild(learnCard);
+
+      // Engine
+      var engineCard = makeCard('The engine');
+      API.health()
+        .then(function (data) {
+          addInfoRow(engineCard, 'Status', data.ok ? 'Healthy' : 'Unavailable');
+          if (data.purpose) addInfoRow(engineCard, 'Purpose', data.purpose);
+        })
+        .catch(function () { addInfoRow(engineCard, 'Status', 'Disconnected'); });
+      API.sparkHealth()
+        .then(function (data) {
+          addInfoRow(engineCard, 'Spark', data.spark || 'unavailable');
+          if (data.profile) addInfoRow(engineCard, 'Profile', data.profile);
+        })
+        .catch(function () { addInfoRow(engineCard, 'Spark', 'unavailable'); });
+      container.appendChild(engineCard);
+    }
+
+    function makeCard(title) {
+      var card = h('div', { className: 'settings-card' });
+      card.appendChild(h('h3', { className: 'settings-card__title', textContent: title }));
+      return card;
+    }
+    function addOptionRow(card, label, options, prefKey) {
+      var row = h('div', { className: 'settings-row' });
+      row.appendChild(h('span', { className: 'settings-row__label', textContent: label }));
+      var opts = h('div', { className: 'settings-row__options' });
+      options.forEach(function (opt) {
+        var active = current[prefKey] === opt.value;
+        var btn = h('button', {
+          className: 'settings-option' + (active ? ' settings-option--active' : ''),
+          textContent: opt.label
+        });
+        btn.addEventListener('click', function () {
+          if (P && P.set) {
+            var patch = {};
+            patch[prefKey] = opt.value;
+            P.set(patch);
+            current = P.get();
+          }
+          opts.querySelectorAll('.settings-option').forEach(function (b) { b.classList.remove('settings-option--active'); });
+          btn.classList.add('settings-option--active');
+        });
+        opts.appendChild(btn);
+      });
+      row.appendChild(opts);
+      card.appendChild(row);
+    }
+    function addInfoRow(card, label, value) {
+      var row = h('div', { className: 'settings-row' });
+      row.appendChild(h('span', { className: 'settings-row__label', textContent: label }));
+      row.appendChild(h('span', { className: 'settings-row__value', textContent: value }));
+      card.appendChild(row);
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     INIT — the room comes alive
+     ══════════════════════════════════════════════════════ */
+
+  // The shelf — a low shelf of carved placards
+  document.getElementById('shelf').addEventListener('click', function (e) {
+    var item = e.target.closest('.placard');
+    if (item && item.dataset.screen) navigate(item.dataset.screen);
+  });
+
+  // The world hangs its name over the door; the lantern lights
+  API.world()
+    .then(function (data) {
+      inhabitWorld(data);
+    })
+    .catch(function () {
+      setLantern(false, 'the storyteller can\u2019t be reached');
+    });
+
+  // Initial route — the foyer is the door you always step through
+  var initial = location.hash.slice(1) || 'launcher';
+  if (!screens[initial]) initial = 'launcher';
+
+  // The studio remembers, listens, and only sounds once asked
+  loadHistories();
+  startWatch();
+  document.addEventListener('pointerdown', studioAudio.unlock);
+  document.addEventListener('keydown', studioAudio.unlock);
+
+  navigate(initial);
+
+  // The house shows a first-time visitor where the doors are
+  firstWalk.start();
+
+})();
