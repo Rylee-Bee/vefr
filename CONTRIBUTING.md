@@ -100,26 +100,21 @@ These are decisions that already cost time once:
   guard's allowlist with a deliberate comment, in the same PR,
   with discussion.
 
-## Touching the Storyteller WIP
+## In-flight work (do not sweep into other commits)
 
-`AGENTS.md` lists the protected WIP files. The summary: there is
-a Storyteller capability in flight (homelab issue
-rylee/vefr#50) that touches:
+The **Storyteller capability WIP landed** in the fleet episodes of
+2026-09-13/14 (`e74626c`..`fae6ca3` on `feat/fleet-storyteller`) —
+`src/vefr/narrate.py`, `src/vefr/interface.py`,
+`src/vefr/lore_shell.py`, `bench/{storyteller,interface}/`, and their
+tests are tracked, not protected.
 
-- `src/vefr/cli.py`, `src/vefr/generator.py`,
-  `src/vefr/storyteller_test.py`
-- `docs/guides/storyteller-packs.md`
-- `deploy/vefr.container`
-- `tests/fixtures/storyteller/*.json` (private-pack fixtures,
-  including `rosa-after-close.json`)
-- `storyteller_packs/*/`
-- `src/vefr/npc_action.py`, `npc_action_scenarios.py`,
-  `storyteller_benchmark.py`
-- `tests/test_npc_action.py`, `test_storyteller_benchmark.py`
-
-These stay on their WIP branch until the story-team design
-lands. Public-release PRs do not stage them. If a refinement
-pass needs to touch any of them, surface the conflict first.
+The protected set today is the **fleet benchmark experiment's dirty
+tree** (`.project/` round reports, `bench/` reports/runs/research,
+`experiments/`, `web/shell*`, `design/owner/`,
+`src/vefr/chat.py`, `.project/DECISIONS.md`). See AGENTS.md
+"Working-tree state" for the live list. Do not stage these as part
+of ordinary engine work; if you must touch the same files,
+surface the conflict first.
 
 ## Commit and PR style
 
