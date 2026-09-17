@@ -484,8 +484,8 @@ itself stays the scaffold's in v1; grow it after with
   OpenDyslexic (SIL OFL, self-hosted under `web/fonts/`). See
   `docs/guides/identity-terms-glossary.md` for the vocabulary.
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) - the gate
-  commands, the architectural principles, the Storyteller-WIP
-  do-not-touch summary.
+  commands, the architectural principles, the do-not-sweep rules for
+  in-flight work.
 - **Security & private reporting:** [SECURITY.md](SECURITY.md) -
   private vulnerability reporting, leaked-credential handling,
   threat model, public-private boundary.

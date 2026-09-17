@@ -7,6 +7,62 @@
 
 ## Landed
 
+- [x] **Fleet Storyteller role + benchmark** (2026-09-14,
+      `e434249`): the fleet storyteller capability — an anti-agentic
+      narrator. `src/vefr/narrate.py` receives an authoritative
+      action result plus bounded context and returns prose only (no
+      tools, no mutation, no canon invention); fail-closed
+      (`StorytellerUnavailable` / `StorytellerFailed`). Template
+      as data in `templates/storyteller/narrate.json`
+      (storyteller-narrate-v1: authority > template > lore >
+      prose precedence, ambiguity preserved, player agency
+      preserved). New CLI `vefr-story` (--json, --fixture, --model,
+      --endpoint). Benchmark in `bench/storyteller/`: 25
+      single-turn cases + 5 multi-turn sequences with hard
+      must/must_all/must_not gates, non-contradiction continuity,
+      and a replay mode. Winners (CPU llama.cpp):
+      `smollm3-3b-q4` 25/25 gate, 5/5 sequences, 100%
+      continuity, 11.4 tok/s (retained as storyteller head);
+      `ministral-3-3b-q4` equivalent at 11.3 tok/s.
+- [x] **Interface Translator + benchmark** (2026-09-13/14,
+      `bdfb421` + `045f289`): `src/vefr/interface.py` — a tiny
+      strict-intent brain mapping natural language to the engine's
+      canonical action vocabulary (attack, console, hurl, strike,
+      observe, speak, move) via strict json_schema + pydantic
+      validation; deterministic clarification on missing args,
+      fail-closed everywhere, no world mutation. Template as data
+      in `templates/interface/intent.json`. Benchmark in
+      `bench/interface/`: 29 deterministic cases; smaller models
+      (qwen2.5-1.5b, qwen3.5-0.8b) fail the safety gate on unsafe
+      false-positives; `qwen3.5-9b-mtp` wins (100% schema-valid,
+      strongest safe-rate) as the reference head.
+- [x] **Lorekeeper slice: `vefr-lore` add/ask** (2026-09-13,
+      `e74626c`): `src/vefr/lore_shell.py` — structured durable
+      truth (`facts.jsonl` authoritative, `index/` derived),
+      bge-m3 embed client via `VEFR_EMBED_URL`, pure-Python cosine
+      retrieval, fail-soft on embed outage. No generative path.
+- [x] **Small Model Finals + qualifier round, 2026-09 bench** (2026-09-13,
+      bench/finals commits + local `bench/reports/` evidence): two
+      skimmable rounds of the small-model bench campaign, plus the
+      qualifier campaign that followed.
+      (1) **Quick finals** (`bench/finals/DECISION-PACKET.md`,
+      CPU-only, Q4_K_M): *Worlds* default = **Qwen3 1.7B**
+      (6 PASS/8 PARTIAL vs LFM2.5-2.6B's 4/10), fallback LFM2.5;
+      *VEFR* default = **Phi-4-mini** provisional (11/12 at 3x the
+      speed of Ministral-3-3B's 12/12), fallback Ministral 3 3B.
+      (2) **Qualifier campaign, suite 0.4.1** (`bench/reports/
+      QUALIFIER-TLDR-2026-09-13.md`): 27 models x 53 tasks, every
+      run now completes (the stuck runs were three harness bugs,
+      zero model faults); backend is observed per run, not assumed;
+      all latencies contended (resident 27B holds the VRAM) and
+      never comparable to historical idle numbers. Standings
+      (pass%): top = qwen3-1.7b 76, lfm2.5-2.6b 70,
+      ministral-3-3b 68, falcon3-3b 66; weak = gemma3-1b 42,
+      qwen3.5-0.8b/-2b 30/28. Honesty notes carried forward:
+      phi-4-mini 64.2% here differs from its historical 100/100
+      (different production-path set), and legacy backend
+      provenance is UNKNOWN. Raw per-run evidence in
+      `bench/runs/` (`index.json` is canonical).
 - [x] **The Foyer sits in the house's own column** (2026-09-15): the
       launcher used to stretch full-bleed edge to edge while every
       other room sits in a centered ~680px readable column, and the
