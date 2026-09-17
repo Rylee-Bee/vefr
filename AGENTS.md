@@ -17,24 +17,32 @@ kilo config - do not add personal files to this repo.
 | Find current truth / decisions    | `.project/CURRENT.md` / `.project/DECISIONS.md`      |
 | See Play-Nice behavioral authority| `.project/contracts/adoption.yaml` (pinned revision) |
 
-## Active checkout and Storyteller WIP (2026-09-12)
+## Working-tree state (2026-09-16)
 
-`origin` is GitHub: `https://github.com/Rylee-Bee/vefr.git`. Gitea is
-retired as source control; historical references remain where truthful
-(see `docs/guides/archive/` and `ROADMAP.md` 2026-09-07 entry).
+The **Storyteller capability WIP described here previously landed**:
+the fleet storyteller role, interface translator, lorekeeper, and
+their benchmarks are now tracked on `feat/fleet-storyteller`
+(commits `e74626c`..`fae6ca3`; see ROADMAP.md's 2026-09-13/14
+entries). The old 5-modified + 20-untracked protected list is
+retired — the files either landed, or were superseded by
+`src/vefr/narrate.py` and `bench/storyteller/`.
 
-The repo's working tree is **deliberately dirty on this checkout** —
-Storyteller capability work is in flight:
+The repo's working tree is **deliberately dirty on this checkout**
+again — an in-flight fleet benchmark experiment:
 
-| State | Paths |
+| State | Paths (approximate; run `git status` for live truth) |
 |---|---|
-| Modified (5) | `deploy/vefr.container`, `docs/guides/storyteller-packs.md`, `src/vefr/cli.py`, `src/vefr/generator.py`, `src/vefr/storyteller_test.py` |
-| Untracked (20) | `src/vefr/npc_action.py`, `src/vefr/npc_action_scenarios.py`, `src/vefr/storyteller_benchmark.py`, `storyteller_packs/{qwen3-0.6b,qwen3-1.7b,qwen3-4b,smollm2-135m,smollm2-360m}/`, `tests/fixtures/storyteller/*.json`, `tests/test_npc_action.py`, `tests/test_storyteller_benchmark.py`, `artifacts/` |
-| Protected as Storyteller WIP until the story-team design lands (homelab issue rylee/vefr#50). | The five modified files; the 20 untracked files; the ten `tests/fixtures/storyteller/*.json` fixtures (one of which is `rosa-after-close.json`). |
+| Modified | `.project/DECISIONS.md`, `src/vefr/chat.py` |
+| Untracked | `.project/` benchmark/round reports, `bench/` reports + runs + research + tests, `experiments/`, `web/shell*` + `web/screens/`, `design/owner/`, `.project/participants/` |
 
 **Do not stage, commit, stash, or rebase any of the above as part of
-ordinary engine work.** If a refinement pass needs to touch the same
-files, surface the conflict first.
+ordinary engine work** — they belong to that active experiment.
+If a refinement pass needs to touch the same files, surface the
+conflict first.
+
+Also in flight: a `feat/ui-workshop` worktree at
+`/var/home/rylee/worktrees/vefr/ui-workshop` (separate checkout, one
+lane per worktree; never run two lanes in one directory).
 
 Live Git truth wins — run `agent-sync status` whenever "current" is
 in doubt; do not maintain duplicate copies of remote SHA here.
@@ -74,7 +82,7 @@ in doubt; do not maintain duplicate copies of remote SHA here.
 
 | Path                  | Purpose                                                        |
 | --------------------- | -------------------------------------------------------------- |
-| `src/vefr/` (30 tracked + Storyteller WIP per "Canonical checkout" above) | The engine. `world.py` is the only seam between engine + story |
+| `src/vefr/` (34 tracked, incl. `narrate.py`, `interface.py`, `lore_shell.py`) | The engine. `world.py` is the only seam between engine + story |
 | `web/`                | Parchment UI + canvas town; `state.js` is the one client state |
 | `worlds/sample-world/`| Playable demo pack, acts shape, validates green            |
 | `worlds/lore/`        | Three lore packs (norse, historical-event, norse-runes)        |

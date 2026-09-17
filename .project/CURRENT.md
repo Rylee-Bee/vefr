@@ -6,23 +6,19 @@
 
 ## Phase
 
-Refinement pass after Play-Nice adoption. Engine rules and Play-Nice
-cooperation boundaries are settled; the Storyteller capability work is
-in flight and preserved as WIP. Engine is *not* in active feature
-development.
-
-## Active WIP (intentionally preserved)
-
-Storyteller capability: benchmark harness, NPC action schemas, fixture
-scenarios, and a second storyteller pack set covering small language
-models. See AGENTS.md "Active checkout and Storyteller WIP" for the
-exact protected-file list and the rule against staging them.
+Fleet-capability season. The Storyteller capability WIP **landed**
+on `feat/fleet-storyteller` (lore `e74626c`, interface translator
+`bdfb421`+`045f289`, fleet storyteller `e434249`, Foyer UI `fae6ca3`
+— see ROADMAP.md 2026-09-13/15 entries). Branch is committed to
+origin as of 2026-09-16. The working tree is dirty with an
+in-flight fleet benchmark experiment; see AGENTS.md
+"Working-tree state".
 
 ## Known protected work
 
 | Item | Path / scope | Source of truth |
 |---|---|---|
-| Storyteller capability WIP | 5 modified + 20 untracked files | AGENTS.md "Active checkout" |
+| Fleet benchmark experiment (dirty tree) | `.project/` reports, `bench/` reports/runs, `experiments/`, `web/shell*`, `design/owner/`, `src/vefr/chat.py`, `.project/DECISIONS.md` | AGENTS.md "Working-tree state" |
 | Play-Nice adoption pin | `21b6841a50a1b0d459a760861385e99679852430` | `.project/contracts/adoption.yaml` |
 | Sample world pack (Emberfield) | `worlds/sample-world/` | `worlds/sample-world/` |
 | Three lore packs | `worlds/lore/{norse,historical-event,norse-runes}/` | each pack's `LICENSE.md` |
@@ -68,6 +64,7 @@ cat .project/contracts/adoption.yaml | head -10
 
 | Item | Value |
 |---|---|
-| Working tree | dirty (Storyteller WIP, see above) |
+| Working tree | dirty (fleet benchmark experiment, see above) |
 | Origin | `https://github.com/Rylee-Bee/vefr.git` |
+| Branch | `feat/fleet-storyteller` (committed to origin 2026-09-16); worktree lane at `/var/home/rylee/worktrees/vefr/ui-workshop` (`feat/ui-workshop`) |
 | Last commit at write time | see `git log -1` for the current SHA |
