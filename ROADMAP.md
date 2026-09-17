@@ -1192,6 +1192,10 @@
       review.)
 
 ## Next
+- (2026-09-16) `feat/dev-board` (123-commit orphan branch, dev-board UI
+      chrome: repo header, file-tree, 4-col grid, drag-rank, right-rail
+      stub) is **preserved on origin, unmerged** — assessment pending,
+      do not discard without a bundle backup.
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
       Acceptance: persistent 6-turn chat in Builder tab successfully calls
