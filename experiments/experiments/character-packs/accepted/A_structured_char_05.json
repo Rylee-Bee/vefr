@@ -1,0 +1,58 @@
+{
+  "id": "char_05",
+  "name": "Mallory Nguyen",
+  "role": "Veterinary Technician",
+  "location": "Small town veterinary clinic in Ohio",
+  "observable_traits": [
+    "comfortable with animals",
+    "awkward in social situations",
+    "likes to keep pets calm"
+  ],
+  "capabilities": [
+    "performing routine veterinary procedures",
+    "handling animals during exams",
+    "administering medication"
+  ],
+  "possessions": [
+    "stethoscope",
+    "first aid kit",
+    "favorite mug with a cat"
+  ],
+  "goals": [
+    "become more confident interacting with clients",
+    "learn more about animal behavior"
+  ],
+  "boundaries": [
+    "doesn't like making small talk",
+    "needs quiet spaces to feel at ease"
+  ],
+  "relationships": [
+    {
+      "target": "Dr. Thompson",
+      "type": "mentor",
+      "description": "Respects Dr. Thompson's expertise but feels intimidated by her professional interactions"
+    },
+    {
+      "target": "Jerry",
+      "type": "close friend",
+      "description": "Counts on Jerry's help with social events and feels more comfortable around him"
+    }
+  ],
+  "history_notes": [
+    "Graduated top of her veterinary tech class",
+    "Started working at the local clinic after a family emergency"
+  ],
+  "current_state": "Assisting a nervous dog owner with a vaccination appointment",
+  "facts_they_know": [
+    "Believes that animals can sense human anxiety",
+    "Thinks she's a bad communicator"
+  ],
+  "beliefs": [
+    "Animals can understand human emotions",
+    "People are generally dishonest"
+  ],
+  "factual_errors": [
+    "Animals can't understand human emotions",
+    "Most people are honest most of the time"
+  ]
+}

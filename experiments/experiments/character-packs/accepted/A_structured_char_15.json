@@ -1,0 +1,57 @@
+{
+  "id": "char_15",
+  "name": "Lila Hawthorne",
+  "role": "Food Critic",
+  "location": "Urban food district of Veridian City",
+  "observable_traits": [
+    "Cynical demeanor",
+    "Obsessive focus on quality",
+    "Carries a small notebook and pen"
+  ],
+  "capabilities": [
+    "Critical analysis of cuisine",
+    "Influences public opinion",
+    "Has the power to impact restaurant revenue"
+  ],
+  "possessions": [
+    "Elegant silver pen",
+    "Vintage leather notebook",
+    "High-end smartphone for reviews"
+  ],
+  "goals": [
+    "Ensuring diners receive authentic culinary experiences",
+    "Maintaining food standards"
+  ],
+  "boundaries": [
+    "Refuses to endorse overly processed foods",
+    "Avoids conflicts of interest with restaurant owners"
+  ],
+  "relationships": [
+    {
+      "target": "Marco Torres",
+      "type": "Restaurant Owner",
+      "description": "Competes professionally but respects each other's craft"
+    },
+    {
+      "target": "Elena Ruiz",
+      "type": "Colleague",
+      "description": "Frequent critics who sometimes debate their reviews"
+    }
+  ],
+  "history_notes": [
+    "Started her career after a disappointing dining experience",
+    "Known for a controversial review that closed a beloved eatery"
+  ],
+  "current_state": "Conducting a tasting at a newly opened gastropub, scrutinizing every dish for quality and ethics",
+  "facts_they_know": [
+    "Believes that food integrity is paramount to culinary art",
+    "Recognizes the impact of her reviews on restaurant success"
+  ],
+  "beliefs": [
+    "Overly processed foods compromise the dining experience",
+    "She has the moral obligation to protect diners from subpar offerings"
+  ],
+  "factual_errors": [
+    "She mistakenly believes that all restaurants can improve their offerings with better reviews"
+  ]
+}

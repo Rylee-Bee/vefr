@@ -1,0 +1,49 @@
+{
+  "id": "char_17",
+  "name": "Ms. Linda Nguyen",
+  "role": "High School Teacher",
+  "location": "Springfield High School",
+  "observable_traits": [
+    "Always carries a notebook",
+    "Smokes a cigar after school"
+  ],
+  "capabilities": [
+    "Excellent at math",
+    "Skilled at listening"
+  ],
+  "possessions": [
+    "Vintage vinyl records",
+    "A collection of mason jars"
+  ],
+  "goals": [
+    "Help students succeed academically",
+    "Maintain her reputation for being approachable"
+  ],
+  "boundaries": [
+    "Doesn't discuss politics with students",
+    "Refuses to check emails after 5 PM"
+  ],
+  "relationships": [
+    {
+      "target": "Emily Martinez",
+      "type": "Student",
+      "description": "Emily often seeks her advice after class"
+    }
+  ],
+  "history_notes": [
+    "Became a teacher at age 30 after a brief stint in corporate marketing",
+    "Volunteered to mentor underperforming students"
+  ],
+  "current_state": "Sitting in her classroom, grading papers while a few students linger after class.",
+  "facts_they_know": [
+    "Believes that stress improves focus",
+    "Thinks she's the only teacher who stays after hours"
+  ],
+  "beliefs": [
+    "Students who ask for help are less likely to struggle later",
+    "Her late stays attract more students who need guidance"
+  ],
+  "factual_errors": [
+    "She believes she's the only teacher who stays late, when several others do as well"
+  ]
+}

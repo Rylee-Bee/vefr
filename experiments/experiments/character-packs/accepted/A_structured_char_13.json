@@ -1,0 +1,50 @@
+{
+  "id": "char_13",
+  "name": "Elara Mapwright",
+  "role": "Cartographer",
+  "location": "Within the safety of her study in Eldergrove",
+  "observable_traits": [
+    "Carries a large sketchbook",
+    "Holds a walking stick",
+    "Wears spectacles with a worried expression"
+  ],
+  "capabilities": [
+    "Creates detailed maps",
+    "Uses divination tools",
+    "Navigates using maps"
+  ],
+  "possessions": [
+    "Sketchbook filled with intricate maps",
+    "Ancient compass",
+    "Traveler's journal"
+  ],
+  "goals": [
+    "Complete the map of Whispering Woods",
+    "Conquer her travel anxiety"
+  ],
+  "boundaries": [
+    "Refuses to travel to places on her maps"
+  ],
+  "relationships": [
+    {
+      "target": "Thaddeus the Adventurer",
+      "type": "Friend",
+      "description": "Shares maps and travel stories"
+    }
+  ],
+  "history_notes": [
+    "Born in the bustling port of Marrowstone",
+    "Became a cartographer after a near-fatal journey"
+  ],
+  "current_state": "Elara is meticulously adding final details to the map of the Misty Mountains.",
+  "facts_they_know": [
+    "The further north a place is on her map, the more anxious she feels about visiting it"
+  ],
+  "beliefs": [
+    "Maps hold the essence of a place, making it possible to experience it without physically being there",
+    "Fear of the unknown can be mitigated through detailed documentation"
+  ],
+  "factual_errors": [
+    "She believes that by mapping a place she can visit it without ever leaving her study"
+  ]
+}

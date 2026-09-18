@@ -1,0 +1,7 @@
+{
+  "character_id": "char_17",
+  "family": "A_structured",
+  "seed": "A_structured_char_17_20260912_201527",
+  "raw": "{\n  \"id\": \"char_17\",\n  \"name\": \"Ms. Linda Nguyen\",\n  \"role\": \"High School Teacher\",\n  \"location\": \"Springfield High School\",\n  \"observable_traits\": [\"Always carries a notebook\", \"Smokes a cigar after school\"],\n  \"capabilities\": [\"Excellent at math\", \"Skilled at listening\"],\n  \"possessions\": [\"Vintage vinyl records\", \"A collection of mason jars\"],\n  \"goals\": [\"Help students succeed academically\", \"Maintain her reputation for being approachable\"],\n  \"boundaries\": [\"Doesn't discuss politics with students\", \"Refuses to check emails after 5 PM\"],\n  \"relationships\": [\n    {\"target\": \"Emily Martinez\", \"type\": \"Student\", \"description\": \"Emily often seeks her advice after class\"}\n  ],\n  \"history_notes\": [\"Became a teacher at age 30 after a brief stint in corporate marketing\", \"Volunteered to mentor underperforming students\"],\n  \"current_state\": \"Sitting in her classroom, grading papers while a few students linger after class.\",\n  \"facts_they_know\": [\"Believes that stress improves focus\", \"Thinks she's the only teacher who stays after hours\"],\n  \"beliefs\": [\"Students who ask for help are less likely to struggle later\", \"Her late stays attract more students who need guidance\"],\n  \"factual_errors\": [\"She believes she's the only teacher who stays late, when several others do as well\"]\n}",
+  "generated_at": "20260912_201527"
+}

@@ -1,0 +1,7 @@
+{
+  "character_id": "char_16",
+  "family": "A_structured",
+  "seed": "A_structured_char_16_20260912_201527",
+  "raw": "{\n  \"id\": \"char_16\",\n  \"name\": \"Mabel Thompson\",\n  \"role\": \"Retired nurse\",\n  \"location\": \"Small coastal town\",\n  \"observable_traits\": [\"Kind demeanor\", \"Always carrying a pouch of cat food\", \"Wears a nurse's cap\"],\n  \"capabilities\": [\"First aid skills\", \"Comforts injured animals\", \"Recalls all stray cat names\"],\n  \"possessions\": [\"Old nurse's bag\", \"Cat food supply\", \"Wardrobe of vintage clothing\"],\n  \"goals\": [\"Ensures all stray cats are fed and cared for\", \"Maintains friendships with neighborhood cats\"],\n  \"boundaries\": [\"Does not take stray cats into her home\", \"Refuses to intervene in human conflicts\"],\n  \"relationships\": [\n    {\"target\": \"Oliver\", \"type\": \"Cat\", \"description\": \"Oliver is Mabel's favorite and always follows her around\"}\n  ],\n  \"history_notes\": [\"Worked at the town clinic for 30 years\", \"Started feeding stray cats after retirement\"],\n  \"current_state\": \"Mabel is sitting on the porch, gently tossing food to the neighborhood cats.\",\n  \"facts_they_know\": [\"All stray cats in town have names\", \"She once saved a baby raccoon from a storm\"],\n  \"beliefs\": [\"Cats are happier living outdoors with their own kind\", \"She can communicate with animals through her intuition\"],\n  \"factual_errors\": [\"Believes she is the only person who knows all cat names, when others recall some\"]\n}",
+  "generated_at": "20260912_201527"
+}
