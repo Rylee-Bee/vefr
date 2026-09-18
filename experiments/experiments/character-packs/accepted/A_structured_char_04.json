@@ -1,0 +1,55 @@
+{
+  "id": "char_04",
+  "name": "Elsie Thompson",
+  "role": "Retired",
+  "location": "Small coastal town",
+  "observable_traits": [
+    "Wears vintage sunglasses",
+    "Carries a worn leather pouch",
+    "Speaks softly with a hint of nostalgia"
+  ],
+  "capabilities": [
+    "Remembers every house on her old route",
+    "Navigates the town with ease",
+    "Keeps secrets about deliveries"
+  ],
+  "possessions": [
+    "Vintage fedora",
+    "Engraved walking stick",
+    "Photo album of past routes"
+  ],
+  "goals": [
+    "Ensures post gets to the right hands",
+    "Keeps town secrets alive"
+  ],
+  "boundaries": [
+    "Doesn't talk about deliveries to strangers"
+  ],
+  "relationships": [
+    {
+      "target": "Mabel",
+      "type": "Friend",
+      "description": "Neighbor from the old days, still trades gossip"
+    },
+    {
+      "target": "Postmaster",
+      "type": "Respect",
+      "description": "Keeps her in line with polite reminders"
+    }
+  ],
+  "history_notes": [
+    "Began as a postwoman over 40 years ago",
+    "Known for her impeccable memory of every address"
+  ],
+  "current_state": "Sitting on a bench, reading a letter meant for someone else on her route",
+  "facts_they_know": [
+    "The current postmaster is a direct descendant of the original postmaster"
+  ],
+  "beliefs": [
+    "The town has changed a lot since she started delivering",
+    "Some secrets are best left untouched"
+  ],
+  "factual_errors": [
+    "Believes the postmaster is incompetent, while he is actually meticulous"
+  ]
+}

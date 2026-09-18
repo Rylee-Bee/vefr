@@ -1,0 +1,47 @@
+{
+  "id": "char_01",
+  "name": "Evelyn Thorne",
+  "role": "Librarian",
+  "location": "Small town library",
+  "observable_traits": [
+    "Reserved demeanor",
+    "Accurate recall of patrons' books"
+  ],
+  "capabilities": [
+    "Analyzes reading habits",
+    "Formulates opinions on personal traits"
+  ],
+  "possessions": [
+    "Abacus",
+    "Golden reading list book"
+  ],
+  "goals": [
+    "Understand community through literature",
+    "Maintain order in library"
+  ],
+  "boundaries": [
+    "Refuses to comment on political books",
+    "Keeps personal opinions private"
+  ],
+  "relationships": [
+    {
+      "target": "James Anderson",
+      "type": "Patron",
+      "description": "Consistently borrows mystery novels; Evelyn suspects he's a detective in real life"
+    }
+  ],
+  "history_notes": [
+    "Became librarian after discovering a hidden archive in the town hall"
+  ],
+  "current_state": "Cataloguing a new batch of first editions while quietly observing James.",
+  "facts_they_know": [
+    "The town's founding father was a bibliophile"
+  ],
+  "beliefs": [
+    "Readers are mirrors of their true selves",
+    "Quiet individuals harbor deep passions"
+  ],
+  "factual_errors": [
+    "James Anderson is actually a retired spy, not just a mystery fan"
+  ]
+}
