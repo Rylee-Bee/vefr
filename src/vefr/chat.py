@@ -82,6 +82,7 @@ class MapRows(BaseModel):
     def to_segments(self) -> list:
         return [[list(part) for part in row] for row in self.rows]
 
+
 ASSISTANT_SYSTEM = (
     "You are a warm, curious world-building collaborator helping someone "
     "shape their own story. Plain prose, never purple, never a lecture. "
@@ -126,8 +127,7 @@ def draft_theme(mood: str) -> dict | None:
         "model": generator.MODEL,
         "system": THEME_SYSTEM,
         "prompt": (
-            f"The mood is: {mood}. Reply with only the JSON object: "
-            f"bg, hero_color, deco_color."
+            f"The mood is: {mood}. Reply with only the JSON object: bg, hero_color, deco_color."
         ),
         "format": THEME_SCHEMA,
         "stream": False,
@@ -197,13 +197,17 @@ def propose_map(story: str, mood: str, w: dict, dest: Path) -> list[str] | None:
     rows_n = len(town["map"])
     cols = len(town["map"][0])
     hero = town["hero_start"]
-    speakers = ", ".join(
-        f"{s['name']} at {tuple(s['at'])}" for s in w["speakers"].values()
-    )
+    speakers = ", ".join(f"{s['name']} at {tuple(s['at'])}" for s in w["speakers"].values())
     pois = "; ".join(f"{town['pois'][k]} at ({k})" for k in town.get("pois", {}))
     legend_text = "; ".join(
         f"'{ch}': "
-        + ("solid" if e.get("solid") is True else "walkable" if e.get("solid") is False else "context")
+        + (
+            "solid"
+            if e.get("solid") is True
+            else "walkable"
+            if e.get("solid") is False
+            else "context"
+        )
         for ch, e in sorted(legend.items())
     )
     prompt = (
@@ -241,6 +245,73 @@ def propose_map(story: str, mood: str, w: dict, dest: Path) -> list[str] | None:
             # (pack_dir=dest) is the full gate before anything ships.
             if not maplab.validate(candidate):
                 return rows
+        except (httpx.HTTPError, ValidationError, KeyError, ValueError, SystemExit):
+            continue
+    return None
+
+
+FACE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "role": {"type": "string"},
+        "seed": {"type": "string"},
+    },
+    "required": ["name", "role", "seed"],
+}
+
+FACE_SYSTEM = (
+    "You propose one person who could live in this world. Keep them "
+    "quiet and specific. Name, role, and one short line of seed "
+    "dialogue they might say to someone passing by. Reply with only "
+    "the JSON object: name, role, seed."
+)
+
+
+class Face(BaseModel):
+    name: str
+    role: str
+    seed: str
+
+
+def propose_face(story: str, mood: str, w: dict) -> dict | None:
+    """One new face: name, role and a seed line, schema-constrained.
+
+    Placement is never the model's choice - the caller asks _pick_tile
+    for a reachable, unoccupied, non-flooded spot. Returns None on any
+    failure so the caller keeps its honest fallback.
+    """
+    legend_text = "; ".join(
+        f"'{ch}': "
+        + (
+            "solid"
+            if e.get("solid") is True
+            else "walkable"
+            if e.get("solid") is False
+            else "context"
+        )
+        for ch, e in sorted(w["town"].get("legend", {}).items())
+    )
+    payload = {
+        "model": generator.MODEL,
+        "system": FACE_SYSTEM,
+        "prompt": (
+            f"The story: {story or 'unspecified'}. The town should feel: {mood}.\n"
+            f"The ground is marked: {legend_text or 'nothing named yet'}.\n"
+            "Propose one person who belongs here."
+        ),
+        "format": FACE_SCHEMA,
+        "stream": False,
+        "think": False,
+        "keep_alive": generator.KEEP_ALIVE,
+        "options": {"temperature": 0.8},
+    }
+    for _ in range(2):
+        try:
+            raw = generator._completion(payload)
+            face = Face.model_validate_json(raw)
+            if face.name.strip() and face.role.strip() and face.seed.strip():
+                return face.model_dump()
         except (httpx.HTTPError, ValidationError, KeyError, ValueError, SystemExit):
             continue
     return None
@@ -316,9 +387,7 @@ def _add_speaker(w: dict, dest: Path, name: str, personality: str) -> bool:
     )
     voices_dir = dest / "voices"
     voices_dir.mkdir(exist_ok=True)
-    (voices_dir / f"{key}.md").write_text(
-        f"# {name}\n\n{voice_text}\n", encoding="utf-8"
-    )
+    (voices_dir / f"{key}.md").write_text(f"# {name}\n\n{voice_text}\n", encoding="utf-8")
     w["speakers"][key] = spec
     return True
 
@@ -343,14 +412,10 @@ def _rename_phase_keys(w: dict, old: list[str], new: list[str]) -> None:
     w["phases"] = {mapping.get(k, k): v for k, v in w["phases"].items()}
     town = w.get("town", {})
     if "water_by_phase" in town:
-        town["water_by_phase"] = {
-            mapping.get(k, k): v for k, v in town["water_by_phase"].items()
-        }
+        town["water_by_phase"] = {mapping.get(k, k): v for k, v in town["water_by_phase"].items()}
     r_by_phase = town.get("watch", {}).get("r_by_phase")
     if r_by_phase:
-        town["watch"]["r_by_phase"] = {
-            mapping.get(k, k): v for k, v in r_by_phase.items()
-        }
+        town["watch"]["r_by_phase"] = {mapping.get(k, k): v for k, v in r_by_phase.items()}
     for spec in w.get("speakers", {}).values():
         if "seeds" in spec:
             spec["seeds"] = {mapping.get(k, k): v for k, v in spec["seeds"].items()}
@@ -368,6 +433,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     # the loader reads the flat JSON. Either way, maplab.load_pack
     # returns a unified shape the interview can mutate.
     from .maplab import load_pack as _load_pack
+
     w = _load_pack(dest)
 
     print("\nnorns chat - let's build your world.\n")
@@ -415,18 +481,14 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         f"through), currently named: {', '.join(old_phases)}."
     )
     new_names = ask(
-        f"Rename them? Comma-separated, same count ({len(old_phases)}), or "
-        f"leave blank to keep"
+        f"Rename them? Comma-separated, same count ({len(old_phases)}), or leave blank to keep"
     )
     if new_names:
         names = [n.strip() for n in new_names.split(",")]
         if len(names) == len(old_phases):
             _rename_phase_keys(w, old_phases, names)
         else:
-            print(
-                f"needed {len(old_phases)} names, got {len(names)} - "
-                f"keeping the originals"
-            )
+            print(f"needed {len(old_phases)} names, got {len(names)} - keeping the originals")
 
     for key in list(w["phases"].keys()):
         tone_hint = ask(f"In a few words, what's the mood of '{key}'?")
@@ -446,8 +508,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
         f"connect to your protagonist): {', '.join(old_bonds)}."
     )
     new_bond_names = ask(
-        f"Rename them? Comma-separated, same count ({len(old_bonds)}), or "
-        f"leave blank to keep"
+        f"Rename them? Comma-separated, same count ({len(old_bonds)}), or leave blank to keep"
     )
     if new_bond_names:
         names = [n.strip() for n in new_bond_names.split(",")]
@@ -455,10 +516,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
             w["bonds"] = {names[i]: w["bonds"][old_bonds[i]] for i in range(len(old_bonds))}
             old_bonds = names
         else:
-            print(
-                f"needed {len(old_bonds)} names, got {len(names)} - "
-                f"keeping the originals"
-            )
+            print(f"needed {len(old_bonds)} names, got {len(names)} - keeping the originals")
 
     for key in old_bonds:
         flavor = ask(f"In a few words, what does a '{key}' bond feel like?")
@@ -499,9 +557,7 @@ def run_interview(dest: Path, scaffold: Path) -> int:
                 f"--pack {dest})"
             )
 
-    speaker_count_raw = ask(
-        "\nHow many people stand in your town? (1-3, blank = 1)", "1"
-    )
+    speaker_count_raw = ask("\nHow many people stand in your town? (1-3, blank = 1)", "1")
     try:
         speaker_count = max(1, min(3, int(speaker_count_raw)))
     except ValueError:
@@ -569,8 +625,5 @@ def run_interview(dest: Path, scaffold: Path) -> int:
     print("\nNext steps:")
     print(f"  VEFR_WORLD={dest.name} norns validate --pack {dest}")
     print(f"  VEFR_WORLD={dest.name} ratatoskr test")
-    print(
-        "  reshape the map later with: norns build-map --segments <file> "
-        f"--pack {dest}"
-    )
+    print(f"  reshape the map later with: norns build-map --segments <file> --pack {dest}")
     return 0
