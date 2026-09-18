@@ -1,0 +1,7 @@
+{
+  "character_id": "char_01",
+  "family": "A_structured",
+  "seed": "A_structured_char_01_20260912_201527",
+  "raw": "{\n  \"id\": \"char_01\",\n  \"name\": \"Evelyn Thorne\",\n  \"role\": \"Librarian\",\n  \"location\": \"Small town library\",\n  \"observable_traits\": [\"Reserved demeanor\", \"Accurate recall of patrons' books\"],\n  \"capabilities\": [\"Analyzes reading habits\", \"Formulates opinions on personal traits\"],\n  \"possessions\": [\"Abacus\", \"Golden reading list book\"],\n  \"goals\": [\"Understand community through literature\", \"Maintain order in library\"],\n  \"boundaries\": [\"Refuses to comment on political books\", \"Keeps personal opinions private\"],\n  \"relationships\": [\n    {\n      \"target\": \"James Anderson\",\n      \"type\": \"Patron\",\n      \"description\": \"Consistently borrows mystery novels; Evelyn suspects he's a detective in real life\"\n    }\n  ],\n  \"history_notes\": [\"Became librarian after discovering a hidden archive in the town hall\"],\n  \"current_state\": \"Cataloguing a new batch of first editions while quietly observing James.\",\n  \"facts_they_know\": [\"The town's founding father was a bibliophile\"],\n  \"beliefs\": [\"Readers are mirrors of their true selves\", \"Quiet individuals harbor deep passions\"],\n  \"factual_errors\": [\"James Anderson is actually a retired spy, not just a mystery fan\"]\n}",
+  "generated_at": "20260912_201527"
+}

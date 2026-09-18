@@ -1,0 +1,52 @@
+{
+  "id": "char_16",
+  "name": "Mabel Thompson",
+  "role": "Retired nurse",
+  "location": "Small coastal town",
+  "observable_traits": [
+    "Kind demeanor",
+    "Always carrying a pouch of cat food",
+    "Wears a nurse's cap"
+  ],
+  "capabilities": [
+    "First aid skills",
+    "Comforts injured animals",
+    "Recalls all stray cat names"
+  ],
+  "possessions": [
+    "Old nurse's bag",
+    "Cat food supply",
+    "Wardrobe of vintage clothing"
+  ],
+  "goals": [
+    "Ensures all stray cats are fed and cared for",
+    "Maintains friendships with neighborhood cats"
+  ],
+  "boundaries": [
+    "Does not take stray cats into her home",
+    "Refuses to intervene in human conflicts"
+  ],
+  "relationships": [
+    {
+      "target": "Oliver",
+      "type": "Cat",
+      "description": "Oliver is Mabel's favorite and always follows her around"
+    }
+  ],
+  "history_notes": [
+    "Worked at the town clinic for 30 years",
+    "Started feeding stray cats after retirement"
+  ],
+  "current_state": "Mabel is sitting on the porch, gently tossing food to the neighborhood cats.",
+  "facts_they_know": [
+    "All stray cats in town have names",
+    "She once saved a baby raccoon from a storm"
+  ],
+  "beliefs": [
+    "Cats are happier living outdoors with their own kind",
+    "She can communicate with animals through her intuition"
+  ],
+  "factual_errors": [
+    "Believes she is the only person who knows all cat names, when others recall some"
+  ]
+}
