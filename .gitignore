@@ -56,3 +56,4 @@ tests/canon-strings.local.txt
 
 # runtime journal single-file (siblings ignored since the runtime-data rule)
 /data/journal.json
+web/static
