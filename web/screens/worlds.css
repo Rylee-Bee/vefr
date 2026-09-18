@@ -1,0 +1,191 @@
+/* Worlds — invitations to other places.
+ *
+ * Each card should feel like a door you could walk through.
+ * Not a database row. A place with a name and a history.
+ */
+
+.worlds {
+  padding: 24px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.worlds__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.worlds__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.worlds__search {
+  max-width: 260px;
+}
+
+/* ── Grid ────────────────────────────────────────────────── */
+
+.worlds__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+
+.world-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.world-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.world-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.world-card--active {
+  border-color: var(--gold);
+  border-width: 2px;
+}
+
+.world-card--active .world-card__initial {
+  color: var(--gold);
+}
+
+/* ── Card Visual ─────────────────────────────────────────── */
+
+.world-card__visual {
+  height: 80px;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.world-card__initial {
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--text-dim);
+  opacity: 0.6;
+  font-family: 'Spectral', Georgia, serif;
+}
+
+/* ── Card Body ───────────────────────────────────────────── */
+
+.world-card__body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.world-card__name {
+  font-size: 16px;
+  font-weight: 550;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.world-card__desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.world-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.world-card__sessions {
+  color: var(--text-dim);
+}
+
+.world-card__time {
+  color: var(--text-dim);
+}
+
+.world-card__badge {
+  background: rgba(91, 138, 114, 0.15);
+  color: var(--teal);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+
+.worlds__empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.worlds__empty-text {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+.worlds__loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .worlds {
+    padding: 16px;
+  }
+  
+  .worlds__grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .world-card__visual {
+    height: 60px;
+  }
+}
