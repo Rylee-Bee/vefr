@@ -1,0 +1,84 @@
+{
+ "qwen2.5-0.5b": [
+  "20260913T005812Z__qualifier__qwen2.5-0.5b__e56725"
+ ],
+ "smollm2-360m": [
+  "20260913T005910Z__qualifier__smollm2-360m__331a17"
+ ],
+ "llama3.2-1b": [
+  "20260913T010126Z__qualifier__llama3.2-1b__df196b"
+ ],
+ "lfm2.5-1.2b": [
+  "20260913T010331Z__qualifier__lfm2.5-1.2b__de5697"
+ ],
+ "xlam-2-1b-fc-r": [
+  "20260913T010458Z__qualifier__xlam-2-1b-fc-r__d8d598"
+ ],
+ "qwen2.5-1.5b": [
+  "20260913T010712Z__qualifier__qwen2.5-1.5b__92c120"
+ ],
+ "qwen3-1.7b": [
+  "20260913T010904Z__qualifier__qwen3-1.7b__8d5bb4"
+ ],
+ "smollm2-1.7b": [
+  "20260913T014507Z__qualifier__smollm2-1.7b__f8d448"
+ ],
+ "qwen2.5-1.5b-tools": [
+  "20260913T014751Z__qualifier__qwen2.5-1.5b-tools__b0dbd5"
+ ],
+ "qwen2.5-3b": [
+  "20260913T014941Z__qualifier__qwen2.5-3b__51dd71"
+ ],
+ "granite-4.1-3b": [
+  "20260913T025418Z__qualifier__granite-4.1-3b__2f3fe9"
+ ],
+ "qwen3-0.6b": [
+  "20260913T030256Z__qualifier__qwen3-0.6b__95685c"
+ ],
+ "qwen2.5-hermes-1.5b": [
+  "20260913T041700Z__qualifier__qwen2.5-hermes-1.5b__331628",
+  "20260913T070930Z__qualifier__qwen2.5-hermes-1.5b__27d247"
+ ],
+ "gemma3-1b": [
+  "20260913T062949Z__qualifier__gemma3-1b__7c958e"
+ ],
+ "qwen3.5-0.8b": [
+  "20260913T045035Z__qualifier__qwen3.5-0.8b__a57b0c"
+ ],
+ "qwen3.5-2b": [
+  "20260913T045601Z__qualifier__qwen3.5-2b__6e10c0"
+ ],
+ "qwen3.5-4b": [
+  "20260913T052156Z__qualifier__qwen3.5-4b__0bf1a9"
+ ],
+ "granite-4.2-3b": [
+  "20260913T063208Z__qualifier__granite-4.2-3b__73309b"
+ ],
+ "falcon3-3b": [
+  "20260913T071206Z__qualifier__falcon3-3b__7c3de0"
+ ],
+ "gemma3-4b": [
+  "20260913T071740Z__qualifier__gemma3-4b__eb0fa1"
+ ],
+ "lfm2.5-2.6b": [
+  "20260913T072316Z__qualifier__lfm2.5-2.6b__0d7776"
+ ],
+ "llama3.2-3b": [
+  "20260913T074646Z__qualifier__llama3.2-3b__994bfa"
+ ],
+ "ministral-3-3b": [
+  "20260913T075049Z__qualifier__ministral-3-3b__7354b5"
+ ],
+ "phi-3.5-mini": [
+  "20260913T075732Z__qualifier__phi-3.5-mini__3aacf7"
+ ],
+ "smollm3-3b": [
+  "20260913T081004Z__qualifier__smollm3-3b__c722e2"
+ ],
+ "stablelm-zephyr-3b": [
+  "20260913T082214Z__qualifier__stablelm-zephyr-3b__213667"
+ ],
+ "phi-4-mini": [
+  "20260913T082741Z__qualifier__phi-4-mini__b79b00"
+ ]
+}
