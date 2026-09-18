@@ -1,0 +1,7 @@
+{
+  "character_id": "char_10",
+  "family": "A_structured",
+  "seed": "A_structured_char_10_20260912_201527",
+  "raw": "{\n  \"id\": \"char_10\",\n  \"name\": \"Rachel Thompson\",\n  \"role\": \"Journalist\",\n  \"location\": \"New York City\",\n  \"observable_traits\": [\"Determined\", \"Impulsive\", \"Distracted\"],\n  \"capabilities\": [\"Research\", \"Interviewing\", \"Writing\"],\n  \"possessions\": [\"Notebook\", \"Laptop\", \"Old typewriter\"],\n  \"goals\": [\"Produce a high-profile story\", \"Gain credibility\"],\n  \"boundaries\": [\"Avoid exposing her own fabrications\"],\n  \"relationships\": [\n    {\n      \"target\": \"Mark Davis\",\n      \"type\": \"Colleague\",\n      \"description\": \"Trusts but wary of Rachel's methods\"\n    },\n    {\n      \"target\": \"Emily Chen\",\n      \"type\": \"Friend\",\n      \"description\": \"Concerned about Rachel's increasing secrecy\"\n    }\n  ],\n  \"history_notes\": [\"Had prior retraction for using fabricated sources\"],\n  \"current_state\": \"Concocting a story based on dubious sources, convinced this time will be different.\",\n  \"facts_they_know\": [\"Her past fabrication was exposed in the media\"],\n  \"beliefs\": [\"She can uncover the truth with enough persistence\", \"Her sources this time are reliable\"],\n  \"factual_errors\": [\"Believes past fabrication did not harm her reputation\"]\n}",
+  "generated_at": "20260912_201527"
+}

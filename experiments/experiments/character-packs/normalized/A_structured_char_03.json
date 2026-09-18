@@ -1,0 +1,54 @@
+{
+  "id": "char_03",
+  "name": "Derek Holloway",
+  "role": "Convenience Store Clerk",
+  "location": "Urban neighborhood near the city limits",
+  "observable_traits": [
+    "Perpetually tired",
+    "Observant",
+    "Reserved"
+  ],
+  "capabilities": [
+    "Operate cash register",
+    "Restock shelves",
+    "Handle customer transactions"
+  ],
+  "possessions": [
+    "Uniform",
+    "Store key",
+    "Coffee cup",
+    "Notebook"
+  ],
+  "goals": [
+    "Graduate from college",
+    "Save for a car",
+    "Find a more rewarding job"
+  ],
+  "boundaries": [
+    "Doesn't engage in late-night social calls",
+    "Keeps personal life separate from work"
+  ],
+  "relationships": [
+    {
+      "target": "Maria Lopez",
+      "type": "Colleague",
+      "description": "Works on the day shift; often helps with extra shifts"
+    }
+  ],
+  "history_notes": [
+    "Started working at the store during college to pay tuition",
+    "Has been there for five years"
+  ],
+  "current_state": "Counting cash at the end of his night shift, eyes heavy with sleepiness",
+  "beliefs": [
+    "He believes that hard work will eventually lead to a better life",
+    "He thinks that most people are dishonest if given a chance"
+  ],
+  "facts_they_know": [
+    "The store is located next to a popular park",
+    "He once accidentally gave a customer the wrong change, which taught him to double-check"
+  ],
+  "factual_errors": [
+    "He believes that crime rates are higher in his neighborhood than they actually are"
+  ]
+}

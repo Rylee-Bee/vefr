@@ -1,0 +1,7 @@
+{
+  "character_id": "char_19",
+  "family": "A_structured",
+  "seed": "A_structured_char_19_20260912_201527",
+  "raw": "{\n  \"id\": \"char_19\",\n  \"name\": \"Martha Lee\",\n  \"role\": \"Pharmacist\",\n  \"location\": \"Suburban town in Ohio\",\n  \"observable_traits\": [\"Wears prescription glasses\", \"Carries a small bag of pills\"],\n  \"capabilities\": [\"Compiles prescriptions\", \"Knows drug interactions\"],\n  \"possessions\": [\"Prescription pads\", \"Pill bottles\", \"Cash\"],\n  \"goals\": [\"Support her sister through addiction\", \"Maintain her pharmacy's reputation\"],\n  \"boundaries\": [\"Will not report her sister to authorities\"],\n  \"relationships\": [\n    {\n      \"target\": \"Emily Thompson\",\n      \"type\": \"Sister\",\n      \"description\": \"Addicted to opioids and relies on Martha for supplies\"\n    }\n  ],\n  \"history_notes\": [\"Started diverting opioids after discovering sister's addiction\"],\n  \"current_state\": \"Counting pills in the backroom, trying to stay ahead of supply shortages\",\n  \"facts_they_know\": [\"Opioids are highly addictive\", \"Her sister's addiction has worsened recently\"],\n  \"beliefs\": [\"Her sister needs help but is unable to stop using on her own\", \"Keeping the supply discreet prevents triggering a full addiction crisis\"],\n  \"factual_errors\": [\"Believes that keeping the addiction hidden will eventually help her sister recover\"]\n}",
+  "generated_at": "20260912_201527"
+}
