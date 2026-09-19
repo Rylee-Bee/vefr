@@ -1,0 +1,158 @@
+# Qwen2.5-1.5B-Instruct — VEFR Project Participant Profile
+
+**STATUS**: PROVISIONAL — promoted to DEFAULT from Round 5 bounded benchmark evidence
+
+---
+
+## Identity
+
+**Participant**: Qwen2.5-1.5B-Instruct
+**Runtime**: llama.cpp server via Podman
+**Environment**: Bazzite, CPU-only (x86_64)
+**Role**: Hermod DEFAULT Brain
+**Status**: PROVISIONAL — benchmark evidence only
+
+---
+
+## Model Identity
+
+| Field | Value |
+|-------|-------|
+| Repository | Qwen/Qwen2.5-1.5B-Instruct-GGUF |
+| File | Qwen2.5-1.5B-Instruct-Q4_K_M.gguf |
+| Parameters | 1.5B |
+| Quantization | Q4_K_M |
+| File size | 1.08 GB (1,117,320,736 bytes) |
+| Context configured | 8192 tokens |
+| Chat template | `--jinja` (Qwen2.5 native, no reasoning mode) |
+| Reasoning mode | N/A (Qwen2.5 has no thinking mode) |
+| License | Apache-2.0 |
+
+---
+
+## Runtime Configuration
+
+```
+podman run -d --name llama-bench \
+  -p 8086:8080 \
+  -v ~/llama-server/models/bench:/models:Z \
+  ghcr.io/ggml-org/llama.cpp:server \
+  --model /models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  --alias qwen2.5-1.5b \
+  --host 0.0.0.0 --port 8080 \
+  -c 8192 -t 8 -ngl 0 --jinja
+```
+
+Generation parameters (benchmark):
+- temperature: 0.3
+- min_p: 0.1
+- max_tokens: 500
+
+---
+
+## Observed VEFR Tasks
+
+### Round 5 — Six-Task Hermod Benchmark (5 repetitions)
+
+| Task | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Repeatability |
+|------|-------|-------|-------|-------|-------|---------------|
+| NPC JSON Creation | PASS | PASS | PASS | PASS | PASS | 5/5 |
+| Bounded State Edit | PASS | PASS | PASS | PASS | PASS | 5/5 |
+| Ambiguous Escalation | PASS | PASS | PASS | PASS | PASS | 5/5 |
+| Rune Classification | FAIL | FAIL | FAIL | FAIL | FAIL | 0/5 |
+| UNKNOWN Preservation | PASS | PASS | PASS | PASS | PASS | 5/5 |
+| Instruction Scope | PASS | PASS | PASS | PASS | PASS | 5/5 |
+| **Score** | **5/6** | **5/6** | **5/6** | **5/6** | **5/6** | **25/30 (83%)** |
+
+### Latency
+
+| Metric | Value |
+|--------|-------|
+| Mean latency | ~1.5s |
+| Min latency | ~1.3s (Run 4) |
+| Max latency | ~1.6s (Run 3) |
+
+---
+
+## Good Fit
+
+- Structured JSON output with bounded schema
+- State edits (change only what is requested)
+- Escalation judgment (returns valid enum values)
+- UNKNOWN preservation (returns empty/unknown for unestablished facts)
+- Instruction scope discipline (no extra fields)
+- Simple bounded tasks requiring fast response
+
+## Good With Verification
+
+- Any task where deterministic validation catches errors
+- Multi-field JSON generation (capacity may be limited)
+
+## Poor Fit / Route Elsewhere First
+
+- Large context synthesis
+- Complex multi-step reasoning chains
+- Visual/UI judgment
+- Architecture decisions
+- Domain-specific knowledge not in training data (e.g., VEFR rune mappings)
+
+## Ask For Help When
+
+- Task requires knowledge beyond training data
+- Reasoning depth exceeds 1.5B capacity
+- Consequential mutations or policy decisions
+- Output fails deterministic validation
+
+## Preferred Task Shape
+
+- Bounded input (< 2048 tokens context)
+- Strict JSON output schema
+- Single, well-defined operation
+- Deterministic acceptance criteria
+
+## Preferred Evidence
+
+- Exact JSON match against expected schema
+- Latency measurements
+- Repeatability across runs
+
+## Known Failure Mode
+
+- Rune Classification (domain-specific knowledge gap, not general capacity issue)
+- Occasional markdown fence wrapping (rare at temp=0.3)
+
+## Resource / Speed Notes
+
+| Metric | Value |
+|--------|-------|
+| Size | 1.08 GB |
+| Mean latency | ~1.5s |
+| Compared to Granite 4.1 3B | 45% smaller, ~46% faster |
+
+## Authority
+
+**Does not imply**: world-state authority, policy authority, mutation authority, final acceptance authority
+
+Qwen is Hermod's replaceable DEFAULT brain. Hermod retains its role. VEFR retains authoritative world state and validation.
+
+## Self-Reported / Unknown
+
+- UNKNOWN: General capability outside the six-task benchmark
+- UNKNOWN: Long-context performance (> 4096 tokens)
+- UNKNOWN: Multi-turn conversation quality
+- UNKNOWN: Tool-calling behavior (not tested)
+
+## Evidence Base
+
+- Round 5 benchmark: 5 identical 5/6 runs, zero variance
+- Settings sweep: temp=0.3, min_p=0.1 optimal
+- Comparison: behaviorally equivalent to Granite 4.1 3B on six-task benchmark (same pass/fail pattern, zero variance)
+- Reservation: six tasks do not establish general model equivalence
+
+---
+
+## Profile History
+
+- 2026-09-12: Created; promoted to DEFAULT from Round 5 evidence
+- 2026-09-12: Five-run repeatability confirmed
+- 2026-09-12: Production-route verification passed
