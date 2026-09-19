@@ -1,0 +1,59 @@
+{
+  "id": "char_02",
+  "name": "Eddie Thompson",
+  "role": "Bus Driver",
+  "location": "Small Townsville",
+  "observable_traits": [
+    "Weariness in eyes",
+    "Kind smile",
+    "Gloves always on"
+  ],
+  "capabilities": [
+    "Navigate familiar routes",
+    "Identify regular passengers",
+    "Handle emergency situations"
+  ],
+  "possessions": [
+    "Uniform",
+    "Whistle",
+    "Pen for notes"
+  ],
+  "goals": [
+    "Reach each stop safely",
+    "Engage with familiar faces",
+    "Retire in peace"
+  ],
+  "boundaries": [
+    "Avoid shortcuts",
+    "Respect local traffic laws",
+    "Keep conversations friendly"
+  ],
+  "relationships": [
+    {
+      "target": "Mabel",
+      "type": "Neighbor",
+      "description": "Regular passenger who greets him daily and shares local gossip"
+    },
+    {
+      "target": "Tom",
+      "type": "Colleague",
+      "description": "Bus supervisor who appreciates his years of service"
+    }
+  ],
+  "history_notes": [
+    "Started driving 15 years ago",
+    "Seen the town grow from a quaint village to a bustling suburb"
+  ],
+  "current_state": "Driving the familiar route, reflecting on how much the town has changed",
+  "facts_they_know": [
+    "Used to deliver newspapers before becoming a bus driver",
+    "Knows every hidden shortcut the townsfolk use"
+  ],
+  "beliefs": [
+    "The town is better off now than it was when he started",
+    "People are less friendly now compared to the past"
+  ],
+  "factual_errors": [
+    "Believes that the town was always as large and busy as it is now"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "char_21",
+  "name": "Harold Thompson",
+  "role": "Small-town Banker",
+  "location": "Pleasantville, Ohio",
+  "observable_traits": [
+    "Wears conservative suits",
+    "Maintains a neat appearance",
+    "Keeps a low profile"
+  ],
+  "capabilities": [
+    "Manages bank transactions",
+    "Navigates local politics"
+  ],
+  "possessions": [
+    "Wallet full of cash",
+    "Old Rolls-Royce",
+    "Hunting rifle"
+  ],
+  "goals": [
+    "Secrely funds wife's experimental cancer treatment",
+    "Maintains cover of honest banker"
+  ],
+  "boundaries": [
+    "Avoids drawing suspicion to his embezzlement"
+  ],
+  "relationships": [
+    {
+      "target": "Emily Thompson",
+      "type": "Wife",
+      "description": "Supports his secretive funding for experimental treatments, unaware of financial strain"
+    },
+    {
+      "target": "Marge Sullivan",
+      "type": "Neighbor",
+      "description": "Leans on him for community advice, oblivious to his financial deceit"
+    }
+  ],
+  "history_notes": [
+    "Graduated from local university",
+    "Started working at Pleasantville Bank after college"
+  ],
+  "current_state": "Reviewing financial statements while pretending to do paperwork to avoid detection",
+  "facts_they_know": [
+    "His wife's treatment costs exceed bank budget",
+    "The experimental therapy has unproven success rates"
+  ],
+  "beliefs": [
+    "The experimental treatment will cure his wife",
+    "Keeping quiet about embezzlement protects his family"
+  ],
+  "factual_errors": [
+    "The experimental treatment has a high success rate for his wife's condition"
+  ]
+}

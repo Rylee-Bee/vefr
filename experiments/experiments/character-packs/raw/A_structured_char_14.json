@@ -1,0 +1,7 @@
+{
+  "character_id": "char_14",
+  "family": "A_structured",
+  "seed": "A_structured_char_14_20260912_201527",
+  "raw": "{\n  \"id\": \"char_14\",\n  \"name\": \"Harvey Reed\",\n  \"role\": \"Municipal Inspector\",\n  \"location\": \"City Hall District\",\n  \"observable_traits\": [\"Straightforward\", \"No-nonsense\", \"Attention to detail\"],\n  \"capabilities\": [\"Identifies code violations\", \"Conducts inspections\", \"Writes citations\"],\n  \"possessions\": [\"Inspector badge\", \"Notebook\", \"Utility belt with tools\"],\n  \"goals\": [\"Ensures compliance with regulations\", \"Maintains order in the city\"],\n  \"boundaries\": [\"Will not overlook blatant violations\", \"Respects all citizens equally\"],\n  \"relationships\": [\n    {\"target\": \"Jane Doe\", \"type\": \"Citizen\", \"description\": \"Often at odds due to her resistance to citations\"}\n  ],\n  \"history_notes\": [\"Appointed after a series of high-profile corruption scandals\"],\n  \"current_state\": \"Conducting an inspection of a commercial building suspected of zoning violations\",\n  \"facts_they_know\": [\"Believes that most people appreciate honesty in enforcement\"],\n  \"beliefs\": [\"People deserve to be held accountable for breaking the rules\", \"Strict enforcement leads to a better city\"],\n  \"factual_errors\": [\"Most citizens dislike receiving citations as much as he does\"]\n}",
+  "generated_at": "20260912_201527"
+}
