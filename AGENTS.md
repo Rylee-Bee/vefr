@@ -40,10 +40,6 @@ ordinary engine work** — they belong to that active experiment.
 If a refinement pass needs to touch the same files, surface the
 conflict first.
 
-Also in flight: a `feat/ui-workshop` worktree at
-`/var/home/rylee/worktrees/vefr/ui-workshop` (separate checkout, one
-lane per worktree; never run two lanes in one directory).
-
 Live Git truth wins — run `agent-sync status` whenever "current" is
 in doubt; do not maintain duplicate copies of remote SHA here.
 

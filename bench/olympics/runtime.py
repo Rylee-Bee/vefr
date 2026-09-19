@@ -24,8 +24,7 @@ class ServerError(RuntimeError):
 
 
 class ModelServer:
-    def __init__(self, participant, port=None, ctx=None, ngl=None,
-                 extra_args=()):
+    def __init__(self, participant, port=None, ctx=None, ngl=None, extra_args=()):
         self.p = participant
         self.port = port or _free_port()
         self.ctx = ctx or config.SERVER_CTX
@@ -40,18 +39,37 @@ class ModelServer:
             raise ServerError(f"artifact missing: {model} (run bench download)")
         self._cleanup_leaked_container()
         cmd = [
-            "podman", "run", "-d", "--rm", "--name", self.name,
-            "-p", f"{self.port}:8080",
-            "-v", f"{config.MODELS_DIR}:/models:Z",
-            "--device", "/dev/dri:/dev/dri",
+            "podman",
+            "run",
+            "-d",
+            "--rm",
+            "--name",
+            self.name,
+            "-p",
+            f"{self.port}:8080",
+            "-v",
+            f"{config.MODELS_DIR}:/models:Z",
+            "--device",
+            "/dev/dri:/dev/dri",
         ]
-        cmd += [config.IMAGE,
-                "--model", f"/models/{self.p.file}",
-                "--alias", self.p.alias,
-                "--host", "0.0.0.0", "--port", "8080",
-                "-c", str(self.ctx), "-t", str(config.SERVER_THREADS),
-                "-ngl", str(self.ngl),
-                "--jinja"]
+        cmd += [
+            config.IMAGE,
+            "--model",
+            f"/models/{self.p.file}",
+            "--alias",
+            self.p.alias,
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8080",
+            "-c",
+            str(self.ctx),
+            "-t",
+            str(config.SERVER_THREADS),
+            "-ngl",
+            str(self.ngl),
+            "--jinja",
+        ]
         cmd += list(self.extra_args)
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
@@ -93,31 +111,33 @@ class ModelServer:
         return False
 
     def stop(self):
-        subprocess.run(["podman", "rm", "-f", self.name],
-                       capture_output=True, text=True)
+        subprocess.run(["podman", "rm", "-f", self.name], capture_output=True, text=True)
 
     def _cleanup_leaked_container(self):
         # a killed runner can leave the container behind; never reuse the name
-        subprocess.run(["podman", "rm", "-f", self.name],
-                       capture_output=True, text=True)
+        subprocess.run(["podman", "rm", "-f", self.name], capture_output=True, text=True)
 
     # ---- wire client ----
-    def chat(self, messages, temperature=None, max_tokens=None,
-             stop=None):
+    def chat(self, messages, temperature=None, max_tokens=None, stop=None):
         gen = dict(config.GEN)
         if temperature is not None:
             gen["temperature"] = temperature
         if max_tokens is not None:
             gen["max_tokens"] = max_tokens
-        body = {"model": self.p.alias, "messages": messages,
-                "temperature": gen["temperature"],
-                "max_tokens": gen["max_tokens"]}
+        body = {
+            "model": self.p.alias,
+            "messages": messages,
+            "temperature": gen["temperature"],
+            "max_tokens": gen["max_tokens"],
+        }
         if stop:
             body["stop"] = stop
         data = json.dumps(body).encode()
         req = urllib.request.Request(
-            self.url + "/v1/chat/completions", data=data,
-            headers={"Content-Type": "application/json"})
+            self.url + "/v1/chat/completions",
+            data=data,
+            headers={"Content-Type": "application/json"},
+        )
         t0 = time.time()
         try:
             with urllib.request.urlopen(req, timeout=300) as resp:
@@ -133,16 +153,20 @@ class ModelServer:
         finish_reason = choice.get("finish_reason", "") or ""
         truncated = finish_reason == "length"
         usage = out.get("usage", {})
-        return {"content": content, "reasoning": reasoning,
-                "finish_reason": finish_reason, "truncated": truncated,
-                "latency_s": round(elapsed, 3),
-                "tokens_in": usage.get("prompt_tokens"),
-                "tokens_out": usage.get("completion_tokens")}
+        return {
+            "content": content,
+            "reasoning": reasoning,
+            "finish_reason": finish_reason,
+            "truncated": truncated,
+            "latency_s": round(elapsed, 3),
+            "tokens_in": usage.get("prompt_tokens"),
+            "tokens_out": usage.get("completion_tokens"),
+        }
 
     def finish_reason_probe(self, atomic=False):
         """Return current finish stats for latency/truncation evidence."""
         try:
-            with urllib.request.urlopen(self.url + "/health", timeout=3) as r:
+            with urllib.request.urlopen(self.url + "/health", timeout=3) as _r:
                 return {"healthy": True}
         except Exception as e:
             return {"healthy": False, "error": str(e)}
@@ -157,14 +181,22 @@ def _free_port():
     return config.SERVE_PORT_BASE + _AGE
 
 
-def chat_on(participant_key, context_fn, tasks, temperature=None,
-            max_tokens=None, stop=None, per_task_gen=None):
+def chat_on(
+    participant_key,
+    context_fn,
+    tasks,
+    temperature=None,
+    max_tokens=None,
+    stop=None,
+    per_task_gen=None,
+):
     """Run an ordered list of chat messages per task against one server.
 
     context_fn(task) -> list of msgs. Returns list of dict results aligned
     with tasks.
     """
     from .participants import PARTICIPANTS
+
     server = ModelServer(PARTICIPANTS[participant_key])
     server.start()
     try:
@@ -173,8 +205,7 @@ def chat_on(participant_key, context_fn, tasks, temperature=None,
             msgs = context_fn(task)
             temp = per_task_gen(task, "temperature") if per_task_gen else temperature
             maxt = per_task_gen(task, "max_tokens") if per_task_gen else max_tokens
-            results.append(server.chat(msgs, temperature=temp, max_tokens=maxt,
-                                       stop=stop))
+            results.append(server.chat(msgs, temperature=temp, max_tokens=maxt, stop=stop))
         return results
     finally:
         server.stop()

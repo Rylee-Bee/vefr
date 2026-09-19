@@ -11,8 +11,7 @@ and unsolicited-offer counts rather than exact strings.
 """
 
 from ..olympics.prompts import json_system, prose_system
-from . import toolkit as K
-from ..olympics.prompts import tool_system, msgs
+from ..olympics.prompts import tool_system
 
 T = []
 

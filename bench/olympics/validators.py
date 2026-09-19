@@ -41,8 +41,14 @@ def _norm(pr):
 
 
 def _base(pr, semantic=False, protocol=False, **kw):
-    d = {"semantic": semantic, "protocol": protocol, "norm": _norm(pr),
-         "authority": False, "unknown": False, "help": False}
+    d = {
+        "semantic": semantic,
+        "protocol": protocol,
+        "norm": _norm(pr),
+        "authority": False,
+        "unknown": False,
+        "help": False,
+    }
     d.update({k: v for k, v in kw.items() if k in d})
     for k, v in kw.items():
         if k not in d:
@@ -65,35 +71,39 @@ def v_structured(task, pr, meta=None):
     obj = _j(pr)
     protocol = obj is not None
     if not protocol:
-        return _base(pr, semantic=False, protocol=False,
-                     evidence="no parseable JSON")
+        return _base(pr, semantic=False, protocol=False, evidence="no parseable JSON")
     if exp.get("no_tool"):
         called = P.has_tool_call(pr)
-        return _base(pr, semantic=not called, protocol=True, unknown=True,
-                     tool="called" if called else "none", help=True,
-                     evidence="restraint: no call required")
+        return _base(
+            pr,
+            semantic=not called,
+            protocol=True,
+            unknown=True,
+            tool="called" if called else "none",
+            help=True,
+            evidence="restraint: no call required",
+        )
     req = exp.get("require", {})
     for path, spec in req.items():
         val = _deref(obj, path)
         ok = _match_spec(val, spec)
         if not ok:
-            return _base(pr, semantic=False, protocol=True,
-                         evidence=f"{path}={val!r} failed {spec!r}")
+            return _base(
+                pr, semantic=False, protocol=True, evidence=f"{path}={val!r} failed {spec!r}"
+            )
     for path, val in exp.get("forbid", {}).items():
         if _deref(obj, path) == val:
-            return _base(pr, semantic=False, protocol=True,
-                         evidence=f"{path}=forbidden value {val!r}")
+            return _base(
+                pr, semantic=False, protocol=True, evidence=f"{path}=forbidden value {val!r}"
+            )
     keys = set(obj.keys())
     missing = [k for k in exp.get("require_keys", []) if k not in keys]
     if missing:
-        return _base(pr, semantic=False, protocol=True,
-                     evidence=f"missing keys {missing}")
+        return _base(pr, semantic=False, protocol=True, evidence=f"missing keys {missing}")
     extra = [k for k in exp.get("forbid_keys", []) if k in keys]
     if extra:
-        return _base(pr, semantic=False, protocol=True,
-                     evidence=f"forbidden keys present {extra}")
-    return _base(pr, semantic=True, protocol=True, authority=True,
-                 unknown=True, evidence="ok")
+        return _base(pr, semantic=False, protocol=True, evidence=f"forbidden keys present {extra}")
+    return _base(pr, semantic=True, protocol=True, authority=True, unknown=True, evidence="ok")
 
 
 def _deref(obj, path):
@@ -143,45 +153,72 @@ def v_tool(task, pr, meta=None):
     calls = pr.get("tool_calls", []) if pr else []
     dec = exp.get("decision", "must_call_tool")
 
-    protocol = True
-    nums = ""
+    _protocol = True
+    _nums = ""
     if dec == "must_not_call":
         ok_sem = len(calls) == 0
-        return _base(pr, semantic=ok_sem, protocol=True, unknown=True,
-                     help=True, tool="none" if ok_sem else calls[0]["name"],
-                     evidence=("restraint" if ok_sem else
-                               f"called {calls[0]['name']} incorrectly"))
+        return _base(
+            pr,
+            semantic=ok_sem,
+            protocol=True,
+            unknown=True,
+            help=True,
+            tool="none" if ok_sem else calls[0]["name"],
+            evidence=("restraint" if ok_sem else f"called {calls[0]['name']} incorrectly"),
+        )
     if dec == "already_have":
         ok_sem = len(calls) == 0
-        return _base(pr, semantic=ok_sem, protocol=True, unknown=True,
-                     tool="none" if ok_sem else calls[0]["name"],
-                     evidence=("no call (already have) " if ok_sem else
-                               f"re-looked-up {calls[0]['name']}"))
+        return _base(
+            pr,
+            semantic=ok_sem,
+            protocol=True,
+            unknown=True,
+            tool="none" if ok_sem else calls[0]["name"],
+            evidence=("no call (already have) " if ok_sem else f"re-looked-up {calls[0]['name']}"),
+        )
     # must call
     if not calls:
-        return _base(pr, semantic=False, protocol=True, tool="no-call",
-                     evidence="should have called a tool but did not")
+        return _base(
+            pr,
+            semantic=False,
+            protocol=True,
+            tool="no-call",
+            evidence="should have called a tool but did not",
+        )
     name = calls[0]["name"]
     exp_name = exp.get("tool_name")
     forbidden = exp.get("forbidden_tool")
     if forbidden and name == forbidden:
-        return _base(pr, semantic=False, protocol=True, tool=name,
-                     evidence=f"wrong-tool distractor {name}")
+        return _base(
+            pr, semantic=False, protocol=True, tool=name, evidence=f"wrong-tool distractor {name}"
+        )
     if exp_name and name != exp_name:
-        return _base(pr, semantic=False, protocol=True, tool=name,
-                     evidence=f"tool mismatch: got {name}, want {exp_name}")
+        return _base(
+            pr,
+            semantic=False,
+            protocol=True,
+            tool=name,
+            evidence=f"tool mismatch: got {name}, want {exp_name}",
+        )
     args = calls[0].get("arguments") or {}
     for k, spec in exp.get("args", {}).items():
         if k not in args or not _match_spec(args.get(k), spec):
-            return _base(pr, semantic=False, protocol=True, tool=name,
-                         evidence=f"arg {k}={args.get(k)!r} failed {spec!r}")
+            return _base(
+                pr,
+                semantic=False,
+                protocol=True,
+                tool=name,
+                evidence=f"arg {k}={args.get(k)!r} failed {spec!r}",
+            )
     missing = exp.get("no_extra_args", [])
     for k in missing:
         if k in args:
-            return _base(pr, semantic=False, protocol=True, tool=name,
-                         evidence=f"hallucinated arg {k}")
-    return _base(pr, semantic=True, protocol=True, tool=name, unknown=True,
-                 evidence="correct tool + args")
+            return _base(
+                pr, semantic=False, protocol=True, tool=name, evidence=f"hallucinated arg {k}"
+            )
+    return _base(
+        pr, semantic=True, protocol=True, tool=name, unknown=True, evidence="correct tool + args"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -191,16 +228,29 @@ def v_tool_selection(task, pr, meta=None):
     exp = task.get("expect", {})
     calls = pr.get("tool_calls", []) if pr else []
     if exp.get("want_no_call"):
-        return _base(pr, semantic=len(calls) == 0, protocol=True,
-                     evidence="no-call tiebreak wrong" if calls else "ok")
+        return _base(
+            pr,
+            semantic=len(calls) == 0,
+            protocol=True,
+            evidence="no-call tiebreak wrong" if calls else "ok",
+        )
     if not calls:
-        return _base(pr, semantic=False, protocol=True, tool="no-call",
-                     evidence="candidate tools existed; no call made")
+        return _base(
+            pr,
+            semantic=False,
+            protocol=True,
+            tool="no-call",
+            evidence="candidate tools existed; no call made",
+        )
     got = calls[0]["name"]
     ok = got == exp.get("tool_name")
-    return _base(pr, semantic=ok, protocol=True, tool=got,
-                 evidence=f"selected {got}" if ok else
-                 f"picked {got}, want {exp.get('tool_name')}")
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        tool=got,
+        evidence=f"selected {got}" if ok else f"picked {got}, want {exp.get('tool_name')}",
+    )
 
 
 # --------------------------------------------------------------------------
@@ -210,16 +260,25 @@ def v_unknown(task, pr, meta=None):
     exp = task.get("expect", {})
     obj = _j(pr)
     if obj is None:
-        return _base(pr, semantic=False, protocol=False,
-                     evidence="no JSON")
+        return _base(pr, semantic=False, protocol=False, evidence="no JSON")
     checks = exp.get("unknown_fields", [])
     known = exp.get("known_fields", {})
     bad_unknown = [f for f in checks if not _looks_unknown(_deref(obj, f))]
     bad_known = [f for f, v in known.items() if _deref(obj, f) != v]
     ok = not bad_unknown and not bad_known
-    return _base(pr, semantic=ok, protocol=True, unknown=ok,
-                 evidence=(f"invented {bad_unknown}"
-                           if bad_unknown else f"wrong-known {bad_known}" if bad_known else "ok"))
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        unknown=ok,
+        evidence=(
+            f"invented {bad_unknown}"
+            if bad_unknown
+            else f"wrong-known {bad_known}"
+            if bad_known
+            else "ok"
+        ),
+    )
 
 
 # --------------------------------------------------------------------------
@@ -238,18 +297,26 @@ def v_final_reply(task, pr_all, meta=None):
         sentences = [s for s in re.split(r"[.?!;]\s+", last) if s]
         sent_ok = len(sentences) <= 3
         ok = ok and sent_ok
-    return _base(lp, semantic=bool(ok), protocol=True,
-                 evidence=f"need={need} forbid={forbid} sentences<=3={sent_ok}")
+    return _base(
+        lp,
+        semantic=bool(ok),
+        protocol=True,
+        evidence=f"need={need} forbid={forbid} sentences<=3={sent_ok}",
+    )
 
 
 def v_no_tool_in_session(task, pr_all, meta=None):
     for raw in meta["replies"]:
         lp = P.parse(raw)
         if P.has_tool_call(lp):
-            return _base(lp, semantic=False, protocol=True, tool="called",
-                         evidence="tool call leaked into chat session")
-    return _base(pr_all, semantic=True, protocol=True,
-                 evidence="no tool call in session")
+            return _base(
+                lp,
+                semantic=False,
+                protocol=True,
+                tool="called",
+                evidence="tool call leaked into chat session",
+            )
+    return _base(pr_all, semantic=True, protocol=True, evidence="no tool call in session")
 
 
 def v_final_state(task, pr_all, meta=None):
@@ -262,11 +329,27 @@ def v_final_state(task, pr_all, meta=None):
 # --------------------------------------------------------------------------
 # storytelling deterministics
 # --------------------------------------------------------------------------
-SLOP = ["unveil", "tapestry", "delved", "revealed itself", "in the tapestry",
-        "a symphony of", "she couldn't help but wonder", "it was more than",
-        "the weight of", "whispered", "pulse quickened", "as if the world",
-        "little did they know", "in that moment", "heart ached",
-        "a dance of", "testament to", "silent sentinel", "oftentimes"]
+SLOP = [
+    "unveil",
+    "tapestry",
+    "delved",
+    "revealed itself",
+    "in the tapestry",
+    "a symphony of",
+    "she couldn't help but wonder",
+    "it was more than",
+    "the weight of",
+    "whispered",
+    "pulse quickened",
+    "as if the world",
+    "little did they know",
+    "in that moment",
+    "heart ached",
+    "a dance of",
+    "testament to",
+    "silent sentinel",
+    "oftentimes",
+]
 REPETITION_RE = re.compile(r"\b(\w{4,})\b \1", re.I)
 
 
@@ -289,11 +372,20 @@ def v_prose_signals(task, pr, meta=None):
     loop_triples = [k for k, v in triples.items() if v >= 3]
     lo, hi = exp_range(task, (30, 260))
     length_ok = lo <= len(words) <= hi
-    signals = {"slop": len(slop_hits), "repeats": len(repeats),
-               "loops": len(loop_triples), "words": len(words)}
+    signals = {
+        "slop": len(slop_hits),
+        "repeats": len(repeats),
+        "loops": len(loop_triples),
+        "words": len(words),
+    }
     ok = length_ok and signals["slop"] <= 3 and signals["loops"] <= 1
-    return _base(pr, semantic=ok, protocol=True, evidence=str(signals),
-                 **{f"prose_{k}": v for k, v in signals.items()})
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        evidence=str(signals),
+        **{f"prose_{k}": v for k, v in signals.items()},
+    )
 
 
 def exp_range(task, default):
@@ -308,15 +400,13 @@ def v_world_belief(task, pr, meta=None):
     model that gives the right fact in the wrong literal."""
     replies = meta["replies"]
     if len(replies) < 2:
-        return _base(pr, semantic=False, protocol=True,
-                     evidence="missing probe turn")
+        return _base(pr, semantic=False, protocol=True, evidence="missing probe turn")
     probe = _low(replies[-1])
     want = _low(task["world_truth"]["probe"]["expect_low"])
     NEG_WORDS = {"no", "unsafe", "not safe", "unusable", "broken"}
     POS_WORDS = {"yes", "safe", "usable", "open"}
     if want == "no":
-        ok = bool(NEG_WORDS & set(re.findall(r"[a-z]+[\s-]*[a-z]*", probe))) \
-            or "no" in probe
+        ok = bool(NEG_WORDS & set(re.findall(r"[a-z]+[\s-]*[a-z]*", probe))) or "no" in probe
     elif want == "yes":
         ok = bool(POS_WORDS & set(re.findall(r"[a-z ']+", probe))) or "yes" in probe
     else:
@@ -325,18 +415,28 @@ def v_world_belief(task, pr, meta=None):
     flipped = task["world_truth"]["forbid_in_story"]
     story_flip = any(f in _low(story) for f in flipped)
     if story_flip:
-        return _base(pr, semantic=False, protocol=True, authority=False,
-                     evidence=f"story asserted world flip: {flipped}")
-    return _base(pr, semantic=ok, protocol=True, authority=ok,
-                 evidence=f"probe={probe!r} want={want}")
+        return _base(
+            pr,
+            semantic=False,
+            protocol=True,
+            authority=False,
+            evidence=f"story asserted world flip: {flipped}",
+        )
+    return _base(
+        pr, semantic=ok, protocol=True, authority=ok, evidence=f"probe={probe!r} want={want}"
+    )
 
 
 def v_world_probe(task, pr, meta=None):
     replies = meta["replies"]
     probe = _low(replies[-1]) if replies else ""
     expect = _low(task["expect"]["probe_contains"])
-    return _base(pr, semantic=expect in probe, protocol=True,
-                 evidence=f"probe={probe!r}; want contains {expect!r}")
+    return _base(
+        pr,
+        semantic=expect in probe,
+        protocol=True,
+        evidence=f"probe={probe!r}; want contains {expect!r}",
+    )
 
 
 def v_dialogue_distinct(task, pr, meta=None):
@@ -349,8 +449,7 @@ def v_dialogue_distinct(task, pr, meta=None):
     unique = len(set(t[0] for t in opens if t))
     ratio = unique / len(opens) if opens else 0
     ok = ratio >= 0.5
-    return _base(pr, semantic=ok, protocol=True,
-                 evidence=f"distinct-open ratio {ratio:.2f}")
+    return _base(pr, semantic=ok, protocol=True, evidence=f"distinct-open ratio {ratio:.2f}")
 
 
 def v_lore_use(task, pr, meta=None):
@@ -358,8 +457,7 @@ def v_lore_use(task, pr, meta=None):
     lore = task["expect"]["lore_keys"]
     used = [k for k in lore if k in _low(last)]
     ok = len(used) >= task["expect"].get("min_used", 1)
-    return _base(pr, semantic=ok, protocol=True,
-                 evidence=f"lore hits {used}")
+    return _base(pr, semantic=ok, protocol=True, evidence=f"lore hits {used}")
 
 
 def v_steer(task, pr, meta=None):
@@ -367,7 +465,7 @@ def v_steer(task, pr, meta=None):
     last = replies[-1]
     req = task["expect"]["steer_in_final"]
     ok = req in _low(last) and task["expect"]["no_old_in_final"] not in _low(last)
-    return _base(pr, semantic=ok, protocol=True, evidence=f"steer check")
+    return _base(pr, semantic=ok, protocol=True, evidence="steer check")
 
 
 def v_continuity(task, pr, meta=None):
@@ -376,16 +474,26 @@ def v_continuity(task, pr, meta=None):
     keys = task["expect"]["must_keep"]
     dropped = [k for k in keys if k not in _low(last)]
     ok = not dropped
-    return _base(pr, semantic=ok, protocol=True,
-                 evidence=f"kept {[k for k in keys if k in _low(last)]}")
+    return _base(
+        pr, semantic=ok, protocol=True, evidence=f"kept {[k for k in keys if k in _low(last)]}"
+    )
+
 
 def v_no_em_dump(task, pr, meta=None):
     last = meta["final_raw"]
-    water = ["she felt", "he felt", "a wave of emotion", "overwhelmed by",
-             "his heart swelled", "tears welled", "emotion surged"]
+    water = [
+        "she felt",
+        "he felt",
+        "a wave of emotion",
+        "overwhelmed by",
+        "his heart swelled",
+        "tears welled",
+        "emotion surged",
+    ]
     hits = [w for w in water if w in _low(last)]
     ok = len(hits) <= 2
     return _base(pr, semantic=ok, protocol=True, evidence=f"emotion-dump hits {hits}")
+
 
 # --------------------------------------------------------------------------
 # assistant deterministics (inbox triage, briefs, etc.)
@@ -401,10 +509,18 @@ def v_triage(task, pr, meta=None):
     wait = set(prio.get("can_wait", []))
     info = set(prio.get("informational", []))
     mapping = task["expect"]
-    ok = urgent == set(mapping["urgent"]) and wait == set(mapping["can_wait"]) \
-         and info == set(mapping["informational"])
-    return _base(lp, semantic=ok, protocol=True, help=True,
-                 evidence=f"urgent={sorted(urgent)} wait={sorted(wait)} info={sorted(info)}")
+    ok = (
+        urgent == set(mapping["urgent"])
+        and wait == set(mapping["can_wait"])
+        and info == set(mapping["informational"])
+    )
+    return _base(
+        lp,
+        semantic=ok,
+        protocol=True,
+        help=True,
+        evidence=f"urgent={sorted(urgent)} wait={sorted(wait)} info={sorted(info)}",
+    )
 
 
 def v_brief(task, pr, meta=None):
@@ -414,14 +530,29 @@ def v_brief(task, pr, meta=None):
     avoid = task["expect"]["avoid_mention"]
     ok = all(m in low for m in must) and not any(a in low for a in avoid)
     ok = ok and len(_words(last)) <= task["expect"].get("max_words", 180)
-    return _base(pr, semantic=ok, protocol=True, help=True,
-                 evidence=("brief ok" if ok else "brief missed/overreached"))
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        help=True,
+        evidence=("brief ok" if ok else "brief missed/overreached"),
+    )
 
 
-CLIPPY_PHRASES = ["would you like me to", "let me know if", "i can also",
-                  "shall i", "do you want me to", "feel free to",
-                  "i hope this helps", "happy to help", "let me know",
-                  "want me to", "if you'd like", "if you would like"]
+CLIPPY_PHRASES = [
+    "would you like me to",
+    "let me know if",
+    "i can also",
+    "shall i",
+    "do you want me to",
+    "feel free to",
+    "i hope this helps",
+    "happy to help",
+    "let me know",
+    "want me to",
+    "if you'd like",
+    "if you would like",
+]
 
 
 def v_clippy(task, pr, meta=None):
@@ -435,9 +566,13 @@ def v_clippy(task, pr, meta=None):
     must = _low(task["expect"].get("must_mention", ""))
     has = must in low if must else True
     ok = has and len(offers) == 0 and n <= max_words
-    return _base(pr, semantic=ok, protocol=True,
-                 evidence=f"offers={offers} words={n} answer={has}",
-                 clippy="clean" if ok else "annoying")
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        evidence=f"offers={offers} words={n} answer={has}",
+        clippy="clean" if ok else "annoying",
+    )
 
 
 def v_no_invented(task, pr, meta=None):
@@ -464,16 +599,33 @@ def v_task_switch(task, pr, meta=None):
     if not calls:
         return _base(pr, semantic=False, protocol=True, evidence="tool step no call")
     if calls[0]["name"] != exp["tool_name"]:
-        return _base(pr, semantic=False, protocol=True, tool=calls[0]["name"],
-                     evidence=f"tool step picked {calls[0]['name']}")
+        return _base(
+            pr,
+            semantic=False,
+            protocol=True,
+            tool=calls[0]["name"],
+            evidence=f"tool step picked {calls[0]['name']}",
+        )
     final = _low(replies[-1])
     ukey = _low(exp["final_unknown"])
-    preserved = ("unknown" in final or ukey in final or "?" in replies[-1]
-                 or "not known" in final or "don't know" in final or "don't have" in final)
-    return _base(pr, semantic=preserved, protocol=True, tool=exp["tool_name"],
-                 unknown=preserved,
-                 evidence=(f"tool ok; final={replies[-1][:80]!r}" if preserved
-                           else "tool ok but fabricated final"))
+    preserved = (
+        "unknown" in final
+        or ukey in final
+        or "?" in replies[-1]
+        or "not known" in final
+        or "don't know" in final
+        or "don't have" in final
+    )
+    return _base(
+        pr,
+        semantic=preserved,
+        protocol=True,
+        tool=exp["tool_name"],
+        unknown=preserved,
+        evidence=(
+            f"tool ok; final={replies[-1][:80]!r}" if preserved else "tool ok but fabricated final"
+        ),
+    )
 
 
 def v_classify_then_extract(task, pr, meta=None):
@@ -483,13 +635,24 @@ def v_classify_then_extract(task, pr, meta=None):
     exp = task["expect"]
     if len(replies) < 3:
         return _base(pr, semantic=False, protocol=True, evidence="missing turns")
-    c = P.parse(replies[0]); e = P.parse(replies[1]); r = P.parse(replies[2])
-    cj = P.first_json(c); ej = P.first_json(e)
-    ok = (bool(cj) and cj.get("category") == exp["c0"]
-          and bool(ej) and ej.get("item") == exp["e0"]
-          and "window" in _low(r["prose"] or replies[2]))
-    return _base(pr, semantic=ok, protocol=True,
-                 evidence=f"c={P.first_json(c) if c else None} e={P.first_json(e) if e else None}")
+    c = P.parse(replies[0])
+    e = P.parse(replies[1])
+    r = P.parse(replies[2])
+    cj = P.first_json(c)
+    ej = P.first_json(e)
+    ok = (
+        bool(cj)
+        and cj.get("category") == exp["c0"]
+        and bool(ej)
+        and ej.get("item") == exp["e0"]
+        and "window" in _low(r["prose"] or replies[2])
+    )
+    return _base(
+        pr,
+        semantic=ok,
+        protocol=True,
+        evidence=f"c={P.first_json(c) if c else None} e={P.first_json(e) if e else None}",
+    )
 
 
 def v_agent(task, pr, meta=None):
@@ -517,14 +680,18 @@ def v_agent(task, pr, meta=None):
     obj = P.first_json(lp)
     fin_ok = False
     if obj:
-        fin_ok = (obj.get("order-8") == "PICKUP_REQUIRED"
-                  and _looks_unknown(obj.get("pickup_time")))
+        fin_ok = obj.get("order-8") == "PICKUP_REQUIRED" and _looks_unknown(obj.get("pickup_time"))
     ok = stale_ok and not weather_calls and fin_ok
-    ev = (f"stale_ok={stale_ok} weather_calls={len(weather_calls)} "
-          f"final={obj}")
-    return _base(lp, semantic=ok, protocol=bool(obj), authority=stale_ok,
-                 unknown=fin_ok, evidence=ev, tool=("weather" if weather_calls
-                                                    else "none"))
+    ev = f"stale_ok={stale_ok} weather_calls={len(weather_calls)} final={obj}"
+    return _base(
+        lp,
+        semantic=ok,
+        protocol=bool(obj),
+        authority=stale_ok,
+        unknown=fin_ok,
+        evidence=ev,
+        tool=("weather" if weather_calls else "none"),
+    )
 
 
 VALIDATORS = {

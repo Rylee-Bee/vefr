@@ -6,10 +6,8 @@ Focus: smallest suitable replaceable brain for Hermod Trusted Steward role.
 """
 
 import json
-import os
 import re
 import subprocess
-import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -359,7 +357,7 @@ def main():
             continue
         result = run_benchmark(model_key, TASKS)
         if result.get("status") == "FAILED":
-            print(f"  SKIPPED (container start failed)")
+            print("  SKIPPED (container start failed)")
             continue
         all_results.append(result)
     

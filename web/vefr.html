@@ -374,7 +374,7 @@ html[data-theme="bright"] .vignette{ background:radial-gradient(58% 46% at 14% 0
 .ea-input::placeholder{ color:var(--faint); }
 .ea-hand{ font-family:var(--font-display); font-style:italic; font-size:var(--t-base); line-height:1.6; color:var(--muted); }
 
-/* EA at her levels */
+/* EA at their levels */
 .kit{ display:flex; align-items:flex-end; gap:var(--sp-4); flex-wrap:wrap; }
 .kit-item{ display:grid; gap:7px; justify-items:center; width:74px; color:var(--muted); }
 .kit-item .ic{ width:34px; height:34px; stroke-width:1; color:color-mix(in oklch, var(--accent) 52%, var(--muted)); }
@@ -1050,21 +1050,21 @@ var WORLD = WORLDS[0];
 
 var FOLKS = [
   { id:'maren', name:'Maren', role:'Village healer', emblem:'yarrow', initials:'M',
-    line:'Knows more than she says.',
+    line:'Knows more than they says.',
     voice:'The forest does not want anything. That is what frightens me.',
-    heard:'Spoken to nobody — written in the margin of her own ledger.',
+    heard:'Spoken to nobody — written in the margin of their own ledger.',
     truth:['world','belief','reservation'],
-    ties:[ { name:'Aldous', note:'owes him a debt she has never named' },
+    ties:[ { name:'Aldous', note:'owes them a debt they has never named' },
            { name:'Corvin', note:'grew up together; have not spoken since the spring' },
-           { name:'Isolde', note:'takes her on rounds, unofficially' } ],
+           { name:'Isolde', note:'takes their on rounds, unofficially' } ],
     keeps:[ { id:'ledger', name:'Herb ledger' }, { id:'shrine-key', name:'Store key, old shrine' } ],
-    places:[ { id:'cot', name:"The healer's cot" }, { id:'shrine', name:'The old shrine', note:'she will not go up the path' } ],
+    places:[ { id:'cot', name:"The healer's cot" }, { id:'shrine', name:'The old shrine', note:'they will not go up the path' } ],
     appears:['Chapter II', 'Chapter IV', 'Tonight'],
     moments:[ { when:'Tonight', text:'Stopped mid-sentence when the lamp guttered, and did not start again.' },
               { when:'Five days ago', text:'Refused to name the plant on page 41, and turned the page.' },
               { when:'Three weeks ago', text:'Took Isolde on rounds for the first time.' } ],
-    unsaid:'She has not said what she was doing at the treeline on the eighth.',
-    recall:'Three days since somebody last spoke to her without wanting something.' },
+    unsaid:'they has not said what they was doing at the treeline on the eighth.',
+    recall:'Three days since somebody last spoke to their without wanting something.' },
 
   { id:'corvin', name:'Corvin Ashgrove', role:'Woodcutter and ferryman', emblem:'axe', initials:'C',
     line:'Cuts for a living. Knows what a tree sounds like.',
@@ -1079,28 +1079,28 @@ var FOLKS = [
     moments:[ { when:'Tonight', text:'Repeated it twice, then stopped and looked at the door.' },
               { when:'Twelve days ago', text:'Came back across the river after dark instead of camping.' } ],
     unsaid:'He has not said which stand of trees he was in.',
-    recall:'He is the only person who has heard it with his own ears and said so.' },
+    recall:'He is the only person who has heard it with their own ears and said so.' },
 
   { id:'isolde', name:'Isolde', role:'Child, eleven', emblem:'bird', initials:'I',
     line:'Says the forest is not whispering. It is repeating.',
     voice:'It is not whispering. It is repeating.',
     heard:'On the shrine path, to Maren, while carrying water.',
     truth:['belief','open'],
-    ties:[ { name:'Maren', note:'walks her rounds with her' } ],
-    keeps:[ { name:'A whistle', note:'she will not explain' } ],
+    ties:[ { name:'Maren', note:'walks their rounds with their' } ],
+    keeps:[ { name:'A whistle', note:'they will not explain' } ],
     places:[ { id:'shrine-path', name:'The shrine path' } ],
     appears:['Chapter IV'],
     moments:[ { when:'Four days ago', text:'Found the pendant and did not keep it.' },
               { when:'Two nights ago', text:'Asked whether trees can be tired.' } ],
-    unsaid:'She has not said who told her the word “repeating”.',
-    recall:'She has been right twice, and both times nobody wrote it down.' },
+    unsaid:'they has not said who told their the word “repeating”.',
+    recall:'they has been right twice, and both times nobody wrote it down.' },
 
   { id:'aldous', name:'Father Aldous', role:'Keeper of the old shrine', emblem:'shrine', initials:'A',
     line:'Writes down what arrives. Has stopped writing what it means.',
     voice:'I write down what arrives. I have stopped writing what it means.',
     heard:'To you, at the shrine door, without being asked.',
     truth:['world','history','reservation'],
-    ties:[ { name:'Maren', note:'she owes him something' },
+    ties:[ { name:'Maren', note:'they owes them something' },
            { name:'The shrine', note:'he is the last keeper of it' } ],
     keeps:[ { id:'ledger', name:'The shrine ledger' }, { id:'shrine-key', name:'Store key, old shrine' } ],
     places:[ { id:'shrine', name:'The old shrine' } ],
@@ -1115,7 +1115,7 @@ var FOLKS = [
     voice:'Three days since the last traveler. Longest quiet I have had in nine years.',
     heard:'Behind the bar, to the room, cheerfully.',
     truth:['world','player','history'],
-    ties:[ { name:'Corvin', note:'pours him the second cup without being asked' } ],
+    ties:[ { name:'Corvin', note:'pours them the second cup without being asked' } ],
     keeps:[ { name:'The bell', note:'rung for arrivals only' } ],
     places:[ { id:'inn', name:'The Hearth & Bell' } ],
     appears:['Chapter II', 'Chapter IV'],
@@ -1131,14 +1131,14 @@ var ITEMS = [
     connects:[ { name:'Isolde', note:'found it, gave it up' }, { name:'Maren', note:'would not hold it' }, { name:'The old shrine', note:'it was going that way' } ],
     truth:['world','open','proposal'], note:'Nobody who has held it has said what it depicts.' },
   { id:'ledger', name:"Maren's herb ledger", emblem:'ledger', world:'emberfield',
-    why:'It records what she will not say aloud, and one page is folded.',
-    origin:'From the shelf above her drying rack. She has not offered it and you have not asked.',
-    connects:[ { name:'Maren', note:'kept it' }, { name:'Corvin', note:'one page is in his hand' }, { name:'Aldous', note:'the same sentence, four days earlier' } ],
+    why:'It records what they will not say aloud, and one page is folded.',
+    origin:'From the shelf above their drying rack. they has not offered it and you have not asked.',
+    connects:[ { name:'Maren', note:'kept it' }, { name:'Corvin', note:'one page is in their hand' }, { name:'Aldous', note:'the same sentence, four days earlier' } ],
     truth:['world','belief','reservation'], note:'Page 41 is folded. That is all.' },
   { id:'axe', name:"Corvin's felling axe", emblem:'axe', world:'emberfield',
     why:'Worn down a full hand-width in a single season. That is not a normal year.',
     origin:"Corvin's shed, beside the ferry landing.",
-    connects:[ { name:'Corvin', note:'his' }, { name:'Nine Firs', note:'where it was worn' } ],
+    connects:[ { name:'Corvin', note:'their' }, { name:'Nine Firs', note:'where it was worn' } ],
     truth:['world','history'], note:'Sharpened eleven times since spring.' },
   { id:'shrine-key', name:'The shrine store key', emblem:'key', world:'emberfield',
     why:'The only key to the room under the shrine. Aldous wears it now, which he did not used to.',
@@ -1171,7 +1171,7 @@ var WHISPERS = [
   { id:'w1', world:'emberfield', text:'The trees have been whispering again.',
     src:'Heard at the Hearth & Bell — Corvin, second-hand', certainty:'second-hand', where:'desk' },
   { id:'w3', world:'emberfield', text:'It is not whispering. It is repeating.',
-    src:'Isolde, on the shrine path — she is eleven', certainty:'uncertain', where:'chronicle' },
+    src:'Isolde, on the shrine path — they is eleven', certainty:'uncertain', where:'chronicle' },
   { id:'w4', world:'emberfield', text:'The pendant is not a pendant.',
     src:'Your own note, written at this desk at 23:40', certainty:'uncertain', where:'desk' },
   { id:'w5', world:'emberfield', text:'Maren counted the doors. Twice.',
@@ -1196,14 +1196,14 @@ var CHRONICLE = [
   { kind:'discovery', when:'Four days ago', title:'The carved wooden pendant',
     body:'Isolde found it at the edge of the shrine path and handed it to Maren without being asked. Maren carried it as far as the gate.' },
   { kind:'revelation', when:'Four days ago', title:'The ledger said it first',
-    body:'Aldous recorded the same sentence on the eighth, four nights before Corvin said it aloud. The handwriting is his. The sentence is not his. He has folded page 41 and will not unfold it.' },
+    body:'Aldous recorded the same sentence on the eighth, four nights before Corvin said it aloud. The handwriting is their. The sentence is not their. He has folded page 41 and will not unfold it.' },
   { kind:'character', when:'Five days ago', person:'maren', title:'Maren stopped mid-sentence',
-    body:'The lamp guttered between one word and the next, and she simply did not finish. She was not startled. She was waiting.' },
+    body:'The lamp guttered between one word and the next, and they simply did not finish. they was not startled. they was waiting.' },
   { kind:'decision', when:'Five days ago', title:'You decided not to tell Maren',
     body:'You found the pendant first and you have not said so. The decision is still standing, which means it is still yours.' },
   { kind:'branch', when:'Five days ago', title:'Two roads from the crossroads',
     arms:[ { label:'Ask Aldous about page 41', note:'He answers questions he has been asked before, and only those.' },
-           { label:'Follow Isolde to the shrine', note:'She goes up the path without being asked. She would take you.' } ] },
+           { label:'Follow Isolde to the shrine', note:'they goes up the path without being asked. they would take you.' } ] },
   { kind:'checkpoint', when:'Six days ago', title:'Checkpoint 2 — before the shrine',
     body:'The world as it stood the evening before you walked up the path. Nothing has been written over it.' },
   { kind:'visit', when:'Twelve days ago', title:'A crossing and a return',
@@ -1241,7 +1241,7 @@ var LOCATIONS = [
     about:'The last row of trees before the forest stops being countable.',
     evidence:[ { src:'Corvin Ashgrove, twice', txt:'That was not a tree.', truth:'player' },
                 { src:'An unresolved whisper', txt:'The trees have been whispering again.', truth:'whisper' },
-                { src:'Your own reservation', txt:'“Whispering” is his word. Nobody else has used it.', truth:'reservation' } ],
+                { src:'Your own reservation', txt:'“Whispering” is their word. Nobody else has used it.', truth:'reservation' } ],
     sketch:'Mark where countable stops. That boundary is the whole subject.' }
 ];
 
@@ -1255,13 +1255,13 @@ var ARCHIVE = {
             'One object follows it: the carved pendant, which has been in four hands this week.' ],
   reservation:'Aldous’s page 41 is folded, and a folded page is a decision, not a record. What he left out is the part that would settle this.',
   records:[
-    { src:'The shrine ledger, page 41', when:'Recorded the 8th', who:'Aldous, in his own hand', truth:'history', conf:'High that it is written. Silent on whether it is true.',
+    { src:'The shrine ledger, page 41', when:'Recorded the 8th', who:'Aldous, in their own hand', truth:'history', conf:'High that it is written. Silent on whether it is true.',
       txt:'“The trees have been whispering again.” Recorded as an arrival, not as a claim.' },
     { src:'Corvin Ashgrove, at the inn', when:'Said the 12th, twice', who:'Second-hand, after the second cup', truth:'player', conf:'Medium. He was drinking, and he was sober when he said it the first time.',
       txt:'“I cut for a living. I know what a tree sounds like. That was not a tree.”' },
     { src:'The carved wooden pendant', when:'Found the 11th', who:'Found by Isolde, carried by Maren', truth:'world', conf:'It is real. What it depicts is not known.',
       txt:'A carved wooden disc, worn smooth on one face. It reinforces the sentence without confirming it.' },
-    { src:'Isolde, on the shrine path', when:'Said two nights ago', who:'First-hand, and she is eleven', truth:'belief', conf:'Low as evidence. High as a signal — she has been right twice.',
+    { src:'Isolde, on the shrine path', when:'Said two nights ago', who:'First-hand, and they is eleven', truth:'belief', conf:'Low as evidence. High as a signal — they has been right twice.',
       txt:'“It is not whispering. It is repeating.”' }
   ],
   engine:{ provider:'local runtime', model:'workshop-local/1.4', run:'run_8f21c4', retrieved:4, temperature:'0.3', tokens:'1,284 in / 312 out', latency:'2.1s' },
@@ -1311,8 +1311,8 @@ var SPREAD = [
 
 var PROPOSALS = [
   { id:'pr1', kind:'Person', title:'Maren’s brother — a ferryman who left before the story began',
-    state:'proposal', source:'Proposed while you were asking about the crossing. Nothing about him is written yet.',
-    body:'He would be older, and gone, and mentioned exactly once. Keeping him costs nothing; making him real writes a person into the pack.' },
+    state:'proposal', source:'Proposed while you were asking about the crossing. Nothing about them is written yet.',
+    body:'He would be older, and gone, and mentioned exactly once. Keeping them costs nothing; making them real writes a person into the pack.' },
   { id:'pr2', kind:'Note', title:'Ask Aldous about page 41',
     state:'kept', where:'On the desk', source:'Kept from tonight, out of the conversation.',
     body:'A slip, not a fact. It sits on the desk until you use it.' },
@@ -1446,29 +1446,29 @@ function worldById(id){ return WORLDS.filter(function(w){return w.id===id;})[0];
 var EA_CONVOS = {
   folks:{
     maren:[
-      { q:'What does she know that she has not said?', a:'She counted the doors at the shrine. Twice. She has not told anyone the number she arrived at. Ask her about the eighth — not the pendant, the eighth.' },
-      { q:'Help me strengthen her voice.', a:'She speaks in short sentences when she is hiding something and long ones when she is telling the truth. Her silence is not absence — it is a decision. Write her as a person who has already chosen, and is waiting for you to notice.' },
-      { q:'What is her relationship with Corvin?', a:'They grew up together and have not spoken since the spring. The break was not a fight. It was a door she closed, and he has not knocked. There is a debt she has never named, and he has never asked for.' }
+      { q:'What does they know that they has not said?', a:'they counted the doors at the shrine. Twice. they has not told anyone the number they arrived at. Ask their about the eighth — not the pendant, the eighth.' },
+      { q:'Help me strengthen their voice.', a:'they speaks in short sentences when they is hiding something and long ones when they is telling the truth. their silence is not absence — it is a decision. Write their as a person who has already chosen, and is waiting for you to notice.' },
+      { q:'What is their relationship with Corvin?', a:'They grew up together and have not spoken since the spring. The break was not a fight. It was a door they closed, and he has not knocked. There is a debt they has never named, and he has never asked for.' }
     ],
     corvin:[
       { q:'What did he actually hear?', a:'He heard something that sounded like a tree falling, except no tree fell. He has cut every stand on that side of the river except the nine. He knows what a tree sounds like. He said it twice and stopped.' },
-      { q:'Help me write his scene at the inn.', a:'He sits at the same table every night. Bram pours the second cup without being asked. The first time he said it, nobody heard. The second time, the room went quiet. Write the quiet, not the words.' },
-      { q:'What does he want?', a:'He wants somebody to tell him he did not hear what he heard. He has been going back to Nine Firs every morning, and every morning the nine are still standing, and he does not know if that is comfort or threat.' }
+      { q:'Help me write their scene at the inn.', a:'He sits at the same table every night. Bram pours the second cup without being asked. The first time he said it, nobody heard. The second time, the room went quiet. Write the quiet, not the words.' },
+      { q:'What does he want?', a:'He wants somebody to tell them he did not hear what he heard. He has been going back to Nine Firs every morning, and every morning the nine are still standing, and he does not know if that is comfort or threat.' }
     ],
     isolde:[
-      { q:'Why is she always right?', a:'She is not always right. She has been right twice, and both times nobody wrote it down. The whistle she carries is older than she is, and she will not explain it because nobody has asked the right question.' },
-      { q:'What does "repeating" mean?', a:'She said it on the shrine path, to Maren, while carrying water. She did not say the trees are whispering. She said they are repeating. The difference is that repeating has a source, and she knows where it is.' },
-      { q:'Help me write her honestly.', a:'She is eleven. She is not wise beyond her years — she is paying attention beyond theirs. Write her as a child who sees clearly because nobody has taught her what to ignore.' }
+      { q:'Why is they always right?', a:'they is not always right. they has been right twice, and both times nobody wrote it down. The whistle they carries is older than they is, and they will not explain it because nobody has asked the right question.' },
+      { q:'What does "repeating" mean?', a:'they said it on the shrine path, to Maren, while carrying water. they did not say the trees are whispering. they said they are repeating. The difference is that repeating has a source, and they knows where it is.' },
+      { q:'Help me write their honestly.', a:'they is eleven. they is not wise beyond their years — they is paying attention beyond theirs. Write their as a child who sees clearly because nobody has taught their what to ignore.' }
     ],
     aldous:[
-      { q:'What is on page 41?', a:'The sentence. In his hand. Recorded on the eighth, four days before Corvin said it aloud. He folded the page, which is a decision, not a record. He has not unfolded it, and he has not explained why.' },
-      { q:'Why does he keep the shrine locked?', a:'He wears the key now, which he did not used to. The store under the shrine has not been opened since before his time, and he has stopped saying he does not know what is in it.' },
-      { q:'Help me understand his faith.', a:'He writes down what arrives. He has stopped writing what it means. That is not a loss of faith — it is a decision to let the shrine speak for itself. He is waiting, and he is the last person who will wait.' }
+      { q:'What is on page 41?', a:'The sentence. In their hand. Recorded on the eighth, four days before Corvin said it aloud. He folded the page, which is a decision, not a record. He has not unfolded it, and he has not explained why.' },
+      { q:'Why does he keep the shrine locked?', a:'He wears the key now, which he did not used to. The store under the shrine has not been opened since before their time, and he has stopped saying he does not know what is in it.' },
+      { q:'Help me understand their faith.', a:'He writes down what arrives. He has stopped writing what it means. That is not a loss of faith — it is a decision to let the shrine speak for itself. He is waiting, and he is the last person who will wait.' }
     ],
     bram:[
-      { q:'Who was the last traveler?', a:'He remembers every arrival in nine years, in order. He has not said who the last one was, and the bell has not rung in three days. He will tell you when the room lets him.' },
+      { q:'Who was the last traveler?', a:'He remembers every arrival in nine years, in order. He has not said who the last one was, and the bell has not rung in three days. He will tell you when the room lets them.' },
       { q:'What does the inn hear?', a:'Everything. The Hearth & Bell is the only public room in Ashfen. Every conversation passes through it eventually. Bram pours, and listens, and remembers, and has not written any of it down.' },
-      { q:'Help me write his warmth.', a:'He is cheerful the way a person is cheerful when they have decided the alternative is worse. He says things to nobody, which is how he says them to you. Write him as a man who has made the bar a home, and is waiting for someone to notice.' }
+      { q:'Help me write their warmth.', a:'He is cheerful the way a person is cheerful when they have decided the alternative is worse. He says things to nobody, which is how he says them to you. Write them as a man who has made the bar a home, and is waiting for someone to notice.' }
     ]
   },
   vault:{
@@ -1478,7 +1478,7 @@ var EA_CONVOS = {
     ],
     ledger:[
       { q:'What does page 41 say?', a:'The sentence. In Aldous\'s hand. Recorded on the eighth, four days before Corvin said it aloud. The page is folded, which means he decided not to show it, which means it matters.' },
-      { q:'What else is in it?', a:'Herb notes, mostly. Dosages, seasons, which plants grow where. But there are margins, and the margins have handwriting that is not hers.' }
+      { q:'What else is in it?', a:'Herb notes, mostly. Dosages, seasons, which plants grow where. But there are margins, and the margins have handwriting that is not theirs.' }
     ],
     axe:[
       { q:'Why is it worn so much?', a:'He has cut every stand on that side of the river except the nine. A felling axe worn a hand-width in a single season is not a tool being used — it is a person being driven.' },
@@ -1519,7 +1519,7 @@ var EA_CONVOS = {
   ],
   archives:[
     { q:'Why should I believe this?', a:'Two people who have not spoken about it repeat the same sentence four days apart, and one of them wrote it down before the other said it aloud. That is enough to act on. It is not enough to write into the world as true.' },
-    { q:'What is the weakest evidence?', a:'Isolde. She is eleven, and she was carrying water. Low as evidence. High as a signal — she has been right twice, and both times nobody wrote it down.' },
+    { q:'What is the weakest evidence?', a:'Isolde. they is eleven, and they was carrying water. Low as evidence. High as a signal — they has been right twice, and both times nobody wrote it down.' },
     { q:'What would settle it?', a:'Aldous\'s page 41 is folded. A folded page is a decision, not a record. What he left out is the part that would settle this. Unfold the page, and you have your answer.' }
   ],
   foundry:[
@@ -1884,7 +1884,7 @@ function viewDesk(){
             + '<span class="person-role">'+esc(maren.role)+'</span>'
             + '<span class="person-line">'+esc(maren.line)+'</span></span>'
           + '</a>'
-          + '<p class="ea-hand" style="margin-top:var(--sp-4)">“She was at the well this morning. She counted the doors again.”</p>'
+          + '<p class="ea-hand" style="margin-top:var(--sp-4)">“they was at the well this morning. they counted the doors again.”</p>'
           + '<div class="tb-row" style="margin-top:var(--sp-3)">'+badges(maren.truth)+'</div>'
         + '</div>'
         + '<button class="card" type="button" data-act="open-item" data-id="'+onDesk.id+'" style="text-align:left;cursor:pointer" data-od-id="desk-object">'
@@ -1922,7 +1922,7 @@ function viewDesk(){
     + '<div class="threshold" style="margin-top:var(--sp-6)" data-od-id="desk-threshold">'
       + '<div>'
         + '<div class="kit">'
-          + [['hat','her hat'],['clipboard','the clipboard'],['pencil','a pencil'],['foldedmap','the survey'],['satchel','the pouch']]
+          + [['hat','their hat'],['clipboard','the clipboard'],['pencil','a pencil'],['foldedmap','the survey'],['satchel','the pouch']]
             .map(function(k){ return '<span class="kit-item">'+icon(k[0])+'<span class="kit-cap">'+k[1]+'</span></span>'; }).join('')
         + '</div>'
         + '<p class="threshold-say" style="margin-top:var(--sp-5)">“I kept your place.”</p>'
@@ -2159,7 +2159,7 @@ function viewFolks(){
       + '<div class="eyebrow"><span>The Folks</span><i class="rule"></i><span>'+FOLKS.length+' people</span><i class="rule"></i><span>pinned, not filed</span></div>'
       + '<div class="room-head-row"><div>'
         + '<h1 class="room-title" data-od-id="folks-title">The Folks</h1>'
-        + '<p class="room-sub">Five people who are all doing something at this moment, whether or not you are watching. Open one and she is suddenly in the room.</p>'
+        + '<p class="room-sub">Five people who are all doing something at this moment, whether or not you are watching. Open one and they is suddenly in the room.</p>'
       + '</div><div class="room-tools">'
         + '<button class="btn" type="button" data-act="folk-shuffle">'+icon('users')+'<span>Who is nearest?</span></button>'
         + '<button class="btn" type="button" data-act="folk-walk" aria-pressed="'+state.folkWalk+'">'+icon('play')+'<span>'+(state.folkWalk?'Return to dossier':'Walk through the world')+'</span></button>'
@@ -2185,12 +2185,12 @@ function viewFolks(){
           + '</div>'
           + '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-5)">'
             + '<button class="btn btn--primary" type="button" data-act="ea-ask" data-q="What does '+esc(f.name)+' know?" data-od-id="folks-ask">'+icon('ea')+'<span>Ask what '+esc(f.name.split(' ')[0])+' knows</span></button>'
-            + '<a class="btn btn--ghost" href="#/chronicle">'+icon('scroll')+'<span>Her moments</span></a>'
+            + '<a class="btn btn--ghost" href="#/chronicle">'+icon('scroll')+'<span>their moments</span></a>'
           + '</div>'
         + '</article>'
 
         + '<article class="card card--quiet">'
-          + '<div class="card-head"><span class="card-kicker">what she has not said</span></div>'
+          + '<div class="card-head"><span class="card-kicker">what they has not said</span></div>'
           + '<p style="font-family:var(--font-display);font-size:var(--t-md);line-height:1.5">'+esc(f.unsaid)+'</p>'
           + '<div class="tb-row" style="margin-top:var(--sp-3)"><span class="tb tb-open">'+icon('question','ic--sm')+'<b>Unresolved</b></span>'
             + '<span class="tb tb-reservation">'+icon('flag','ic--sm')+'<b>Reservation</b></span></div>'
@@ -2513,8 +2513,8 @@ function viewRunes(){
             }).join('') || '<span class="legend-txt">Nothing held. Holding a rune is how you keep one without deciding anything.</span>') + '</div>'
         + '</article>'
         + '<article class="card card--quiet">'
-          + '<div class="card-head">'+eaSeal()+'<span class="card-kicker">Sunniva, keeping her voice down</span></div>'
-          + '<p class="ea-hand">“I would not write any of this into the pack. The one thing I would note is that your thread rune is a person, not a place — and you have not asked her anything.”</p>'
+          + '<div class="card-head">'+eaSeal()+'<span class="card-kicker">Sunniva, keeping their voice down</span></div>'
+          + '<p class="ea-hand">“I would not write any of this into the pack. The one thing I would note is that your thread rune is a person, not a place — and you have not asked their anything.”</p>'
           + '<div class="tb-row" style="margin-top:var(--sp-3)">'
             + '<button class="chip" type="button" data-act="ea-ask" data-q="What does this cast suggest?">'+icon('ea','ic--sm')+'<span>What does this cast suggest?</span></button>'
           + '</div>'
@@ -2808,7 +2808,7 @@ var GAME_DLG = {
     greeting:'He has the ledger open to a page he will not show you.',
     lines:[
       { q:'What is on page 41?', a:'He closes the ledger. \u201cA sentence,\u201d he says. \u201cIn my hand. I wrote it on the eighth.\u201d He does not open it again.', give:null },
-      { q:'Why is the store locked?', a:'He touches the key at his throat. \u201cIt was not locked last season,\u201d he says. That is all.', give:null },
+      { q:'Why is the store locked?', a:'He touches the key at their throat. \u201cIt was not locked last season,\u201d he says. That is all.', give:null },
       { q:'What does the shrine keep?', a:'He looks at the stair. \u201cWhat arrives,\u201d he says. \u201cI have stopped writing what it means.\u201d', give:null }
     ]
   },
@@ -2821,11 +2821,11 @@ var GAME_DLG = {
     ]
   },
   isolde: {
-    greeting:'She is carrying water and a whistle she will not explain.',
+    greeting:'they is carrying water and a whistle they will not explain.',
     lines:[
-      { q:'What are the trees doing?', a:'She does not look at you. \u201cIt is not whispering,\u201d she says. \u201cIt is repeating.\u201d She keeps walking.', give:null },
-      { q:'What is the whistle for?', a:'She puts her hand over it. She does not answer. She has been right twice, and both times nobody wrote it down.', give:null },
-      { q:'Who told you the word "repeating"?', a:'She stops. She looks at you the way a person looks at somebody who has just arrived at the wrong time. She does not answer.', give:null }
+      { q:'What are the trees doing?', a:'they does not look at you. \u201cIt is not whispering,\u201d they says. \u201cIt is repeating.\u201d they keeps walking.', give:null },
+      { q:'What is the whistle for?', a:'they puts their hand over it. they does not answer. they has been right twice, and both times nobody wrote it down.', give:null },
+      { q:'Who told you the word "repeating"?', a:'they stops. they looks at you the way a person looks at somebody who has just arrived at the wrong time. they does not answer.', give:null }
     ]
   }
 };
@@ -3157,7 +3157,7 @@ function viewExport(){
         + '<div class="slip slip-uncertain" style="margin:var(--sp-6) auto;max-width:46ch">'
           + '<p class="slip-quote">“The trees have been whispering again.”</p>'
           + '<p class="slip-src">Heard at the Hearth &amp; Bell — Corvin, second-hand</p></div>'
-        + '<p>Aldous recorded the same sentence on the eighth, four nights before Corvin said it aloud. The handwriting is his. The sentence is not his.</p>'
+        + '<p>Aldous recorded the same sentence on the eighth, four nights before Corvin said it aloud. The handwriting is their. The sentence is not their.</p>'
         + '<div class="chapter-orn"><i class="rule"></i>'+icon('sprig')+'<i class="rule"></i></div>'
         + '<p style="text-align:center;color:var(--faint);font-size:var(--t-sm);margin-top:var(--sp-4)">12 entries · 3 plates · 7 whispers · 6 objects</p>'
       + '</div>'
@@ -3229,7 +3229,7 @@ var EA_SAY = {
 };
 var EA_NOTES = {
   desk:'Your seat is exactly where it was. I did not tidy the papers.',
-  folks:'She is the one I would ask first, and she is the one you have not asked.',
+  folks:'they is the one I would ask first, and they is the one you have not asked.',
   map:'The sketch is still on the table. You can keep it whenever you like.',
   runes:'Kenaz is not a prediction. It is a note that the story circles one lamp.',
   archives:'Nothing was written back into the world. Asking is not writing.',
@@ -3243,18 +3243,18 @@ var EA_NOTES = {
 };
 function eaAnswer(q){
   var s = (q||'').toLowerCase();
-  if(s.indexOf('page 41')>-1) return 'Page 41 was folded on the sixth night, after the sentence was written and before Aldous closed the book. He has not unfolded it. I would ask him what he took out, not what he wrote.';
+  if(s.indexOf('page 41')>-1) return 'Page 41 was folded on the sixth night, after the sentence was written and before Aldous closed the book. He has not unfolded it. I would ask them what he took out, not what he wrote.';
   if(s.indexOf('changed')>-1) return 'Two things: Aldous folded a page, and the shrine store is locked after dark, which it was not last season. Everything else is exactly where you left it.';
   if(s.indexOf('believe')>-1) return 'Probably — two sources, four days apart, neither aware of the other. With one reservation: nobody has heard it themselves and said so plainly.';
   if(s.indexOf('missing')>-1) return 'A person who can hear it. Everyone in this pack has a report about the whisper and nobody has heard it firsthand. I would start with Maren.';
-  if(s.indexOf('maren')>-1) return 'Maren has been to the well, counted the doors twice, and was at the treeline on the eighth without saying so. She has not been asked. She is the only one who could settle this.';
-  if(s.indexOf('corvin')>-1) return 'Corvin said it sober the first time and drunk the second, and he does not drink before noon. He has never cut the Nine Firs, and he will tell you why if you ask him plainly.';
-  if(s.indexOf('isolde')>-1) return 'Isolde is eleven and has been right twice, and both times nobody wrote it down. She found the pendant and gave it up, which is not what a child does.';
-  if(s.indexOf('aldous')>-1) return 'Aldous keeps a ledger of arrivals and has stopped writing down meanings. He answers questions he has been asked before, and only those — so ask him twice.';
+  if(s.indexOf('maren')>-1) return 'Maren has been to the well, counted the doors twice, and was at the treeline on the eighth without saying so. they has not been asked. they is the only one who could settle this.';
+  if(s.indexOf('corvin')>-1) return 'Corvin said it sober the first time and drunk the second, and he does not drink before noon. He has never cut the Nine Firs, and he will tell you why if you ask them plainly.';
+  if(s.indexOf('isolde')>-1) return 'Isolde is eleven and has been right twice, and both times nobody wrote it down. they found the pendant and gave it up, which is not what a child does.';
+  if(s.indexOf('aldous')>-1) return 'Aldous keeps a ledger of arrivals and has stopped writing down meanings. He answers questions he has been asked before, and only those — so ask them twice.';
   if(s.indexOf('bram')>-1) return 'Bram remembers every arrival in nine years, in order, and will not say the name of the last one in front of the room.';
   if(s.indexOf('cast')>-1) return 'The thread rune is a person, not a place. Perthro sits on the folded page. I would not write any of that into the pack.';
   if(s.indexOf('what happened here')>-1 || s.indexOf('happened here')>-1) return 'On the shrine, the sentence was written four nights before it was spoken. On the path, a child found a pendant and gave it away. Those are the two things.';
-  if(s.indexOf('ask next')>-1) return 'Maren. She is the only one who could make this true, and the only one who would rather not.';
+  if(s.indexOf('ask next')>-1) return 'Maren. they is the only one who could make this true, and the only one who would rather not.';
   return 'I have it noted. Ask me about the ledger, about Maren, about what changed — or tell me what you want written down and I will tell you honestly whether the world agrees.';
 }
 function renderEA(){
@@ -3300,7 +3300,7 @@ function renderEA(){
         }).join('')
         + (EA_KEPT.length > 3 ? '<p style="font-size:var(--t-sm);color:var(--faint)">+'+ (EA_KEPT.length-3) +' more on the Desk</p>' : '')
         + '</div>' : '')
-      + '<p style="font-size:var(--t-sm);color:var(--faint)">She answers from the pack. She cannot make anything true, and she will say so.</p>'
+      + '<p style="font-size:var(--t-sm);color:var(--faint)">they answers from the pack. they cannot make anything true, and they will say so.</p>'
     + '</div>'
     + '<div class="ea-foot">'
       + '<label class="visually-hidden" for="ea-input">Ask Sunniva</label>'

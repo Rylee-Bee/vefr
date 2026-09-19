@@ -37,8 +37,7 @@ def cmd_list(_):
         p = PARTICIPANTS[k]
         f = MODELS_DIR / p.file
         ok = "ok" if f.exists() else "MISSING"
-        print(f"  {k:34s} {p.class_:20s} {p.params_b}B/{p.quant:8s} "
-              f"{ok:8s} {p.family}")
+        print(f"  {k:34s} {p.class_:20s} {p.params_b}B/{p.quant:8s} {ok:8s} {p.family}")
     if miss:
         print(f"\n{len(miss)} missing:\n" + "\n".join(f"  {m}" for m in miss))
 
@@ -51,14 +50,23 @@ def cmd_tasks(a):
     for t in ts:
         rc = "RC" if t.get("role_critical") else "  "
         qu = "Q" if t["id"] in TASKS.QUALS else " "
-        print(f"  [{qu}{rc}] {t['id']:32s} {t['category']:18s} "
-              f"{t['capability']:14s} {t.get('name','')}")
+        print(
+            f"  [{qu}{rc}] {t['id']:32s} {t['category']:18s} "
+            f"{t['capability']:14s} {t.get('name', '')}"
+        )
 
 
 def cmd_run(a):
-    rids = RUN.run_participant(a.key, a.stage, cup=a.cup, category=a.category,
-                               ids=a.ids, runs=a.runs, temperature=a.temp,
-                               guided=a.guided)
+    rids = RUN.run_participant(
+        a.key,
+        a.stage,
+        cup=a.cup,
+        category=a.category,
+        ids=a.ids,
+        runs=a.runs,
+        temperature=a.temp,
+        guided=a.guided,
+    )
     for rid in rids:
         _print_run_summary(rid)
 
@@ -70,41 +78,55 @@ def cmd_many(a):
 
 def cmd_compress(a):
     """Agentic compression: same tasks RAW vs GUIDED, report delta."""
-    from bench.olympics import score as SC
     from bench.olympics.records import load_trials
     from bench.cups.real_agent import AGENT_TASKS
-    ids = a.ids or ["hermod.inst4", "hermod.struct2", "hermod.tj1",
-                    "hermod.tj4", "hermod.ts1", "hermod.src1",
-                    "hermod.contra2", "assist.triage1", "assist.brief1",
-                    "assist.reconcile1", "flex.switch1"]
+
+    ids = a.ids or [
+        "hermod.inst4",
+        "hermod.struct2",
+        "hermod.tj1",
+        "hermod.tj4",
+        "hermod.ts1",
+        "hermod.src1",
+        "hermod.contra2",
+        "assist.triage1",
+        "assist.brief1",
+        "assist.reconcile1",
+        "flex.switch1",
+    ]
     ids = ids + [AGENT_TASKS[0]["id"]]
     raw = RUN.run_participant(a.key, "compress-raw", ids=ids, runs=1)
-    gui = RUN.run_participant(a.key, "compress-guided", ids=ids, runs=1,
-                              guided=True)
+    gui = RUN.run_participant(a.key, "compress-guided", ids=ids, runs=1, guided=True)
 
     def rates(runs_):
         trs = [t for r in runs_ for t in load_trials(r)]
         return len(trs), sum(1 for t in trs if t["pass"])
+
     n, pr = rates(raw)
     ng, pg = rates(gui)
     print(f"\nCOMPRESSION for {a.key} over {n} tasks:")
-    print(f"  RAW     {pr}/{n} ({pr/n*100:.0f}%)")
-    print(f"  GUIDED  {pg}/{ng} ({pg/ng*100:.0f}%)")
+    print(f"  RAW     {pr}/{n} ({pr / n * 100:.0f}%)")
+    print(f"  GUIDED  {pg}/{ng} ({pg / ng * 100:.0f}%)")
     if a.flagged:
         delta = pg - pr
-        print(f"  delta   {delta:+d} ({delta/n*100:+.0f}%)")
+        print(f"  delta   {delta:+d} ({delta / n * 100:+.0f}%)")
 
     # per-task diff
     raw_t = {t["task_id"]: t for r in raw for t in load_trials(r)}
     gui_t = {t["task_id"]: t for r in gui for t in load_trials(r)}
-    print("  per-task: " + ", ".join(
-        f"{k}: {raw_t[k]['pass']}->{gui_t[k]['pass']}" if k in gui_t else f"{k}: rg"
-        for k in raw_t))
+    print(
+        "  per-task: "
+        + ", ".join(
+            f"{k}: {raw_t[k]['pass']}->{gui_t[k]['pass']}" if k in gui_t else f"{k}: rg"
+            for k in raw_t
+        )
+    )
 
 
 def cmd_patch(a):
     """Re-run the patched task ids for one participant so summaries supersede."""
     from bench.olympics.tasks import PATCHED
+
     if not PATCHED:
         print("no patched tasks")
         return
@@ -146,7 +168,8 @@ def cmd_compare(a):
 
 
 def cmd_inspect(a):
-    from bench.olympics.records import summarize_run, load_trials
+    from bench.olympics.records import load_trials
+
     trials = load_trials(a.run)
     if not trials:
         print("no trials in run", a.run)
@@ -156,9 +179,11 @@ def cmd_inspect(a):
         if want and t["task_id"] != want:
             continue
         print("=" * 78)
-        print(f"{t['task_id']}  {t['cup']}/{t['category']} | pass="
-              f"{t['pass']} sem={t['dims'].get('semantic')} "
-              f"proto={t['dims'].get('protocol')} ev={t['dims'].get('evidence')}")
+        print(
+            f"{t['task_id']}  {t['cup']}/{t['category']} | pass="
+            f"{t['pass']} sem={t['dims'].get('semantic')} "
+            f"proto={t['dims'].get('protocol')} ev={t['dims'].get('evidence')}"
+        )
         replies = t.get("replies") or []
         j = 0
         for msg in t["messages"]:
@@ -186,11 +211,13 @@ def cmd_pairs(a):
     anonymized as Output A/B (shuffled per question); the key is written to a
     separate solutions file so the reader stays blind."""
     import random
-    from bench.cups.storyteller_tasks import STORYTELLER_TASKS
-    from bench.olympics.records import load_trials
+
     pool = {t["id"]: t for t in TASKS.ALL_TASKS}
-    tids = a.tasks.split(",") if a.tasks else \
-        ["story.world1", "story.cont1", "assist.brief1", "assist.triage1"]
+    tids = (
+        a.tasks.split(",")
+        if a.tasks
+        else ["story.world1", "story.cont1", "assist.brief1", "assist.triage1"]
+    )
     usable = [k for k in sorted(PARTICIPANTS) if RUN.list_runs().get(k)]
     rng = random.Random(a.seed)
     pairs = []
@@ -201,22 +228,25 @@ def cmd_pairs(a):
     if not pairs:
         print("no models with runs yet for pairs")
         return
-    text = ["# Blind human comparison pack", "",
-            "Each item shows the same task to two models, anonymized. Write "
-            "better: A / B / tie, and one line why."]
+    text = [
+        "# Blind human comparison pack",
+        "",
+        "Each item shows the same task to two models, anonymized. Write "
+        "better: A / B / tie, and one line why.",
+    ]
     sol = ["# Pair key (do not read before judging)"]
     qn = 0
     for pi, pr in enumerate(pairs):
         if len(pr) < 2:
             continue
-        text.append(f"\n## Pair {pi+1} ({len(tids)} questions)")
+        text.append(f"\n## Pair {pi + 1} ({len(tids)} questions)")
         for tid in tids:
             if tid not in pool:
                 continue
             qn += 1
             halves = list(pr)
             rng.shuffle(halves)
-            swaps = {}
+            _swaps = {}
             order = {m: ("A" if halves[0] == m else "B") for m in pr}
             text.append(f"\n### Q{qn} — task `{tid}` ({pool[tid]['name']})")
             text.append(f"prompt:\n> {pool[tid].get('user') or pool[tid]['session'][0]['user']}")
@@ -226,14 +256,14 @@ def cmd_pairs(a):
                 text.append(f"\n**Output {order[who]}**\n\n{out}")
             text.append("\nverdict: better **A** / **B** / tie — reason: ______")
             sol.append(f"Q{qn}: {tid} -> {order[pr[0]]}={pr[0]}, {order[pr[1]]}={pr[1]}")
-    for label, body in (("pairs-human", "\n".join(text)),
-                        ("pairs-solutions", "\n".join(sol))):
+    for label, body in (("pairs-human", "\n".join(text)), ("pairs-solutions", "\n".join(sol))):
         p = REP.save(f"{label}.md", body)
         print(f"wrote {p}")
 
 
 def _first_trial(key, task_id):
     from bench.olympics.records import load_trials
+
     for rid in RUN.list_runs().get(key, []):
         for t in load_trials(rid):
             if t["task_id"] == task_id:
@@ -253,19 +283,23 @@ def cmd_download(a):
 
 def cmd_parsertest(_):
     from bench.tests.test_parse import run
+
     sys.exit(run())
 
 
 def _print_run_summary(rid):
     from bench.olympics.records import summarize_run
+
     meta, trials = summarize_run(rid)
     if not trials:
         print(f"{rid}: no trials")
         return
     n = len(trials)
     p = sum(1 for t in trials if t["pass"])
-    print(f"{rid}: {p}/{n} ({p/n*100:.0f}%) participant={meta.get('participant')} "
-          f"stage={meta.get('stage')}")
+    print(
+        f"{rid}: {p}/{n} ({p / n * 100:.0f}%) participant={meta.get('participant')} "
+        f"stage={meta.get('stage')}"
+    )
 
 
 def _all_summaries():
@@ -293,9 +327,11 @@ def main():
 
     sp = sub.add_parser("run")
     sp.add_argument("key")
-    sp.add_argument("--stage", default="qualifier",
-                    choices=["qualifier", "semifinal", "final", "full",
-                             "single"])
+    sp.add_argument(
+        "--stage",
+        default="qualifier",
+        choices=["qualifier", "semifinal", "final", "full", "single"],
+    )
     sp.add_argument("--cup")
     sp.add_argument("--category")
     sp.add_argument("--ids", nargs="*")
@@ -344,8 +380,7 @@ def main():
     sp.set_defaults(fn=cmd_report)
 
     sp = sub.add_parser("pairs")
-    sp.add_argument("--tasks", default="story.world1,story.cont1,"
-                                       "assist.brief1,assist.triage1")
+    sp.add_argument("--tasks", default="story.world1,story.cont1,assist.brief1,assist.triage1")
     sp.add_argument("--n", type=int, default=2)
     sp.add_argument("--story", action="store_true")
     sp.add_argument("--seed", type=int, default=20260913)
