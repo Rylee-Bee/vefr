@@ -16,7 +16,6 @@ Each invocation runs ONE participant on ONE suite (or all), producing:
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -27,7 +26,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from bench.olympics.participants import PARTICIPANTS
 from bench.olympics.runtime import ModelServer
 from bench.olympics.records import probe_backend
-from bench.olympics.harness import run_tasks
 from bench.olympics import parse as P
 from bench.olympics.validators import VALIDATORS
 
