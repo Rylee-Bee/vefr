@@ -12,7 +12,6 @@ Decision rule: 4/5 or 5/5 pass → Phi canonical. 3/5 or worse → Ministral.
 
 import json
 import os
-import re
 import sys
 import time
 from pathlib import Path
@@ -22,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from bench.olympics.participants import PARTICIPANTS
 from bench.olympics.runtime import ModelServer
 from bench.olympics.harness import sanitize_messages
-from bench.olympics import config
 
 FINALS_DIR = Path(__file__).parent
 RUNS_DIR = FINALS_DIR / "runs"
