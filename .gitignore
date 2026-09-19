@@ -57,3 +57,8 @@ tests/canon-strings.local.txt
 # runtime journal single-file (siblings ignored since the runtime-data rule)
 /data/journal.json
 web/static
+
+# Generated content index (agent-config). Regenerable; binary; contains
+# absolute home paths, so it must never reach a public repo.
+data/content.db
+**/data/content.db
