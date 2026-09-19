@@ -66,5 +66,5 @@ cat .project/contracts/adoption.yaml | head -10
 |---|---|
 | Working tree | dirty (fleet benchmark experiment, see above) |
 | Origin | `https://github.com/Rylee-Bee/vefr.git` |
-| Branch | `feat/fleet-storyteller` (committed to origin 2026-09-16); worktree lane at `/var/home/rylee/worktrees/vefr/ui-workshop` (`feat/ui-workshop`) |
+| Branch | `main` (fleet-storyteller merged 2026-09-19) |
 | Last commit at write time | see `git log -1` for the current SHA |

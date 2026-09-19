@@ -14,8 +14,7 @@ expect, role_critical, weight.
 """
 
 from . import toolkit as K
-from ..olympics.prompts import tool_system, json_system, prose_system, msgs
-import json as _json
+from ..olympics.prompts import tool_system, json_system, prose_system
 
 T = []
 

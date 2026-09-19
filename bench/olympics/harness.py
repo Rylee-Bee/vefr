@@ -19,7 +19,6 @@ import time
 
 from . import parse as P
 from .validators import VALIDATORS
-from .records import TrialStore
 
 
 def sanitize_messages(msgs):
