@@ -10,7 +10,6 @@ Shapes deliberately included:
 """
 
 from ..olympics.prompts import tool_system, prose_system
-from ..olympics.tools import render_tools
 
 SHELF = [
     {"name": "fetch_status",

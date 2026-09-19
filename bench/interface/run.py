@@ -135,7 +135,7 @@ def run_candidate(label: str, url: str, model: str, cases: list[dict]) -> dict:
     median_latency = round(statistics.median(latencies), 1) if latencies else None
     try:
         tps = _token_rate(url, model)
-    except Exception as e:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         tps = None
     total = len(cases)
     result = {

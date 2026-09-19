@@ -28,22 +28,23 @@ def probe_backend(cid):
     """
     evidence = {"render_node": False}
     try:
-        out = subprocess.run(["podman", "exec", cid, "ls", "/dev/dri/"],
-                             capture_output=True, text=True, timeout=15)
-        evidence["render_node"] = any(
-            n.startswith("renderD") for n in out.stdout.split())
+        out = subprocess.run(
+            ["podman", "exec", cid, "ls", "/dev/dri/"], capture_output=True, text=True, timeout=15
+        )
+        evidence["render_node"] = any(n.startswith("renderD") for n in out.stdout.split())
     except Exception:
         pass
     base = Path("/sys/class/drm/card1/device")
-    for key, name in (("vram_used_mib", "mem_info_vram_used"),
-                      ("vram_total_mib", "mem_info_vram_total")):
+    for key, name in (
+        ("vram_used_mib", "mem_info_vram_used"),
+        ("vram_total_mib", "mem_info_vram_total"),
+    ):
         try:
             evidence[key] = int(base.joinpath(name).read_text().strip()) // 1048576
         except Exception:
             pass
     try:
-        evidence["gpu_busy_pct"] = int(
-            base.joinpath("gpu_busy_percent").read_text().strip())
+        evidence["gpu_busy_pct"] = int(base.joinpath("gpu_busy_percent").read_text().strip())
     except Exception:
         pass
     backend = "vulkan" if evidence["render_node"] else "cpu"
@@ -80,8 +81,10 @@ class TrialStore:
             "box": BOX,
             "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "samples": samples,
-            "gen_defaults": {"temperature_default": GEN["temperature"],
-                             "max_tokens_default": GEN["max_tokens"]},
+            "gen_defaults": {
+                "temperature_default": GEN["temperature"],
+                "max_tokens_default": GEN["max_tokens"],
+            },
         }
 
     def write_header(self):
@@ -101,8 +104,7 @@ class TrialStore:
 
     def trial_count(self):
         try:
-            return sum(1 for line in self.path.read_text().splitlines()
-                       if '"trial"' in line)
+            return sum(1 for line in self.path.read_text().splitlines() if '"trial"' in line)
         except Exception:
             return 0
 
@@ -111,8 +113,8 @@ def summarize_run(run_id):
     """Return (participant, stage, trials) from a run file."""
     path = RUNDIR / f"{run_id}.jsonl"
     lines = path.read_text().splitlines()
-    meta = next((json.loads(l)["meta"] for l in lines if '"run"' in l), {})
-    trials = [json.loads(l)["trial"] for l in lines if '"trial"' in l]
+    meta = next((json.loads(line)["meta"] for line in lines if '"run"' in line), {})
+    trials = [json.loads(line)["trial"] for line in lines if '"trial"' in line]
     return meta, trials
 
 

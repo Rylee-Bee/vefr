@@ -7,8 +7,6 @@ participants.
 
 import json
 import statistics
-from collections import defaultdict
-from pathlib import Path
 
 from .config import RUNDIR, REPORTDIR
 from .participants import PARTICIPANTS

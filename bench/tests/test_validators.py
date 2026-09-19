@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from bench.olympics import parse as P  # noqa: E402
-from bench.olympics.tasks import ALL_TASKS, BY_ID  # noqa: E402
+from bench.olympics.tasks import ALL_TASKS  # noqa: E402
 from bench.olympics.validators import VALIDATORS  # noqa: E402
 from bench.cups.real_agent import AGENT_TASKS  # noqa: E402
 
