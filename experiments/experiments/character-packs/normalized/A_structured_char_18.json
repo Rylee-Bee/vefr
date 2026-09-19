@@ -1,0 +1,57 @@
+{
+  "id": "char_18",
+  "name": "Megan Ross",
+  "role": "Defense Attorney",
+  "location": "Seattle, Washington",
+  "observable_traits": [
+    "Charitable",
+    "Reflective",
+    "Graceful"
+  ],
+  "capabilities": [
+    "Negotiation",
+    "Legal Strategy",
+    "Emotional Intelligence"
+  ],
+  "possessions": [
+    "Luxury Car",
+    "Donation Ledger",
+    "Art Collection"
+  ],
+  "goals": [
+    "Empower Underprivileged Youth",
+    "Maintain Ethical Standards"
+  ],
+  "boundaries": [
+    "Won't Accept Cases with Pre-Recorded Verdicts",
+    "Refuse to Engage in Shady Practices"
+  ],
+  "relationships": [
+    {
+      "target": "James Thompson",
+      "type": "Former Client",
+      "description": "Acquitted a high-profile murder case, now partners with Megan in a community outreach program."
+    },
+    {
+      "target": "Dr. Emily Nguyen",
+      "type": "Colleague",
+      "description": "Respected attorney who mentors new lawyers and shares a passion for social justice."
+    }
+  ],
+  "history_notes": [
+    "Became known for her ability to secure acquittals even in high-stakes cases.",
+    "Started a foundation to provide legal aid to underprivileged individuals."
+  ],
+  "current_state": "Meeting with a client at her law firm, reviewing documents for a new community service project.",
+  "facts_they_know": [
+    "She once represented a client who was initially found guilty but was later exonerated.",
+    "Her firm has helped over 200 individuals with free legal representation."
+  ],
+  "beliefs": [
+    "Clients deserve a fair trial regardless of public perception.",
+    "Giving back to the community is as important as personal success."
+  ],
+  "factual_errors": [
+    "She believes that all lawyers prioritize justice over winning cases, which is not universally true."
+  ]
+}

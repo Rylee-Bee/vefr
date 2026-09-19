@@ -37,6 +37,20 @@ __pycache__/
 /data/weave.jsonl.old
 /data/handoffs/
 
+# runtime lore - the Lorekeeper store (facts + derived vector index).
+# session data under VEFR_HOME/data, never part of the engine.
+/data/lore/
+
+# runtime interface translator log - evidence-first capture from the
+# fleet's tiny intent brain. Private runtime state, never tracked.
+/data/interface.jsonl
+/data/interface.jsonl.old
+
+# runtime storyteller log - bounded narrative prose + evidence metadata.
+# Story text is private story content; never tracked.
+/data/storyteller.jsonl
+/data/storyteller.jsonl.old
+
 # user-installed Storyteller Packs. Tracked packs ship in
 # storyteller_packs/ at the repo root; everything under
 # data/storytellers/ is a per-machine install (mirrors of upstream

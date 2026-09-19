@@ -1,0 +1,50 @@
+{
+  "id": "char_14",
+  "name": "Harvey Reed",
+  "role": "Municipal Inspector",
+  "location": "City Hall District",
+  "observable_traits": [
+    "Straightforward",
+    "No-nonsense",
+    "Attention to detail"
+  ],
+  "capabilities": [
+    "Identifies code violations",
+    "Conducts inspections",
+    "Writes citations"
+  ],
+  "possessions": [
+    "Inspector badge",
+    "Notebook",
+    "Utility belt with tools"
+  ],
+  "goals": [
+    "Ensures compliance with regulations",
+    "Maintains order in the city"
+  ],
+  "boundaries": [
+    "Will not overlook blatant violations",
+    "Respects all citizens equally"
+  ],
+  "relationships": [
+    {
+      "target": "Jane Doe",
+      "type": "Citizen",
+      "description": "Often at odds due to her resistance to citations"
+    }
+  ],
+  "history_notes": [
+    "Appointed after a series of high-profile corruption scandals"
+  ],
+  "current_state": "Conducting an inspection of a commercial building suspected of zoning violations",
+  "facts_they_know": [
+    "Believes that most people appreciate honesty in enforcement"
+  ],
+  "beliefs": [
+    "People deserve to be held accountable for breaking the rules",
+    "Strict enforcement leads to a better city"
+  ],
+  "factual_errors": [
+    "Most citizens dislike receiving citations as much as he does"
+  ]
+}

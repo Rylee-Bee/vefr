@@ -1,0 +1,48 @@
+{
+  "id": "char_19",
+  "name": "Martha Lee",
+  "role": "Pharmacist",
+  "location": "Suburban town in Ohio",
+  "observable_traits": [
+    "Wears prescription glasses",
+    "Carries a small bag of pills"
+  ],
+  "capabilities": [
+    "Compiles prescriptions",
+    "Knows drug interactions"
+  ],
+  "possessions": [
+    "Prescription pads",
+    "Pill bottles",
+    "Cash"
+  ],
+  "goals": [
+    "Support her sister through addiction",
+    "Maintain her pharmacy's reputation"
+  ],
+  "boundaries": [
+    "Will not report her sister to authorities"
+  ],
+  "relationships": [
+    {
+      "target": "Emily Thompson",
+      "type": "Sister",
+      "description": "Addicted to opioids and relies on Martha for supplies"
+    }
+  ],
+  "history_notes": [
+    "Started diverting opioids after discovering sister's addiction"
+  ],
+  "current_state": "Counting pills in the backroom, trying to stay ahead of supply shortages",
+  "facts_they_know": [
+    "Opioids are highly addictive",
+    "Her sister's addiction has worsened recently"
+  ],
+  "beliefs": [
+    "Her sister needs help but is unable to stop using on her own",
+    "Keeping the supply discreet prevents triggering a full addiction crisis"
+  ],
+  "factual_errors": [
+    "Believes that keeping the addiction hidden will eventually help her sister recover"
+  ]
+}

@@ -1,0 +1,267 @@
+[
+  {
+    "model": "granite-4.1-3b",
+    "params": "3B",
+    "size_gb": 1.95,
+    "passed": 6,
+    "total": 6,
+    "pass_rate": 1.0,
+    "avg_total_ms": 2543,
+    "results": [
+      {
+        "task": "npc_creation",
+        "name": "NPC JSON Creation",
+        "passed": true,
+        "ttft_ms": 607,
+        "total_ms": 4815
+      },
+      {
+        "task": "state_edit",
+        "name": "Bounded State Edit",
+        "passed": true,
+        "ttft_ms": 789,
+        "total_ms": 2680
+      },
+      {
+        "task": "escalation_ambiguous",
+        "name": "Ambiguous Escalation",
+        "passed": true,
+        "ttft_ms": 846,
+        "total_ms": 2756
+      },
+      {
+        "task": "rune_classification",
+        "name": "Rune Classification",
+        "passed": true,
+        "ttft_ms": 797,
+        "total_ms": 2621
+      },
+      {
+        "task": "unknown_preservation",
+        "name": "UNKNOWN Preservation",
+        "passed": true,
+        "ttft_ms": 428,
+        "total_ms": 1513
+      },
+      {
+        "task": "instruction_scope",
+        "name": "Instruction Scope",
+        "passed": true,
+        "ttft_ms": 362,
+        "total_ms": 872
+      }
+    ]
+  },
+  {
+    "model": "granite-4.2-3b",
+    "params": "4B",
+    "size_gb": 2.15,
+    "passed": 1,
+    "total": 6,
+    "pass_rate": 0.167,
+    "avg_total_ms": 13558,
+    "results": [
+      {
+        "task": "npc_creation",
+        "name": "NPC JSON Creation",
+        "passed": false,
+        "ttft_ms": 745,
+        "total_ms": 24253
+      },
+      {
+        "task": "state_edit",
+        "name": "Bounded State Edit",
+        "passed": true,
+        "ttft_ms": 909,
+        "total_ms": 12789
+      },
+      {
+        "task": "escalation_ambiguous",
+        "name": "Ambiguous Escalation",
+        "passed": false,
+        "ttft_ms": 1191,
+        "total_ms": 15229
+      },
+      {
+        "task": "rune_classification",
+        "name": "Rune Classification",
+        "passed": false,
+        "ttft_ms": 1043,
+        "total_ms": 14756
+      },
+      {
+        "task": "unknown_preservation",
+        "name": "UNKNOWN Preservation",
+        "passed": false,
+        "ttft_ms": 587,
+        "total_ms": 9604
+      },
+      {
+        "task": "instruction_scope",
+        "name": "Instruction Scope",
+        "passed": false,
+        "ttft_ms": 404,
+        "total_ms": 4718
+      }
+    ]
+  },
+  {
+    "model": "lfm2.5-2.6b",
+    "params": "2.6B",
+    "size_gb": 1.55,
+    "passed": 1,
+    "total": 6,
+    "pass_rate": 0.167,
+    "avg_total_ms": 9645,
+    "results": [
+      {
+        "task": "npc_creation",
+        "name": "NPC JSON Creation",
+        "passed": false,
+        "ttft_ms": 551,
+        "total_ms": 17685
+      },
+      {
+        "task": "state_edit",
+        "name": "Bounded State Edit",
+        "passed": false,
+        "ttft_ms": 634,
+        "total_ms": 8888
+      },
+      {
+        "task": "escalation_ambiguous",
+        "name": "Ambiguous Escalation",
+        "passed": false,
+        "ttft_ms": 720,
+        "total_ms": 10799
+      },
+      {
+        "task": "rune_classification",
+        "name": "Rune Classification",
+        "passed": false,
+        "ttft_ms": 681,
+        "total_ms": 10927
+      },
+      {
+        "task": "unknown_preservation",
+        "name": "UNKNOWN Preservation",
+        "passed": false,
+        "ttft_ms": 452,
+        "total_ms": 7228
+      },
+      {
+        "task": "instruction_scope",
+        "name": "Instruction Scope",
+        "passed": true,
+        "ttft_ms": 314,
+        "total_ms": 2342
+      }
+    ]
+  },
+  {
+    "model": "ministral-3-3b",
+    "params": "3.4B",
+    "size_gb": 2.15,
+    "passed": 1,
+    "total": 6,
+    "pass_rate": 0.167,
+    "avg_total_ms": 5909,
+    "results": [
+      {
+        "task": "npc_creation",
+        "name": "NPC JSON Creation",
+        "passed": false,
+        "ttft_ms": 543,
+        "total_ms": 7156
+      },
+      {
+        "task": "state_edit",
+        "name": "Bounded State Edit",
+        "passed": false,
+        "ttft_ms": 746,
+        "total_ms": 3527
+      },
+      {
+        "task": "escalation_ambiguous",
+        "name": "Ambiguous Escalation",
+        "passed": true,
+        "ttft_ms": 800,
+        "total_ms": 3836
+      },
+      {
+        "task": "rune_classification",
+        "name": "Rune Classification",
+        "passed": false,
+        "ttft_ms": 765,
+        "total_ms": 14561
+      },
+      {
+        "task": "unknown_preservation",
+        "name": "UNKNOWN Preservation",
+        "passed": false,
+        "ttft_ms": 379,
+        "total_ms": 4619
+      },
+      {
+        "task": "instruction_scope",
+        "name": "Instruction Scope",
+        "passed": false,
+        "ttft_ms": 279,
+        "total_ms": 1753
+      }
+    ]
+  },
+  {
+    "model": "smollm3-3b",
+    "params": "3B",
+    "size_gb": 1.92,
+    "passed": 3,
+    "total": 6,
+    "pass_rate": 0.5,
+    "avg_total_ms": 6932,
+    "results": [
+      {
+        "task": "npc_creation",
+        "name": "NPC JSON Creation",
+        "passed": false,
+        "ttft_ms": 711,
+        "total_ms": 20898
+      },
+      {
+        "task": "state_edit",
+        "name": "Bounded State Edit",
+        "passed": true,
+        "ttft_ms": 605,
+        "total_ms": 2685
+      },
+      {
+        "task": "escalation_ambiguous",
+        "name": "Ambiguous Escalation",
+        "passed": false,
+        "ttft_ms": 737,
+        "total_ms": 12786
+      },
+      {
+        "task": "rune_classification",
+        "name": "Rune Classification",
+        "passed": false,
+        "ttft_ms": 743,
+        "total_ms": 2717
+      },
+      {
+        "task": "unknown_preservation",
+        "name": "UNKNOWN Preservation",
+        "passed": true,
+        "ttft_ms": 475,
+        "total_ms": 1634
+      },
+      {
+        "task": "instruction_scope",
+        "name": "Instruction Scope",
+        "passed": true,
+        "ttft_ms": 276,
+        "total_ms": 873
+      }
+    ]
+  }
+]

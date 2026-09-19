@@ -1,0 +1,53 @@
+{
+  "id": "char_12",
+  "name": "Gideon Cogwood",
+  "role": "Watchmaker",
+  "location": "A small, dimly lit workshop on the outskirts of town",
+  "observable_traits": [
+    "Prefers gears to people",
+    "Constantly muttering to himself",
+    "Deeply contemplative demeanor"
+  ],
+  "capabilities": [
+    "Crafts intricate timepieces",
+    "Diagnoses mechanical issues",
+    "Skilfully repairs delicate components"
+  ],
+  "possessions": [
+    "A set of precision tools",
+    "Various worn gears and springs",
+    "An old, tattered journal"
+  ],
+  "goals": [
+    "Master the art of watchmaking",
+    "Uncover the secrets of time itself"
+  ],
+  "boundaries": [
+    "Avoids social interactions",
+    "Will not alter a timepiece beyond repair"
+  ],
+  "relationships": [
+    {
+      "target": "Evelyn",
+      "type": "Friend",
+      "description": "She is the only person he trusts, a local librarian who appreciates his quiet company"
+    }
+  ],
+  "history_notes": [
+    "Grew up in a bustling city where noise and crowds overwhelmed him",
+    "Trained under a reclusive master watchmaker who valued silence and precision"
+  ],
+  "current_state": "Currently fine-tuning a pocket watch, his hands moving with surgical precision",
+  "facts_they_know": [
+    "Believes that time is a construct that can be harnessed",
+    "Thinks he has discovered a hidden chamber in the universe of gears"
+  ],
+  "beliefs": [
+    "He can manipulate time by adjusting the gears",
+    "The universe operates on a predictable mechanical rhythm"
+  ],
+  "factual_errors": [
+    "Time is not a construct that can be harnessed as he believes",
+    "Human perception of time is subjective and not governed by mechanical principles"
+  ]
+}

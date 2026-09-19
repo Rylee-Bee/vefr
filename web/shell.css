@@ -1,0 +1,254 @@
+/* VEFR Shell — the room everything lives in.
+ *
+ * The shell is the constant: sidebar, top bar, bottom bar.
+ * Screens swap inside the main content area.
+ * Every color resolves through vefr-theme.css.
+ * This file owns layout and chrome only.
+ */
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+
+.vefr-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "sidebar topbar"
+    "sidebar main"
+    "sidebar bottombar";
+  height: 100vh;
+  overflow: hidden;
+}
+
+.vefr-sidebar {
+  grid-area: sidebar;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  overflow-y: auto;
+}
+
+.vefr-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.vefr-sidebar__brand svg {
+  width: 24px;
+  height: 24px;
+  color: var(--gold);
+}
+
+.vefr-sidebar__brand-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.vefr-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+  flex: 1;
+}
+
+.vefr-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 450;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.vefr-nav-item:hover {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.vefr-nav-item[aria-current="page"],
+.vefr-nav-item--active {
+  background: rgba(201, 173, 107, 0.08);
+  color: var(--gold);
+  font-weight: 550;
+}
+
+.vefr-nav-item__icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.vefr-nav-item--active .vefr-nav-item__icon {
+  opacity: 1;
+}
+
+/* ── Top Bar ──────────────────────────────────────────────── */
+
+.vefr-topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.vefr-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.vefr-topbar__world {
+  font-size: 15px;
+  font-weight: 550;
+  color: var(--text-primary);
+}
+
+.vefr-topbar__act {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.vefr-topbar__center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vefr-topbar__timer {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.vefr-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vefr-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.vefr-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex-shrink: 0;
+}
+
+.vefr-status__dot--warning { background: var(--warning); }
+.vefr-status__dot--error { background: var(--danger); }
+.vefr-status__dot--idle { background: var(--text-dim); }
+
+/* ── Main Content ─────────────────────────────────────────── */
+
+.vefr-main {
+  grid-area: main;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-primary);
+}
+
+/* ── Bottom Bar ───────────────────────────────────────────── */
+
+.vefr-bottombar {
+  grid-area: bottombar;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 36px;
+  background: var(--bg-deep);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.vefr-bottombar__rune {
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+/* ── Screen Container ─────────────────────────────────────── */
+
+.vefr-screen {
+  display: none;
+  height: 100%;
+}
+
+.vefr-screen--active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .vefr-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "main"
+      "bottombar";
+  }
+  
+  .vefr-sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 100;
+    transition: left 0.25s ease-out;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  
+  .vefr-sidebar--open {
+    left: 0;
+  }
+  
+  .vefr-sidebar__backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+  
+  .vefr-sidebar--open ~ .vefr-sidebar__backdrop {
+    display: block;
+  }
+}

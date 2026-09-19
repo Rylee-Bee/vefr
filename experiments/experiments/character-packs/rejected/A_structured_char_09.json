@@ -1,0 +1,7 @@
+{
+  "data": null,
+  "issues": [
+    "no_json"
+  ],
+  "raw_excerpt": "{\n  \"id\": \"char_09\",\n  \"name\": \"Derek \"Dee\" Donovan\",\n  \"role\": \"Grifter and Charlatan\",\n  \"location\": \"Underworld alleyways of Newcrest\",\n  \"observable_traits\": [\"Playful grin\", \"Quick wit\", \"Restless eyes\"],\n  \"capabilities\": [\"Masterful deception\", \"Smooth talking\", \"Quick on his feet\"],\n  \"possessions\": [\"A collection of old, polished pocket watches\", \"A silver locket with a picture of a woman he never met\"],\n  \"goals\": [\"Wealth and respect in the underworld\", \"A life where he doesn't have t"
+}

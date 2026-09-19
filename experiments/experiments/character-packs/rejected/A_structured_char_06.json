@@ -1,0 +1,7 @@
+{
+  "data": null,
+  "issues": [
+    "no_json"
+  ],
+  "raw_excerpt": "{\n  \"id\": \"char_06\",\n  \"name\": \"Ezekiel \"Ez\" Hawthorne\",\n  \"role\": \"Forensic Accountant\",\n  \"location\": \"Small apartment in Seattle's Rainier Valley\",\n  \"observable_traits\": [\"Always wears a thick knit scarf\", \"Carries a vintage leather briefcase\", \"Has a penchant for black coffee\"],\n  \"capabilities\": [\"Detects financial discrepancies with uncanny accuracy\", \"Can identify fraudulent activity from a distance\", \"Expertise in tax evasion schemes\"],\n  \"possessions\": [\"Old laptop running legacy accou"
+}

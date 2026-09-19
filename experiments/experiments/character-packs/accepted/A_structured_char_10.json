@@ -1,0 +1,54 @@
+{
+  "id": "char_10",
+  "name": "Rachel Thompson",
+  "role": "Journalist",
+  "location": "New York City",
+  "observable_traits": [
+    "Determined",
+    "Impulsive",
+    "Distracted"
+  ],
+  "capabilities": [
+    "Research",
+    "Interviewing",
+    "Writing"
+  ],
+  "possessions": [
+    "Notebook",
+    "Laptop",
+    "Old typewriter"
+  ],
+  "goals": [
+    "Produce a high-profile story",
+    "Gain credibility"
+  ],
+  "boundaries": [
+    "Avoid exposing her own fabrications"
+  ],
+  "relationships": [
+    {
+      "target": "Mark Davis",
+      "type": "Colleague",
+      "description": "Trusts but wary of Rachel's methods"
+    },
+    {
+      "target": "Emily Chen",
+      "type": "Friend",
+      "description": "Concerned about Rachel's increasing secrecy"
+    }
+  ],
+  "history_notes": [
+    "Had prior retraction for using fabricated sources"
+  ],
+  "current_state": "Concocting a story based on dubious sources, convinced this time will be different.",
+  "facts_they_know": [
+    "Her past fabrication was exposed in the media"
+  ],
+  "beliefs": [
+    "She can uncover the truth with enough persistence",
+    "Her sources this time are reliable"
+  ],
+  "factual_errors": [
+    "Believes past fabrication did not harm her reputation"
+  ]
+}

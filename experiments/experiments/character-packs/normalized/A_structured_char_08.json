@@ -1,0 +1,53 @@
+{
+  "id": "char_08",
+  "name": "Clarissa Reeves",
+  "role": "Structural Engineer",
+  "location": "Near the collapsed bridge site",
+  "observable_traits": [
+    "Wears safety goggles",
+    "Carries a notepad"
+  ],
+  "capabilities": [
+    "Analyzes structural integrity",
+    "Communicates technical findings"
+  ],
+  "possessions": [
+    "Hard hat",
+    "Engineering diagrams"
+  ],
+  "goals": [
+    "Seek justice for the accident",
+    "Prevent future failures"
+  ],
+  "boundaries": [
+    "Refuses to take blame for the collapse"
+  ],
+  "relationships": [
+    {
+      "target": "Mayor Thompson",
+      "type": "Supervisor",
+      "description": "Reports findings but faces skepticism"
+    },
+    {
+      "target": "Colleague Dr. Patel",
+      "type": "Colleague",
+      "description": "Shares concerns but limited influence"
+    }
+  ],
+  "history_notes": [
+    "Worked on the bridge project",
+    "Previously raised safety concerns"
+  ],
+  "current_state": "Investigating the accident and gathering evidence",
+  "facts_they_know": [
+    "The bridge failed due to overloading",
+    "She warned authorities about design flaws"
+  ],
+  "beliefs": [
+    "The accident was preventable if earlier warnings were acted upon",
+    "Higher management ignored valid safety protocols"
+  ],
+  "factual_errors": [
+    "She believes her warnings alone could have stopped the collapse, ignoring the complexity of decision-making processes"
+  ]
+}

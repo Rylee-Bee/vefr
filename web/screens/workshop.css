@@ -1,0 +1,265 @@
+/* Workshop — the place where something is being made.
+ *
+ * The story lives on the left. The world's awareness lives on the right.
+ * Gold is for the one thing that matters right now: continuing.
+ * Teal is for AI presence — warm but secondary.
+ */
+
+/* ── Layout ──────────────────────────────────────────────── */
+
+.workshop {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.workshop--context-closed {
+  grid-template-columns: 1fr;
+}
+
+.workshop--context-closed .workshop__context {
+  display: none;
+}
+
+/* ── Story Area ──────────────────────────────────────────── */
+
+.workshop__story {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workshop__story-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 24px 32px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.workshop__chapter {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.workshop__wordcount {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.workshop__story-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px 20px;
+}
+
+.workshop__story-content {
+  max-width: 620px;
+  line-height: 1.75;
+  color: var(--text-body);
+  font-size: 15px;
+}
+
+.workshop__story-content p {
+  margin: 0 0 1.25em;
+}
+
+.workshop__story-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+
+.workshop__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.workshop__empty-text {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+.workshop__empty-hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* ── Story Footer ────────────────────────────────────────── */
+
+.workshop__story-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── AI Context Panel ────────────────────────────────────── */
+
+.workshop__context {
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.context__section {
+  padding: 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.context__section:last-child {
+  border-bottom: none;
+}
+
+.context__heading {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal);
+  margin: 0 0 14px;
+}
+
+.context__empty {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-dim);
+  padding: 8px 0;
+}
+
+.context__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 0;
+}
+
+.context__item + .context__item {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.context__item-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.context__item-value {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ── Timeline ────────────────────────────────────────────── */
+
+.context__event {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.context__event + .context__event {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.context__event-time {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.context__event-text {
+  color: var(--text-secondary);
+}
+
+/* ── Evidence Link ───────────────────────────────────────── */
+
+.context__evidence-link {
+  font-size: 13px;
+  color: var(--teal);
+  padding: 8px 0;
+}
+
+.context__evidence-link:hover {
+  color: var(--teal-light);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .workshop {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  
+  .workshop__context {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 40vh;
+  }
+  
+  .workshop__story-header,
+  .workshop__story-body,
+  .workshop__story-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .workshop__story-header {
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    padding: 16px 16px 12px;
+  }
+  
+  .workshop__story-body {
+    padding: 16px;
+  }
+  
+  .workshop__story-footer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+  
+  .workshop__story-content {
+    font-size: 15px;
+  }
+  
+  .workshop__context {
+    max-height: 50vh;
+  }
+  
+  .context__section {
+    padding: 16px;
+  }
+}

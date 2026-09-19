@@ -7,6 +7,226 @@
 
 ## Landed
 
+- [x] **Fleet Storyteller role + benchmark** (2026-09-14,
+      `e434249`): the fleet storyteller capability — an anti-agentic
+      narrator. `src/vefr/narrate.py` receives an authoritative
+      action result plus bounded context and returns prose only (no
+      tools, no mutation, no canon invention); fail-closed
+      (`StorytellerUnavailable` / `StorytellerFailed`). Template
+      as data in `templates/storyteller/narrate.json`
+      (storyteller-narrate-v1: authority > template > lore >
+      prose precedence, ambiguity preserved, player agency
+      preserved). New CLI `vefr-story` (--json, --fixture, --model,
+      --endpoint). Benchmark in `bench/storyteller/`: 25
+      single-turn cases + 5 multi-turn sequences with hard
+      must/must_all/must_not gates, non-contradiction continuity,
+      and a replay mode. Winners (CPU llama.cpp):
+      `smollm3-3b-q4` 25/25 gate, 5/5 sequences, 100%
+      continuity, 11.4 tok/s (retained as storyteller head);
+      `ministral-3-3b-q4` equivalent at 11.3 tok/s.
+- [x] **Interface Translator + benchmark** (2026-09-13/14,
+      `bdfb421` + `045f289`): `src/vefr/interface.py` — a tiny
+      strict-intent brain mapping natural language to the engine's
+      canonical action vocabulary (attack, console, hurl, strike,
+      observe, speak, move) via strict json_schema + pydantic
+      validation; deterministic clarification on missing args,
+      fail-closed everywhere, no world mutation. Template as data
+      in `templates/interface/intent.json`. Benchmark in
+      `bench/interface/`: 29 deterministic cases; smaller models
+      (qwen2.5-1.5b, qwen3.5-0.8b) fail the safety gate on unsafe
+      false-positives; `qwen3.5-9b-mtp` wins (100% schema-valid,
+      strongest safe-rate) as the reference head.
+- [x] **Lorekeeper slice: `vefr-lore` add/ask** (2026-09-13,
+      `e74626c`): `src/vefr/lore_shell.py` — structured durable
+      truth (`facts.jsonl` authoritative, `index/` derived),
+      bge-m3 embed client via `VEFR_EMBED_URL`, pure-Python cosine
+      retrieval, fail-soft on embed outage. No generative path.
+- [x] **Small Model Finals + qualifier round, 2026-09 bench** (2026-09-13,
+      bench/finals commits + local `bench/reports/` evidence): two
+      skimmable rounds of the small-model bench campaign, plus the
+      qualifier campaign that followed.
+      (1) **Quick finals** (`bench/finals/DECISION-PACKET.md`,
+      CPU-only, Q4_K_M): *Worlds* default = **Qwen3 1.7B**
+      (6 PASS/8 PARTIAL vs LFM2.5-2.6B's 4/10), fallback LFM2.5;
+      *VEFR* default = **Phi-4-mini** provisional (11/12 at 3x the
+      speed of Ministral-3-3B's 12/12), fallback Ministral 3 3B.
+      (2) **Qualifier campaign, suite 0.4.1** (`bench/reports/
+      QUALIFIER-TLDR-2026-09-13.md`): 27 models x 53 tasks, every
+      run now completes (the stuck runs were three harness bugs,
+      zero model faults); backend is observed per run, not assumed;
+      all latencies contended (resident 27B holds the VRAM) and
+      never comparable to historical idle numbers. Standings
+      (pass%): top = qwen3-1.7b 76, lfm2.5-2.6b 70,
+      ministral-3-3b 68, falcon3-3b 66; weak = gemma3-1b 42,
+      qwen3.5-0.8b/-2b 30/28. Honesty notes carried forward:
+      phi-4-mini 64.2% here differs from its historical 100/100
+      (different production-path set), and legacy backend
+      provenance is UNKNOWN. Raw per-run evidence in
+      `bench/runs/` (`index.json` is canonical).
+- [x] **The Foyer sits in the house's own column** (2026-09-15): the
+      launcher used to stretch full-bleed edge to edge while every
+      other room sits in a centered ~680px readable column, and the
+      first-walk rail (pinned top-right of the room) hovered over the
+      foyer's right edge. The Foyer now keeps the same centered
+      column as the Desk and the boiler room
+      (`max-width: min(680px, calc(100vw - 32px))`, auto margins), so
+      the walk rail clears the cards on desktop and the landing reads
+      like the rest of the house.
+- [x] **The Foyer — a launcher landing, the door you step through
+      first** (2026-09-15): the studio now opens onto The Foyer, built
+      like a game launcher: the project on the table (the real current
+      world from `/api/world`, with act, phases, and an "enter the
+      house" door into the Desk), the pantry (every real pack from
+      `/api/builder/worlds`, honestly marked "in the pantry — ask the
+      keeper to set VEFR_WORLD" since the engine is bound to one world
+      per running house; no fake switching), what the house remembers
+      (kept lately from the real vault, starred lately from the real
+      journal, spoken lately from the folio threads and watch
+      whispers), and quick options at the mantel that mirror the
+      boiler room's contracts (hearth sound and motion via
+      `VEFR_PREFS`, walk again + sheet via the first walk, boiler room
+      door). Every panel fetches real endpoints with honest
+      loading/empty states; nothing is invented. The Foyer is the
+      first placard and the default landing route (a `#screen` hash
+      still wins).
+- [x] **The walk walks you — after each step, onwards to the next
+      room** (2026-09-15): the housewarming used to stall at the
+      first popup because the folio (bell and faces open it) covered
+      the shelf and nothing guided you onward. Now each walk step
+      knows its room; when a step truly completes, Ratatoskr tugs
+      your sleeve and walks you to the next step's room — the folio
+      steps wait until you close the folio, then set off, the rest
+      move after a short beat, always with a ferry note. The shelf
+      (and any room, including the Foyer) also shows a "walk me to
+      {Room} →" button for the current step, hidden when you're
+      already there. The step still only completes when the real
+      action fires — the walk guides, never invents progress.
+- [x] **The workshop becomes rooms: full scene frame, the
+      household, and the keepsake Hall** (2026-09-15): the UI's
+      chrome is gone - the shell is now a room scene with a hanging
+      sign, a low shelf of ≥44px carved placards, a candle lantern
+      for connection (lit when the storyteller is reachable, cold
+      with a plain sentence when not), a world-phase candlelight
+      tint, and the mood-note whisper. Nine screens: the seven rooms
+      plus The Hall (real `/api/starred` + vault + journal stars) and
+      plain Settings. The household lives here - one engine, many
+      faces: The Storyteller (Desk), The Cartographer (Map),
+      The Keeper of Faces (Folks), The Hoard-Keeper (Vault),
+      Urðr (Chronicle), The Rune-Carver (Casting), Skuld (Archives),
+      Ratatoskr (Hall). Every room has a "tended by" line and a
+      speaking folio wired to `/api/builder/chat` with per-resident
+      role templates (history owned by the page, `{message, history}
+      → {reply}`), plus the Storyteller bell on the Desk. Squirrel
+      ferry language for loading; motion off by default; all
+      interactive targets back to ≥44px (the 40px/32px regressions
+      are fixed). Engine stays story-agnostic; interiors carried
+      forward from the warm pass. Reference provenance in
+      `design/UI-REFERENCES.md` (RPGUI zlib, A Dark Room MPL-2.0,
+      Twine/SugarCube per-theme, gameuidatabase.com taste).
+- [x] **Rooms become benches: warmth, real builders, and rooms that
+      use the screen** (2026-09-15): a second pass on the room scene -
+      hearth glow, candle flicker (dead under `motion=off`), warmer
+      wood, parchment folio, wax-seal mark, per-room ambience lines,
+      and Ratatoskr's ferry note when the squirrel acts. The Map Room
+      becomes a survey bench: per-region survey readouts (dimensions +
+      ground census read off the real map), every mark a ≥44px door
+      into the folio ("what is 'g' in town?"), a "deepen a landmark"
+      tool wired to `/api/builder/enhance/map`, and a real pack-check
+      (`/api/builder/validate`). The Vault becomes a forge bench:
+      "ask the forge" (real model roll), shape the draft by hand on
+      the anvil, keep it into the vault (`POST /api/vault`, new
+      `VEFR_API.vaultKeep`), or deepen a kept thing
+      (`/api/builder/enhance/item`); model-less failure is honest
+      ("the forge is cold"), not a red error. Settings is no longer
+      a plain hall: the boiler room has its own smith, Völundr, with
+      the same folio chat as every room and role templates tuned to
+      the studio itself (which reading mode, walking the motion
+      setting, setting the room up for an easier day). Layout fixes: rooms span
+      the full screen with centered readable columns (Chronicle,
+      Archives, Hall, Map, Vault, Casting, Folks); Settings becomes a
+      responsive grid (was a scrunched 580px column); deep Archives
+      levels are readable (10-11px mono → 12-12.5px) with the raw
+      truth contained; loading/empty states center everywhere (the
+      Chronicle squirrel no longer veers left). Settings now drives
+      `window.VEFR_PREFS.set(...)` - prefs.js is the one canonical
+      owner of `data-prefs` tokens, so the motion-off a11y floor
+      actually works in the workshop (the old `data-motion` attribute
+      the foundation ignored is gone).
+- [x] **The Map Room gains the drawing table - a map maker with no
+      markdown** (2026-09-15): a storyteller doesn't need to know
+      glyphs to make a map. The table reads the pack's real legend
+      into labeled ink pots ("solid", "open ground", "marked",
+      "sanctuary" - derived from the pack's own solid/deco/
+      sanctuary_tiles data, never invented), a paintable 44px-cell
+      grid with a proper roving-keyboard grid surface (arrows move,
+      Enter inks), a live ink-line census, and three honest actions:
+      "reset the ink" restores the pack's ground; "sketch new land"
+      calls the new `/api/builder/map/propose` route (the same
+      model-drafted, `maplab.validate`-gated run-length pipeline as
+      the `norns chat` interview - proposal only, never writes to
+      the pack, honest message without a model); "keep this sketch"
+      posts the sketch as a real vault keepsake item (kind
+      "sketch"). Drafts persist per world+region in localStorage so
+      the table remembers your ink between visits, and "ask the
+      Cartographer about it" prefills the folio. Two new tests
+      (`tests/test_map_propose.py`) assert the route returns a
+      validated grid and never mutates the pack, plus the honest
+      no-model path. New public route `POST /api/builder/map/propose`
+      (engine surface, flagged per Ask-first).
+- [x] **The Housewarming — a first walk, taught by doing, and a
+      broadsheet that stays** (2026-09-15): the first time the
+      studio opens with no walk on record, Ratatoskr pins a short
+      note under the sign. Five steps, one real action each, in five
+      rooms: ring the bell, press the ground once, press a leaf,
+      open a face, look out the window. Each step completes only
+      when the real button truly fires (the same event hooks as the
+      keeps and squeaks) — nothing is invented, no fake progress.
+      Progress persists in `vefr.walk`; skipping is one press;
+      "walk the house again" and "open the sheet" sit under
+      Settings so both stay callable any time after setup. The
+      tucked-in extra is a broadsheet — "How to read this house" —
+      one line per room plus the three rules of the house, as a
+      real dialog (focus-in, Escape closes, focus returns). The
+      walk is model-agnostic on purpose: it works whether or not a
+      brain is attached (the bell answers however the lantern
+      honestly does). A11y held: real list/dialog semantics,
+      ≥44px targets, aria-live step announcements, zero motion,
+      plain English only. Verified 412 passed, 2 skipped.
+- [x] **The household keeps, invites, listens, and sounds only when
+      asked** (2026-09-15): the studio's ten wants, all landed.
+      Keepsakes sit in the rooms: sketches kept from the table are
+      pinned under it, every vault object shows its kind, the Folks
+      grow by hand. "Invite a new face" (new public route
+      `POST /api/builder/face/roll`, flagged per Ask-first): the
+      model drafts name/role/seed through a schema-constrained
+      pipeline, the engine places them with the interview's own
+      deterministic rule (`_pick_tile` - reachable, unclaimed, dry),
+      and keeping the editable card vaults a real `kind: "face"`
+      item - the household grows, never invented. "Check the ground"
+      (new public route `POST /api/builder/map/check`, deterministic
+      - flagged): the draft grid is run through the real
+      `maplab.validate` gate, surfaced honestly. The drawing table
+      gains a fill (flood of one mark), an undo (40-step), and
+      drag-to-paint. The studio listens: while visible it reads
+      `/api/trace` every 10s and the Hall's fire keeps watch over
+      true engine events as quiet whispers (each paired with a squeak
+      when sound is on). Sound, off by default, lives in the prefs
+      contract (`sound.effects/ambience/speech`, deep-merged by
+      prefs.js) with one Settings row; every sound pairs with a
+      visible event. The folio remembers per resident (localStorage)
+      with a "forget this talk" control, and every reply can become
+      a keepsake in one click ("keep this note" → vault
+      `kind: "note"`) - the reply now renders live too. The Folks
+      are living cards reading real `at/near/seeds` + wiki lines,
+      each a door into the folio. The town sits behind glass in the
+      Hall: a framed window rendering the real pack map at its real
+      phase, hero lit gold, speakers lit teal, sanctuary rimmed.
+      Five new tests (`tests/test_map_check.py`,
+      `tests/test_face_roll.py`) cover the deterministic gate and
+      the face pipeline incl. the honest no-model path; verified
+      412 passed, 2 skipped. Full a11y contract held: ≥44px targets,
+      luminance focus, motion off by default, plain English, sound
+      paired + off.
 - [x] **Container/registry: GHCR publication, .containerignore,
       compose split** (2026-09-13): VEFR images now publish to
       `ghcr.io/rylee-bee/vefr` automatically from `main` after CI
@@ -972,6 +1192,10 @@
       review.)
 
 ## Next
+- (2026-09-16) `feat/dev-board` (123-commit orphan branch, dev-board UI
+      chrome: repo header, file-tree, 4-col grid, drag-rank, right-rail
+      stub) is **preserved on origin, unmerged** — assessment pending,
+      do not discard without a bundle backup.
 - [ ] **interactive chat helper**: inline conversational assistant in
       the builder UI answering world-building questions and adjusting pack data.
       Acceptance: persistent 6-turn chat in Builder tab successfully calls
