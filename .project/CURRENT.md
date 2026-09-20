@@ -7,8 +7,8 @@
 ## Phase
 
 Fleet-capability season. The Storyteller capability WIP **landed**
-on `feat/fleet-storyteller` (lore `e74626c`, interface translator
-`bdfb421`+`045f289`, fleet storyteller `e434249`, Foyer UI `fae6ca3`
+on `feat/fleet-storyteller` (lore `f0d6612`, interface translator
+`175d771`+`772677b`, fleet storyteller `ab1695c`, Foyer UI `e1973ac`
 — see ROADMAP.md 2026-09-13/15 entries). Branch is committed to
 origin as of 2026-09-16. The working tree is dirty with an
 in-flight fleet benchmark experiment; see AGENTS.md
@@ -19,7 +19,7 @@ in-flight fleet benchmark experiment; see AGENTS.md
 | Item | Path / scope | Source of truth |
 |---|---|---|
 | Fleet benchmark experiment (dirty tree) | `.project/` reports, `bench/` reports/runs, `experiments/`, `web/shell*`, `design/owner/`, `src/vefr/chat.py`, `.project/DECISIONS.md` | AGENTS.md "Working-tree state" |
-| Play-Nice adoption pin | `21b6841a50a1b0d459a760861385e99679852430` | `.project/contracts/adoption.yaml` |
+| Play-Nice adoption pin | `0cee0652fb6f13c440b1fd9cc5d78fd87cdca8ad` | `.project/contracts/adoption.yaml` |
 | Sample world pack (Emberfield) | `worlds/sample-world/` | `worlds/sample-world/` |
 | Three lore packs | `worlds/lore/{norse,historical-event,norse-runes}/` | each pack's `LICENSE.md` |
 

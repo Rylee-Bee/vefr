@@ -103,7 +103,7 @@ These are decisions that already cost time once:
 ## In-flight work (do not sweep into other commits)
 
 The **Storyteller capability WIP landed** in the fleet episodes of
-2026-09-13/14 (`e74626c`..`fae6ca3` on `feat/fleet-storyteller`) —
+2026-09-13/14 (`f0d6612`..`e1973ac` on `feat/fleet-storyteller`) —
 `src/vefr/narrate.py`, `src/vefr/interface.py`,
 `src/vefr/lore_shell.py`, `bench/{storyteller,interface}/`, and their
 tests are tracked, not protected.

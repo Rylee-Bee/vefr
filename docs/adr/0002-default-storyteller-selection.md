@@ -1,7 +1,7 @@
 # Small Model Decision — VEFR Storyteller
 
 Date: 2026-09-13
-Benchmark commit: ec40163
+Benchmark commit: 78e3fb0
 Continuity check commit: (pending)
 
 ## Decision

@@ -15,7 +15,7 @@ remain. One leaked container cleaned.
 
 | Repo | Branch | HEAD | Upstream (origin/main) | State |
 |---|---|---|---|---|
-| `/var/home/rylee/vefr` | main | `6bbfdca4892c` | `e23456d…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
+| `/var/home/rylee/vefr` | main | `c7a15617baee` | `294ebce…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
 | `/var/home/rylee/projects/homelab` | main | `898634c965ba` | `898634c` | clean, in sync |
 | `/var/home/rylee/munr` | main | `f8bf58e…` | — | dirty; unrelated personal project |
 
