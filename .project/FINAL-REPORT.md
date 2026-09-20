@@ -2,7 +2,7 @@
 
 **Date**: 2026-09-12
 **Benchmark Version**: v3 (repeatability + Hermod-style testing)
-**VEFR SHA**: d7ce9a4
+**VEFR SHA**: f5469c3
 **Runtime**: llama.cpp server (build 10671, commit 35999d101)
 **Hardware**: Bazzite Linux, x86_64, CPU-only
 
