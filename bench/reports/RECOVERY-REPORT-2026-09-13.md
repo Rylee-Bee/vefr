@@ -15,8 +15,8 @@ remain. One leaked container cleaned.
 
 | Repo | Branch | HEAD | Upstream (origin/main) | State |
 |---|---|---|---|---|
-| `/var/home/rylee/vefr` | main | `c7a15617baee` | `294ebce…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
-| `/var/home/rylee/projects/homelab` | main | `898634c965ba` | `898634c` | clean, in sync |
+| `/var/home/rylee/vefr` | main | `c7a1561` | `294ebce…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
+| `/var/home/rylee/projects/homelab` | main | `53169d2` | `53169d2` | clean, in sync |
 | `/var/home/rylee/munr` | main | `f8bf58e…` | — | dirty; unrelated personal project |
 
 - The active harness `vefr/bench/` (Small Model Olympics) is **untracked WIP**.
