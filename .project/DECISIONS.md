@@ -57,7 +57,7 @@ CPU/GPU numbers for the same participant.
 
 ## 2026-09-12 — adopt Play-Nice as canonical behavioral authority; preserve engine kernels
 
-**Decision.** Pin `play-nice-contracts @ 21b6841a50a1b0d459a760861385e99679852430`
+**Decision.** Pin `play-nice-contracts @ 0cee0652fb6f13c440b1fd9cc5d78fd87cdca8ad`
 as the canonical behavioral constitution for this project. AGENTS.md and
 AGENT_POLICY.md remain as the local engine-specific kernels — they
 describe VEFR's architecture, world-pack shape, and how to work in this
@@ -70,7 +70,7 @@ Play-Nice. Its architectural rules (pack loader contract, brain-socket
 seam, world-vs-engine split) stay local. The adoption makes the upstream
 pointer explicit without rewriting the local kernels.
 
-**Evidence.** Library SHA `21b6841`. `contractctl adopt` reports VALID.
+**Evidence.** Library SHA `0cee065`. `contractctl adopt` reports VALID.
 The existing AGENTS.md/AGENT_POLICY.md already reference "canonical
 contract/index documentation" without naming one; this adoption names
 Play-Nice.

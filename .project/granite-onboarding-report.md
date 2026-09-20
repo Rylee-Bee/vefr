@@ -1,8 +1,8 @@
 # Final Report: Granite Onboarding + Play-Nice Harness Evidence
 
 **Date**: 2026-09-12
-**VEFR SHA**: d7ce9a4 (main)
-**Play-Nice SHA**: 88effb1 → 1c4efa4 (3 commits ahead)
+**VEFR SHA**: f5469c3 (main)
+**Play-Nice SHA**: 1c05de4 → 60b1bf8 (3 commits ahead)
 **Play-Nice VERSION**: 0.6.0 (unchanged)
 **Contracts**: 65 (unchanged)
 
@@ -11,13 +11,13 @@
 ## Canonical State
 
 ### VEFR
-- Starting SHA: d7ce9a4
-- Final SHA: 6bbfdca (committed)
+- Starting SHA: f5469c3
+- Final SHA: c7a1561 (committed)
 - Status: `.project/` untracked, experiments/ untracked
 
 ### Play-Nice Contracts
-- Starting SHA: 88effb1
-- Final SHA: 1c4efa4
+- Starting SHA: 1c05de4
+- Final SHA: 60b1bf8
 - Commits: 3 ahead of origin
 - VERSION: 0.6.0 (unchanged)
 - Lockfile: unchanged
@@ -262,6 +262,6 @@ Also: fix the character pack generation harness (`generate_corpus.py`) and run t
 
 | Repo | SHA | Status |
 |------|-----|--------|
-| vefr | 6bbfdca | .project/ + experiments/ untracked |
+| vefr | c7a1561 | .project/ + experiments/ untracked |
 | rylee_lore | b03cc9c | clean |
-| play-nice-contracts | 1c4efa4 | 3 ahead of origin, unpushed |
+| play-nice-contracts | 60b1bf8 | 3 ahead of origin, unpushed |

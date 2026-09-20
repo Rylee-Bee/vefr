@@ -8,7 +8,7 @@
 
 ## Canonical State
 
-- VEFR SHA: d7ce9a4 (HEAD -> main)
+- VEFR SHA: f5469c3 (HEAD -> main)
 - Hardware: Bazzite Linux, x86_64, CPU-only
 - Runtime: llama.cpp server (build 10671, commit 35999d101)
 - Context: 8192 tokens | Threads: 8 | GPU layers: 0 | Jinja: enabled

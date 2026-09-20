@@ -15,8 +15,8 @@ Status: FINALS READY — AWAITING LAUNCH
 
 ## Commit SHAs
 
-- Task bank curation: `41e027d`
-- Finals infrastructure: `62656cb`
+- Task bank curation: `5f4b918`
+- Finals infrastructure: `c8bd6c6`
 
 ## Models/Artifacts Detected
 

@@ -8,7 +8,7 @@
 ## Landed
 
 - [x] **Fleet Storyteller role + benchmark** (2026-09-14,
-      `e434249`): the fleet storyteller capability — an anti-agentic
+      `ab1695c`): the fleet storyteller capability — an anti-agentic
       narrator. `src/vefr/narrate.py` receives an authoritative
       action result plus bounded context and returns prose only (no
       tools, no mutation, no canon invention); fail-closed
@@ -25,7 +25,7 @@
       continuity, 11.4 tok/s (retained as storyteller head);
       `ministral-3-3b-q4` equivalent at 11.3 tok/s.
 - [x] **Interface Translator + benchmark** (2026-09-13/14,
-      `bdfb421` + `045f289`): `src/vefr/interface.py` — a tiny
+      `175d771` + `772677b`): `src/vefr/interface.py` — a tiny
       strict-intent brain mapping natural language to the engine's
       canonical action vocabulary (attack, console, hurl, strike,
       observe, speak, move) via strict json_schema + pydantic
@@ -37,7 +37,7 @@
       false-positives; `qwen3.5-9b-mtp` wins (100% schema-valid,
       strongest safe-rate) as the reference head.
 - [x] **Lorekeeper slice: `vefr-lore` add/ask** (2026-09-13,
-      `e74626c`): `src/vefr/lore_shell.py` — structured durable
+      `f0d6612`): `src/vefr/lore_shell.py` — structured durable
       truth (`facts.jsonl` authoritative, `index/` derived),
       bge-m3 embed client via `VEFR_EMBED_URL`, pure-Python cosine
       retrieval, fail-soft on embed outage. No generative path.
@@ -278,7 +278,7 @@
       resolution. Secret scanning + push protection + Dependabot
       alerts + Dependabot security updates enabled on the public
       repo. CodeQL default-setup enabled across actions / js / py.
-      PR #2 merged at `eba9980`. Repo flipped to public. Final gates:
+      PR #2 merged at `37ef35e`. Repo flipped to public. Final gates:
       `uv run --group test ruff check src tests scripts` all checks
       passed; `python3 scripts/check_public_surface.py` clean (1345
       tracked files scanned); `uv run --group test pytest
@@ -358,7 +358,7 @@
       `src/vefr/cli.py`, which is part of the protected Storyteller
       WIP; the Storyteller team should land them alongside their
       work. Play-Nice adoption pin remained
-      `21b6841a50a1b0d459a760861385e99679852430` (no contract
+      `0cee0652fb6f13c440b1fd9cc5d78fd87cdca8ad` (no contract
       semantics changed in the new Play-Nice revision; only
       documentation did). Storyteller WIP (5 modified + 20 untracked
       files) untouched; nothing in the protected set was staged.

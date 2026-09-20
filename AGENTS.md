@@ -22,7 +22,7 @@ kilo config - do not add personal files to this repo.
 The **Storyteller capability WIP described here previously landed**:
 the fleet storyteller role, interface translator, lorekeeper, and
 their benchmarks are now tracked on `feat/fleet-storyteller`
-(commits `e74626c`..`fae6ca3`; see ROADMAP.md's 2026-09-13/14
+(commits `f0d6612`..`e1973ac`; see ROADMAP.md's 2026-09-13/14
 entries). The old 5-modified + 20-untracked protected list is
 retired — the files either landed, or were superseded by
 `src/vefr/narrate.py` and `bench/storyteller/`.

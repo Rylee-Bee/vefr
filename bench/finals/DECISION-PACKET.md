@@ -3,7 +3,7 @@
 Run date: 2026-09-13
 Backend: CPU-only, AMD Ryzen 7 7800X3D, llama.cpp podman container, OLY_NGPU=0
 Quantization: Q4_K_M for all models
-Suite commit: 63ea2de
+Suite commit: a9a562f
 
 ---
 
