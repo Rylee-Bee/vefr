@@ -79,6 +79,14 @@ to talk to whoever's near. Whichever world pack is present under
 (see below), you'll see that; otherwise this is Emberfield, the
 demonstration world.
 
+**What you'll see:**
+
+![The Foyer — the landing page](docs/screenshots/workshop-landing.png)
+*The Foyer — your entry point. The project on the table, the pantry, and the first-walk rail.*
+
+![The Desk — where worlds begin](docs/screenshots/workshop-desk.png)
+*The Desk — the creation workspace. Your world's map, gold rule, and the "Ring for the Storyteller" button.*
+
 > The engine boots fine with no model at all - the town walks, the
 > journal keeps, the vault stores. The model-backed beats (Whisper,
 > Forge, the Bell, NPC talk) answer with the model when it is
