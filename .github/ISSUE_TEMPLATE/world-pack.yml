@@ -1,0 +1,56 @@
+name: World Pack
+description: A question, bug, or idea about building or using a world pack.
+labels: ["world-pack", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        World packs are the stories that live inside vefr. This
+        template is for questions about building, validating, or
+        sharing a pack — not for engine bugs (use "Bug report" for those).
+  - type: dropdown
+    id: pack-type
+    attributes:
+      label: What kind of pack?
+      options:
+        - New pack (building from scratch)
+        - Existing pack (editing or extending)
+        - Validation issue (norns validate fails)
+        - Export issue (ratatoskr weave problem)
+        - General question about the pack contract
+    validations:
+      required: true
+  - type: textarea
+    id: pack-name
+    attributes:
+      label: Pack name
+      placeholder: "e.g. my-world, burrito-journalism"
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      placeholder: |
+        What you tried, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation output (if applicable)
+      description: Paste the output of `norns validate --pack worlds/<name>`
+      placeholder: |
+        $ uv run norns validate --pack worlds/my-world
+        ...
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: |
+        Links to your pack repo, screenshots, or related issues.
+    validations:
+      required: false

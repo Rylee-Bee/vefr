@@ -1,0 +1,65 @@
+name: screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/packaged.html'
+      - 'web/screens/**'
+      - 'web/shell.*'
+      - 'src/vefr/weave.py'
+      - 'worlds/sample-world/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    name: capture workshop + export screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync deps
+        run: uv sync --group test
+
+      - name: Install Playwright chromium
+        run: uv run playwright install chromium --with-deps
+
+      - name: Start engine (sample-world, no model)
+        run: |
+          uv run uvicorn vefr.main:app --app-dir src --port 8820 &
+          sleep 3
+          curl -sf http://127.0.0.1:8820/api/health || exit 1
+        env:
+          VEFR_WORLD: sample-world
+
+      - name: Generate woven HTML
+        run: uv run ratatoskr weave --pack worlds/sample-world
+
+      - name: Capture screenshots
+        run: uv run python scripts/capture-screenshots.py
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: docs/screenshots/*.png
+          retention-days: 30
+
+      - name: Commit screenshots (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/
+          git diff --cached --quiet || git commit -m "docs: update screenshots [skip ci]"
+          git push

@@ -1,5 +1,9 @@
 # vefr
 
+[![Play-Nice](https://img.shields.io/badge/Play--Nice-Contract-activated-green)](https://github.com/Rylee-Bee/play-nice-contracts)
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml/badge.svg)](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml)
+
 > The three Norns weave fate at the well beneath the world tree -
 > not one fixed fate, whichever one is given them.
 >
@@ -16,6 +20,14 @@ their own flesh.
 It is an honesty contract rendered as a game: the world's claims
 live in the pack, the engine's rules are tested, and every name
 spoken must be true.
+
+![The Foyer — warm parchment, first-walk rail, room navigation](docs/screenshots/workshop-landing.png)
+
+![The Desk — ASCII map, gold rule, "Ring for the Storyteller"](docs/screenshots/workshop-desk.png)
+
+![Title card — world name, tagline, enter button](docs/screenshots/export-title-card.png)
+
+![Play surface — config box, world header, ready to play](docs/screenshots/export-play-surface.png)
 
 ## First 60 seconds
 
