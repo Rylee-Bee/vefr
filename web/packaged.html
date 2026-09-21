@@ -125,10 +125,57 @@
     border: 1px solid var(--card-edge); border-radius: 6px; min-height: 44px;
   }
   #config .hint { color: var(--ink-dim); font-size: 0.82rem; margin: 0.4rem 0 0; }
+  /* ---- title screen ---- */
+  #title-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg);
+    opacity: 1; transition: opacity 0.6s ease;
+  }
+  #title-screen[aria-hidden="true"] {
+    pointer-events: none; opacity: 0;
+  }
+  #title-screen h1 {
+    margin: 0; font-size: 2.4rem; font-weight: 700;
+    letter-spacing: 0.06em;
+    font-family: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    color: var(--ink);
+    animation: title-fade-in 0.8s ease both;
+  }
+  #title-screen .title-tagline {
+    margin: 0.6rem 0 2.4rem;
+    font-size: 1rem; color: var(--ink-dim);
+    letter-spacing: 0.03em;
+    font-family: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    animation: title-fade-in 0.8s ease 0.3s both;
+  }
+  #title-screen button {
+    font: inherit; font-size: 1rem; padding: 0.7rem 2rem;
+    min-height: 48px; min-width: 88px;
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--card-edge); border-radius: 6px;
+    cursor: pointer; letter-spacing: 0.06em;
+    text-transform: lowercase;
+    animation: title-fade-in 0.8s ease 0.5s both;
+  }
+  #title-screen button:hover,
+  #title-screen button:focus-visible {
+    border-color: var(--accent); outline: none;
+  }
+  @keyframes title-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<div id="title-screen" role="banner" aria-label="Title screen">
+  <h1 id="ts-title">{{title}}</h1>
+  <p class="title-tagline">{{tagline}}</p>
+  <button type="button" id="ts-enter" autofocus>enter</button>
+</div>
 <header>
   <h1>{{title}}</h1>
   <p class="tagline">{{tagline}}</p>
@@ -230,25 +277,19 @@ var llmModel = config.llmModel || '';
 // ---- first-run setup vs play ----
 var play = document.getElementById('play');
 var configBox = document.getElementById('config');
-if (llmUrl && llmModel) {
+// Title screen shows first; config/play revealed after "enter" click.
+// Wire up the config-save handler now so it's ready when needed.
+document.getElementById('cfg-save').addEventListener('click', function () {
+  llmUrl = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  llmModel = document.getElementById('cfg-model').value.trim();
+  if (!llmUrl || !llmModel) {
+    alert('both URL and model are required.');
+    return;
+  }
+  saveConfig({ llmUrl: llmUrl, llmModel: llmModel });
   configBox.hidden = true; play.hidden = false;
   bootstrap();
-} else {
-  configBox.hidden = false; play.hidden = true;
-  document.getElementById('cfg-url').value = llmUrl;
-  document.getElementById('cfg-model').value = llmModel;
-  document.getElementById('cfg-save').addEventListener('click', function () {
-    llmUrl = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
-    llmModel = document.getElementById('cfg-model').value.trim();
-    if (!llmUrl || !llmModel) {
-      alert('both URL and model are required.');
-      return;
-    }
-    saveConfig({ llmUrl: llmUrl, llmModel: llmModel });
-    configBox.hidden = true; play.hidden = false;
-    bootstrap();
-  });
-}
+});
 
 function bootstrap() {
   STATE.set({ world: window.VEFR_WORLD, phase: Object.keys(window.VEFR_WORLD.phases)[0] });
@@ -756,6 +797,27 @@ function setupTown() {
   });
   draw();
 }
+// ---- title screen ----
+var titleScreen = document.getElementById('title-screen');
+var tsEnter = document.getElementById('ts-enter');
+tsEnter.addEventListener('click', function () {
+  titleScreen.setAttribute('aria-hidden', 'true');
+  // After fade completes, remove from flow and show the game
+  setTimeout(function () {
+    titleScreen.style.display = 'none';
+    // Now reveal config or play surface
+    if (llmUrl && llmModel) {
+      configBox.hidden = true; play.hidden = false;
+      bootstrap();
+    } else {
+      configBox.hidden = false; play.hidden = true;
+      document.getElementById('cfg-url').value = llmUrl;
+      document.getElementById('cfg-model').value = llmModel;
+    }
+  }, 600);
+});
+// Focus the enter button after paint
+requestAnimationFrame(function () { tsEnter.focus(); });
 </script>
 </body>
 </html>
