@@ -201,7 +201,7 @@ def _canonical_quadlet() -> str:
     """
     return """\
 [Unit]
-Description=vefr - the loom-web the Norns weave fate on; worlds bind-mounted so star/import edits persist across container rebuilds
+Description=vefr - the loom-web the Norns weave fate on; bundled brain ships with llama.cpp + model fleet
 
 [Container]
 Image=localhost/vefr:latest
@@ -209,17 +209,25 @@ ContainerName=vefr
 Network=host
 Environment=VEFR_HOME=/app
 Environment=VEFR_WORLD=sample-world
-Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8081
-Environment=VEFR_MODEL=gpt-oss-20b
+# Bundled brain — primary storyteller on :8084 (Qwen3-1.7B)
+Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8084
+Environment=VEFR_MODEL=qwen3-1.7b
 Environment=VEFR_KEEP_ALIVE=1m
+# Bundled brain — fleet roles
+Environment=VEFR_SPARK_URL=http://127.0.0.1:8083
+Environment=VEFR_VISION_URL=http://127.0.0.1:8085
+Environment=VEFR_EMBED_URL=http://127.0.0.1:8086
+# Persistence
 Environment=VEFR_VAULT=/app/data/vault.json
 Environment=VEFR_JOURNAL=/app/data/journal.json
+# Volumes
 Volume=vefr-template:/app/worlds-template:ro
 Volume=vefr-worlds:/app/worlds
 Volume=%h/vefr-data:/app/data:Z
 
 [Service]
 Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=default.target
