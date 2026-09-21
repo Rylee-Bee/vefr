@@ -9,6 +9,7 @@ on:
       - 'web/shell.*'
       - 'src/vefr/weave.py'
       - 'worlds/sample-world/**'
+      - 'scripts/capture-screenshots.py'
   workflow_dispatch:
 
 permissions:
@@ -49,7 +50,7 @@ jobs:
       - name: Capture screenshots
         run: uv run python scripts/capture-screenshots.py
 
-      - name: Upload screenshots
+      - name: Upload screenshots as artifact
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
@@ -61,5 +62,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/screenshots/
-          git diff --cached --quiet || git commit -m "docs: update screenshots [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+          else
+            git commit -m "docs: update screenshots [skip ci]"
+            git push
+          fi
