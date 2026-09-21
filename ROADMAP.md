@@ -7,6 +7,12 @@
 
 ## Landed
 
+- [x] **Sample-world CC0 art swap** (2026-09-21): replaced the bundled
+      non-redistributable tileset (1,131 PNGs) in `worlds/sample-world/assets/`
+      with Kenney CC0 tiles under `assets/kenney/`; corrected `LICENSE` and
+      `THIRD_PARTY_NOTICES.md`, which had mislabeled that art as CC0. The demo
+      town renders its map in code, so gameplay is unaffected (`norns validate`
+      green; `ruff` clean).
 - [x] **Fleet Storyteller role + benchmark** (2026-09-14,
       `ab1695c`): the fleet storyteller capability — an anti-agentic
       narrator. `src/vefr/narrate.py` receives an authoritative
