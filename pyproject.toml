@@ -36,5 +36,13 @@ vefr-lore = "vefr.lore_shell:main"
 vefr-interface = "vefr.interface:main"
 vefr-story = "vefr.narrate:main"
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Starlette's TestClient re-exports httpx; httpx2 is the official
+    # replacement but fastapi hasn't migrated yet.  Cosmetic only —
+    # no functional impact.  Silenced to keep the warning budget at zero.
+    "ignore:.*httpx.*starlette.*:UserWarning",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/vefr"]
