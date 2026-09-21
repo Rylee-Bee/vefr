@@ -6,42 +6,48 @@
 
 ## Phase
 
-Fleet-capability season. The Storyteller capability WIP **landed**
-on `feat/fleet-storyteller` (lore `f0d6612`, interface translator
-`175d771`+`772677b`, fleet storyteller `ab1695c`, Foyer UI `e1973ac`
-— see ROADMAP.md 2026-09-13/15 entries). Branch is committed to
-origin as of 2026-09-16. The working tree is dirty with an
-in-flight fleet benchmark experiment; see AGENTS.md
-"Working-tree state".
+**Engine-as-game era.** The fleet capability season landed
+(2026-09-13/16, `feat/fleet-storyteller` merged). The engine is now
+in its next phase: vefr becomes a game-building engine that is itself
+a game. The orchestration plan (`VEFR-ORCHESTRATION-PLAN-2026-09-21.md`)
+has 15 work packages across 5 weeks. WP1 (defect bundle), WP2
+(bundled-brain), WP10 (title card), and WP11 (room acknowledgments)
+have landed on feature branches.
+
+**Key owner decisions (2026-09-21):**
+- DD1: C+A synthesis (the game IS making something real, plus lean-in
+  workshop rooms becoming alive/responsive)
+- DD2: Theme = Workshop (iterate via OpenDesign)
+- DD3: Export = game-quality (title card + ambient CSS on woven HTML)
+- D3′: Brain bundled inside the vefr container (not external)
+- D4′: BJ pack license = CC-BY-4.0
+- D5: Retire munr (archive repo, keep little-fox pack safe)
+- D6: Fixture placement = A (BJ-pack-supplied, content follows ownership)
+- D7: BJ canonical home = `code/Rylee-Bee/burrito-journalism`
+- Model fleet: Qwen3-0.6B + Qwen3-1.7B + SmolVLM2-500M + bge-m3
+  (~2.8GB total, all Apache-2.0 or compatible)
 
 ## Known protected work
 
 | Item | Path / scope | Source of truth |
 |---|---|---|
-| Fleet benchmark experiment (dirty tree) | `.project/` reports, `bench/` reports/runs, `experiments/`, `web/shell*`, `design/owner/`, `src/vefr/chat.py`, `.project/DECISIONS.md` | AGENTS.md "Working-tree state" |
 | Play-Nice adoption pin | `0cee0652fb6f13c440b1fd9cc5d78fd87cdca8ad` | `.project/contracts/adoption.yaml` |
 | Sample world pack (Emberfield) | `worlds/sample-world/` | `worlds/sample-world/` |
 | Three lore packs | `worlds/lore/{norse,historical-event,norse-runes}/` | each pack's `LICENSE.md` |
 
-## Next decision
+## Active branches
 
-Storyteller architecture (how Rosa/taqueria fixtures move between
-engine / pack / harness — see "Deferred" below). Do not begin without
-Rylee's design call.
+| Branch | WP | Commits | Status |
+|---|---|---|---|
+| `feat/hygiene-bundle` | WP1: B1+B3+B4+B6 defects | `b77e668` | landed, needs PR |
+| `feat/bundled-brain` | WP2: container + quadlet + docs | `178aac4` | landed, needs PR |
+| `feat/export-title-card` | WP10: title screen for woven HTML | `12be191` | landed, needs PR |
+| `feat/room-acknowledgment` | WP11: workshop room acks | `4f5cec8` | landed, needs PR |
 
-## Deferred architecture
+## Next decisions
 
-- **Storyteller fixture placement.** The current Storyteller benchmark
-  includes a single anchor scenario (`rosa-after-close`) that carries
-  private-pack flavor (`Rosa`, `Mateo`, the taqueria, the
-  transmitter). The engine's `AGENTS.md` "Never" rule says the engine
-  must not name any specific game. Possible structural directions:
-  A. fixture stays in engine but becomes engine-neutral; B. fixture
-  becomes pack-supplied; C. scenario/tests move into the specific world
-  pack; D. evidence insufficient. **Classification: D** — the
-  Storyteller WIP itself acknowledges the question
-  (`tests/test_npc_action.py:243-250`) but has not settled it. Do not
-  restructure as part of a refinement pass.
+None currently blocked. The fixture placement question (D6) is resolved:
+BJ-pack-supplied. The model fleet is locked.
 
 ## Verification entry points
 
@@ -64,7 +70,8 @@ cat .project/contracts/adoption.yaml | head -10
 
 | Item | Value |
 |---|---|
-| Working tree | dirty (fleet benchmark experiment, see above) |
+| Working tree | clean on `main` |
 | Origin | `https://github.com/Rylee-Bee/vefr.git` |
-| Branch | `main` (fleet-storyteller merged 2026-09-19) |
-| Last commit at write time | see `git log -1` for the current SHA |
+| Branch | `main` |
+| Last commit at write time | `0c91cf0` |
+| Demo server | running on :8825 (Emberfield, ministral3-3b pack, spark K2) |
