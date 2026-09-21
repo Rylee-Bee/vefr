@@ -19,7 +19,11 @@ from pydantic import BaseModel, ValidationError
 #   OLLAMA_URL          ollama's /api/generate endpoint (legacy fallback).
 #                       Empty string "" disables a backend; unset means use
 #                       the default.
-LLAMACPP_URL = os.environ.get("VEFR_LLAMACPP_URL", "http://127.0.0.1:8081").rstrip("/")
+LLAMACPP_URL = (
+    os.environ.get("VEFR_LLAMACPP_URL", "http://127.0.0.1:8081")
+    .rstrip("/")
+    .removesuffix("/v1")  # engine appends /v1/chat/completions itself
+)
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = os.environ.get("VEFR_MODEL", "gpt-oss-20b")
 KEEP_ALIVE = os.environ.get("VEFR_KEEP_ALIVE", "1m")
@@ -35,6 +39,16 @@ def _active_model() -> str:
     from .storyteller import active_model_name
 
     return active_model_name()
+
+
+class GeneratorUnavailable(RuntimeError):
+    """Transport-level failure (endpoint down, timeout, bad wiring).
+    Fail closed: never generate from a guess."""
+
+
+class GeneratorFailed(RuntimeError):
+    """The endpoint answered but the output broke the contract (empty,
+    unreadable). Fail closed: the rumor is discarded."""
 
 
 class RumorCard(BaseModel):
@@ -156,15 +170,33 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
         for k in ("max_tokens", "temperature"):
             if k in payload:
                 body[k] = payload[k]
-        r = httpx.post(
-            f"{LLAMACPP_URL}/v1/chat/completions", json=body, timeout=180
-        )
-        r.raise_for_status()
-        return json.loads(r.text)["choices"][0]["message"]["content"]
+        try:
+            r = httpx.post(
+                f"{LLAMACPP_URL}/v1/chat/completions", json=body, timeout=180
+            )
+            r.raise_for_status()
+            return json.loads(r.text)["choices"][0]["message"]["content"]
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as e:
+            raise GeneratorUnavailable(
+                f"openai-compatible endpoint {LLAMACPP_URL} failed: {e}"
+            ) from e
+        except (KeyError, ValueError) as e:
+            raise GeneratorFailed(
+                f"openai-compatible endpoint {LLAMACPP_URL} returned unreadable output: {e}"
+            ) from e
     # Provider.OLLAMA
-    r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
-    r.raise_for_status()
-    return json.loads(r.text)["response"]
+    try:
+        r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
+        r.raise_for_status()
+        return json.loads(r.text)["response"]
+    except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as e:
+        raise GeneratorUnavailable(
+            f"ollama endpoint {OLLAMA_URL} failed: {e}"
+        ) from e
+    except (KeyError, ValueError) as e:
+        raise GeneratorFailed(
+            f"ollama endpoint {OLLAMA_URL} returned unreadable output: {e}"
+        ) from e
 
 
 def generate_rumor(phase: str = "whispers", theme: str | None = None) -> RumorCard:
