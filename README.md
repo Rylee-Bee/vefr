@@ -4,22 +4,18 @@
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml/badge.svg)](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml)
 
-> The three Norns weave fate at the well beneath the world tree -
-> not one fixed fate, whichever one is given them.
->
-> **It gives the hellos that never happened.**
+> *It gives the hellos that never happened.*
 
-**Bring your own brain. VEFR provides the world.**
+**A story engine you run on your own machine. You bring the story. VEFR brings the world.**
 
-A rumor engine for playable worlds. The engine holds the rules:
-phases, whispers, the forge, the vault, a walkable town under a
-watchful tower. A **world pack** holds the story. The two only
-touch through one contract, so anyone can take the bones and grow
-their own flesh.
+VEFR is a lightweight, self-contained game engine for text-driven
+playable worlds. It runs a walkable town, NPCs, whispers, items, a
+forge, and a bell — all shaped by a **world pack** (a folder of
+markdown and JSON that holds your story). The engine and the story
+are separate: anyone can take the engine and grow their own world.
 
-It is an honesty contract rendered as a game: the world's claims
-live in the pack, the engine's rules are tested, and every name
-spoken must be true.
+No cloud account. No subscription. CPU-only if you want. A small
+local model and a folder of markdown is enough to play.
 
 ![The Foyer — warm parchment, first-walk rail, room navigation](docs/screenshots/workshop-landing.png)
 
@@ -57,38 +53,10 @@ below.
 ## A Play-Nice project
 
 This repository adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts)
-as its shared cooperation and engineering constitution.
-
-Here, Play-Nice governs how humans, agents, providers, and tools
-cooperate **around** the engine: truth and evidence before generating
-content, explicit state, asking instead of guessing, provenance on
-consequential acts, recoverable mistakes, accessibility floors,
-bounded work, and collaborative good faith.
-
-VEFR itself stays authoritative for everything that makes it the
-engine it is: the authoritative world state and its loaders, the
-brain-pack seam ("bring your own brain; VEFR provides the world"),
-action validation through `maplab`, the world-pack shape (data only;
-engine doesn't reach into pack contents), engine architecture and
-the `ratatoskr` and `norns` CLIs, the deterministic/generative
-boundary (deterministic everywhere except explicit generative
-edges), and runtime/performance contracts. Project-specific rules in
-[`AGENTS.md`](AGENTS.md) and [`AGENT_POLICY.md`](AGENT_POLICY.md)
-remain local.
-
-Canonical adoption lives at
-[`.project/contracts/adoption.yaml`](.project/contracts/adoption.yaml);
-canonical current state at [`.project/CURRENT.md`](.project/CURRENT.md);
-durable decisions at [`.project/DECISIONS.md`](.project/DECISIONS.md).
-The pinned adoption revision is the source of truth — do not
-re-pin without an explicit discussion.
-
-Play-Nice's **[Trusted Translation](https://github.com/Rylee-Bee/play-nice-contracts/blob/main/docs/principles/trusted-translation.md)**
-("different languages, different systems, shared understanding,
-earned trust") is the philosophy behind the adoption: VEFR keeps its
-own engine architecture while honoring a shared cooperation language
-with every other participant. The philosophy is non-normative; the
-contracts in the adoption pin are authoritative.
+as its shared cooperation constitution — truth and evidence before
+generating content, explicit state, asking instead of guessing,
+and accessibility floors. See the
+[adoption record](.project/contracts/adoption.yaml) for details.
 
 ## The bones and the flesh
 
@@ -190,17 +158,12 @@ empty until a pack mounts.
 
 ## Design
 
-The engine's identity is *part of the skeleton*, not a flavor toggle.
+The engine never gates the player on HP, attack, or roll results.
+There is no failure state. The bell never rings bad, items can't be
+lost, NPCs always have a line. HP bars are a *costume*.
 
-**The contract is airtight.** The engine never gates the player on
-HP, attack, or roll results. The vefr way — what Emberfield does —
-has no failure state. The bell never rings bad, items can't be
-lost, NPCs always have a line. HP bars are a *costume*. Death is
-not on the table.
-
-**The journey begins.** The engine's story structure is the
-**Hero's Journey** told through the **Elder Futhark** runes — a
-four-act shape anchored to four runes:
+The story structure follows the **Hero's Journey** through four
+phases:
 
 | Phase | Journey stage | Rune |
 |---|---|---|
@@ -209,80 +172,21 @@ four-act shape anchored to four runes:
 | `feared` | the tests, allies, enemies | **Kenaz** (the torch) |
 | `awed` | the revelation / the return | **Sowilo** (the sun) |
 
-Packs can rename their phase keys; the engine maps them by
-position. The runes don't predict either — they're the bones the
-system prompts thread through every generation, so the LLM's
-voice carries the journey shape without the journey being a gate.
+Packs can rename their phase keys; the engine maps them by position.
+The runes thread through every generation prompt so the LLM's voice
+carries the journey shape — but the journey is never a gate.
 
-**The tree is being woven.** The engine is **Yggdrasil**; the
-ratatoskr ferries data between the roots (dev box, deploy host,
-Gitea, NAS) and the crown (the player's play history); the
-norns weave what happens at runtime. The world tree is also a
-literal artifact — `ratatoskr weave` produces a `<name>.tree.md`,
-the world's living document with one section per dev-UI tab.
+**Deterministic vs. generative.** Everything except the rune cast
+is deterministic — the contract, the packs, the lore, the journal,
+the export. The rune cast is the one stochastic surface: same seed
+→ same cast within a minute, but the cast is never replayed across
+sessions. The tree is the memory. The runes are what the memory
+can't capture.
 
-**Only the runes leave room for chaos.** Every other surface is
-deterministic — the engine's contract, the packs, the lore, the
-tree, the journal, the export, the backup. The runes are the one
-stochastic surface; the cast is the one moment where what happens
-is *up to the world*. The player reads what the chips say; the
-chips don't read the player.
-
-The deterministic surfaces are the engine's *commitment to being
-honest*: every claim has a verifiable command, every backup
-restores, every export reads the journal exactly as written. The
-rune cast is the engine's *commitment to being alive*: the cast
-isn't recorded, isn't persisted, isn't replayable across sessions
-(the seed changes every minute). **The tree is the memory. The
-runes are what the memory can't capture.**
-
-Which is to say — the rune cast is *not* a memory system. It is
-the absence of one. The homelab's `memory_journal_log` and the
-vefr engine's `journal.log()` are both *memories*: atomic, dated,
-replayable. The rune cast is **what neither memory captures**.
-It is the unrepeatable surprise that sits inside a fully
-replayable world. **You can replay a session and the lore, the
-tree, the journal, the export are all identical. The cast is
-never the same twice.**
-
-The Hero's Journey *is* the deterministic backbone — the four
-phases anchored to four runes (Fehu, Thurisaz, Kenaz, Sowilo) are
-the journey. The cast is what lives *outside* the journey: the
-two free runes in every cast (what_is, what_asks) are the
-random cards the deterministic structure leaves room for. **The
-journey is the shape. The cast is the surprise inside the shape.**
-
-### Bring your own brain
-
-VEFR is not a game where the model owns the simulation.
-
-> **Bring your own brain. VEFR provides the world.**
-
-The world pack, the loader, the validator, the journal, and the
-export are the authority. A model may interpret the world's facts,
-propose an action, or help an author draft a change - but VEFR owns
-truth, validates mutations, and keeps the memory of what actually
-happened.
-
-That same rule applies on the builder side. The assistant may propose
-changes; VEFR validates them; the author approves what becomes canon.
-
-Provider and brain are also different concepts. A provider answers
-where inference comes from (local, hosted, custom endpoint). A brain
-answers what kind of cognition should operate here. VEFR should keep
-those seams open. See `docs/guides/brain-socket.md`.
-
-The practical direction right now is broad playability: the engine
-should run happily against a small local model on the player's own
-computer, even on CPU. The earlier small-model benchmarking work was
-useful for learning the socket; it is not VEFR's required future, and
-no specific host or hardware class should become canonical.
-
-Same seed -> same cast. The player can replay a minute and find
-the same runes (within that minute). The author can name a moment
-in the logbok ("the morning of Woden's day") and the cast for that
-minute will always match. The surprise is *bounded*, never
-unbound.
+For the full architecture, see
+[brain-socket.md](docs/guides/brain-socket.md) (provider vs. brain),
+[bundled-brain.md](docs/guides/bundled-brain.md) (zero-setup model
+fleet), and the lore packs section below.
 
 ### Lore packs
 
