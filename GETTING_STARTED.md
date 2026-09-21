@@ -73,11 +73,9 @@ VEFR_LLAMACPP_URL=http://127.0.0.1:11434 VEFR_MODEL=qwen3:8b \
 
 Then, in a browser: `http://127.0.0.1:8820`
 
-You should see a walkable town. `WASD`/arrows/pad to move, `E` or tap
-to talk to whoever's near. Whichever world pack is present under
-`worlds/` loads automatically - if you cloned the story separately
-(see below), you'll see that; otherwise this is Emberfield, the
-demonstration world.
+You should see a walkable town. `WASD`/arrows to move, `E` or tap to
+talk. Whichever world pack is under `worlds/` loads automatically —
+Emberfield ships with the engine.
 
 **What you'll see:**
 
@@ -92,12 +90,6 @@ demonstration world.
 > Forge, the Bell, NPC talk) answer with the model when it is
 > reachable; without one they say so ("is the model loaded?") and the
 > world stays playable.
-
-> **Note (2026-08-31):** the author's own story and game live in
-> their own private repo - they never ship inside a clone of this
-> engine repo. This repo ([`Rylee-Bee/vefr`](https://github.com/Rylee-Bee/vefr))
-> is the shareable tooling only; it doesn't know or need to know any
-> specific game's name to run it.
 
 ## 3. Check the engine is sound
 

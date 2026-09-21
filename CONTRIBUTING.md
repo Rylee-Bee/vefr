@@ -1,10 +1,9 @@
 # Contributing to vefr
 
-Thank you for wanting to help build vefr — a rumor engine for playable worlds.
+Thank you for wanting to help build vefr — a story engine for
+playable worlds.
 
-**Play-Nice promise:** Every contribution honors the [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts): truth and evidence before generating content, explicit state, asking instead of guessing, and accessibility floors. If your change touches a player-facing surface, read the accessibility matrix first.
-
-## Quick start (for humans)
+**Quick start:** clone, install, test, run:
 
 ```sh
 git clone https://github.com/Rylee-Bee/vefr.git
@@ -14,6 +13,24 @@ uv run --group test pytest -q       # should pass — count varies; check no new
 uv run uvicorn vefr.main:app --app-dir src --port 8820
 # open http://127.0.0.1:8820
 ```
+
+From here, pick what you want to do:
+
+| Want to... | Read this |
+|---|---|
+| Fix a bug | Reproduce → fix → test gate → PR |
+| Add a feature | `ROADMAP.md` → find the Next item → discuss in an issue first |
+| Build a world | [`GETTING_STARTED.md` §4](GETTING_STARTED.md#4-make-your-own-world) |
+| Change the UI | `web/` — follow the [accessibility matrix](#accessibility-matrix) below |
+| Change the pack contract | `src/vefr/world.py` docstring — **ask first** |
+
+## Play-Nice Contracts
+
+This project adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts)
+as its shared cooperation constitution: truth and evidence before
+generating content, explicit state, asking instead of guessing,
+and accessibility floors. If your change touches a player-facing
+surface, read the accessibility matrix first.
 
 ## Quick start (for agents)
 
@@ -75,12 +92,17 @@ python3 scripts/check_public_surface.py            # no private IPs, hostnames, 
 - **Screen reader:** semantic HTML, ARIA labels, live regions for dynamic content
 - **Reading load:** short, plain English; Norse as flavour, not requirement
 
-## What never goes in
+## Engine neutrality
 
-- Story content from a private pack (worlds under `worlds/` are gitignored unless shipped)
-- Names of any specific game in engine code, prompts, API titles, or docs
-- Runtime state (data/sessions/, vault JSON, journal JSON)
-- Model calls in deterministic surfaces (export.py, weave.py, maplab.py, journal.py)
+The engine must stay story-agnostic — it works with any world pack,
+including ones that don't exist yet. To keep that:
+
+- No story content from private packs in tracked files
+  (worlds under `worlds/` are gitignored unless shipped)
+- No game-specific names in engine code, prompts, or API titles
+- No runtime state (sessions, vault, journal)
+- No model calls in deterministic surfaces
+  (`export.py`, `weave.py`, `maplab.py`, `journal.py`)
 
 ## Commit messages
 
@@ -101,6 +123,12 @@ This project adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice
 
 ## Getting help
 
-- **Issues:** Bug reports and feature requests welcome
-- **Discussions:** For questions about building your own world
-- **Security:** See `SECURITY.md` — never paste secrets in issues
+- **[Issues](https://github.com/Rylee-Bee/vefr/issues):** Bug reports
+  and feature requests welcome
+- **[Discussions](https://github.com/Rylee-Bee/vefr/discussions):**
+  For questions about building your own world
+- **Security:** See [`SECURITY.md`](SECURITY.md) — never paste
+  secrets in issues
+- **Stuck?** Check [`GETTING_STARTED.md`](GETTING_STARTED.md) and
+  the [API docs](http://127.0.0.1:8820/docs) (when the engine is
+  running)
