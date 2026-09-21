@@ -28,4 +28,5 @@ description = "Files that intentionally contain pattern fragments"
 paths = [
   '''.gitleaks-baseline\.json''',
   '''tests/test_public_surface\.py''',
+  '''bench/taskbank/.*''',
 ]
