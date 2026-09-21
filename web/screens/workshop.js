@@ -17,6 +17,8 @@
   var el = null;
   var currentWorld = null;
   var journalEntries = [];
+  var worldLoaded = false;
+  var journalLoaded = false;
 
   /* ── Template ──────────────────────────────────────────── */
 
@@ -54,6 +56,11 @@
       + '    <div class="context__section">'
       + '      <h3 class="context__heading">Recent</h3>'
       + '      <div class="context__timeline" id="ws-ctx-recent"></div>'
+      + '    </div>'
+      + '    <div class="context__section context__section--ack">'
+      + '      <div class="context__ack" id="ws-acknowledgments">'
+      + '        <div class="context__empty">The world is quiet.</div>'
+      + '      </div>'
       + '    </div>'
       + '    <div class="context__section">'
       + '      <button class="context__evidence-link btn btn--ghost" id="ws-evidence">'
@@ -105,10 +112,14 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         currentWorld = data;
+        worldLoaded = true;
         renderWorld();
+        maybeRenderAcknowledgments();
       })
       .catch(function () {
+        worldLoaded = true;
         showStoryEmpty();
+        maybeRenderAcknowledgments();
       });
   }
 
@@ -117,11 +128,15 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         journalEntries = Array.isArray(data) ? data : (data.entries || data.journal || []);
+        journalLoaded = true;
         renderRecent();
+        maybeRenderAcknowledgments();
       })
       .catch(function () {
         journalEntries = [];
+        journalLoaded = true;
         renderRecent();
+        maybeRenderAcknowledgments();
       });
   }
 
@@ -311,6 +326,106 @@
     }).join('');
   }
 
+  /* ── Acknowledgments ─────────────────────────────────────── */
+
+  function maybeRenderAcknowledgments() {
+    if (!worldLoaded || !journalLoaded) return;
+    renderAcknowledgments();
+  }
+
+  function detectAcknowledgments() {
+    var ack = null;
+
+    // Scan journal entries for recent action keywords (latest first)
+    for (var i = journalEntries.length - 1; i >= 0; i--) {
+      var entry = journalEntries[i];
+      var text = (entry.text || entry.content || entry.summary || entry.event || '').toLowerCase();
+      var kind = (entry.kind || entry.type || '').toLowerCase();
+      var combined = text + ' ' + kind;
+
+      if (!ack && (combined.indexOf('kept') !== -1 || combined.indexOf('stored') !== -1
+          || combined.indexOf('vault') !== -1 || combined.indexOf('carry') !== -1
+          || combined.indexOf('carried') !== -1)) {
+        var itemName = extractKeptItem(entry);
+        ack = { type: 'keep', message: 'the house remembers', item: itemName };
+      }
+
+      if (!ack && (combined.indexOf('forge') !== -1 || combined.indexOf('crafted') !== -1
+          || combined.indexOf('created') !== -1)) {
+        ack = { type: 'forge', message: 'you forged something new' };
+      }
+
+      if (!ack && (combined.indexOf('room') !== -1 || combined.indexOf('map') !== -1
+          || combined.indexOf('region') !== -1 || combined.indexOf('built') !== -1)) {
+        var roomCount = countRooms();
+        ack = { type: 'map', message: 'your world has ' + roomCount + (roomCount === 1 ? ' room' : ' rooms') + ' now' };
+      }
+    }
+
+    // If no journal match, but we have world data, show room count
+    if (!ack && currentWorld) {
+      var rooms = countRooms();
+      if (rooms > 0) {
+        ack = { type: 'map', message: 'your world has ' + rooms + (rooms === 1 ? ' room' : ' rooms') + ' now' };
+      }
+    }
+
+    return ack || { type: 'quiet', message: 'the world is quiet' };
+  }
+
+  function extractKeptItem(entry) {
+    // Try to pull an item name from the journal entry
+    var itemName = entry.item || entry.name || entry.target || '';
+    if (!itemName) {
+      // Fall back to truncating the entry text
+      var text = entry.text || entry.content || entry.summary || '';
+      itemName = truncate(text, 40);
+    }
+    return itemName;
+  }
+
+  function countRooms() {
+    if (!currentWorld) return 0;
+    var regions = currentWorld.regions || {};
+    var count = Object.keys(regions).length;
+    if (count > 0) return count;
+    // Fallback: count from acts if regions are nested
+    var acts = currentWorld.acts;
+    if (Array.isArray(acts)) {
+      for (var i = 0; i < acts.length; i++) {
+        var act = acts[i];
+        if (act.regions) count += Object.keys(act.regions).length;
+      }
+    }
+    return count;
+  }
+
+  function renderAcknowledgments() {
+    var container = el.querySelector('#ws-acknowledgments');
+    if (!container) return;
+
+    var ack = detectAcknowledgments();
+    var html = '';
+
+    if (ack.type === 'keep') {
+      html = '<div class="context__ack-msg context__ack-msg--keep">'
+        + escapeHtml(ack.message)
+        + (ack.item ? '<span class="context__ack-detail">' + escapeHtml(ack.item) + '</span>' : '')
+        + '</div>';
+    } else if (ack.type === 'forge') {
+      html = '<div class="context__ack-msg context__ack-msg--forge">'
+        + escapeHtml(ack.message) + '</div>';
+    } else if (ack.type === 'map') {
+      html = '<div class="context__ack-msg context__ack-msg--map">'
+        + escapeHtml(ack.message) + '</div>';
+    } else {
+      html = '<div class="context__ack-msg context__ack-msg--quiet">'
+        + escapeHtml(ack.message) + '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
   function formatTime(t) {
     if (!t) return '';
     try {
@@ -349,4 +464,13 @@
     leave: leave,
     el: function () { return el; }
   });
+
+  /* ── Test surface ─────────────────────────────────────────── */
+  window.VEFR_WORKSHOP = {
+    detectAcknowledgments: detectAcknowledgments,
+    countRooms: countRooms,
+    extractKeptItem: extractKeptItem,
+    _testSetJournal: function (entries) { journalEntries = entries; },
+    _testSetWorld: function (world) { currentWorld = world; }
+  };
 })();
