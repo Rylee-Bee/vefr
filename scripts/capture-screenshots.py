@@ -27,29 +27,31 @@ def screenshot_workshop(page):
         print("  workshop-desk.png")
 
 
-def screenshot_export(page):
+def screenshot_export(page, color_scheme="dark"):
     """Screenshot the exported HTML title card + play surface."""
-    export_path = (
-        Path(__file__).resolve().parents[1] / "dist"
-    )
+    export_path = Path(__file__).resolve().parents[1] / "dist"
     html_files = sorted(export_path.glob("sample-world-*.html"))
     if not html_files:
         print("  skip export — no woven HTML found in dist/")
         return
 
+    suffix = f"-{color_scheme}" if color_scheme != "dark" else ""
     page.goto(f"file://{html_files[-1]}", wait_until="networkidle", timeout=15000)
     page.wait_for_timeout(2000)
-    page.screenshot(path=str(SCREENSHOTS_DIR / "export-title-card.png"), full_page=True)
-    print("  export-title-card.png")
+    page.screenshot(
+        path=str(SCREENSHOTS_DIR / f"export-title-card{suffix}.png"), full_page=True
+    )
+    print(f"  export-title-card{suffix}.png")
 
     enter_btn = page.locator("button:has-text('enter')").first
     if enter_btn.is_visible():
         enter_btn.click()
         page.wait_for_timeout(2000)
         page.screenshot(
-            path=str(SCREENSHOTS_DIR / "export-play-surface.png"), full_page=True
+            path=str(SCREENSHOTS_DIR / f"export-play-surface{suffix}.png"),
+            full_page=True,
         )
-        print("  export-play-surface.png")
+        print(f"  export-play-surface{suffix}.png")
 
 
 def main():
@@ -57,9 +59,20 @@ def main():
     print("capturing screenshots...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
+
+        # Dark mode (default)
         page = browser.new_page(viewport={"width": 1280, "height": 900})
         screenshot_workshop(page)
-        screenshot_export(page)
+        screenshot_export(page, "dark")
+        page.close()
+
+        # Light mode (title card only — shows how export looks in light theme)
+        page_light = browser.new_page(
+            viewport={"width": 1280, "height": 900}, color_scheme="light"
+        )
+        screenshot_export(page_light, "light")
+        page_light.close()
+
         browser.close()
     print(f"done — {len(list(SCREENSHOTS_DIR.glob('*.png')))} files in {SCREENSHOTS_DIR}")
 
