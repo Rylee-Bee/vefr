@@ -212,6 +212,41 @@
   color: var(--teal-light);
 }
 
+/* ── Acknowledgments ─────────────────────────────────────── */
+
+.context__section--ack {
+  border-bottom: none;
+}
+
+.context__ack {
+  padding: 4px 0;
+}
+
+.context__ack-msg {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.context__ack-msg--quiet {
+  color: var(--text-dim);
+}
+
+.context__ack-msg--keep,
+.context__ack-msg--forge,
+.context__ack-msg--map {
+  color: var(--text-secondary);
+}
+
+.context__ack-detail {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-style: normal;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
