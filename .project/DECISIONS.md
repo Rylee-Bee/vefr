@@ -55,6 +55,44 @@ CPU/GPU numbers for the same participant.
 
 ---
 
+## 2026-09-21 — Engine-as-game direction: C+A synthesis, bundled brain, model fleet
+
+**Decision.** The engine's next phase is "game-building engine that is
+itself a game." Fourteen owner decisions shape the direction:
+
+1. **DD1: Design direction = C+A synthesis.** The creation experience
+   IS the game. Workshop rooms (Foyer, Desk, Vault) become alive and
+   responsive to what the builder has done.
+
+2. **DD2: Theme = Workshop.** Already complete. Iterate via OpenDesign.
+
+3. **DD3: Export feel = game-quality.** Woven HTML gets a title card
+   (world name, tagline, "play" button) so it feels like a game
+   within 3 seconds of opening.
+
+4. **D3′: Brain bundled inside the container.** `podman run vefr` =
+   fully playable game, no external LLM setup. CPU-only, least
+   hardware possible.
+
+5. **D4′: BJ pack license = CC-BY-4.0.**
+
+6. **D5: Retire munr.** Archive the predecessor engine repo.
+
+7. **D6: Fixture placement = A (BJ-pack-supplied).** Rosa/Mateo
+   fixtures move into the BJ pack.
+
+8. **D7: BJ canonical home = `code/Rylee-Bee/burrito-journalism`.**
+
+9. **Model fleet locked:** Qwen3-0.6B, Qwen3-1.7B, SmolVLM2-500M,
+   bge-m3. Total: ~2.8GB. All Apache-2.0 or compatible.
+
+**Evidence.** Full inventory, product direction, competitive landscape,
+model verification, live demo on :8825.
+
+**Status.** ACCEPTED.
+
+---
+
 ## 2026-09-12 — adopt Play-Nice as canonical behavioral authority; preserve engine kernels
 
 **Decision.** Pin `play-nice-contracts @ 0cee0652fb6f13c440b1fd9cc5d78fd87cdca8ad`
