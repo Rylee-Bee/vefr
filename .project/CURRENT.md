@@ -70,8 +70,10 @@ cat .project/contracts/adoption.yaml | head -10
 
 | Item | Value |
 |---|---|
-| Working tree | clean on `main` |
+| Working tree | `git status` for live state |
 | Origin | `https://github.com/Rylee-Bee/vefr.git` |
-| Branch | `main` |
-| Last commit at write time | `0c91cf0` |
-| Demo server | running on :8825 (Emberfield, ministral3-3b pack, spark K2) |
+| Branch | `git branch --show-current` for live state |
+| Last commit | `git rev-parse HEAD` for live state |
+
+> **Agent note:** This section is orientation, not a mirror of HEAD.
+> Always verify with git commands, not this table.
