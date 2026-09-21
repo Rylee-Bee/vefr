@@ -24,7 +24,7 @@ common options:
 - **[Ollama](https://ollama.com)** — simpler to install on many
   machines. Set `VEFR_MODEL` to your pulled model's name and use
   Ollama's OpenAI-compatible endpoint:
-  `VEFR_LLAMACPP_URL=http://127.0.0.1:11434/v1`.
+  `VEFR_LLAMACPP_URL=http://127.0.0.1:11434` (the engine appends `/v1` itself).
 
 If both are set, `VEFR_LLAMACPP_URL` wins.
 
@@ -67,7 +67,7 @@ ollama pull qwen3:8b
 # llama-server -m <your-model.gguf> --port 8081   # if you use llama.cpp
 
 # second terminal: the engine, pointed at it
-VEFR_LLAMACPP_URL=http://127.0.0.1:11434/v1 VEFR_MODEL=qwen3:8b \
+VEFR_LLAMACPP_URL=http://127.0.0.1:11434 VEFR_MODEL=qwen3:8b \
   uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```
 

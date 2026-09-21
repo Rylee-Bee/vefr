@@ -16,6 +16,7 @@ import httpx
 import pytest
 
 from vefr import generator
+from vefr.generator import GeneratorFailed, GeneratorUnavailable
 
 
 # --- Fake response helpers ---
@@ -65,12 +66,12 @@ def test_normal_generation_returns_prose(monkeypatch):
 
 
 def test_timeout_handled(monkeypatch):
-    """Provider hangs. The error propagates as a connection error."""
+    """Provider hangs. The error propagates as a GeneratorUnavailable."""
     def fake_post(url, json=None, timeout=None):
         raise httpx.ConnectTimeout("connection timed out")
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises(httpx.ConnectTimeout):
+    with pytest.raises(GeneratorUnavailable, match="failed"):
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
@@ -79,12 +80,12 @@ def test_timeout_handled(monkeypatch):
 
 
 def test_malformed_response_raises(monkeypatch):
-    """Garbage output from the model raises a parse error."""
+    """Garbage output from the model raises a GeneratorFailed."""
     def fake_post(url, json=None, timeout=None):
         return _Resp(GARBAGE_BODY)
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises((json.JSONDecodeError, KeyError)):
+    with pytest.raises(GeneratorFailed, match="unreadable"):
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
@@ -134,13 +135,13 @@ def test_primary_failure_fallback_used(monkeypatch):
 
 
 def test_both_providers_unavailable_clear_error(monkeypatch):
-    """When all backends are down, the error is clear."""
+    """When all backends are down, the error is clear and structured."""
     def fake_post(url, json=None, timeout=None):
         raise httpx.ConnectError("connection refused")
 
     monkeypatch.setattr(httpx, "post", fake_post)
 
-    with pytest.raises(httpx.ConnectError, match="connection refused"):
+    with pytest.raises(GeneratorUnavailable, match="connection refused"):
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
@@ -169,12 +170,12 @@ def test_diagnostics_which_model_produced_response(monkeypatch):
 
 
 def test_http_error_status_raises(monkeypatch):
-    """A 500 from the backend raises cleanly."""
+    """A 500 from the backend raises as GeneratorUnavailable."""
     def fake_post(url, json=None, timeout=None):
         return _Resp('{"error":"internal"}', status=500)
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(GeneratorUnavailable, match="HTTP 500"):
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
