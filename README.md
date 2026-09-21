@@ -28,8 +28,8 @@ uv sync --group test
 # 2. Bring any OpenAI-compatible LLM endpoint.
 #    llama.cpp, Ollama, LM Studio, a phone running a local server,
 #    or any hosted endpoint that speaks /v1/chat/completions.
-export VEFR_LLAMACPP_URL=http://127.0.0.1:8081
-export VEFR_MODEL=gpt-oss-20b
+export VEFR_LLAMACPP_URL=http://127.0.0.1:8084
+export VEFR_MODEL=qwen3-1.7b
 
 # 3. Run with the bundled sample world (Emberfield).
 uv run --group test norns validate --pack worlds/sample-world
@@ -322,8 +322,8 @@ RPG-looking panels.
 mkdir -p ~/vefr-data
 podman run -d --name vefr -p 8820:8820 \
   -v ~/vefr-data:/app/data \
-  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8081 \
-  -e VEFR_MODEL=gpt-oss-20b \
+  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
+  -e VEFR_MODEL=qwen3-1.7b \
   ghcr.io/rylee-bee/vefr:latest
 curl -s http://127.0.0.1:8820/api/health
 
@@ -331,7 +331,8 @@ curl -s http://127.0.0.1:8820/api/health
 podman build -t localhost/vefr:latest .
 podman run -d --name vefr -p 8820:8820 \
   -v ~/vefr-data:/app/data \
-  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8081 \
+  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
+  -e VEFR_MODEL=qwen3-1.7b \
   localhost/vefr:latest
 ```
 
@@ -346,8 +347,9 @@ Published images live at
 | `:sha-<full SHA>` | Immutable; the documented rollback handle |
 
 Images are built automatically from `main` after CI passes. The
-image contains the engine, web UI, and sample world — no model
-weights. Bring your own LLM endpoint.
+image contains the engine, web UI, and sample world. For a
+bundled-brain deployment (model weights included), see
+`docs/guides/bundled-brain.md`.
 
 ### Model configuration
 
@@ -359,7 +361,7 @@ running a local server.
 |---|---|---|
 | `VEFR_LLAMACPP_URL` | llama.cpp endpoint (preferred) | — |
 | `OLLAMA_URL` | Ollama endpoint (fallback) | — |
-| `VEFR_MODEL` | Model name sent to the endpoint | `gpt-oss-20b` |
+| `VEFR_MODEL` | Model name sent to the endpoint | `qwen3-1.7b` |
 | `VEFR_KEEP_ALIVE` | Ollama model keep-alive window | `1m` |
 | `VEFR_HOME` | Engine root directory | `/app` |
 | `VEFR_VAULT` | Path to vault.json | `<VEFR_HOME>/data/vault.json` |
@@ -409,9 +411,24 @@ podman run -d --name vefr -p 8820:8820 \
   -v ~/vefr-data:/app/data \
   -v /path/to/your-pack:/app/worlds/your-name:Z \
   -e VEFR_WORLD=your-name \
-  -e VEFR_LLAMACPP_URL=http://host.docker.internal:8081 \
+  -e VEFR_LLAMACPP_URL=http://host.docker.internal:8084 \
   localhost/vefr:latest
 ```
+
+### Bundled brain (zero-setup)
+
+The container ships with a bundled brain — `podman run vefr` gives
+you a fully playable game with no external LLM configuration:
+
+| Port | Role | Model | Size |
+|---|---|---|---|
+| :8083 | Spark | Qwen3-0.6B | ~460 MB |
+| :8084 | Storyteller | Qwen3-1.7B | ~1.1 GB |
+| :8085 | Vision | SmolVLM2-500M | ~640 MB |
+| :8086 | Embeddings | bge-m3 | ~600 MB (optional) |
+
+CPU-only, ~4 GB RAM minimum. See `docs/guides/bundled-brain.md`
+for the full architecture, swap guide, and degradation behavior.
 
 ### Point it at a phone-as-backend
 
@@ -433,6 +450,10 @@ entirely off the laptop, the cloud, and any LAN host.
 ratatoskr weave
 # -> dist/sample-world-<date>.html  (one self-contained file)
 ```
+
+The exported file includes a title screen (world name, tagline,
+"enter" button) so it feels like a game within 3 seconds of opening.
+No server, no internet — the world's data is baked into the HTML.
 
 The packaged file is the engine's `web/` UI with your world pack
 inlined as JSON. Send it to someone - they open it in a browser

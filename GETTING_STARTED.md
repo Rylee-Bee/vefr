@@ -64,7 +64,7 @@ Start a small model server, then start the engine against it:
 # Ollama works too - it serves the same endpoint at /v1:
 OLLAMA_ORIGINS="*" ollama serve &
 ollama pull qwen3:8b
-# llama-server -m <your-model.gguf> --port 8081   # if you use llama.cpp
+# llama-server -m <your-model.gguf> --port 8084   # if you use llama.cpp
 
 # second terminal: the engine, pointed at it
 VEFR_LLAMACPP_URL=http://127.0.0.1:11434 VEFR_MODEL=qwen3:8b \
