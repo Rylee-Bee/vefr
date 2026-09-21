@@ -1,0 +1,32 @@
+[Unit]
+Description=llama-vefr - bundled llama.cpp server for the vefr model fleet
+After=network.target
+
+[Container]
+Image=localhost/llama-vefr:latest
+ContainerName=llama-vefr
+Network=host
+# CPU-only: no GPU device mapping. Each model gets its own port.
+# Model fleet (locked 2026-09-21):
+#   :8083  Spark      Qwen3-0.6B          ~460 MB
+#   :8084  Storyteller Qwen3-1.7B        ~1.1 GB
+#   :8085  Vision     SmolVLM2-500M       ~640 MB
+#   :8086  Embeddings bge-m3              ~600 MB
+# Total resident: ~2.8 GB
+ExecStart=/start-models.sh
+# Health: check the storyteller (primary brain) port
+HealthCmd=curl -sf http://127.0.0.1:8084/health || exit 1
+HealthInterval=30s
+HealthRetries=3
+# Give models time to load on startup
+HealthStartPeriod=120s
+# Memory limit — enough for all 4 models plus headroom
+# Adjust if adding larger models
+#MemoryLimit=4G
+
+[Service]
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
