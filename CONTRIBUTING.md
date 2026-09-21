@@ -10,7 +10,7 @@ Thank you for wanting to help build vefr — a rumor engine for playable worlds.
 git clone https://github.com/Rylee-Bee/vefr.git
 cd vefr
 uv sync --group test
-uv run --group test pytest -q       # should pass (412+ tests)
+uv run --group test pytest -q       # should pass — count varies; check no new failures
 uv run uvicorn vefr.main:app --app-dir src --port 8820
 # open http://127.0.0.1:8820
 ```
@@ -18,9 +18,20 @@ uv run uvicorn vefr.main:app --app-dir src --port 8820
 ## Quick start (for agents)
 
 1. Read `AGENTS.md` — it has every rule this repo enforces.
-2. Read `.project/CURRENT.md` — what's true right now.
-3. Run the gate: `uv run --group test ruff check src tests && uv run --group test pytest -q`
-4. The 2 pre-existing failures (`test_face_roll_is_honest_without_a_model`, `test_map_propose_is_honest_without_a_model`) are model-dependent — they fail when no LLM is reachable. Ignore them.
+2. Read `AGENT_POLICY.md` — the decision kernel and definition of done.
+3. Read `.project/CURRENT.md` — what's true right now.
+4. Run the gate (must match CI exactly):
+   ```sh
+   uv sync --group test
+   uv run --group test ruff check src tests scripts
+   uv run --group test pytest -q \
+     --ignore=tests/test_npc_action.py \
+     --ignore=tests/test_storyteller_benchmark.py
+   python3 scripts/check_public_surface.py
+   ```
+5. Known pre-existing failures (do not treat as regressions):
+   - `test_npc_action.py` + `test_storyteller_benchmark.py` — WIP Storyteller files, excluded from CI via `--ignore` (tracked in rylee/vefr#50).
+   - `test_face_roll_is_honest_without_a_model`, `test_map_propose_is_honest_without_a_model` — model-dependent; fail when no LLM endpoint is reachable.
 
 ## What to work on
 
@@ -47,9 +58,12 @@ main ← PR ← feat/*
 ## Test gate (every PR must pass)
 
 ```sh
-uv run --group test ruff check src tests    # lint
-uv run --group test pytest -q               # tests (412+ pass, 2 pre-existing fail)
-uv run norns validate --pack worlds/sample-world  # pack integrity
+uv run --group test ruff check src tests scripts    # lint (scripts/ too — CI checks it)
+uv run --group test pytest -q \
+  --ignore=tests/test_npc_action.py \
+  --ignore=tests/test_storyteller_benchmark.py      # tests (WIP files excluded, matches CI)
+uv run norns validate --pack worlds/sample-world    # pack integrity
+python3 scripts/check_public_surface.py            # no private IPs, hostnames, or creds
 ```
 
 ## Accessibility matrix (every UI change must answer)

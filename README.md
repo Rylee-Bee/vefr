@@ -563,10 +563,15 @@ when the world is kind.
 ```sh
 uv sync --group test
 uv run --group test ruff check src tests scripts
-uv run --group test pytest -q
+uv run --group test pytest -q \
+  --ignore=tests/test_npc_action.py \
+  --ignore=tests/test_storyteller_benchmark.py
 uv run --group test norns validate --pack worlds/sample-world
 python3 scripts/check_public_surface.py
 ```
+
+The `--ignore` flags match CI — two Storyteller WIP test files
+carry known failures tracked in rylee/vefr#50.
 
 The last command is the **public-surface guard** — it fails the
 build if the tracked tree contains private LAN IPs, real hostnames,
