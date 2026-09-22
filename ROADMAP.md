@@ -7,6 +7,20 @@
 
 ## Landed
 
+- [x] **NPC seed fallback survives the fail-closed translation** (2026-09-22):
+      with the brain down, `POST /api/npc` returned a 404 leaking
+      `[Errno111] Connection refused` instead of the canon seed line the
+      contract promises (`npc.py`: "If the model is unreachable, a seed
+      line speaks instead"). Cause: `_completion` translates httpx failures
+      into `GeneratorUnavailable`/`GeneratorFailed`, but `generate_line`'s
+      except tuple only caught raw `httpx` errors — the old test injected
+      the error *below* that translation seam, so it stayed green while
+      live runs broke. Surfaced by the WP2 Meera (brain-down) drill. Fix:
+      catch both translated errors in `generate_line` + a regression test
+      pinned at the production seam. Verified live: world/journal → 200
+      with brains dead, npc → 200 `source:"seed"`; ruff clean; pytest
+      425 passed / 2 skipped / 2 known model-dependent env failures.
+
 - [x] **Container runs as root: bind mounts writable again** (2026-09-22):
       the non-root `USER vefr` (uid 999) could not write host-owned bind
       mounts under rootless engines — host uid 1000 maps to container uid 0,
