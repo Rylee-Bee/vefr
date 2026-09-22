@@ -541,6 +541,25 @@ def cmd_map(args) -> int:
     return maplab_main(argv)
 
 
+def _template_candidates() -> list[Path]:
+    """Where web/packaged.html may live, in preference order.
+
+    A source checkout has it at the repo root. A pip-installed wheel
+    ships it as package data (hatch force-include: vefr/web/), which
+    is what a pack author's repo sees when it runs `ratatoskr weave`
+    against an installed engine. Container installs keep it under
+    VEFR_HOME. Try all three and prefer whichever actually exists.
+    """
+    from .paths import app_home
+
+    here = Path(__file__).resolve()
+    return [
+        here.parents[2] / 'web' / 'packaged.html',   # source checkout
+        here.parent / 'web' / 'packaged.html',        # wheel package data
+        app_home() / 'web' / 'packaged.html',         # container / VEFR_HOME
+    ]
+
+
 def cmd_build_web(args) -> int:
     """Bundle worlds/<name>/ + web/packaged.html into one self-contained file.
 
@@ -586,15 +605,7 @@ def cmd_build_web(args) -> int:
     from .world import fragments_for_pack
     fragments = fragments_for_pack(pack)
 
-    # The template ships with the repo in a checkout, but in the
-    # container the package is pip-installed into site-packages while
-    # web/ lives under VEFR_HOME - so try both, and prefer whichever
-    # actually exists.
-    template_candidates = [
-        Path(__file__).resolve().parents[2] / 'web' / 'packaged.html',
-    ]
-    from .paths import app_home
-    template_candidates.append(app_home() / 'web' / 'packaged.html')
+    template_candidates = _template_candidates()
     template_path = next(
         (p for p in template_candidates if p.exists()), template_candidates[0])
     template = template_path.read_text(encoding='utf-8')
