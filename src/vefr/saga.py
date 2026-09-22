@@ -41,6 +41,19 @@ def system_prompt(phase: str) -> str:
     rune_line = (
         f"JOURNEY STAGE: {jr['stage']} (rune: {jr['rune']} - {jr['rune_meaning']})\n"
     )
+    # The act's tone dial position, when the pack declares one:
+    # where this act sits on the ridiculous-literal dial. Mechanics
+    # never branch on it; the voice does.
+    from .world import current_act as _current_act
+    try:
+        act_tone = (_current_act() or {}).get("tone", "")
+    except Exception:
+        act_tone = ""
+    tone_dial_line = (
+        f"ACT TONE: {act_tone} - let the rumor's register sit at this "
+        "position on the ridiculous-literal dial.\n"
+        if act_tone else ""
+    )
     # The cast is deterministic for a given moment. We seed from
     # the phase name + the current ISO minute so the cast changes
     # over time but stays consistent within a session-minute. The
@@ -54,7 +67,7 @@ def system_prompt(phase: str) -> str:
         "spoken by a named minor character. Follow the Contract strictly:\n"
         "never explain, never label, never use modern words. Show only.\n\n"
         f"CURRENT PHASE: {tone}\n"
-        f"{rune_line}\n"
+        f"{rune_line}\n{tone_dial_line}"
         f"{cast_block}\n"
         f"{_logbok()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "

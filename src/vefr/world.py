@@ -61,6 +61,27 @@ Packs can rename their phases (any keys the author wants) but the
 journey-stage anchors are positional - first phase in `phases` maps
 to the first rune, and so on.
 
+PACK LAW (per act): every act may declare how it plays -
+  `floor`   - how hard the numbers bite: 'costume' (default; the
+              HP bar is a costume, the player never drops to
+              zero), 'story' (failure bends the narrative), or
+              'stakes' (the numbers bite). The engine owns no
+              opinion; each world declares its own floor.
+  `tone`    - the act's position on the ridiculous-literal dial
+              ('literal' | 'warm' | 'deadpan' | 'ridiculous' |
+              'absurd'). The storyteller prompt carries it.
+  `ruleset` - which ruleset module the act plays under
+              ('ambient' default; ruleset modules land in future
+              PRs).
+  `verbs`   - the act's own action vocabulary. When declared, it
+              replaces the engine's costume verbs entirely (a
+              cooking act can offer plate/flip/serve).
+  `enemies` / `bosses` / `transitions` - reserved shape for the
+              rulesets that need them; validated, echoed by
+              inspect, consumed by ruleset modules as they land.
+All five are optional; absent means the engine's defaults, so
+every existing pack loads unchanged.
+
 STEFNA / BELL VOICE: a pack may declare an optional top-level
 `stefna_voice` (string naming which speaker writes the sealed letter;
 absent means "the pack's first declared voice"). Every voice declared
@@ -88,6 +109,19 @@ from .weave import weave
 log = logging.getLogger(__name__)
 
 VALID_SURFACES = ("combat", "investigation", "plain")
+# How hard the numbers bite is the pack's law, not the engine's.
+#   costume - HP tracks as a number; the player never drops to
+#             zero; the bar is a costume (the classic vefr way).
+#   story   - failure bends the narrative instead of ending it
+#             (the ruleset defines how; future PRs).
+#   stakes  - the numbers bite (the ruleset defines how; future
+#             PRs).
+# The default is `costume` so every existing pack behaves exactly
+# as it did before floors existed.
+VALID_FLOORS = ("costume", "story", "stakes")
+# The act's position on the ridiculous-literal dial. The
+# storyteller prompt carries it; mechanics never branch on it.
+VALID_TONES = ("literal", "warm", "deadpan", "ridiculous", "absurd")
 REQUIRED_FLAT = ("title", "phases", "voices", "bonds", "town")
 
 
@@ -278,6 +312,9 @@ def _load_act(act_dir: Path) -> dict:
         "transitions": contract.get("transitions", []),
         "vault_intro": contract.get("vault_intro", ""),
         "verbs": contract.get("verbs", []),
+        "floor": contract.get("floor", "costume"),
+        "tone": contract.get("tone", ""),
+        "ruleset": contract.get("ruleset", "ambient"),
     }
     weave("act.loaded", act=act_id, title=act["title"],
           regions=list(regions.keys()),
@@ -321,6 +358,9 @@ def _flat_to_act(config: dict, pack: Path) -> dict:
         "transitions": config.get("transitions", []),
         "vault_intro": config.get("vault_intro", ""),
         "verbs": config.get("verbs", []),
+        "floor": config.get("floor", "costume"),
+        "tone": config.get("tone", ""),
+        "ruleset": config.get("ruleset", "ambient"),
         "_town_legacy": town,
     }
 

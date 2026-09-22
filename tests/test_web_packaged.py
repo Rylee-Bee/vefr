@@ -244,7 +244,10 @@ def test_packaged_carries_the_surface_costume(tmp_path, monkeypatch, canned_gene
     # Markup.
     assert 'id="hud-hp"' in html and 'id="hud-hp-fill"' in html
     assert 'id="encounter-prompt"' in html
-    assert 'id="verb-row"' in html and 'data-verb="attack"' in html
+    assert 'id="verb-row"' in html and "['attack', 'Strike']" in html
+    # The verb row is rendered at play time from the act's own
+    # verbs (or the baked defaults) - never static pack-named buttons.
+    assert 'aria-label="Combat actions"></div>' in html
     # The surface comes from the pack at play time, not from the
     # template - a plain pack never sees the costume.
     assert "setAttribute('data-surface'" in html

@@ -226,11 +226,7 @@
       <p class="npc-line" id="npc-line"></p>
       <button type="button" id="npc-close" class="primary">close</button>
     </div>
-    <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions">
-      <button type="button" data-verb="attack">Strike</button>
-      <button type="button" data-verb="console">Console</button>
-      <button type="button" data-verb="hurl">Hurl an insult</button>
-    </div>
+    <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
     <p class="status" id="combat-log" aria-live="polite"></p>
   </div>
 </main>
@@ -791,6 +787,25 @@ function setupTown() {
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
+  /* The act's verbs are the pack's own vocabulary; baked defaults
+     keep the old costume when the act declares none. */
+  (function () {
+    var row = document.getElementById('verb-row');
+    var act = (VEFR_WORLD && VEFR_WORLD.acts && VEFR_WORLD.acts[0]) || {};
+    var verbs = Array.isArray(act.verbs) && act.verbs.length
+      ? act.verbs.map(function (v) {
+          return [v, v.charAt(0).toUpperCase() + v.slice(1)];
+        })
+      : [['attack', 'Strike'], ['console', 'Console'],
+         ['hurl', 'Hurl an insult']];
+    verbs.forEach(function (pair) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.verb = pair[0];
+      b.textContent = pair[1];
+      row.appendChild(b);
+    });
+  })();
   document.getElementById('verb-row').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-verb]');
     if (!b) return;

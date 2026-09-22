@@ -148,13 +148,13 @@ def test_star_routes_item_forged_to_kept_items(tmp_pack):
     assert '## kept-items' in (tmp_pack / 'starred-whispers.md').read_text(encoding='utf-8')
 
 
-def test_star_routes_stefna_letter_to_awed(tmp_pack):
+def test_star_routes_stefna_letter_to_letters(tmp_pack):
     starred.star({
         'kind': 'stefna_letter',
         'letter': 'For you.\nMend the hem.',
     })
     text = (tmp_pack / 'starred-whispers.md').read_text(encoding='utf-8')
-    assert '## awed' in text
+    assert '## letters' in text
     assert 'Mend' in text
 
 

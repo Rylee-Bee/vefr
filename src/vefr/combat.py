@@ -11,15 +11,23 @@ behavior the costume needs:
     is positional + simple; the costume is the point, not the
     formula.
 
-  - POST /api/combat/action records a `combat_action` journal
-    entry with the action's kind (attack, console, etc.) and
-    an optional target. The engine doesn't have a turn system;
-    the action just lives in the journal so the play log is
-    complete.
+  - The act's `verbs` list is the pack's own action vocabulary.
+    When an act declares verbs, they ARE the allowed combat
+    actions and the HUD's buttons; when it declares none, the
+    engine's default costume verbs apply (back-compat).
 
-The "no failure" contract holds: nothing the attack does can
-fail or end the game. HP tracks as a number, the player can
-never drop to zero, the journal entry is honest.
+  - POST /api/combat/action records a `combat_action` journal
+    entry with the action's kind and an optional target. The
+    engine doesn't have a turn system; the action just lives in
+    the journal so the play log is complete.
+
+How hard the numbers bite is the pack's law, not the engine's:
+each act declares a `floor` (see world.py - "costume" by
+default, where HP tracks as a number and the player never drops
+to zero; "story" and "stakes" get their mechanics from rulesets
+in future PRs). Under the default floor the old contract holds:
+nothing the attack does can fail or end the game, and the
+journal entry is honest.
 """
 
 from .journal import log as _journal_log
@@ -29,6 +37,11 @@ from .journal import log as _journal_log
 # second, etc. The numbers are intentionally small (single digit)
 # - the costume is the point, not the math.
 DEFAULT_HP_BY_INDEX = [3, 4, 5, 6]
+
+# The engine's default action vocabulary - the costume verbs the
+# HUD offers when the active act declares none of its own. A
+# pack's act `verbs` list replaces this entirely.
+DEFAULT_VERBS = ("attack", "console", "hurl", "strike", "observe")
 
 
 def hp_for_pack(world: dict) -> dict:
@@ -54,22 +67,42 @@ def hp_for_pack(world: dict) -> dict:
     }
 
 
+def verbs_for_pack(world: dict) -> tuple[str, ...]:
+    """The active act's action vocabulary, or the engine default.
+
+    An act that declares `verbs` owns its actions entirely - a
+    cooking act can offer ["plate", "flip", "serve"] and the
+    costume verbs stop being legal. An act with no `verbs` keeps
+    the default costume so existing packs behave unchanged.
+    """
+    acts = world.get("acts") or []
+    idx = world.get("_current_act", 0)
+    act = acts[idx] if idx < len(acts) else {}
+    verbs = act.get("verbs") or []
+    if verbs:
+        return tuple(verbs)
+    return DEFAULT_VERBS
+
+
 def record_combat_action(
     *,
     kind: str,
     phase: str | None,
     target: str | None = None,
     session: str = "",
+    allowed: tuple[str, ...] | None = None,
 ) -> dict:
     """Record a combat action in the journal. Returns the entry.
 
-    The action is whatever the HUD sent: `attack` (the canary
-    only has one verb in this PR), `console`, `hurl`, etc. The
-    journal shape is `combat_action` with the action, the
-    phase, the target, and the timestamp. No HP change - the
-    surface is a costume, the costume is the point.
+    The action is whatever the HUD sent, checked against the
+    allowed vocabulary (the active act's verbs, or the engine
+    default when the caller passes nothing). The journal shape
+    is `combat_action` with the action, the phase, the target,
+    and the timestamp. No HP change under the default floor -
+    the surface is a costume, the costume is the point.
     """
-    if kind not in {"attack", "console", "hurl", "strike", "observe"}:
+    vocab = allowed if allowed is not None else DEFAULT_VERBS
+    if kind not in set(vocab):
         raise ValueError(f"unknown combat action kind: {kind!r}")
     # The journal's first positional arg is the *kind of journal
     # entry* (rumor, npc_line, combat_action, etc.). The action's
