@@ -281,3 +281,44 @@ def test_interview_blank_map_mood_keeps_the_scaffold_map(tmp_path, monkeypatch):
     rc = chat.run_interview(dest, SCAFFOLD)
     assert rc == 0
     assert maplab.load_pack(dest)['town']['map'] == original
+
+
+# ---- transport failures take the retry path, never crash the interview --
+# The autouse fixture rebinds chat.draft / chat.draft_theme to stubs;
+# captured at import time (before any fixture) so their real retry
+# loops can be driven directly.
+
+_REAL_DRAFT = chat.draft
+_REAL_DRAFT_THEME = chat.draft_theme
+
+
+def test_dead_endpoint_falls_back_instead_of_crashing(tmp_path, monkeypatch):
+    """generator._completion wraps httpx timeouts in GeneratorUnavailable.
+    Every interview retry loop must catch it (retry twice, then the
+    placeholder) - the owner's WP5 interview died mid-run when the
+    brain was slow, despite draft()'s 'never a crash mid-interview'."""
+    from vefr import generator
+
+    calls = []
+
+    def _timeout(payload):
+        calls.append(payload)
+        raise generator.GeneratorUnavailable('endpoint timed out')
+
+    monkeypatch.setattr(generator, '_completion', _timeout)
+
+    # prose drafts: two tries, then the editable placeholder
+    assert _REAL_DRAFT('write a line') == '(draft failed - edit this by hand)'
+    assert len(calls) == 2
+    # theme: two tries, then None -> the caller keeps scaffold colors
+    calls.clear()
+    assert _REAL_DRAFT_THEME('candlelit church') is None
+    assert len(calls) == 2
+    # map + face proposers share the same loop shape
+    w = maplab.load_pack(SCAFFOLD)
+    calls.clear()
+    assert chat.propose_map('a story', 'a mood', w, tmp_path) is None
+    assert len(calls) == 2
+    calls.clear()
+    assert chat.propose_face('a story', 'a mood', w) is None
+    assert len(calls) == 2

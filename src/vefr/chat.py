@@ -114,7 +114,8 @@ def draft(prompt: str, system: str = ASSISTANT_SYSTEM) -> str:
         try:
             raw = generator._completion(payload)
             return Draft.model_validate_json(raw).text
-        except (httpx.HTTPError, ValidationError, KeyError, ValueError):
+        except (httpx.HTTPError, generator.GeneratorUnavailable,
+                generator.GeneratorFailed, ValidationError, KeyError, ValueError):
             continue
     return "(draft failed - edit this by hand)"
 
@@ -141,7 +142,8 @@ def draft_theme(mood: str) -> dict | None:
             colors = Theme.model_validate_json(raw)
             if all(HEX_RE.match(v) for v in (colors.bg, colors.hero_color, colors.deco_color)):
                 return colors.model_dump()
-        except (httpx.HTTPError, ValidationError, KeyError, ValueError):
+        except (httpx.HTTPError, generator.GeneratorUnavailable,
+                generator.GeneratorFailed, ValidationError, KeyError, ValueError):
             continue
     return None
 
@@ -245,7 +247,9 @@ def propose_map(story: str, mood: str, w: dict, dest: Path) -> list[str] | None:
             # (pack_dir=dest) is the full gate before anything ships.
             if not maplab.validate(candidate):
                 return rows
-        except (httpx.HTTPError, ValidationError, KeyError, ValueError, SystemExit):
+        except (httpx.HTTPError, generator.GeneratorUnavailable,
+                generator.GeneratorFailed,
+                ValidationError, KeyError, ValueError, SystemExit):
             continue
     return None
 
@@ -312,7 +316,9 @@ def propose_face(story: str, mood: str, w: dict) -> dict | None:
             face = Face.model_validate_json(raw)
             if face.name.strip() and face.role.strip() and face.seed.strip():
                 return face.model_dump()
-        except (httpx.HTTPError, ValidationError, KeyError, ValueError, SystemExit):
+        except (httpx.HTTPError, generator.GeneratorUnavailable,
+                generator.GeneratorFailed,
+                ValidationError, KeyError, ValueError, SystemExit):
             continue
     return None
 
