@@ -7,6 +7,18 @@
 
 ## Landed
 
+- [x] **example.env: interface port corrected, spark modes made explicit**
+      (2026-09-22): the Interface Translator block still said "Port 8085
+      is the unambiguous default" with `#VEFR_INTERFACE_URL=…:8085` —
+      stale since WP2 moved the translator :8085 → :8087 (vision took
+      :8085). Value and comment now say :8087, matching
+      `interface.py:174` and `test_interface.py`. The Spark comment now
+      names both documented modes (:8082 no-bundle default, :8083
+      bundled image → `docs/guides/bundled-brain.md` carries both
+      columns). Recon finding recorded: a suspected `spark.py`/:8082 vs
+      `volumes.py`/:8083 contradiction is NOT one — the three writers
+      are each self-consistent per mode, so no port code changed.
+
 - [x] **Docs restructure: three-section README + canon guard on root
       docs** (2026-09-22): README grew to 484 lines mixing philosophy,
       world-authoring, and ops. Restructured to three pillars - "Open
