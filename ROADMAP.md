@@ -7,6 +7,15 @@
 
 ## Landed
 
+- [x] **WP6-wrap: templates + brain-socket example neutralized** (2026-09-22):
+      owner chose "fix now" — the two copy-paste storyteller tests plus their
+      sample fixture under `tests/templates/`, and the persistent-memory
+      example in `docs/guides/brain-socket.md`, were the last tracked
+      surfaces quoting private-pack names. All now use engine-neutral
+      caretaker/forge and market-lane examples; self-contained tests stay
+      green, guards clean (378 — the +1 is `sample-scene.json`, now tracked
+      and scanned per D6, which was untracked during WP6's guard run).
+
 - [x] **WP6 / D6: fixture content follows ownership - neutral sample
       in the engine, seam for pack scenes** (2026-09-22): the
       engine-owned audition fixture was a private pack's scene. D6:

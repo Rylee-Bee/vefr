@@ -38,7 +38,7 @@ class _Resp:
 
 
 GOOD_BODY = json.dumps({
-    "choices": [{"message": {"content": "Rosa looked up. 'He had somewhere to be.'"}}]
+    "choices": [{"message": {"content": "The caretaker looked up. 'The bell rang once.'"}}]
 })
 
 GARBAGE_BODY = "this is not json at all"
@@ -61,8 +61,8 @@ def test_normal_generation_returns_prose(monkeypatch):
         "messages": [{"role": "user", "content": "hello"}],
         "stream": False,
     })
-    assert "Rosa" in result
-    assert "somewhere" in result
+    assert "caretaker" in result
+    assert "bell" in result
 
 
 def test_timeout_handled(monkeypatch):
