@@ -24,6 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from .paths import world_name as _default_world_name
+from .world import VALID_FLOORS, VALID_TONES
 from .world import creed_from as _creed_from
 
 BLOCKED_FALLBACK = ['~', 'B', '#', 'T', 'M']
@@ -263,6 +264,28 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             sfile = spec.get('voice_file', '')
             if not find_voice_file(sfile):
                 errors.append(f'missing speaker voice file: {sfile}')
+
+    # Pack law: each act declares how it plays (world.py contract).
+    # Shape-checked here; the mechanics land with the ruleset
+    # modules. A bad value is a pack authoring error, so it fails
+    # validation loudly instead of silently defaulting.
+    for act in w.get('acts', []):
+        aid = act.get('id', '?')
+        floor = act.get('floor', 'costume')
+        if floor not in VALID_FLOORS:
+            errors.append(f"act '{aid}' floor '{floor}' not in {list(VALID_FLOORS)}")
+        tone = act.get('tone', '')
+        if tone and tone not in VALID_TONES:
+            errors.append(f"act '{aid}' tone '{tone}' not in {list(VALID_TONES)}")
+        ruleset = act.get('ruleset', 'ambient')
+        if not isinstance(ruleset, str) or not ruleset.strip():
+            errors.append(f"act '{aid}' ruleset must be a non-empty string")
+        for fname in ('verbs', 'enemies', 'bosses', 'transitions'):
+            val = act.get(fname, [])
+            if not isinstance(val, list):
+                errors.append(f"act '{aid}' {fname} must be a list")
+            elif not all(isinstance(x, str) for x in val):
+                errors.append(f"act '{aid}' {fname} must be a list of strings")
 
     return errors
 

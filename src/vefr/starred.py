@@ -4,7 +4,8 @@ Three kinds of star-target exist:
   - rumor:        appended under ## <phase> in starred-whispers.md
   - npc_line:     same file, under ## <phase>
   - item_forged:  appended under ## kept-items (no phase)
-  - stefna_letter: appended under ## letters (under 'awed' phase)
+  - stefna_letter: appended under ## letters (no phase - the bell
+    is its own beat, not a phase of the town)
 
 The file lives at <pack>/starred-whispers.md. It's part of the
 pack on disk like logbok.md - committed to the story repo and
@@ -32,11 +33,12 @@ from .paths import pack_dir
 FILE_NAME = "starred-whispers.md"
 
 # Phase labels for non-rumor/npc kinds. Item_forged is phase-less
-# by design (the forge is its own beat); stefna letters always live
-# under the 'awed' phase because that's when the summons is answered.
+# by design (the forge is its own beat); stefna letters are their
+# own beat too - the bell is not a phase of the town, so letters
+# live under their own heading.
 FALLBACK_PHASE = {
     "item_forged": "kept-items",
-    "stefna_letter": "awed",
+    "stefna_letter": "letters",
 }
 
 

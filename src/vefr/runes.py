@@ -108,7 +108,7 @@ RUNES: tuple[Rune, ...] = (
          "the hearth; the room that stays shut",
          None),
     Rune("Sowilo", "\u16F0", 2, "the sun, the whirling",
-         "the gold moment; the warmth earned by the journey back",
+         "the warmth earned by the journey back",
          "awed"),
 
     # Third aettir (the deep / the return)
@@ -125,7 +125,7 @@ RUNES: tuple[Rune, ...] = (
          "the protagonist themselves",
          None),
     Rune("Laguz", "\u16DA", 3, "the water, the leek",
-         "the crossing; the gold in the water",
+         "the crossing; what the water keeps",
          None),
     Rune("Ingwaz", "\u16DC", 3, "the seed, the gestation",
          "the time before the journey begins",

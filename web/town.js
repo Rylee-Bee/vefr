@@ -14,7 +14,6 @@
   var SANCT = [];
   var BLOCKED = ['~', 'B', '#', 'T', 'M'];
   var flooded = {};
-  var sighted = false;
   var openSpeaker = null;
   var busy = false;
   var railPhases = null; /* the phase list the rail was built from */
@@ -288,6 +287,7 @@
         var b = document.createElement('button');
         b.type = 'button';
         b.dataset.phase = p;
+        b.dataset.culm = (p === phases[phases.length - 1]) ? 'true' : 'false';
         b.textContent = p;
         b.setAttribute('aria-pressed', 'false');
         b.addEventListener('click', function () { STATE.setPhase(p); });
@@ -306,29 +306,9 @@
     hero.x = nx;
     hero.y = ny;
     if (openSpeaker) closeNpc();
-    checkSighting();
     draw();
     hud();
     journalVisit();
-  }
-
-  function checkSighting() {
-    if (sighted || phase() !== 'awed') return;
-    var onCrossing = (W.flood_tiles || []).some(function (t) {
-      return t[0] === hero.x && t[1] === hero.y;
-    });
-    if (!onCrossing) return;
-    sighted = true;
-    var box = document.getElementById('npc-box');
-    box.classList.add('sighting');
-    document.getElementById('npc-name').textContent = '';
-    document.getElementById('npc-line').textContent = 'a figure stands at the crossing, watching.';
-    box.hidden = false;
-    window.setTimeout(function () {
-      box.classList.remove('sighting');
-      if (!openSpeaker) box.hidden = true;
-      hud();
-    }, 4000);
   }
 
   function talk() {

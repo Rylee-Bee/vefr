@@ -241,9 +241,5 @@ html[data-prefs~="focus=accent"]    { --ring: var(--color-accent); }
 /* Colorblind-safe palette pref: phase hues shift to
    luminance-equivalent blue/gray (unchanged contract, now
    theme-aware values). */
-html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"]   { border-color: var(--color-blue-500); }
-html[data-prefs~="palette=cb-safe"] .card[data-phase="feared"] { border-color: #6b6b78; }
-html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] { border-color: var(--color-blue-500); }
-html[data-prefs~="palette=cb-safe"] .card[data-bond="assigned"]{ border-color: #6b6b78; }
-html[data-prefs~="palette=cb-safe"] .card[data-phase="awed"] .speaker,
-html[data-prefs~="palette=cb-safe"] .card[data-bond="attuned"] .speaker { color: var(--color-blue-400); }
+html[data-prefs~="palette=cb-safe"] .card[data-culm="true"] { border-color: var(--color-blue-500); }
+html[data-prefs~="palette=cb-safe"] .card[data-culm="true"] .speaker { color: var(--color-blue-400); }
