@@ -1,12 +1,12 @@
 {
   "id": "two-distinct-characters",
-  "speaker": "Rosa and the Keeper appear in the same scene.\n\nRosa: observant, protective, jokes when uncomfortable.\nthe Keeper: still as stone, speaks in short sentences, guards the fire.",
-  "speaker_knows": "Rosa knows Mateo left early.\nThe Keeper knows the stone kept the night.",
-  "speaker_does_not_know": "Rosa does NOT know about the transmitter.\nThe Keeper does NOT know what the wanderer seeks.",
-  "scene": "The taqueria is closed.\nRain hits the windows.\nThe Keeper sits by the fire in the corner.\nRosa wipes the counter.",
-  "relationship": "The player earned Rosa's trust yesterday.\nThe Keeper does not trust the player yet.",
-  "recent_action": "The player asked:\n\n\"Why did Mateo leave early?\"",
-  "open_threads": "Mateo has been acting strangely.\nThe transmitter has not been discovered.\nThe Keeper waits for the wanderer to speak.",
-  "instruction": "Respond as Rosa. Include her physical behavior. Do not speak for the Keeper. Do not reveal facts Rosa cannot know.",
+  "speaker": "The caretaker and the Keeper appear in the same scene.\n\ncaretaker: observant, patient, answers plainly.\nthe Keeper: still as stone, speaks in short sentences, guards the fire.",
+  "speaker_knows": "The caretaker knows the bell rang after the forge went cold.\nThe Keeper knows the stone kept the night.",
+  "speaker_does_not_know": "The caretaker does NOT know who left the sealed letter.\nThe Keeper does NOT know what the wanderer seeks.",
+  "scene": "The forge is closed.\nRain taps the windows.\nThe Keeper sits by the fire in the corner.\nThe caretaker wipes the bench.",
+  "relationship": "The player earned the caretaker's trust yesterday.\nThe Keeper does not trust the player yet.",
+  "recent_action": "The player asked:\n\n\"Who rang the bell?\"",
+  "open_threads": "The sealed letter has not been opened.\nThe morning delivery has not come.\nThe Keeper waits for the wanderer to speak.",
+  "instruction": "Respond as the caretaker. Include immediate physical behavior. Do not speak for the Keeper. Do not reveal facts the caretaker cannot know.",
   "version": "0.1.0"
 }
