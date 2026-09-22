@@ -67,10 +67,16 @@ RUN mkdir -p /app/models && \
 COPY deploy/start-bundled.sh /app/start-bundled.sh
 RUN chmod +x /app/start-bundled.sh
 
-# Non-root user
-RUN useradd --system --no-create-home --shell /usr/sbin/nologin vefr \
-    && chown -R vefr:vefr /app/data /app/worlds /app/models
-USER vefr
+# Runs as container root ON PURPOSE — decision recorded in the commit that
+# removed the non-root USER (2026-09-21). A non-root USER (uid 999) cannot
+# write host-owned BIND MOUNTS under rootless engines (the documented
+# default): host uid 1000 maps to container uid 0, so the mount appears
+# root:root 755 and uid 999 gets EACCES — observed live as
+# POST /api/rumor -> PermissionError: /app/data/journal.tmp.
+# Under a rootless engine container root IS the unprivileged invoking user,
+# so no real privilege is gained or lost there; under rootful engines this
+# is the ordinary container contract. Named volumes are unaffected either way.
+# Do NOT re-add USER without solving bind-mount ownership first.
 
 # Bundled brain defaults (override with env vars for external brain)
 ENV VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
