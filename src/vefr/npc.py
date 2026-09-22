@@ -81,7 +81,18 @@ def generate_line(phase: str = "whispers", key: str | None = None) -> NpcLine:
             line = NpcLine.model_validate_json(raw)
             line.speaker = spec["name"]
             return line
-        except (httpx.HTTPError, ValidationError, KeyError, ValueError):
+        except (
+            httpx.HTTPError,
+            # _completion is fail-closed: it translates transport and
+            # unreadable-output errors into these before we see them.
+            # Catch them here or the seed fallback never runs and the
+            # route leaks internals (observed: HTTP 404 + errno).
+            generator.GeneratorUnavailable,
+            generator.GeneratorFailed,
+            ValidationError,
+            KeyError,
+            ValueError,
+        ):
             continue
     return NpcLine(
         speaker=spec["name"],

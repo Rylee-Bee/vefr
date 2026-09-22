@@ -41,6 +41,27 @@ def test_fallback_uses_seed_when_the_whisper_is_quiet(monkeypatch):
     assert line.source == "seed"
 
 
+def test_fallback_survives_the_fail_closed_translation(monkeypatch):
+    """Pin at the PRODUCTION seam, not below it.
+
+    _completion wraps httpx failures as GeneratorUnavailable /
+    GeneratorFailed before generate_line ever sees them (the
+    fail-closed boundary). The seed must still speak through that
+    translation - a raw httpx error injected under _completion would
+    have kept passing while live runs404'd with leaked internals.
+    """
+    # Patch only the transport call on generator's real httpx module:
+    # _completion's except clauses must still resolve httpx.ConnectError
+    # & friends, so a whole-module stub would break them.
+    def down(*a, **k):
+        raise httpx.ConnectError("backend unreachable")
+
+    monkeypatch.setattr(generator.httpx, "post", down)
+    line = generate_line("dawn")
+    assert "The stone kept the night" in line.line
+    assert line.source == "seed"
+
+
 def test_unknown_speaker_raises():
     with pytest.raises(RuntimeError):
         build_payload("dusk", "nobody")
