@@ -227,13 +227,13 @@ Example factual memory:
 
 ```text
 Tuesday, 11:43 PM
-Alley behind Rosa's Taqueria
+Lane behind the market hall
 
 Player helped Ana after her car broke down.
 Present:
 - Player
 - Ana
-- Mateo
+- Ivo
 ```
 
 Later, whichever brain is active may receive a compact factual memory
