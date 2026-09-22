@@ -7,6 +7,18 @@
 
 ## Landed
 
+- [x] **weave: acts-shape packs bake the resolved world** (2026-09-22):
+      `cmd_build_web` baked the raw `world.json` root, but acts-shape packs
+      keep `town`/`speakers`/`creed` under `acts/<id>/` — so a woven file from
+      such a pack drew a blank town (`setupTown` TypeError, bootstrap aborted
+      before the verbs attached), exposed no `npc:` pools (`pool.py` read the
+      long-dead root `speakers`), and fell back to the default tagline. Weave
+      now merges `load_pack()` over the raw root (same shape the CLI's live
+      path resolves), `pool.py` takes speakers from `current_act()`, and the
+      pool fixtures were converted to acts shape — which is itself the
+      regression test. Found by the first-ever browser stranger-test of a
+      woven file (WP7).
+
 - [x] **weave: template resolution works from a pip-installed engine**
       (2026-09-22): `cmd_build_web` resolved `web/packaged.html` only via
       the source-checkout or `VEFR_HOME` layouts, so a pack author running
