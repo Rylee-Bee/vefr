@@ -7,6 +7,17 @@
 
 ## Landed
 
+- [x] **weave: template resolution works from a pip-installed engine**
+      (2026-09-22): `cmd_build_web` resolved `web/packaged.html` only via
+      the source-checkout or `VEFR_HOME` layouts, so a pack author running
+      `ratatoskr weave` from their own repo (installed wheel) hit
+      FileNotFoundError before any weaving began. The wheel now ships the
+      template as package data (hatch force-include → `vefr/web/`),
+      `_template_candidates()` covers checkout → package data → VEFR_HOME
+      in that order, and regression tests pin both the candidate shape and
+      the packaging config. Found while weaving the demo from the pack
+      repo (WP7).
+
 - [x] **WP6-wrap: templates + brain-socket example neutralized** (2026-09-22):
       owner chose "fix now" — the two copy-paste storyteller tests plus their
       sample fixture under `tests/templates/`, and the persistent-memory

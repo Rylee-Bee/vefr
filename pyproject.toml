@@ -50,3 +50,8 @@ filterwarnings = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vefr"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# weave's player template ships as package data so a pip-installed
+# engine can weave from a pack author's repo (site-packages/vefr/web/).
+"web/packaged.html" = "vefr/web/packaged.html"
