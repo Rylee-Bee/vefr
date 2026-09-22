@@ -32,8 +32,12 @@ RUN apt-get update \
 
 COPY pyproject.toml ./
 COPY src ./src
-RUN pip install --no-cache-dir .
+# web/ must land BEFORE the install: the wheel force-includes
+# web/packaged.html as package data (weave's template), so the
+# metadata step needs it present. (Latent since the force-include
+# landed; buildx cache hid it until an src change busted the layer.)
 COPY web ./web
+RUN pip install --no-cache-dir .
 COPY worlds ./worlds-template
 
 RUN mkdir -p /app/worlds /app/data
