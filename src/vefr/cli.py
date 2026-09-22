@@ -589,7 +589,17 @@ def cmd_build_web(args) -> int:
         print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
         return 1
 
-    world = _json.loads((pack / 'world.json').read_text(encoding='utf-8'))
+    # The player template reads town geometry, speakers, and creed off
+    # VEFR_WORLD - all three live in acts/<id>/ for an acts-shape pack
+    # and are invisible to the raw root file (a raw-only bake left the
+    # town canvas blank and the tagline on its generic default).
+    # load_pack is the validator's unified shape; it carries the
+    # gold_rule read-fallback through creed_from, and raw root fields
+    # ride along underneath.
+    world = {
+        **_json.loads((pack / 'world.json').read_text(encoding='utf-8')),
+        **load_pack(pack),
+    }
     title = world.get('title', pack.name)
     logbok = (pack / 'logbok.md').read_text(encoding='utf-8') if (pack / 'logbok.md').exists() else ''
     ledger = (pack / 'ledger.md').read_text(encoding='utf-8') if (pack / 'ledger.md').exists() else ''
