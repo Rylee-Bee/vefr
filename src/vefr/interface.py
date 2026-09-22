@@ -29,7 +29,7 @@ smallest translator-specific container for that vocabulary.
 Config (plain process env, repo convention; loopback ONLY):
 
     VEFR_INTERFACE_URL       llama.cpp /v1/chat/completions endpoint
-                             (default http://127.0.0.1:8085)
+                             (default http://127.0.0.1:8087)
     VEFR_INTERFACE_MODEL     alias/model sent to the endpoint
                              (default qwen3.5-9b-mtp)
     VEFR_INTERFACE_TIMEOUT   seconds for one completion (default 60)
@@ -42,9 +42,11 @@ fabricated instructions as actions (48-55% safe, ~12 unsafe false
 positives each). The 9B shard holds 100% / 100% / zero across the same
 29 deterministic cases.
 
-Port note: 8085 is the translator's unambiguous default - 8081 is the
+Port note: 8087 is the translator's unambiguous default - 8081 is the
 engine's llama.cpp default, 8082 is Spark's default AND the live
-llama-embed (bge-m3) service, 11436/11437 are the 9B servers. The
+llama-embed (bge-m3) service, 8083-8086 are the bundled fleet (8085 is
+the bundled Vision/SmolVLM2 tenant - the translator moved off it when
+vision shipped,2026-09-22), 11436/11437 are the 9B servers. The
 translator never shares a default port with another conceptual service.
 
 Only 127.0.0.1 is ever used - the host's pasta IPv6 loopback is broken,
@@ -169,7 +171,7 @@ class InterfaceMalformed(RuntimeError):
 # --- configuration ------------------------------------------------------
 
 def interface_url() -> str:
-    return os.environ.get("VEFR_INTERFACE_URL", "http://127.0.0.1:8085").rstrip("/")
+    return os.environ.get("VEFR_INTERFACE_URL", "http://127.0.0.1:8087").rstrip("/")
 
 
 def interface_model() -> str:

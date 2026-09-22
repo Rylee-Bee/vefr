@@ -10,7 +10,7 @@ Network=host
 # Model fleet (locked 2026-09-21):
 #   :8083  Spark      Qwen3-0.6B          ~460 MB
 #   :8084  Storyteller Qwen3-1.7B        ~1.1 GB
-#   :8085  Vision     SmolVLM2-500M       ~640 MB
+#   :8085  Vision     SmolVLM2-500M       546 MB (Q8_0+mmproj)
 #   :8086  Embeddings bge-m3              ~600 MB
 # Total resident: ~2.8 GB
 ExecStart=/start-models.sh

@@ -221,7 +221,7 @@ def test_log_shape_and_runtime_private(env, tmp_path, monkeypatch):
 
 def test_loopback_default_not_localhost(monkeypatch):
     monkeypatch.delenv("VEFR_INTERFACE_URL", raising=False)
-    assert interface.interface_url() == "http://127.0.0.1:8085"
+    assert interface.interface_url() == "http://127.0.0.1:8087"
     assert "localhost" not in interface.interface_url()
     assert "::1" not in interface.interface_url()
 

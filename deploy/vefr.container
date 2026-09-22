@@ -15,6 +15,7 @@ Environment=VEFR_KEEP_ALIVE=1m
 Environment=VEFR_VAULT=/app/data/vault.json
 Environment=VEFR_JOURNAL=/app/data/journal.json
 Environment=VEFR_SPARK_URL=http://127.0.0.1:8083
+Environment=VEFR_VISION_URL=http://127.0.0.1:8085
 Environment=VEFR_EMBED_URL=http://127.0.0.1:8086
 Volume=vefr-template:/app/worlds-template:ro
 Volume=vefr-worlds:/app/worlds
