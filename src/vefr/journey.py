@@ -55,7 +55,7 @@ PHASE_JOURNEY_RUNE: dict[str, dict[str, str]] = {
     "awed": {
         "stage": "the revelation / the return",
         "rune": "Sowilo",
-        "rune_meaning": "the sun - the gold moment, the warmth earned by the journey back",
+        "rune_meaning": "the sun - the warmth earned by the journey back",
         "journey_question": "what does the protagonist carry home that they did not carry out?",
     },
 }
@@ -82,9 +82,9 @@ JOURNEY_STAGE_PROSE: dict[str, str] = {
         "looking for."
     ),
     "awed": (
-        "The return. The world is the same and not the same. The "
-        "gold is in the water, the gold is in the fire, the gold "
-        "is what the protagonist carries home. The home is the "
+        "The return. The world is the same and not the same. What "
+        "the water kept, what the fire kept, what the protagonist "
+        "carries home: the same thing, changed. The home is the "
         "home. The protagonist is not."
     ),
 }

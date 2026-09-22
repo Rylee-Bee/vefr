@@ -4,7 +4,7 @@
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml/badge.svg)](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml)
 
-> *It gives the hellos that never happened.*
+> *The loom is strung; the world provides the thread.*
 
 **A story engine you run on your own machine. You bring the story. VEFR brings the world.**
 
@@ -163,9 +163,14 @@ empty until a pack mounts.
 
 ### Design
 
-The engine never gates the player on HP, attack, or roll results.
-There is no failure state. The bell never rings bad, items can't be
-lost, NPCs always have a line. HP bars are a *costume*.
+How hard the numbers bite is each world's own law, not the
+engine's: every act declares a `floor` - `costume` (the default:
+HP tracks as a number, the player never drops to zero, the bar
+is a *costume*), `story` (failure bends the narrative), or
+`stakes` (the numbers bite; the act's ruleset says how). Under
+the default floor the engine never gates the player on HP,
+attack, or roll results: the bell never rings bad, items can't
+be lost, NPCs always have a line.
 
 The story structure follows the **Hero's Journey** through four
 phases:

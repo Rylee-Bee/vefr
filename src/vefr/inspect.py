@@ -60,6 +60,9 @@ def resolved_world() -> dict:
                 "transitions": a.get("transitions", []),
                 "vault_intro": a.get("vault_intro", ""),
                 "verbs": a.get("verbs", []),
+                "floor": a.get("floor", "costume"),
+                "tone": a.get("tone", ""),
+                "ruleset": a.get("ruleset", "ambient"),
             }
             for a in w["acts"]
         ],

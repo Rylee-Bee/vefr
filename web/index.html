@@ -648,7 +648,6 @@
     background: transparent;
   }
   .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
-  .tabs button[data-view="awed"][aria-selected="true"] { color: var(--accent); border-color: var(--accent); }
   .tabs button:hover { border-color: var(--accent); }
   .tabs button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
@@ -680,7 +679,7 @@
     color: var(--muted-foreground);
   }
   .phase-rail button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-dim); background: var(--card); }
-  .phase-rail button[data-phase="awed"][aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+  .phase-rail button[data-culm="true"][aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 
   .controls { display: flex; align-items: center; gap: 0.8rem; margin: 1.2rem 0 0; }
   .controls button, .dpad button {
@@ -705,9 +704,10 @@
   .card .whisper { margin: 0.4rem 0 0; }
   .card .hook { color: var(--ink-dim); font-style: italic; margin: 0.5rem 0 0; font-size: 0.92rem; }
   .card .truth { color: var(--ink-dim); font-size: 0.82rem; margin-top: 0.4rem; }
-  .card[data-phase="awed"], .card[data-bond="attuned"] { border-color: var(--accent); }
-  .card[data-phase="awed"] .speaker, .card[data-bond="attuned"] .speaker { color: var(--accent); }
-  .card[data-phase="feared"], .card[data-bond="assigned"] { border-color: var(--church); }
+  /* The culminating phase of the pack's own phase list wears the
+     accent - position, never a pack's phase names. */
+  .card[data-culm="true"] { border-color: var(--accent); }
+  .card[data-culm="true"] .speaker { color: var(--accent); }
   .card .kind { color: var(--ink-dim); font-size: 0.85rem; font-style: italic; }
 
   /* per-entry star / remove - the journal and the vault use the same
@@ -960,7 +960,6 @@
   .npc-name { margin: 0; color: var(--ink-dim); font-size: 0.9rem; letter-spacing: 0.06em; }
   .npc-line { margin: 0.4rem 0 0.9rem; }
   .npc-box button { font-size: 0.88rem; padding: 0.5rem 1rem; color: var(--muted-foreground); }
-  .npc-box.sighting { border-color: var(--primary); }
 
   /* The surface costume. The engine's surface field becomes a
      <body data-surface="combat|investigation|plain"> attribute on
@@ -972,16 +971,10 @@
      The HP bar is at the top of the Town view; the combat verb
      buttons live in the npc-box; the encounter prompt is a
      one-line note under the canvas that appears in
-     doubted/feared/awed phases.
+     the pack's later phases.
 
      Luminance-first: rank by lightness, not hue. A red/brown tint
      is the max deviation; the cards stay mostly ink-on-card. */
-  body[data-surface="combat"] .card[data-phase="feared"] {
-    border-color: #6b3a2a;       /* dim red-brown */
-  }
-  body[data-surface="combat"] .card[data-phase="awed"] {
-    border-color: var(--accent);
-  }
 
   /* HP bar - combat surface only. The bar is a thin flexbox
      pinned above the phase rail in the Town view. Plain /
@@ -1041,8 +1034,6 @@
     font-size: 0.88rem; padding: 0.45rem 0.9rem;
     color: var(--muted-foreground);
   }
-  .npc-box.sighting { border-color: var(--primary); }
-  .npc-box.sighting .npc-line { color: var(--primary); }
 
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -1539,7 +1530,7 @@
     </div>
   </div>
   <div class="sub-bar">
-    <p class="tagline">memory &amp; longing, flying out and coming home &mdash; it gives the hellos that never happened</p>
+    <p class="tagline">the loom is strung; the world provides the thread</p>
     <p class="note" id="session-note" hidden>playthrough <span id="session-id"></span> &middot; <button type="button" id="new-game-btn">new game</button></p>
   </div>
 </header>
@@ -1626,12 +1617,7 @@
     <div class="npc-box" id="npc-box" hidden>
       <p class="npc-name" id="npc-name"></p>
       <p class="npc-line" id="npc-line"></p>
-      <div class="verb-row" id="verb-row">
-        <button type="button" data-verb="attack">Strike</button>
-        <button type="button" data-verb="console">Console</button>
-        <button type="button" data-verb="hurl">Hurl an insult</button>
-        <button type="button" data-verb="observe">Observe</button>
-      </div>
+      <div class="verb-row" id="verb-row"></div>
       <button type="button" id="npc-close">close</button>
     </div>
     <p class="note" id="poi" aria-live="polite"></p>
@@ -2479,6 +2465,7 @@
         var b = document.createElement('button');
         b.type = 'button';
         b.dataset.phase = p;
+        b.dataset.culm = (p === phases[phases.length - 1]) ? 'true' : 'false';
         b.textContent = p;
         b.setAttribute('aria-pressed', 'false');
         rail.appendChild(b);
@@ -2532,7 +2519,7 @@
   function whisperHTML(c, ph) {
     var hook = c.hook ? '<p class="hook">' + esc(c.hook) + '</p>' : '';
     var truth = c.is_true ? '' : '<p class="truth">a lie, or close enough</p>';
-    return '<article class="card" data-phase="' + ph + '">'
+    return '<article class="card" data-phase="' + ph + '" data-culm="' + (ph === (STATE.get().phases || []).slice(-1)[0] ? 'true' : 'false') + '">'
       + '<div class="speaker">' + esc(c.speaker) + '</div>'
       + '<p class="whisper">&ldquo;' + esc(c.whisper) + '&rdquo;</p>'
       + hook + truth + '</article>';
@@ -2561,13 +2548,18 @@
       el.textContent = '';
       return;
     }
-    var lines = {
-      'doubts': 'something watches from the corner of the street.',
-      'feared': 'the air tastes like old metal. they are very still.',
-      'awed':   'the room is quiet in a way that means something has been said.'
-    };
+    /* Position, not names: the phase vocabulary belongs to the
+       pack. Second phase watches, third goes still, fourth and
+       beyond fall quiet. */
+    var lines = [
+      '',
+      'something watches from the corner of the street.',
+      'the air tastes like old metal. they are very still.',
+      'the room is quiet in a way that means something has been said.'
+    ];
     el.hidden = false;
-    el.textContent = lines[ph] || ('something stirs nearby.');
+    el.textContent = lines[Math.min(phaseIdx, lines.length - 1)]
+      || ('something stirs nearby.');
   }
   window.addEventListener('vefr:phase', function () {
     var p = STATE.get().phase;
@@ -2589,6 +2581,31 @@
      to /api/combat/action and the response lands in the journal
      tab. The button briefly disables so the user knows the
      action fired. */
+  /* The act's verbs are the pack's own vocabulary; the engine's
+     defaults keep the old costume when the act declares none. */
+  var UI_DEFAULT_VERBS = [
+    ['attack', 'Strike'], ['console', 'Console'],
+    ['hurl', 'Hurl an insult'], ['observe', 'Observe']
+  ];
+  function renderVerbRow(w) {
+    var row = document.getElementById('verb-row');
+    if (!row) return;
+    var act = (w && (w.act || (w.acts && w.acts[0]))) || {};
+    var verbs = Array.isArray(act.verbs) && act.verbs.length
+      ? act.verbs.map(function (v) {
+          return [v, v.charAt(0).toUpperCase() + v.slice(1)];
+        })
+      : UI_DEFAULT_VERBS;
+    row.innerHTML = '';
+    verbs.forEach(function (pair) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.verb = pair[0];
+      b.textContent = pair[1];
+      row.appendChild(b);
+    });
+  }
+  STATE.world().then(renderVerbRow);
   var verbRow = document.getElementById('verb-row');
   if (verbRow) {
     verbRow.addEventListener('click', function (e) {

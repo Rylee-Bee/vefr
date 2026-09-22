@@ -7,6 +7,32 @@
 
 ## Landed
 
+- [x] **Phase 0 boundary: private canon out of the engine, pack-law contracts
+      in, guards into code** (2026-09-22): owner-approved Phase 0 of
+      VEFR-GAME-PLAN-2026-09-22 (vision interview Q1-Q8 is the authority).
+      (1) Private-game assumptions removed WITHOUT touching the Norse
+      identity: the engine tagline/PURPOSE (the old private tagline is gone;
+      now "a rumor engine for playable worlds" + "the loom is strung; the
+      world provides the thread"), gold-canon prose in journey.py/runes.py,
+      the hardcoded 'awed'-phase sighting in town.js, starred stefna letters
+      routed under a pack phase name (now their own `## letters` heading), and
+      CSS/encounter lines keyed by phase/bond NAMES (now positional: the pack's
+      culminating phase wears the accent via data-culm; encounter lines key by
+      phase index). (2) Pack-law contract (world.py docstring): per-act `floor`
+      (costume|story|stakes; default costume = today's behavior exactly),
+      `tone` (the ridiculous-literal dial, carried in the storyteller prompt),
+      `ruleset` (default ambient), `verbs` (the act's own action vocabulary -
+      when declared it replaces the costume verbs in the HUD AND the
+      /api/combat/action whitelist); `enemies/bosses/transitions` now
+      shape-validated. All optional; every existing pack loads unchanged.
+      (3) Guards extended into engine code: canon-strings list carries the
+      removed strings (it caught this very entry's first draft quoting them -
+      the teeth work); tests/test_phase0_boundary.py pins the boundary in CI
+      (no pack phase names in engine behavior, no private taglines, verb/
+      floor/tone/ruleset validation, tone-dial prompt carriage).
+      (4) Function preserved: ruff + pytest + public-surface + norns validate
+      green; sample-world untouched.
+
 - [x] **web: setup is a choice, not a wall; the URL join can't double**
       (2026-09-22): two player-facing defects in `web/packaged.html`,
       both hit live during the WP5 playthrough. (1) Every POST joined

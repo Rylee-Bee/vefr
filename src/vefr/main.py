@@ -25,7 +25,7 @@ from .npc import generate_line
 from .paths import app_home
 from .world import load_world, current_act
 
-PURPOSE = "it gives the hellos that never happened"
+PURPOSE = "a rumor engine for playable worlds"
 
 
 def _app_title() -> str:
@@ -215,6 +215,7 @@ def combat_action(req: CombatAction, session: str = ""):
                 phase=req.phase,
                 target=req.target,
                 session=session,
+                allowed=combat.verbs_for_pack(load_world()),
             )
         except ValueError as e:
             from fastapi import HTTPException
@@ -267,7 +268,14 @@ def world():
         "phases": list(w["phases"].keys()),
         "surface": w["surface"],
         "hp": combat.hp_for_pack(w) if w["surface"] == "combat" else None,
-        "act": {"id": act["id"], "title": act["title"]},
+        "act": {
+            "id": act["id"],
+            "title": act["title"],
+            "verbs": list(act.get("verbs") or []),
+            "floor": act.get("floor", "costume"),
+            "tone": act.get("tone", ""),
+            "ruleset": act.get("ruleset", "ambient"),
+        },
         "regions": {"town": {"map_text": town_map}},
         "tile": legacy.get("tile", 32),
         "bg": legacy.get("bg", "#131311"),
