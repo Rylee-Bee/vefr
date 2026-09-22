@@ -91,6 +91,16 @@ VALID_SURFACES = ("combat", "investigation", "plain")
 REQUIRED_FLAT = ("title", "phases", "voices", "bonds", "town")
 
 
+def creed_from(config: dict) -> str:
+    """The world's creed - the one governing line of a pack.
+
+    `gold_rule` is the pre-rename field name (the term belonged to one
+    author's game). It is read forever so packs written before the
+    rename keep their line; maplab writes the value back as `creed`.
+    """
+    return config.get("creed") or config.get("gold_rule", "")
+
+
 class PackError(RuntimeError):
     """A world pack failed to load. The error message names the pack
     and the cause so the author can fix it without reading the stack."""
@@ -420,7 +430,7 @@ def load_world(name: str | None = None) -> dict:
         "name": d.name,
         "title": config.get("title") or acts[0]["title"],
         "description": config.get("description", ""),
-        "gold_rule": config.get("gold_rule", ""),
+        "creed": creed_from(config),
         "phases": config["phases"],
         "logbok": _read_text(d / "logbok.md", what=f"{d.name}/logbok.md"),
         "ledger": _read_text(d / "ledger.md", what=f"{d.name}/ledger.md"),

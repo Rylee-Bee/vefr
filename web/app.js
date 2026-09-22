@@ -1250,9 +1250,9 @@
       // The room's quiet sound — pinned at the top of the desk
       parts.push('<p class="room-ambience">' + esc(AMBIENCE.workshop) + '</p>');
 
-      // The gold rule — cast in brass above the desk
-      if (world.gold_rule) {
-        parts.push('<p class="workshop__gold-rule">' + esc(world.gold_rule) + '</p>');
+      // The creed — cast in brass above the desk
+      if (world.creed) {
+        parts.push('<p class="workshop__creed">' + esc(world.creed) + '</p>');
       }
 
       // The map — a scrap pinned to the desk
@@ -1296,8 +1296,8 @@
         items.push({ label: 'Phases', value: world.phases.join(', ') });
       if (world.surface)
         items.push({ label: 'Surface', value: world.surface });
-      if (world.gold_rule)
-        items.push({ label: 'Gold Rule', value: world.gold_rule });
+      if (world.creed)
+        items.push({ label: 'Creed', value: world.creed });
       if (world.hp)
         items.push({ label: 'HP', value: world.hp.current + '/' + world.hp.max });
 
@@ -2617,9 +2617,9 @@
           if (world && world.title) {
             box.innerHTML = '<p style="font-family:Spectral,serif;font-size:17px;color:var(--gold,#C9AD6B);margin-bottom:8px">'
               + esc(world.title) + '</p>';
-            if (world.gold_rule) {
+            if (world.creed) {
               box.innerHTML += '<p style="font-family:Spectral,serif;font-style:italic;color:var(--text-muted,#C2BDB0)">'
-                + esc(world.gold_rule) + '</p>';
+                + esc(world.creed) + '</p>';
             }
           } else {
             box.innerHTML = '<p style="color:var(--text-dim,#A39E92)">No world loaded.</p>';
@@ -2711,8 +2711,8 @@
         var rl = residentLine('hall');
         if (rl) container.appendChild(rl);
 
-        // The gold rule — framed above the studio door
-        var rule = (world && (world.gold_rule || world.title)) || '';
+        // The creed — framed above the studio door
+        var rule = (world && (world.creed || world.title)) || '';
         if (rule) {
           container.appendChild(h('div', { className: 'hall-plaque', textContent: rule }));
         }

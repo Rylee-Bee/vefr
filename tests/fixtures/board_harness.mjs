@@ -27,7 +27,7 @@ const code = fs.readFileSync(path, 'utf8');
 
 const FAKE_WORLD = {
   title: 'Testfield',
-  gold_rule: 'gold only when kind.',
+  creed: 'walk gently.',
   phases: ['dusk', 'dawn'],
   speakers: [
     {

@@ -3,8 +3,8 @@
 The bone-strip audited the engine's code, but a pack is data - the
 gate proves structure, not story absence, so the sample world
 escaped the audit and carried the author's story grammar ("write
-the goodbye", "her hands", the Gold Rule) into an MIT-licensed
-directory.
+the goodbye", "her hands", a private world-rule phrase) into an
+MIT-licensed directory.
 
 This module provides two independent guards:
 1. `test_sample_surfaces_carry_no_private_story`: reads an optional,

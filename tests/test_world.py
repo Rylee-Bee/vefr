@@ -9,7 +9,7 @@ import copy
 
 from vefr import maplab
 from vefr.paths import pack_dir
-from vefr.world import current_act, load_world
+from vefr.world import creed_from, current_act, load_world
 
 WORLD = 'sample-world'
 
@@ -29,6 +29,16 @@ def _legacy_town():
 def test_maplab_validates_the_pack():
     errors = maplab.validate(_w(), pack_dir=pack_dir(WORLD))
     assert errors == []
+
+
+def test_creed_reads_the_legacy_field_name():
+    """The pre-rename `gold_rule` field is read forever: packs written
+    before the rename keep their line, and `creed` wins when both exist
+    (maplab writes the value back as `creed` on the next save)."""
+    assert creed_from({"creed": "new line"}) == "new line"
+    assert creed_from({"gold_rule": "old line"}) == "old line"
+    assert creed_from({"creed": "new line", "gold_rule": "old line"}) == "new line"
+    assert creed_from({}) == ""
 
 
 def test_maplab_flags_a_broken_map():

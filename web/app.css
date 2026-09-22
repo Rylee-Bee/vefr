@@ -501,8 +501,8 @@ body {
 .workshop__content p { margin: 0 0 1.3em; }
 .workshop__content p:last-child { margin-bottom: 0; }
 
-/* The gold rule — cast in brass above the desk */
-.workshop__gold-rule {
+/* The creed — cast in brass above the desk */
+.workshop__creed {
   font-family: 'Spectral', Georgia, serif;
   font-style: italic;
   font-size: 17px;
@@ -520,7 +520,7 @@ body {
   position: relative;
   transform: rotate(-0.25deg);
 }
-.workshop__gold-rule::before {
+.workshop__creed::before {
   content: '✦';
   position: absolute;
   right: 10px; top: 8px;
@@ -1241,7 +1241,7 @@ body {
   opacity: 0.7;
 }
 
-/* The gold rule, framed on the wall */
+/* The creed, framed on the wall */
 .hall-plaque {
   font-family: 'Spectral', Georgia, serif;
   font-style: italic;

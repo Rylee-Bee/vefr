@@ -24,6 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from .paths import world_name as _default_world_name
+from .world import creed_from as _creed_from
 
 BLOCKED_FALLBACK = ['~', 'B', '#', 'T', 'M']
 
@@ -90,7 +91,7 @@ def load_pack(pack_dir: Path) -> dict:
             'name': pack.name,
             'title': config.get('title', act.get('title', pack.name)),
             'description': config.get('description', ''),
-            'gold_rule': config.get('gold_rule', ''),
+            'creed': _creed_from(config),
             'phases': config['phases'],
             'voices': config.get('voices', {}),
             'bonds': config.get('bonds', {}),
@@ -325,7 +326,7 @@ def write_pack(pack_dir: Path, w: dict) -> None:
             'name': pack.name,
             'title': w.get('title', pack.name),
             'description': w.get('description', ''),
-            'gold_rule': w.get('gold_rule', ''),
+            'creed': _creed_from(w),
             'phases': w.get('phases', {}),
             'surface': w.get('surface', 'combat'),
             'voices': w.get('voices', {}),
@@ -342,7 +343,7 @@ def write_pack(pack_dir: Path, w: dict) -> None:
             'name': pack.name,
             'title': w.get('title', pack.name),
             'description': w.get('description', ''),
-            'gold_rule': w.get('gold_rule', ''),
+            'creed': _creed_from(w),
             'phases': w.get('phases', {}),
             'surface': w.get('surface', 'combat'),
             'voices': w.get('voices', {}),
