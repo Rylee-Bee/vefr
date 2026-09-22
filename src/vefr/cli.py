@@ -1010,7 +1010,7 @@ def cmd_test(args) -> int:
 
 RATATOSKR_HELP = """ratatoskr - the squirrel who carries messages up and down Yggdrasil.
 
-Three subcommands for ferrying things between the engine and the
+Subcommands for ferrying things between the engine and the
 rest of the world:
 
   ratatoskr skipa         the seven questions - git/deploy sync,
@@ -1067,7 +1067,7 @@ rest of the world:
 
 NORNS_HELP = """norns - the weavers of fate at the well beneath Yggdrasil.
 
-Four subcommands for shaping what the engine makes:
+Subcommands for shaping what the engine makes:
 
   norns chat        interview a new world into existence, against
                     your local model. Writes worlds/<name>/,
