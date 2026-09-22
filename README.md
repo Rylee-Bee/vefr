@@ -340,7 +340,7 @@ you a fully playable game with no external LLM configuration:
 |---|---|---|---|
 | :8083 | Spark | Qwen3-0.6B | ~460 MB |
 | :8084 | Storyteller | Qwen3-1.7B | ~1.1 GB |
-| :8085 | Vision | SmolVLM2-500M | ~640 MB |
+| :8085 | Vision | SmolVLM2-500M (Q8_0 + mmproj) | 546 MB |
 | :8086 | Embeddings | bge-m3 | ~600 MB (optional) |
 
 CPU-only, ~4 GB RAM minimum. See `docs/guides/bundled-brain.md`

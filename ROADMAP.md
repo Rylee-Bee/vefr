@@ -7,6 +7,25 @@
 
 ## Landed
 
+- [x] **Bundled fleet complete: Vision tenant on :8085** (2026-09-22):
+      docs promised a 4-model fleet; the image carried 3 — SmolVLM2 was
+      never bundled (the docs-vs-reality gap). Added
+      `ggml-org/SmolVLM2-500M-Video-Instruct` Q8_0 (417 MB) + its mmproj
+      (104 MB) — SmolVLM2's only official 500M checkpoint, API-verified
+      URLs + size guards, one image layer per model so editing one fetch
+      can't re-fetch the fleet, and a build-time `--mmproj` assertion so
+      a multimodal-less llama-server can never ship. `start-bundled.sh`
+      launches vision on :8085 (health loop now 8083–8086);
+      `VEFR_VISION_URL` baked into the image + compose/quadlet parity.
+      The Interface Translator's default moved :8085 → :8087 — its own
+      stated invariant is "never shares a default port with another
+      conceptual service", and vision is now :8085's tenant (its docstring
+      records the move). README/guide size claims corrected to the real
+      546 MB. Verified local E2E: image in → description out on :8085,
+      four brains + engine green; ruff clean; pytest 425 passed /
+      2 skipped / 2 known model-dependent env failures; public-surface
+      clean.
+
 - [x] **NPC seed fallback survives the fail-closed translation** (2026-09-22):
       with the brain down, `POST /api/npc` returned a 404 leaking
       `[Errno111] Connection refused` instead of the canon seed line the

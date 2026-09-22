@@ -10,7 +10,7 @@ CPU-only, no GPU required.
 |---|---|---|---|---|
 | :8083 | Spark | Qwen3-0.6B-Instruct | ~460 MB | Interface translator — structured state edits, bounded NPC logic, continuity |
 | :8084 | Storyteller | Qwen3-1.7B | ~1.1 GB | Primary narration, dialogue, scene description |
-| :8085 | Vision | SmolVLM2-500M-Instruct | ~640 MB | Image understanding for visual scenes |
+| :8085 | Vision | SmolVLM2-500M-Video-Instruct (Q8_0 + mmproj) | 546 MB | Image understanding for visual scenes |
 | :8086 | Embeddings | bge-m3 | ~600 MB | Vector embeddings for lore retrieval (optional) |
 
 **Total resident memory: ~2.8 GB**
@@ -22,7 +22,7 @@ llama-server process on its designated port.
 
 - **Qwen3-0.6B (Spark):** Fastest sub-1B with reliable structured output. Q4 quantization is forbidden for sub-1B models — state edits corrupt. Runs at ~58 tok/s on CPU.
 - **Qwen3-1.7B (Storyteller):** Best quality-to-size ratio for narration within the bundled budget. ~21 tok/s on CPU — fast enough for conversational flow.
-- **SmolVLM2-500M (Vision):** Smallest vision model that handles scene descriptions. Keeps the vision role available without blowing the memory budget.
+- **SmolVLM2-500M (Vision):** `SmolVLM2-500M-Video-Instruct` at Q8_0 plus its mmproj projector (546 MB total) — SmolVLM2's only official 500M checkpoint, and the smallest model that handles scene descriptions. Keeps the vision role available without blowing the memory budget.
 - **bge-m3 (Embeddings):** Runs the lore retrieval pipeline. Marked optional — the game works without it, just loses semantic lore search.
 
 ## Port topology
@@ -47,14 +47,14 @@ Engine env vars map these ports:
 | `VEFR_LLAMACPP_URL` | `http://127.0.0.1:8081` | `http://127.0.0.1:8084` |
 | `VEFR_MODEL` | `gpt-oss-20b` | `qwen3-1.7b` |
 | `VEFR_SPARK_URL` | `http://127.0.0.1:8082` | `http://127.0.0.1:8083` |
-| `VEFR_VISION_URL` | _(not yet read)_ | `http://127.0.0.1:8085` |
+| `VEFR_VISION_URL` | _(not yet read by the engine)_ | `http://127.0.0.1:8085` |
 | `VEFR_EMBED_URL` | `http://127.0.0.1:8082` | `http://127.0.0.1:8086` |
 
 ## Hardware requirements
 
 - **Minimum:** 4 GB RAM, any modern CPU (x86_64 or aarch64)
 - **Recommended:** 8 GB RAM, 4+ cores
-- **Storage:** ~3 GB for model files + engine + world data
+- **Storage:** ~3.6 GB for model files + engine + world data
 - **GPU:** Not required. All models run on CPU via llama.cpp.
 
 ## How to swap models

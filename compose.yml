@@ -1,6 +1,6 @@
 # vefr — a rumor engine for playable worlds
 #
-# BUNDLED BRAIN (default): ships with 3 small models inside the
+# BUNDLED BRAIN (default): ships with 4 small models inside the
 # container. `docker compose up` = fully playable game.
 #
 # EXTERNAL BRAIN: edit the env vars below to point at your own
@@ -29,6 +29,7 @@ services:
       VEFR_LLAMACPP_URL: http://127.0.0.1:8084
       VEFR_MODEL: qwen3-1.7b
       VEFR_SPARK_URL: http://127.0.0.1:8083
+      VEFR_VISION_URL: http://127.0.0.1:8085
       VEFR_EMBED_URL: http://127.0.0.1:8086
       # ── External brain (uncomment to override) ──
       # Set VEFR_BUNDLED_BRAIN=0 and point at your own endpoint:

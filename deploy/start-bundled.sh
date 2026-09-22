@@ -1,6 +1,6 @@
 #!/bin/bash
 # ── vefr bundled brain entrypoint ─────────────────────────────
-# Starts 3 llama.cpp servers (spark, storyteller, embeddings)
+# Starts 4 llama.cpp servers (spark, storyteller, vision, embed)
 # then the vefr engine. All inside one container.
 #
 # To use an external brain instead:
@@ -20,7 +20,7 @@ fi
 
 echo "$LOG_PREFIX Starting bundled brain..."
 
-# Start spark (Qwen3-0.6B) — interface translator
+# Start spark (Qwen3-0.6B) — the resident quick brain
 echo "$LOG_PREFIX  Spark (Qwen3-0.6B) → :8083"
 llama-server \
     --model "$MODELS_DIR/spark.gguf" \
@@ -36,6 +36,15 @@ llama-server \
     --ctx-size 4096 --threads $(nproc) --parallel 1 \
     --log-disable 2>/dev/null &
 
+# Start vision (SmolVLM2-500M) — image understanding + its projector
+echo "$LOG_PREFIX  Vision (SmolVLM2-500M) → :8085"
+llama-server \
+    --model "$MODELS_DIR/vision.gguf" \
+    --mmproj "$MODELS_DIR/vision-mmproj.gguf" \
+    --port 8085 --host 0.0.0.0 \
+    --ctx-size 4096 --threads $(nproc) --parallel 1 \
+    --log-disable 2>/dev/null &
+
 # Start embeddings (bge-m3) — lore retrieval
 echo "$LOG_PREFIX  Embeddings (bge-m3) → :8086"
 llama-server \
@@ -46,7 +55,7 @@ llama-server \
 
 # Wait for models to load (check /health on each port)
 echo "$LOG_PREFIX Waiting for models to load..."
-for port in 8083 8084 8086; do
+for port in 8083 8084 8085 8086; do
     for i in $(seq 1 60); do
         if curl -sf "http://127.0.0.1:$port/health" > /dev/null 2>&1; then
             echo "$LOG_PREFIX  :$port ready"

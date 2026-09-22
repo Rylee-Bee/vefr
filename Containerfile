@@ -1,5 +1,5 @@
 # ── vefr: a rumor engine for playable worlds ──────────────────
-# Bundled brain edition — ships with llama.cpp + 3 small models.
+# Bundled brain edition — ships with llama.cpp + 4 small models.
 # `docker compose up` = fully playable game, no external LLM setup.
 #
 # Override to external brain:
@@ -45,23 +45,41 @@ FROM engine AS brain
 # Copy llama-server from the builder stage
 COPY --from=llama-builder /usr/local/bin/llama-server /usr/local/bin/llama-server
 RUN llama-server --version
+# Vision gate: the fleet promises a vision tenant on :8085, which needs
+# multimodal (mtmd) support compiled in. Fail the build if it is missing.
+RUN llama-server --help 2>&1 | grep -q -- "--mmproj" && \
+    echo "multimodal (--mmproj) support: compiled in" || \
+    { echo "FATAL: llama-server built without --mmproj (no vision)"; exit 1; }
 
-# Download the model fleet (~2.1GB total)
-# curl -L follows HuggingFace redirects; size check catches error-page downloads
-RUN mkdir -p /app/models && \
-    echo "Downloading Qwen3-0.6B (spark)..." && \
+# Download the model fleet (~2.7GB total).
+# curl -L follows HuggingFace redirects; size checks catch error-page
+# downloads (a bad URL returns a 15-29 byte page, never a model).
+# One layer per model so editing one download never re-fetches the rest.
+RUN mkdir -p /app/models
+RUN echo "Downloading Qwen3-0.6B (spark)..." && \
     curl -sSL "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf" \
       -o /app/models/spark.gguf && \
-    echo "Downloading Qwen3-1.7B (storyteller)..." && \
+    test $(stat -c%s /app/models/spark.gguf) -gt 100000000
+RUN echo "Downloading Qwen3-1.7B (storyteller)..." && \
     curl -sSL "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf" \
       -o /app/models/storyteller.gguf && \
-    echo "Downloading bge-m3 (embeddings)..." && \
+    test $(stat -c%s /app/models/storyteller.gguf) -gt 500000000
+RUN echo "Downloading bge-m3 (embeddings)..." && \
     curl -sSL "https://huggingface.co/vonjack/bge-m3-gguf/resolve/main/bge-m3-q8_0.gguf" \
       -o /app/models/embeddings.gguf && \
-    echo "Models downloaded:" && ls -lh /app/models/ && \
-    test $(stat -c%s /app/models/spark.gguf) -gt 100000000 && \
-    test $(stat -c%s /app/models/storyteller.gguf) -gt 500000000 && \
     test $(stat -c%s /app/models/embeddings.gguf) -gt 300000000
+# Vision: SmolVLM2's only official 500M checkpoint (Video-Instruct) at Q8_0
+# + its multimodal projector. Image URLs API-verified 2026-09-22:
+#   main    436,808,704 B   mmproj 108,785,184 B
+RUN echo "Downloading SmolVLM2-500M (vision)..." && \
+    curl -sSL "https://huggingface.co/ggml-org/SmolVLM2-500M-Video-Instruct-GGUF/resolve/main/SmolVLM2-500M-Video-Instruct-Q8_0.gguf" \
+      -o /app/models/vision.gguf && \
+    echo "Downloading SmolVLM2 vision projector (mmproj)..." && \
+    curl -sSL "https://huggingface.co/ggml-org/SmolVLM2-500M-Video-Instruct-GGUF/resolve/main/mmproj-SmolVLM2-500M-Video-Instruct-Q8_0.gguf" \
+      -o /app/models/vision-mmproj.gguf && \
+    test $(stat -c%s /app/models/vision.gguf) -gt 400000000 && \
+    test $(stat -c%s /app/models/vision-mmproj.gguf) -gt 100000000
+RUN echo "Model fleet:" && ls -lh /app/models/
 
 # Entrypoint: start bundled brain + engine
 COPY deploy/start-bundled.sh /app/start-bundled.sh
@@ -82,12 +100,13 @@ RUN chmod +x /app/start-bundled.sh
 ENV VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
     VEFR_MODEL=qwen3-1.7b \
     VEFR_SPARK_URL=http://127.0.0.1:8083 \
+    VEFR_VISION_URL=http://127.0.0.1:8085 \
     VEFR_EMBED_URL=http://127.0.0.1:8086 \
     VEFR_BUNDLED_BRAIN=1
 
 ARG ENGINE_SHA=unknown
 LABEL vefr.engine_sha=${ENGINE_SHA} \
       vefr.bundled_brain=1 \
-      vefr.models="qwen3-0.6b,qwen3-1.7b,bge-m3"
+      vefr.models="qwen3-0.6b,qwen3-1.7b,smolvlm2-500m,bge-m3"
 
 CMD ["/app/start-bundled.sh"]

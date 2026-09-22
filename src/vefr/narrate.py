@@ -42,7 +42,8 @@ Config (plain process env, repo convention; loopback ONLY):
     VEFR_NARRATE_TEMPLATE  override templates/storyteller/narrate.json
 
 Port note: 8088 is the storyteller shard default - 8081 engine, 8082
-embed/Spark, 8085 interface, 11436/11437 9B, 8086/8089/8090 bench shards.
+embed/Spark, 8085 bundled vision, 8087 interface, 11436/11437 9B,
+8086/8089/8090 bench shards.
 """
 
 import argparse
