@@ -22,7 +22,8 @@ uv run norns build-map --segments segs.json \
 uv run ratatoskr weave --pool 2 --pack your-world    # 4. -> dist/your-world-<date>.html
 ```
 
-Open the HTML in a browser, set your LLM URL + model in it, play.
+Open the HTML in a browser, set your LLM URL + model in it, play — or
+leave both blank to play offline from the woven pool.
 `worlds/*` is gitignored - a throwaway world never touches git.
 
 ## 1. The interview
@@ -108,7 +109,7 @@ VEFR_LLAMACPP_URL=http://127.0.0.1:8083 \
 combination (dry run: 10 lines across `rumor:dusk`, `rumor:dawn`,
 `letter`, `forge`), then writes `dist/your-world-<date>.html`. Open
 it anywhere - the file carries the pack; you set the LLM URL + model
-when you play.
+when you play (or leave both blank and the pool carries you).
 
 ## Where your world lives
 

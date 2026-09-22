@@ -191,7 +191,7 @@
     <p class="hint">e.g. a llama.cpp server on your local network (<code>http://198.51.100.10:8081</code>),
        an ollama instance on the same network, an iPhone running "Local LLM Server"
        from the App Store, or any OpenAI-compatible endpoint. Your data never leaves
-       your device.</p>
+       your device. Leave both blank to play offline - the woven pool carries the world.</p>
   </section>
 
   <div id="play" hidden>
@@ -270,6 +270,27 @@ function loadConfig() {
 function saveConfig(c) {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
 }
+// ---- endpoint join + post ----
+// The config URL is player-entered: it may or may not end in /v1 (the
+// placeholder shows one), may carry trailing slashes. Join once, here,
+// so no caller can ever produce /v1/v1 again.
+function chatEndpoint(base) {
+  var u = String(base || '').replace(/\/+$/, '');
+  if (/\/chat\/completions$/.test(u)) return u;
+  if (/\/v1$/.test(u)) return u + '/chat/completions';
+  return u + '/v1/chat/completions';
+}
+// No endpoint configured (offline play) -> reject straight into the
+// caller's pool/fragment fallback; never fetch a relative URL.
+function llmPost(body) {
+  if (!llmUrl || !llmModel) {
+    return Promise.reject(new Error('offline - no endpoint set'));
+  }
+  return fetch(chatEndpoint(llmUrl), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
 var config = loadConfig();
 var llmUrl = config.llmUrl || '';
 var llmModel = config.llmModel || '';
@@ -282,11 +303,14 @@ var configBox = document.getElementById('config');
 document.getElementById('cfg-save').addEventListener('click', function () {
   llmUrl = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
   llmModel = document.getElementById('cfg-model').value.trim();
-  if (!llmUrl || !llmModel) {
-    alert('both URL and model are required.');
+  // Half-filled is the only mistake worth stopping: one without the
+  // other can never reach an endpoint. Both blank is a real choice -
+  // play offline, the woven pool carries the world.
+  if (!!llmUrl !== !!llmModel) {
+    alert('URL and model go together - fill in both, or leave both blank to play offline.');
     return;
   }
-  saveConfig({ llmUrl: llmUrl, llmModel: llmModel });
+  saveConfig({ llmUrl: llmUrl, llmModel: llmModel, configured: true });
   configBox.hidden = true; play.hidden = false;
   bootstrap();
 });
@@ -443,10 +467,7 @@ function bindWhisper() {
         max_tokens: 200, temperature: 0.95, stream: false,
         chat_template_kwargs: { reasoning_effort: 'low' },
       };
-      var r = await fetch(llmUrl + '/v1/chat/completions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      var r = await llmPost(body);
       if (!r.ok) throw new Error('LLM ' + r.status);
       var j = await r.json();
       var card = JSON.parse(j.choices[0].message.content);
@@ -734,15 +755,12 @@ function setupTown() {
     var schema = { type: 'object', properties: {
       speaker: { type: 'string' }, line: { type: 'string' },
     }, required: ['speaker', 'line'], additionalProperties: false };
-    fetch(llmUrl + '/v1/chat/completions', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: llmModel,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: userPrompt }],
-        response_format: { type: 'json_schema', json_schema: { schema: schema, strict: true } },
-        max_tokens: 120, temperature: 0.85, stream: false,
-        chat_template_kwargs: { reasoning_effort: 'low' },
-      }),
+    llmPost({
+      model: llmModel,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: userPrompt }],
+      response_format: { type: 'json_schema', json_schema: { schema: schema, strict: true } },
+      max_tokens: 120, temperature: 0.85, stream: false,
+      chat_template_kwargs: { reasoning_effort: 'low' },
     }).then(function (r) { return r.json(); }).then(function (j) {
       var line = JSON.parse(j.choices[0].message.content);
       document.getElementById('npc-name').textContent = nearest.spec.name;
@@ -805,8 +823,11 @@ tsEnter.addEventListener('click', function () {
   // After fade completes, remove from flow and show the game
   setTimeout(function () {
     titleScreen.style.display = 'none';
-    // Now reveal config or play surface
-    if (llmUrl && llmModel) {
+    // Now reveal config or play surface. configured:true (saved even
+    // when both fields were left blank) means "setup decided - play",
+    // so offline players don't get re-prompted on every load. The
+    // llmUrl && llmModel check keeps pre-flag saves working.
+    if (config.configured || (llmUrl && llmModel)) {
       configBox.hidden = true; play.hidden = false;
       bootstrap();
     } else {

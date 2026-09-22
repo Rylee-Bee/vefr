@@ -165,6 +165,74 @@ def test_packaged_pool_draw_semantics(tmp_path, monkeypatch, canned_generators):
     assert "pool harness passed" in result.stdout
 
 
+def test_chat_endpoint_normalizes_the_config_url(tmp_path, monkeypatch, canned_generators):
+    """The setup placeholder ends in `/v1`; a naive join once appended
+    `/v1/chat/completions` to it and produced `/v1/v1/...` (seen live).
+    The shipped joiner must collapse every input shape onto exactly one
+    endpoint, so run the built file's own function over the cases."""
+    html = _build_packaged_file(tmp_path, monkeypatch)
+
+    match = re.search(r"function chatEndpoint\(base\) \{.*?\n\}", html, re.DOTALL)
+    assert match, "chatEndpoint missing from packaged file"
+    code = match.group(0)
+
+    cases = [
+        # (input, expected)
+        ("http://192.168.1.5:11434", "http://192.168.1.5:11434/v1/chat/completions"),
+        # The defect: base URL as the placeholder itself shows it.
+        ("http://192.168.1.5:11434/v1", "http://192.168.1.5:11434/v1/chat/completions"),
+        # Trailing slashes and a pasted full endpoint must also land once.
+        ("http://192.168.1.5:11434/v1/", "http://192.168.1.5:11434/v1/chat/completions"),
+        ("http://192.168.1.5:11434/", "http://192.168.1.5:11434/v1/chat/completions"),
+        ("http://192.168.1.5:11434/v1/chat/completions",
+         "http://192.168.1.5:11434/v1/chat/completions"),
+    ]
+    driver = (
+        code + "\n"
+        "const cases = " + json.dumps(cases) + ";\n"
+        "let bad = [];\n"
+        "for (const [input, expected] of cases) {\n"
+        "  const got = chatEndpoint(input);\n"
+        "  if (got !== expected) bad.push({input, expected, got});\n"
+        "}\n"
+        "if (bad.length) { console.error(JSON.stringify(bad, null, 2)); process.exit(1); }\n"
+        "console.log('endpoint join passed');\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", driver],
+        capture_output=True, text=True, timeout=30, env={**os.environ},
+    )
+    assert result.returncode == 0, (
+        f"chatEndpoint failed:\n{result.stdout}\n{result.stderr}")
+    assert "endpoint join passed" in result.stdout
+
+
+def test_setup_gate_allows_offline_play(tmp_path, monkeypatch, canned_generators):
+    """First-run setup once hard-gated `alert('both URL and model are
+    required.')` - no way past it without an endpoint, even though the
+    woven pool exists precisely to carry offline play. The built file
+    must offer the offline path, remember the choice, and never fetch
+    a relative URL when no endpoint is set."""
+    html = _build_packaged_file(tmp_path, monkeypatch)
+
+    # The hard gate is gone; half-filled (a typo) still warns.
+    assert "both URL and model are required." not in html
+    assert "fill in both, or leave both blank" in html
+    # Offline is a saved, remembered choice: returning offline players
+    # skip setup (older saves without the flag still pass via llmUrl).
+    assert "configured: true" in html
+    assert "config.configured || (llmUrl && llmModel)" in html
+    # The copy names the affordance where the player decides.
+    assert "Leave both blank to play offline" in html
+    # Offline never fetches a relative URL: the post helper rejects
+    # straight into the existing pool/fragment fallbacks, and no caller
+    # joins the endpoint by hand anymore.
+    assert "offline - no endpoint set" in html
+    assert "llmUrl + '/v1/chat/completions'" not in html
+    assert "await llmPost(body)" in html
+    assert "llmPost({" in html
+
+
 def test_packaged_carries_the_surface_costume(tmp_path, monkeypatch, canned_generators):
     """The combat costume rides in the packaged file too - the web UI
     half landed in 06eed41; the packaged half was the gap. The built
