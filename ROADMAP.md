@@ -7,6 +7,29 @@
 
 ## Landed
 
+- [x] **Docs restructure: three-section README + canon guard on root
+      docs** (2026-09-22): README grew to 484 lines mixing philosophy,
+      world-authoring, and ops. Restructured to three pillars - "Open
+      and play" (60-second start), "Build a world" (bones/flesh
+      contract, pack layout, Design/Hero's-Journey + lore-pack tables,
+      Surface), "Run the engine" (container, config, compose) - with
+      the intro relinking to the new anchors, ~200 lines out. Moved the
+      env-var table into GETTING_STARTED "What you need" with defaults
+      corrected to code truth (`VEFR_MODEL=gpt-oss-20b`,
+      `VEFR_LLAMACPP_URL=:8081`, `OLLAMA_URL=:11434`,
+      `VEFR_KEEP_ALIVE=1m`), reordered GS to §1 get the code → §2 open
+      and play → §3 make your own world → §4 sound check → §5 CLI →
+      §6 shipping → §7 API (CONTRIBUTING anchor updated), relocated the
+      phone-as-backend section to `docs/guides/install.md`, and cut
+      count-free CLI prose from `cli.py --help`, `AGENTS.md`, and GS
+      (`--help` is canonical). Scrubbed the one private-game canon line
+      from README and extended `test_pack_neutrality` to audit root
+      `*.md` + `LICENSE` with whitespace-normalized matching - RED
+      captured pre-scrub (README:435), green after. Kept the
+      worked-example lore tables (tight) and the pack file list;
+      module tree compressed to pointers at `src/vefr/*.py` docstrings
+      + `brain-socket.md`.
+
 - [x] **screenshots workflow: first-ever green run** (2026-09-22): the
       auto-capture workflow had never passed — 7 straight failures
       since wiring. Every capture step actually succeeded (artifacts
