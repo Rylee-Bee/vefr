@@ -119,6 +119,10 @@ edit `world.json`, `logbok.md`, and the `voices/` files directly - see
 the "Make your own world" section of `README.md` for the full
 contract.
 
+The full interview-to-HTML walkthrough - every question, the
+fallbacks, map reshaping, weaving - is
+`docs/guides/world-creation.md`.
+
 Either way, point the engine at it:
 
 ```sh
@@ -171,5 +175,6 @@ Every route, every request/response shape, try-it-out included.
 |---|---|
 | How does the bones/flesh split work? | `README.md` |
 | What's landed, what's next? | `ROADMAP.md` |
+| How do I build a world end to end? | `docs/guides/world-creation.md` |
 | Who can use what, under what license? | `LICENSE` (engine) and `worlds/<name>/LICENSE` (a specific world, if it has one) |
 | How do I run this always-on? | `README.md` Quickstart (container) section |
