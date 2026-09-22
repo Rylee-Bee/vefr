@@ -7,6 +7,19 @@
 
 ## Landed
 
+- [x] **screenshots workflow: first-ever green run** (2026-09-22): the
+      auto-capture workflow had never passed — 7 straight failures
+      since wiring. Every capture step actually succeeded (artifacts
+      uploaded, ~1.5 MB of PNGs); the run was failed only by
+      `setup-uv@v5`'s post-step, which prunes the uv cache before
+      saving. The prune hung 5 minutes and exited 2, so the cache
+      never once saved (every restore missed "No GitHub Actions
+      cache found") — pure cost, sole failure. Aligned screenshots.yml
+      to the exact pins `ci.yml`/`security.yml` already use and pass
+      with: setup-uv v10.1.0 (prune-cache defaults false, node24),
+      checkout v7.0.1, upload-artifact v7.0.1 — all SHA-pinned like
+      the rest of the fleet.
+
 - [x] **The creed: pack field rename + sample-value sanitize** (2026-09-22):
       the pack contract's `gold_rule` field carried one author's game
       term into the engine, and the sample-world value was that game's
