@@ -34,9 +34,25 @@ If both are set, `VEFR_LLAMACPP_URL` wins.
 > `VEFR_LLAMACPP_URL` is the one that matters. `OLLAMA_URL` only
 > matters for a pack that explicitly declares `provider = "ollama"`.
 
+### Environment variables
+
+Every variable the engine reads, with its default. The engine reads
+plain process env vars, so any entry point picks them up:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `VEFR_LLAMACPP_URL` | `http://127.0.0.1:8081` | OpenAI-compatible endpoint the brain answers on |
+| `OLLAMA_URL` | `http://127.0.0.1:11434` | Only used by a pack declaring `provider = "ollama"` |
+| `VEFR_MODEL` | `gpt-oss-20b` | Model name sent to the server |
+| `VEFR_KEEP_ALIVE` | `1m` | How long the server keeps the model resident |
+| `VEFR_HOME` | repo checkout (container: `/app`) | Where the engine root lives |
+| `VEFR_VAULT` | `<VEFR_HOME>/data/vault` | Session memory store |
+| `VEFR_JOURNAL` | `<VEFR_HOME>/data/journal` | Journal store |
+| `VEFR_WORLD` | `sample-world` | Which pack under `worlds/` is active |
+
 Tip: keep your endpoint config in one place. Copy `example.env`
 to `.env` (gitignored), fill in your host, and source it before
-any entry point - the engine reads plain process env vars:
+any entry point:
 
 ```sh
 cp example.env .env
@@ -55,7 +71,7 @@ cd vefr
 uv sync --group test
 ```
 
-## 2. Run it
+## 2. Open and play
 
 Start a small model server, then start the engine against it:
 
@@ -91,16 +107,7 @@ Emberfield ships with the engine.
 > reachable; without one they say so ("is the model loaded?") and the
 > world stays playable.
 
-## 3. Check the engine is sound
-
-```sh
-uv run ratatoskr test
-```
-
-That's the full pytest suite. It should pass with zero setup beyond
-step 1 - the engine tests itself against the demonstration world.
-
-## 4. Make your own world
+## 3. Make your own world
 
 Two ways in:
 
@@ -116,8 +123,7 @@ trust your own edits; the tool always checks.
 
 Or by hand: copy `worlds/sample-world/` to `worlds/your-world/` and
 edit `world.json`, `logbok.md`, and the `voices/` files directly - see
-the "Make your own world" section of `README.md` for the full
-contract.
+the "Build a world" section of `README.md` for the full contract.
 
 The full interview-to-HTML walkthrough - every question, the
 fallbacks, map reshaping, weaving - is
@@ -129,17 +135,26 @@ Either way, point the engine at it:
 VEFR_WORLD=your-world uv run uvicorn vefr.main:app --app-dir src --port 8820
 ```
 
+## 4. Check the engine is sound
+
+```sh
+uv run ratatoskr test
+```
+
+That's the full pytest suite. It should pass with zero setup beyond
+step 1 - the engine tests itself against the demonstration world.
+
 ## 5. The CLI reference
 
 ```sh
-uv run ratatoskr --help    # memory: skipa, test, weave, ferry (deploy, carry, fetch)
-uv run norns --help    # craft: chat, validate, build-map, verify
+uv run ratatoskr --help    # the ops CLI
+uv run norns --help        # the craft CLI
 ```
 
 Both print a full command list with descriptions - that's the
 canonical reference, always in sync with the code.
 
-## 5b. Shipping to a deploy host
+## 6. Shipping to a deploy host
 
 The deploy wrapper hides rsync + podman build + quadlet restart +
 health check behind one command. First-time setup:
@@ -158,7 +173,7 @@ when you want them to.
 
 Full guide: `docs/guides/deploy.md`.
 
-## 6. The API reference
+## 7. The API reference
 
 The FastAPI app serves interactive docs for free, no separate file
 to keep in sync:
@@ -177,4 +192,4 @@ Every route, every request/response shape, try-it-out included.
 | What's landed, what's next? | `ROADMAP.md` |
 | How do I build a world end to end? | `docs/guides/world-creation.md` |
 | Who can use what, under what license? | `LICENSE` (engine) and `worlds/<name>/LICENSE` (a specific world, if it has one) |
-| How do I run this always-on? | `README.md` Quickstart (container) section |
+| How do I run this always-on? | `README.md` "Run the engine" section |

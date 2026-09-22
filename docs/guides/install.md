@@ -65,6 +65,21 @@ For ollama specifically, the simplest is to add an `ollama`
 service to the same compose file. See `examples/ollama.yml`
 in the engine repo for a starter.
 
+### Point it at a phone-as-backend
+
+Anywhere the engine can reach an OpenAI-compatible HTTP endpoint,
+the engine is happy. That includes:
+
+- `Local LLM Server` on the iPhone (App Store, iOS 26+) - runs Apple's
+  Foundation Models on-device, exposes OpenAI + Ollama APIs
+- `Crucible LLM Server` or `Pirate LLM Server` - open-source, llama.cpp
+  + Metal, sideloadable via AltStore
+- A Mac running Ollama / LM Studio, exposed to your LAN
+
+Set `VEFR_LLAMACPP_URL=http://<phone-ip>:11434/v1` (compose: put it
+in `environment:` like above) and the game runs entirely off the
+laptop, the cloud, and any LAN host.
+
 ### Edit a pack in vim
 
 ```sh

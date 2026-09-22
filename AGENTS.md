@@ -23,7 +23,7 @@ to this repo.
 ## What this repo is
 
 - **The engine only** ("the bones"): FastAPI + any OpenAI-compatible LLM backend. MPL-2.0-licensed.
-- Two CLIs: `ratatoskr` (ops: skipa, test, weave, ferry) and `norns` (craft: chat, validate, build-map, verify).
+- Two CLIs: `ratatoskr` (ops: skipa, test, weave, ferry, volumes, spark) and `norns` (craft: chat, validate, migrate, build-map, verify, handbok, doctor, storyteller-test, storyteller-benchmark) — `--help` is canonical.
 - `worlds/sample-world/` (Emberfield) ships with the engine — the demo pack.
 - `worlds/lore/<flavor>/` packs are data-only mood-boards (CC BY-SA 4.0).
 
@@ -63,9 +63,9 @@ python3 scripts/check_public_surface.py
 # Session-start health
 uv run --group test norns doctor
 
-# CLI references
-uv run ratatoskr --help   # ops: skipa, test, weave, ferry
-uv run norns --help       # craft: chat, validate, build-map, verify
+# CLI references (--help prints the live, complete command list)
+uv run ratatoskr --help   # the ops CLI
+uv run norns --help       # the craft CLI
 
 # Validate a world pack
 uv run norns validate --pack worlds/<name>

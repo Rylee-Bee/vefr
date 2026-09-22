@@ -20,7 +20,7 @@ From here, pick what you want to do:
 |---|---|
 | Fix a bug | Reproduce → fix → test gate → PR |
 | Add a feature | `ROADMAP.md` → find the Next item → discuss in an issue first |
-| Build a world | [`GETTING_STARTED.md` §4](GETTING_STARTED.md#4-make-your-own-world) |
+| Build a world | [`GETTING_STARTED.md` §3](GETTING_STARTED.md#3-make-your-own-world) |
 | Change the UI | `web/` — follow the [accessibility matrix](#accessibility-matrix) below |
 | Change the pack contract | `src/vefr/world.py` docstring — **ask first** |
 

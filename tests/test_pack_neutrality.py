@@ -6,10 +6,13 @@ escaped the audit and carried the author's story grammar ("write
 the goodbye", "her hands", a private world-rule phrase) into an
 MIT-licensed directory.
 
-This module provides two independent guards:
+This module provides three independent guards:
 1. `test_sample_surfaces_carry_no_private_story`: reads an optional,
    gitignored list of private terms (tests/canon-strings.local.txt)
-   and checks for literal term leakage across shipped surfaces.
+   and checks for literal term leakage across shipped surfaces:
+   the sample pack, `web/`, `src/`, and root-level docs. Text and
+   terms are whitespace-normalized before matching, so a phrase
+   line-wrapped in prose still counts as a hit.
 2. `test_engine_surfaces_carry_no_gendered_pronouns`: a shape-based
    guard that verifies no third-person singular gendered pronouns
    (she/her/hers/his/him) appear in user-facing code strings or
@@ -48,6 +51,14 @@ def _audit_files():
         for f in sorted(root.rglob("*")):
             if f.is_file() and f.suffix in AUDIT_SUFFIXES:
                 yield f
+    # Root docs ship too (README, AGENTS, ROADMAP, GETTING_STARTED, ...).
+    # A glob, not an enumerated list: a new root doc must not become a
+    # blind spot. LICENSE rides along for parity with the historical-name
+    # guard below (it has no suffix).
+    for f in sorted(ROOT.glob("*.md")):
+        yield f
+    if (ROOT / "LICENSE").is_file():
+        yield ROOT / "LICENSE"
 
 
 def test_sample_surfaces_carry_no_private_story():
@@ -70,8 +81,11 @@ def test_sample_surfaces_carry_no_private_story():
             text = f.read_text(encoding="utf-8").lower()
         except UnicodeDecodeError:
             continue
+        # Whitespace-normalize both sides: prose wraps long lines, so a
+        # single-line term must still match across a line break.
+        norm_text = " ".join(text.split())
         for term in terms:
-            if term.lower() in text:
+            if " ".join(term.lower().split()) in norm_text:
                 failures.append(f"  {rel}: {term!r}")
 
     assert not failures, (
