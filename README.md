@@ -19,7 +19,7 @@ local model and a folder of markdown is enough to play.
 
 ![The Foyer — warm parchment, first-walk rail, room navigation](docs/screenshots/workshop-landing.png)
 
-![The Desk — ASCII map, gold rule, "Ring for the Storyteller"](docs/screenshots/workshop-desk.png)
+![The Desk — ASCII map, creed, "Ring for the Storyteller"](docs/screenshots/workshop-desk.png)
 
 ![Title card — world name, tagline, enter button](docs/screenshots/export-title-card.png)
 

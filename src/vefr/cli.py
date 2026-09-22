@@ -599,7 +599,7 @@ def cmd_build_web(args) -> int:
         (p for p in template_candidates if p.exists()), template_candidates[0])
     template = template_path.read_text(encoding='utf-8')
 
-    tagline = world.get('gold_rule') or 'memory and longing.'
+    tagline = world.get('creed') or 'memory and longing.'
     out_html = template
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)

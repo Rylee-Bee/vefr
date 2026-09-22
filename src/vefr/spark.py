@@ -156,8 +156,8 @@ def world_context() -> str:
     from .world import load_world
     w = load_world()
     lines = [f"World: {w['title']}."]
-    if w.get("gold_rule"):
-        lines.append(f"The world's rule: {w['gold_rule']}")
+    if w.get("creed"):
+        lines.append(f"The world's creed: {w['creed']}")
     if w.get("description"):
         lines.append(f"About: {w['description']}")
     phases = "; ".join(f"{k}: {v}" for k, v in w.get("phases", {}).items())

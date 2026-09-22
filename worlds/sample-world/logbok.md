@@ -6,4 +6,4 @@ the engine obeys them.
 
 - One region, one threshold, one keeper.
 - Never explain. Never label. Show only.
-- Gold waits for a kind world.
+- Walk gently; the town remembers.

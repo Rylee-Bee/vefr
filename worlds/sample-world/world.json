@@ -2,7 +2,7 @@
   "name": "sample-world",
   "title": "Emberfield",
   "description": "A demonstration world for the vefr engine. Replace everything.",
-  "gold_rule": "Gold waits for a kind world.",
+  "creed": "Walk gently; the town remembers.",
   "stefna_voice": "keeper",
   "phases": {
     "dusk": "The day settles. The tone is quiet and watchful.",

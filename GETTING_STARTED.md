@@ -83,7 +83,7 @@ Emberfield ships with the engine.
 *The Foyer — your entry point. The project on the table, the pantry, and the first-walk rail.*
 
 ![The Desk — where worlds begin](docs/screenshots/workshop-desk.png)
-*The Desk — the creation workspace. Your world's map, gold rule, and the "Ring for the Storyteller" button.*
+*The Desk — the creation workspace. Your world's map, creed, and the "Ring for the Storyteller" button.*
 
 > The engine boots fine with no model at all - the town walks, the
 > journal keeps, the vault stores. The model-backed beats (Whisper,

@@ -559,7 +559,7 @@ sandbox.fetch = (url, opts) => {
   if (url === '/api/trace') return ok({ events: [{ at: '2026-08-31T13:00:00Z', route: '/api/rumor', ms: 812.3, ok: true, phase: 'whispers', speaker: 'Old Sela' }] });
   if (url === '/api/weave') return ok({ events: [{ event: 'pack.load.end', at: 1234567890.0, pack: 'sample-world', acts: 1, shape: 'acts', surface: 'combat' }] });
   if (url.startsWith('/api/builder/aspects')) return ok({
-    pack: { name: 'sample-world', title: 'Emberfield', surface: 'combat', shape: 'acts', phases: ['dusk', 'dawn'], gold_rule: '', journey: [] },
+    pack: { name: 'sample-world', title: 'Emberfield', surface: 'combat', shape: 'acts', phases: ['dusk', 'dawn'], creed: '', journey: [] },
     act: { id: 'act-1', title: 'Emberfield', index: 0, total_acts: 1, enemies: [], bosses: [], transitions: [] },
     regions: { town: { title: 'town', has_map: true, pois: ['inn'], hero_start: [1, 1] } },
     speakers: { smith: { name: 'The Smith', near: 'forge', voice_file: 'smith.md', seeds: { dusk: 'aye' } } },
