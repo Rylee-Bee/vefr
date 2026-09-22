@@ -71,6 +71,17 @@ OpenAI-compatible LLM URL, and play. No Python, no server, no
 internet. The packaged file is yours to release; the engine that
 built it isn't.
 
+### Play a finished demo
+
+One world, one file: **Burrito Journalism** — a journalism +
+taqueria simulation, woven from its pack with `ratatoskr weave
+--pool 5` and published as a [release
+asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.0.0/burrito-journalism-2026-09-22.html).
+Download it, open it in any browser, and play: point it at any
+OpenAI-compatible LLM URL for live narration, or play the baked-in
+offline pool with nothing at all. The pack is CC BY 4.0; the
+engine that wove it is MPL-2.0.
+
 ## Build a world
 
 A world pack is a folder of markdown and JSON. Two ways in:
