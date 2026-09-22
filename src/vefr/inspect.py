@@ -43,7 +43,7 @@ def resolved_world() -> dict:
         "name": w["name"],
         "title": w["title"],
         "description": w.get("description", ""),
-        "gold_rule": w.get("gold_rule", ""),
+        "creed": w.get("creed", ""),
         "surface": w["surface"],
         "phases": w["phases"],
         "bonds": w.get("bonds", {}),
@@ -109,7 +109,7 @@ def pack_aspects(phase: str | None = None) -> dict:
             "surface": w.get("surface", "combat"),
             "shape": w.get("_shape", "acts"),
             "phases": pack_phases,
-            "gold_rule": w.get("gold_rule", ""),
+            "creed": w.get("creed", ""),
             "journey": w.get("_journey", []),
         },
         "act": {

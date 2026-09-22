@@ -263,7 +263,7 @@ def world():
     ]
     return {
         "title": w["title"],
-        "gold_rule": w.get("gold_rule", ""),
+        "creed": w.get("creed", ""),
         "phases": list(w["phases"].keys()),
         "surface": w["surface"],
         "hp": combat.hp_for_pack(w) if w["surface"] == "combat" else None,

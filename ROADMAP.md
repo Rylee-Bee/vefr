@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **The creed: pack field rename + sample-value sanitize** (2026-09-22):
+      the pack contract's `gold_rule` field carried one author's game
+      term into the engine, and the sample-world value was that game's
+      canon line. The field is now `creed` everywhere - contract
+      (`world.py`), loader, inspect, maplab, spark prompt, API, weave
+      tagline, web labels, CSS class, docs, fixtures - read through one
+      owner (`creed_from`) so `gold_rule` survives as a read-fallback:
+      packs written before the rename keep their line, and maplab
+      writes them back as `creed` on the next save. Sample-world's
+      value is now engine-neutral ("Walk gently; the town remembers.")
+      across `world.json`, `logbok.md`, and `world-tree.md`. Added
+      `test_creed_reads_the_legacy_field_name` pinning the alias, and
+      the local canon-strings guard now bans the old line and term
+      (list never ships - audit stays local-only by design). Gates:
+      ruff clean; pytest 427 passed / 1 skipped (2 known
+      model-dependent env failures); public-surface clean (377).
+
 - [x] **World-creation guide: interview to playable HTML** (2026-09-22):
       drove `norns chat` end to end against the bundled Spark as a
       first-time author would - 15 prompts, exit 0, a valid pack in
@@ -513,7 +530,7 @@
       mother's chore-note in her voice - headed "For you."
 - [x] **the canon**: the archive, the hero, the bell, the
       church, the dictionary, the laughing room, the labyrinth, the
-      monsters, Bog & Bell style, the Gold Rule
+      monsters, Bog & Bell style, the world's creed
 - [x] **the founding myth**: the Keeper's empty throne, the Weaver's
       scorn, the Untongued - the Conserved Word vs the Fen Verse
 - [x] **v1.0 - first tiles**: MAP.md became a walkable grid; the hero

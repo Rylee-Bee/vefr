@@ -183,7 +183,7 @@
     } else if (typeof act === 'string') {
       actTitle = act;
     }
-    var goldRule = currentWorld.gold_rule || '';
+    var creed = currentWorld.creed || '';
     var phase = currentWorld.surface || '';
     var regions = currentWorld.regions || {};
 
@@ -198,9 +198,9 @@
     if (contentEl) {
       var parts = [];
 
-      // Gold rule as opening line
-      if (goldRule) {
-        parts.push('<p class="workshop__gold-rule">' + escapeHtml(goldRule) + '</p>');
+      // Creed as opening line
+      if (creed) {
+        parts.push('<p class="workshop__creed">' + escapeHtml(creed) + '</p>');
       }
 
       // Region descriptions
@@ -285,9 +285,9 @@
         items.push({ label: 'Surface', value: surface });
       }
 
-      var goldRule = currentWorld.gold_rule;
-      if (goldRule) {
-        items.push({ label: 'Gold Rule', value: goldRule });
+      var creed = currentWorld.creed;
+      if (creed) {
+        items.push({ label: 'Creed', value: creed });
       }
     }
 
