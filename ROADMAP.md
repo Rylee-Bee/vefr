@@ -33,8 +33,9 @@
       increment (set-aside beat line was overwritten by the morning-over line;
       both now read). Weave bakes the acts contract (verbs/floor/tone/ruleset/
       cooking) so packaged packs carry their law; cli's default tagline lost its
-      last private-canon string ("memory and longing" → the engine tagline, and
-      the canon list grew the string so the guard proves it stays gone).
+      last private-canon string (the old private tagline, now the engine
+      tagline; the canon list grew the string so the guard proves it stays
+      gone - and caught this very entry quoting it, twice).
       Gates: ruff clean · pytest 2 failed (both documented model-up env) /
       461 passed / 1 skipped · public-surface clean (381) · norns validate ok.
 
