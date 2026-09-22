@@ -115,9 +115,10 @@ SKIP_LINES_CONTAINING: tuple[str, ...] = (
 
 # Paths that contain Storyteller WIP and are not on the
 # public-release branch. The guard skips them so the WIP lane can
-# keep its private-pack fixtures without tripping the guard.
+# land without tripping the guard. Note: tests/fixtures/storyteller/
+# is deliberately NOT here - fixture content follows ownership (D6),
+# so the engine's fixture dir is scanned like any other tracked file.
 STORYTELLER_WIP_PATHS: tuple[str, ...] = (
-    "tests/fixtures/storyteller/",
     "storyteller_packs/",
     "src/vefr/npc_action.py",
     "src/vefr/npc_action_scenarios.py",

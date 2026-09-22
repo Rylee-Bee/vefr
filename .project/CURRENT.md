@@ -46,8 +46,12 @@ have landed on feature branches.
 
 ## Next decisions
 
-None currently blocked. The fixture placement question (D6) is resolved:
-BJ-pack-supplied. The model fleet is locked.
+None currently blocked. D6 (fixture placement) is resolved and
+implemented 2026-09-22: the pack-owned scene fixture lives in the BJ
+repo; the engine ships a neutral `tests/fixtures/storyteller/
+sample-scene.json` plus a `VEFR_STORYTELLER_FIXTURES` search path
+(pack-supplied dirs first, engine dir last). The model fleet is
+locked.
 
 ## Verification entry points
 

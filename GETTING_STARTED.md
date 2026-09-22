@@ -49,6 +49,7 @@ plain process env vars, so any entry point picks them up:
 | `VEFR_VAULT` | `<VEFR_HOME>/data/vault` | Session memory store |
 | `VEFR_JOURNAL` | `<VEFR_HOME>/data/journal` | Journal store |
 | `VEFR_WORLD` | `sample-world` | Which pack under `worlds/` is active |
+| `VEFR_STORYTELLER_FIXTURES` | *(unset)* | PATH-style list of extra scene-fixture dirs for `norns storyteller-test`, searched before the engine's own |
 
 Tip: keep your endpoint config in one place. Copy `example.env`
 to `.env` (gitignored), fill in your host, and source it before

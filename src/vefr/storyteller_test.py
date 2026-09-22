@@ -4,8 +4,8 @@ A tiny, repeatable way to run the same VEFR scene through several
 local models and compare whether the resulting characters feel alive.
 
 This is NOT a benchmark suite. No automated scoring. No leaderboard.
-The output is human-readable prose, side by side, so Rylee can read
-it and decide which Rosa she wants to talk to again.
+The output is human-readable prose, side by side, so a reader can
+compare characters and decide which pack brings them alive.
 
 Architecture:
     VEFR scene state
@@ -27,6 +27,7 @@ architecture as much as the models.
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -48,7 +49,7 @@ class SceneFixture:
     A fixture is data, not code. It carries everything the packet
     builder needs to construct a ScenePacket without leaking
     character-specific assumptions into the engine (the spec's
-    "do not hardcode Rosa into the architecture" rule).
+    "no game-specific characters in engine code" rule).
     """
 
     id: str
@@ -108,24 +109,48 @@ class RunResult:
     pack_license: dict = field(default_factory=dict)
 
 
-# Canonical fixtures live as JSON files under tests/fixtures/storyteller/
-# so a future scene can be added without touching the harness code.
+# Fixtures are JSON files. The engine bundles one neutral sample under
+# tests/fixtures/storyteller/; a pack supplies its own scenes from its
+# own repo by pointing VEFR_STORYTELLER_FIXTURES at extra directories
+# (PATH-style). Fixture content follows ownership: story data lives
+# with whoever owns the story (D6).
+def fixture_dirs() -> list[Path]:
+    """Every directory the fixture search covers, in priority order.
+
+    Explicit configuration wins over the bundled default: env-supplied
+    dirs come first, the engine's own dir is the fallback.
+    """
+    dirs: list[Path] = []
+    for part in os.environ.get("VEFR_STORYTELLER_FIXTURES", "").split(os.pathsep):
+        if part.strip():
+            dirs.append(Path(part.strip()))
+    dirs.append(FIXTURES_DIR)
+    return dirs
+
+
 def load_fixture(scene_id: str) -> SceneFixture:
-    """Load a named scene fixture from disk.
+    """Load a named scene fixture from the first dir that carries it.
 
     Raises FileNotFoundError if the fixture id is unknown - the
     caller (CLI) catches that and prints the available list.
     """
-    path = FIXTURES_DIR / f"{scene_id}.json"
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return SceneFixture(**data)
+    for dir_ in fixture_dirs():
+        path = dir_ / f"{scene_id}.json"
+        if path.is_file():
+            return SceneFixture(**json.loads(path.read_text(encoding="utf-8")))
+    raise FileNotFoundError(
+        f"fixture {scene_id!r} not found in: "
+        + ", ".join(str(d) for d in fixture_dirs())
+    )
 
 
 def list_fixtures() -> list[str]:
-    """All fixture ids the harness knows about."""
-    if not FIXTURES_DIR.is_dir():
-        return []
-    return sorted(p.stem for p in FIXTURES_DIR.glob("*.json"))
+    """All fixture ids the harness knows about, across every search dir."""
+    ids: set[str] = set()
+    for dir_ in fixture_dirs():
+        if dir_.is_dir():
+            ids.update(p.stem for p in dir_.glob("*.json"))
+    return sorted(ids)
 
 
 def audition_one(
@@ -263,6 +288,7 @@ __all__ = [
     "RunResult",
     "audition_one",
     "build_blind_map",
+    "fixture_dirs",
     "list_fixtures",
     "load_fixture",
     "write_artifacts",

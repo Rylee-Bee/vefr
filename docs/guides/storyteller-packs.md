@@ -313,62 +313,62 @@ or future versions of itself.
 ## Anatomy of a scene
 
 The harness's job is one struct: a `ScenePacket`. It is what the
-model sees. Below is the canonical Rosa fixture from
-`tests/fixtures/storyteller/rosa-after-close.json`, rendered into
+model sees. Below is the bundled sample fixture from
+`tests/fixtures/storyteller/sample-scene.json`, rendered into
 the packet shape the storyteller actually receives:
 
 ```text
 WHO YOU ARE
 
-Rosa.
+The forge's caretaker.
 
-You have known Mateo for six years.
-You are observant and protective of him.
-You tend to joke when uncomfortable.
+You tend the bell, the tools, and the door.
+You have worked here long enough to notice what does not belong.
+You answer plainly and stop talking before you fill the silence.
 
 WHAT YOU KNOW
 
-Mateo left earlier than usual tonight.
-He looked nervous when he left.
+The bell rang once after the forge went cold.
+No delivery was due last night.
 
-You do NOT know about the transmitter.
+WHAT YOU DO NOT KNOW
+
+You do NOT know who left the sealed letter by the door.
 
 CURRENT SCENE
 
-The taqueria is closed.
-Rain is hitting the windows.
-The dining room is empty.
-Chairs are upside down on tables.
+The forge is cold.
+Tools hang in a clean row on the wall.
+The street outside has gone quiet.
+One oil lamp still burns by the door.
 
 RELATIONSHIP
 
-The player earned your trust yesterday.
+The player returned a lost tool yesterday.
 
 WHAT JUST HAPPENED
 
-The player quietly asked:
+The player asked:
 
-"Why did Mateo leave early?"
+"Who rang the bell after the forge went cold?"
 
 OPEN THREADS
 
-Mateo has been acting strangely the past week.
-The transmitter has not been discovered.
+A sealed letter is waiting by the door.
+The morning delivery has not come.
 
 WRITE
 
-Respond naturally as Rosa. Include her immediate physical behavior
-if useful. Do not reveal facts Rosa cannot know. Do not resolve every
-mystery. Leave room for the player to continue.
+Respond naturally. Include your immediate physical behavior if useful. Do not reveal facts you cannot know. Do not resolve every mystery. Leave room for the player to continue.
 ```
 
 Notice the **`WHAT YOU KNOW`** and **`WHAT YOU DO NOT KNOW`**
 sections. They are separate on purpose.
 
-> **VEFR may know something that Rosa does not.**
+> **VEFR may know something the speaker does not.**
 
-The transmitter is canon. It exists in world state. Rosa has no
-business knowing about it. The packet encodes the boundary
+The sealed letter is canon. It exists in world state. The caretaker
+has no business knowing who left it. The packet encodes the boundary
 explicitly so a small model can stay in character even when its
 training data contains plausible conspiracy tropes. If the packet
 didn't draw the line, the model would.
@@ -377,9 +377,12 @@ This is one of the major reasons VEFR prepares context instead of
 handing the model the whole world. The packet is the epistemic
 contract for one scene.
 
-The Rosa fixture itself is data, not code. Adding a new scene means
-adding a new JSON file under `tests/fixtures/storyteller/`. The
-harness reads whatever fixture the CLI names.
+A fixture is data, not code. Adding a new scene means adding a new
+JSON file. The harness reads whatever fixture the CLI names,
+searching `VEFR_STORYTELLER_FIXTURES` first (a PATH-style list of
+directories) and then the engine's own `tests/fixtures/storyteller/`.
+A pack keeps its scenes in its own repo and points the variable at
+them - fixture content follows ownership.
 
 ---
 
@@ -391,7 +394,8 @@ universal rules.
 ### Give the model a role
 
 Tell it who it is or what narrative function it is performing.
-"Respond as Rosa" is more useful than "respond helpfully." Voice
+"Respond as the caretaker" is more useful than "respond helpfully."
+Voice
 comes from the role, not from temperature settings.
 
 ### Give it facts, not a data dump
@@ -462,7 +466,7 @@ uv run norns storyteller-test --matrix --runs 3
 # one specific storyteller
 uv run norns storyteller-test --model gemma4-e2b
 
-# a different scene fixture (default: rosa-after-close)
+# a different scene fixture (default: sample-scene)
 uv run norns storyteller-test --matrix --scene <fixture-id>
 
 # blind mode: outputs labelled Storyteller A/B/C, mapping written to blind_map.txt
@@ -476,12 +480,17 @@ usage: norns storyteller-test [-h] [--model MODEL] [--matrix] [--scene SCENE]
                               [--runs RUNS] [--seed SEED] [--blind]
 
 options:
-  --model MODEL   pack id or model name (mutually exclusive with --matrix)
-  --matrix        run the scene through every installed pack
-  --scene SCENE   scene fixture id (default: rosa-after-close)
-  --runs RUNS     repetitions per pack (default: 1; 3 recommended)
-  --seed SEED     record a seed for reproducibility (informational)
-  --blind         label outputs Storyteller A/B/C and write blind_map.txt
+  -h, --help     show this help message and exit
+  --model MODEL  pack id or model name to run (mutually exclusive with
+                 --matrix)
+  --matrix       run the scene through every installed pack
+  --scene SCENE  scene fixture id (default: sample-scene)
+  --runs RUNS    repetitions per pack (default: 1; 3 recommended for creative
+                 models)
+  --seed SEED    record a seed for reproducibility (informational; providers
+                 that support it will)
+  --blind        label outputs Storyteller A/B/C and write a blind_map.txt for
+                 later reveal
 ```
 
 ### What it writes
@@ -626,7 +635,7 @@ The shortest possible recipe, against the current implementation:
    prose.
 7. Drop your pack under `data/storytellers/<id>/` (or
    `storyteller_packs/<id>/` if you're contributing to the engine).
-8. Run the Rosa audition:
+8. Run the audition:
    ```sh
    uv run norns storyteller-test --model <your-pack-id> --runs 3
    ```
@@ -719,5 +728,5 @@ That's enough to begin.
 | Wire layer (completion routing) | `src/vefr/generator.py` |
 | Audition harness | `src/vefr/storyteller_test.py` |
 | Bundled packs | `storyteller_packs/` |
-| Rosa scene fixture | `tests/fixtures/storyteller/rosa-after-close.json` |
+| Bundled sample fixture | `tests/fixtures/storyteller/sample-scene.json` |
 | Test suite for the provider + harness | `tests/test_storyteller_test.py` |
