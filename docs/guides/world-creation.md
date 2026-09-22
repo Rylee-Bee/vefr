@@ -1,0 +1,152 @@
+# World creation - from interview to a playable file
+
+> One interview writes you a validated pack; one more command weaves
+> it into a single HTML file you can open and play. Proven end to end
+> 2026-09-22 against the bundled Spark (`:8083`): 15 prompts, exit 0,
+> a valid pack in 25 seconds, a map extension through `build-map`,
+> and a 37.9 KB single-file HTML with 10 woven pool lines.
+
+## What you need
+
+- A brain: the bundled fleet (`docs/guides/bundled-brain.md`) or any
+  OpenAI-compatible backend pointed at with `VEFR_LLAMACPP_URL`.
+- This repo, with `uv sync` done (`GETTING_STARTED.md`, step 1).
+
+## The whole flow
+
+```sh
+uv run norns chat --name your-world                  # 1. the interview
+uv run norns validate --pack worlds/your-world       # 2. the gate
+uv run norns build-map --segments segs.json \
+    --pack worlds/your-world                         # 3. optional: reshape the map
+uv run ratatoskr weave --pool 2 --pack your-world    # 4. -> dist/your-world-<date>.html
+```
+
+Open the HTML in a browser, set your LLM URL + model in it, play.
+`worlds/*` is gitignored - a throwaway world never touches git.
+
+## 1. The interview
+
+`norns chat` asks, in order (scaffold defaults in brackets):
+
+| # | The question | Blank keeps | Behind it |
+|---|---|---|---|
+| 1 | What's your world called? [scaffold title] | scaffold title | becomes the pack's `world.json` title |
+| 2 | In one or two sentences, what's the story? | - | the premise |
+| 3 | Who is your protagonist, in a few words? | - | premise + protagonist -> the model drafts `logbok.md`, printed for you |
+| 4 | the color mood (e.g. 'candlelit church', 'cold moonlit fen') | scaffold colors | theme draft, schema-constrained |
+| 5 | Rename the phases? comma-separated, same count (2) | dusk, dawn | rewrites the phase keys |
+| 6-7 | In a few words, what's the mood of 'dusk'? 'dawn'? | scaffold mood | one prose draft per phase |
+| 8 | Rename the bonds? same count (3) | given, found, cold | renames how items connect to your protagonist |
+| 9-11 | what does a '<bond>' bond feel like? | scaffold cards | a prose draft: card + prompt per bond |
+| 12 | how should the town feel to walk? (e.g. 'tight lanes around a well') | scaffold layout | the map proposal - the hardest call |
+| 13 | How many people stand in your town? (1-3, blank = 1) | one | each extra gets a "who else stands there?" + personality prompt |
+| 14 | Your first townsperson is '<name>'. What should they be called? | scaffold name | |
+| 15 | In a few words, who is <name>? | skips their drafts | a seed line per phase + a `voices/<file>.md` voice file |
+
+Then: `checking your world...` runs the full validator - either
+`ok - ... is valid and ready`, or a FAIL list naming what to fix by
+hand, plus the next-steps commands.
+
+Every question has a default. Blank keeps the scaffold's proven
+piece, so even a fast, half-answered interview ends in a pack that
+validates - the scaffold exists so the interview cannot strand you.
+
+## 2. When a draft falls back
+
+Every model call in the interview is schema-constrained and tries
+twice before falling back. What the fallbacks look like, verbatim
+from the dry run:
+
+```text
+  theme draft failed twice - keeping the scaffold's colors
+  the map draft never validated twice - keeping the scaffold's
+  proven layout (always try: norns validate --pack worlds/<name>)
+```
+
+The map proposal is the hardest ask in the whole flow: the model
+must emit run-length rows at the scaffold's exact dimensions, using
+only the scaffold's legend characters, that pass `maplab.validate()`
+in place - geometry, reachability from the hero's start, every
+speaker still on walkable ground. In the dry run every prose draft
+(canon, phase moods, bond cards, voice, seeds) landed on the 0.6B
+Spark while both gated structured drafts fell back. A bigger brain
+narrows that gap:
+
+```sh
+VEFR_LLAMACPP_URL=http://127.0.0.1:8084 uv run norns chat --name your-world
+```
+
+A prose draft that fails twice becomes a plain placeholder instead -
+you always get something to edit, never a crash mid-interview.
+
+## 3. Reshaping the map later
+
+`norns build-map` rebuilds the town map from a run-length segments
+file - `{"rows": [[["H", 4], ["#", 12], ...], ...]}`, one
+`[character, count]` pair run per row, every row the same width:
+
+```sh
+uv run norns build-map --segments segs.json --pack worlds/your-world
+uv run norns validate --pack worlds/your-world
+```
+
+Dry run: a one-row extension (10 -> 11 rows, width 12), run
+unforced. `build-map` validates before writing - bad geometry never
+lands unless you pass `--force` (then fix it and validate anyway).
+The validator after any map write is not optional; hand edits
+included.
+
+## 4. Weave it into one file
+
+```sh
+VEFR_LLAMACPP_URL=http://127.0.0.1:8083 \
+    uv run ratatoskr weave --pool 2 --pack your-world
+```
+
+`--pool N` needs a live model: it pre-generates N real lines per
+combination (dry run: 10 lines across `rumor:dusk`, `rumor:dawn`,
+`letter`, `forge`), then writes `dist/your-world-<date>.html`. Open
+it anywhere - the file carries the pack; you set the LLM URL + model
+when you play.
+
+## Where your world lives
+
+```text
+worlds/your-world/
+├── world.json         # pack root: title, phases, bonds, voices
+├── logbok.md          # the canon the interview drafted
+├── map.md             # the town map
+├── ledger.md          # generation log
+├── world-tree.md      # act/POI overview
+├── voices/            # speaker voice files (+ fragments)
+├── assets/kenney/     # tileset art + licenses
+└── acts/act-1/        # act shape: world.json, town/ (contract,
+                       # map.md, sprites/, voices/)
+```
+
+The contract for every field lives in `src/vefr/world.py`. The
+interview writes it; `norns validate` checks it; you can hand-edit
+any of it - then validate again, because the tool never trusts your
+edit, including the engine's own.
+
+## Cleaning up
+
+```sh
+rm -rf worlds/your-world    # gitignored - git status stays clean
+```
+
+## Troubleshooting
+
+| Symptom | Truth |
+|---|---|
+| drafts keep falling back | the smallest brain strains on gated structured drafts - point the interview at `:8084` or any bigger backend |
+| `validate` FAIL after a hand edit | the validator names the file and reason; fix, re-run `norns validate --pack worlds/<name>` |
+| `build-map` refused to write | validation failed before the write - fix the segments (`--force` writes anyway, then validate) |
+| brain unreachable during play | engine-time generation fails closed (an error, never invented lore); the interview itself degrades to scaffold + placeholders |
+
+## See also
+
+- `GETTING_STARTED.md` - install, run, first checks
+- `docs/guides/bundled-brain.md` - the model fleet and how to swap brains
+- `docs/guides/brain-socket.md` - the provider seam behind `VEFR_LLAMACPP_URL`
