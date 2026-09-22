@@ -1,11 +1,25 @@
 # ── vefr: a rumor engine for playable worlds ──────────────────
 # Bundled brain edition — ships with llama.cpp + 3 small models.
-# `podman run vefr` = fully playable game, no external LLM setup.
+# `docker compose up` = fully playable game, no external LLM setup.
 #
 # Override to external brain:
 #   VEFR_LLAMACPP_URL=http://host.lan:8084 VEFR_MODEL=qwen3-1.7b podman run ...
 # ──────────────────────────────────────────────────────────────
 
+# ── Stage 1: build llama.cpp from source ──────────────────────
+FROM ubuntu:24.04 AS llama-builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake curl git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch b5530 https://github.com/ggml-org/llama.cpp.git /build && \
+    cd /build && \
+    cmake -B build -DLLAMA_CURL=OFF -DLLAMA_SERVER=ON -DLLAMA_NATIVE=ON -DBUILD_SHARED_LIBS=OFF && \
+    cmake --build build --config Release -j$(nproc) --target llama-server && \
+    cp build/bin/llama-server /usr/local/bin/llama-server && \
+    ldd /usr/local/bin/llama-server | grep "not found" && exit 1 || true && \
+    /usr/local/bin/llama-server --version
+
+# ── Stage 2: vefr engine ─────────────────────────────────────
 FROM python:3.12-slim AS engine
 WORKDIR /app
 ENV VEFR_HOME=/app \
@@ -13,7 +27,7 @@ ENV VEFR_HOME=/app \
     VEFR_JOURNAL=/app/data/journal.json
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl \
+    && apt-get install -y --no-install-recommends git curl libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
@@ -25,25 +39,29 @@ COPY worlds ./worlds-template
 RUN mkdir -p /app/worlds /app/data
 VOLUME ["/app/worlds-template", "/app/worlds", "/app/data"]
 
-# ── Bundled brain: llama.cpp + model fleet ────────────────────
+# ── Stage 3: bundled brain ───────────────────────────────────
 FROM engine AS brain
 
-# Install llama.cpp pre-built binary (CPU, AVX2)
-RUN arch=$(uname -m) && \
-    if [ "$arch" = "x86_64" ]; then arch="x86_64"; elif [ "$arch" = "aarch64" ]; then arch="arm64"; fi && \
-    curl -sSL "https://github.com/ggml-org/llama.cpp/releases/download/b5530/llama.cpp-b5530-linux-${arch}-avx2.tar.gz" \
-    | tar xz -C /usr/local --strip-components=1 bin/llama-server && \
-    llama-server --version || echo "llama-server installed"
+# Copy llama-server from the builder stage
+COPY --from=llama-builder /usr/local/bin/llama-server /usr/local/bin/llama-server
+RUN llama-server --version
 
-# Download the model fleet (~2.2GB total)
+# Download the model fleet (~2.1GB total)
+# curl -L follows HuggingFace redirects; size check catches error-page downloads
 RUN mkdir -p /app/models && \
-    curl -sSL "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/qwen3-0.6b-q4_k_m.gguf" \
+    echo "Downloading Qwen3-0.6B (spark)..." && \
+    curl -sSL "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf" \
       -o /app/models/spark.gguf && \
-    curl -sSL "https://huggingface.co/Qwen/Qwen3-1.7B-GGUF/resolve/main/qwen3-1.7b-q4_k_m.gguf" \
+    echo "Downloading Qwen3-1.7B (storyteller)..." && \
+    curl -sSL "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf" \
       -o /app/models/storyteller.gguf && \
-    curl -sSL "https://huggingface.co/nicepkg/bge-m3-gguf/resolve/main/bge-m3-Q8_0.gguf" \
+    echo "Downloading bge-m3 (embeddings)..." && \
+    curl -sSL "https://huggingface.co/vonjack/bge-m3-gguf/resolve/main/bge-m3-q8_0.gguf" \
       -o /app/models/embeddings.gguf && \
-    ls -lh /app/models/
+    echo "Models downloaded:" && ls -lh /app/models/ && \
+    test $(stat -c%s /app/models/spark.gguf) -gt 100000000 && \
+    test $(stat -c%s /app/models/storyteller.gguf) -gt 500000000 && \
+    test $(stat -c%s /app/models/embeddings.gguf) -gt 300000000
 
 # Entrypoint: start bundled brain + engine
 COPY deploy/start-bundled.sh /app/start-bundled.sh
