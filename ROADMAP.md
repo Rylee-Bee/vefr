@@ -7,6 +7,38 @@
 
 ## Landed
 
+- [x] **Act 1 increment 1: the kitchen ruleset v0, act-runner router, and the
+      pleasant-loop harness** (2026-09-22): Phase 1 of VEFR-GAME-PLAN begins per
+      the owner's Act-1 directive (a cooking act that wakes, serves, and prints
+      its first page). Engine: per-act `cooking` contract block (pantry / tickets /
+      morning_length / headlines / optional opening + byline) loaded by both
+      loaders,
+      shape-validated by maplab (orders must reference real pantry ids; every
+      ticket needs the customer's voice; headlines must be a real choice),
+      echoed by inspect. Player: `web/packaged.html` gains a per-act screen
+      router (`startPlaySurface`) and the kitchen - tickets arrive as spoken
+      notes (reading them is the game), assembly resolves by deterministic set
+      equality, wrong burritos get kind beats never slaps, tickets set aside
+      wait without penalty (no timers anywhere: `setInterval` absent from the
+      template), and the morning closes with the player's first editorial
+      choice printing page 1 of the paper (masthead, headline, pack byline,
+      honest body, pack creed, "more mornings soon") plus a sleep/wake replay
+      nudge. Tests: tests/test_cooking_contract.py (contract pins) and
+      tests/test_kitchen_loop.py + tests/fixtures/kitchen_harness.mjs - a
+      stub-DOM harness that EXECUTES the woven file and plays a whole morning,
+      asserting journal order, kind beats, the printed page, a ≤4-clicks-per-
+      ticket budget, and timer absence: the CI-enforceable half of the
+      pleasant-loop protocol (VEFR-ACT1-SPEC §9). Playtest pass 1 (harness,
+      offline): 8 clicks for a 3-ticket morning; fix-forward landed in the same
+      increment (set-aside beat line was overwritten by the morning-over line;
+      both now read). Weave bakes the acts contract (verbs/floor/tone/ruleset/
+      cooking) so packaged packs carry their law; cli's default tagline lost its
+      last private-canon string (the old private tagline, now the engine
+      tagline; the canon list grew the string so the guard proves it stays
+      gone - and caught this very entry quoting it, twice).
+      Gates: ruff clean · pytest 2 failed (both documented model-up env) /
+      461 passed / 1 skipped · public-surface clean (381) · norns validate ok.
+
 - [x] **Phase 0 boundary: private canon out of the engine, pack-law contracts
       in, guards into code** (2026-09-22): owner-approved Phase 0 of
       VEFR-GAME-PLAN-2026-09-22 (vision interview Q1-Q8 is the authority).

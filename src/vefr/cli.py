@@ -600,6 +600,20 @@ def cmd_build_web(args) -> int:
         **_json.loads((pack / 'world.json').read_text(encoding='utf-8')),
         **load_pack(pack),
     }
+    # The packaged player reads the acts contract (verbs, floor,
+    # tone, ruleset, cooking) straight off the baked world. The
+    # validator's unified shape doesn't carry acts, so pull them
+    # from the loader when the pack resolves under a worlds root;
+    # packs woven from elsewhere keep the old behavior (defaults).
+    if not world.get('acts'):
+        from .world import load_world as _load_world
+        try:
+            loaded = _load_world(pack)
+        except Exception:
+            loaded = {}
+        if loaded.get('acts'):
+            world['acts'] = loaded['acts']
+            world.setdefault('_current_act', 0)
     title = world.get('title', pack.name)
     logbok = (pack / 'logbok.md').read_text(encoding='utf-8') if (pack / 'logbok.md').exists() else ''
     ledger = (pack / 'ledger.md').read_text(encoding='utf-8') if (pack / 'ledger.md').exists() else ''
@@ -620,7 +634,7 @@ def cmd_build_web(args) -> int:
         (p for p in template_candidates if p.exists()), template_candidates[0])
     template = template_path.read_text(encoding='utf-8')
 
-    tagline = world.get('creed') or 'memory and longing.'
+    tagline = world.get('creed') or 'the loom is strung; the world provides the thread.'
     out_html = template
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)

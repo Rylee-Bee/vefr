@@ -287,6 +287,54 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             elif not all(isinstance(x, str) for x in val):
                 errors.append(f"act '{aid}' {fname} must be a list of strings")
 
+    # Cooking ruleset content (the act-1 loop): the morning is pack-
+    # authored; the engine only resolves it. Orders must reference
+    # real pantry ids so a served burrito can be checked
+    # deterministically, and every ticket needs a note - the
+    # customer's voice IS the order (reading them is the game).
+    for act in w.get('acts', []):
+        if act.get('ruleset') != 'cooking':
+            continue
+        aid = act.get('id', '?')
+        block = act.get('cooking') or {}
+        if not isinstance(block, dict):
+            errors.append(f"act '{aid}' cooking block must be an object")
+            continue
+        pantry = block.get('pantry', [])
+        pids = set()
+        if not isinstance(pantry, list) or not pantry:
+            errors.append(f"act '{aid}' cooking pantry must be a non-empty list")
+        for item in pantry:
+            if not isinstance(item, dict) or not str(item.get('id', '')).strip():
+                errors.append(f"act '{aid}' pantry entries need an id")
+                continue
+            pids.add(item['id'])
+            if not str(item.get('label', '')).strip():
+                errors.append(f"act '{aid}' pantry entry '{item.get('id')}' needs a label")
+        tickets = block.get('tickets', [])
+        tlist = tickets if isinstance(tickets, list) else []
+        if not isinstance(tickets, list) or not tickets:
+            errors.append(f"act '{aid}' cooking tickets must be a non-empty list")
+        for t in tlist:
+            if not isinstance(t, dict) or not str(t.get('id', '')).strip():
+                errors.append(f"act '{aid}' tickets need an id")
+                continue
+            order = t.get('order', [])
+            if not isinstance(order, list) or not order:
+                errors.append(f"act '{aid}' ticket '{t.get('id')}' needs a non-empty order")
+            elif not all(o in pids for o in order):
+                errors.append(
+                    f"act '{aid}' ticket '{t.get('id')}' order references unknown pantry ids")
+            if not str(t.get('note', '')).strip():
+                errors.append(f"act '{aid}' ticket '{t.get('id')}' needs a note (the customer's voice)")
+        length = block.get('morning_length', len(tlist))
+        if not isinstance(length, int) or length < 1 or length > len(tlist):
+            errors.append(f"act '{aid}' morning_length must be 1..len(tickets)")
+        heads = block.get('headlines', [])
+        if (not isinstance(heads, list) or len(heads) < 2
+                or not all(isinstance(h, str) and h.strip() for h in heads)):
+            errors.append(f"act '{aid}' cooking headlines must be at least two non-empty strings")
+
     return errors
 
 
