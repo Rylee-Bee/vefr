@@ -1,8 +1,9 @@
 """Storyteller provider seam + audition harness tests.
 
 Covers the model-neutral boundary, the per-pack manifest format, the
-Rosa scene fixture, the blind-map helper, and the SKIPPED-on-missing-
-model behavior. HTTP paths are monkeypatched; no live backend needed.
+bundled sample fixture, the fixture-dir seam, the blind-map helper,
+and the SKIPPED-on-missing-model behavior. HTTP paths are
+monkeypatched; no live backend needed.
 """
 
 from __future__ import annotations
@@ -48,19 +49,19 @@ def test_capabilities_derive_tier():
 
 def test_scene_packet_renders_expected_sections():
     p = ScenePacket(
-        speaker="Rosa",
-        speaker_knows="Mateo left early",
-        speaker_does_not_know="the transmitter exists",
-        scene="taqueria, closed",
-        relationship="trust earned yesterday",
-        recent_action="player asked why Mateo left",
-        open_threads="Mateo acting strange",
+        speaker="The forge's caretaker",
+        speaker_knows="the bell rang after the forge went cold",
+        speaker_does_not_know="who left the sealed letter",
+        scene="the forge, closed for the night",
+        relationship="the player returned a lost tool yesterday",
+        recent_action="the player asked who rang the bell",
+        open_threads="the morning delivery has not come",
     )
     text = p.render()
-    assert "WHO YOU ARE" in text and "Rosa" in text
+    assert "WHO YOU ARE" in text and "caretaker" in text
     assert "WHAT YOU KNOW" in text
-    assert "WHAT YOU DO NOT KNOW" in text and "transmitter" in text
-    assert "CURRENT SCENE" in text and "taqueria" in text
+    assert "WHAT YOU DO NOT KNOW" in text and "sealed letter" in text
+    assert "CURRENT SCENE" in text and "forge" in text
     assert "RELATIONSHIP" in text
     assert "WHAT JUST HAPPENED" in text
     assert "OPEN THREADS" in text
@@ -69,7 +70,7 @@ def test_scene_packet_renders_expected_sections():
 
 def test_scene_packet_omits_blank_sections():
     p = ScenePacket(
-        speaker="Rosa",
+        speaker="Caretaker",
         speaker_knows="x",
         speaker_does_not_know="",
         scene="y",
@@ -193,18 +194,76 @@ def test_render_scene_packet_uses_pack_template(tmp_path, monkeypatch):
             os.environ["VEFR_STORYTELLER"] = old
 
 
-def test_rosa_fixture_loads_and_builds_packet():
+def test_sample_fixture_loads_and_builds_packet():
     fixtures = storyteller_test.list_fixtures()
-    assert "rosa-after-close" in fixtures
-    scene = storyteller_test.load_fixture("rosa-after-close")
+    assert "sample-scene" in fixtures
+    scene = storyteller_test.load_fixture("sample-scene")
     packet = scene.to_packet()
-    # Sanity: the canonical scene fields are present.
-    assert "Rosa" in packet.speaker
-    assert "Mateo" in packet.speaker_knows
-    assert "transmitter" in packet.speaker_does_not_know
-    assert "taqueria" in packet.scene
-    assert "trust" in packet.relationship
-    assert "leave early" in packet.recent_action
+    # Sanity: the sample scene's fields survive the round trip.
+    assert "caretaker" in packet.speaker
+    assert "bell" in packet.speaker_knows
+    assert "sealed letter" in packet.speaker_does_not_know
+    assert "forge" in packet.scene
+    assert "lost tool" in packet.relationship
+    assert "Who rang the bell" in packet.recent_action
+
+
+def test_env_fixture_dir_adds_pack_scenes(tmp_path, monkeypatch):
+    """VEFR_STORYTELLER_FIXTURES dirs join the search (PATH-style, D6)."""
+    import os
+
+    d1 = tmp_path / "pack-one"
+    d2 = tmp_path / "pack-two"
+    d1.mkdir()
+    d2.mkdir()
+    base = {
+        "speaker": "A pack-supplied speaker.",
+        "speaker_knows": "Pack knowledge.",
+        "speaker_does_not_know": "Pack ignorance.",
+        "scene": "A pack scene.",
+        "relationship": "None yet.",
+        "recent_action": "The player arrived.",
+        "open_threads": "One thread.",
+    }
+    (d1 / "pack-scene.json").write_text(
+        json.dumps({"id": "pack-scene", **base}), encoding="utf-8"
+    )
+    (d2 / "second-scene.json").write_text(
+        json.dumps({"id": "second-scene", **base}), encoding="utf-8"
+    )
+
+    monkeypatch.setenv(
+        "VEFR_STORYTELLER_FIXTURES", f"{d1}{os.pathsep}{d2}"
+    )
+    fixtures = storyteller_test.list_fixtures()
+    assert "pack-scene" in fixtures
+    assert "second-scene" in fixtures
+    # The engine's bundled sample is still available alongside them.
+    assert "sample-scene" in fixtures
+    scene = storyteller_test.load_fixture("pack-scene")
+    assert scene.speaker == "A pack-supplied speaker."
+
+
+def test_env_fixture_dir_shadows_engine_fixture(tmp_path, monkeypatch):
+    """An env-dir fixture wins a colliding id: runtime config beats repo data."""
+    pack_dir = tmp_path / "pack-fixtures"
+    pack_dir.mkdir()
+    (pack_dir / "sample-scene.json").write_text(
+        json.dumps({
+            "id": "sample-scene",
+            "speaker": "Shadowed by the pack.",
+            "speaker_knows": "k",
+            "speaker_does_not_know": "d",
+            "scene": "s",
+            "relationship": "r",
+            "recent_action": "a",
+            "open_threads": "t",
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("VEFR_STORYTELLER_FIXTURES", str(pack_dir))
+    scene = storyteller_test.load_fixture("sample-scene")
+    assert scene.speaker == "Shadowed by the pack."
 
 
 def test_audition_one_skips_on_missing_model(monkeypatch):
@@ -222,7 +281,7 @@ def test_audition_one_skips_on_missing_model(monkeypatch):
     monkeypatch.setattr(gen_mod, "storytell", fake_storytell)
 
     pack = find_pack("gemma4-e2b")
-    scene = storyteller_test.load_fixture("rosa-after-close")
+    scene = storyteller_test.load_fixture("sample-scene")
     result = storyteller_test.audition_one(pack, scene)
     assert result.status == "skipped"
     assert "not found" in result.skip_reason.lower()
@@ -232,15 +291,15 @@ def test_audition_one_returns_ok_with_response(monkeypatch):
     import vefr.generator as gen_mod
 
     def fake_storytell(*_args, **_kwargs):
-        return "Rosa looked toward the kitchen. 'He had somewhere to be.'"
+        return "The caretaker set down the lamp. 'The bell rang once.'"
 
     monkeypatch.setattr(gen_mod, "storytell", fake_storytell)
 
     pack = find_pack("gemma4-e2b")
-    scene = storyteller_test.load_fixture("rosa-after-close")
+    scene = storyteller_test.load_fixture("sample-scene")
     result = storyteller_test.audition_one(pack, scene)
     assert result.status == "ok"
-    assert "Rosa" in result.response
+    assert "caretaker" in result.response
     assert result.latency_s >= 0
     assert result.pack_id == "gemma4-e2b"
 
@@ -273,13 +332,13 @@ def test_write_artifacts_creates_manifest_and_pack_files(tmp_path):
     results = [
         storyteller_test.RunResult(
             pack_id="pack-a", model="m", provider="openai-compatible",
-            scene_id="rosa-after-close", scene_version="0.1.0",
+            scene_id="sample-scene", scene_version="0.1.0",
             run_number=1, seed=None, status="ok",
-            response="rosa speaks", latency_s=1.23,
+            response="the caretaker answers", latency_s=1.23,
         ),
         storyteller_test.RunResult(
             pack_id="pack-a", model="m", provider="openai-compatible",
-            scene_id="rosa-after-close", scene_version="0.1.0",
+            scene_id="sample-scene", scene_version="0.1.0",
             run_number=2, seed=None, status="skipped",
             skip_reason="model not found",
         ),
@@ -290,7 +349,7 @@ def test_write_artifacts_creates_manifest_and_pack_files(tmp_path):
     manifest = json.loads((out / "manifest.json").read_text())
     assert len(manifest) == 2
     prose = (out / "pack-a.txt").read_text()
-    assert "rosa speaks" in prose
+    assert "the caretaker answers" in prose
     assert "SKIPPED" in prose
 
 

@@ -149,9 +149,15 @@ def test_skip_path_prefixes_skip_data_artifacts_git(tmp_path):
 
 def test_skip_storyteller_wip_paths():
     mod = _load_guard()
-    assert mod.should_skip("tests/fixtures/storyteller/rosa-after-close.json")
     assert mod.should_skip("storyteller_packs/qwen3-0.6b/manifest.json")
     assert mod.should_skip("src/vefr/npc_action.py")
+
+
+def test_fixture_dir_is_scanned_not_skipped():
+    """D6: fixture content follows ownership - the engine's fixture dir
+    is public surface and must be scanned, not skipped."""
+    mod = _load_guard()
+    assert not mod.should_skip("tests/fixtures/storyteller/sample-scene.json")
 
 
 def test_scan_empty_repo_returns_no_hits(tmp_path):

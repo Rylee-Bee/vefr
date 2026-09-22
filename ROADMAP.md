@@ -7,6 +7,21 @@
 
 ## Landed
 
+- [x] **WP6 / D6: fixture content follows ownership - neutral sample
+      in the engine, seam for pack scenes** (2026-09-22): the
+      engine-owned audition fixture was a private pack's scene. D6:
+      it moves to the BJ pack repo, and the engine now ships
+      `tests/fixtures/storyteller/sample-scene.json` as the
+      `norns storyteller-test` `--scene` default and the docs
+      showcase (regenerated from real packet output). The loader
+      gains `VEFR_STORYTELLER_FIXTURES` - a PATH-style dir list
+      searched before the engine's own fixtures, so pack-supplied
+      scenes win on id collision. The public-surface guard no
+      longer skips `tests/fixtures/storyteller/` (that skip existed
+      only for the moved fixture); engine tests repoint at
+      `sample-scene`, and the BJ-content assertions move to the BJ
+      pack's own test suite.
+
 - [x] **example.env: interface port corrected, spark modes made explicit**
       (2026-09-22): the Interface Translator block still said "Port 8085
       is the unambiguous default" with `#VEFR_INTERFACE_URL=…:8085` —

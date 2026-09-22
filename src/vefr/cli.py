@@ -2052,12 +2052,17 @@ def cmd_storyteller_test(args) -> int:
         write_artifacts,
     )
 
-    scene_id = getattr(args, "scene", None) or "rosa-after-close"
+    scene_id = getattr(args, "scene", None) or "sample-scene"
     available = list_fixtures()
     if scene_id not in available:
         print(f"unknown scene {scene_id!r}. available:")
         for sid in available:
             print(f"  - {sid}")
+        if not available:
+            print(
+                "  (none found - set VEFR_STORYTELLER_FIXTURES to a "
+                "directory of scene fixtures)"
+            )
         return 1
     scene = load_fixture(scene_id)
 
@@ -2302,7 +2307,7 @@ def norns_main() -> int:
     mt.add_argument('--matrix', action='store_true',
                     help='run the scene through every installed pack')
     mt.add_argument('--scene', default=None,
-                    help='scene fixture id (default: rosa-after-close)')
+                    help='scene fixture id (default: sample-scene)')
     mt.add_argument('--runs', type=int, default=1,
                     help='repetitions per pack (default: 1; 3 recommended for creative models)')
     mt.add_argument('--seed', type=int, default=None,
