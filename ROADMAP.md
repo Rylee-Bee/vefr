@@ -7,6 +7,24 @@
 
 ## Landed
 
+- [x] **web: setup is a choice, not a wall; the URL join can't double**
+      (2026-09-22): two player-facing defects in `web/packaged.html`,
+      both hit live during the WP5 playthrough. (1) Every POST joined
+      `llmUrl + '/v1/chat/completions'`, so the config URL as the
+      placeholder itself shows it (`...:11434/v1`) produced
+      `/v1/v1/chat/completions` and a dead 404 — the join now lives
+      once in `chatEndpoint()` (idempotent over base, `/v1`, trailing
+      slashes, pasted full endpoint). (2) First-run setup hard-gated
+      `alert('both URL and model are required.')`, with no way past it
+      even though the woven pool exists precisely to carry offline
+      play — both-blank now saves as a remembered offline choice
+      (`configured: true`, older saves still pass), half-filled still
+      warns (one without the other can never reach an endpoint), and
+      `llmPost()` rejects straight into the pool/fragment fallbacks
+      instead of fetching a relative URL. Pinned by
+      `test_chat_endpoint_normalizes_the_config_url` and
+      `test_setup_gate_allows_offline_play`.
+
 - [x] **chat: a dead endpoint falls back, never crashes the interview**
       (2026-09-22): every model call in the interview retries twice
       before falling back to scaffold/placeholder — except transport
