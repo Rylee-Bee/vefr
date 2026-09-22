@@ -7,6 +7,19 @@
 
 ## Landed
 
+- [x] **chat: a dead endpoint falls back, never crashes the interview**
+      (2026-09-22): every model call in the interview retries twice
+      before falling back to scaffold/placeholder — except transport
+      failures never reached that loop: `generator._completion` wraps
+      httpx timeouts in `GeneratorUnavailable`/`GeneratorFailed`, which
+      none of the four retry loops caught, so a slow brain killed the
+      interview mid-run (the `draft()` docstring's "never a crash
+      mid-interview" was false for the one failure most likely to hit a
+      first-time author). Found live during the WP5 owner walkthrough;
+      both vefr transport exceptions now take the retry → fallback path
+      in `draft`, `draft_theme`, `propose_map`, `propose_face`, pinned
+      by `test_dead_endpoint_falls_back_instead_of_crashing`.
+
 - [x] **weave: acts-shape packs bake the resolved world** (2026-09-22):
       `cmd_build_web` baked the raw `world.json` root, but acts-shape packs
       keep `town`/`speakers`/`creed` under `acts/<id>/` — so a woven file from
