@@ -315,6 +315,7 @@ def _load_act(act_dir: Path) -> dict:
         "floor": contract.get("floor", "costume"),
         "tone": contract.get("tone", ""),
         "ruleset": contract.get("ruleset", "ambient"),
+        "cooking": contract.get("cooking", {}),
     }
     weave("act.loaded", act=act_id, title=act["title"],
           regions=list(regions.keys()),
@@ -361,6 +362,7 @@ def _flat_to_act(config: dict, pack: Path) -> dict:
         "floor": config.get("floor", "costume"),
         "tone": config.get("tone", ""),
         "ruleset": config.get("ruleset", "ambient"),
+        "cooking": config.get("cooking", {}),
         "_town_legacy": town,
     }
 
