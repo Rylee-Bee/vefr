@@ -14,7 +14,11 @@ def _fake_world(monkeypatch):
         lambda name=None: {
             "title": "T",
             "phases": {"whispers": "", "doubts": ""},
-            "speakers": {"ferry": {"name": "the ferryman"}, "katla": {"name": "Katla"}},
+            # The always-array shape: speakers live on the act, never
+            # on the root. The pool must read them there (npc.py's
+            # path) or acts-shape packs weave with no npc pools.
+            "acts": [{"speakers": {
+                "ferry": {"name": "the ferryman"}, "katla": {"name": "Katla"}}}],
         },
     )
 
@@ -100,7 +104,7 @@ def test_weave_bakes_pool_into_html(tmp_path, monkeypatch):
 
     monkeypatch.setattr(world_mod, "load_world", lambda name=None: {
         "title": "Pool", "phases": {"whispers": ""},
-        "speakers": {"ferry": {"name": "the ferryman"}}})
+        "acts": [{"speakers": {"ferry": {"name": "the ferryman"}}}]})
     _fake_generators(monkeypatch)
 
     out = tmp_path / "out.html"

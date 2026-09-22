@@ -39,7 +39,7 @@ def build_pool(
     from .generator import generate_rumor
     from .npc import generate_line
     from .stefna import generate_letter
-    from .world import load_world
+    from .world import current_act, load_world
 
     # Explicit name, not the env-resolved no-arg call: load_world is
     # lru_cached on its name argument, so load_world() would keep
@@ -49,7 +49,11 @@ def build_pool(
     # default for direct callers.
     world = load_world(pack_name)
     phases = list(world.get("phases", {}).keys())
-    speakers = list(world.get("speakers", {}).keys())
+    # Mirror the live NPC path (npc.py reads the current act's
+    # speakers): root-level speakers moved into acts/ in the
+    # always-array shape, so reading the root gave every acts-shape
+    # pack an empty npc pool.
+    speakers = list(current_act(world)["speakers"].keys())
 
     pool: dict[str, list] = {}
 
