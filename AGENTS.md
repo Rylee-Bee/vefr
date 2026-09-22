@@ -104,6 +104,7 @@ uv run ratatoskr weave --pool 5
 | Doc | What it is |
 |---|---|
 | `AGENT_POLICY.md` | Agent decision kernel: preflight, DoD, evidence requirements |
+| `docs/guides/world-creation.md` | World authoring: norns chat -> validate -> build-map -> weave |
 | `README.md` | Design philosophy + screenshots + quickstart |
 | `CONTRIBUTING.md` | How to contribute (human + agent onboarding) |
 | `docs/guides/brain-socket.md` | Architecture: VEFR owns reality; brains plug in |

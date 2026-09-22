@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **World-creation guide: interview to playable HTML** (2026-09-22):
+      drove `norns chat` end to end against the bundled Spark as a
+      first-time author would - 15 prompts, exit 0, a valid pack in
+      25 seconds. Both gated fallbacks captured verbatim (theme kept
+      the scaffold's colors; the map proposal failed its hard
+      validation gate twice and the proven layout held). Extended the
+      map through `norns build-map` from a run-length segments file
+      (+1 row, unforced - validation gated the write), re-validated
+      ok, and wove a 10-line pool (`rumor:dusk`, `rumor:dawn`,
+      `letter`, `forge`) into a 37.9 KB single-file HTML. Wrote
+      `docs/guides/world-creation.md` from that capture: the full
+      prompt sequence, what blank keeps, the fallback messages, the
+      segments format, cleanup, troubleshooting - linked from
+      `GETTING_STARTED.md` and the `AGENTS.md` references. Gates:
+      ruff clean; pytest 425 passed / 2 skipped (2 known
+      model-dependent env failures); public-surface clean (377).
+
 - [x] **Bundled fleet complete: Vision tenant on :8085** (2026-09-22):
       docs promised a 4-model fleet; the image carried 3 — SmolVLM2 was
       never bundled (the docs-vs-reality gap). Added
