@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # The full history is needed for the Storyteller-WIP-aware
           # public-surface guard and for any future gitleaks step.
           fetch-depth: 0
@@ -33,6 +34,11 @@ jobs:
 
       - name: Ruff
         run: uv run --group test ruff check src tests scripts
+
+      - name: Install node dev deps (test harnesses only)
+        # package.json is dev-only tooling (jsdom for the kitchen
+        # harness). Nothing in it ships or runs at runtime.
+        run: npm ci
 
       - name: Pytest (public - blocks CI)
         # The Storyteller WIP lane (homelab issue rylee/vefr#50)

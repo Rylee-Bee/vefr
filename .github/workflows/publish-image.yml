@@ -12,6 +12,11 @@ name: publish-image
 # on each successful main publish.
 
 on:
+  # zizmor: ignore[dangerous-triggers] because this workflow_run is
+  # filtered to main-branch completions of `ci`; the SHA it checks out
+  # is always a post-merge main SHA that already passed ci, never a
+  # pull-request head. The trigger is what keeps broken images
+  # unpublished.
   workflow_run:
     workflows: ["ci"]
     types: [completed]
