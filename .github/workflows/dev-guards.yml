@@ -69,9 +69,11 @@ jobs:
           uv run ratatoskr weave --pack sample-world --out /tmp/weave/sample.html
           PACK=$(python3 tests/fixtures/make_kitchen_pack.py /tmp/weave/kitchen-home)
           uv run ratatoskr weave --pack "$PACK" --out /tmp/weave/kitchen.html
+          DPACK=$(python3 tests/fixtures/make_desk_pack.py /tmp/weave/desk-home)
+          uv run ratatoskr weave --pack "$DPACK" --out /tmp/weave/desk.html
 
       - name: axe-core (vendored, MPL-2.0)
-        run: uv run python scripts/a11y_check.py /tmp/weave/sample.html /tmp/weave/kitchen.html
+        run: uv run python scripts/a11y_check.py /tmp/weave/sample.html /tmp/weave/kitchen.html /tmp/weave/desk.html
 
   visual:
     name: visual regression on woven sample
