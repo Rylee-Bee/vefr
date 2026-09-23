@@ -192,5 +192,6 @@ Every route, every request/response shape, try-it-out included.
 | How does the bones/flesh split work? | `README.md` |
 | What's landed, what's next? | `ROADMAP.md` |
 | How do I build a world end to end? | `docs/guides/world-creation.md` |
+| Which game does an act play? | `docs/guides/rulesets.md` |
 | Who can use what, under what license? | `LICENSE` (engine) and `worlds/<name>/LICENSE` (a specific world, if it has one) |
 | How do I run this always-on? | `README.md` "Run the engine" section |

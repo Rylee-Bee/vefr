@@ -110,6 +110,8 @@ itself stays the scaffold's in v1; grow it after with
 The full walkthrough — every interview question, the fallbacks,
 map reshaping, weaving — is
 [`docs/guides/world-creation.md`](docs/guides/world-creation.md).
+Which game an act plays - cooking, desk, and the pack-law fields
+(floor, tone, verbs, transitions): [`docs/guides/rulesets.md`](docs/guides/rulesets.md).
 
 ### The bones and the flesh
 
