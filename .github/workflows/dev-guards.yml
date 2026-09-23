@@ -26,10 +26,10 @@ jobs:
         run: |
           set -euo pipefail
           V=1.7.12
-          curl -sSLf -o al.tgz "https://github.com/rhysd/actionlint/releases/download/v${V}/actionlint_${V}_linux_amd64.tar.gz"
+          curl -sSLf -o "actionlint_${V}_linux_amd64.tar.gz" "https://github.com/rhysd/actionlint/releases/download/v${V}/actionlint_${V}_linux_amd64.tar.gz"
           curl -sSLf -o al.sum "https://github.com/rhysd/actionlint/releases/download/v${V}/actionlint_${V}_checksums.txt"
           sha256sum -c <(grep "actionlint_${V}_linux_amd64.tar.gz" al.sum)
-          tar -xzf al.tgz actionlint
+          tar -xzf "actionlint_${V}_linux_amd64.tar.gz" actionlint
           ./actionlint .github/workflows/*.yml
 
       - name: zizmor (pinned via uv tool run)
