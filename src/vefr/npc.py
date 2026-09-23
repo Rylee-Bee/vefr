@@ -10,6 +10,7 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from . import generator
+from .desk import prompt_lines as _knowledge
 from .world import current_act, load_world, phase_tone, resolve_voice_file
 
 SCHEMA = {
@@ -48,7 +49,7 @@ def _speaker(key: str | None) -> dict:
     return speakers[key]
 
 
-def build_payload(phase: str, key: str | None = None) -> dict:
+def build_payload(phase: str, key: str | None = None, sid: str | None = None) -> dict:
     spec = _speaker(key)
     voice = resolve_voice_file(spec["voice_file"]).read_text(encoding="utf-8")
     seed = spec["seeds"].get(phase, next(iter(spec["seeds"].values()), ""))
@@ -57,6 +58,7 @@ def build_payload(phase: str, key: str | None = None) -> dict:
         "system": (
             voice
             + f"\n\nCURRENT PHASE: {phase_tone(phase)}\n"
+            + (_knowledge(sid) if sid else "")
         ),
         "prompt": (
             f"{spec['name']} speaks one line at {spec['near']}, in the "
@@ -72,9 +74,12 @@ def build_payload(phase: str, key: str | None = None) -> dict:
     }
 
 
-def generate_line(phase: str = "whispers", key: str | None = None) -> NpcLine:
+def generate_line(
+    phase: str = "whispers", key: str | None = None,
+    sid: str | None = None,
+) -> NpcLine:
     spec = _speaker(key)
-    payload = build_payload(phase, key)
+    payload = build_payload(phase, key, sid)
     for _ in range(2):
         try:
             raw = generator._completion(payload)

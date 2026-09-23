@@ -45,6 +45,12 @@ def journal_path(sid: str | None = None) -> Path:
     return derive(JOURNAL, sid)
 
 
+def entries(sid: str | None = None) -> list[dict]:
+    """Public read of a session's journal (the desk ruleset derives
+    world knowledge from it; an unreadable log reads as empty)."""
+    return _load(sid)
+
+
 def _load(sid: str | None = None) -> list[dict]:
     path = journal_path(sid)
     if not path.exists():
