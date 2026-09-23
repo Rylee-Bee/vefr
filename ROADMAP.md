@@ -7,6 +7,33 @@
 
 ## Landed
 
+- [x] **Dev-guards: the tooling gate (owner directive: "implement them and
+      continue development")** (2026-09-22): the MIT-tooling survey's top four
+      land as one guard workflow + hardening. (1) `dev-guards.yml`:
+      actionlint 1.7.12 (checksum-verified release binary) + zizmor 1.30.1
+      (pinned `uv tool run`) over `.github/`; axe-core 4.13.0 gate (vendored
+      MPL-2.0, `scripts/a11y_check.py`, real chromium via the existing
+      playwright test dep) over BOTH woven players (sample + kitchen
+      fixture); visual regression (`scripts/visual_regress.py`) — stdlib
+      PNG decode (zlib + scanline unfilter, zero new deps; pixelmatch
+      evaluated and set aside to honor keep-deps-short) against a committed
+      baseline, `VISUAL_UPDATE=1` for deliberate redesigns. (2) zizmor's
+      first run found seven live findings in OUR workflows; all fixed or
+      justified: `persist-credentials: false` on ci/secret-scan/security
+      checkouts, dependabot `cooldown: 7d`, screenshots.yml keeps its push
+      token under a justified ignore, publish-image's `workflow_run`
+      (main-branch-filtered, post-merge SHAs only) under a justified
+      ignore. (3) the kitchen harness moved from my hand-rolled stub DOM to
+      **jsdom** (MIT, dev-only `package.json`; happy-dom evaluated and
+      rejected with evidence: it does not execute inline scripts via
+      document.write). (4) `tests/fixtures/make_kitchen_pack.py` factors the
+      neutral kitchen fixture out for CI gates. New: THIRD_PARTY.md
+      (vendored/dev-only provenance). Local evidence: a11y gate no
+      serious/critical on both woven players; visual drift 0.0000% vs fresh
+      baseline; actionlint clean; zizmor "No findings" (2 ignored, 10
+      suppressed); ruff clean; pytest 2 failed (documented model-up env
+      pair) / 461 passed / 1 skipped; public-surface clean (384); validate ok.
+
 - [x] **Act 1 increment 1: the kitchen ruleset v0, act-runner router, and the
       pleasant-loop harness** (2026-09-22): Phase 1 of VEFR-GAME-PLAN begins per
       the owner's Act-1 directive (a cooking act that wakes, serves, and prints

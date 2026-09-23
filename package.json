@@ -1,0 +1,9 @@
+{
+  "name": "vefr-devtools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only node tooling for vefr's test harnesses. Nothing here ships, runs at runtime, or reaches the woven single-file player. See ROADMAP and THIRD_PARTY.md.",
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}
