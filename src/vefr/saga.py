@@ -33,7 +33,7 @@ def sealed_voice(key: str) -> str:
     return rules + "\n\n" + logbok
 
 
-def system_prompt(phase: str) -> str:
+def system_prompt(phase: str, sid: str | None = None) -> str:
     tone = phase_tone(phase)
     from .journey import journey_for
     from .runes import cast_for, render_for_prompt, seed_for
@@ -54,6 +54,10 @@ def system_prompt(phase: str) -> str:
         "position on the ridiculous-literal dial.\n"
         if act_tone else ""
     )
+    # The world knows its own stories: confirmed/debunked truths and
+    # printed headlines from this session's journal, derived on read.
+    from .desk import prompt_lines as _knowledge
+    know_line = _knowledge(sid) if sid else ""
     # The cast is deterministic for a given moment. We seed from
     # the phase name + the current ISO minute so the cast changes
     # over time but stays consistent within a session-minute. The
@@ -68,6 +72,7 @@ def system_prompt(phase: str) -> str:
         "never explain, never label, never use modern words. Show only.\n\n"
         f"CURRENT PHASE: {tone}\n"
         f"{rune_line}\n{tone_dial_line}"
+        f"{know_line}"
         f"{cast_block}\n"
         f"{_logbok()}\n\n"
         "Whispers already collected - match their cadence, do not repeat "

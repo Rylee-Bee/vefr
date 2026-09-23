@@ -8,6 +8,7 @@ from pathlib import Path
 
 from . import (
     combat,
+    desk,
     enhance,
     forge,
     inspect as inspect_mod,
@@ -83,7 +84,7 @@ def health():
 @app.post("/api/rumor")
 def rumor(req: RumorRequest, session: str = ""):
     with trace.span("/api/rumor", phase=req.phase, session=session or "default") as sp:
-        card = generate_rumor(req.phase, req.theme)
+        card = generate_rumor(req.phase, req.theme, sid=session or None)
         sp.set(speaker=card.speaker)
     journal.log(
         "rumor",
@@ -180,7 +181,7 @@ def npc(req: NpcRequest, session: str = ""):
 
     try:
         with trace.span("/api/npc", phase=req.phase, session=session or "default") as sp:
-            spoken = generate_line(req.phase, req.speaker)
+            spoken = generate_line(req.phase, req.speaker, sid=session or None)
             sp.set(speaker=spoken.speaker)
     except RuntimeError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -222,6 +223,48 @@ def combat_action(req: CombatAction, session: str = ""):
 
             raise HTTPException(status_code=400, detail=str(e))
     return entry
+
+
+class DeskVerify(BaseModel):
+    whisper: str
+    verdict: str
+
+
+class DeskPrint(BaseModel):
+    headline: str
+
+
+@app.post("/api/desk/verify")
+def desk_verify(req: DeskVerify, session: str = ""):
+    """Judge a whisper this session heard. The engine compares the
+    verdict against the truth it actually sent - the Desk is where
+    is_true finally gets consumed."""
+    from fastapi import HTTPException
+
+    try:
+        return desk.verify(session or None, req.whisper, req.verdict)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/api/desk/print")
+def desk_print(req: DeskPrint, session: str = ""):
+    """Print a headline. What the paper says, the world hears:
+    later prompts carry the printed list."""
+    from fastapi import HTTPException
+
+    try:
+        entry = desk.print_headline(session or None, req.headline)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return entry
+
+
+@app.get("/api/desk/facts")
+def desk_facts(session: str = ""):
+    """The session's derived world knowledge: confirmed, debunked,
+    printed. Replay of the journal - always honest, never stale."""
+    return {"facts": desk.facts(session or None)}
 
 
 @app.get("/api/world")

@@ -662,7 +662,7 @@ def cmd_build_web(args) -> int:
                   'live model...')
             pool = pool_mod.build_pool(
                 samples=pool_n,
-                pack_name=pack.name,
+                pack_name=pack,
                 progress=lambda combo, count: print(f'  {combo}: {count}'),
             )
         finally:

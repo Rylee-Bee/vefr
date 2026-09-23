@@ -70,7 +70,7 @@ SCHEMA = {
 }
 
 
-def build_payload(phase: str, theme: str | None) -> dict:
+def build_payload(phase: str, theme: str | None, sid: str | None = None) -> dict:
     """Build an ollama-style payload (stable build spec, kept for tests).
 
     The actual HTTP request is shaped by _completion() into whatever the
@@ -80,7 +80,7 @@ def build_payload(phase: str, theme: str | None) -> dict:
     theme_line = f" The rumor touches: {theme}." if theme else ""
     return {
         "model": _active_model(),
-        "system": _system(phase),
+        "system": _system(phase, sid),
         "prompt": f"Whisper one tavern rumor.{theme_line} Reply with only the JSON object.",
         "format": SCHEMA,
         "stream": False,
@@ -90,10 +90,10 @@ def build_payload(phase: str, theme: str | None) -> dict:
     }
 
 
-def _system(phase: str) -> str:
+def _system(phase: str, sid: str | None = None) -> str:
     from .saga import system_prompt
 
-    return system_prompt(phase)
+    return system_prompt(phase, sid=sid)
 
 
 def _completion(payload: dict, max_tokens: int = 1024) -> str:
@@ -199,8 +199,11 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
         ) from e
 
 
-def generate_rumor(phase: str = "whispers", theme: str | None = None) -> RumorCard:
-    payload = build_payload(phase, theme)
+def generate_rumor(
+    phase: str = "whispers", theme: str | None = None,
+    sid: str | None = None,
+) -> RumorCard:
+    payload = build_payload(phase, theme, sid)
     last_err: Exception | None = None
     for _ in range(2):
         raw = _completion(payload)

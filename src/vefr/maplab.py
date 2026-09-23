@@ -334,6 +334,16 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         if (not isinstance(heads, list) or len(heads) < 2
                 or not all(isinstance(h, str) and h.strip() for h in heads)):
             errors.append(f"act '{aid}' cooking headlines must be at least two non-empty strings")
+        if act.get('ruleset') == 'desk':
+            dblock = act.get('desk') or {}
+            if not isinstance(dblock, dict):
+                errors.append(f"act '{aid}' desk block must be an object")
+            else:
+                dheads = dblock.get('headlines', [])
+                if (not isinstance(dheads, list) or len(dheads) < 2
+                        or not all(isinstance(h, str) and h.strip() for h in dheads)):
+                    errors.append(
+                        f"act '{aid}' desk headlines must be at least two non-empty strings")
 
     return errors
 

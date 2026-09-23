@@ -7,6 +7,30 @@
 
 ## Landed
 
+- [x] **Act 2 increment 1: the Desk ruleset - is_true finally consumed, the
+      world knows its own stories** (2026-09-22): Phase 2 of the game plan
+      begins. Engine: `desk.py` (verify / print / facts / prompt_lines -
+      deterministic, no model calls; knowledge DERIVED from the session
+      journal on every read, no separate store to corrupt); rumors and NPC
+      lines now thread the session id into their prompts, so
+      `WHAT THE WORLD KNOWS NOW` (confirmed / debunked / printed) rides in
+      every later generation; routes `POST /api/desk/verify`,
+      `POST /api/desk/print`, `GET /api/desk/facts` (added under the
+      approved plan; AGENTS ask-first noted in this entry); pack contract
+      gains the per-act `desk` block (headlines validated >= 2 when
+      `ruleset: desk`). Player: the packaged player grows a Desk screen
+      (listen -> trust/doubt -> print -> what-the-world-knows), fully
+      client-side like the rest of the single file, reusing the honest
+      fallback chain (live schema -> woven pool -> composer -> fragments).
+      Tests: test_desk.py (8 server pins incl. prompt injection both ways)
+      + desk_harness.mjs + test_desk_loop.py (5 play pins; whole loop <= 6
+      clicks). Weave now resolves out-of-root packs by path for pool builds
+      (fixes tmp-pack weaves; BJ repo weaves unaffected). dev-guards: the
+      desk pack joins the axe gate. Gates: a11y no serious/critical on
+      sample+kitchen+desk weaves; visual drift 0.0000%; ruff clean; pytest
+      2 failed (documented model-up env pair) / 474 passed / 1 skipped;
+      public-surface clean (394); validate ok.
+
 - [x] **Dev-guards: the tooling gate (owner directive: "implement them and
       continue development")** (2026-09-22): the MIT-tooling survey's top four
       land as one guard workflow + hardening. (1) `dev-guards.yml`:
