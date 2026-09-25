@@ -7,6 +7,19 @@
 
 ## Landed
 
+- [x] **Resolve the open-issue list** (2026-09-25): (1) the CI `--ignore`
+      flags and the "informational" pytest step named two Storyteller test
+      files that exist nowhere in the tree or history, and a tracker item
+      (#50) that is no longer reachable; the informational step failed
+      silently on every run. All removed: CI and the docs now run plain
+      `pytest -q`. (2) D6 finished: engine tests and the rulesets guide
+      example use neutral fixture fiction, no game-pack names. (3) The
+      2026-09 model-benchmark reports and harnesses moved to
+      `.project/archive/model-benchmarks-2026-09/` (only consumers were each
+      other). (4) Owner rulings recorded in DECISIONS: the sibling engine repo kept separate (D5
+      superseded), alpha pack parked, old art commit accepted. CURRENT.md
+      updated; one open design call remains (rumor path reads no pack canon).
+
 - [x] **Green main + orientation refresh** (2026-09-25): `78fa0f8`
       named the sibling engine in AGENTS.md and tripped
       `test_no_historical_package_names` (CI red on main). AGENTS.md now

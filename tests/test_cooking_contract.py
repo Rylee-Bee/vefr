@@ -17,11 +17,11 @@ GOOD_BLOCK = {
     "tickets": [
         {
             "id": "t1",
-            "customer": "rosa",
+            "customer": "the regular",
             "order": ["egg", "salsa"],
             "note": "The usual. Egg, and the red one that bites.",
-            "thanks": "Rosa eats standing up, already turning to go.",
-            "kind_line": "Rosa eats it anyway. Something is off and so is the morning; both are true.",
+            "thanks": "The regular eats standing up, already turning to go.",
+            "kind_line": "The regular eats it anyway. Something is off and so is the morning; both are true.",
         },
         {
             "id": "t2",

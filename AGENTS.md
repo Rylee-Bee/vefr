@@ -54,9 +54,7 @@ to this repo.
 # The gate — run before claiming anything is done (must match CI)
 uv sync --group test
 uv run --group test ruff check src tests scripts
-uv run --group test pytest -q \
-  --ignore=tests/test_npc_action.py \
-  --ignore=tests/test_storyteller_benchmark.py
+uv run --group test pytest -q
 
 # Public-surface guard (CI runs this; catches private data in tracked files)
 python3 scripts/check_public_surface.py
@@ -82,7 +80,7 @@ uv run ratatoskr weave --pool 5
 
 | Severity | Rule |
 |---|---|
-| **Always** | `ruff check src tests scripts && pytest -q --ignore=tests/test_npc_action.py --ignore=tests/test_storyteller_benchmark.py` green before claiming done. Paste the exact command + output. The `--ignore` matches CI; those two files carry WIP Storyteller failures tracked in rylee/vefr#50. |
+| **Always** | `ruff check src tests scripts && pytest -q` green before claiming done (matches CI). Paste the exact command + output. |
 | **Always** | Every UI change answers the accessibility matrix: ≥44px targets, luminance over hue, motion off, keyboard + SR accessible. |
 | **Always** | `norns validate` after any world-pack write. Never trust a hand edit. |
 | **Always** | No model calls in deterministic surfaces: `export.py`, `weave.py`, `maplab.py`, `journal.py`. |
