@@ -31,7 +31,7 @@ to this repo.
 
 - **The game.** The engine is the bones; the author's story is the flesh, kept in a separate private pack repo. Any non-shipped pack under `worlds/` is gitignored. The engine must never re-learn a game's name.
 - Multi-backend tied: llama.cpp preferred, Ollama fallback. Structured output only.
-- **Related to `munr`, not synced with it.** `Rylee-Bee/munr` is a separate public repo sharing this codebase's rewritten-history origin. They evolve independently — never merge, rebase, or cherry-pick between them without an explicit owner decision.
+- **A mirror of its sibling engine repo.** Related, not synced: a separate public repo shares this codebase's rewritten-history origin (named in `.project/DECISIONS.md`, 2026-09-25; the engine tree must not name it — `tests/test_pack_neutrality.py`). They evolve independently — never merge, rebase, or cherry-pick between them without an explicit owner decision.
 
 ## Directory map
 
