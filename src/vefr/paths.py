@@ -68,18 +68,87 @@ def worlds_dir() -> Path:
     return app_home() / "worlds"
 
 
+def data_dir() -> Path:
+    """Runtime state that isn't a world pack - sessions, journals,
+    the active-world choice. Lives under the app home, next to the
+    tracked data/ tree, and is never committed.
+    """
+    return app_home() / "data"
+
+
+def active_world_file() -> Path:
+    """The tiny file the active-world choice persists to."""
+    return data_dir() / "active-world"
+
+
+# The in-memory half of the override: a request that just switched
+# worlds takes effect immediately, before the file is ever re-read.
+_ACTIVE_WORLD: str | None = None
+
+
+def active_world() -> str | None:
+    """The server-side world override, if one was chosen at runtime.
+
+    In-memory first (someone just picked a world in the web UI),
+    then the persisted file under data/. None when neither names
+    one, so world_name() falls through to its normal resolution.
+    """
+    global _ACTIVE_WORLD
+    name = _ACTIVE_WORLD
+    if not name:
+        try:
+            name = active_world_file().read_text(encoding="utf-8").strip()
+        except OSError:
+            name = ""
+    # The file is server-written, but it is still read back from disk:
+    # hold it to the same bare-name rule as a request.
+    try:
+        return safe_pack_name(name)
+    except ValueError:
+        return None
+
+
+def set_active_world(name: str) -> None:
+    """Remember + persist the active-world override.
+
+    The caller has already validated `name` as a bare pack name that
+    resolves to a real pack. The module global makes the switch take
+    effect without a restart; the file makes it survive one.
+    """
+    global _ACTIVE_WORLD
+    _ACTIVE_WORLD = name
+    f = active_world_file()
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(f"{name}\n", encoding="utf-8")
+
+
+def _pack_exists(name: str) -> bool:
+    return (
+        (worlds_dir() / name / "world.json").is_file()
+        or (template_dir() / name / "world.json").is_file()
+    )
+
+
 def world_name() -> str:
     """Which world pack is loaded.
 
-    VEFR_WORLD wins. Otherwise the first pack alphabetically across
-    BOTH the rw canon mount and the ro template mount - the bones
-    boot with any flesh, or none at all beyond the sample that
+    VEFR_WORLD wins - the operator's env always has the last word.
+    Then the runtime active-world override (what the web UI picked,
+    in-memory or on disk), so the served page can switch worlds
+    without a restart. Otherwise the first pack alphabetically
+    across BOTH the rw canon mount and the ro template mount - the
+    bones boot with any flesh, or none at all beyond the sample that
     ships with the engine. No pack name is ever special-cased here;
     the engine doesn't know or care whose story it's running.
     """
     env = os.environ.get('VEFR_WORLD')
     if env:
         return env
+    active = active_world()
+    # A persisted choice can outlive the pack it named; ignore a
+    # stale one rather than loading a directory that isn't there.
+    if active and _pack_exists(active):
+        return active
     # Union of (rw canon) + (ro template), author canon wins on
     # conflict. The loader does the same merge; here we just need
     # *a* default if no env is set.

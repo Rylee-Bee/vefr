@@ -40,6 +40,10 @@ __pycache__/
 /data/weave.jsonl.old
 /data/handoffs/
 
+# runtime world choice - which pack the served UI made active.
+# a per-machine switch, never engine code.
+/data/active-world
+
 # runtime lore - the Lorekeeper store (facts + derived vector index).
 # session data under VEFR_HOME/data, never part of the engine.
 /data/lore/

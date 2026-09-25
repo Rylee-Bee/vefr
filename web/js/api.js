@@ -34,6 +34,8 @@
     world:        function ()     { return get('/api/world'); },
     health:       function ()     { return get('/api/health'); },
     builderWorlds:function ()     { return get('/api/builder/worlds'); },
+    createWorld:  function (q)    { return post('/api/builder/worlds', q); },
+    setActiveWorld: function (q)  { return post('/api/builder/worlds/active', q); },
     aspects:      function ()     { return get('/api/builder/aspects'); },
     resolved:     function ()     { return get('/api/builder/resolved'); },
 
