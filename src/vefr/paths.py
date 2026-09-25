@@ -1,5 +1,29 @@
 import os
+import re
 from pathlib import Path
+
+# A name that can be joined onto a pack root without escaping it: one
+# bare path segment, no separators, no leading dot. The request-facing
+# routes validate through safe_pack_name() so "../elsewhere" can never
+# reach pack_dir().
+_PACK_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+
+def safe_pack_name(name: str | None) -> str | None:
+    """Validate a pack/world name that arrived from an untrusted caller.
+
+    None and "" mean "the current pack" and pass through unchanged.
+    Anything else must be a bare pack name, so it stays under worlds/
+    or templates/ when pack_dir() joins it. Raises ValueError for
+    anything else; the HTTP layer turns that into a 400. This is the
+    single source of the pack-name rule - main.py's routes no longer
+    carry their own regex.
+    """
+    if not name:
+        return None
+    if not isinstance(name, str) or not _PACK_NAME_RE.match(name):
+        raise ValueError("world must be a bare pack name")
+    return name
 
 
 def app_home() -> Path:
