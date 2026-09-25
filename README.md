@@ -60,6 +60,11 @@ ratatoskr weave
 # -> dist/sample-world-<date>.html  (one self-contained file)
 ```
 
+Prefer a browser? The served workshop's Desk has a **Make shareable
+file** button — it builds the current world the same way and offers a
+Download link (plus the phone's Share sheet where the browser supports
+sharing files). Same single HTML file, no terminal.
+
 The exported file includes a title screen (world name, tagline,
 "enter" button) so it feels like a game within 3 seconds of opening.
 No server, no internet — the world's data is baked into the HTML.

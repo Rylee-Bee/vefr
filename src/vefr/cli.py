@@ -560,36 +560,17 @@ def _template_candidates() -> list[Path]:
     ]
 
 
-def cmd_build_web(args) -> int:
-    """Bundle worlds/<name>/ + web/packaged.html into one self-contained file.
+def weave_html(pack: Path, *, pool: dict | None = None) -> str:
+    """Weave a pack into the single shareable HTML document.
 
-    The player opens the file, points it at any OpenAI-compatible LLM
-    endpoint, and plays. No Python, no server, no internet: the pack's
-    logbok, ledger, voices, and town are inlined as JSON inside the
-    HTML. Distributable: send it as a single email attachment, host
-    on any static site, open from a phone's Files app.
-
-    The 'bones' shape carries through here. Whatever the engine reads
-    from the pack on disk, the bundled file reads from a JS object.
+    The packaging core behind `ratatoskr weave` and the served
+    builder's "Make shareable file" button. Loads the resolved world
+    (raw root folded under the validator's unified shape, acts carried
+    through), folds it over web/packaged.html, and returns the finished
+    document as a string. No writes and no model calls - `pool`, when
+    present, is caller-supplied already-generated content.
     """
     import json as _json
-    from datetime import date
-
-    if args.pack is None:
-        pack = pack_root() / 'worlds' / world_name()
-    else:
-        # Bare name -> resolve under worlds/; any path -> made absolute,
-        # so load_world below finds an out-of-root pack instead of
-        # joining a relative path under worlds/ (which dropped acts).
-        p = Path(args.pack)
-        if p.is_absolute() or '/' in str(args.pack):
-            pack = (p if p.is_dir() else p.parent).resolve()
-        else:
-            pack = pack_root() / 'worlds' / p
-
-    if not (pack / 'world.json').exists():
-        print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
-        return 1
 
     # The player template reads town geometry, speakers, and creed off
     # VEFR_WORLD - all three live in acts/<id>/ for an acts-shape pack
@@ -645,6 +626,64 @@ def cmd_build_web(args) -> int:
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
     out_html = out_html.replace('{{fragments_json}}', _json.dumps(fragments, ensure_ascii=False))
+    # The woven pool: real generations baked into the file, so a
+    # player with no LLM endpoint still hears the world. Empty unless
+    # the caller generated one (the CLI's --pool; the web route never).
+    out_html = out_html.replace('{{pool_json}}', _json.dumps(pool or {}, ensure_ascii=False))
+    return out_html
+
+
+def build_web(pack: Path, out_dir: Path, *, out_name: str | None = None,
+              pool: dict | None = None) -> Path:
+    """Weave a pack and write it into `out_dir`; return the file path.
+
+    The packaging core both `ratatoskr weave` (cmd_build_web) and
+    POST /api/builder/weave call, so the CLI and the served UI ship
+    byte-identical files. `out_dir` is a directory the caller owns;
+    the name defaults to <pack>-<date>.html and is overridable with
+    out_name. No caller-supplied output path is ever accepted here.
+    """
+    from datetime import date
+
+    pack = Path(pack)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    name = out_name or f'{pack.name}-{date.today().isoformat()}.html'
+    out_path = out_dir / name
+    out_path.write_text(weave_html(pack, pool=pool), encoding='utf-8')
+    return out_path
+
+
+def cmd_build_web(args) -> int:
+    """Bundle worlds/<name>/ + web/packaged.html into one self-contained file.
+
+    The player opens the file, points it at any OpenAI-compatible LLM
+    endpoint, and plays. No Python, no server, no internet: the pack's
+    logbok, ledger, voices, and town are inlined as JSON inside the
+    HTML. Distributable: send it as a single email attachment, host
+    on any static site, open from a phone's Files app.
+
+    The 'bones' shape carries through here. Whatever the engine reads
+    from the pack on disk, the bundled file reads from a JS object.
+    The packaging itself lives in weave_html/build_web so the served
+    builder shares one implementation; this wrapper keeps the CLI's
+    flags, output paths, and console lines unchanged.
+    """
+    if args.pack is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        # Bare name -> resolve under worlds/; any path -> made absolute,
+        # so load_world below finds an out-of-root pack instead of
+        # joining a relative path under worlds/ (which dropped acts).
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = (p if p.is_dir() else p.parent).resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+
+    if not (pack / 'world.json').exists():
+        print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
+        return 1
 
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Zero by
@@ -676,16 +715,13 @@ def cmd_build_web(args) -> int:
                 _os.environ['VEFR_WORLD'] = old_world_env
         total = sum(len(v) for v in pool.values())
         print(f'pool woven: {total} lines across {len(pool)} combinations')
-    out_html = out_html.replace('{{pool_json}}', _json.dumps(pool, ensure_ascii=False))
 
     if args.out:
         out_path = Path(args.out)
+        out_dir, out_name = out_path.parent, out_path.name
     else:
-        out_dir = Path('dist')
-        out_dir.mkdir(exist_ok=True)
-        out_path = out_dir / f'{pack.name}-{date.today().isoformat()}.html'
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(out_html, encoding='utf-8')
+        out_dir, out_name = Path('dist'), None
+    out_path = build_web(pack, out_dir, out_name=out_name, pool=pool)
     size_kb = out_path.stat().st_size / 1024
     print(f'wrote {out_path} ({size_kb:.1f} KB)')
     print('open it in a browser, set your LLM URL + model, and play.')

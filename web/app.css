@@ -640,6 +640,21 @@ body {
 }
 .btn--bell:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* The shareable file — weave status words + its two follow-on actions */
+.weave-status {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-muted, #C2BDB0);
+}
+/* .btn sets display, so [hidden] needs to out-specify it. */
+.weave-action[hidden] { display: none; }
+#ws-weave:focus-visible,
+.weave-action:focus-visible {
+  outline: 2px solid var(--ring, var(--gold, #C9AD6B));
+  outline-offset: 2px;
+}
+
 /* ── Context Panel — the folio beside the desk ──────────── */
 .workshop__context {
   background: rgba(30, 28, 24, 0.6);
