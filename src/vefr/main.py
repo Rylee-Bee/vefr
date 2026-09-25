@@ -951,11 +951,14 @@ def builder_weave_file(name: str):
     """
     if not _WEAVE_NAME_RE.match(name):
         raise HTTPException(status_code=404, detail="no such woven file")
-    out_dir = _weave_output_dir().resolve()
-    target = (out_dir / name).resolve()
-    if target.parent != out_dir or not target.is_file():
+    out_dir = _weave_output_dir()
+    # Look the name up among the files the server wrote rather than
+    # joining it onto a path: the request never builds a filesystem path.
+    woven = {p.name: p for p in out_dir.glob("*.html") if p.is_file()} if out_dir.is_dir() else {}
+    target = woven.get(name)
+    if target is None:
         raise HTTPException(status_code=404, detail="no such woven file")
-    return FileResponse(target, media_type="text/html", filename=name)
+    return FileResponse(target, media_type="text/html", filename=target.name)
 
 
 @app.get("/api/starred")
