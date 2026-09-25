@@ -164,6 +164,11 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
             "response_format": response_format,
             "stream": False,
             "chat_template_kwargs": {"reasoning_effort": "low"},
+            # llama.cpp's default n_predict is unlimited: a model that
+            # rambles inside the JSON grammar would run to the context
+            # limit and hit the 180 s client timeout instead of failing
+            # fast into generate_rumor's retry.
+            "max_tokens": max_tokens,
         }
         # Allow callers to override defaults via the payload (useful
         # for lore drafts that need much more headroom than 1024).
