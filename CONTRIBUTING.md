@@ -41,13 +41,10 @@ surface, read the accessibility matrix first.
    ```sh
    uv sync --group test
    uv run --group test ruff check src tests scripts
-   uv run --group test pytest -q \
-     --ignore=tests/test_npc_action.py \
-     --ignore=tests/test_storyteller_benchmark.py
+   uv run --group test pytest -q
    python3 scripts/check_public_surface.py
    ```
 5. Known pre-existing failures (do not treat as regressions):
-   - `test_npc_action.py` + `test_storyteller_benchmark.py` — WIP Storyteller files, excluded from CI via `--ignore` (tracked in rylee/vefr#50).
    - `test_face_roll_is_honest_without_a_model`, `test_map_propose_is_honest_without_a_model` — model-dependent; fail when no LLM endpoint is reachable.
 
 ## What to work on
@@ -76,9 +73,7 @@ main ← PR ← feat/*
 
 ```sh
 uv run --group test ruff check src tests scripts    # lint (scripts/ too — CI checks it)
-uv run --group test pytest -q \
-  --ignore=tests/test_npc_action.py \
-  --ignore=tests/test_storyteller_benchmark.py      # tests (WIP files excluded, matches CI)
+uv run --group test pytest -q                       # tests (matches CI)
 uv run norns validate --pack worlds/sample-world    # pack integrity
 python3 scripts/check_public_surface.py            # no private IPs, hostnames, or creds
 ```

@@ -1,5 +1,26 @@
 # DECISIONS — vefr
 
+## 2026-09-25 — owner rulings: munr kept, alpha world parked, old art accepted
+
+**Decision.** Three open items closed by the owner:
+
+1. **munr: keep, separate.** Supersedes D5 ("Retire munr"). munr stays
+   its own active repo, related but not synced (entry below). It may
+   later ride on vefr as a costume-ruleset pack (VEFR-GAME-PLAN §2).
+2. **`worlds/rylee-alpha-world/`: parked.** It is the owner's own
+   WP5 acceptance build (2026-09-22, a real `norns chat` interview,
+   "Built it myself" — estate `docs/vefr/VEFR-ORCHESTRATION-PLAN`
+   WP5). A proof artifact, not an active project. It stays local and
+   gitignored; do not delete it. Its generated voice file repeats
+   itself, which is evidence about `norns chat` voice drafting.
+3. **Commit `948df78` (non-CC0 art, 2026-09-06): accepted risk.** No
+   branch contains it; GitHub still serves it only by exact SHA. No
+   support request or history rewrite.
+
+**Status.** ACCEPTED.
+
+---
+
 ## 2026-09-25 — munr is a related repo, not a synced one; D5 unreconciled
 
 **Decision.** `Rylee-Bee/munr` shares this codebase's rewritten-history
