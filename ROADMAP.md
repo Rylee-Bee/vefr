@@ -7,6 +7,17 @@
 
 ## Landed
 
+- [x] **Weave keeps acts for relative out-of-root packs; rumor canon pinned**
+      (2026-09-25): `ratatoskr weave --pack ../<repo>/worlds/<pack>` silently
+      dropped `VEFR_WORLD.acts` (the relative path was joined under
+      `worlds/` and the load error swallowed), so the player's act router
+      never saw `ruleset: cooking` and opened the town instead of the
+      kitchen. `cmd_build_web` now resolves path-style packs to absolute.
+      Regression: `test_weave_keeps_acts_for_relative_out_of_root_pack`
+      (fails before, passes after). Also pinned: every rumor's system prompt
+      carries the pack's `logbok.md` (`test_rumor_prompt_carries_pack_canon`;
+      true since 2026-08-31, previously unpinned).
+
 - [x] **Resolve the open-issue list** (2026-09-25): (1) the CI `--ignore`
       flags and the "informational" pytest step named two Storyteller test
       files that exist nowhere in the tree or history, and a tracker item

@@ -578,10 +578,12 @@ def cmd_build_web(args) -> int:
     if args.pack is None:
         pack = pack_root() / 'worlds' / world_name()
     else:
-        # Bare name -> resolve under worlds/; absolute path -> use as-is.
+        # Bare name -> resolve under worlds/; any path -> made absolute,
+        # so load_world below finds an out-of-root pack instead of
+        # joining a relative path under worlds/ (which dropped acts).
         p = Path(args.pack)
         if p.is_absolute() or '/' in str(args.pack):
-            pack = p if p.is_dir() else p.parent
+            pack = (p if p.is_dir() else p.parent).resolve()
         else:
             pack = pack_root() / 'worlds' / p
 

@@ -71,3 +71,13 @@ def test_openai_compatible_body_bounds_max_tokens(monkeypatch):
     assert generator._completion({"model": "m", "prompt": "p"}, max_tokens=64) == "ok"
     assert generator._completion({"model": "m", "prompt": "p", "max_tokens": 4096}) == "ok"
     assert [b["max_tokens"] for b in sent] == [1024, 64, 4096]
+
+
+def test_rumor_prompt_carries_pack_canon(monkeypatch):
+    # The pack's logbok.md (its canon) rides in every rumor's system
+    # prompt, the same as npc lines; a rumor must never be pack-blind.
+    from vefr import saga, world
+
+    monkeypatch.setattr(saga, "_logbok", lambda: "CANON-SENTINEL: the grill remembers.")
+    phase = next(iter(world.load_world()["phases"]))
+    assert "CANON-SENTINEL: the grill remembers." in build_payload(phase, None)["system"]
