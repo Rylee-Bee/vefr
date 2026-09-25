@@ -95,3 +95,37 @@ def test_weave_bakes_resolved_world(tmp_path, monkeypatch):
     assert baked["creed"] == "Walk softly."  # previously the default tagline
     assert baked["phases"] == {"whispers": "", "doubts": ""}
     assert baked["hero_start"] == {"x": 1, "y": 1}  # raw root fields ride along
+
+
+def test_weave_keeps_acts_for_relative_out_of_root_pack(tmp_path, monkeypatch):
+    """A relative --pack outside the engine's worlds root still bakes acts.
+
+    Regression: `ratatoskr weave --pack ../<other-repo>/worlds/<pack>` dropped
+    VEFR_WORLD.acts (load_world joined the relative path under worlds/ and the
+    failure was swallowed), so the player's act router never saw the act's
+    ruleset and fell back to the town surface.
+    """
+    engine = tmp_path / "engine"
+    engine.mkdir()
+    (tmp_path / "elsewhere").mkdir()
+    pack = _write_act_pack(tmp_path / "elsewhere")
+    act_json = pack / "acts" / "act-1" / "world.json"
+    data = json.loads(act_json.read_text(encoding="utf-8"))
+    data["ruleset"] = "cooking"
+    act_json.write_text(json.dumps(data), encoding="utf-8")
+    out = tmp_path / "woven.html"
+
+    monkeypatch.setattr("vefr.cli.pack_root", lambda: engine)
+    monkeypatch.chdir(engine)
+    args = SimpleNamespace(
+        pack="../elsewhere", out=str(out), pool=0, with_bundle=False,
+        vault=None, journal=None, from_live=None,
+    )
+    assert cmd_build_web(args) == 0
+
+    html = out.read_text(encoding="utf-8")
+    marker = "window.VEFR_WORLD = "
+    start = html.index(marker) + len(marker)
+    baked = json.loads(html[start:html.index("\n", start)].rstrip(";"))
+
+    assert [a.get("ruleset") for a in baked.get("acts") or []] == ["cooking"]
