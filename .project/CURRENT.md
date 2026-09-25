@@ -21,7 +21,8 @@ and each act's fun gate must pass before the next begins.
 | Rulesets guide | `docs/guides/rulesets.md`, PR #28 | — |
 
 **The one next step:** the owner plays Act 1 as the woven file (the
-"smile test"). Only after it passes: bump the BJ pack's vefr pin
+"smile test"). Build published 2026-09-25 to the owner's dev gallery
+(`burrito-journalism`, build `2026-09-25-b679fe0`). Only after it passes: bump the BJ pack's vefr pin
 (it is on `fc0e798`, before the desk ruleset) and write Act 2 content.
 Do not start engine work for Act 3+ until Act 2 has been played.
 
@@ -46,16 +47,21 @@ Treat `docs/vefr/` as the canonical copy.
 
 ## Open owner decisions
 
-1. **Should rumors read pack canon?** NPC lines include the pack's
-   `logbok.md`; the rumor path (`saga.system_prompt`) does not, so a
-   pack's canon never reaches `/api/rumor`. Flagged in the
-   orchestration plan as an engine design call; untouched.
+None. "Should rumors read pack canon?" (raised 2026-09-25) was already
+true: `saga.system_prompt` has carried the pack's `logbok.md` since
+2026-08-31. The orchestration plan's "pack-blind" note was wrong; a
+test now pins it (`test_rumor_prompt_carries_pack_canon`).
 
 Closed 2026-09-25 (see `DECISIONS.md`): munr kept separate (D5
 superseded); `worlds/rylee-alpha-world/` parked as the WP5 proof
 pack; commit `948df78` accepted as risk.
 
 ## Known debt (small, safe to pick up)
+
+- **Kitchen screen shows town leftovers.** The woven Act 1 player renders
+  the Whisper button, an `HP 0/0` bar, and an empty town canvas above
+  the kitchen (seen in headless Chromium, 2026-09-25). Cosmetic; the
+  kitchen loop itself plays clean.
 
 - `docs/guides/accessibility-contract.md` and
   `docs/guides/brain-socket.md` name the demo game as a product (not
