@@ -427,17 +427,47 @@ def _rename_phase_keys(w: dict, old: list[str], new: list[str]) -> None:
             spec["seeds"] = {mapping.get(k, k): v for k, v in spec["seeds"].items()}
 
 
-def run_interview(dest: Path, scaffold: Path) -> int:
+def create_world(
+    dest: Path,
+    scaffold: Path,
+    *,
+    title: str | None = None,
+    premise: str | None = None,
+) -> Path:
+    """Copy the scaffold to dest and stamp in the author's title/premise.
+
+    The non-interactive core of the interview: the same copy and the
+    same world.json fields the conversation would set, so the served
+    builder and `norns chat` produce the same on-disk pack. Raises
+    FileExistsError when dest is already taken - a world is never
+    overwritten. The new pack keeps the scaffold's shape (flat or
+    acts); the loader unifies both on read.
+    """
     if dest.exists():
+        raise FileExistsError(f"a world already lives at {dest}")
+    shutil.copytree(scaffold, dest)
+    if title or premise:
+        from .maplab import load_pack as _load_pack
+
+        w = _load_pack(dest)
+        if title:
+            w["title"] = title
+        if premise:
+            w["description"] = premise
+        maplab.write_pack(dest, w)
+    return dest
+
+
+def run_interview(dest: Path, scaffold: Path) -> int:
+    try:
+        create_world(dest, scaffold)
+    except FileExistsError:
         print(f"a world already lives at {dest} - pick a new name or remove it first")
         return 1
 
-    shutil.copytree(scaffold, dest)
-    # The new pack keeps the scaffold's shape (flat or acts).
-    # If the scaffold is acts-shape, the copy inherits acts/ and
-    # the loader reads it as such; if flat, no acts/ exists and
-    # the loader reads the flat JSON. Either way, maplab.load_pack
-    # returns a unified shape the interview can mutate.
+    # The loader reads either shape: acts-shape if the scaffold has
+    # acts/, otherwise flat JSON. maplab.load_pack returns a unified
+    # shape the interview can mutate regardless.
     from .maplab import load_pack as _load_pack
 
     w = _load_pack(dest)
