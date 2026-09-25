@@ -27,7 +27,7 @@ from .export import export_story
 from .forge import ItemCard, forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
-from .paths import app_home
+from .paths import app_home, safe_pack_name
 from .world import load_world, current_act
 
 PURPOSE = "a rumor engine for playable worlds"
@@ -549,6 +549,11 @@ def builder_chat(turn: BuilderChatTurn):
     """One turn of the builder-mode chat. Stateless, proposal-only."""
     from .chat import draft
 
+    # `world` names the pack this turn focuses on (None = current). It
+    # isn't read further yet, but a traversal-shaped value must still
+    # never be accepted by a builder route.
+    _safe_world_name(turn.world)
+
     # Replay the history briefly so the model has context. We keep it
     # short - the page holds the long view.
     context_lines = []
@@ -767,6 +772,10 @@ def builder_lore(req: lore.LorePreviewRequest):
     from fastapi import HTTPException
     from .lore import preview_lore
 
+    # A lore pack is still a bare pack name: worlds/lore/<lore>/ is
+    # joined from this value in lore.py, so same rule as a world.
+    _safe_world_name(req.lore)
+
     try:
         result = preview_lore(req)
     except FileNotFoundError as e:
@@ -836,7 +845,7 @@ def builder_import(payload: dict):
 
     args = argparse.Namespace(
         repo=payload.get("repo", ""),
-        name=payload.get("name"),
+        name=_safe_world_name(payload.get("name")),
         base=payload.get("base", GITEA_BASE),
         target=payload.get("target", "local"),
         pull=payload.get("pull", True),
@@ -852,7 +861,7 @@ def builder_validate(payload: dict):
     from .maplab import load_pack, validate
     from .paths import pack_dir
 
-    name = payload.get("name") or None
+    name = _safe_world_name(payload.get("name"))
     try:
         pack = pack_dir(name)
         w = load_pack(pack)
@@ -882,8 +891,20 @@ def builder_verify(payload: dict):
 # and one weave runs at a time.
 
 _WEAVE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.html$")
-_WORLD_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _WEAVE_LOCK = threading.Lock()
+
+
+def _safe_world_name(name: str | None) -> str | None:
+    """Validate a request's pack/world name; a bad one is a 400.
+
+    The rule itself (and its regex) lives in paths.safe_pack_name() -
+    this is only the HTTP edge that turns its ValueError into the
+    builder's standard 400.
+    """
+    try:
+        return safe_pack_name(name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def _weave_output_dir() -> Path:
@@ -913,11 +934,9 @@ def builder_weave(req: BuilderWeaveRequest | None = None):
     from .cli import build_web
     from .paths import pack_dir
 
-    world = req.world if req else None
-    if world is not None and not _WORLD_NAME_RE.match(world):
-        # A bare pack name only: this route bundles whatever it resolves
-        # into a downloadable file, so "../elsewhere" must never reach pack_dir.
-        raise HTTPException(status_code=400, detail="world must be a bare pack name")
+    # A bare pack name only: this route bundles whatever it resolves
+    # into a downloadable file, so "../elsewhere" must never reach pack_dir.
+    world = _safe_world_name(req.world if req else None)
     pack = pack_dir(world)
     if not (pack / "world.json").exists():
         raise HTTPException(status_code=404, detail=f"pack not found: {pack.name}")
@@ -1039,7 +1058,7 @@ def builder_map_propose(payload: dict):
     from .maplab import load_pack
     from .paths import pack_dir
 
-    name = payload.get("name") or None
+    name = _safe_world_name(payload.get("name"))
     story = (payload.get("story") or "").strip()
     mood = (payload.get("mood") or "").strip() or "quiet"
     try:
@@ -1079,7 +1098,7 @@ def builder_map_check(payload: dict):
     from .maplab import load_pack, validate
     from .paths import pack_dir
 
-    name = payload.get("name") or None
+    name = _safe_world_name(payload.get("name"))
     grid = payload.get("grid") or []
     if not isinstance(grid, list) or not grid or not all(isinstance(r, str) for r in grid):
         return {"ok": False, "errors": ["the sketch needs a rectangular grid of text rows"]}
@@ -1112,7 +1131,7 @@ def builder_face_roll(payload: dict):
     from .maplab import load_pack
     from .paths import pack_dir
 
-    name = payload.get("name") or None
+    name = _safe_world_name(payload.get("name"))
     mood = (payload.get("mood") or "").strip() or "quiet"
     try:
         pack = pack_dir(name)
