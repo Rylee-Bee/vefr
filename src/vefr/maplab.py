@@ -289,7 +289,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
 
     # Cooking ruleset content (the act-1 loop): the morning is pack-
     # authored; the engine only resolves it. Orders must reference
-    # real pantry ids so a served burrito can be checked
+    # real pantry ids so a served order can be checked
     # deterministically, and every ticket needs a note - the
     # customer's voice IS the order (reading them is the game).
     for act in w.get('acts', []):

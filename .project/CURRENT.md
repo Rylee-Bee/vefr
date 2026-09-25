@@ -46,37 +46,29 @@ Treat `docs/vefr/` as the canonical copy.
 
 ## Open owner decisions
 
-1. **munr's fate (D5).** Recorded as "retire"; in reality it is
-   active and the game plan casts it as a later pack. See the
-   2026-09-25 entry in `DECISIONS.md`.
-2. **Local private pack `worlds/rylee-alpha-world/`** (gitignored):
-   active, or retire? Status UNKNOWN.
-3. **Non-CC0 art still fetchable on GitHub** (commit `948df78`,
-   2026-09-06): no branch contains it any more, but GitHub still
-   serves the commit by SHA. Purging it means a GitHub support
-   request, not a force-push. Owner-gated.
+1. **Should rumors read pack canon?** NPC lines include the pack's
+   `logbok.md`; the rumor path (`saga.system_prompt`) does not, so a
+   pack's canon never reaches `/api/rumor`. Flagged in the
+   orchestration plan as an engine design call; untouched.
+
+Closed 2026-09-25 (see `DECISIONS.md`): munr kept separate (D5
+superseded); `worlds/rylee-alpha-world/` parked as the WP5 proof
+pack; commit `948df78` accepted as risk.
 
 ## Known debt (small, safe to pick up)
 
-- **D6 half-done:** `tests/test_cooking_contract.py` and
-  `tests/test_kitchen_loop.py` still carry game-pack names in their
-  fixture strings. D6 says pack-owned fixtures live in the pack;
-  neutralize them the way `tests/fixtures/make_kitchen_pack.py` did.
-- **PR #29** (`fix/openai-compatible-max-tokens`): all checks green
-  since 2026-09-24, awaiting review.
-- **CI-ignored Storyteller tests** (`test_npc_action.py`,
-  `test_storyteller_benchmark.py`) point at tracker item "#50"; it is
-  not a GitHub issue on this repo. Tracker location UNKNOWN.
-- `.project/` still holds the 2026-09 benchmark-era reports and
-  scripts (`round*`, `qualifying_v2*`, `benchmark_r4.py`). History, not
-  current work.
+- `docs/guides/accessibility-contract.md` and
+  `docs/guides/brain-socket.md` name the demo game as a product (not
+  its canon). Leave them unless the owner wants the docs fully
+  game-agnostic.
+- The generated voice file in the parked alpha pack repeats itself —
+  a `norns chat` voice-drafting quality signal worth a look.
 
 ## Branches
 
 | Branch | Status |
 |---|---|
 | `main` | trunk; land by PR (convention — protection does not require reviews) |
-| `fix/openai-compatible-max-tokens` | PR #29, green |
 | `oa/old-main-20260920` | local-only snapshot of main (last commit 2026-09-19); do not push |
 
 ## Known protected work
@@ -93,9 +85,7 @@ Treat `docs/vefr/` as the canonical copy.
 # Gate - must match CI (.github/workflows/ci.yml)
 uv sync --group test
 uv run --group test ruff check src tests scripts
-uv run --group test pytest -q \
-  --ignore=tests/test_npc_action.py \
-  --ignore=tests/test_storyteller_benchmark.py
+uv run --group test pytest -q
 python3 scripts/check_public_surface.py
 
 # Pack integrity

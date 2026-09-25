@@ -28,13 +28,13 @@ strings).
 ```json
 "cooking": {
   "opening": "Day one after the quiet. The grill remembers heat.",
-  "byline": "by Scoop - breakfast burrito truck, editor of one",
+  "byline": "by the morning truck",
   "pantry": [{"id": "egg", "label": "fried egg"}],
   "tickets": [{
-    "id": "t1", "customer": "Rosa", "order": ["egg", "salsa"],
-    "note": "The usual, mija. Egg, and the red one that bites.",
-    "thanks": "Rosa eats standing up, already turning toward the day.",
-    "kind_line": "Rosa eats it anyway, nodding at something only she can see."
+    "id": "t1", "customer": "the regular", "order": ["egg", "salsa"],
+    "note": "The usual. Egg, and the red one that bites.",
+    "thanks": "The regular eats standing up, already turning toward the day.",
+    "kind_line": "The regular eats it anyway, nodding at something only they can see."
   }],
   "morning_length": 3,
   "headlines": ["FIRST TRUCK ON THE ROAD SERVES BREAKFAST AGAIN"]
@@ -43,7 +43,7 @@ strings).
 
 The loop: tickets arrive as **spoken notes** (reading them is the game —
 the order ids stay hidden); the player wraps from the pantry and serves;
-resolution is deterministic set equality; a wrong burrito gets its
+resolution is deterministic set equality; a wrong order gets its
 `kind_line` (a kind beat, never a slap); after `morning_length` tickets
 the player picks a headline and page 1 of the paper prints (masthead,
 headline, `byline`, an honest body from the journal, the pack creed,

@@ -27,7 +27,7 @@ SAMPLE = ROOT / "worlds" / "sample-world"
 HARNESS = ROOT / "tests" / "fixtures" / "kitchen_harness.mjs"
 
 COOKING = {
-    "opening": "Day one after the quiet. The grill remembers heat before Scoop does.",
+    "opening": "Day one after the quiet. The grill remembers heat before anyone does.",
     "pantry": [
         {"id": "egg", "label": "fried egg"},
         {"id": "salsa", "label": "red salsa"},
