@@ -1,5 +1,26 @@
 # DECISIONS — vefr
 
+## 2026-09-25 — munr is a related repo, not a synced one; D5 unreconciled
+
+**Decision.** `Rylee-Bee/munr` shares this codebase's rewritten-history
+origin (identical "v0.1 - rumor engine skeleton" first commits) but
+evolves independently. Never merge, rebase, or cherry-pick between the
+two without an explicit owner decision.
+
+**Rationale.** AGENTS.md carried this note by name (`78fa0f8`), which
+broke `test_no_historical_package_names` and turned `main` red. The
+engine tree must not name the sibling; this file is outside the audited
+roots, so the name lives here and AGENTS.md points here.
+
+**Open.** D5 (2026-09-21, "Retire munr — archive the repo") does not
+match reality: on 2026-09-25 munr is active (`wip/norn-journey`, commits
+that day), and VEFR-GAME-PLAN §2 casts munr as a later costume-ruleset
+pack on vefr. Owner to reconcile; until then treat D5 as UNKNOWN.
+
+**Status.** ACCEPTED (not-synced rule); D5 OPEN.
+
+---
+
 ## 2026-09-13 — Olympus restart: Vulkan campaign, harness evidence fixes, legacy backend labeled UNKNOWN
 
 **Decision.** Complete the Small Model Olympics v0.4.1 qualifier campaign

@@ -7,6 +7,17 @@
 
 ## Landed
 
+- [x] **Green main + orientation refresh** (2026-09-25): `78fa0f8`
+      named the sibling engine in AGENTS.md and tripped
+      `test_no_historical_package_names` (CI red on main). AGENTS.md now
+      points to `.project/DECISIONS.md` (outside the audited roots), which
+      records the not-synced rule and flags D5 as unreconciled.
+      `.project/CURRENT.md` rewritten: the phase table (engine at Act 2, the game
+      pack at Act 1 awaiting the owner's taste-pass), where the out-of-repo
+      plan lives, open owner decisions, small safe debt, and a gate command
+      that matches CI. Gate: ruff clean; pytest 0 failed; public-surface
+      clean; validate ok.
+
 - [x] **Act 2 increment 1: the Desk ruleset - is_true finally consumed, the
       world knows its own stories** (2026-09-22): Phase 2 of the game plan
       begins. Engine: `desk.py` (verify / print / facts / prompt_lines -
