@@ -40,3 +40,34 @@ def test_generate_raises_after_two_failures(monkeypatch):
     monkeypatch.setattr(generator, "_completion", lambda *a, **k: "still bad")
     with pytest.raises(RuntimeError):
         generate_rumor("whispers")
+
+
+def test_openai_compatible_body_bounds_max_tokens(monkeypatch):
+    # llama.cpp defaults to unlimited generation; the body must carry a cap
+    # (the function default) unless the payload overrides it (lore drafts).
+    from vefr import storyteller
+
+    sent = []
+
+    class _Resp:
+        text = '{"choices": [{"message": {"content": "ok"}}]}'
+
+        def raise_for_status(self):
+            pass
+
+    def fake_post(url, json, timeout):
+        sent.append(json)
+        return _Resp()
+
+    st = storyteller.Storyteller(
+        id="t", name="t", version="0", model_provider=storyteller.Provider.OPENAI_COMPATIBLE,
+        model="m", capabilities=storyteller.Capabilities(text=True),
+    )
+    monkeypatch.setattr(storyteller, "resolve_active", lambda: st)
+    monkeypatch.setattr(generator, "LLAMACPP_URL", "http://stub")
+    monkeypatch.setattr(generator.httpx, "post", fake_post)
+
+    assert generator._completion({"model": "m", "system": "s", "prompt": "p"}) == "ok"
+    assert generator._completion({"model": "m", "prompt": "p"}, max_tokens=64) == "ok"
+    assert generator._completion({"model": "m", "prompt": "p", "max_tokens": 4096}) == "ok"
+    assert [b["max_tokens"] for b in sent] == [1024, 64, 4096]
