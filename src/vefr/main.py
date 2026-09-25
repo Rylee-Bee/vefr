@@ -1,9 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import json
+import os
+import re
+import threading
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from . import (
@@ -866,6 +870,92 @@ def builder_verify(payload: dict):
     url = payload.get("url", "http://127.0.0.1:8820")
     ok, errors = verify_live(url)
     return {"ok": bool(ok), "errors": errors, "url": url}
+
+
+# --------------------------------------------------------------- weave file
+
+# The served builder's "Make shareable file" pair. `ratatoskr weave`
+# is terminal-only; a phone user with no terminal needs the same
+# packaging from the page. The build is the CLI's own build_web core,
+# so the bytes match `ratatoskr weave` exactly. Output is server-owned
+# (VEFR_WEAVE_DIR or app_home()/dist) - a request never names a path -
+# and one weave runs at a time.
+
+_WEAVE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.html$")
+_WORLD_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+_WEAVE_LOCK = threading.Lock()
+
+
+def _weave_output_dir() -> Path:
+    """Where the served builder drops woven files. Server-owned only.
+
+    VEFR_WEAVE_DIR is operator config (deploys/tests); otherwise the
+    repo/container's dist/, the same tree `ratatoskr weave` writes to.
+    """
+    env = os.environ.get("VEFR_WEAVE_DIR")
+    return Path(env) if env else app_home() / "dist"
+
+
+class BuilderWeaveRequest(BaseModel):
+    world: str | None = None  # pack to weave (None = current), like the other builder routes
+
+
+@app.post("/api/builder/weave")
+def builder_weave(req: BuilderWeaveRequest | None = None):
+    """Weave the current world into one shareable HTML file.
+
+    Resolves the pack exactly as the other /api/builder routes do
+    (pack_dir over the named pack or the current world), builds it
+    with the CLI's own packaging core into a server-owned directory,
+    and returns {name, size_bytes, built_at, download_url}. A second
+    weave while one is running gets 409 instead of racing the output.
+    """
+    from .cli import build_web
+    from .paths import pack_dir
+
+    world = req.world if req else None
+    if world is not None and not _WORLD_NAME_RE.match(world):
+        # A bare pack name only: this route bundles whatever it resolves
+        # into a downloadable file, so "../elsewhere" must never reach pack_dir.
+        raise HTTPException(status_code=400, detail="world must be a bare pack name")
+    pack = pack_dir(world)
+    if not (pack / "world.json").exists():
+        raise HTTPException(status_code=404, detail=f"pack not found: {pack.name}")
+    if not _WEAVE_LOCK.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="a weave is already running")
+    try:
+        safe = re.sub(r"[^A-Za-z0-9._-]+", "-", pack.name).strip("-") or "world"
+        out_path = build_web(
+            pack,
+            _weave_output_dir(),
+            out_name=f"{safe}-{date.today().isoformat()}.html",
+        )
+    finally:
+        _WEAVE_LOCK.release()
+    stat = out_path.stat()
+    return {
+        "name": out_path.name,
+        "size_bytes": stat.st_size,
+        "built_at": datetime.now(timezone.utc).isoformat(),
+        "download_url": f"/api/builder/weave/file/{out_path.name}",
+    }
+
+
+@app.get("/api/builder/weave/file/{name}")
+def builder_weave_file(name: str):
+    """Download a woven file as an attachment.
+
+    `name` must match a strict filename pattern and resolve inside the
+    server-owned output dir; anything else is refused before the disk
+    is touched (path traversal never reaches FileResponse).
+    """
+    if not _WEAVE_NAME_RE.match(name):
+        raise HTTPException(status_code=404, detail="no such woven file")
+    out_dir = _weave_output_dir().resolve()
+    target = (out_dir / name).resolve()
+    if target.parent != out_dir or not target.is_file():
+        raise HTTPException(status_code=404, detail="no such woven file")
+    return FileResponse(target, media_type="text/html", filename=name)
 
 
 @app.get("/api/starred")

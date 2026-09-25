@@ -71,6 +71,7 @@
     starred:      function ()     { return get('/api/starred'); },
     trace:        function ()     { return get('/api/trace'); },
     weave:        function ()     { return get('/api/weave'); },
+    weaveBuild:   function ()     { return post('/api/builder/weave'); },
     sparkHealth:  function ()     { return get('/api/spark/health'); },
     sparkTask:    function (q)    { return post('/api/spark/task', q); },
     sparkInspect: function ()     { return get('/api/spark/inspect'); },

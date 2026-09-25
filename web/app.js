@@ -1146,7 +1146,7 @@
   })();
 
   screens.workshop = (function () {
-    var el_screen, world = null, journal = [];
+    var el_screen, world = null, journal = [], lastWoven = null;
 
     function init() {
       el_screen = h('div', { className: 'screen', id: 'screen-workshop' });
@@ -1162,6 +1162,10 @@
         + '      <button class="btn btn--bell" id="ws-bell">\u{1F514} Ring for the Storyteller</button>'
         + '      <button class="btn btn--ghost" id="ws-continue" aria-label="Continue the story">What happens next?</button>'
         + '      <button class="btn btn--ghost" id="ws-toggle-ctx" aria-expanded="true" aria-label="Toggle context">Notes</button>'
+        + '      <button class="btn btn--warm" id="ws-weave" aria-describedby="ws-weave-status">Make shareable file</button>'
+        + '      <span class="weave-status" id="ws-weave-status" role="status" aria-live="polite"></span>'
+        + '      <a class="btn btn--ghost weave-action" id="ws-weave-download" download hidden>Download</a>'
+        + '      <button class="btn btn--ghost weave-action" id="ws-weave-share" hidden>Share</button>'
         + '    </div>'
         + '  </div>'
         + '  <aside class="workshop__context" id="ws-context" role="complementary" aria-label="What the world knows">'
@@ -1185,6 +1189,8 @@
       });
       el_screen.querySelector('#ws-continue').addEventListener('click', continueStory);
       el_screen.querySelector('#ws-toggle-ctx').addEventListener('click', toggleContext);
+      el_screen.querySelector('#ws-weave').addEventListener('click', makeShareable);
+      el_screen.querySelector('#ws-weave-share').addEventListener('click', shareWoven);
       el_screen.querySelector('#ws-evidence').addEventListener('click', function () { navigate('evidence'); });
       main.appendChild(el_screen);
     }
@@ -1355,6 +1361,86 @@
       btn.setAttribute('aria-expanded', String(!open));
       ctx.style.display = open ? 'none' : '';
       el_screen.querySelector('.workshop').classList.toggle('workshop--no-context', open);
+    }
+
+    /* ── The shareable file — weave the world into one HTML ── */
+    function sizeWords(bytes) {
+      if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      if (bytes >= 1024) return Math.round(bytes / 1024) + ' KB';
+      return bytes + ' B';
+    }
+
+    function setWeaveStatus(text) {
+      var s = el_screen.querySelector('#ws-weave-status');
+      if (s) s.textContent = text || '';
+    }
+
+    function canShareFiles() {
+      if (!navigator.canShare || !navigator.share || typeof File === 'undefined') return false;
+      try {
+        return navigator.canShare({ files: [new File(['x'], 'world.html', { type: 'text/html' })] });
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function makeShareable() {
+      var btn = el_screen.querySelector('#ws-weave');
+      var dl = el_screen.querySelector('#ws-weave-download');
+      var share = el_screen.querySelector('#ws-weave-share');
+      btn.disabled = true;
+      dl.hidden = true;
+      share.hidden = true;
+      setWeaveStatus('Weaving…');
+      API.weaveBuild()
+        .then(function (info) {
+          lastWoven = info;
+          dl.href = info.download_url;
+          dl.setAttribute('download', info.name);
+          dl.hidden = false;
+          share.hidden = !canShareFiles();
+          setWeaveStatus('Ready · ' + sizeWords(info.size_bytes));
+        })
+        .catch(function (err) {
+          lastWoven = null;
+          setWeaveStatus('The weave failed. ' + (err && err.message ? err.message : 'Try again.'));
+        })
+        .finally(function () {
+          btn.disabled = false;
+        });
+    }
+
+    function shareWoven() {
+      if (!lastWoven) return;
+      var share = el_screen.querySelector('#ws-weave-share');
+      share.disabled = true;
+      setWeaveStatus('Preparing the file…');
+      fetch(lastWoven.download_url)
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+          return r.blob();
+        })
+        .then(function (blob) {
+          var file = new File([blob], lastWoven.name, { type: 'text/html' });
+          return navigator.share({
+            files: [file],
+            title: 'A world to keep',
+            text: 'Open this file and play.'
+          });
+        })
+        .then(function () {
+          setWeaveStatus('Ready · ' + sizeWords(lastWoven.size_bytes));
+        })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') {
+            setWeaveStatus('Ready · ' + sizeWords(lastWoven.size_bytes));
+            return;
+          }
+          setWeaveStatus('Could not share. Download instead.');
+        })
+        .finally(function () {
+          share.disabled = false;
+        });
     }
 
     return { init: init, enter: enter, leave: leave };

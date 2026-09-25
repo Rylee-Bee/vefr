@@ -7,6 +7,25 @@
 
 ## Landed
 
+- [x] **Weave from the web: a phone user with no terminal can make the
+      shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
+      The packaging core moved out of `cmd_build_web` into `weave_html` +
+      `build_web` (the CLI keeps calling it, output byte-identical), and the
+      served workshop's Desk grows a "Make shareable file" button:
+      `POST /api/builder/weave` builds the current world (same `pack_dir`
+      resolution as the other builder routes) into a server-owned dir
+      (`VEFR_WEAVE_DIR` or `app_home()/dist`), one at a time (409 on a
+      concurrent weave), returning `{name, size_bytes, built_at,
+      download_url}`; `GET /api/builder/weave/file/{name}` serves that file
+      as an attachment behind a strict filename regex + in-dir resolve
+      (traversal refused). The page shows "Weaving…" then "Ready · N KB",
+      then a Download link and — where `navigator.share` supports files — a
+      Share button (>=44px targets, visible focus, status as words, 390px).
+      Tests: `tests/test_builder_weave.py` (metadata + real download,
+      traversal refusal, 409 lock, CLI/shared-core byte parity). Gates:
+      ruff clean; pytest 488 passed / 3 skipped; sample-world validate ok;
+      public-surface clean (401).
+
 - [x] **Local test packs removed** (2026-09-25): owner ruling — the
       gitignored `worlds/rylee-alpha-world/` and `worlds/kitchen-playtest/`
       were test artifacts; deleted from disk (default pack now resolves to
