@@ -834,6 +834,102 @@ def builder_worlds():
     return {"worlds": out}
 
 
+def _sample_scaffold():
+    """The engine-shipped sample pack a new world is copied from.
+
+    Template mount first (container installs), then the rw canon
+    mount (dev checkouts ship sample-world under worlds/). None when
+    neither tree has it, so the caller can say so plainly.
+    """
+    from .paths import template_dir, worlds_dir
+
+    for base in (template_dir(), worlds_dir()):
+        cand = base / "sample-world"
+        if (cand / "world.json").is_file():
+            return cand
+    return None
+
+
+class BuilderWorldCreateRequest(BaseModel):
+    name: str
+    title: str | None = None
+    premise: str | None = None
+
+
+class BuilderWorldActiveRequest(BaseModel):
+    name: str
+
+
+@app.post("/api/builder/worlds")
+def builder_worlds_create(req: BuilderWorldCreateRequest):
+    """Start a new world from the served UI - the phone user's `norns chat`.
+
+    The same scaffold copy and the same world.json fields the CLI
+    interview would set, with no terminal involved. `name` must be a
+    bare pack name (never a path), an existing name is refused rather
+    than overwritten, and the new world becomes the active one so the
+    Desk shows it immediately.
+    """
+    from .chat import create_world
+    from .paths import set_active_world, worlds_dir
+
+    name = _safe_world_name(req.name.strip())
+    if not name:
+        raise HTTPException(status_code=400, detail="world must be a bare pack name")
+    dest = worlds_dir() / name
+    if dest.exists():
+        raise HTTPException(status_code=409, detail=f"a world named {name!r} already lives here")
+    scaffold = _sample_scaffold()
+    if scaffold is None:
+        raise HTTPException(status_code=500, detail="the sample-world scaffold is missing")
+    try:
+        create_world(
+            dest,
+            scaffold,
+            title=(req.title or "").strip() or None,
+            premise=(req.premise or "").strip() or None,
+        )
+    except FileExistsError:
+        raise HTTPException(status_code=409, detail=f"a world named {name!r} already lives here")
+    try:
+        title = json.loads((dest / "world.json").read_text(encoding="utf-8")).get("title", name)
+    except (json.JSONDecodeError, OSError):
+        title = name
+    set_active_world(name)
+    load_world.cache_clear()
+    return {"name": name, "title": title}
+
+
+@app.post("/api/builder/worlds/active")
+def builder_worlds_active(req: BuilderWorldActiveRequest):
+    """Switch the world the engine serves - no restart.
+
+    Validates a bare pack name that resolves to a real pack under
+    either mount, records it as the runtime override (in memory + a
+    small file under data/), and returns the newly active world.
+    VEFR_WORLD still beats this when the operator sets it; the
+    override only fills the gap the env var used to require a restart
+    for.
+    """
+    from .paths import set_active_world, template_dir, worlds_dir
+
+    name = _safe_world_name(req.name.strip())
+    if not name:
+        raise HTTPException(status_code=400, detail="world must be a bare pack name")
+    pack = worlds_dir() / name
+    if not (pack / "world.json").is_file():
+        pack = template_dir() / name
+    if not (pack / "world.json").is_file():
+        raise HTTPException(status_code=404, detail=f"no world named {name!r}")
+    set_active_world(name)
+    load_world.cache_clear()
+    try:
+        title = json.loads((pack / "world.json").read_text(encoding="utf-8")).get("title", name)
+    except (json.JSONDecodeError, OSError):
+        title = name
+    return {"name": name, "title": title, "active": True}
+
+
 @app.post("/api/builder/import")
 def builder_import(payload: dict):
     """Thin wrapper around `ratatoskr ferry fetch --pull`.

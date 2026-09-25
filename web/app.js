@@ -956,22 +956,120 @@
 
       var hearth = section(c, 'foyer-hearth', 'The project on the table');
       var pantry = section(c, 'foyer-pantry', 'The pantry');
+      var begin = section(c, 'foyer-begin', 'Begin a new world');
       var mems = section(c, 'foyer-memories', 'What the house remembers');
       c.appendChild(optionsPanel());
 
-      // Table + pantry from the same two real calls
-      Promise.all([API.world(), API.builderWorlds()])
-        .then(function (rs) { renderProjects(hearth, pantry, rs[0], (rs[1] && rs[1].worlds) || []); })
-        .catch(function () {
-          setSection(hearth, emptyState('the house can\u2019t find the project right now', 'check that the house is running'));
-          setSection(pantry, emptyState('the shelves wouldn\u2019t open', 'try again in a moment'));
-        });
+      setSection(begin, beginWorldForm(hearth, pantry));
+      loadProjects(hearth, pantry);
+
+      loadProjects(hearth, pantry);
 
       // Memories — what was kept, starred, and spoken, from real books
       Promise.all([API.vault(), API.journal()])
         .then(function (rs) { renderMemories(mems, rs[0], rs[1]); })
         .catch(function () {
           setSection(mems, emptyState('the house is still waking up', 'the shelves open in a moment'));
+        });
+    }
+
+    function loadProjects(hearth, pantry) {
+      Promise.all([API.world(), API.builderWorlds()])
+        .then(function (rs) { renderProjects(hearth, pantry, rs[0], (rs[1] && rs[1].worlds) || []); })
+        .catch(function () {
+          setSection(hearth, emptyState('the house can’t find the project right now', 'check that the house is running'));
+          setSection(pantry, emptyState('the shelves wouldn’t open', 'try again in a moment'));
+        });
+    }
+
+    /* The launcher's front door for a phone with no terminal: name,
+       title, one-line premise, and the engine does the rest. This is
+       the page's twin of `norns chat` - the same scaffold copy, the
+       same world.json fields. The name is the folder id; the server
+       owns the path and refuses anything that isn't a bare pack name. */
+    function beginWorldForm(hearth, pantry) {
+      var form = h('form', { className: 'world-begin', id: 'begin-world-form' });
+      form.setAttribute('novalidate', 'novalidate');
+      form.appendChild(field('begin-world-name', 'Name',
+        'a short id for the folder — letters, numbers, dashes, underscores',
+        'quiet-town', '^[A-Za-z0-9][A-Za-z0-9_-]*$'));
+      form.appendChild(field('begin-world-title', 'Title',
+        'what you call it in play', 'The name of your world', null));
+      form.appendChild(field('begin-world-premise', 'Premise',
+        'one line — the story under everything', 'A town keeps a quiet secret', null));
+
+      var create = h('button', { className: 'btn btn--primary world-begin__submit',
+        type: 'submit', textContent: 'Create' });
+      form.appendChild(create);
+
+      var status = h('p', { className: 'world-begin__status', id: 'begin-world-status',
+        role: 'status', 'aria-live': 'polite' });
+      form.appendChild(status);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var nameEl = form.querySelector('#begin-world-name');
+        var name = nameEl.value.trim();
+        var title = form.querySelector('#begin-world-title').value.trim();
+        var premise = form.querySelector('#begin-world-premise').value.trim();
+        if (!name) {
+          status.textContent = 'a world needs a name before it can begin.';
+          nameEl.focus();
+          return;
+        }
+        create.disabled = true;
+        status.textContent = 'the house is clearing a table for “' + name + '”…';
+        API.createWorld({ name: name, title: title || null, premise: premise || null })
+          .then(function (created) {
+            status.textContent = 'the world “' + (created.title || name) + '” is on the table.';
+            navigate('workshop');
+          })
+          .catch(function (err) {
+            var code = String((err && err.message) || '');
+            if (code.indexOf('409') === 0) {
+              status.textContent = 'a world by that name already lives here — try another.';
+            } else if (code.indexOf('400') === 0) {
+              status.textContent = 'names are letters, numbers, dashes, underscores — no spaces or slashes.';
+            } else {
+              status.textContent = 'the house couldn’t start that world just now — try again.';
+            }
+            create.disabled = false;
+            nameEl.focus();
+          });
+      });
+      return form;
+    }
+
+    function field(id, label, hint, placeholder, pattern) {
+      var wrap = h('div', { className: 'world-begin__field' });
+      var hintId = id + '-hint';
+      wrap.appendChild(h('label', { className: 'world-begin__label', 'for': id, textContent: label }));
+      var input = h('input', { className: 'world-begin__input', id: id, name: id, type: 'text',
+        placeholder: placeholder, 'aria-describedby': hintId, autocomplete: 'off' });
+      if (pattern) input.setAttribute('pattern', pattern);
+      wrap.appendChild(input);
+      wrap.appendChild(h('span', { className: 'world-begin__hint', id: hintId, textContent: hint }));
+      return wrap;
+    }
+
+    /* Put an existing pack on the table: the web twin of setting
+       VEFR_WORLD, no restart. Keeps the current room steady while
+       the house re-reads the world it now serves. */
+    function makeActive(name, btn, hearth, pantry) {
+      var label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'setting the table…';
+      API.setActiveWorld({ name: name })
+        .then(function () { return API.world(); })
+        .then(function (w) {
+          inhabitWorld(w);
+          ferryNote('the table is set for “' + name + '”.');
+          loadProjects(hearth, pantry);
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.textContent = label;
+          ferryNote('the house couldn’t set that table — try again.');
         });
     }
 
@@ -1000,7 +1098,7 @@
         });
       }
       setSection(hearth, projectTable(w));
-      setSection(pantry, pantryGrid(packs, currentName));
+      setSection(pantry, pantryGrid(packs, currentName, hearth, pantry));
     }
     function projectTable(w) {
       if (!w || !w.title) return emptyState('the house doesn\u2019t know its project yet', 'check that a world is mounted');
@@ -1015,7 +1113,7 @@
       card.appendChild(enter);
       return card;
     }
-    function pantryGrid(packs, currentName) {
+    function pantryGrid(packs, currentName, hearth, pantry) {
       var others = packs.filter(function (p) { return p.name !== currentName; });
       if (!others.length) return emptyState('the pantry is bare', 'every pack you have is already on the table');
       var wrap = h('div', { className: 'foyer-pantry__grid' });
@@ -1026,8 +1124,10 @@
         if (p.phases && p.phases.length) bits.push(p.phases.join(' \u00B7 '));
         if (p.speakers) bits.push(p.speakers.length + ' speaker' + (p.speakers.length !== 1 ? 's' : ''));
         if (bits.length) card.appendChild(h('div', { className: 'project-card__meta', textContent: bits.join(' \u00B7 ') }));
-        card.appendChild(h('p', { className: 'project-card__pantry-note',
-          textContent: 'In the pantry \u2014 ask the keeper to set VEFR_WORLD to \u201C' + p.name + '\u201D when the house starts.' }));
+        var put = h('button', { className: 'btn btn--ghost project-card__table', type: 'button',
+          textContent: 'put on the table' });
+        put.addEventListener('click', function () { makeActive(p.name, put, hearth, pantry); });
+        card.appendChild(put);
         wrap.appendChild(card);
       });
       return wrap;

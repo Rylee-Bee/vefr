@@ -3107,6 +3107,60 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
   gap: 10px;
 }
+/* Begin a new world — the served UI's twin of `norns chat` */
+.world-begin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 12px 6px 10px 8px;
+  border: 1px solid rgba(201, 173, 107, 0.22);
+  background: linear-gradient(180deg, rgba(42, 35, 26, 0.85) 0%, rgba(31, 28, 22, 0.85) 100%);
+}
+.world-begin__field { display: flex; flex-direction: column; gap: 4px; }
+.world-begin__label {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-body, #E8E5DF);
+}
+.world-begin__input {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 173, 107, 0.35);
+  background: rgba(20, 18, 15, 0.9);
+  color: var(--text-body, #E8E5DF);
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 15px;
+}
+.world-begin__input::placeholder { color: var(--text-dim, #A39E92); }
+.world-begin__input:focus-visible {
+  outline: 2px solid var(--ring, var(--gold, #C9AD6B));
+  outline-offset: 1px;
+}
+.world-begin__hint {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim, #A39E92);
+}
+.world-begin__submit {
+  justify-self: start;
+  align-self: end;
+  min-height: 44px;
+}
+.world-begin__status {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: 'Spectral', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-body, #E8E5DF);
+}
+.world-begin__status:empty { display: none; }
+.project-card__table { align-self: flex-start; min-height: 44px; }
 .foyer-memories__row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
