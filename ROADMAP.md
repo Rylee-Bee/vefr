@@ -7,6 +7,11 @@
 
 ## Landed
 
+- [x] **Local test packs removed** (2026-09-25): owner ruling — the
+      gitignored `worlds/rylee-alpha-world/` and `worlds/kitchen-playtest/`
+      were test artifacts; deleted from disk (default pack now resolves to
+      `sample-world`). DECISIONS and CURRENT corrected from "parked".
+
 - [x] **Weave keeps acts for relative out-of-root packs; rumor canon pinned**
       (2026-09-25): `ratatoskr weave --pack ../<repo>/worlds/<pack>` silently
       dropped `VEFR_WORLD.acts` (the relative path was joined under

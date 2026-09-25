@@ -53,8 +53,7 @@ true: `saga.system_prompt` has carried the pack's `logbok.md` since
 test now pins it (`test_rumor_prompt_carries_pack_canon`).
 
 Closed 2026-09-25 (see `DECISIONS.md`): munr kept separate (D5
-superseded); `worlds/rylee-alpha-world/` parked as the WP5 proof
-pack; commit `948df78` accepted as risk.
+superseded); the local test packs deleted; commit `948df78` accepted as risk.
 
 ## Known debt (small, safe to pick up)
 
@@ -67,8 +66,8 @@ pack; commit `948df78` accepted as risk.
   `docs/guides/brain-socket.md` name the demo game as a product (not
   its canon). Leave them unless the owner wants the docs fully
   game-agnostic.
-- The generated voice file in the parked alpha pack repeats itself —
-  a `norns chat` voice-drafting quality signal worth a look.
+- `norns chat` voice drafting can loop: the WP5 test build's voice
+  file repeated the same sentences. Worth a look.
 
 ## Branches
 
