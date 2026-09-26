@@ -191,3 +191,23 @@ def pack_dir(name: str | None = None) -> Path:
 
 def pack_file(rel: str, name: str | None = None) -> Path:
     return pack_dir(name) / rel
+
+
+# The world whose play history lives in the unscoped files (journal.json,
+# vault.json). History predates per-world files and was recorded almost
+# entirely in the sample world, so it stays that world's.
+LEGACY_HISTORY_WORLD = 'sample-world'
+
+
+def world_scoped(base: Path, world: str | None = None) -> Path:
+    """The per-world file for a history base path (journal, vault).
+
+    journal.json -> journal.<world>.json beside it, so kept items and
+    whispers never bleed between worlds. The legacy world keeps the
+    base file itself. `world` defaults to the world being served.
+    """
+    w = world if world is not None else world_name()
+    if not w or w == LEGACY_HISTORY_WORLD:
+        return base
+    safe = re.sub(r'[^A-Za-z0-9._-]', '_', w)
+    return base.with_name(f"{base.stem}.{safe}{base.suffix}")

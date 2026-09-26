@@ -853,17 +853,20 @@ def cmd_build_web(args) -> int:
             print(f"  pulled vault ({len(vault_data)} items) + "
                   f"journal ({len(journal_data)} entries) from {url}")
         else:
-            vault_path = vault_path or _forge_mod.VAULT
-            journal_path = journal_path or _journal_mod.JOURNAL
+            from .paths import world_scoped as _scoped
+            vault_path = vault_path or _scoped(_forge_mod.VAULT, pack.name)
+            journal_path = journal_path or _scoped(_journal_mod.JOURNAL, pack.name)
 
         old_vault, old_journal = _forge_mod.VAULT, _journal_mod.JOURNAL
         _forge_mod.VAULT = vault_path
         _journal_mod.JOURNAL = journal_path
+        _forge_mod.SCOPE_BY_WORLD = _journal_mod.SCOPE_BY_WORLD = False
         try:
             bundle_md = _render()
         finally:
             _forge_mod.VAULT = old_vault
             _journal_mod.JOURNAL = old_journal
+            _forge_mod.SCOPE_BY_WORLD = _journal_mod.SCOPE_BY_WORLD = True
 
         bundle_path = out_path.with_name(out_path.stem + '.tree.md')
         bundle_path.write_text(bundle_md, encoding="utf-8")
