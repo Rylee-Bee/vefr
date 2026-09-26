@@ -212,17 +212,17 @@
 </header>
 <main>
   <section id="config" hidden aria-labelledby="cfg-title">
-    <span class="label">Before you play</span>
-    <h2 id="cfg-title">Play offline, or bring a model</h2>
-    <p>This game plays fine on its own. If you run a language model, it can write the characters' lines fresh each time.</p>
+    <span class="label">Optional extra</span>
+    <h2 id="cfg-title">Connect your own model</h2>
+    <p>This game is complete on its own. If you run a language model, it can write fresh lines for the characters as you play.</p>
     <label for="cfg-url">Model address (any OpenAI-compatible server)</label>
     <input id="cfg-url" type="text" placeholder="http://localhost:11434/v1" autocomplete="off">
     <label for="cfg-model">Model name</label>
     <input id="cfg-model" type="text" placeholder="qwen3-1.7b" autocomplete="off">
     <p id="cfg-error" role="alert" hidden></p>
     <div class="btns">
-      <button type="button" id="cfg-offline" class="cta cta--gold">Play offline</button>
-      <button type="button" id="cfg-save" class="cta">Connect and play</button>
+      <button type="button" id="cfg-save" class="cta cta--gold">Connect</button>
+      <button type="button" id="cfg-offline" class="cta">Keep playing without one</button>
     </div>
     <p class="hint">Works with llama.cpp, Ollama, LM Studio, or a phone running a local model server. Leave both blank to play offline; the game's own lines carry the world. Nothing leaves your device.</p>
   </section>
@@ -333,8 +333,8 @@
     </div>
     <div data-panel-body="model" hidden>
       <h2>Model settings</h2>
-      <p>Change which language model writes the lines, or play offline.</p>
-      <button type="button" id="menu-model" class="cta">Change model</button>
+      <p>This game can use your own language model for fresh lines. It plays fully without one.</p>
+      <button type="button" id="menu-model" class="cta">Model settings</button>
     </div>
   </div>
 </div>
@@ -398,6 +398,12 @@ function llmPost(body) {
 var config = loadConfig();
 var llmUrl = config.llmUrl || '';
 var llmModel = config.llmModel || '';
+// Games play without a model (docs/adr/0003). A pack may offer one as an
+// optional extra ("player": {"model": "optional"}); otherwise any saved
+// endpoint is ignored and the baked lines carry the world.
+var MODEL_OPTIONAL = !!(window.VEFR_WORLD && window.VEFR_WORLD.player
+  && window.VEFR_WORLD.player.model === 'optional');
+if (!MODEL_OPTIONAL) { llmUrl = ''; llmModel = ''; }
 
 // ---- first-run setup vs play ----
 var play = document.getElementById('play');
@@ -478,6 +484,10 @@ function showSpeech(speaker, line, note) {
 function bindMenu() {
   var menu = document.getElementById('menu');
   var opener = document.getElementById('menu-open');
+  if (!MODEL_OPTIONAL) {
+    var modelItem = menu.querySelector('[data-panel="model"]');
+    if (modelItem) modelItem.closest('li').remove();
+  }
   function showPanel(name) {
     menu.querySelectorAll('[data-panel]').forEach(function (b) {
       b.setAttribute('aria-current', b.dataset.panel === name ? 'true' : 'false');
@@ -1448,13 +1458,9 @@ tsEnter.addEventListener('click', function () {
     // when both fields were left blank) means "setup decided - play",
     // so offline players don't get re-prompted on every load. The
     // llmUrl && llmModel check keeps pre-flag saves working.
-    if (config.configured || (llmUrl && llmModel)) {
-      enterGame();
-    } else {
-      configBox.hidden = false; play.hidden = true;
-      document.getElementById('cfg-url').value = llmUrl;
-      document.getElementById('cfg-model').value = llmModel;
-    }
+    // Begin goes straight into the game; a model is only ever an
+    // optional extra, offered from the pause menu.
+    enterGame();
   }, 0);
 });
 // Focus the enter button after paint

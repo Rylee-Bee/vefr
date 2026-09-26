@@ -218,10 +218,13 @@ def test_setup_gate_allows_offline_play(tmp_path, monkeypatch, canned_generators
     # The hard gate is gone; half-filled (a typo) still warns.
     assert "both URL and model are required." not in html
     assert "fill in both, or leave both blank" in html
-    # Offline is a saved, remembered choice: returning offline players
-    # skip setup (older saves without the flag still pass via llmUrl).
+    # Games play without a model (docs/adr/0003): Begin goes straight in,
+    # and a saved endpoint is ignored unless the pack opts in with
+    # "player": {"model": "optional"}, which offers it in the pause menu.
     assert "configured: true" in html
-    assert "config.configured || (llmUrl && llmModel)" in html
+    assert "window.VEFR_WORLD.player.model === 'optional'" in html
+    assert "if (!MODEL_OPTIONAL) { llmUrl = ''; llmModel = ''; }" in html
+    assert "config.configured || (llmUrl && llmModel)" not in html
     # The copy names the affordance where the player decides.
     assert "Leave both blank to play offline" in html
     # Offline never fetches a relative URL: the post helper rejects
