@@ -3154,7 +3154,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="hall-room" id="hall-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band hall-room" id="hall-content"></div>';
       firstWalk.attempt('hall');
       var container = el_screen.querySelector('#hall-content');
       container.appendChild(loadingState('The ferry is bringing the keepsakes\u2026'));
@@ -3168,8 +3168,6 @@
         container.innerHTML = '';
         var world = results[0], journalData = results[1], vaultData = results[2], starredData = results[3];
 
-        var heading = h('div', { className: 'hall-room__heading', textContent: 'What you\u2019ve kept' });
-        container.appendChild(heading);
         var rl = residentLine('hall');
         if (rl) container.appendChild(rl);
 
@@ -3209,7 +3207,7 @@
           container.appendChild(keepsakeShelf(
             'pressed leaves from the chronicle',
             pressed.map(function (e) {
-              return { name: truncate((e.text || e.content || e.event || e.whisper || ''), 60), note: formatTime(e.timestamp || e.time || e.at) };
+              return { name: truncate(chronicleLine(e).text || '', 90), note: formatTime(e.timestamp || e.time || e.at) };
             }),
             '\u2767'
           ));
@@ -3248,6 +3246,7 @@
         Object.keys(RESIDENTS).forEach(function (key) {
           var res = RESIDENTS[key];
           var row = h('button', { className: 'hall-household__r', type: 'button' });
+          row.appendChild(portrait(key, res, 'hall-household__face'));
           row.appendChild(h('span', { className: 'hall-household__name', textContent: res.name }));
           row.appendChild(h('span', { className: 'hall-household__craft', textContent: res.craft }));
           // Each face is a door into their room's folio
@@ -3357,13 +3356,37 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="settings-room" id="settings-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band settings-room" id="settings-content"></div>';
       var container = el_screen.querySelector('#settings-content');
 
-      container.appendChild(h('div', { className: 'archives-intro',
+      container.appendChild(h('p', { className: 'archives-intro',
         textContent: 'The boiler room. Even a loved studio keeps its pipes plain.' }));
       var rl = residentLine('settings');
       if (rl) container.appendChild(rl);
+
+      // Spark, the little local brain, has a face: Bolt. His card says
+      // in words whether Spark is running, and how he is doing.
+      var bolt = h('section', { className: 'settings-card spark-card', 'aria-labelledby': 'spark-title' });
+      bolt.appendChild(portrait('spark', { name: 'Bolt, the face of Spark' }, 'spark-card__face'));
+      bolt.querySelector('.spark-card__face').innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-spark"/></svg>';
+      var boltText = h('div', { className: 'spark-card__text' });
+      boltText.appendChild(h('h3', { className: 'settings-card__title', id: 'spark-title', textContent: 'Bolt \u00B7 Spark, the little local brain' }));
+      var boltStatus = h('p', { className: 'spark-card__status', role: 'status', textContent: 'checking on Bolt\u2026' });
+      boltText.appendChild(boltStatus);
+      boltText.appendChild(h('p', { className: 'settings-card__note',
+        textContent: 'Spark is a small model that runs on this machine and helps every resident. Nothing leaves the house.' }));
+      bolt.appendChild(boltText);
+      container.appendChild(bolt);
+      API.sparkHealth()
+        .then(function (sp) {
+          if (sp && sp.ok) {
+            bolt.classList.add('spark-card--awake');
+            boltStatus.textContent = 'Awake. Spark is running' + (sp.profile ? ' (' + sp.profile + ' profile)' : '') + '.';
+          } else {
+            boltStatus.textContent = 'Napping on the boiler. Spark is not running on this machine yet.';
+          }
+        })
+        .catch(function () { boltStatus.textContent = 'Napping on the boiler. Spark could not be reached.'; });
 
       // Appearance — one voice for all of it: the prefs engine
       current = (P && P.get) ? P.get() : current;
