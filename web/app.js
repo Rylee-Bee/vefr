@@ -101,12 +101,8 @@
     if (room) room.setAttribute('data-phase', phaseFor(world.phases));
 
     // The surface mood adds a subtle warmth to the work surface
-    if (main) {
-      var m = SURFACE_MOOD[world.surface] || SURFACE_MOOD.quiet;
-      main.style.background = m.accent
-        ? 'linear-gradient(180deg, ' + m.accent + ' 0%, transparent 240px)'
-        : '';
-    }
+    var foot = document.getElementById('foot-world');
+    if (foot) foot.textContent = world.title ? 'on the table: ' + world.title : '';
 
     // The lantern burns: the storyteller is reachable
     setLantern(true, 'the lantern burns warm');
@@ -168,7 +164,8 @@
   /* ── The rooms ────────────────────────────────────────── */
 
   var SCREEN_TITLES = {
-    launcher:   'The Foyer',
+    floor:      'The Studio Floor',
+    launcher:   'The Studio',
     workshop:   'The Desk',
     map:        'The Map Room',
     characters: 'The Folks',
@@ -181,6 +178,7 @@
   };
 
   var SCREEN_SUBTITLES = {
+    floor:      'Ten rooms, one resident each. Every room is a department a real studio has, and every game passes through them.',
     launcher:   'come in, sit by the fire',
     workshop:   'where worlds begin',
     map:        'the world laid out',
@@ -192,6 +190,16 @@
     hall:       'what you\u2019ve kept',
     settings:   'the boiler room'
   };
+
+  // The department each room is, in studio words
+  var SCREEN_DEPTS = {
+    launcher: 'Welcome', floor: 'Every department', workshop: 'Concept \u00B7 the brief',
+    map: 'Level design', characters: 'Characters', items: 'Items \u0026 economy',
+    journal: 'Production records', runes: 'Inspiration', evidence: 'The story bible',
+    hall: 'Launch \u00B7 on display', settings: 'The machinery'
+  };
+  // Rooms reached through the Floor light the Floor in the nav
+  var NAV_HOME = { map: 'floor', characters: 'floor', items: 'floor', runes: 'floor', evidence: 'floor', settings: 'floor' };
 
   // Each room has a quiet sound — a diegetic line, never a claim
   // about engine state. It just tells you the room is lived in.
@@ -610,16 +618,54 @@
     closeFolio();
     try { localStorage.setItem('vefr-screen', id); } catch (e) {}
     history.replaceState(null, '', '#' + id);
+    window.scrollTo(0, 0);
   }
 
   function updateRoom(id) {
-    document.querySelectorAll('.placard').forEach(function (item) {
-      var active = item.dataset.screen === id;
-      item.classList.toggle('placard--active', active);
-      item.setAttribute('aria-current', active ? 'page' : 'false');
+    document.documentElement.setAttribute('data-screen', id);
+    var navKey = NAV_HOME[id] || id;
+    document.querySelectorAll('.go[data-screen]').forEach(function (item) {
+      if (item.dataset.screen === navKey) item.setAttribute('aria-current', 'page');
+      else item.removeAttribute('aria-current');
     });
     document.getElementById('rs-title').textContent = SCREEN_TITLES[id] || '';
     document.getElementById('rs-subtitle').textContent = SCREEN_SUBTITLES[id] || '';
+    document.getElementById('rs-dept').textContent = SCREEN_DEPTS[id] || '';
+    renderGreeter(id);
+  }
+
+  /* The resident who tends this room greets you in its header. */
+  function renderGreeter(id) {
+    var slot = document.getElementById('rs-greeter');
+    var resident = RESIDENTS[id];
+    if (!slot) return;
+    slot.innerHTML = '';
+    if (!resident) { slot.hidden = true; return; }
+    slot.hidden = false;
+    slot.appendChild(portrait(id, resident, 'greeter__portrait'));
+    var who = h('div', { className: 'greeter__who' });
+    who.appendChild(h('b', { className: 'greeter__name', textContent: resident.name }));
+    who.appendChild(h('span', { className: 'greeter__craft', textContent: resident.craft }));
+    who.appendChild(h('p', { className: 'greeter__says', textContent: '\u201C' + resident.greeting + '\u201D' }));
+    var ask = h('button', { className: 'cta cta--line greeter__ask', type: 'button', textContent: 'Ask ' + resident.name });
+    ask.addEventListener('click', function () { openFolio(id, ask); });
+    who.appendChild(ask);
+    slot.appendChild(who);
+  }
+
+  /* A resident's portrait: a drawn face where the studio has one,
+     otherwise their carved mark in a round frame. */
+  var PORTRAITS = { hall: 'p-ratatoskr', workshop: 'p-storyteller', journal: 'p-urdr' };
+  function portrait(id, resident, cls) {
+    var sym = PORTRAITS[id];
+    var wrap = h('span', { className: 'portrait ' + (cls || ''), role: 'img', 'aria-label': resident.name });
+    if (sym) {
+      wrap.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#' + sym + '"/></svg>';
+    } else {
+      var icon = (DEPARTMENTS.filter(function (d) { return d[0] === id; })[0] || [])[1] || 'i-hall';
+      wrap.innerHTML = '<svg class="portrait__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#' + icon + '"/></svg>';
+    }
+    return wrap;
   }
 
   /* ══════════════════════════════════════════════════════
@@ -915,21 +961,110 @@
   /* A quiet line in each room: who tends it, how to ask, and the
      room's own sound. Returns a fragment so one append gets both. */
   function residentLine(screenId) {
-    var resident = RESIDENTS[screenId];
-    if (!resident) return null;
+    // The resident now greets from the room's header (renderGreeter);
+    // in the room itself only the room's quiet ambience line remains.
     var frag = document.createDocumentFragment();
-    var line = h('div', { className: 'resident-line' });
-    line.appendChild(h('span', { className: 'resident-line__who',
-      textContent: 'tended by ' + resident.name + ' \u2014 ' + resident.craft }));
-    var btn = h('button', { className: 'resident-line__btn',
-      textContent: 'Ask ' + resident.name });
-    btn.addEventListener('click', function () { openFolio(screenId, btn); });
-    line.appendChild(btn);
-    frag.appendChild(line);
     var amb = ambienceNode(screenId);
     if (amb) frag.appendChild(amb);
     return frag;
   }
+
+  /* ══════════════════════════════════════════════════════
+     THE FLOOR — every department, one door each
+     ══════════════════════════════════════════════════════ */
+
+  var DEPARTMENTS = [
+    ['workshop', 'i-desk', 'Concept and pre-production: the brief, the pitch, the next beat.'],
+    ['map', 'i-map', 'Level design: the town, the floors below, the roads between.'],
+    ['characters', 'i-folks', 'Characters: who lives here, what they want, what they fear.'],
+    ['items', 'i-vault', 'Items and economy: what you carry, and what it means.'],
+    ['journal', 'i-chronicle', 'Production records: what happened, and when.'],
+    ['runes', 'i-runes', 'Inspiration, for when you are stuck.'],
+    ['evidence', 'i-archives', 'The story bible: the truth beneath the world.'],
+    ['hall', 'i-hall', 'Launch and display: finished work on the walls.'],
+    ['settings', 'i-gear', 'The machinery: the engine, the tools, the little local brain.']
+  ];
+
+  function carved(tag, cls, attrs) {
+    var a = attrs || {};
+    a.className = 'carved ' + (cls || '');
+    return h(tag, a);
+  }
+  function sectionHead(label, title, id, action) {
+    var head = h('div', { className: 'section-head' });
+    var left = h('div');
+    left.appendChild(h('span', { className: 'label', textContent: label }));
+    left.appendChild(h('h2', { className: 'section-head__title', id: id, textContent: title }));
+    head.appendChild(left);
+    if (action) head.appendChild(action);
+    return head;
+  }
+  function door(screenId, text, cls) {
+    return h('a', { className: 'go cta ' + (cls || 'cta--line'), href: '#' + screenId, 'data-screen': screenId, textContent: text });
+  }
+
+  screens.floor = (function () {
+    var el_screen;
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-floor' });
+      main.appendChild(el_screen);
+    }
+    function enter() {
+      el_screen.innerHTML = '';
+      var wrap = h('div', { className: 'wrap band' });
+      var grid = h('div', { className: 'floor-grid' });
+      DEPARTMENTS.forEach(function (d) {
+        var r = RESIDENTS[d[0]] || {};
+        var card = carved('a', 'dept go', { href: '#' + d[0], 'data-screen': d[0] });
+        card.innerHTML = '<svg class="dept__icon" aria-hidden="true"><use href="#' + d[1] + '"/></svg>';
+        card.appendChild(h('h3', { className: 'dept__name', textContent: SCREEN_TITLES[d[0]] || d[0] }));
+        card.appendChild(h('span', { className: 'dept__who', textContent: r.name || '' }));
+        card.appendChild(h('p', { className: 'dept__what', textContent: d[2] }));
+        grid.appendChild(card);
+      });
+      wrap.appendChild(grid);
+      el_screen.appendChild(wrap);
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* A poster for a world: drawn from its phases, never from a name */
+  var PHASE_SKY = {
+    dawn: ['#2A2030', '#B0704A', '#F0B862'], dusk: ['#1A1426', '#4A2E3A', '#9A5A36'],
+    day: ['#1E3A4A', '#4E7A8A', '#C9D8C0'], night: ['#08131A', '#16333A', '#2A4A45']
+  };
+  function posterSvg(world, i) {
+    var ph = (world.phases && world.phases[0]) || 'dusk';
+    var sky = PHASE_SKY[ph] || PHASE_SKY.dusk;
+    var gid = 'poster-sky-' + i;
+    return '<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + sky[0] + '"/><stop offset=".65" stop-color="' + sky[1] + '"/><stop offset="1" stop-color="' + sky[2] + '"/></linearGradient></defs>'
+      + '<rect width="300" height="400" fill="url(#' + gid + ')"/>'
+      + '<g fill="#F0B862" opacity=".8"><circle cx="' + (60 + (i * 47) % 180) + '" cy="110" r="2"/><circle cx="' + (140 + (i * 31) % 120) + '" cy="80" r="1.6"/><circle cx="220" cy="140" r="1.8"/></g>'
+      + '<g fill="#140E14"><path d="M20 300 L60 262 L100 300 Z"/><rect x="28" y="298" width="64" height="60"/><path d="M110 290 L160 240 L210 290 Z"/><rect x="120" y="288" width="80" height="70"/><rect x="226" y="220" width="30" height="138"/><path d="M220 222 L241 186 L262 222 Z"/><rect x="0" y="356" width="300" height="44"/></g>'
+      + '<g fill="#F0B862"><rect x="150" y="310" width="10" height="14"/><rect x="50" y="318" width="8" height="12"/><circle cx="241" cy="240" r="5"/></g></svg>';
+  }
+
+  /* The Chronicle's reading rules live in js/chronicle.js (tested alone) */
+  var chronicleLine = window.VEFR_CHRONICLE.line;
+  var foldChronicle = window.VEFR_CHRONICLE.fold;
+  var actionsLine = window.VEFR_CHRONICLE.actions;
+
+  /* The hero's night: hills, a lit town, wind, and the World Tree */
+  var HERO_ART = '<svg class="hero__art" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+    + '<defs><linearGradient id="hero-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#08131A"/><stop offset=".6" stop-color="#16333A"/><stop offset="1" stop-color="#2A4A45"/></linearGradient>'
+    + '<linearGradient id="hero-scrim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#060A0D" stop-opacity=".92"/><stop offset=".55" stop-color="#060A0D" stop-opacity=".5"/><stop offset=".85" stop-color="#060A0D" stop-opacity="0"/></linearGradient></defs>'
+    + '<rect width="1200" height="560" fill="url(#hero-sky)"/>'
+    + '<g fill="#E9DDB8"><circle cx="640" cy="70" r="1.6"/><circle cx="720" cy="130" r="1.2"/><circle cx="820" cy="54" r="1.8"/><circle cx="900" cy="150" r="1.2"/><circle cx="1110" cy="40" r="1.2"/><circle cx="560" cy="160" r="1.1"/></g>'
+    + '<circle cx="1000" cy="130" r="52" fill="#EADFBC"/>'
+    + '<g fill="none" stroke="#E9DDB8" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"><path d="M520 210 C620 180 700 230 800 200 S960 170 1040 210"/><path d="M600 262 C700 240 780 280 880 256 S1020 238 1100 262"/></g>'
+    + '<path d="M0 420 L140 330 L260 380 L380 300 L520 370 L640 320 L780 390 L900 330 L1040 380 L1200 320 V560 H0 Z" fill="#12272A"/>'
+    + '<path d="M560 560 C640 470 720 440 820 430 C920 420 1000 436 1080 470 L1200 500 V560 Z" fill="#0C1B1D"/>'
+    + '<g fill="#0A1618"><path d="M800 440 L840 404 L880 440 Z"/><rect x="808" y="438" width="64" height="40"/><path d="M890 430 L940 380 L990 430 Z"/><rect x="900" y="428" width="80" height="50"/><rect x="996" y="360" width="26" height="118"/><path d="M990 362 L1009 330 L1028 362 Z"/></g>'
+    + '<g fill="#E8B25A"><rect x="930" y="446" width="10" height="14"/><rect x="830" y="452" width="8" height="12"/><circle cx="1009" cy="380" r="4"/></g>'
+    + '<g transform="translate(1090 330)"><path d="M20 140 V70 M20 92 Q4 84 -4 96 M20 84 Q36 76 44 88" stroke="#1E2A20" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="20" cy="48" r="42" fill="#15251B"/><circle cx="-12" cy="66" r="24" fill="#15251B"/><circle cx="52" cy="66" r="24" fill="#15251B"/><rect x="-2" y="36" width="12" height="16" rx="2" fill="#3E6B6A"/><rect x="30" y="26" width="12" height="16" rx="2" fill="#9C5A3E"/><rect x="42" y="60" width="11" height="14" rx="2" fill="#D6C590"/></g>'
+    + '<rect width="1200" height="560" fill="url(#hero-scrim)"/></svg>';
 
   /* ══════════════════════════════════════════════════════
      THE DESK — the writing desk where worlds are made
@@ -948,29 +1083,91 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="foyer" id="foyer-content"></div>';
+      // The studio's front page: what is on the table, every world on
+      // the walls, how the studio works, the latest from the Chronicle,
+      // and the residents. Everything is real data; nothing is invented.
+      el_screen.innerHTML = '<div class="studio-home" id="foyer-content"></div>';
       var c = el_screen.querySelector('#foyer-content');
 
-      c.appendChild(h('div', { className: 'archives-intro',
-        textContent: 'The foyer. Come in, sit by the fire \u2014 the house is glad you\u2019re back.' }));
+      var hearth = h('div', { className: 'foyer-hearth' });
+      hearth.appendChild(h('div', { className: 'foyer-holder' }));
+      c.appendChild(hearth);
 
-      var hearth = section(c, 'foyer-hearth', 'The project on the table');
-      var pantry = section(c, 'foyer-pantry', 'The pantry');
-      var begin = section(c, 'foyer-begin', 'Begin a new world');
-      var mems = section(c, 'foyer-memories', 'What the house remembers');
-      c.appendChild(optionsPanel());
+      var games = h('div', { className: 'wrap band' });
+      var pantry = h('section', { className: 'foyer-pantry', 'aria-labelledby': 'home-games' });
+      pantry.appendChild(sectionHead('Our worlds', 'On the walls', 'home-games', door('floor', 'Walk the floor')));
+      var holder = h('div', { className: 'foyer-holder' });
+      holder.appendChild(loadingState('the studio is looking\u2026'));
+      pantry.appendChild(holder);
+      games.appendChild(pantry);
+      c.appendChild(games);
 
-      setSection(begin, beginWorldForm(hearth, pantry));
+      var creed = h('section', { className: 'creed-band', 'aria-label': 'How the studio works', id: 'home-creed' });
+      c.appendChild(creed);
+
+      var two = h('div', { className: 'wrap band home-two' });
+      var news = h('section', { 'aria-labelledby': 'home-news' });
+      news.appendChild(sectionHead('From the Chronicle', 'Latest from the studio', 'home-news', door('journal', 'All news')));
+      var newsList = h('div', { className: 'news-list' });
+      newsList.appendChild(loadingState('Urðr is turning the pages\u2026'));
+      news.appendChild(newsList);
+      var begin = h('section', { 'aria-labelledby': 'home-begin' });
+      begin.appendChild(sectionHead('New project', 'Begin a new world', 'home-begin'));
+      var beginCard = carved('div', 'begin-card');
+      beginCard.appendChild(beginWorldForm(hearth, pantry));
+      begin.appendChild(beginCard);
+      two.appendChild(news);
+      two.appendChild(begin);
+      c.appendChild(two);
+
+      var team = h('section', { className: 'wrap band', 'aria-labelledby': 'home-team' });
+      team.appendChild(sectionHead('The team', 'Meet the residents', 'home-team', door('floor', 'Every department')));
+      team.appendChild(teamGrid());
+      c.appendChild(team);
+
+      var mantel = h('div', { className: 'wrap band band--last' });
+      mantel.appendChild(optionsPanel());
+      c.appendChild(mantel);
+
       loadProjects(hearth, pantry);
-
-      loadProjects(hearth, pantry);
-
-      // Memories — what was kept, starred, and spoken, from real books
-      Promise.all([API.vault(), API.journal()])
-        .then(function (rs) { renderMemories(mems, rs[0], rs[1]); })
+      API.journal()
+        .then(function (data) { renderNews(newsList, (data && data.entries) || []); })
         .catch(function () {
-          setSection(mems, emptyState('the house is still waking up', 'the shelves open in a moment'));
+          newsList.innerHTML = '';
+          newsList.appendChild(emptyState('the Chronicle is closed right now', 'try again in a moment'));
         });
+    }
+
+    function renderNews(list, entries) {
+      list.innerHTML = '';
+      var folded = foldChronicle(entries).reverse().slice(0, 3);
+      if (!folded.length) {
+        list.appendChild(emptyState('nothing has happened yet', 'every story leaves traces'));
+        return;
+      }
+      folded.forEach(function (f, i) {
+        var line = f.kind === 'combat_action' ? actionsLine(f) : chronicleLine(f.entry);
+        var post = carved('a', 'post go' + (i === 0 ? ' post--lead' : ''), { href: '#journal', 'data-screen': 'journal' });
+        post.appendChild(h('span', { className: 'post__date', textContent: formatTime(f.at) + ' \u00B7 ' + line.kind }));
+        post.appendChild(h('p', { className: 'post__text', textContent: truncate(line.text || '', 180) }));
+        if (line.who) post.appendChild(h('span', { className: 'post__who', textContent: '\u2014 ' + line.who }));
+        list.appendChild(post);
+      });
+    }
+
+    function teamGrid() {
+      var grid = h('div', { className: 'team-grid' });
+      ['hall', 'workshop', 'journal', 'map', 'characters', 'items', 'runes', 'evidence', 'settings'].forEach(function (id) {
+        var r = RESIDENTS[id];
+        if (!r) return;
+        var card = carved('a', 'member go', { href: '#' + id, 'data-screen': id });
+        card.appendChild(portrait(id, r, 'member__portrait'));
+        card.appendChild(h('h3', { className: 'member__name', textContent: r.name }));
+        card.appendChild(h('span', { className: 'member__role', textContent: (SCREEN_DEPTS[id] || '') + ' \u00B7 ' + (SCREEN_TITLES[id] || '') }));
+        card.appendChild(h('p', { className: 'member__craft', textContent: r.craft }));
+        grid.appendChild(card);
+      });
+      return grid;
     }
 
     function loadProjects(hearth, pantry) {
@@ -1101,79 +1298,68 @@
       setSection(pantry, pantryGrid(packs, currentName, hearth, pantry));
     }
     function projectTable(w) {
-      if (!w || !w.title) return emptyState('the house doesn\u2019t know its project yet', 'check that a world is mounted');
-      var card = h('div', { className: 'project-card project-card--table' });
-      card.appendChild(h('div', { className: 'project-card__title', textContent: w.title }));
-      var meta = [];
-      if (w.act && w.act.title) meta.push(w.act.title);
-      if (w.phases && w.phases.length) meta.push(w.phases.join(' \u00B7 '));
-      if (meta.length) card.appendChild(h('div', { className: 'project-card__meta', textContent: meta.join('  \u2014  ') }));
-      var enter = h('button', { className: 'btn btn--warm project-card__enter', type: 'button', textContent: 'enter the house \u2192' });
-      enter.addEventListener('click', function () { navigate('workshop'); });
-      card.appendChild(enter);
-      return card;
+      if (!w || !w.title) return emptyState('the studio doesn\u2019t know its project yet', 'check that a world is mounted');
+      var hero = h('section', { className: 'hero', 'aria-labelledby': 'hero-title' });
+      hero.innerHTML = HERO_ART;
+      var copy = h('div', { className: 'wrap hero__copy' });
+      copy.appendChild(h('span', { className: 'hero__kicker', textContent: 'On the table \u00B7 in development' }));
+      copy.appendChild(h('h2', { className: 'hero__title', id: 'hero-title', textContent: w.title }));
+      if (w.creed) copy.appendChild(h('p', { className: 'hero__creed', textContent: w.creed }));
+      var facts = h('div', { className: 'hero__facts' });
+      var bits = [];
+      if (w.act && w.act.title && w.act.title !== w.title) bits.push(w.act.title);
+      if (w.phases && w.phases.length) bits.push(w.phases.join(' \u00B7 '));
+      if (w.act && w.act.ruleset) bits.push(w.act.ruleset);
+      bits.forEach(function (b) { facts.appendChild(h('span', { className: 'hero__fact', textContent: b })); });
+      copy.appendChild(facts);
+      var actions = h('div', { className: 'hero__actions' });
+      actions.appendChild(door('workshop', 'Open the Desk', 'cta--gold'));
+      actions.appendChild(door('floor', 'Walk the floor', 'cta--ghost'));
+      copy.appendChild(actions);
+      hero.appendChild(copy);
+      var band = document.getElementById('home-creed');
+      if (band) {
+        band.innerHTML = '';
+        var inner = h('div', { className: 'wrap creed-band__row' });
+        [[w.creed || 'Walk gently.', 'carved above the door'],
+         ['Every sitting ends with something alive.', 'how the studio works'],
+         ['You write the stories. The studio builds the halls.', 'who does what']].forEach(function (l) {
+          var d = h('div', { className: 'creed-band__line' });
+          d.appendChild(h('b', { textContent: l[0] }));
+          d.appendChild(h('small', { textContent: l[1] }));
+          inner.appendChild(d);
+        });
+        band.appendChild(inner);
+      }
+      return hero;
     }
     function pantryGrid(packs, currentName, hearth, pantry) {
-      var others = packs.filter(function (p) { return p.name !== currentName; });
-      if (!others.length) return emptyState('the pantry is bare', 'every pack you have is already on the table');
-      var wrap = h('div', { className: 'foyer-pantry__grid' });
-      others.forEach(function (p) {
-        var card = h('div', { className: 'project-card project-card--pantry' });
-        card.appendChild(h('div', { className: 'project-card__title', textContent: p.title || p.name }));
+      if (!packs.length) return emptyState('no worlds on the walls yet', 'begin a new world below');
+      var wrap = h('div', { className: 'poster-grid' });
+      packs.forEach(function (p, i) {
+        var current = p.name === currentName;
+        var card = carved('article', 'poster');
+        var key = h('div', { className: 'poster__key' });
+        key.innerHTML = posterSvg(p, i);
+        key.appendChild(h('h3', { className: 'poster__title', textContent: p.title || p.name }));
+        card.appendChild(key);
+        var body = h('div', { className: 'poster__body' });
+        body.appendChild(h('span', { className: 'status' + (current ? ' status--now' : ''), textContent: current ? 'On the table' : 'On the wall' }));
         var bits = [];
         if (p.phases && p.phases.length) bits.push(p.phases.join(' \u00B7 '));
         if (p.speakers) bits.push(p.speakers.length + ' speaker' + (p.speakers.length !== 1 ? 's' : ''));
-        if (bits.length) card.appendChild(h('div', { className: 'project-card__meta', textContent: bits.join(' \u00B7 ') }));
-        var put = h('button', { className: 'btn btn--ghost project-card__table', type: 'button',
-          textContent: 'put on the table' });
-        put.addEventListener('click', function () { makeActive(p.name, put, hearth, pantry); });
-        card.appendChild(put);
+        if (bits.length) body.appendChild(h('p', { className: 'poster__meta', textContent: bits.join(' \u00B7 ') }));
+        if (current) {
+          body.appendChild(door('workshop', 'Open the Desk', 'cta--line'));
+        } else {
+          var put = h('button', { className: 'cta cta--line', type: 'button', textContent: 'Put on the table' });
+          put.addEventListener('click', function () { makeActive(p.name, put, hearth, pantry); });
+          body.appendChild(put);
+        }
+        card.appendChild(body);
         wrap.appendChild(card);
       });
       return wrap;
-    }
-
-    function renderMemories(mems, vaultRes, journalRes) {
-      var keeps = (vaultRes && (vaultRes.items || vaultRes.keepsakes)) || (Array.isArray(vaultRes) ? vaultRes : []);
-      var entries = (journalRes && journalRes.entries) || (Array.isArray(journalRes) ? journalRes : []);
-      var starred = entries.filter(function (e) { return e.starred || e.star; }).slice(0, 3);
-
-      var colKeep = h('div', { className: 'foyer-mem' });
-      colKeep.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'kept lately' }));
-      if (!keeps.length) colKeep.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'nothing kept yet \u2014 the walls are bare' }));
-      keeps.slice(-3).reverse().forEach(function (k) {
-        colKeep.appendChild(h('p', { className: 'foyer-mem__line', textContent: truncate(k.name || 'a keepsake', 34) }));
-      });
-
-      var colStar = h('div', { className: 'foyer-mem' });
-      colStar.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'starred lately' }));
-      if (!starred.length) colStar.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'no leaves pressed yet' }));
-      starred.forEach(function (e) {
-        colStar.appendChild(h('p', { className: 'foyer-mem__line',
-          textContent: truncate(e.text || e.content || e.event || e.whisper || 'a starred line', 34) }));
-      });
-
-      var colTalk = h('div', { className: 'foyer-mem' });
-      colTalk.appendChild(h('h3', { className: 'foyer-mem__title', textContent: 'spoken lately' }));
-      var whisper = watch.buffer && watch.buffer[watch.buffer.length - 1];
-      var thread = lastThread();
-      if (thread) colTalk.appendChild(h('p', { className: 'foyer-mem__line', textContent: thread }));
-      else if (whisper && whisper.el) colTalk.appendChild(h('p', { className: 'foyer-mem__line',
-        textContent: truncate(whisper.el.textContent || 'the house stirred', 34) }));
-      else colTalk.appendChild(h('p', { className: 'foyer-mem__empty', textContent: 'the house is quiet tonight' }));
-
-      var wrap = h('div', { className: 'foyer-memories__row' });
-      wrap.appendChild(colKeep);
-      wrap.appendChild(colStar);
-      wrap.appendChild(colTalk);
-      setSection(mems, wrap);
-    }
-    function lastThread() {
-      var keys = Object.keys(histories || {});
-      if (!keys.length) return null;
-      var msgs = histories[keys[keys.length - 1]];
-      var last = msgs && msgs[msgs.length - 1];
-      return last ? truncate(String(last.content || last.text || '').replace(/\s+/g, ' '), 44) : null;
     }
 
     function optionsPanel() {
@@ -2640,7 +2826,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="chronicle-room" id="chronicle-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band chronicle-room" id="chronicle-content"></div>';
       var container = el_screen.querySelector('#chronicle-content');
       container.appendChild(loadingState('Opening the chronicle\u2026'));
       API.journal()
@@ -2655,33 +2841,37 @@
             ));
             return;
           }
-          var heading = h('div', { className: 'chronicle-room__heading', textContent: 'What has happened' });
-          container.appendChild(heading);
           var rl = residentLine('journal');
           if (rl) container.appendChild(rl);
-          var list = h('div', { className: 'chronicle-entries' });
-          entries.slice(-30).reverse().forEach(function (entry, i) {
-            var text = entry.text || entry.content || entry.event || entry.whisper || '';
-            var time = entry.timestamp || entry.time || entry.at || '';
-            var starred = entry.starred || entry.star;
-            var row = h('div', { className: 'chronicle-entry' + (starred ? ' chronicle-entry--starred' : '') });
-            row.appendChild(h('span', { className: 'chronicle-entry__time', textContent: formatTime(time) }));
-            row.appendChild(h('span', { className: 'chronicle-entry__text', textContent: text }));
-            var starBtn = h('button', { className: 'chronicle-entry__star',
-              'aria-label': starred ? 'Unstar' : 'Star',
-              textContent: starred ? '\u2B50' : '\u2606' });
-            starBtn.addEventListener('click', function () {
-              if (starred) {
-                ferryNote('those leaves are already pressed into the hall wall\u2026');
-              } else {
-                var textName = truncate(text || 'this moment', 36);
-                studioAudio.squeak();
-                firstWalk.attempt('chronicle');
-                ferryNote('Ratatoskr is pressing \u201c' + textName + '\u201d into the hall\u2026');
-              }
-              API.journalStar(entries.length - 1 - i).then(function () { enter(); });
-            });
-            row.appendChild(starBtn);
+          var folded = foldChronicle(entries);
+          var list = h('ol', { className: 'timeline', 'aria-label': 'What has happened, newest first' });
+          folded.slice(-40).reverse().forEach(function (f) {
+            var line = f.kind === 'combat_action' ? actionsLine(f) : chronicleLine(f.entry);
+            var starred = f.entry.starred || f.entry.star;
+            var row = h('li', { className: 'entry' + (starred ? ' entry--starred' : '') });
+            row.appendChild(h('span', { className: 'entry__date', textContent: formatTime(f.at) }));
+            var body = h('div', { className: 'entry__body' });
+            body.appendChild(h('span', { className: 'entry__kind', textContent: line.kind + (starred ? ' \u00B7 kept in the Hall' : '') }));
+            body.appendChild(h('p', { className: 'entry__text', textContent: line.text || '' }));
+            if (line.who) body.appendChild(h('span', { className: 'entry__who', textContent: '\u2014 ' + line.who }));
+            row.appendChild(body);
+            if (f.kind !== 'combat_action') {
+              var text = line.text || '';
+              var starBtn = h('button', { className: 'cta cta--line entry__star', type: 'button',
+                'aria-pressed': starred ? 'true' : 'false',
+                textContent: starred ? 'Kept' : 'Keep in the Hall' });
+              starBtn.addEventListener('click', function () {
+                if (starred) {
+                  ferryNote('those leaves are already pressed into the hall wall\u2026');
+                } else {
+                  studioAudio.squeak();
+                  firstWalk.attempt('chronicle');
+                  ferryNote('Ratatoskr is pressing \u201c' + truncate(text || 'this moment', 36) + '\u201d into the hall\u2026');
+                }
+                API.journalStar(f.index).then(function () { enter(); });
+              });
+              row.appendChild(starBtn);
+            }
             list.appendChild(row);
           });
           container.appendChild(list);
@@ -3233,9 +3423,33 @@
      ══════════════════════════════════════════════════════ */
 
   // The shelf — a low shelf of carved placards
-  document.getElementById('shelf').addEventListener('click', function (e) {
-    var item = e.target.closest('.placard');
-    if (item && item.dataset.screen) navigate(item.dataset.screen);
+  document.addEventListener('click', function (e) {
+    var door = e.target.closest('.go[data-screen]');
+    if (!door || !screens[door.dataset.screen]) return;
+    e.preventDefault();
+    navigate(door.dataset.screen);
+  });
+  window.addEventListener('hashchange', function () {
+    var id = location.hash.slice(1);
+    if (screens[id]) navigate(id);
+  });
+
+  // Night by candle, or day in the hall. Separate from the contrast
+  // tiers (data-theme), which keep working in either light.
+  function setLight(light) {
+    document.documentElement.setAttribute('data-light', light);
+    var btn = document.getElementById('light-toggle');
+    if (btn) {
+      btn.setAttribute('aria-label', light === 'day' ? 'Switch to night' : 'Switch to day');
+      btn.querySelector('use').setAttribute('href', light === 'day' ? '#i-moon' : '#i-sun');
+    }
+    try { localStorage.setItem('vefr-light', light); } catch (e) {}
+  }
+  var savedLight = null;
+  try { savedLight = localStorage.getItem('vefr-light'); } catch (e) {}
+  setLight(savedLight === 'day' ? 'day' : 'night');
+  document.getElementById('light-toggle').addEventListener('click', function () {
+    setLight(document.documentElement.getAttribute('data-light') === 'day' ? 'night' : 'day');
   });
 
   // The world hangs its name over the door; the lantern lights

@@ -27,8 +27,8 @@ packaged file both work offline from the first byte.
   weights 400-900)
 - Vendored: 2026-09-25, latin subset, from the `Cinzel` Google Fonts
   CSS2 endpoint with a browser UA (single variable woff2).
-- Used by: `web/studio-hall.css` (`--font-display`): room signs,
-  shelf placards and screen headings. Display only; body text stays
+- Used by: `web/studio.css` (`--studio-engraved`): the top bar,
+  room headers, headings and buttons. Display only; body text stays
   on the UI and reading fonts.
 
 ## Atkinson Hyperlegible Next

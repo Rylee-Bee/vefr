@@ -7,23 +7,23 @@
 
 ## Landed
 
-- [x] **Studio Hall skin, slice 1 of the studio redesign** (2026-09-25):
-      the workshop now reads as a game studio the old Norse run: forged
-      iron, gold, rune bands and engraved lettering. One new stylesheet,
-      `web/studio-hall.css`, loaded last in `web/app.html`; restyle only,
-      no structure or behaviour, so removing its `<link>` restores the old
-      look. Room sign becomes a level iron plaque with a rune band; the
-      shelf becomes an iron bar of engraved placards (room descriptions
-      grow from 9.5px to 11px); room headings take the engraved face; the
-      Warm tier's charcoal becomes iron (Bright and Nothing Hides keep
-      their own contrast values). Phones: the sign no longer covers the
-      scene's first heading (`.main` clears it at <=640px). New font:
-      Cinzel (SIL OFL 1.1), self-hosted as `web/fonts/Cinzel-Variable.woff2`
-      and listed in `web/fonts/README.md` + `THIRD_PARTY_NOTICES.md`.
-      Gates: `ruff check` clean; `pytest -q` 550 passed, 1 skipped;
-      public-surface clean; axe-core over all ten rooms at 1280px:
-      zero serious/critical findings added (the one existing Archives
-      `scrollable-region-focusable` is identical on `main`).
+- [ ] **Studio Hall: the workshop UI, completely replaced** (in progress,
+      2026-09-25, owner: "complete replace", "never wanna see the old one
+      again"). A game studio the old Norse run: iron top bar, room header
+      with its resident, rune bands, engraved lettering (Cinzel, SIL OFL
+      1.1, self-hosted), night by candle / day in the hall
+      (`data-light`, separate from the contrast tiers, which keep
+      working). New shell in `web/app.html`, all look in
+      `web/studio.css`; `web/app.css` is deleted when the last room is
+      rebuilt. Rebuilt so far: the Studio home (was the Foyer: hero from
+      the world on the table, worlds as posters, news from the Chronicle,
+      begin-a-world, the residents, the mantel), the Floor (new: every
+      department), the Chronicle. Chronicle fix: actions, npc lines and
+      letters no longer render as blank rows; runs of actions fold into
+      one line (`web/js/chronicle.js`, pinned by
+      `tests/test_web_chronicle.py`). Still to rebuild: Desk, Map Room,
+      Folks, Vault, Casting Table, Archives, Hall, Settings, first walk,
+      resident folio.
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +
