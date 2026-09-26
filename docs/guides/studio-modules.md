@@ -89,6 +89,35 @@ be changed any time in the Boiler Room, like the other preferences:
 Story help is never automatic, and a maker's own story is never written
 for them.
 
+## Learn by making: the ladder
+
+Rylee's dream for the studio: that people who play VEFR "can actually like... learn to be software
+devs, but it be fun". The "Show me how things work" slider grows from two steps into a ladder. Each rung
+shows one more real layer of the same thing, with a resident as the mentor, and ends with a sticker.
+Nothing is simulated: every rung uses the studio's real files and real commands, so what you learn
+works outside VEFR too.
+
+| Rung | What you see | Mentor | The real skill |
+|---|---|---|---|
+| 1. Pictures | Paint the map, pick tiles, keep or redo | the Cartographer | using a tool well |
+| 2. The data | The squares are symbols in a text file | the Cartographer | data and formats |
+| 3. The files | A world's own files: a book, a character, the map | Fróði | reading and editing files |
+| 4. The checks | Break the map on purpose; the checker catches it; fix it | Skuld | debugging and testing |
+| 5. The history | Save a version, try something wild, go back | Urðr | version control |
+| 6. The commands | The same buttons, typed (`ratatoskr weave` makes your game) | Ratatoskr | the command line |
+| 7. Your own rule | Change one small rule of the game and see it play differently | Völundr | programming |
+
+Rules for the ladder:
+
+- **Opt in, one rung at a time.** "Keep it simple" stays the default; nobody is marched up.
+- **Every quest uses the person's own world,** so the lesson is about something they care about.
+- **Break things safely.** Each quest starts from a saved version and can always be undone.
+- **Playtest on Cottage of the Breeze first, with Rylee as the first player.** A rung is ready when it
+  makes something click; confusion or boredom is the bug to fix.
+- **The residents are the dev roles in costume:** the Cartographer (level design), Skuld (tests and
+  truth), Urðr (version history), Völundr (settings and ops), Ratatoskr (shipping), Fróði (files and
+  docs). The handbook's seven stages are the real process software follows.
+
 ## What every module declares
 
 | Part | What it is |
