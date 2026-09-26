@@ -9,7 +9,7 @@ then widen.
 * * *
 
 A rhythm that works: one goal per sitting, and every sitting ends with
-something alive: a build, a map, a page.
+something that works: a build, a map, a page.
 
 Tests keep the old parts working while the new parts arrive.
 
