@@ -28,7 +28,9 @@ the Floor's cutaway illustration, textures, the app icon and the wax seal.
     what it is, shown in the Library's reader.
   - `poses/bolt-thinking|awake-wave|unplugged.webp`: Bolt's Spark moods in
     the Boiler Room; `poses/boiler-room-empty.webp`.
-  - `icons/ui/quill|sparkle|check|warning|info|map-pin.webp`.
+  - `icons/ui/quill|sparkle|check|warning|info|map-pin.webp`. `info` is
+    now a signpost, and `scroll` and `rune` are new stickers not yet used
+    (the owner's picks, 26 Sep).
   - `illustrations/team-photo.webp` (Studio home) and
     `illustrations/lost-in-the-tree.webp` (not yet used).
 - Engine-neutral: residents and rooms belong to the workshop, not to any
