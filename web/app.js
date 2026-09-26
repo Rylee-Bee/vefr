@@ -1386,10 +1386,12 @@
           ferryNote('Now working on “' + name + '”.');
           loadProjects(hearth, pantry);
         })
-        .catch(function () {
+        .catch(function (err) {
           btn.disabled = false;
           btn.textContent = label;
-          ferryNote('Couldn’t open that world. Try again.');
+          /* 409 = the server pins a world: say so, don't invite a retry. */
+          ferryNote(err && err.status === 409 && err.message
+            ? err.message : 'Couldn’t open that world. Try again.');
         });
     }
 

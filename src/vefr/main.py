@@ -955,6 +955,15 @@ def builder_worlds_active(req: BuilderWorldActiveRequest):
         pack = template_dir() / name
     if not (pack / "world.json").is_file():
         raise HTTPException(status_code=404, detail=f"no world named {name!r}")
+    pinned = os.environ.get("VEFR_WORLD")
+    if pinned and pinned != name:
+        # The operator's env always wins (paths.world_name), so saying
+        # "active" here would be a lie: the page would keep serving the
+        # pinned world. Refuse, and say how to unpin.
+        raise HTTPException(status_code=409, detail=(
+            f"This studio is pinned to {pinned!r} by its server settings "
+            "(VEFR_WORLD). Remove that setting and restart the studio to "
+            "switch worlds from the page."))
     set_active_world(name)
     load_world.cache_clear()
     try:
