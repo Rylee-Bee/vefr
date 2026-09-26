@@ -580,6 +580,81 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .spark-card:not(.spark-card--awake) .spark-card__face { filter: saturate(0.6); }
 
 /* ------------------------------------------------------------
+   8g. The Map Room: the survey bench and the drawing table
+   ------------------------------------------------------------ */
+.map-room { display: grid; gap: 26px; }
+.map-bench { display: grid; gap: 20px; }
+.map-regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 20px; align-items: start; }
+.map-region { display: grid; gap: 8px; padding: 24px; background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px; min-width: 0;
+  box-shadow: inset 0 0 0 5px var(--color-card), inset 0 0 0 6px color-mix(in srgb, var(--color-card-edge) 60%, transparent); }
+.map-region__name { margin: 0; font: 700 1.2rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); text-transform: capitalize; }
+.map-region__survey { margin: 0; font-size: 0.9rem; font-style: italic; }
+.map-region__grid {
+  position: relative; justify-self: start; width: fit-content; max-width: 100%; margin-top: 10px; padding: 22px 26px 18px; overflow-x: auto; white-space: pre; border-radius: 2px;
+  background: #EFE6CF; color: #3A2E1E; transform: rotate(-0.4deg); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  font: 600 1rem/1.2 var(--studio-mono); letter-spacing: 0.2em;
+}
+.map-region__grid::before {
+  content: ''; position: absolute; top: -8px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #E07A6A, #8E2F24); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+.map-marks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.map-marks__label, .map-deepen__label, .map-check__label, .map-draw__pinned-title {
+  width: 100%; font: 600 0.68rem var(--studio-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-dim);
+}
+.map-mark, .map-tool, .map-inked, .pinned-card {
+  min-height: 44px; padding: 0 14px; border-radius: 3px; cursor: pointer;
+  border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink); font: 600 0.92rem var(--studio-body);
+}
+.map-mark:hover, .map-tool:hover, .map-inked:hover, .pinned-card:hover { background: color-mix(in srgb, var(--color-card) 75%, var(--color-ink) 8%); }
+.map-tool--active, .map-inked--active { border-color: var(--studio-gold); box-shadow: inset 0 -2px 0 var(--studio-gold); }
+.map-tool { min-width: 64px; }
+.map-tool--undo { min-width: 88px; }
+.map-deepen { display: grid; gap: 8px; margin-top: 10px; padding-top: 14px; border-top: 1px dashed var(--color-card-edge); }
+.map-deepen__row, .map-sketch, .map-draw__row, .map-draw__keep { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.map-deepen__input, .map-sketch__input, .map-draw__keep-name {
+  flex: 1 1 240px; min-height: 44px; padding: 0 12px; border-radius: 3px; border: 1px solid var(--color-card-edge);
+  background: var(--color-bg); color: var(--color-ink); font: 1rem var(--studio-body);
+}
+.map-deepen__err, .map-sketch__err { width: 100%; margin: 0; font-weight: 700; color: var(--color-ink); }
+.map-enhance { display: grid; gap: 6px; padding: 16px 18px; border-radius: 3px; background: color-mix(in srgb, var(--studio-gold) 10%, var(--color-card)); border: 1px solid color-mix(in srgb, var(--studio-gold) 40%, transparent); }
+.map-enhance__title { font: 700 1rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
+.map-enhance__desc { margin: 0; color: var(--color-ink); }
+.map-enhance__details { margin: 0; padding-left: 18px; }
+.map-check { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 14px 18px; border: 1px dashed var(--color-card-edge); border-radius: 3px; }
+.map-check__label { width: auto; }
+.map-check__value { color: var(--color-ink); }
+.map-check__value--ok::before { content: 'ok \00B7 '; font-weight: 700; }
+.map-check__value--warn::before { content: 'needs a look \00B7 '; font-weight: 700; }
+.map-draw { display: grid; gap: 14px; padding: 28px 28px 26px; background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px;
+  box-shadow: inset 0 0 0 5px var(--color-card), inset 0 0 0 6px color-mix(in srgb, var(--color-card-edge) 60%, transparent); }
+.map-draw__note, .map-draw__ink { margin: 0; font-size: 0.92rem; }
+.map-draw__ink { color: var(--color-ink); min-height: 1.4em; }
+.map-pots { display: flex; flex-wrap: wrap; gap: 8px; }
+.map-inked { display: inline-flex; align-items: center; gap: 10px; padding: 0 14px 0 8px; }
+.map-inked__char { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.35); font: 600 0.9rem var(--studio-mono); color: #F4EEDD; }
+.map-inked__label { font-size: 0.88rem; }
+.map-canvas { display: inline-block; max-width: 100%; overflow-x: auto; padding: 10px; border-radius: 3px; background: #0E1512; border: 8px solid var(--studio-wood); }
+.map-canvas:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 3px; }
+.map-canvas__row { display: flex; }
+.map-cell {
+  position: relative; flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.45); font: 600 0.9rem var(--studio-mono); color: #F4EEDD;
+}
+.map-cell:hover { z-index: 1; box-shadow: inset 0 0 0 2px rgba(216, 170, 78, 0.6); }
+.map-cell:focus-visible { z-index: 2; outline: 2px solid var(--studio-gold); outline-offset: -2px; }
+.map-cell--solid { box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.55); }
+.map-cell--marked { box-shadow: inset 0 0 0 2px rgba(216, 170, 78, 0.8); }
+.map-draw__tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.map-draw__check { margin: 0; padding: 12px 14px; border-radius: 3px; border: 1px solid var(--color-card-edge); color: var(--color-ink); }
+.map-draw__check--good::before { content: 'Ready \00B7 '; font-weight: 700; }
+.map-draw__check--bad::before { content: 'Not yet \00B7 '; font-weight: 700; }
+.map-draw__pinned { display: grid; gap: 10px; }
+.pinned-card { display: grid; gap: 2px; justify-items: start; padding: 10px 14px; text-align: left; border-style: dashed; }
+.pinned-card__name { font: 700 0.95rem var(--studio-engraved); color: var(--color-ink); }
+.pinned-card__lore { font-size: 0.85rem; color: var(--color-ink-dim); }
+
+/* ------------------------------------------------------------
    9. States, notes, and panels
    ------------------------------------------------------------ */
 .empty, .loading { display: grid; justify-items: center; gap: 6px; padding: 36px 16px; text-align: center; color: var(--color-ink-dim); }

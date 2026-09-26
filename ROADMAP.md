@@ -30,13 +30,18 @@
       Hall (creed plaque, the town window framed in wood, keepsake shelves,
       the household with portraits; its pressed-leaves shelf had the same
       blank-text bug as the Chronicle, now fixed) and Settings (Bolt, the
-      face of Spark, gets a card that says in words whether Spark runs).
+      face of Spark, gets a card that says in words whether Spark runs), and
+      the Map Room (regions as pinned scraps with their survey, the drawing
+      table with ink pots and a 44px tile grid in a wooden frame). Map fix:
+      the pack check posted no JSON body, so `/api/builder/validate`
+      answered 422 and the room always read "the pack won't answer";
+      `web/js/api.js` now sends `{}` and the check reads "ok".
       Old `app.css` rules for rebuilt rooms are deleted as each room lands.
       Chronicle fix: actions, npc lines and
       letters no longer render as blank rows; runs of actions fold into
       one line (`web/js/chronicle.js`, pinned by
-      `tests/test_web_chronicle.py`). Still to rebuild: Map Room, first walk,
-      resident folio.
+      `tests/test_web_chronicle.py`). Still to rebuild: first walk, resident
+      folio; then `web/app.css` is deleted.
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +

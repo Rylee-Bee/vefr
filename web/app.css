@@ -440,67 +440,6 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════
-   THE MAP ROOM — spatial, the world laid out
-   ══════════════════════════════════════════════════════════ */
-
-.map-room {
-  padding: 88px 36px 32px;
-  overflow-y: auto;
-  flex: 1;
-}
-.map-room__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim, #A39E92);
-  margin-bottom: 20px;
-  opacity: 0.7;
-}
-.map-region { margin-bottom: 36px; }
-.map-region__name {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary, #F5F3EC);
-  margin-bottom: 14px;
-  text-transform: capitalize;
-  letter-spacing: 0.04em;
-}
-.map-region__grid {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 18px;
-  line-height: 1.15;
-  letter-spacing: 0.22em;
-  color: var(--text-muted, #C2BDB0);
-  background: rgba(26, 24, 20, 0.5);
-  border: 1px solid rgba(139, 119, 90, 0.12);
-  border-radius: 4px;
-  padding: 24px 28px;
-  overflow-x: auto;
-  white-space: pre;
-  position: relative;
-  transform: rotate(-0.2deg);
-  box-shadow:
-    2px 3px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(201, 173, 107, 0.03);
-}
-.map-region__grid::before {
-  content: 'the region';
-  position: absolute;
-  top: -8px; left: 18px;
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 9px;
-  font-style: italic;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim, #A39E92);
-  background: var(--bg-primary, #1e1b16);
-  padding: 0 8px;
-}
-
-/* ══════════════════════════════════════════════════════════
    THE FOLIO — speak to the household
    ══════════════════════════════════════════════════════════ */
 
@@ -857,20 +796,8 @@ body {
 
 
 
-/* ══════════════════════════════════════════════════════════
-   THE BENCHES — rooms use the whole room, builders get a bench
-   (appended overrides; motion stays off by default)
-   ══════════════════════════════════════════════════════════ */
 
-/* Rooms span the full screen; their content stays a readable column */
-.map-room {
-  max-width: none;
-}
-.map-room > * {
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
-}
+
 
 /* Centered quiet states, wherever they land */
 .loading, .empty { max-width: 640px; margin-left: auto; margin-right: auto; }
@@ -904,170 +831,38 @@ body {
   min-width: 108px;
 }
 
-/* ── The Map Room: the survey bench ───────────────────── */
 
-.map-bench { margin-top: 4px; }
-.map-regions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 26px;
-  align-items: flex-start;
-}
-.map-region {
-  flex: 1 1 480px;
-  max-width: 660px;
-  margin-bottom: 0;
-  padding: 22px 24px 20px;
-  background: rgba(26, 24, 20, 0.35);
-  border: 1px solid rgba(139, 119, 90, 0.12);
-  border-radius: 8px;
-  box-shadow:
-    2px 3px 10px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(201, 173, 107, 0.03);
-}
-.map-region__name { margin-bottom: 4px; }
-.map-region__survey {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12px;
-  color: var(--text-dim, #A39E92);
-  margin: 0 0 14px;
-  opacity: 0.85;
-}
-.map-region__grid { width: 100%; }
 
-/* Every mark is a door into a question */
-.map-marks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-top: 16px;
-}
-.map-marks__label {
-  width: 100%;
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-style: italic;
-  color: var(--text-dim, #A39E92);
-  opacity: 0.8;
-  margin-bottom: 2px;
-}
-.map-mark {
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.5);
-  color: var(--text-muted, #C2BDB0);
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  font-style: italic;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-.map-mark:hover {
-  background: rgba(201, 173, 107, 0.07);
-  border-color: rgba(201, 173, 107, 0.35);
-  color: var(--gold, #C9AD6B);
-}
-.map-mark:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 2px; }
 
-/* Deepen a landmark */
-.map-deepen {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(139, 119, 90, 0.1);
-}
-.map-deepen__label {
-  display: block;
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--teal, #5B8A72);
-  margin-bottom: 10px;
-  opacity: 0.85;
-}
-.map-deepen__row { display: flex; gap: 10px; align-items: center; }
-.map-deepen__input {
-  flex: 1;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.7);
-  color: var(--text-body, #E8E5DF);
-  font-family: inherit;
-  font-size: 14px;
-}
-.map-deepen__input:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 1px; }
-.map-deepen__out { margin-top: 12px; }
-.map-deepen__out .loading { padding: 8px 0; }
-.map-deepen__err {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--danger, #B8543F);
-  margin: 0;
-}
-.map-enhance {
-  background: rgba(201, 173, 107, 0.05);
-  border: 1px solid rgba(201, 173, 107, 0.22);
-  border-radius: 6px;
-  padding: 14px 16px;
-}
-.map-enhance__title {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--gold, #C9AD6B);
-  margin-bottom: 6px;
-}
-.map-enhance__desc {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-body, #E8E5DF);
-  margin: 0 0 8px;
-}
-.map-enhance__details { padding-left: 18px; margin: 0; }
-.map-enhance__details li {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12.5px;
-  color: var(--text-muted, #C2BDB0);
-  margin: 5px 0;
-}
 
-/* The pack's own word */
-.map-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 28px;
-  padding: 12px 16px;
-  border: 1px dashed rgba(139, 119, 90, 0.18);
-  border-radius: 6px;
-}
-.map-check__label {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim, #A39E92);
-  opacity: 0.9;
-}
-.map-check__value {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--text-muted, #C2BDB0);
-}
-.map-check__value--ok { color: var(--teal, #5B8A72); }
-.map-check__value--warn { color: var(--danger, #B8543F); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── The Vault: the forge bench ───────────────────────── */
 
@@ -1160,199 +955,40 @@ body {
 
 
 
-/* ── The drawing table — a map maker with no markdown ── */
-.map-draw {
-  margin-top: 40px;
-  padding: 26px 24px 24px;
-  background:
-    radial-gradient(120% 90% at 50% -20%, rgba(201, 173, 107, 0.06), transparent 60%),
-    rgba(26, 24, 20, 0.35);
-  border: 1px solid rgba(139, 119, 90, 0.14);
-  border-radius: 10px;
-  box-shadow:
-    2px 3px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(201, 173, 107, 0.04);
-}
-.map-draw__title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 15px;
-  font-weight: 500;
-  font-style: italic;
-  letter-spacing: 0.02em;
-  color: var(--gold, #C9AD6B);
-  margin: 0 0 6px;
-}
-.map-draw__hint {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--text-dim, #A39E92);
-  margin: 0 0 20px;
-  opacity: 0.9;
-}
-.map-draw__note {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--text-dim, #A39E92);
-  margin: 0;
-}
 
-/* Ink pots — one brush per mark the pack really knows */
-.map-pots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.map-inked {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 0 16px 0 10px;
-  border-radius: 22px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.55);
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.map-inked:hover {
-  background: rgba(201, 173, 107, 0.07);
-  border-color: rgba(201, 173, 107, 0.35);
-}
-.map-inked--active {
-  border-color: rgba(201, 173, 107, 0.6);
-  background: rgba(201, 173, 107, 0.1);
-}
-.map-inked:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 2px; }
-.map-inked__char {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--ink, rgba(255, 255, 255, 0.06));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-primary, #F5F3EC);
-  font-family: UI-MONO, 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 14px;
-}
-.map-inked__label {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12px;
-  color: var(--text-muted, #C2BDB0);
-}
-.map-inked--active .map-inked__label { color: var(--gold, #C9AD6B); }
 
-/* The ink line — a live census of the sketch */
-.map-draw__ink {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12.5px;
-  color: var(--teal, #5B8A72);
-  margin: 0 0 14px;
-  min-height: 18px;
-}
 
-/* The canvas — a grid you press, not a file you edit */
-.map-canvas {
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 10px;
-  border: 1px solid rgba(139, 119, 90, 0.16);
-  border-radius: 8px;
-  background: rgba(18, 16, 12, 0.55);
-  outline: none;
-  scrollbar-width: thin;
-}
-.map-canvas:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 2px; }
-.map-canvas__row { display: flex; }
-.map-cell {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  font-family: UI-MONO, 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 15px;
-  color: var(--text-primary, #F5F3EC);
-  border: 1px solid rgba(0, 0, 0, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  cursor: pointer;
-  position: relative;
-  transition: box-shadow 0.15s;
-}
-.map-cell:hover { z-index: 1; box-shadow: inset 0 0 0 1px rgba(201, 173, 107, 0.5); }
-.map-cell:focus-visible {
-  z-index: 2;
-  outline: 2px solid var(--ring, var(--gold, #C9AD6B));
-  outline-offset: -2px;
-}
-.map-cell--solid { box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.55); }
-.map-cell--marked { box-shadow: inset 0 0 9px rgba(201, 173, 107, 0.35); }
 
-/* Sketch new land */
-.map-sketch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin: 16px 0 0;
-}
-.map-sketch__input {
-  flex: 1 1 260px;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.7);
-  color: var(--text-body, #E8E4DA);
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-}
-.map-sketch__input:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 1px; }
-.map-sketch__err {
-  width: 100%;
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12.5px;
-  color: var(--danger, #B8543F);
-  margin: 0;
-}
 
-/* The actions row */
-.map-draw__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  margin-top: 18px;
-}
-.map-draw__keep {
-  display: flex;
-  flex: 1 1 320px;
-  gap: 10px;
-  align-items: center;
-}
-.map-draw__keep-name {
-  flex: 1;
-  min-width: 180px;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.7);
-  color: var(--text-body, #E8E4DA);
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-}
-.map-draw__keep-name:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 1px; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── The household listens & keeps · 2026-09-15 ────────────
    The folio remembers and keeps notes; the Folks invite new
@@ -1464,88 +1100,22 @@ body {
   margin-top: 2px;
 }
 
-/* The drawing table — tools, the engine pacing, pinned sketches */
-.map-draw__tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin: 12px 0;
-}
-.map-tool {
-  min-height: 44px;
-  min-width: 64px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.22);
-  background: rgba(26, 24, 20, 0.6);
-  color: var(--text-body, #E8E5DF);
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  cursor: pointer;
-}
-.map-tool:hover { border-color: rgba(201, 173, 107, 0.45); }
-.map-tool--active {
-  border-color: rgba(201, 173, 107, 0.55);
-  background: rgba(201, 173, 107, 0.1);
-  color: var(--gold, #C9AD6B);
-}
-.map-tool:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 2px; }
-.map-tool--undo { min-width: 88px; }
-.map-draw__check {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 12px 0 4px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.14);
-  background: rgba(26, 24, 20, 0.4);
-  color: var(--text-body, #E8E5DF);
-}
-.map-draw__check--good {
-  border-color: rgba(91, 138, 114, 0.4);
-  color: var(--teal, #5B8A72);
-}
-.map-draw__check--bad {
-  border-color: rgba(184, 84, 63, 0.4);
-  color: var(--danger, #B8543F);
-}
-.map-draw__pinned { margin-top: 22px; }
-.map-draw__pinned-title {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--teal, #5B8A72);
-  margin-bottom: 10px;
-  opacity: 0.9;
-}
-.pinned-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px dashed rgba(139, 119, 90, 0.3);
-  background: rgba(26, 24, 20, 0.35);
-  cursor: pointer;
-  text-align: left;
-}
-.pinned-card:hover { border-color: rgba(201, 173, 107, 0.5); }
-.pinned-card:focus-visible { outline: 2px solid var(--ring, var(--gold, #C9AD6B)); outline-offset: 2px; }
-.pinned-card__name {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 14px;
-  color: var(--gold, #C9AD6B);
-}
-.pinned-card__lore {
-  font-size: 12px;
-  color: var(--text-dim, #A39E92);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* The Hall — the town behind glass */
 .hall-window {

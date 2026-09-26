@@ -1803,7 +1803,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="map-room" id="map-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band map-room" id="map-content"></div>';
       var container = el_screen.querySelector('#map-content');
       container.appendChild(loadingState('The map is drawing itself\u2026'));
 
@@ -1821,8 +1821,6 @@
           ));
           return;
         }
-        container.appendChild(h('div', { className: 'map-room__heading',
-          textContent: 'The world laid out' }));
         var rl = residentLine('map');
         if (rl) container.appendChild(rl);
 
