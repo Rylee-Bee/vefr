@@ -8,17 +8,19 @@
 
 **A story engine you run on your own machine. You bring the story. VEFR brings the world.**
 
-VEFR is a lightweight, self-contained game engine for text-driven
-playable worlds. It runs a walkable town, NPCs, whispers, items, a
-forge, and a bell — all shaped by a **world pack** (a folder of
-markdown and JSON that holds your story). The engine and the story
-are separate: anyone can take the engine and grow their own world.
+VEFR is a small, self-contained engine for story games you can walk
+around in: a town to explore, characters to talk to, items to find, and
+short lines of story ("whispers") written by a language model. What's in
+the world comes from a **world pack**, a folder of markdown and JSON that
+holds your story. The engine and the story are kept apart, so anyone can
+use the engine to make their own world.
 
-No cloud account. No subscription. CPU-only if you want. A small
-local model and a folder of markdown is enough to play.
+There's no cloud account or subscription, and it runs on a CPU. A small
+local model and a folder of markdown are enough to play.
 
-The workshop is a game studio the old Norse run: rooms are departments,
-each tended by a resident, under the World Tree.
+You make games in the **studio**: a game studio run by the old Norse,
+inside the World Tree. Each room is a department, and each has a resident
+who helps with it.
 
 ![The Studio: the world on the table, worlds on the walls, news, the residents](docs/screenshots/studio-home.jpg)
 
@@ -51,11 +53,10 @@ uv run uvicorn vefr.main:app --app-dir src --port 8820
 # -> open http://127.0.0.1:8820
 ```
 
-Walk with the pad, WASD, or arrows. `E` or tap talks to whoever is
-near. The tower's watch is geometry — safe pockets exist, and the
-world's tone narrows them as the phases turn. No model? The engine
-boots anyway — the town walks, the journal keeps, and the
-model-backed beats say so ("is the model loaded?").
+Walk with the on-screen pad, WASD or the arrow keys. Press `E` or tap
+to talk to whoever is nearby. Without a model the engine still runs:
+you can walk the town and the journal still records, and anything that
+needs the model tells you it isn't loaded.
 
 ### Package a single HTML file
 
@@ -64,32 +65,28 @@ ratatoskr weave
 # -> dist/sample-world-<date>.html  (one self-contained file)
 ```
 
-Prefer a browser? The served workshop's Desk has a **Make shareable
-file** button — it builds the current world the same way and offers a
-Download link (plus the phone's Share sheet where the browser supports
-sharing files). Same single HTML file, no terminal.
+No terminal? The studio's Desk has a **Make shareable file** button.
+It builds the current world the same way and offers a download (or your
+phone's Share sheet, where the browser supports sharing files).
 
-The exported file includes a title screen (world name, tagline,
-"enter" button) so it feels like a game within 3 seconds of opening.
-No server, no internet — the world's data is baked into the HTML.
+The file opens on a title screen with the world's name, its tagline and
+an "enter" button. Everything the world needs is inside the file.
 
-The packaged file is the engine's `web/` UI with your world pack
-inlined as JSON. Send it to someone — they open it in a browser
-(on a phone, on a tablet, on a desktop), point it at any
-OpenAI-compatible LLM URL, and play. No Python, no server, no
-internet. The packaged file is yours to release; the engine that
-built it isn't.
+Send it to someone and they can play it in any browser, on a phone,
+tablet or computer, with no Python, server or internet. They can point
+it at any OpenAI-compatible model for live lines, or play offline. The
+file you make is yours to release; the engine that built it keeps its
+own license (MPL-2.0).
 
 ### Play a finished demo
 
-One world, one file: **Burrito Journalism** — a journalism +
-taqueria simulation, woven from its pack with `ratatoskr weave
---pool 5` and published as a [release
-asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.0.0/burrito-journalism-2026-09-22.html).
-Download it, open it in any browser, and play: point it at any
-OpenAI-compatible LLM URL for live narration, or play the baked-in
-offline pool with nothing at all. The pack is CC BY 4.0; the
-engine that wove it is MPL-2.0.
+**Burrito Journalism**, a journalism and taqueria game, is published
+as a single [release
+asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.0.0/burrito-journalism-2026-09-22.html)
+(built with `ratatoskr weave --pool 5`). Download it and open it in any
+browser. Point it at an OpenAI-compatible model for live lines, or play
+offline with the lines built into the file. The pack is CC BY 4.0; the
+engine that built it is MPL-2.0.
 
 ## Build a world
 
@@ -97,34 +94,34 @@ A world pack is a folder of markdown and JSON. Two ways in:
 
 **By hand:**
 
-1. Copy `worlds/sample-world/` to `worlds/yours/` - or start from the
-   keys in `world.json` alone.
-2. Write your `logbok.md` (canon + the rules the engine must obey)
-   and `ledger.md` (seed whispers; the cadence compounds).
-3. Define phases and their tones, your bonds, your speakers, your
-   town grid and palette.
-4. `VEFR_WORLD=yours`. The engine does the rest.
+1. Copy `worlds/sample-world/` to `worlds/yours/`, or start from just
+   the keys in `world.json`.
+2. Write `logbok.md` (your canon and the rules the engine must follow)
+   and `ledger.md` (example whispers that set the voice).
+3. Define the phases and their tones, relationships, speakers, and the
+   town's map and colours.
+4. Set `VEFR_WORLD=yours` and start the engine.
 
-**By conversation** (`norns chat --name yours`): an interview, run
-against your own local ollama, drafts the canon, the theme colors,
-your phases, bonds, and one speaker's voice - starting from
-`worlds/sample-world/` (a known-valid scaffold) so the geometry can
-never break. The interview's flow is plain Python, never the model's
-call; the model only ever fills in prose or a hex color inside a
-schema it can't escape. Every write ends in `maplab.validate()` - you
-never have to trust your own edits, the tool always checks. The map
-itself stays the scaffold's in v1; grow it after with
+**By conversation** (`norns chat --name yours`): an interview with your
+local Ollama model drafts the canon, colours, phases, relationships and
+one speaker's voice. It starts from a copy of `worlds/sample-world/`, so
+the map is always valid. The interview's steps are fixed Python code;
+the model only fills in text or a colour inside a strict schema. Every
+save runs `maplab.validate()`, so a broken pack is caught immediately.
+The map starts as the sample's; reshape it afterwards with
 `norns build-map --segments`.
 
-The full walkthrough — every interview question, the fallbacks,
-map reshaping, weaving — is
+The full walkthrough (every interview question, what happens when the
+model fails, reshaping the map, building the file) is in
 [`docs/guides/world-creation.md`](docs/guides/world-creation.md).
-Which game an act plays - cooking, desk, and the pack-law fields
-(floor, tone, verbs, transitions): [`docs/guides/rulesets.md`](docs/guides/rulesets.md).
+Which kind of game each act plays (cooking, the newsroom desk) and the
+fields that control it (floor, tone, verbs, transitions) are in
+[`docs/guides/rulesets.md`](docs/guides/rulesets.md).
 
-### The bones and the flesh
+### The engine and the pack
 
-The repo split is the contract. The engine reads:
+The engine never contains story. Here's what it reads and what it
+doesn't:
 
 | The engine reads | The engine never reads |
 | --- | --- |
@@ -152,10 +149,10 @@ worlds/<name>/       a world pack - a story
   logbok.md          the world logbok - canon + style contract
   ledger.md          collected whispers - voice anchors, hand-curated
   map.md             the story's geometry, source of truth
-  voices/*.md        sealed voices (rules only; knowing stays sealed)
+  voices/*.md        how each character speaks (rules for the model)
 
-worlds/sample-world/ Emberfield - the teaching example (CC0 1.0,
-                     ships with the engine so it's shareable end to end)
+worlds/sample-world/ Emberfield, the example world (CC0 1.0, so it can
+                     be shared freely)
 
 web/                 the studio workshop (app.html + studio.css + app.js),
                      the woven player (packaged.html), studio art (web/art/),
@@ -163,27 +160,27 @@ web/                 the studio workshop (app.html + studio.css + app.js),
 tests/               pytest - pack contract, schemas, fallbacks
 ```
 
-No world pack ships tracked in this repo except the sample — the
-author's own game keeps its pack in a separate private repo and
-drops it into `worlds/<name>/` locally. One env var selects the
-world: `VEFR_WORLD=your-world`. You develop the engine here; you
-write the game there. Restart the engine so the loader re-reads the
-worlds dir.
+The only world pack in this repo is the sample. Real games keep their
+packs in their own repos and are placed in `worlds/<name>/` locally.
+`VEFR_WORLD=your-world` selects the world; restart the engine after
+adding one. Work on the engine here, and write the game there.
 
-If a future engine contributor (human or AI) reads the source and
-sees names that aren't theirs, that's a leak. The bones are
-empty until a pack mounts.
+If you find a specific game's names or text inside the engine source,
+that's a bug: the engine should know nothing about any game until a
+pack is loaded. A test enforces this.
 
 ### Design
 
-How hard the numbers bite is each world's own law, not the
-engine's: every act declares a `floor` - `costume` (the default:
-HP tracks as a number, the player never drops to zero, the bar
-is a *costume*), `story` (failure bends the narrative), or
-`stakes` (the numbers bite; the act's ruleset says how). Under
-the default floor the engine never gates the player on HP,
-attack, or roll results: the bell never rings bad, items can't
-be lost, NPCs always have a line.
+Each world decides how much the numbers matter. Every act declares a
+`floor`:
+
+- `costume` (the default): health is shown as a number but never drops
+  to zero. It's decoration.
+- `story`: failing changes what happens in the story.
+- `stakes`: the numbers really count; the act's ruleset says how.
+
+Under the default, nothing blocks the player on health or dice: items
+can't be lost, and characters always have something to say.
 
 The story structure follows the **Hero's Journey** through four
 phases:
@@ -195,23 +192,22 @@ phases:
 | `feared` | the tests, allies, enemies | **Kenaz** (the torch) |
 | `awed` | the revelation / the return | **Sowilo** (the sun) |
 
-Packs can rename their phase keys; the engine maps them by position.
-The runes thread through every generation prompt so the LLM's voice
-carries the journey shape — but the journey is never a gate.
+Packs can rename the phases; the engine matches them by order. Each
+phase's rune is included in the model's prompts to set the mood, but
+phases never block the player.
 
-**Deterministic vs. generative.** Everything except the rune cast
-is deterministic — the contract, the packs, the lore, the journal,
-the export. The rune cast is the one stochastic surface: same seed
-→ same cast within a minute, never replayed across sessions.
+**What's random.** Everything is predictable (the packs, lore, journal
+and export) except the rune cast. The same seed gives the same cast for
+about a minute, and a cast is never repeated across sessions.
 Full architecture: [`brain-socket.md`](docs/guides/brain-socket.md)
 (provider vs. brain) and [`bundled-brain.md`](docs/guides/bundled-brain.md)
 (zero-setup model fleet).
 
 ### Lore packs
 
-Three lore packs ship with the engine — data-only mood-boards under
+Three lore packs ship with the engine: mood boards made of data, in
 `worlds/lore/<name>/` (**`norse`**, **`historical-event`**,
-**`norse-runes`**):
+**`norse-runes`**).
 
 | File | Engine reads? | Author reads? |
 |---|---|---|
@@ -220,20 +216,19 @@ Three lore packs ship with the engine — data-only mood-boards under
 | `prompt.md` | no | **yes** (copy-paste into any LLM) |
 | `LICENSE.md` | no | yes (CC BY-SA 4.0 + attributions) |
 
-Call `/api/builder/lore` with the pack name + seed words to get
-`textures`, `names`, `questions` — mood, not canon; `norns chat`
-carries the mood into the interview. Add your own pack:
-`mkdir worlds/lore/<your-flavor>` and write the files — the engine
-discovers it, no PR required.
+Call `/api/builder/lore` with a pack name and some seed words to get
+`textures`, `names` and `questions`. They're for mood, not canon;
+`norns chat` uses them in its interview. To add your own, make
+`worlds/lore/<your-flavor>/` and write the files. The engine finds it
+automatically.
 
 ### Surface
 
-`world.json` may declare a `surface` field — `combat` (default, for
-back-compat), `investigation`, or `plain`. The surface is the
-*grammar* the player sees (HP bars, encounter prompts, investigation
-dice), never the engine's actual behavior; a pack that wants "no HP,
-no dice, just the bell and the whispers" declares
-`surface: "plain"` and the UI skips the RPG-looking panels.
+`world.json` can set a `surface`: `combat` (the default), `investigation`
+or `plain`. It only changes what the player sees (health bars, encounter
+prompts, investigation dice), not how the engine behaves. A pack that
+wants no health or dice at all sets `surface: "plain"`, and the player
+hides those panels.
 
 ## Run the engine
 
@@ -257,21 +252,20 @@ podman run -d --name vefr -p 8820:8820 \
   localhost/vefr:latest
 ```
 
-Published at `ghcr.io/rylee-bee/vefr`: `:latest` advances on every
-successful publish; `:sha-<full SHA>` is immutable — the documented
-rollback handle. The image contains the engine, web UI, and sample
-world; model-weights-included deployments see
+The image is published at `ghcr.io/rylee-bee/vefr`. `:latest` moves with
+every successful publish; `:sha-<full SHA>` never changes, so use it to
+roll back. The image holds the engine, the studio and the sample world.
+For an image with model weights included, see
 [`bundled-brain.md`](docs/guides/bundled-brain.md).
 
-`GET /api/health` returns `{"ok": true, ...}` when the engine is
-running — the health check does **not** require a model; the engine
-boots and serves the UI without one. Model-backed endpoints
-(`/api/rumor`, `/api/forge`, `/api/npc`, `/api/stefna`) error when
-no endpoint is configured. The model is replaceable machinery; the
-world is authoritative.
+`GET /api/health` returns `{"ok": true, ...}` when the engine is running.
+It doesn't need a model: the engine starts and serves the studio without
+one. The endpoints that use a model (`/api/rumor`, `/api/forge`,
+`/api/npc`, `/api/stefna`) return an error until one is configured.
+The model can always be swapped; the world pack is the source of truth.
 
-**Configuration.** Any `/v1/chat/completions` endpoint works —
-llama.cpp, Ollama, LM Studio, a phone on your LAN. The full
+**Configuration.** Any `/v1/chat/completions` endpoint works: llama.cpp,
+Ollama, LM Studio, or a phone on your network. The full
 variable table lives in [`GETTING_STARTED.md`](GETTING_STARTED.md);
 `example.env` is a fillable copy. Compose, volumes, phone
 backends, and pack mounting are covered by
@@ -288,68 +282,66 @@ podman run -d --name vefr -p 8820:8820 \
   localhost/vefr:latest
 ```
 
-**Compose:** `podman compose up -d` — full guide in
+**Compose:** `podman compose up -d`. The full guide is in
 [`docs/guides/install.md`](docs/guides/install.md) (change the
 world, point at an LLM, volumes).
 
-**Zero-setup brain:** the container ships a bundled brain —
-`podman run vefr` gives a fully playable game with no external LLM
-configuration (4-model fleet, ~4 GB RAM, CPU-only). Fleet, ports,
-and the swap guide: [`docs/guides/bundled-brain.md`](docs/guides/bundled-brain.md).
+**Built-in models:** a bundled image can include its own small models,
+so `podman run vefr` is playable with no model setup (four models,
+about 4 GB of RAM, CPU only). Models, ports and how to swap them:
+[`docs/guides/bundled-brain.md`](docs/guides/bundled-brain.md).
 
-**CLI:** `ratatoskr --help` (ops) / `norns --help` (craft) — the
-full command list, always in sync with the code.
+**CLI:** `ratatoskr --help` (running things) and `norns --help` (making
+things) list every command, straight from the code.
 
 ## A Play-Nice project
 
 This repository adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts)
-as its shared cooperation constitution — truth and evidence before
-generating content, explicit state, asking instead of guessing,
-and accessibility floors. See the
+as its shared working rules: evidence before generating content,
+explicit state, asking instead of guessing, and minimum accessibility
+standards. See the
 [adoption record](.project/contracts/adoption.yaml) for details.
 
 ## More docs
 
-- **New here?** `GETTING_STARTED.md` - install, run, build your own
-  world, no story content required.
-- **CLI reference:** `ratatoskr --help` / `norns --help` - the full
-  command list, always in sync with the code.
-- **Architecture:** `docs/guides/brain-socket.md` - VEFR owns reality,
-  brains are swappable, builder AI is proposal-only.
-- **API reference:** the running app serves interactive docs for
-  free at `/docs` (e.g. `http://127.0.0.1:8820/docs`) - every route,
-  every shape, try-it-out included. No separate file to keep in sync.
-- **Accessibility:** the Reading & sound panel (title-bar trigger,
-  English labels with Norse flavor) lets you set text size, line
-  spacing, font, contrast, colorblind-safe palette, motion, focus
-  ring, and density. Preferences live in localStorage; a
-  share-link button (`Deila`) gives you a URL you can paste into
-  another browser to apply them there. Idea credit: Fluid
-  Infusion (UI Options pattern), Atkinson Hyperlegible Next +
-  OpenDyslexic (SIL OFL, self-hosted under `web/fonts/`). See
-  `docs/guides/identity-terms-glossary.md` for the vocabulary.
-- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) - the gate
-  commands, the architectural principles, the do-not-sweep rules for
-  in-flight work.
-- **Security & private reporting:** [SECURITY.md](SECURITY.md) -
-  private vulnerability reporting, leaked-credential handling,
-  threat model, public-private boundary.
+- **New here?** `GETTING_STARTED.md`: install, run, and build your own
+  world. No story content needed.
+- **CLI reference:** `ratatoskr --help` and `norns --help` list every
+  command, straight from the code.
+- **Architecture:** `docs/guides/brain-socket.md`. VEFR decides what's
+  true; models are swappable; the building assistant only ever
+  proposes.
+- **API reference:** the running engine serves interactive docs at
+  `/docs` (for example `http://127.0.0.1:8820/docs`): every route and
+  shape, with try-it-out.
+- **Accessibility:** the studio's Boiler Room sets the contrast (Warm &
+  Easy, Bright & Clear, Nothing Hides), the reading font (Atkinson
+  Hyperlegible Next, OpenDyslexic, a serif, or your system font),
+  motion and sound. Nothing moves or makes a sound unless you turn it
+  on. The fonts are SIL OFL and self-hosted in `web/fonts/`. The
+  pattern is credited to Fluid Infusion's UI Options. See
+  `docs/guides/accessibility-contract.md` for the rules every screen
+  follows.
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md): the checks to
+  run, the design principles, and what not to touch while work is in
+  progress.
+- **Security:** [SECURITY.md](SECURITY.md): private vulnerability
+  reporting, what to do about leaked credentials, the threat model,
+  and what stays private.
 - **What's landed, what's next:** `ROADMAP.md`.
 
 ## Attribution
 
-- Dependencies: fastapi, uvicorn, httpx, pydantic (MIT/BSD-3) -
+- Dependencies: fastapi, uvicorn, httpx, pydantic (MIT/BSD-3),
   declared in `pyproject.toml`; their notices ship in the wheels.
 - Model: Qwen (Apache-2.0); outputs are shaped by this repo's
   prompts and reviewed by a human before they become canon.
 - Code co-written with Kilo (AI) at the author's direction.
-- Idea credits - framing borrowed from projects whose stacks
-  didn't fit, with thanks:
-  OpenPixel-RPG (MIT) for the whitebox pattern - a deterministic
-  blueprint a generative model must respect; RPG-JS (MIT) for
-  prompting the render-target contract - any future renderer reads
-  `/api/world`; ink + inkjs (MIT) for the authored-branching idea
-  shelved for packs.
+- Ideas borrowed, with thanks, from projects we didn't build on:
+  OpenPixel-RPG (MIT) for the whitebox pattern (a fixed blueprint a
+  model must respect); RPG-JS (MIT) for the idea that any future
+  renderer reads `/api/world`; ink and inkjs (MIT) for authored
+  branching, saved for later.
 - Engine license: MPL-2.0 (see `LICENSE`) for the engine source
   under `src/`, `web/` (except `web/art/`), `tests/`, `scripts/`, `docs/`, `deploy/`,
   and `Containerfile`. Sample world (`worlds/sample-world/`) is
@@ -358,7 +350,7 @@ and accessibility floors. See the
   The workshop's studio art in `web/art/` is CC BY-SA 4.0 (see
   `web/art/README.md`).
   Any other world pack dropped into `worlds/<name>/` locally is
-  that pack's own author's property - the engine grants no license
+  its own author's property. The engine grants no license
   to story content, and carries none in this repo.
 - See `THIRD_PARTY_NOTICES.md` for bundled web fonts (SIL OFL 1.1)
   and third-party dependency notices.
@@ -375,8 +367,8 @@ uv run --group test norns validate --pack worlds/sample-world
 python3 scripts/check_public_surface.py
 ```
 
-The last command is the **public-surface guard** — it fails the
-build if the tracked tree contains private LAN IPs, real hostnames,
-the operator's SSH user, private filesystem paths, or obvious
-credential formats. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+The last command is the **public-surface guard**. It fails the build
+if the repository contains private network addresses, real hostnames,
+the operator's SSH user, private file paths, or anything that looks
+like a credential. See [CONTRIBUTING.md](CONTRIBUTING.md) and
 [SECURITY.md](SECURITY.md) for the contract.
