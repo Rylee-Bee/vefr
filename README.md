@@ -75,10 +75,12 @@ speech, choices and health drawn over it and a pause menu (`Esc`) for
 the journal. Everything the world needs is inside the file.
 
 Send it to someone and they can play it in any browser, on a phone,
-tablet or computer, with no Python, server or internet. They can point
-it at any OpenAI-compatible model for live lines, or play offline. The
-file you make is yours to release; the engine that built it keeps its
-own license (MPL-2.0).
+tablet or computer, with no Python, server, internet or model. Models
+help while you make the game, in the studio; the finished file is
+complete on its own ([ADR 0003](docs/adr/0003-models-in-the-studio.md)).
+A game can still offer players an optional model of their own for fresh
+lines. The file you make is yours to release; the engine that built it
+keeps its own license (MPL-2.0).
 
 ### Play a finished demo
 
