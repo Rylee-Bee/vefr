@@ -239,6 +239,15 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 .greeter__who { display: grid; gap: 2px; justify-items: start; }
 .greeter__name { font: 700 1rem var(--studio-engraved); letter-spacing: 0.05em; color: #FFF8E8; }
 .greeter__craft { font: 0.66rem var(--studio-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--studio-iron-dim); }
+/* Fróði's paddle: a note card pinned to a little wooden handle. The words
+   stay in the body face for legibility; the shape carries the character. */
+.paddle { display: inline-flex; flex-direction: column; align-items: center; margin: 4px 0 8px; }
+.paddle__note { margin: 0; padding: 8px 12px; max-width: 18rem; background: #F4EEDD; color: #2A241B;
+  border: 2px solid var(--studio-wood-light); border-radius: 4px; font-size: 0.95rem; line-height: 1.35;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); transform: rotate(-1.5deg); }
+.paddle__handle { width: 10px; height: 22px; margin-top: -2px; background: var(--studio-wood-light);
+  border-radius: 0 0 4px 4px; }
+@media (prefers-reduced-motion: reduce) { .paddle__note { transform: none; } }
 .greeter__says { margin: 4px 0 8px; font-size: 0.9rem; font-style: italic; color: #E6DECB; }
 .greeter__ask { color: #F2ECDD; border-color: var(--studio-iron-edge); }
 .portrait {
