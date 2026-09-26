@@ -8,23 +8,28 @@
 
 ## Phase
 
-**Game plan Phase 1 → 2, engine running ahead of the game.**
-The engine is the bones; the demo game is the flesh, built in a
-separate private pack repo. The plan is one playable act per slice,
-and each act's fun gate must pass before the next begins.
+**The studio grows by building its first game (owner, 2026-09-25).**
+The engine is the bones; games are the flesh, in private pack repos.
+The engine now grows one ruleset at a time, each one pulled in by the
+first studio project: a classic town-and-dungeon roguelike remake in a
+private pack. The owner learns game-making by building it; the engine
+gets fun and accessible by carrying it. The BJ pack is paused and
+becomes the **launch title** later.
 
-| Slice | Engine (this repo) | Game pack (BJ repo) |
+| Slice | Engine (this repo) | Pack |
 |---|---|---|
 | Phase 0 — boundary | Done, PR #23 | — |
-| Act 1 — cooking | Ruleset + act-runner, PR #24 | Content proposed; **owner taste-pass pending** |
-| Act 2 — desk | Ruleset + world-knowledge loop, PR #27 | Not started |
+| Act 1 — cooking | Ruleset + act-runner, PR #24 | BJ: paused (launch title later) |
+| Act 2 — desk | Ruleset + world-knowledge loop, PR #27 | BJ: paused |
 | Rulesets guide | `docs/guides/rulesets.md`, PR #28 | — |
+| **Library** (next) | Ruleset: authored books, notes and terminals found in the world, kept, fed to the book export | First studio project |
+| Delve (proposed) | Ruleset: floors, items, weight, spells, turns | First studio project |
 
-**The one next step:** the owner plays Act 1 as the woven file (the
-"smile test"). Build published 2026-09-25 to the owner's dev gallery
-(`burrito-journalism`, build `2026-09-25-b679fe0`). Only after it passes: bump the BJ pack's vefr pin
-(it is on `fc0e798`, before the desk ruleset) and write Act 2 content.
-Do not start engine work for Act 3+ until Act 2 has been played.
+**The one next step:** the Library ruleset, built through the checklist
+in `docs/guides/rulesets.md`. The owner approved this pack-contract
+change on 2026-09-25; each later ruleset is its own ask-first.
+The old "play Act 2 before Act 3+ engine work" gate is retired by owner
+decision (estate vision doc Q9).
 
 ## Where things live
 
