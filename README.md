@@ -17,13 +17,17 @@ are separate: anyone can take the engine and grow their own world.
 No cloud account. No subscription. CPU-only if you want. A small
 local model and a folder of markdown is enough to play.
 
-![The Foyer — warm parchment, first-walk rail, room navigation](docs/screenshots/workshop-landing.png)
+The workshop is a game studio the old Norse run: rooms are departments,
+each tended by a resident, under the World Tree.
 
-![The Desk — ASCII map, creed, "Ring for the Storyteller"](docs/screenshots/workshop-desk.png)
+![The Studio: the world on the table, worlds on the walls, news, the residents](docs/screenshots/studio-home.jpg)
 
-![Title card — world name, tagline, enter button](docs/screenshots/export-title-card.png)
+| | |
+|---|---|
+| ![The Desk: the brief, the creed, the map pinned like a scrap](docs/screenshots/studio-desk.jpg)<br>The Desk | ![The Library: reading a book one page at a time](docs/screenshots/studio-library-reading.jpg)<br>The Library |
+| ![The woven player's title card](docs/screenshots/export-title-card.jpg)<br>The shareable file | ![The Studio on a phone](docs/screenshots/studio-home-phone.jpg)<br>On a phone |
 
-![Play surface — config box, world header, ready to play](docs/screenshots/export-play-surface.png)
+**[See every room in the screenshots gallery →](docs/screenshots/README.md)**
 
 Three things to do with it: **[open it and play](#open-and-play)**,
 **[build a world](#build-a-world)**, **[run the engine](#run-the-engine)**.
@@ -153,7 +157,9 @@ worlds/<name>/       a world pack - a story
 worlds/sample-world/ Emberfield - the teaching example (CC0 1.0,
                      ships with the engine so it's shareable end to end)
 
-web/                 parchment UI + canvas town (world-driven)
+web/                 the studio workshop (app.html + studio.css + app.js),
+                     the woven player (packaged.html), studio art (web/art/),
+                     the studio's own Library shelf (web/library/)
 tests/               pytest - pack contract, schemas, fallbacks
 ```
 

@@ -4,26 +4,26 @@ on:
   push:
     branches: [main]
     paths:
-      - 'web/packaged.html'
-      - 'web/screens/**'
-      - 'web/shell.*'
-      - 'src/vefr/weave.py'
+      - 'web/**'
+      - 'src/vefr/**'
       - 'worlds/sample-world/**'
       - 'scripts/capture-screenshots.py'
   workflow_dispatch:
 
+# Read-only: the gallery is uploaded as an artifact for review. The
+# committed gallery in docs/screenshots/ is refreshed by running the
+# script locally (see its docstring) and committing the result.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   capture:
-    name: capture workshop + export screenshots
+    name: capture the studio + player screenshots gallery
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        # zizmor: ignore[artipacked] because this workflow
-        # commits captured screenshots back to main; it needs the
-        # checkout token. Scope is contents: write on main only.
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
@@ -37,7 +37,7 @@ jobs:
         run: uv sync --group test
 
       - name: Install Playwright chromium
-        run: uv run playwright install chromium --with-deps
+        run: uv run --group test playwright install chromium --with-deps
 
       - name: Start engine (sample-world, no model)
         run: |
@@ -51,11 +51,13 @@ jobs:
         run: uv run ratatoskr weave --pack worlds/sample-world
 
       - name: Capture screenshots
-        run: uv run python scripts/capture-screenshots.py
+        run: uv run --group test python scripts/capture-screenshots.py
 
       - name: Upload screenshots as artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: screenshots-${{ github.sha }}
-          path: docs/screenshots/*.png
+          path: |
+            docs/screenshots/*.jpg
+            docs/screenshots/README.md
           retention-days: 30

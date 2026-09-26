@@ -96,11 +96,13 @@ Emberfield ships with the engine.
 
 **What you'll see:**
 
-![The Foyer — the landing page](docs/screenshots/workshop-landing.png)
-*The Foyer — your entry point. The project on the table, the pantry, and the first-walk rail.*
+![The Studio — the front door](docs/screenshots/studio-home.jpg)
+*The Studio: the world on the table, every world on the walls, news from the Chronicle, "Begin a new world", and the residents.*
 
-![The Desk — where worlds begin](docs/screenshots/workshop-desk.png)
-*The Desk — the creation workspace. Your world's map, creed, and the "Ring for the Storyteller" button.*
+![The Desk — where worlds begin](docs/screenshots/studio-desk.jpg)
+*The Desk: your world's brief, creed and map, "Ring for the Storyteller", and making the shareable file.*
+
+Every room is in the [screenshots gallery](docs/screenshots/README.md).
 
 > The engine boots fine with no model at all - the town walks, the
 > journal keeps, the vault stores. The model-backed beats (Whisper,
