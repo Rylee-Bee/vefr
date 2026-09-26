@@ -24,8 +24,21 @@
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined
     }).then(function (r) {
-      if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
-      return r.json();
+      return r.json().catch(function () { return null; }).then(function (data) {
+        if (!r.ok) {
+          /* Keep the server's own words (FastAPI's `detail`) and the
+             status, so a caller can tell 409 "replace?" from a plain
+             failure and show the reason rather than "409 Conflict". */
+          var detail = data && data.detail;
+          var msg = detail || (r.status + ' ' + r.statusText);
+          if (typeof msg !== 'string') msg = JSON.stringify(msg);
+          var err = new Error(msg);
+          err.status = r.status;
+          err.detail = detail;
+          throw err;
+        }
+        return data;
+      });
     });
   }
 
@@ -85,6 +98,7 @@
     enhanceMap:   function (q)    { return post('/api/builder/enhance/map', q); },
     mapPropose:   function (q)    { return post('/api/builder/map/propose', q); },
     mapCheck:     function (q)    { return post('/api/builder/map/check', q); },
+    mapBuild:     function (q)    { return post('/api/builder/map/build', q); },
     faceRoll:     function (q)    { return post('/api/builder/face/roll', q); },
     validate:     function ()     { return post('/api/builder/validate', {}); },
     verify:       function ()     { return post('/api/builder/verify'); },

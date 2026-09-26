@@ -1213,6 +1213,135 @@ def builder_map_check(payload: dict):
     return {"ok": not errors, "errors": errors}
 
 
+def _map_rows_from_payload(payload: dict) -> list[str]:
+    """The draft rows a build request carries, or a 422 explaining why not.
+
+    `grid` is what /api/builder/map/check already accepts (a list of
+    text rows); `segments` is the CLI's run-length shape
+    ({"rows": [[["H", 4], ...], ...]}) so a caller can replay a
+    `norns build-map` input verbatim. Both funnel through maplab's
+    own builders, so the rows are the same rows the CLI would use.
+    """
+    grid = payload.get("grid")
+    if grid is not None:
+        if not isinstance(grid, list) or not grid or not all(isinstance(r, str) for r in grid):
+            raise HTTPException(
+                status_code=422,
+                detail="the map needs a rectangular grid of text rows",
+            )
+        return grid
+    segments = payload.get("segments")
+    if segments is not None:
+        from .maplab import build_map
+
+        raw = segments.get("rows") if isinstance(segments, dict) else segments
+        try:
+            return build_map(raw)
+        except (KeyError, TypeError, ValueError, SystemExit) as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"those segments don’t build a map: {exc}",
+            ) from exc
+    raise HTTPException(
+        status_code=422,
+        detail="send a grid of text rows (or run-length segments) to build",
+    )
+
+
+def _map_file_target(pack: Path, w: dict) -> Path:
+    """The single file maplab.write_pack writes the map into.
+
+    Acts-shape packs (the served builder's own worlds) keep the map
+    in acts/<act>/<region>/map.md, exactly as write_pack() does.
+    Flat-shape packs keep it inside world.json. This mirrors
+    write_pack() so the backup lands on the file that is about to
+    be overwritten.
+    """
+    if "acts" in w or (pack / "acts").is_dir():
+        act_id = w.get("_act_id") or "act-1"
+        return pack / "acts" / act_id / "town" / "map.md"
+    return pack / "world.json"
+
+
+def _backup_map_file(target: Path) -> Path:
+    """Copy `target` beside itself as <name>.bak-<timestamp>.
+
+    Never overwrites an existing backup: a second build in the same
+    second gets a -2, -3, ... suffix, so no map is ever lost to a
+    fast double-commit.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    backup = target.with_name(f"{target.name}.bak-{stamp}")
+    n = 1
+    while backup.exists():
+        backup = target.with_name(f"{target.name}.bak-{stamp}-{n}")
+        n += 1
+    backup.write_bytes(target.read_bytes())
+    return backup
+
+
+@app.post("/api/builder/map/build")
+def builder_map_build(payload: dict):
+    """Commit a storyteller's sketch as this world's map - for real.
+
+    The drawing table proposes and checks; this is the one builder
+    route that writes. The draft runs through the same maplab.validate
+    gate as /api/builder/map/check first - a draft that doesn't hold
+    is refused with the validator's errors in words (422). An
+    existing map is never clobbered by accident: without `force` the
+    route answers 409, and only then does it write - through the
+    CLI's own path (maplab.write_pack), so the bytes match
+    `norns build-map` for the same input. The previous map file is
+    copied beside it as <name>.bak-<timestamp> before the overwrite.
+    Deterministic: no model call ever runs here.
+    """
+    from .maplab import load_pack, validate, write_pack
+    from .paths import pack_dir
+
+    name = _safe_world_name(payload.get("name"))
+    rows = _map_rows_from_payload(payload)
+    force = payload.get("force") is True
+
+    pack = pack_dir(name)
+    if not (pack / "world.json").is_file():
+        raise HTTPException(status_code=404, detail=f"pack not found: {pack.name}")
+    try:
+        w = load_pack(pack)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=f"couldn’t open the pack: {e}") from e
+    town = w.get("town") or {}
+    if not town.get("legend"):
+        raise HTTPException(status_code=422, detail="this world has no legend to draw a map with")
+
+    # The previous map survives in `previous` for the backup step;
+    # the draft replaces only the ground, everything else is the
+    # pack's own proven content.
+    previous = list(town.get("map") or [])
+    w["town"]["map"] = rows
+    errors = validate(w, pack_dir=pack)
+    if errors:
+        raise HTTPException(status_code=422, detail=" · ".join(errors))
+    if previous and not force:
+        raise HTTPException(
+            status_code=409,
+            detail="a map already exists — send force to replace it",
+        )
+
+    target = _map_file_target(pack, w)
+    backup_rel = None
+    if previous and target.is_file():
+        backup = _backup_map_file(target)
+        backup_rel = str(backup.relative_to(pack))
+    write_pack(pack, w)
+    # /api/world is cached; a committed map must show on the next read.
+    load_world.cache_clear()
+    return {
+        "written": True,
+        "path_rel": str(target.relative_to(pack)),
+        "backup_rel": backup_rel,
+    }
+
+
 @app.post("/api/builder/face/roll")
 def builder_face_roll(payload: dict):
     """Invite a new face: model-drafted, engine-placed, never written.
