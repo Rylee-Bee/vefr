@@ -190,7 +190,7 @@ def run(participants):
                            axe=best["axe"], error=best["error"], first_score=rounds[0].get("score", 0),
                            fixes_used=len(rounds) - 1, rounds=rounds)
                 rec["score"] = best["score"]
-                rec["pass"] = rec["renders"] and rec["score"] >= 5
+                rec["pass"] = rec["renders"] and rec["required_parts"] and rec["score"] >= 5
                 summary.append(rec)
                 (d / f"{tag}.json").write_text(json.dumps(rec, indent=1))
                 print(f"{key:<28} {tag:<22} {rec['first_score']}->{rec['score']}/6 {'PASS' if rec['pass'] else 'fail'} "

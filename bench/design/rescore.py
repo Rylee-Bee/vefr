@@ -38,7 +38,7 @@ def rescore(run_dir):
         new = dict(rec, was_score=rec.get("score"))
         if best:
             new.update(best[1], score=best[0])
-            new["pass"] = new["renders"] and new["score"] >= 5
+            new["pass"] = new["renders"] and new["required_parts"] and new["score"] >= 5
         out.append(new)
     (run_dir / "rescore.json").write_text(json.dumps(out, indent=1))
     return out
