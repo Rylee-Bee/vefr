@@ -138,6 +138,22 @@ def test_vefr_world_env_beats_the_override(home, monkeypatch):
     assert client.get("/api/world").json()["title"] == "Emberfield"
 
 
+def test_switch_refuses_when_env_pins_another_world(home, monkeypatch):
+    """With VEFR_WORLD set, 'active: true' would be a lie: refuse and say why."""
+    client = TestClient(app)
+    assert client.post(
+        "/api/builder/worlds", json={"name": "zulu", "title": "Zulu"}
+    ).status_code == 200
+    monkeypatch.setenv("VEFR_WORLD", "sample-world")
+    world_mod.load_world.cache_clear()
+    r = client.post("/api/builder/worlds/active", json={"name": "zulu"})
+    assert r.status_code == 409
+    assert "VEFR_WORLD" in r.json()["detail"]
+    assert client.get("/api/world").json()["title"] == "Emberfield"
+    # Choosing the pinned world itself is fine.
+    assert client.post("/api/builder/worlds/active", json={"name": "sample-world"}).status_code == 200
+
+
 def test_stale_override_falls_back_to_alphabetical(home, monkeypatch):
     monkeypatch.setattr(paths, "_ACTIVE_WORLD", "ghost-pack")
     assert paths.world_name() == "sample-world"
