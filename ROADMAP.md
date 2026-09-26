@@ -7,6 +7,33 @@
 
 ## Landed
 
+- [x] **chat: a drafted voice can't loop; dedupe at the draft seam**
+      (2026-09-26): the WP5 `norns chat` acceptance build left a voice file
+      that said the same sentence over and over (`.project/DECISIONS.md`,
+      2026-09-25). The artifact world was deleted as a test artifact, so the
+      file can't be re-read; the mechanism was reproduced instead with a fake
+      backend. **Cause:** nothing in the interview ever looked at what the
+      model *said*. `draft()`'s `format` pins the JSON shape, never the
+      content, so a small brain sampling at 0.85 that falls into a repetition
+      loop answers with perfectly valid JSON full of one repeated sentence —
+      and the interview wrote it to `voices/<name>.md` verbatim. The same hole
+      fed the logbok, phase moods, bond prose and the per-phase seeds.
+      **Fix:** `chat.dedupe_repeats()` — sentence-level, keeps the first
+      occurrence in order, preserves line breaks and bullet lists, never
+      invents text — applied at the one prose seam, `draft()`, which every
+      interview draft and `/api/builder/chat` pass through. A draft that comes
+      back empty now takes the retry → placeholder path instead of being
+      written blank. Tests:
+      `test_interview_voice_file_has_no_repeated_sentences` (a looping fake
+      backend; the saved voice file is read off disk),
+      `test_draft_returns_one_copy_of_a_looping_model`,
+      `test_dedupe_repeats_keeps_the_first_copy_and_the_order`. No live model
+      in any test; the engine stays game-neutral. **Found, not fixed here:**
+      the interview writes the first speaker's draft to the pack root's
+      `voices/<name>.md`, while an acts-shape pack's live voice file is the
+      region one (`acts/<act>/<region>/voices/` — `resolve_voice_file()`
+      prefers it). A separate path question, left alone under "smallest
+      change".
 - [x] **`ratatoskr spark status` tells the truth about a remote Spark**
       (2026-09-26): with Spark on another machine, the status command
       looked for the model file on this one and asked systemd over SSH
