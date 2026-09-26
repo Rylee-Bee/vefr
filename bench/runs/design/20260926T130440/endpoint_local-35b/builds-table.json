@@ -1,0 +1,62 @@
+{
+ "participant": "endpoint:local-35b",
+ "brief": "builds-table",
+ "repeat": 1,
+ "repair_max": 2,
+ "backend": "endpoint",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": false,
+ "required_parts": true,
+ "seconds": 36.5,
+ "tokens_out": 830,
+ "axe": [],
+ "error": null,
+ "first_score": 5,
+ "fixes_used": 2,
+ "rounds": [
+  {
+   "renders": true,
+   "workbench_only": true,
+   "accessible": true,
+   "phone_fit": true,
+   "targets_44": false,
+   "required_parts": true,
+   "score": 5,
+   "seconds": 11.8,
+   "tokens_out": 830,
+   "axe": [],
+   "error": null
+  },
+  {
+   "renders": true,
+   "workbench_only": true,
+   "accessible": true,
+   "phone_fit": true,
+   "targets_44": false,
+   "required_parts": true,
+   "score": 5,
+   "seconds": 12.2,
+   "tokens_out": 834,
+   "axe": [],
+   "error": null
+  },
+  {
+   "renders": true,
+   "workbench_only": true,
+   "accessible": true,
+   "phone_fit": true,
+   "targets_44": false,
+   "required_parts": true,
+   "score": 5,
+   "seconds": 12.5,
+   "tokens_out": 840,
+   "axe": [],
+   "error": null
+  }
+ ],
+ "score": 5,
+ "pass": true
+}

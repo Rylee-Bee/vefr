@@ -10,7 +10,10 @@ Runs in its own venv (onnxruntime, kokoro-onnx, kittentts, piper-tts,
 useful-moonshine-onnx, faster-whisper, soundfile, jiwer, pyarrow); model
 files live in VOICE_DATA (default ~/.cache/vefr-senses/data).
 
-    VOICE_DATA=... <venv>/bin/python -m bench.senses.voice
+    VOICE_DATA=... <venv>/bin/python -m bench.senses.voice [<key> ...]
+
+Kitten needs the official wheel (github.com/KittenML/KittenTTS releases,
+0.8.1); PyPI's `kittentts` is an old 0.1 build that can't load 0.8 models.
 """
 import io
 import json
@@ -118,7 +121,7 @@ SPEAKERS = [
 ]
 
 
-def run():
+def run(only=None):
     rid = time.strftime("%Y%m%dT%H%M%S")
     out = ROOT / "bench" / "runs" / "senses" / "voice" / rid
     out.mkdir(parents=True, exist_ok=True)
@@ -128,6 +131,8 @@ def run():
     audio_s = sum(c[2] for c in cl)
     listen = []
     for key, mb, make, lic in LISTENERS:
+        if only and key not in only:
+            continue
         rec = {"model": key, "size_mb": mb, "licence": lic}
         try:
             f = make()
@@ -142,6 +147,8 @@ def run():
     judge = whisper("small.en")
     speak = []
     for key, mb, make, lic in SPEAKERS:
+        if only and key not in only:
+            continue
         rec = {"model": key, "size_mb": mb, "licence": lic}
         try:
             f = make()
@@ -167,4 +174,5 @@ def run():
 
 
 if __name__ == "__main__":
-    print("evidence:", run())
+    import sys
+    print("evidence:", run(sys.argv[1:]))
