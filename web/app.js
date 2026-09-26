@@ -2130,6 +2130,7 @@
         census();
         cansBtn.hidden = false;
         btnKeep.disabled = false;
+        btnUse.disabled = false;
         firstWalk.attempt('map');
       }
       function floodFill(r, c) {
@@ -2167,6 +2168,7 @@
         census();
         cansBtn.hidden = false;
         btnKeep.disabled = false;
+        btnUse.disabled = false;
         firstWalk.attempt('map');
       }
       function focusCell(r, c) {
@@ -2270,7 +2272,7 @@
           b.addEventListener('click', function () {
             brush = ch;
             paintPots();
-            if (dirty) { cansBtn.hidden = false; btnKeep.disabled = false; }
+            if (dirty) { cansBtn.hidden = false; btnKeep.disabled = false; btnUse.disabled = false; }
           });
           pots.appendChild(b);
         });
@@ -2334,9 +2336,68 @@
       var keepWrap = h('div', { className: 'map-draw__keep' });
       keepWrap.appendChild(keepName);
       keepWrap.appendChild(btnKeep);
+      var btnUse = h('button', { className: 'btn btn--warm', type: 'button',
+        textContent: 'use as this world\u2019s map', disabled: true });
       actions.appendChild(cansBtn);
       actions.appendChild(sketchBtn);
       actions.appendChild(keepWrap);
+      actions.appendChild(btnUse);
+
+      /* Committing the drawing to the world — the one action that
+         writes. A refusal (422) is the engine's own words; an
+         existing map (409) is a question, never a silent clobber. */
+      var useNote = h('p', { className: 'map-draw__check', role: 'status',
+        'aria-live': 'polite', hidden: true });
+      var replaceRow = h('div', { className: 'map-draw__replace', hidden: true });
+      replaceRow.appendChild(h('p', { className: 'map-draw__replace-q',
+        textContent: 'Replace the current map? A backup is kept.' }));
+      var replaceYes = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Replace' });
+      var replaceNo = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Cancel' });
+      replaceRow.appendChild(replaceYes);
+      replaceRow.appendChild(replaceNo);
+
+      function commitMap(force) {
+        if (!dirty) return;
+        btnUse.disabled = true;
+        replaceRow.hidden = true;
+        useNote.hidden = false;
+        useNote.classList.remove('map-draw__check--good', 'map-draw__check--bad');
+        useNote.textContent = 'the engine is walking your new ground\u2026';
+        API.mapBuild({
+          grid: grid.map(function (r) { return r.join(''); }),
+          force: !!force
+        })
+          .then(function (res) {
+            dirty = false;
+            /* The world's map is now the truth; the local sketch is redundant. */
+            try { window.localStorage.removeItem(sketchKey); } catch (e) {}
+            studioAudio.clank();
+            ferryNote('your map is committed to this world'
+              + (res && res.backup_rel ? ' \u2014 the old map is kept beside it' : '') + '.');
+            enter();
+          })
+          .catch(function (err) {
+            if (err && err.status === 409) {
+              useNote.hidden = true;
+              replaceRow.hidden = false;
+              replaceYes.focus();
+              return;
+            }
+            useNote.textContent = (err && err.detail)
+              ? String(err.detail)
+              : 'the engine refused that map \u2014 check the ground and try again';
+            useNote.classList.add('map-draw__check--bad');
+          })
+          .finally(function () { btnUse.disabled = false; });
+      }
+      btnUse.addEventListener('click', function () { commitMap(false); });
+      replaceYes.addEventListener('click', function () { commitMap(true); });
+      replaceNo.addEventListener('click', function () {
+        replaceRow.hidden = true;
+        useNote.hidden = false;
+        useNote.classList.remove('map-draw__check--good', 'map-draw__check--bad');
+        useNote.textContent = 'left as it was \u2014 this world\u2019s map is unchanged.';
+      });
 
       var askBtn = h('button', { className: 'btn btn--ghost', type: 'button',
         textContent: 'ask the Cartographer about it' });
@@ -2382,6 +2443,7 @@
         render();
         cansBtn.hidden = true;
         btnKeep.disabled = true;
+        btnUse.disabled = true;
       });
 
       btnKeep.addEventListener('click', function () {
@@ -2448,6 +2510,7 @@
             render();
             cansBtn.hidden = false;
             btnKeep.disabled = false;
+            btnUse.disabled = false;
             ferryNote('the surveyor sketched \u201c' + truncate(story, 42) + '\u201d into new land\u2026');
           })
           .catch(function () {
@@ -2472,12 +2535,15 @@
       section.appendChild(canvas);
       section.appendChild(sketchRow);
       section.appendChild(actions);
+      section.appendChild(useNote);
+      section.appendChild(replaceRow);
       section.appendChild(checkNote);
       section.appendChild(pinned);
       paintPots();
       render();
       cansBtn.hidden = !dirty;
       btnKeep.disabled = !dirty;
+      btnUse.disabled = !dirty;
       return section;
     }
     function leave() {}

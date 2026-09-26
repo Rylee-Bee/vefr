@@ -29,6 +29,7 @@ BAD_CASES = [
     "/api/builder/import",
     "/api/builder/map/propose",
     "/api/builder/map/check",
+    "/api/builder/map/build",
     "/api/builder/face/roll",
     "/api/builder/weave",
     "/api/builder/chat",
@@ -103,6 +104,16 @@ def test_map_check_accepts_a_bare_pack_name(fixture_vefr_home):
     )
     assert r.status_code == 200, r.text
     assert r.json()["ok"] is True
+
+
+def test_map_build_accepts_a_bare_pack_name(fixture_vefr_home):
+    rows = ["#####", "#...#", "#.#.#", "#...#", "#####"]
+    r = TestClient(app).post(
+        "/api/builder/map/build",
+        json={"name": "four-phase-pack", "grid": rows, "force": True},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["written"] is True
 
 
 def test_face_roll_accepts_a_bare_pack_name(fixture_vefr_home, monkeypatch):

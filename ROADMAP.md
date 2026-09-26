@@ -24,6 +24,23 @@
       public-surface clean; axe-core over 11 rooms in night and day: zero
       serious/critical; 1440px + 390px screenshots: no errors, no sideways
       scroll.
+- [x] **Commit a map to the world from the page** (2026-09-25): the
+      drawing table could sketch and check but never write - "keep this
+      sketch" saved a keepsake to the vault. New
+      `POST /api/builder/map/build` validates the draft with maplab's own
+      gate (422 with the validator's errors in words), refuses to clobber
+      an existing map without `force` (409), then writes through the CLI's
+      path (`maplab.write_pack`), copying the previous map file beside it
+      as `<name>.bak-<timestamp>`. The pack name goes through
+      `safe_pack_name` (400). The map room gains "use as this world's map"
+      next to "keep this sketch" (≥44px, focus-visible, status in words;
+      409 asks "Replace the current map? A backup is kept." with
+      replace/cancel) and refreshes the world on success.
+      Tests: `tests/test_map_build.py` (invalid → 422 + nothing written;
+      valid → bytes match `norns build-map`; existing → 409; force →
+      replaced + backup; acts shape → `map.md` + backup + fresh
+      `/api/world`), plus the new route in the pack-name guard matrix.
+
 - [x] **The studio's own art** (2026-09-26): owner-commissioned art,
       web-sized WebP in `web/art/` (1.2 MB): ten resident portraits replace
       the placeholder drawings; every room header carries its banner under a
