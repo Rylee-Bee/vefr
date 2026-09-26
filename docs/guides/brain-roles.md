@@ -26,6 +26,24 @@ runs on ordinary CPUs (x86 and ARM), and lets any role be swapped.
 Runtimes: GGUF on llama.cpp for text and vision; whisper.cpp or ONNX for
 speech; stable-diffusion.cpp for images.
 
+## What we already measured
+
+The owner's Small Model Olympics (`bench/olympics`, suite 0.4.1, 27 models,
+53-task qualifier, 2026-09-13; summary in
+`bench/reports/QUALIFIER-TLDR-2026-09-13.md`) is the evidence to start from:
+
+- **Top:** qwen3-1.7b 76%, lfm2.5-2.6b 70%, ministral-3-3b 68%, falcon3-3b 66%.
+- **Middle:** gemma3-4b, phi-3.5-mini, phi-4-mini 64%; granite-4.1-3b,
+  qwen2.5-1.5b-tools, qwen2.5-3b 62%.
+- **Weak:** gemma3-1b 42%; qwen3.5-0.8b and -2b 30% and 28% (the report notes
+  a missing Q8_0 file and template fixes; retest before judging).
+- The earlier model search (`.project/archive/model-benchmarks-2026-09/`)
+  routed bounded tasks to Qwen2.5-1.5B (default) with Granite 4.1 3B as
+  fallback; ADR 0002 picked Ministral 3 3B as storyteller.
+
+Latencies in that campaign were measured on a contended GPU, so size and
+speed still need re-measuring on a plain CPU.
+
 ## Candidates by role (Hugging Face, 2026-09-26)
 
 Sizes are parameter counts; a 4-bit GGUF is roughly 0.6 GB per billion.
@@ -97,16 +115,18 @@ provider can be tied to any single role to lift it beyond the machine.
 
 | Profile | Roles | Rough download |
 |---|---|---|
-| **Tiny** (any laptop) | Qwen3.5-0.8B (Spark, vision, names) · granite-embedding-97m · Kitten TTS nano · Moonshine tiny · rules for sprites and sound | about 1 GB |
-| **Standard** | Tiny + a storyteller (MiniCPM5-2B or Ministral 3 3B) · Kokoro · Moonshine small | about 3–4 GB |
+| **Tiny** (any laptop) | Qwen3-1.7B (Spark and names; top of the olympics) · granite-embedding-97m · Kitten TTS nano · Moonshine tiny · rules for sprites and sound | about 1.5 GB |
+| **Standard** | Tiny + a storyteller (Ministral 3 3B or LFM2.5-2.6B, both proven; MiniCPM5-2B to test) + vision (MiniCPM-V-4.6) · Kokoro · Moonshine small | about 4–5 GB |
 | **Full** | Standard + image generation (FLUX.2-klein-4B) + translation (Hy-MT2) | about 7–8 GB |
 
 Any role in any profile can point at a provider instead.
 
 ## The bake-off (next step)
 
-Run every candidate on our own CPU, reusing the approach of ADR 0002's
-storyteller benchmark:
+The harness exists: add the new candidates as participants in
+`bench/olympics` (MiniCPM5-1B/2B, Gemma 4 E2B, Nanbeige4.2-3B, LFM2.5-230M,
+Granite 4.2 3B, SmolLM3-3B, and a Qwen3.5 retest), run the qualifier on a
+plain CPU, and add role-specific checks the olympics doesn't cover yet:
 
 - **Spark:** JSON-schema validity across a fixed set of studio edits; latency.
 - **Storyteller:** the continuity cases from ADR 0002; voice and character
