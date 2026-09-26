@@ -594,9 +594,12 @@ def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
     candidates = []
     own = player.get('title_art')
     if isinstance(own, str) and own:
-        p = (pack / own).resolve()
-        if p.is_relative_to(pack.resolve()):
-            candidates.append(p)
+        # Only a file inside the pack: resolve symlinks and '..', then
+        # require the pack's own real path as the prefix.
+        base = os.path.realpath(pack)
+        target = os.path.realpath(os.path.join(base, own))
+        if target.startswith(base + os.sep):
+            candidates.append(Path(target))
     candidates.append(web_dir / 'art' / 'illustrations' / 'player-title.webp')
     art = ''
     for p in candidates:
