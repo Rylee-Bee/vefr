@@ -4,6 +4,24 @@ What making a real game by hand taught us, and where each lesson belongs
 in the studio. Every workaround here is a feature the studio still owes
 the next person. Add to it as you go; newest first.
 
+## 2026-09-26 (evening): pictures
+
+- **One reference set can't serve thirteen worlds.** Painting every genre with the same few reference
+  pictures pulled them all toward our wood floor and rune pebble (a cyberpunk street painted as
+  floorboards). *In the studio:* each theme gets its own **anchors**, a ground and a wall painted from
+  words first; everything else in that theme uses those as references. Consistent within a theme,
+  still in one family through a written style guide.
+- **A reference is the strongest instruction.** "Match only the style" doesn't stop a model copying the
+  reference's objects and clothes; choose references that share nothing but the style.
+- **Keep the house style; offer others.** VEFR's own look stays storybook; other styles (pixel, flat,
+  watercolour, woodcut, low-poly) are options for other people's games, each with its own anchors and
+  add-on, never mixed in.
+- **Know where training art came from.** Every picture keeps its prompt and references beside it, so a
+  training set can be built from art we're free to train on (and never from outputs whose terms forbid it).
+- **A big local painter can follow one example.** FLUX.2-klein on a 16 GB GPU painted a new tile on our
+  own floorboards from one reference in 10 seconds: good for the studio's "Refine", and as a teacher
+  for the small painter.
+
 ## 2026-09-26: Cottage of the Breeze, day one
 
 Made by hand with Rylee: the brief, a title picture, a colour, stickers,
