@@ -692,6 +692,58 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
 .pinned-card__lore { font-size: 0.85rem; color: var(--color-ink-dim); }
 
 /* ------------------------------------------------------------
+   8h. The Library: Urðr's shelves and the reading desk
+   ------------------------------------------------------------ */
+.lib-room { display: grid; gap: 20px; }
+.lib-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 22px; align-items: start; }
+.lib-shelves { display: grid; gap: 20px; min-width: 0; }
+.lib-shelf { padding: 20px 20px 0; display: grid; gap: 12px; }
+.lib-shelf__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.lib-shelf__title { margin: 0; font: 700 1.15rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); }
+.lib-books {
+  display: flex; align-items: flex-end; gap: 8px; min-height: 164px; padding: 0 6px; overflow-x: auto;
+  border-bottom: 12px solid var(--studio-wood-light);
+  border-image: url('/static/art/textures/carved-wood.webp') 30 round;
+  box-shadow: 0 4px 0 var(--studio-wood);
+}
+.lib-spine {
+  flex: none; width: 50px; height: var(--spine-h, 130px); min-height: 44px; padding: 14px 0 0; cursor: pointer;
+  writing-mode: vertical-rl; text-align: start; border-radius: 3px 3px 0 0;
+  background: var(--spine, #2F5553); color: #F6EEDC; border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 10px 0 -7px rgba(216, 170, 78, 0.7), inset 0 -12px 0 -9px rgba(216, 170, 78, 0.7);
+  font: 700 0.74rem/1.1 var(--studio-engraved); letter-spacing: 0.06em;
+}
+.lib-spine:hover { filter: brightness(1.12); }
+.lib-spine[aria-pressed="true"] { outline: 2px solid var(--studio-gold); outline-offset: 2px; transform: translateY(-6px); }
+.lib-spine--note { width: 40px; background: #EFE6CF; color: #3A2E1E; }
+.lib-spine--terminal { background: #1F2A30; color: #9FD8C9; font-family: var(--studio-mono); }
+.lib-spine__title { display: block; max-height: 100%; overflow: hidden; }
+.lib-empty { margin: 0 0 14px; font-style: italic; align-self: center; writing-mode: horizontal-tb; }
+.lib-reader { position: sticky; top: 96px; padding: 26px 26px 22px; display: grid; gap: 10px; min-height: 320px; align-content: start; }
+.lib-reader__title { margin: 0; font: 700 1.5rem/1.2 var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
+.lib-reader__title:focus { outline: none; }
+.lib-reader__title:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 4px; }
+.lib-reader__hint { margin: 0; font-style: italic; }
+.lib-page {
+  padding: 22px 24px; border-radius: 2px; min-height: 220px;
+  background: url('/static/art/textures/parchment.webp') repeat center / 256px, #F4EEDD; color: #2A241B;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); font-size: 1.05rem; line-height: 1.7;
+}
+.lib-page p, .lib-page ul, .lib-page ol { margin: 0 0 12px; }
+.lib-page :last-child { margin-bottom: 0; }
+.lib-page strong { color: #1B1206; }
+.lib-reader__nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin-top: 6px; }
+.lib-reader__nav .cta { padding-inline: 10px; font-size: 0.72rem; letter-spacing: 0.08em; }
+.lib-reader__nav .cta:last-child { justify-self: end; }
+.lib-reader__count { font: 600 0.72rem var(--studio-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-dim); }
+.lib-ladder { width: clamp(90px, 11vw, 130px); }
+@media (max-width: 960px) {
+  .lib-grid { grid-template-columns: minmax(0, 1fr); }
+  .lib-reader { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { .lib-spine[aria-pressed="true"] { transform: none; } }
+
+/* ------------------------------------------------------------
    9. States, notes, and panels
    ------------------------------------------------------------ */
 .empty, .loading { display: grid; justify-items: center; gap: 6px; padding: 36px 16px; text-align: center; color: var(--color-ink-dim); }

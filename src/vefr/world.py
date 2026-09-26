@@ -397,6 +397,11 @@ def _apply_surface(world: dict, pack_name: str) -> None:
         )
 
 
+def _load_library(pack: Path) -> list[dict]:
+    from .library import load_library
+    return load_library(pack)
+
+
 @lru_cache(maxsize=8)
 def load_world(name: str | None = None) -> dict:
     """Load a world pack. Returns the always-array canonical shape.
@@ -485,6 +490,8 @@ def load_world(name: str | None = None) -> dict:
         "forge_texture": config.get("forge_texture", ""),
         "surface": config.get("surface", "combat"),
         "acts": acts,
+        # The Library: authored books (library/*.md); see library.py.
+        "library": _load_library(d),
         "_current_act": 0,
         "_shape": "acts" if acts_dir.is_dir() else "flat",
     }

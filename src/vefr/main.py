@@ -700,6 +700,40 @@ def spark_escalate():
         return {"ok": False, "error": f"{exc}", "decisions": []}
 
 
+@app.get("/api/library")
+def library_shelves(world: str | None = None):
+    """The Library: the current world's books and the studio's own shelf.
+
+    Books are authored markdown (worlds/<name>/library/*.md and the
+    engine's web/library/*.md); nothing here calls a model. Each book
+    carries its pages and how it is found, in words, for the reader.
+    """
+    from .library import found_words, load_library, load_shelf, studio_shelf_dir
+    from .paths import pack_dir
+
+    try:
+        name = safe_pack_name(world)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    try:
+        w = load_world(name)
+        pack = pack_dir(name)
+        world_books = load_library(pack)
+        title = w.get("title", "")
+    except Exception:  # a missing or broken pack still shows the studio shelf
+        world_books, title = [], ""
+
+    def shape(b: dict) -> dict:
+        return {k: b[k] for k in ("id", "title", "kind", "found", "at", "speaker", "when", "pages")} | {
+            "found_words": found_words(b)}
+
+    return {
+        "world": title,
+        "books": [shape(b) for b in world_books],
+        "studio": [shape(b) for b in load_shelf(studio_shelf_dir())],
+    }
+
+
 @app.get("/api/runes")
 def runes_registry():
     """The full 24-rune Elder Futhark registry for the gallery view.

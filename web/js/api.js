@@ -80,6 +80,7 @@
 
     // Runes
     runes:        function ()     { return get('/api/runes'); },
+    library:      function ()     { return get('/api/library'); },
     castRune:     function ()     { return get('/api/runes/cast'); },
 
     // AI / Evidence

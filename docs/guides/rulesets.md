@@ -71,6 +71,40 @@ routes: `POST /api/desk/verify`, `POST /api/desk/print`,
 `GET /api/desk/facts`; the single-file player runs the same loop
 client-side against the baked pool's truth.
 
+## library (books a world keeps)
+
+Not an act loop: a pack-level shelf every ruleset can use. A pack may
+carry `library/*.md`, one authored book per file:
+
+```markdown
+---
+title: A Miner's Note
+found: map        # shelf (default) | map | resident | earned
+at: [7, 4]        # map: the tile it lies on (walkable, in the town)
+speaker: keeper   # resident: the act voice that hands it over
+when: bell        # earned: bell | first-visit | act-complete | rumor-verified | book:<id>
+kind: note        # book (default) | note | terminal
+---
+The first page.
+
+* * *
+
+The second page.
+```
+
+A line holding only `* * *` starts a new page. The author writes every
+word; no model call touches a book. `maplab.validate` (and so `norns
+validate`) checks every book: a title, non-empty pages, a known `found`,
+a walkable `at` for map books, a real speaker for given books, a known
+`when` (or an existing `book:<id>`) for earned books, lowercase-dash
+file names. The loader carries them as `world["library"]`;
+`GET /api/library` serves the current world's books plus the studio's
+own shelf (`web/library/`, the game-making handbook); the workshop's
+Library room reads them a page at a time (`web/js/library.js`); the book
+export adds a "The Library" chapter. Finding books in play (on the map,
+from a resident, earned) is the next slice. Code: `src/vefr/library.py`;
+tests: `tests/test_library.py` + `tests/fixtures/make_library_pack.py`.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).
