@@ -81,6 +81,12 @@ VEFR_LLAMACPP_URL=http://127.0.0.1:8084 uv run norns chat --name your-world
 A prose draft that fails twice becomes a plain placeholder instead -
 you always get something to edit, never a crash mid-interview.
 
+A small brain can also fall into a repetition loop and answer with the
+same sentence over and over. The schema pins the JSON shape, not the
+words, so `draft()` collapses repeated sentences before the interview
+writes anything: your logbok, bonds, seeds and `voices/<name>.md` carry
+each sentence once.
+
 ## 3. Reshaping the map later
 
 `norns build-map` rebuilds the town map from a run-length segments
