@@ -1741,6 +1741,15 @@
       review.)
 
 ## Next
+- [ ] **Interview template** (from `docs/guides/studio-lessons.md`): residents
+      ask one question per turn, keep the author's words verbatim, recap before
+      saving. First users: the Desk (the brief) and the Folks (a character).
+- [ ] **Keep / Refine / Redo with pick-from-three** for every picture and draft;
+      refine takes plain words; unpicked options go to a spare parts shelf.
+- [ ] **Begin a new world starts blank**: placeholders marked "yours to write",
+      not another world's tagline, map and keeper.
+- [ ] **Say why when slow**: the status pill names a busy brain and offers the
+      no-model path.
 - (2026-09-16) `feat/dev-board` (123-commit orphan branch, dev-board UI
       chrome: repo header, file-tree, 4-col grid, drag-rank, right-rail
       stub) is **preserved on origin, unmerged** — assessment pending,
