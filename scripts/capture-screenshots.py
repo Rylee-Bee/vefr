@@ -108,7 +108,7 @@ def capture_studio(browser, shots):
 
 
 def capture_player(browser, shots):
-    """The woven single-file player: title, first run, and in game."""
+    """The woven single-file player: the title, and in game (Begin goes straight in)."""
     woven = sorted((ROOT / "dist").glob("sample-world-*.html"))
     if not woven:
         print("  skip player: no woven HTML in dist/ (run ratatoskr weave first)")
@@ -125,11 +125,6 @@ def capture_player(browser, shots):
         begin(page)
         page.screenshot(path=str(OUT / f"export-title-card{suffix}.jpg"), **SHOT)
         shots.append(("The shareable file", f"export-title-card{suffix}.jpg", f"The title screen ({scheme})"))
-        page.click("#ts-enter")
-        page.wait_for_timeout(400)
-        if page.is_visible("#config"):
-            page.screenshot(path=str(OUT / f"export-before-play{suffix}.jpg"), **SHOT)
-            shots.append(("The shareable file", f"export-before-play{suffix}.jpg", f"Before you play: offline, or bring a model ({scheme})"))
         page.close()
 
     # In game: the view fills the screen; a whisper lands in the speech box.
@@ -139,9 +134,6 @@ def capture_player(browser, shots):
         begin(page)
         page.click("#ts-enter")
         page.wait_for_timeout(400)
-        if page.is_visible("#cfg-offline"):
-            page.click("#cfg-offline")
-            page.wait_for_timeout(800)
         page.click("#whisper")
         page.wait_for_timeout(800)
         page.screenshot(path=str(OUT / f"export-in-game{tag}.jpg"), **SHOT)

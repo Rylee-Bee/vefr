@@ -108,9 +108,11 @@ VEFR_LLAMACPP_URL=http://127.0.0.1:8083 \
 `--pool N` needs a live model: it pre-generates N real lines per
 combination (dry run: 10 lines across `rumor:dusk`, `rumor:dawn`,
 `letter`, `forge`), then writes `dist/your-world-<date>.html`. Open
-it in any browser: the file carries the whole pack. Players choose
-"Play offline" (the pool and the characters' own lines carry the
-world) or connect their own model.
+it in any browser: the file carries the whole pack, and it plays
+completely without a model (see `docs/adr/0003`). By default the game
+never mentions models. To offer players an optional model of their own
+for fresh lines, add `"model": "optional"` to the `player` block below;
+it then appears under Model settings in the pause menu.
 
 ### The title screen
 
@@ -121,13 +123,15 @@ its buttons, in `world.json`:
 ```json
 "player": {
   "title_art": "assets/title.webp",
-  "accent": "#C98049"
+  "accent": "#C98049",
+  "model": "optional"
 }
 ```
 
 `title_art` is a path inside your pack (WebP, PNG or JPEG; around
 1400px wide keeps the file small). `accent` is a six-digit hex colour;
-the button text turns dark or light to stay readable on it.
+the button text turns dark or light to stay readable on it. `model` is
+optional too; leave it out and the game offers no model at all.
 
 ## Where your world lives
 
