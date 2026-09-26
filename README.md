@@ -84,6 +84,11 @@ keeps its own license (MPL-2.0).
 
 ### Play a finished demo
 
+**Emberfield**, the sample world, woven with the storybook player (title
+screen, in-game menus, plays with no model at all), is a single [release
+asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.1.0/emberfield-2026-09-26.html)
+in v2.1.0. Download it and open it in any browser.
+
 **Burrito Journalism**, a journalism and taqueria game, is published
 as a single [release
 asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.0.0/burrito-journalism-2026-09-22.html)
