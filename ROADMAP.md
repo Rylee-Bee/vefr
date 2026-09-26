@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **The studio comes alive** (2026-09-26): residents change faces:
+      the chat panel shows a resident thinking while they answer, happy when
+      they reply, and sleepy when no model answers (`chat.py`'s
+      "(draft failed" sentinel reply is now read as a failure, with an
+      honest message and no "keep this note" offer); greeters look sleepy
+      while the Storyteller is unreachable. Action poses sit beside what each
+      resident tends (the brief, the drawing table, the invite bench, the
+      forge, the cast card, the archive stairs, the boiler, the household).
+      The Floor opens with a cutaway of the World Tree (Codex-generated,
+      provenance in `web/art/README.md`) and carved room emblems; wood and
+      iron textures on the creed band, shelves and top bar; the app icon as
+      favicon; Ratatoskr waves goodbye in the footer. Words still carry every
+      meaning; pictures are decorative (`alt=""`) except the cutaway, which
+      is described. Gates: `pytest -q` 551 passed, 1 skipped; `ruff` clean;
+      public-surface clean; axe-core over 11 rooms in night and day: zero
+      serious/critical; 1440px + 390px screenshots: no errors, no sideways
+      scroll.
 - [x] **The studio's own art** (2026-09-26): owner-commissioned art,
       web-sized WebP in `web/art/` (1.2 MB): ten resident portraits replace
       the placeholder drawings; every room header carries its banner under a
