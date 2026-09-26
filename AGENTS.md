@@ -38,7 +38,7 @@ to this repo.
 | Path | Purpose |
 |---|---|
 | `src/vefr/` | The engine. `world.py` is the only seam between engine + story |
-| `web/` | Parchment UI + canvas town; `state.js` is the one client state |
+| `web/` | The studio workshop (`app.html`, `studio.css`, `app.js`; `state.js` is the one client state), the woven player (`packaged.html`), art (`web/art/`), the studio shelf (`web/library/`) |
 | `worlds/sample-world/` | Playable demo pack, acts shape, validates green |
 | `worlds/lore/` | Three lore packs (norse, historical-event, norse-runes) |
 | `tests/` | pytest suite, incl. node-vm harnesses for shipped JS |

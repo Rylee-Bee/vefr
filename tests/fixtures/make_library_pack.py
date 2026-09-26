@@ -25,7 +25,9 @@ def build(dest: Path, books: dict | None = None) -> Path:
     pack.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SAMPLE, pack)
     lib = pack / "library"
-    lib.mkdir(exist_ok=True)
+    if lib.exists():  # the sample world's own demo books are not the fixture's
+        shutil.rmtree(lib)
+    lib.mkdir()
     for name, text in (BOOKS if books is None else books).items():
         (lib / f"{name}.md").write_text(text, encoding="utf-8")
     return pack

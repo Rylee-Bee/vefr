@@ -37,8 +37,9 @@ Rule that keeps this honest:
 - What we port: the **no-chrome, in-world voice**. The conviction
   that a text game's interface should be a place ("the fire is
   dying", not "⚠ HP LOW") — status as narration, hierarchy expressed
-  by what's *said*, not by layout chrome. vefr's mood-note, lantern,
-  and room-signs are this idea in our own wood.
+  by what's *said*, not by layout chrome. vefr's mood-note, lantern
+  (the storyteller's reachability, in words), and resident greetings
+  are this idea in our own iron and wood.
 - What we do not port: its code, its prose, its setting.
 
 ## Twine / SugarCube themes — license varies per theme
@@ -71,7 +72,7 @@ Rule that keeps this honest:
    every interactive target ≥44px, luminance over hue, plain English
    first, motion off by default.
 3. The visual is rebuilt from vefr-theme.css tokens only, in
-   app.css, with the a11y floor (vefr-foundation.css) untouched.
+   studio.css, with the a11y floor (vefr-foundation.css) untouched.
 4. If the technique can't survive step 2, it doesn't ship.
 
 The household's faces, the room scenes, and the keepsake Hall are
