@@ -979,3 +979,18 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 .map-symbols__toggle { cursor: pointer; min-height: 44px; display: inline-flex; align-items: center;
   color: var(--color-ink-dim, var(--studio-iron-dim)); font-size: 0.9rem; }
 .map-inked__means { display: block; font-size: 0.78rem; opacity: 0.8; }
+
+/* "Keep it simple / Show me how things work" (prefs.js `workings`).
+   The skeleton (symbols, typed maps, counts) shows only on "show". */
+[data-prefs~="workings=simple"] .workings-only { display: none !important; }
+.workings { display: inline-flex; gap: 4px; margin: 0 0 16px; padding: 4px; border-radius: 999px;
+  border: 1px solid var(--color-card-edge); background: var(--color-card); }
+.workings__opt { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent;
+  color: inherit; font: inherit; cursor: pointer; }
+.workings__opt[aria-pressed="true"] { background: var(--studio-gold); color: var(--studio-gold-on); }
+/* Picture tiles on the drawing table */
+.map-cell { background-size: cover; background-position: center; }
+.map-cell__glyph { font: 600 0.8rem var(--studio-mono); color: #F4EEDD;
+  text-shadow: 0 0 3px #000, 0 0 2px #000; }
+.map-inked__tile { display: inline-block; width: 28px; height: 28px; border-radius: 4px; flex: none;
+  background-size: cover; background-position: center; border: 1px solid rgba(0, 0, 0, 0.4); }

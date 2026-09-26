@@ -38,3 +38,8 @@ the Floor's cutaway illustration, textures, the app icon and the wax seal.
 - License: Creative Commons Attribution-ShareAlike 4.0 International
   (CC BY-SA 4.0), the same as the lore packs in `worlds/lore/`. Owner
   decision, 2026-09-26. https://creativecommons.org/licenses/by-sa/4.0/
+
+  - `tiles/*.webp`: picture tiles for the Map Room (96px). Twelve surface
+    tiles (wood-floor, stone-wall, door, window, table, bench, fireplace,
+    bar-counter, barrel, rug, grass, path) and eight `dungeon-*` tiles. A
+    pack legend picks one with `"tile": "<name>"`.

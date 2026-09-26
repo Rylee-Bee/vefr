@@ -32,6 +32,7 @@
     motion:   'off',         /* off | subtle | full */
     focus:    'luminance',   /* luminance | accent */
     density:  'comfortable', /* comfortable | compact */
+    workings: 'simple',      /* simple | show: "Keep it simple / Show me how things work" (studio-modules.md) */
     sound: {
       effects: 0.7, speech: 0.8, ambience: 0.5,
       pairWithVisual: true,
@@ -89,7 +90,8 @@
       'palette=' + p.palette,
       'motion=' + p.motion,
       'focus=' + p.focus,
-      'density=' + p.density
+      'density=' + p.density,
+      'workings=' + (p.workings || 'simple')
     ].join(' ');  /* space-separated: the CSS reads tokens with [data-prefs~="..."] */
   }
 
