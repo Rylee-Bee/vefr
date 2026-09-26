@@ -250,6 +250,9 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 .greeter .portrait { background: #1E2A26; }
 .empty__squirrel img { width: 140px; height: 140px; object-fit: contain; }
 .empty__squirrel--room img { width: 240px; height: auto; }
+.hero__art--day { display: none; }
+html[data-light="day"] .hero__art--day { display: block; }
+html[data-light="day"] .hero__art--night { display: none; }
 .loading__squirrel { display: inline-block; }
 .loading__squirrel img { width: 56px; height: 56px; object-fit: contain; vertical-align: middle; }
 .portrait svg.portrait__icon { width: 44%; height: 44%; stroke: #E2BC6E; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -313,6 +316,7 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .world-begin__submit { width: fit-content; }
 .world-begin__status { margin: 0; min-height: 1.4em; font-size: 0.9rem; }
 
+.team-photo { display: block; width: 100%; height: auto; max-height: 420px; object-fit: cover; object-position: 50% 60%; border-radius: 4px; border: 1px solid var(--color-card-edge); margin-bottom: 18px; }
 .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
 .member { display: grid; justify-items: center; gap: 6px; padding: 24px 18px 20px; text-align: center; text-decoration: none; color: var(--color-ink-dim); }
 .member:hover { background: color-mix(in srgb, var(--color-card) 80%, var(--color-ink) 6%); }
@@ -722,6 +726,8 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
 .lib-spine__title { display: block; max-height: 100%; overflow: hidden; }
 .lib-empty { margin: 0 0 14px; font-style: italic; align-self: center; writing-mode: horizontal-tb; }
 .lib-reader { position: sticky; top: 96px; padding: 26px 26px 22px; display: grid; gap: 10px; min-height: 320px; align-content: start; }
+.lib-reader__found { align-items: center; gap: 8px; }
+.lib-reader__found img { width: 28px; height: 28px; }
 .lib-reader__title { margin: 0; font: 700 1.5rem/1.2 var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
 .lib-reader__title:focus { outline: none; }
 .lib-reader__title:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 4px; }
