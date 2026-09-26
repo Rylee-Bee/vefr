@@ -222,6 +222,10 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
   background: var(--studio-plate); border: 2px solid var(--studio-gold); flex: none;
 }
 .portrait svg { width: 100%; height: 100%; display: block; }
+.greeter .portrait { background: #1E2A26; }
+.empty__squirrel svg { width: 72px; height: 36px; }
+.loading__squirrel { display: inline-block; }
+.loading__squirrel svg { width: 40px; height: 20px; vertical-align: middle; }
 .portrait svg.portrait__icon { width: 44%; height: 44%; stroke: #E2BC6E; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .room-ambience { margin: 0 0 20px; font-family: var(--studio-body); font-size: 0.9rem; font-style: italic; letter-spacing: 0; color: var(--color-ink-dim); }
 
@@ -450,11 +454,81 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 }
 
 /* ------------------------------------------------------------
+   8e. The Folks and the Vault (and the drafting panels they share)
+   ------------------------------------------------------------ */
+.folks-room, .vault-room { display: grid; gap: 22px; }
+.folks-room__sub { margin: 10px 0 0; font: 700 1.2rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); text-transform: none; }
+.folks-room__quiet { margin: 0; font-style: italic; }
+.folks-grid, .folks-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.folk-card {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: start; padding: 20px; cursor: pointer; text-align: left;
+  background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px; color: var(--color-ink-dim);
+  box-shadow: inset 0 0 0 5px var(--color-card), inset 0 0 0 6px color-mix(in srgb, var(--color-card-edge) 60%, transparent);
+  width: auto; max-width: none; transform: none;
+}
+.folk-card:hover { background: color-mix(in srgb, var(--color-card) 80%, var(--color-ink) 6%); }
+.folk-card--invited { border-style: dashed; cursor: default; }
+.folk-card__portrait {
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--studio-plate);
+  border: 2px solid var(--studio-gold); font: 700 1.6rem var(--studio-engraved); color: #E2BC6E;
+}
+.folk-card__who { display: grid; gap: 4px; }
+.folk-card__name { font: 700 1.05rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
+.folk-card__bits { font-size: 0.88rem; }
+.folk-card__seed { font-style: italic; color: var(--color-ink); }
+.folk-card__ask { justify-self: start; min-height: 44px; margin-top: 4px; }
+.folk-invite, .forge {
+  position: relative; display: grid; gap: 10px; justify-items: start; padding: 24px 26px;
+  background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px;
+  box-shadow: inset 0 0 0 5px var(--color-card), inset 0 0 0 6px color-mix(in srgb, var(--color-card-edge) 60%, transparent);
+}
+.forge { background: linear-gradient(160deg, color-mix(in srgb, #C06A2C 16%, var(--color-card)), var(--color-card) 55%); }
+.forge__title, .map-draw__title { margin: 0; font: 700 1.25rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); }
+.forge__title::after { content: ' \00B7 mind the sparks'; font: italic 400 0.85rem var(--studio-body); letter-spacing: 0; color: var(--color-ink-dim); }
+.forge__hint, .map-draw__hint { margin: 0; max-width: 62ch; color: var(--color-ink-dim); font-style: normal; font-size: 0.98rem; }
+.forge__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.folk-invite__result { width: 100%; }
+.folk-invite__cold { margin: 0; font-style: italic; }
+.draft, .face-draft {
+  display: grid; gap: 10px; width: 100%; padding: 20px; margin-top: 4px; border-radius: 3px;
+  background: color-mix(in srgb, var(--studio-gold) 8%, var(--color-card)); border: 1px dashed color-mix(in srgb, var(--studio-gold) 50%, transparent);
+}
+.draft:empty { display: none; }
+.draft__title { font: 700 1rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); }
+.draft__row { display: grid; gap: 4px; }
+.face-draft__label, .draft__row label { font: 700 0.74rem var(--studio-engraved); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink); }
+.draft__field, .draft__lore, .draft__slim {
+  min-height: 44px; width: 100%; padding: 8px 12px; border-radius: 3px; border: 1px solid var(--color-card-edge);
+  background: var(--color-bg); color: var(--color-ink); font: 1rem var(--studio-body); box-sizing: border-box;
+}
+.draft__lore { min-height: 88px; resize: vertical; }
+.draft input, .draft textarea, .face-draft input, .face-draft textarea {
+  background: var(--color-bg); color: var(--color-ink); border: 1px solid var(--color-card-edge); border-radius: 3px; font: 1rem var(--studio-body);
+}
+.draft input::placeholder, .draft textarea::placeholder, .face-draft input::placeholder { color: var(--color-ink-dim); opacity: 1; }
+.draft__row { border: 0; padding: 0; background: none; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.draft .cta, .draft .btn { width: auto; justify-self: start; }
+.draft__error, .draft__err { margin: 0; color: var(--color-ink); font-weight: 700; }
+.face-draft__at { margin: 0; font-style: italic; }
+.vault-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; max-width: none; }
+.vault-object {
+  position: relative; display: grid; justify-items: center; gap: 6px; min-height: 160px; padding: 22px 14px 16px; text-align: center; cursor: pointer;
+  background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px; color: var(--color-ink-dim); transform: none;
+}
+.vault-object:hover { background: color-mix(in srgb, var(--color-card) 80%, var(--color-ink) 6%); }
+.vault-object__icon { font-size: 2rem; line-height: 1; }
+.vault-object__name { font: 700 0.98rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
+.vault-object__kind { font: 600 0.66rem var(--studio-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.vault-object__star { min-height: 44px; min-width: 44px; background: none; border: 0; color: var(--studio-gold); cursor: pointer; font-size: 1.1rem; }
+.vault-deepen { max-width: none; }
+
+/* ------------------------------------------------------------
    9. States, notes, and panels
    ------------------------------------------------------------ */
 .empty, .loading { display: grid; justify-items: center; gap: 6px; padding: 36px 16px; text-align: center; color: var(--color-ink-dim); }
 .empty__text { margin: 0; white-space: pre-line; font: 700 1.05rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
-.empty__hint { margin: 0; font-size: 0.9rem; }
+.empty__hint { margin: 0; font-size: 0.95rem; color: var(--color-ink-dim); opacity: 1; }
+.empty__squirrel { opacity: 1; }
 .loading { grid-auto-flow: column; justify-content: center; font-size: 0.95rem; }
 
 .ferry-note {

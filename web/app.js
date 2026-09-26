@@ -135,7 +135,11 @@
 
   function emptyState(text, hint, squirrel) {
     var children = [];
-    if (squirrel) children.push(h('div', { className: 'empty__squirrel', textContent: '\u{1F43F}\uFE0F' }));
+    if (squirrel) {
+      var sq = h('div', { className: 'empty__squirrel', 'aria-hidden': 'true' });
+      sq.innerHTML = '<svg viewBox="0 0 60 30"><use href="#peek-squirrel"/></svg>';
+      children.push(sq);
+    }
     children.push(h('p', { className: 'empty__text', textContent: text }));
     if (hint) children.push(h('p', { className: 'empty__hint', textContent: hint }));
     return h('div', { className: 'empty', role: 'status' }, children);
@@ -157,7 +161,7 @@
   function loadingState(text) {
     return h('div', { className: 'loading', role: 'status', 'aria-live': 'polite' },
       [
-        h('span', { className: 'loading__squirrel', 'aria-hidden': 'true', textContent: '\u{1F43F}\uFE0F' }),
+        h('span', { className: 'loading__squirrel', 'aria-hidden': 'true', innerHTML: '<svg viewBox="0 0 60 30"><use href="#peek-squirrel"/></svg>' }),
         h('span', { textContent: text || ferryLine() })
       ]
     );
@@ -2440,7 +2444,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="folks-room" id="folks-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band folks-room" id="folks-content"></div>';
       var container = el_screen.querySelector('#folks-content');
       container.appendChild(loadingState('Looking for familiar faces\u2026'));
 
@@ -2457,8 +2461,6 @@
           return i.kind === 'face';
         });
 
-        var heading = h('div', { className: 'folks-room__heading', textContent: 'The people of this world' });
-        container.appendChild(heading);
         var rl = residentLine('characters');
         if (rl) container.appendChild(rl);
 
@@ -2660,7 +2662,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="vault-room" id="vault-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band vault-room" id="vault-content"></div>';
       var container = el_screen.querySelector('#vault-content');
       container.appendChild(loadingState('Checking the vault\u2026'));
 
@@ -2683,8 +2685,6 @@
         .then(function (data) {
           container.innerHTML = '';
           var items = (data && data.items) || [];
-          var heading = h('div', { className: 'vault-room__heading', textContent: 'What you\u2019ve gathered' });
-          container.appendChild(heading);
           var rl = residentLine('items');
           if (rl) container.appendChild(rl);
 
