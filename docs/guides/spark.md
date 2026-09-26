@@ -153,6 +153,29 @@ The smoke probes are health, NPC JSON (schema + key set), state-edit
 preservation (target changed, rest byte-equal), and escalation
 judgment (benchmark probes vs ground truth).
 
+## From the command line (scripts, agents, residents)
+
+`ratatoskr spark task` runs one Spark task through the same checked
+doorway the studio uses: the context layers, the task's JSON schema
+(grammar-locked by llama.cpp), validation and one retry, fail-closed.
+
+```sh
+uv run ratatoskr spark task dialogue "Two lines at dusk." --speaker keeper
+uv run ratatoskr spark task npc -f request.txt --json      # the envelope
+echo "A shy apprentice" | uv run ratatoskr spark task npc  # stdin works
+uv run ratatoskr spark task lore "..." --inspect           # what WOULD be sent; no model call
+```
+
+Plain mode prints the result on stdout and one meta line on stderr, so
+it pipes. With `--json`, `ratatoskr skipa`, `ratatoskr spark status`,
+`ratatoskr spark task` and `norns doctor` print the estate's stable
+envelope, `{ok, status, changed, warnings, actions, data}`, with the
+same exit codes as the Worlds CLI: 0 ok, 1 error (for a task: the
+output failed its schema, nothing to apply), 2 bad arguments,
+3 unavailable (Spark or the live stack can't be reached), 4 needs a
+person's approval. The `profile_model` field names the profile's
+model; a `--spark-url` pointing elsewhere may serve a different one.
+
 ## Rollback
 
 Stop the `spark` compose service (`docker compose stop spark`, or
