@@ -1929,6 +1929,7 @@
           return;
         }
 
+        container.appendChild(workingsControl());
         container.appendChild(mapPrimer());
         var bench = h('div', { className: 'map-bench' });
         var wrap = h('div', { className: 'map-regions' });
@@ -1938,6 +1939,25 @@
         container.appendChild(bench);
         container.appendChild(drawingTable(data));
       });
+    }
+
+    /* "Keep it simple / Show me how things work": one pref for the whole
+       studio (prefs.js `workings`); here so the Map Room can flip it in place. */
+    function workingsControl() {
+      var P = window.VEFR_PREFS;
+      var cur = (P && P.get && P.get().workings) || 'simple';
+      var row = h('div', { className: 'workings', role: 'group', 'aria-label': 'How much of the workings to show' });
+      [['simple', 'Keep it simple'], ['show', 'Show me how things work']].forEach(function (o) {
+        var b = h('button', { className: 'workings__opt', type: 'button', textContent: o[1],
+          'aria-pressed': String(cur === o[0]) });
+        b.addEventListener('click', function () {
+          if (P && P.set) P.set({ workings: o[0] });
+          row.querySelectorAll('.workings__opt').forEach(function (x) {
+            x.setAttribute('aria-pressed', String(x === b)); });
+        });
+        row.appendChild(b);
+      });
+      return row;
     }
 
     /* How maps work, in plain words, right where the map is made
@@ -1986,7 +2006,7 @@
           + kinds + ' kind' + (kinds === 1 ? '' : 's') + ' of ground' }));
       /* The typed view is for the curious: the drawing table below shows
          the same map as squares. */
-      var symbols = h('details', { className: 'map-symbols' });
+      var symbols = h('details', { className: 'map-symbols workings-only' });
       symbols.appendChild(h('summary', { className: 'map-symbols__toggle', textContent: 'Show the symbols' }));
       symbols.appendChild(h('pre', { className: 'map-region__grid', textContent: mapText.join('\n') }));
       card.appendChild(symbols);
@@ -2152,6 +2172,30 @@
       var inkLine = h('p', { className: 'map-draw__ink', role: 'status' });
       var focusR = 0, focusC = 0, cells = [];
 
+      /* Picture tiles: a pack's legend may name one (`"tile": "stone-wall"`);
+         otherwise the kind of ground picks a sensible one. */
+      var TILE_FOR_KIND = { 'solid': 'stone-wall', 'sanctuary': 'rug', 'marked': 'grass', 'open ground': 'grass' };
+      var openKinds = legendKeys.filter(function (k) {
+        var sp = legend[k] || {};
+        return !sp.solid && sanctuary.indexOf(k) === -1 && !sp.deco;
+      });
+      function tileFor(ch) {
+        var spec = legend[ch] || {};
+        if (spec.tile) return spec.tile;
+        if (spec.solid === true) return TILE_FOR_KIND.solid;
+        if (sanctuary.indexOf(ch) !== -1) return TILE_FOR_KIND.sanctuary;
+        if (spec.deco) return TILE_FOR_KIND.marked;
+        return openKinds.indexOf(ch) > 0 ? 'path' : 'grass';
+      }
+      function tileUrl(ch) { return ART + 'tiles/' + tileFor(ch) + '.webp'; }
+      function dressCell(cell, ch) {
+        cell.style.background = cellColor(ch) || 'transparent';
+        cell.style.backgroundImage = 'url(' + tileUrl(ch) + ')';
+        cell.style.backgroundSize = 'cover';
+        cell.innerHTML = '';
+        cell.appendChild(h('span', { className: 'map-cell__glyph workings-only', textContent: ch }));
+        cell.setAttribute('aria-label', potName(ch));
+      }
       function cellColor(ch) {
         var spec = legend[ch];
         if (!spec || !spec.base || !spec.base.length) return '';
@@ -2175,7 +2219,7 @@
             if (ch && ch !== ' ') chr[ch] = (chr[ch] || 0) + 1;
           }
         }
-        var parts = Object.keys(chr).map(function (k) { return '\u201c' + k + '\u201d \u00d7 ' + chr[k]; });
+        var parts = Object.keys(chr).map(function (k) { return potName(k) + ' \u00d7 ' + chr[k]; });
         inkLine.textContent = rows + ' rows \u00d7 ' + cols + ' cols \u00b7 '
           + (parts.length ? parts.join(', ') : 'Nothing painted yet');
       }
@@ -2186,11 +2230,10 @@
         if (grid[r][c] === brush) return;
         snapshot();
         grid[r][c] = brush;
-        cell.textContent = brush;
-        cell.style.background = cellColor(brush) || 'transparent';
+        dressCell(cell, brush);
         cell.classList.toggle('map-cell--solid', cellSolid(brush));
         cell.classList.toggle('map-cell--marked', !!(legend[brush] && legend[brush].deco));
-        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 \u201c' + brush + '\u201d';
+        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 ' + potName(brush);
         dirty = true;
         saveSketch();
         census();
@@ -2213,11 +2256,10 @@
           grid[cr][cc] = brush;
           var cell = cells[cr] && cells[cr][cc];
           if (cell) {
-            cell.textContent = brush;
-            cell.style.background = cellColor(brush) || 'transparent';
+            dressCell(cell, brush);
             cell.classList.toggle('map-cell--solid', cellSolid(brush));
             cell.classList.toggle('map-cell--marked', !!(legend[brush] && legend[brush].deco));
-            cell.title = 'row ' + (cr + 1) + ', column ' + (cc + 1) + ' \u00B7 \u201C' + brush + '\u201D';
+            cell.title = 'row ' + (cr + 1) + ', column ' + (cc + 1) + ' \u00B7 ' + potName(brush);
           }
           var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
           for (var d = 0; d < 4; d++) {
@@ -2250,12 +2292,11 @@
       function makeCell(r, c) {
         var ch = grid[r][c];
         var cell = h('div', { className: 'map-cell' + (cellSolid(ch) ? ' map-cell--solid' : ''),
-          role: 'gridcell', tabindex: '-1', textContent: ch,
+          role: 'gridcell', tabindex: '-1',
           'data-xy': String(r * cols + c) });
-        var bg = cellColor(ch);
-        if (bg) cell.style.background = bg;
+        dressCell(cell, ch);
         if (legend[ch] && legend[ch].deco) cell.classList.add('map-cell--marked');
-        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 \u201c' + ch + '\u201d';
+        cell.title = 'row ' + (r + 1) + ', column ' + (c + 1) + ' \u00b7 ' + potName(ch);
         cell.addEventListener('click', function () {
           var idx = Number(cell.getAttribute('data-xy'));
           var rr = Math.floor(idx / cols), cc = idx % cols;
@@ -2343,7 +2384,9 @@
         legendKeys.forEach(function (ch) {
           var b = h('button', { className: 'map-inked' + (brush === ch ? ' map-inked--active' : ''),
             type: 'button', 'aria-pressed': String(brush === ch) });
-          b.appendChild(h('span', { className: 'map-inked__char', textContent: ch }));
+          b.appendChild(h('span', { className: 'map-inked__tile', 'aria-hidden': 'true',
+            style: 'background-image:url(' + tileUrl(ch) + ')' }));
+          b.appendChild(h('span', { className: 'map-inked__char workings-only', textContent: ch }));
           b.appendChild(h('span', { className: 'map-inked__label', textContent: potName(ch) }));
           b.appendChild(h('span', { className: 'map-inked__means', textContent: POT_MEANING[potLabel(ch)] }));
           var bg = cellColor(ch);
@@ -3748,6 +3791,14 @@
         { label: 'System', value: 'system' }
       ], 'font');
       container.appendChild(fontCard);
+
+      // How much of the workings to show (studio-modules.md: the two sliders)
+      var workCard = makeCard('How much to show');
+      addOptionRow(workCard, 'The workings', [
+        { label: 'Keep it simple', value: 'simple' },
+        { label: 'Show me how things work', value: 'show' }
+      ], 'workings');
+      container.appendChild(workCard);
 
       // Motion
       var motionCard = makeCard('How it moves');
