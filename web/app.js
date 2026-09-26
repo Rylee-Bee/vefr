@@ -1929,6 +1929,7 @@
           return;
         }
 
+        container.appendChild(mapPrimer());
         var bench = h('div', { className: 'map-bench' });
         var wrap = h('div', { className: 'map-regions' });
         names.forEach(function (name) { wrap.appendChild(regionCard(name, regions[name])); });
@@ -1937,6 +1938,24 @@
         container.appendChild(bench);
         container.appendChild(drawingTable(data));
       });
+    }
+
+    /* How maps work, in plain words, right where the map is made
+       (Rylee: "it would be cool if something in the screen could explain it"). */
+    function mapPrimer() {
+      var d = h('details', { className: 'map-primer' });
+      d.open = true;
+      d.appendChild(h('summary', { className: 'map-primer__title', textContent: 'How maps work' }));
+      var ul = h('ul', { className: 'map-primer__list' });
+      [
+        'A map is a grid of squares, like graph paper. Each square is one kind of ground.',
+        'The player walks on open ground. Solid squares (walls, rock) block the way.',
+        'Some squares do something: a safe square is a place nothing can hurt you.',
+        'Some maps are drawn by hand here; others are built by the game from rules as you play.',
+        'Pick a brush below and press the squares. The engine checks every sketch, and nothing is kept until you say so.'
+      ].forEach(function (t) { ul.appendChild(h('li', { textContent: t })); });
+      d.appendChild(ul);
+      return d;
     }
 
     /* The survey — real numbers read off the map itself */
@@ -1965,7 +1984,12 @@
       card.appendChild(h('p', { className: 'map-region__survey',
         textContent: 'a ' + survey.cols + '\u00d7' + survey.rows + ' stretch \u00b7 '
           + kinds + ' kind' + (kinds === 1 ? '' : 's') + ' of ground' }));
-      card.appendChild(h('pre', { className: 'map-region__grid', textContent: mapText.join('\n') }));
+      /* The typed view is for the curious: the drawing table below shows
+         the same map as squares. */
+      var symbols = h('details', { className: 'map-symbols' });
+      symbols.appendChild(h('summary', { className: 'map-symbols__toggle', textContent: 'Show the symbols' }));
+      symbols.appendChild(h('pre', { className: 'map-region__grid', textContent: mapText.join('\n') }));
+      card.appendChild(symbols);
 
       /* Each kind of ground is a door — press it and ask what lives there */
       var marks = h('div', { className: 'map-marks' });
@@ -1981,7 +2005,7 @@
         });
         marks.appendChild(chip);
       });
-      card.appendChild(marks);
+      symbols.appendChild(marks);
 
       card.appendChild(deepenTool(name));
       return card;
@@ -2080,7 +2104,7 @@
       section.appendChild(spot('cartographer-long-map', 'spot--right'));
       section.appendChild(h('h3', { className: 'map-draw__title', textContent: 'The drawing table' }));
       section.appendChild(h('p', { className: 'map-draw__hint',
-        textContent: 'No markdown here \u2014 dip a brush and press the ground. The engine checks every sketch; only you decide what\u2019s kept.' }));
+        textContent: 'Pick a brush, then press or drag across the squares. Nothing is kept until you save it.' }));
 
       if (!legendKeys.length || !packLines.length) {
         section.appendChild(h('p', { className: 'map-draw__note',
@@ -2302,13 +2326,26 @@
         if (spec.deco) return 'marked';
         return 'open ground';
       }
+      var POT_MEANING = {
+        'solid': 'blocks walking',
+        'sanctuary': 'a safe square',
+        'marked': 'walkable, with a mark',
+        'open ground': 'walkable'
+      };
+      /* Two kinds can share a name (two looks of open ground); number them. */
+      function potName(ch) {
+        var base = potLabel(ch);
+        var same = legendKeys.filter(function (k) { return potLabel(k) === base; });
+        return same.length > 1 ? base + ' ' + (same.indexOf(ch) + 1) : base;
+      }
       function paintPots() {
         pots.innerHTML = '';
         legendKeys.forEach(function (ch) {
           var b = h('button', { className: 'map-inked' + (brush === ch ? ' map-inked--active' : ''),
             type: 'button', 'aria-pressed': String(brush === ch) });
           b.appendChild(h('span', { className: 'map-inked__char', textContent: ch }));
-          b.appendChild(h('span', { className: 'map-inked__label', textContent: potLabel(ch) }));
+          b.appendChild(h('span', { className: 'map-inked__label', textContent: potName(ch) }));
+          b.appendChild(h('span', { className: 'map-inked__means', textContent: POT_MEANING[potLabel(ch)] }));
           var bg = cellColor(ch);
           if (bg) b.style.setProperty('--ink', bg);
           b.addEventListener('click', function () {
