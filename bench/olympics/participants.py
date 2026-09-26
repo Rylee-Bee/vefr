@@ -101,6 +101,23 @@ P = [
                 "Falcon3-3B-Instruct-Q4_K_M.gguf"),
     Participant("stablelm-zephyr-3b", "StableLM", 3.0, "Q4_K_M",
                 "StableLM-Zephyr-3B-Q4_K_M.gguf"),
+
+    # ---- 2026-09-26 additions (brain roles survey; docs/guides/brain-roles.md) ----
+    Participant("lfm2.5-230m", "LFM2.5", 0.23, "Q4_K_M",
+                "LFM2.5-230M-Q4_K_M.gguf", class_="FEATHERWEIGHT", tags=("brain-roles-2026-09",)),
+    Participant("qwen3.5-0.8b-q8", "Qwen3.5", 0.8, "Q8_0",
+                "Qwen3.5-0.8B-Q8_0.gguf", class_="BANTAMWEIGHT",
+                tags=("brain-roles-2026-09", "retest")),
+    Participant("minicpm5-1b", "MiniCPM5", 1.1, "Q4_K_M",
+                "MiniCPM5-1B-Q4_K_M.gguf", class_="LIGHTWEIGHT", tags=("brain-roles-2026-09",)),
+    Participant("minicpm5-2b", "MiniCPM5", 2.5, "Q4_K_M",
+                "MiniCPM5-2B-Q4_K_M.gguf", tags=("brain-roles-2026-09",)),
+    Participant("gemma4-e2b", "Gemma4", 2.0, "Q4_0 (QAT)",
+                "gemma-4-E2B_q4_0-it.gguf", class_="WELTERWEIGHT", tags=("brain-roles-2026-09",)),
+    Participant("nanbeige4.2-3b", "Nanbeige4.2", 3.0, "Q4_K_M",
+                "Nanbeige_Nanbeige4.2-3B-Q4_K_M.gguf", tags=("brain-roles-2026-09",)),
+    Participant("vibethinker-3b", "VibeThinker", 3.0, "Q4_K_M",
+                "VibeThinker-3B.Q4_K_M.gguf", tags=("brain-roles-2026-09",)),
 ]
 
 PARTICIPANTS = {p.key: p for p in P}

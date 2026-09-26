@@ -1,0 +1,365 @@
+{
+ "corpus": 209,
+ "queries": 32,
+ "threads": 4,
+ "results": [
+  {
+   "model": "bm25 (no model)",
+   "size_mb": 0,
+   "recall@1": 0.375,
+   "recall@3": 0.562,
+   "mrr": 0.511
+  },
+  {
+   "model": "bekko-a25m",
+   "params_b": 0.25,
+   "file": "bekko-embedding-v1-a25m-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 137,
+   "docs_per_s": 74.2,
+   "query_ms": 116,
+   "recall@1": 0.688,
+   "recall@3": 0.812,
+   "mrr": 0.764,
+   "misses": [
+    {
+     "q": "where can a player come across a book in the world",
+     "rank": 11,
+     "top": "worlds/lore/norse-runes/prompt.md#5"
+    },
+    {
+     "q": "what does the stone guardian say when no language model is available",
+     "rank": 6,
+     "top": "worlds/sample-world/acts/act-1/town/voices/keeper.md#0"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 23,
+     "top": "worlds/lore/norse-runes/cards.md#0"
+    },
+    {
+     "q": "why the alphabet is small and split into three families of eight",
+     "rank": 5,
+     "top": "worlds/lore/norse-runes/names.md#3"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 25,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 12,
+     "top": "web/library/05-alpha.md#0"
+    }
+   ]
+  },
+  {
+   "model": "granite-embed-97m",
+   "params_b": 0.097,
+   "file": "granite-embedding-97M-multilingual-r2-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 115,
+   "docs_per_s": 61.2,
+   "query_ms": 122,
+   "recall@1": 0.562,
+   "recall@3": 0.75,
+   "mrr": 0.661,
+   "misses": [
+    {
+     "q": "list of remembered lines that keep a character sounding consistent",
+     "rank": 39,
+     "top": "worlds/lore/norse-runes/prompt.md#11"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 35,
+     "top": "worlds/lore/norse-runes/questions.md#7"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 17,
+     "top": "worlds/lore/norse-runes/questions.md#7"
+    },
+    {
+     "q": "old verse saying frozen rivers are a hazard for the careless",
+     "rank": 9,
+     "top": "worlds/lore/norse/names.md#3"
+    },
+    {
+     "q": "casting chips shows what is happening now, not what will happen",
+     "rank": 4,
+     "top": "worlds/lore/norse-runes/textures.md#6"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 27,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "make a crude rough version first to see if the main activity is enjoyable",
+     "rank": 8,
+     "top": "web/library/06-beta.md#0"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 6,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  },
+  {
+   "model": "denseon-150m",
+   "params_b": 0.15,
+   "file": "DenseOn.Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 160,
+   "docs_per_s": 50.2,
+   "query_ms": 189,
+   "recall@1": 0.594,
+   "recall@3": 0.719,
+   "mrr": 0.674,
+   "misses": [
+    {
+     "q": "what does the stone guardian say when no language model is available",
+     "rank": 18,
+     "top": "worlds/sample-world/voices/keeper.md#0"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 33,
+     "top": "worlds/lore/norse-runes/textures.md#1"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 21,
+     "top": "worlds/lore/norse-runes/textures.md#1"
+    },
+    {
+     "q": "rune for returning to a house that changed while you were away",
+     "rank": 6,
+     "top": "worlds/lore/norse-runes/textures.md#2"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 64,
+     "top": "web/library/01-the-seven-stages.md#1"
+    },
+    {
+     "q": "make a crude rough version first to see if the main activity is enjoyable",
+     "rank": 15,
+     "top": "web/library/02-concept.md#0"
+    },
+    {
+     "q": "once the whole game exists, may I still add things",
+     "rank": 10,
+     "top": "web/library/05-alpha.md#0"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 17,
+     "top": "web/library/05-alpha.md#0"
+    },
+    {
+     "q": "one small piece of the game built to final quality",
+     "rank": 5,
+     "top": "web/library/04-production.md#0"
+    }
+   ]
+  },
+  {
+   "model": "harrier-270m",
+   "params_b": 0.27,
+   "file": "harrier-oss-v1-270M-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 292,
+   "docs_per_s": 10.9,
+   "query_ms": 398,
+   "recall@1": 0.469,
+   "recall@3": 0.781,
+   "mrr": 0.62,
+   "misses": [
+    {
+     "q": "what does the stone guardian say when no language model is available",
+     "rank": 18,
+     "top": "worlds/sample-world/voices/keeper.md#0"
+    },
+    {
+     "q": "can I use the tile art for free without crediting anyone",
+     "rank": 6,
+     "top": "worlds/sample-world/assets/kenney/README.md#2"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 32,
+     "top": "worlds/lore/norse-runes/prompt.md#8"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 22,
+     "top": "worlds/lore/norse-runes/questions.md#5"
+    },
+    {
+     "q": "why the alphabet is small and split into three families of eight",
+     "rank": 4,
+     "top": "worlds/lore/norse/names.md#5"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 48,
+     "top": "web/library/02-concept.md#1"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 11,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  },
+  {
+   "model": "embeddinggemma-300m",
+   "params_b": 0.3,
+   "file": "embeddinggemma-300m-qat-Q8_0.gguf",
+   "query_prefix": true,
+   "size_mb": 329,
+   "error": "podman run failed: Error: pasta failed with exit code 1:\nListen failed for HOST TCP port */9005: Address already in use\nCouldn't listen on requested ports\n\n"
+  },
+  {
+   "model": "granite-embed-311m",
+   "params_b": 0.311,
+   "file": "granite-embedding-311M-multilingual-r2-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 347,
+   "docs_per_s": 37.4,
+   "query_ms": 176,
+   "recall@1": 0.625,
+   "recall@3": 0.781,
+   "mrr": 0.721,
+   "misses": [
+    {
+     "q": "list of remembered lines that keep a character sounding consistent",
+     "rank": 5,
+     "top": "worlds/lore/norse-runes/prompt.md#11"
+    },
+    {
+     "q": "a name for the silence once the ringing stops",
+     "rank": 7,
+     "top": "worlds/lore/historical-event/textures.md#2"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 33,
+     "top": "worlds/lore/norse-runes/questions.md#9"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 23,
+     "top": "worlds/lore/norse-runes/questions.md#7"
+    },
+    {
+     "q": "rune for returning to a house that changed while you were away",
+     "rank": 7,
+     "top": "worlds/lore/norse-runes/questions.md#3"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 16,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 9,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  },
+  {
+   "model": "qwen3-embed-0.6b",
+   "params_b": 0.6,
+   "file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
+   "query_prefix": true,
+   "size_mb": 639,
+   "docs_per_s": 8.9,
+   "query_ms": 1144,
+   "recall@1": 0.5,
+   "recall@3": 0.75,
+   "mrr": 0.639,
+   "misses": [
+    {
+     "q": "what does the stone guardian say when no language model is available",
+     "rank": 24,
+     "top": "worlds/sample-world/acts/act-1/town/voices/keeper.md#0"
+    },
+    {
+     "q": "a name for the silence once the ringing stops",
+     "rank": 5,
+     "top": "worlds/sample-world/library/a-note-by-the-path.md#1"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 56,
+     "top": "worlds/lore/norse-runes/cards.md#0"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 23,
+     "top": "worlds/lore/norse-runes/cards.md#0"
+    },
+    {
+     "q": "rune for returning to a house that changed while you were away",
+     "rank": 8,
+     "top": "worlds/lore/norse-runes/cards.md#0"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 87,
+     "top": "web/library/02-concept.md#0"
+    },
+    {
+     "q": "once the whole game exists, may I still add things",
+     "rank": 4,
+     "top": "web/library/05-alpha.md#0"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 10,
+     "top": "web/library/07-launch-and-after.md#0"
+    }
+   ]
+  },
+  {
+   "model": "pplx-embed-0.6b",
+   "params_b": 0.6,
+   "file": "pplx-embed-v1-0.6B-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 639,
+   "docs_per_s": 7.3,
+   "query_ms": 1277,
+   "recall@1": 0.719,
+   "recall@3": 0.875,
+   "mrr": 0.797,
+   "misses": [
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 34,
+     "top": "worlds/lore/norse-runes/prompt.md#1"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 23,
+     "top": "worlds/lore/norse-runes/names.md#0"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 40,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 14,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  }
+ ]
+}

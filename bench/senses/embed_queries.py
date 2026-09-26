@@ -1,0 +1,38 @@
+"""Embeddings suite questions: paraphrased on purpose (few shared words with
+the answer), so this measures meaning, not keyword overlap. Each gold list
+holds every chunk that fully answers the question."""
+SW, L, H = "worlds/sample-world/", "worlds/lore/", "web/library/"
+QUERIES = [
+    ("how do I start a fresh page partway through a book", [SW + "library/writing-a-book.md#2"]),
+    ("where can a player come across a book in the world", [SW + "library/writing-a-book.md#1"]),
+    ("how big is the demo town and what is in it", [SW + "map.md#1"]),
+    ("what does the stone guardian say when no language model is available", [SW + "voices/keeper.fragments.md#0"]),
+    ("how many sentences should the guardian of the stone speak at once", [SW + "voices/keeper.md#0", SW + "acts/act-1/town/voices/keeper.md#0"]),
+    ("can I use the tile art for free without crediting anyone", [SW + "assets/kenney/README.md#1"]),
+    ("the world's rules file the engine treats as truth before it writes anything", [SW + "logbok.md#0"]),
+    ("list of remembered lines that keep a character sounding consistent", [SW + "ledger.md#0"]),
+    ("what if my research turns up an actual person's identity", [L + "historical-event/prompt.md#9"]),
+    ("the chamber in someone's home that nobody is meant to open", [L + "historical-event/questions.md#8"]),
+    ("a name for the silence once the ringing stops", [L + "historical-event/names.md#3"]),
+    ("why the disaster never really finished for the town", [L + "historical-event/textures.md#5"]),
+    ("poetic compound names like calling the ocean a path for whales", [L + "norse/names.md#0", L + "norse/names.md#3"]),
+    ("people passing through, not locals, hold the settlement together", [L + "norse/textures.md#2"]),
+    ("disaster when the tower chime sounds two times in a single day", [L + "norse/questions.md#9"]),
+    ("which rune marks the arrival of a message", [L + "norse-runes/cards.md#5"]),
+    ("the rune for being stuck against a wall with no way through", [L + "norse-runes/cards.md#11"]),
+    ("rune for returning to a house that changed while you were away", [L + "norse-runes/cards.md#24"]),
+    ("old verse saying frozen rivers are a hazard for the careless", [L + "norse-runes/names.md#13"]),
+    ("old verse where the steed is the rider's comfort and the wanderer's wealth", [L + "norse-runes/names.md#19"]),
+    ("casting chips shows what is happening now, not what will happen", [L + "norse-runes/textures.md#4", L + "norse-runes/textures.md#0"]),
+    ("why the alphabet is small and split into three families of eight", [L + "norse-runes/textures.md#1", L + "norse-runes/names.md#0"]),
+    ("what gets carved on the heroine's grave marker", [L + "norse-runes/questions.md#11"]),
+    ("is the modern reference book on runes copyrighted", [L + "norse-runes/prompt.md#13"]),
+    ("what test do I pass to move on from the idea stage", [H + "02-concept.md#3"]),
+    ("make a crude rough version first to see if the main activity is enjoyable", [H + "03-pre-production.md#0"]),
+    ("once the whole game exists, may I still add things", [H + "05-alpha.md#1"]),
+    ("write down the licence of every picture and sound I used", [H + "06-beta.md#1"]),
+    ("when does a game count as released", [H + "07-launch-and-after.md#1"]),
+    ("one small piece of the game built to final quality", [H + "08-studio-words.md#2", H + "03-pre-production.md#1"]),
+    ("the top reason games never get finished", [H + "08-studio-words.md#3", H + "06-beta.md#1"]),
+    ("a level built from plain boxes before the art exists", [H + "08-studio-words.md#1"]),
+]

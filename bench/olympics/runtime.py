@@ -39,7 +39,7 @@ class ModelServer:
             raise ServerError(f"artifact missing: {model} (run bench download)")
         self._cleanup_leaked_container()
         cmd = [
-            "podman",
+            config.ENGINE,
             "run",
             "-d",
             "--rm",
@@ -49,9 +49,7 @@ class ModelServer:
             f"{self.port}:8080",
             "-v",
             f"{config.MODELS_DIR}:/models:Z",
-            "--device",
-            "/dev/dri:/dev/dri",
-        ]
+        ] + (["--device", config.GPU_DEVICE] if config.GPU_DEVICE else [])
         cmd += [
             config.IMAGE,
             "--model",
@@ -111,11 +109,11 @@ class ModelServer:
         return False
 
     def stop(self):
-        subprocess.run(["podman", "rm", "-f", self.name], capture_output=True, text=True)
+        subprocess.run([config.ENGINE, "rm", "-f", self.name], capture_output=True, text=True)
 
     def _cleanup_leaked_container(self):
         # a killed runner can leave the container behind; never reuse the name
-        subprocess.run(["podman", "rm", "-f", self.name], capture_output=True, text=True)
+        subprocess.run([config.ENGINE, "rm", "-f", self.name], capture_output=True, text=True)
 
     # ---- wire client ----
     def chat(self, messages, temperature=None, max_tokens=None, stop=None):

@@ -1,0 +1,58 @@
+{
+ "corpus": 209,
+ "queries": 32,
+ "threads": 4,
+ "results": [
+  {
+   "model": "bm25 (no model)",
+   "size_mb": 0,
+   "recall@1": 0.375,
+   "recall@3": 0.562,
+   "mrr": 0.511
+  },
+  {
+   "model": "embeddinggemma-300m",
+   "params_b": 0.3,
+   "file": "embeddinggemma-300m-qat-Q8_0.gguf",
+   "query_prefix": true,
+   "size_mb": 329,
+   "docs_per_s": 21.6,
+   "query_ms": 536,
+   "recall@1": 0.812,
+   "recall@3": 0.812,
+   "mrr": 0.841,
+   "misses": [
+    {
+     "q": "what does the stone guardian say when no language model is available",
+     "rank": 4,
+     "top": "worlds/sample-world/voices/keeper.fragments.md#1"
+    },
+    {
+     "q": "list of remembered lines that keep a character sounding consistent",
+     "rank": 4,
+     "top": "worlds/sample-world/logbok.md#1"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 30,
+     "top": "worlds/lore/norse-runes/prompt.md#8"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 4,
+     "top": "worlds/lore/norse-runes/questions.md#5"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 81,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 9,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  }
+ ]
+}

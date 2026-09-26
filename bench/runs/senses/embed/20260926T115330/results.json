@@ -1,0 +1,61 @@
+{
+ "corpus": 209,
+ "queries": 32,
+ "threads": 4,
+ "results": [
+  {
+   "model": "granite-embed-97m",
+   "params_b": 0.097,
+   "file": "granite-embedding-97M-multilingual-r2-Q8_0.gguf",
+   "query_prefix": false,
+   "size_mb": 115,
+   "docs_per_s": 74.0,
+   "query_ms": 92,
+   "recall@1": 0.562,
+   "recall@3": 0.75,
+   "mrr": 0.661,
+   "misses": [
+    {
+     "q": "list of remembered lines that keep a character sounding consistent",
+     "rank": 39,
+     "top": "worlds/lore/norse-runes/prompt.md#11"
+    },
+    {
+     "q": "which rune marks the arrival of a message",
+     "rank": 35,
+     "top": "worlds/lore/norse-runes/questions.md#7"
+    },
+    {
+     "q": "the rune for being stuck against a wall with no way through",
+     "rank": 17,
+     "top": "worlds/lore/norse-runes/questions.md#7"
+    },
+    {
+     "q": "old verse saying frozen rivers are a hazard for the careless",
+     "rank": 9,
+     "top": "worlds/lore/norse/names.md#3"
+    },
+    {
+     "q": "casting chips shows what is happening now, not what will happen",
+     "rank": 4,
+     "top": "worlds/lore/norse-runes/textures.md#6"
+    },
+    {
+     "q": "what test do I pass to move on from the idea stage",
+     "rank": 27,
+     "top": "web/library/01-the-seven-stages.md#3"
+    },
+    {
+     "q": "make a crude rough version first to see if the main activity is enjoyable",
+     "rank": 8,
+     "top": "web/library/06-beta.md#0"
+    },
+    {
+     "q": "when does a game count as released",
+     "rank": 6,
+     "top": "web/library/08-studio-words.md#3"
+    }
+   ]
+  }
+ ]
+}
