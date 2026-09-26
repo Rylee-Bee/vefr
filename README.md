@@ -345,10 +345,12 @@ and accessibility floors. See the
   `/api/world`; ink + inkjs (MIT) for the authored-branching idea
   shelved for packs.
 - Engine license: MPL-2.0 (see `LICENSE`) for the engine source
-  under `src/`, `web/`, `tests/`, `scripts/`, `docs/`, `deploy/`,
+  under `src/`, `web/` (except `web/art/`), `tests/`, `scripts/`, `docs/`, `deploy/`,
   and `Containerfile`. Sample world (`worlds/sample-world/`) is
   CC0 1.0 (see its `LICENSE`). Lore mood-boards under
   `worlds/lore/` are CC BY-SA 4.0 (see each pack's `LICENSE.md`).
+  The workshop's studio art in `web/art/` is CC BY-SA 4.0 (see
+  `web/art/README.md`).
   Any other world pack dropped into `worlds/<name>/` locally is
   that pack's own author's property - the engine grants no license
   to story content, and carries none in this repo.

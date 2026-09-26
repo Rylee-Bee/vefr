@@ -217,7 +217,13 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 /* ------------------------------------------------------------
    5. The room's header and its resident
    ------------------------------------------------------------ */
-.pagehead { position: static; transform: none; background: var(--studio-iron); color: #F2ECDD; pointer-events: auto; display: block; }
+.pagehead {
+  position: static; transform: none; color: #F2ECDD; pointer-events: auto; display: block;
+  background:
+    linear-gradient(90deg, rgba(10, 11, 13, 0.95) 0%, rgba(10, 11, 13, 0.86) 45%, rgba(10, 11, 13, 0.55) 75%, rgba(10, 11, 13, 0.4) 100%),
+    var(--room-banner, none) center / cover no-repeat,
+    var(--studio-iron);
+}
 .pagehead__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; padding-block: 36px 30px; }
 .pagehead .label { color: #E2BC6E; }
 .label__world:not(:empty)::before { content: '\00B7'; margin-right: 10px; }
@@ -240,10 +246,11 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
   background: var(--studio-plate); border: 2px solid var(--studio-gold); flex: none;
 }
 .portrait svg { width: 100%; height: 100%; display: block; }
+.portrait img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: 50% 12%; }
 .greeter .portrait { background: #1E2A26; }
-.empty__squirrel svg { width: 72px; height: 36px; }
+.empty__squirrel img { width: 140px; height: 140px; object-fit: contain; }
 .loading__squirrel { display: inline-block; }
-.loading__squirrel svg { width: 40px; height: 20px; vertical-align: middle; }
+.loading__squirrel img { width: 56px; height: 56px; object-fit: contain; vertical-align: middle; }
 .portrait svg.portrait__icon { width: 44%; height: 44%; stroke: #E2BC6E; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .room-ambience { margin: 0 0 20px; font-family: var(--studio-body); font-size: 0.9rem; font-style: italic; letter-spacing: 0; color: var(--color-ink-dim); }
 
@@ -254,7 +261,8 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
    6. The Studio home
    ------------------------------------------------------------ */
 .hero { position: relative; min-height: 520px; display: grid; align-items: end; overflow: hidden; background: #0C1A22; color: #F2ECDD; }
-.hero__art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 40%; }
+.hero__scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6, 10, 13, 0.9) 0%, rgba(6, 10, 13, 0.6) 40%, rgba(6, 10, 13, 0.05) 70%), linear-gradient(0deg, rgba(6, 10, 13, 0.7) 0%, transparent 45%); }
 .hero__copy { position: relative; display: grid; gap: 14px; padding-block: 56px 48px; }
 .hero__kicker { font: 600 0.75rem var(--studio-mono); letter-spacing: 0.18em; text-transform: uppercase; color: #E7C27A; }
 .hero__title { margin: 0; max-width: 14ch; font: 800 clamp(2.6rem, 6.4vw, 4.8rem)/0.98 var(--studio-engraved); letter-spacing: 0.05em; color: #FFF8E8; }
@@ -597,6 +605,7 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
 .settings-row__value { color: var(--color-ink); }
 .spark-card { grid-template-columns: 96px minmax(0, 1fr); gap: 18px; align-items: center; }
 .spark-card__face { width: 96px; height: 96px; background: #1F2A30; }
+.spark-card__face img { object-position: 50% 30%; }
 .spark-card__status { margin: 0; font-weight: 700; color: var(--color-ink); }
 .spark-card:not(.spark-card--awake) .spark-card__face { filter: saturate(0.6); }
 
@@ -725,11 +734,8 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
   font-size: 0.82rem; font-style: italic; color: var(--color-ink);
   background: color-mix(in srgb, var(--studio-gold) 16%, var(--color-card)); border: 1px dashed color-mix(in srgb, var(--studio-gold) 45%, transparent); border-radius: 2px;
 }
-.wax-seal {
-  position: absolute; top: 12px; right: 12px; width: 52px; height: 52px; border-radius: 50%;
-  display: grid; place-items: center; background: #8E2F24; box-shadow: inset 0 0 0 3px #A8453A, 0 2px 6px rgba(0,0,0,0.4); transform: rotate(-8deg);
-}
-.wax-seal svg { width: 34px; height: 34px; filter: grayscale(1) brightness(2.2) sepia(0.3); opacity: 0.85; }
+.wax-seal { position: absolute; top: 10px; right: 10px; width: 64px; height: 64px; transform: rotate(-8deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); }
+.wax-seal img { width: 100%; height: 100%; object-fit: contain; }
 .entry__kind { display: inline-flex; align-items: center; gap: 8px; }
 .entry__mark { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .foot-joke { font-style: italic; }
