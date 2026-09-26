@@ -345,6 +345,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                     errors.append(
                         f"act '{aid}' desk headlines must be at least two non-empty strings")
 
+    # The Library: authored books this pack keeps (library/*.md). Needs the
+    # pack on disk; in-memory validation (chat drafts) has no books yet.
+    if pack_dir is not None:
+        from .library import load_library, validate_books
+        errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
+                                     speakers=w.get('speakers')))
+
     return errors
 
 

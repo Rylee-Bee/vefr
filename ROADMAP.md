@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **The Library, slice L1** (2026-09-26): books a world keeps. A pack
+      may carry `library/*.md` (front matter: title, found = shelf | map |
+      resident | earned, at, speaker, when, kind; `* * *` breaks pages).
+      `src/vefr/library.py` parses and validates (wired into
+      `maplab.validate`, so `norns validate` checks every book); the
+      loader carries `world["library"]`; `GET /api/library` (new, read-only,
+      name-validated) serves the world's books + the studio shelf
+      (`web/library/`: the game-making handbook as eight books); the
+      workshop gains Urðr's Library room (shelves of spines, a parchment
+      reader one page at a time, arrow keys turn pages, Library in the top
+      nav and phone tab bar); the book export gains "The Library" chapter.
+      No model call anywhere. Guide: `docs/guides/rulesets.md` → library.
+      Tests: `tests/test_library.py` (20: format, every validator rule, the
+      studio shelf, loader, API, export, reader harness
+      `tests/fixtures/library_harness.mjs`). Next: L2, finding books in
+      play (map pickup, resident gives, earned), then L3, writing books in
+      the studio.
 - [x] **The studio comes alive** (2026-09-26): residents change faces:
       the chat panel shows a resident thinking while they answer, happy when
       they reply, and sleepy when no model answers (`chat.py`'s
