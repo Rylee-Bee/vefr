@@ -698,7 +698,7 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
 .pinned-card__lore { font-size: 0.85rem; color: var(--color-ink-dim); }
 
 /* ------------------------------------------------------------
-   8h. The Library: Urðr's shelves and the reading desk
+   8h. The Library: Fróði's shelves and the reading desk
    ------------------------------------------------------------ */
 .lib-room { display: grid; gap: 20px; }
 .lib-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 22px; align-items: start; }
