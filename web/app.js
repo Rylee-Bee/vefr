@@ -9,8 +9,9 @@
  *   The Folks    → The Keeper of Faces The Archives  → Skuld
  *   The Vault    → The Hoard-Keeper   The Hall      → Ratatoskr, the ferry
  *
- * Every resident is the same model wearing a different face, with its
- * little toolkit of role templates. The squirrel is always watching.
+ * Each resident has its own little toolkit of role templates and uses
+ * the smallest model that passes its job (docs/guides/brain-roles.md),
+ * often the same one. The squirrel is always watching.
  */
 
 (function () {

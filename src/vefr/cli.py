@@ -33,6 +33,33 @@ from pathlib import Path
 from .maplab import load_pack, validate
 from .paths import world_name
 
+
+# ---------------------------------------------------------------- envelope
+# The machine face of every command that takes --json: the same stable
+# envelope the Worlds CLI prints ({ok, status, changed, warnings, actions,
+# data}) and the same exit codes, so scripts, agents and the studio's own
+# residents read VEFR the way they read the rest of the estate.
+EXIT_OK = 0           # did what it says
+EXIT_ERROR = 1        # refused, invalid, failed
+EXIT_USAGE = 2        # bad arguments (argparse's own code)
+EXIT_UNAVAILABLE = 3  # a backend (Spark, the live stack) cannot be reached
+EXIT_GATED = 4        # nothing changed; a person must approve (not an error)
+
+
+def envelope(ok: bool, status: str, data=None, *, changed: bool = False,
+             warnings=(), actions=()) -> dict:
+    return {'ok': ok, 'status': status, 'changed': changed,
+            'warnings': list(warnings), 'actions': list(actions), 'data': data}
+
+
+def emit_json(env: dict) -> None:
+    print(json.dumps(env, indent=2, default=str))
+
+
+def rows_json(rows, keys) -> list:
+    """Table rows -> list of dicts (the --json form of a status table)."""
+    return [dict(zip(keys, r)) for r in rows]
+
 GITEA_BASE = os.environ.get('VEFR_GITEA_URL', 'http://localhost:3000')
 
 DEFAULT_URL = os.environ.get('VEFR_LIVE_URL', 'http://127.0.0.1:8820')
@@ -267,6 +294,10 @@ def cmd_skipa(args) -> int:
         ('Q7', 'open items from the ROADMAP', *q7_next(pack)),
     ]
     now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    if getattr(args, 'json', False):
+        emit_json(envelope(True, 'answered', {
+            'at': now, 'questions': rows_json(rows, ('id', 'question', 'status', 'answer'))}))
+        return EXIT_OK
     print(f'ratatoskr skipa -- {now}')
     print()
     print('| Q  | Question | Status | Answer |')
@@ -1303,7 +1334,9 @@ def ratatoskr_main() -> int:
     ap.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
-    sub.add_parser('skipa', help='the seven questions').set_defaults(fn=cmd_skipa)
+    sk = sub.add_parser('skipa', help='the seven questions')
+    sk.add_argument('--json', action='store_true', help='print the result envelope')
+    sk.set_defaults(fn=cmd_skipa)
 
     pt = sub.add_parser(
         'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
@@ -1492,7 +1525,26 @@ def ratatoskr_main() -> int:
     ss.add_argument('--host', default=DEFAULT_DEPLOY_HOST)
     ss.add_argument('--spark-url', default=None,
                     help='probe this Spark endpoint instead of the default')
+    ss.add_argument('--json', action='store_true', help='print the result envelope')
     ss.set_defaults(fn=cmd_spark_status)
+
+    st = spark_sub.add_parser(
+        'task',
+        help='run one Spark task (npc, dialogue, lore, narrate, classify, '
+             'state_edit) through the same checked doorway the studio uses',
+    )
+    st.add_argument('task', help='the task contract to use')
+    st.add_argument('prompt', nargs='?', default=None,
+                    help='the request (or -f FILE, or stdin)')
+    st.add_argument('-f', '--file', default=None, help='read the request from FILE')
+    st.add_argument('--speaker', default=None, help='a character id from the pack')
+    st.add_argument('--state', default=None, help='a JSON file of runtime state')
+    st.add_argument('--no-world', action='store_true', help="leave the world's canon out")
+    st.add_argument('--spark-url', default=None, help='use this Spark endpoint')
+    st.add_argument('--inspect', action='store_true',
+                    help='print what WOULD be sent (no model call)')
+    st.add_argument('--json', action='store_true', help='print the result envelope')
+    st.set_defaults(fn=cmd_spark_task)
 
     smo = spark_sub.add_parser(
         'smoke',
@@ -2035,10 +2087,17 @@ def cmd_spark_status(args) -> int:
         rows.append(('health', 'ok', f'{h["status"]} in {h["probe_ms"]}ms'))
     except Exception as exc:  # noqa: BLE001
         rows.append(('health', 'DOWN', f'{exc.__class__.__name__}'))
+    healthy = all(s == 'ok' for _, s, _ in rows)
+    if getattr(args, 'json', False):
+        down = any(n == 'health' and s != 'ok' for n, s, _ in rows)
+        emit_json(envelope(healthy, 'healthy' if healthy else ('unavailable' if down else 'unhealthy'), {
+            'profile': prof['key'], 'host': host, 'url': url,
+            'checks': rows_json(rows, ('name', 'status', 'detail'))}))
+        return EXIT_OK if healthy else (EXIT_UNAVAILABLE if down else EXIT_ERROR)
     print(f'ratatoskr spark status (profile={prof["key"]}, host={host})')
     for name, status, detail in rows:
         print(f'  {name:<8} {status:<8} {detail}')
-    return 0 if all(s == 'ok' for _, s, _ in rows) else 1
+    return 0 if healthy else 1
 
 
 def cmd_spark_smoke(args) -> int:
@@ -2115,6 +2174,71 @@ def _pytest_summary(repo: Path) -> tuple:
     return ('ok', summary) if r.returncode == 0 else ('FAIL', summary)
 
 
+def cmd_spark_task(args) -> int:
+    """One Spark task through the checked doorway: context layers in,
+    json_schema-locked output, validated result out, fail-closed.
+
+    Plain mode (like `offload ask`): the result goes to stdout, one meta
+    line to stderr, so it pipes. --json prints the envelope. Exit codes:
+    0 validated, 1 the output failed its schema twice (nothing to apply),
+    2 bad arguments, 3 Spark unreachable.
+    """
+    from . import spark as spark_mod
+    if args.task not in spark_mod.TASK_CONTRACTS:
+        print(f'spark task: unknown task {args.task!r}; one of: '
+              + ', '.join(spark_mod.TASK_CONTRACTS), file=sys.stderr)
+        return EXIT_USAGE
+    if args.file:
+        user = Path(args.file).read_text(encoding='utf-8')
+    elif args.prompt is not None:
+        user = args.prompt
+    elif not sys.stdin.isatty():
+        user = sys.stdin.read()
+    else:
+        print('spark task: give a request, -f FILE, or pipe one in', file=sys.stderr)
+        return EXIT_USAGE
+    state = json.loads(Path(args.state).read_text(encoding='utf-8')) if args.state else None
+    kw = {'speaker': args.speaker, 'state': state, 'world': not args.no_world}
+    if args.inspect:
+        view = spark_mod.inspect_context(args.task, user, **kw)
+        if args.json:
+            emit_json(envelope(True, 'inspected', view))
+        else:
+            for m in view['messages']:
+                print(f"--- {m['role']} ---\n{m['content']}")
+            print(f"[{view['task']} · {view['model']} · ~{view['approx_prompt_words']} words · "
+                  f"{view['schema']}]", file=sys.stderr)
+        return EXIT_OK
+    t0 = datetime.now(timezone.utc)
+    try:
+        result, meta = spark_mod.spark_call(args.task, user, url=args.spark_url, **kw)
+    except spark_mod.SparkUnavailable as exc:
+        if args.json:
+            emit_json(envelope(False, 'unavailable', {'task': args.task},
+                               warnings=[str(exc)], actions=['ratatoskr spark status']))
+        else:
+            print(f'spark task: {exc}', file=sys.stderr)
+        return EXIT_UNAVAILABLE
+    except spark_mod.SparkMalformed as exc:
+        if args.json:
+            emit_json(envelope(False, 'malformed', {'task': args.task}, warnings=[str(exc)],
+                               actions=[f'ratatoskr spark task {args.task} --inspect']))
+        else:
+            print(f'spark task: {exc}', file=sys.stderr)
+        return EXIT_ERROR
+    secs = round((datetime.now(timezone.utc) - t0).total_seconds(), 1)
+    payload = result.model_dump() if hasattr(result, 'model_dump') else result
+    if args.json:
+        emit_json(envelope(True, 'validated', {'task': args.task, 'result': payload,
+                                               'profile_model': meta.get('model'), 'seconds': secs,
+                                               'sections': meta.get('sections')}))
+    else:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(f"[{args.task} · profile {meta.get('model')} · {secs}s · validation {meta.get('validation')}]",
+              file=sys.stderr)
+    return EXIT_OK
+
+
 def cmd_doctor(args) -> int:
     """Session-start health check - norns doctor.
 
@@ -2169,12 +2293,17 @@ def cmd_doctor(args) -> int:
         except Exception as exc:
             rows.append(('live', 'DOWN', f'{live} - {exc.__class__.__name__}'))
 
-    print('norns doctor')
-    for name, status, detail in rows:
-        print(f'  {name:<6} {status:<12} {detail}')
     failed = sum(1 for r in rows if r[1] == 'FAIL')
     skipped = sum(1 for r in rows if r[1] == 'skip')
     ok_n = len(rows) - failed - skipped
+    if getattr(args, 'json', False):
+        emit_json(envelope(not failed, 'healthy' if not failed else 'unhealthy', {
+            'checks': rows_json(rows, ('name', 'status', 'detail')),
+            'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped}}))
+        return EXIT_ERROR if failed else EXIT_OK
+    print('norns doctor')
+    for name, status, detail in rows:
+        print(f'  {name:<6} {status:<12} {detail}')
     print(f'doctor: {ok_n} ok, {failed} failed, {skipped} skipped')
     return 1 if failed else 0
 
@@ -2438,6 +2567,7 @@ def norns_main() -> int:
         help='session-start health check: git, tests, pack, live stack',
     )
     md.add_argument('--pack', default=None)
+    md.add_argument('--json', action='store_true', help='print the result envelope')
     md.set_defaults(fn=cmd_doctor)
 
     mt = craft.add_parser(
