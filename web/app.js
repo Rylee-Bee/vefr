@@ -709,7 +709,16 @@
     var who = h('div', { className: 'greeter__who' });
     who.appendChild(h('b', { className: 'greeter__name', textContent: resident.name }));
     who.appendChild(h('span', { className: 'greeter__craft', textContent: resident.craft }));
-    who.appendChild(h('p', { className: 'greeter__says', textContent: '\u201C' + greetingFor(id) + '\u201D' }));
+    if (id === 'library') {
+      /* Fr\u00F3\u00F0i never speaks: the words come up on a note pinned to a
+         little wooden paddle (docs/guides/residents.md). */
+      var paddle = h('div', { className: 'paddle', role: 'note', 'aria-label': 'Fr\u00F3\u00F0i writes' });
+      paddle.appendChild(h('p', { className: 'paddle__note', textContent: greetingFor(id) }));
+      paddle.appendChild(h('span', { className: 'paddle__handle', 'aria-hidden': 'true' }));
+      who.appendChild(paddle);
+    } else {
+      who.appendChild(h('p', { className: 'greeter__says', textContent: '\u201C' + greetingFor(id) + '\u201D' }));
+    }
     var ask = h('button', { className: 'cta cta--line greeter__ask', type: 'button', textContent: 'Ask ' + resident.name });
     ask.addEventListener('click', function () { openFolio(id, ask); });
     who.appendChild(ask);
@@ -821,7 +830,7 @@
          paddle (Rylee, 2026-09-26; docs/guides/residents.md). */
       name: 'Fr\u00F3\u00F0i', mark: '\u16A0',
       craft: 'keeper of the Library',
-      greeting: '(The paddle comes up.) No book is lost here.',
+      greeting: 'No book is lost here.',
       roles: [
         'Which book should I read first?',
         'What would a found note in this world sound like?',
