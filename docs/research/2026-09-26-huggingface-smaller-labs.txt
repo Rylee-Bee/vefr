@@ -1,0 +1,77 @@
+
+== text-generation (smaller labs, <= 4.5B, since 2026-03-01, by likes)
+  TokenRhythm/NeoHorse-1-4B                                4.21B apache-2.0     2026-09-05 dl=27332 likes=2539
+  XHToken/Spark-X2.5-4B                                    4.11B apache-2.0     2026-08-24 dl=36138 likes=1328
+  WeiboAI/VibeThinker-3B                                   3.09B mit            2026-06-12 dl=6318 likes=845
+  sapientinc/HRM-Text-1B                                   1.18B apache-2.0     2026-05-17 dl=20199 likes=823
+  Nanbeige/Nanbeige4.2-3B                                  4.17B apache-2.0     2026-07-21 dl=52298 likes=803
+  ornith-ai/Ornith-1.0-9B                                  0.00B mit            2026-06-21 dl=979694 likes=547
+  ornith-ai/Ornith-1.0-35B                                 0.00B mit            2026-06-21 dl=1580122 likes=507
+  z-lab/Qwen3.6-27B-DFlash                                 1.73B mit            2026-04-23 dl=82223 likes=399
+
+== sentence-similarity (smaller labs, <= 0.7B, since 2026-03-01, by likes)
+  tardellirs/colibri-embed-ptbr                            0.15B gemma          2026-07-04 dl=7836 likes=105
+  lightonai/LateOn                                         0.15B apache-2.0     2026-03-13 dl=6716 likes=54
+  lightonai/mLateOn                                        0.31B apache-2.0     2026-06-22 dl=6585 likes=38
+  lightonai/DenseOn                                        0.15B apache-2.0     2026-03-13 dl=8202 likes=35
+  lightonai/Agent-ModernColBERT                            0.15B apache-2.0     2026-05-12 dl=32872 likes=35
+  hotchpotch/bekko-embedding-v1-a25m                       0.12B mit            2026-07-19 dl=30259 likes=29
+  ai-sage/Giga-Embeddings-instruct-480M-0826               0.48B mit            2026-08-10 dl=157282 likes=24
+  nlpai-lab/KURE-v2                                        0.15B apache-2.0     2026-08-17 dl=5968 likes=20
+  hotchpotch/bekko-embedding-v1-a8m                        0.11B mit            2026-07-07 dl=6017 likes=19
+  erikkaum/lattice-retrieval                               0.03B mit            2026-08-06 dl=0 likes=19
+
+== feature-extraction (smaller labs, <= 0.7B, since 2026-03-01, by likes)
+  m-a-p/SheetSage2                                         0.06B cc-by-nc-4.0   2026-09-09 dl=17772 likes=128
+  inference-optimization/Kimi-K3-0.40B                     0.40B mit            2026-07-28 dl=1158 likes=82
+  Linkup-Platform/linkup-sparseup-embed-v1                 0.19B apache-2.0     2026-09-16 dl=2582 likes=51
+  m-a-p/MERT-v2-FullSong                                   0.63B cc-by-nc-4.0   2026-09-09 dl=14705 likes=39
+  perplexity-ai/pplx-embed-v1-late-0.6b                    0.60B mit            2026-03-13 dl=1113 likes=32
+  m-a-p/YuE2-Vae                                           0.13B cc-by-nc-4.0   2026-09-09 dl=20853 likes=32
+  OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano                  0.02B apache-2.0     2026-04-02 dl=162739 likes=29
+  naver/v-splade-quality                                   0.33B apache-2.0     2026-07-01 dl=247 likes=22
+  m-a-p/MERT-v2-30s                                        0.63B cc-by-nc-4.0   2026-09-09 dl=1417 likes=20
+  codefuse-ai/F2LLM-v2-0.6B                                0.60B apache-2.0     2026-03-02 dl=8745 likes=16
+
+== text-to-speech (smaller labs, <= 1.0B, since 2026-03-01, by likes)
+  k2-fsa/OmniVoice                                         0.61B ?              2026-03-30 dl=1369984 likes=1433
+  Edge0/Audio8-TTS-Preview-0.6b                            0.60B apache-2.0     2026-07-28 dl=6056 likes=407
+  Edge0/Audio8-TTS-Preview-0.1b                            0.17B other          2026-08-19 dl=4265 likes=227
+  Aratako/Irodori-TTS-500M-v2                              0.49B mit            2026-03-23 dl=0 likes=142
+  nineninesix/gepard-1.0                                   0.56B apache-2.0     2026-06-22 dl=68029 likes=134
+  phasefield-audio/Irodori-TTS-v4.1-Anime                  0.77B mit            2026-09-04 dl=0 likes=127
+  Aratako/Irodori-TTS-500M-v3                              0.51B mit            2026-05-12 dl=0 likes=116
+  darkps/ice-012-audio                                     0.71B cc-by-nc-4.0   2026-08-29 dl=1782 likes=80
+  Aratako/Irodori-TTS-500M-v2-VoiceDesign                  0.51B mit            2026-03-30 dl=0 likes=79
+  sbintuitions/sarashina2.2-tts                            0.81B ?              2026-04-16 dl=762 likes=73
+
+== automatic-speech-recognition (smaller labs, <= 1.0B, since 2026-03-01, by likes)
+  Edge0/Audio8-ASR-0.1B                                    0.32B cc-by-nc-4.0   2026-07-10 dl=25592 likes=84
+  oruk/orukeet                                             0.63B cc-by-sa-4.0   2026-09-09 dl=24459 likes=81
+  tryorato/orato-asr-hindi-v1                              0.78B apache-2.0     2026-07-29 dl=86 likes=30
+  FunAudioLLM/Fun-ASR-Nano-2512-hf                         0.83B apache-2.0     2026-05-24 dl=84897 likes=19
+  FaisaI/tadabur-Whisper-Small                             0.24B cc-by-nc-4.0   2026-03-11 dl=104 likes=18
+  changelinglab/PhoneticXeus                               0.57B apache-2.0     2026-03-30 dl=7051 likes=15
+
+== image-text-to-text (smaller labs, <= 2.5B, since 2026-03-01, by likes)
+  PaddlePaddle/PaddleOCR-VL-1.6                            0.96B apache-2.0     2026-05-27 dl=37807 likes=499
+  ATH-MaaS/OvisOCR2                                        0.85B apache-2.0     2026-07-13 dl=198581 likes=472
+  StarDoc-AI/TeleOCR                                       1.42B apache-2.0     2026-08-14 dl=26152 likes=349
+  opendatalab/MinerU2.5-Pro-2604-1.2B                      1.16B apache-2.0     2026-04-02 dl=190897 likes=169
+  CohereLabs/North-Micro-Vision-Instruct                   2.48B apache-2.0     2026-08-10 dl=169774 likes=148
+
+== text-to-image (smaller labs, <= 4.0B, since 2026-03-01, by likes)
+
+== microsoft image / small vision (since 2025-09)
+  microsoft/Mage-ViT                                        0.32B mit          2026-07-26 image-feature-extraction likes=37
+  microsoft/Mage-VL                                         4.74B apache-2.0   2026-07-25 image-text-to-text likes=414
+  microsoft/Fara1.5-27B                                    27.36B mit          2026-07-17 image-text-to-text likes=292
+  microsoft/Fara1.5-4B                                      4.54B mit          2026-07-17 image-text-to-text likes=47
+  microsoft/GELab-Zero-4B-preview-Sico-Evolution            4.44B apache-2.0   2026-06-30 image-text-to-text likes=57
+  microsoft/Fara1.5-9B                                      9.41B mit          2026-05-12 image-text-to-text likes=46
+  microsoft/UniRG-CXR                                       8.77B apache-2.0   2026-03-19 image-text-to-text likes=2
+  microsoft/X-Reasoner-7B                                   8.29B apache-2.0   2026-02-03 image-text-to-text likes=10
+  microsoft/Phi-4-reasoning-vision-15B                     15.12B mit          2026-01-23 image-text-to-text likes=179
+  microsoft/Fara-7B-onnx                                        ? mit          2025-12-03 image-text-to-text likes=1
+  microsoft/Fara-7B                                         8.29B mit          2025-10-30 image-text-to-text likes=620
+  microsoft/STELLAR                                             ? mit          2025-10-28 image-feature-extraction likes=13

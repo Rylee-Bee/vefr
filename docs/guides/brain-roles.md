@@ -51,6 +51,48 @@ models are now natively multimodal (one model can be Spark *and* vision);
 MiniCPM5 and LFM2.5 are new; tiny speech models (Kitten, Moonshine
 streaming) and a 97M multilingual embedder make a sub-1 GB profile realistic.
 
+## Smaller labs worth testing
+
+Trained and optimized small models from outside the big labs, from a second
+survey the same day (raw output:
+[`docs/research/2026-09-26-huggingface-smaller-labs.txt`](../research/2026-09-26-huggingface-smaller-labs.txt)).
+Check each model's provenance and card before bundling.
+
+| Role | Candidates | Licence |
+|---|---|---|
+| Storyteller / Spark | Nanbeige4.2-3B · VibeThinker-3B · HRM-Text-1B (new architecture) · NeoHorse-1-4B and Spark-X2.5-4B (very popular; verify provenance first) | Apache-2.0 · MIT · Apache-2.0 · Apache-2.0 |
+| Embeddings | LightOn LateOn / DenseOn (0.15B) · bekko-embedding (0.11–0.12B) · pplx-embed-v1-late-0.6b | Apache-2.0 · MIT · MIT |
+| Voice out | Audio8-TTS 0.1B / 0.6B · gepard-1.0 (0.56B) | other / Apache-2.0 · Apache-2.0 |
+| Voice in | Fun-ASR-Nano (0.8B) | Apache-2.0 |
+| Text in images | PaddleOCR-VL-1.6 (0.96B) · OvisOCR2 (0.85B) | Apache-2.0 ×2 |
+| Image generation | none under 4B; rules first stays right | |
+
+## Embedders instead of generators
+
+Many "brain" jobs don't need to generate anything, and a 0.1–0.3B embedder
+answers in milliseconds where a generator takes seconds. Use one wherever
+comparing is enough:
+
+- **Style check:** does a new sprite or picture match the approved house art?
+  Compare image embeddings (microsoft/Mage-ViT, 0.32B, MIT; google/tipsv2-b14,
+  0.2B, Apache-2.0) against the design system's pictures.
+- **Art search and dedupe:** "find every lantern icon", "is this a near
+  copy?".
+- **Routing:** which resident or module handles a request, by similarity to
+  labelled examples, instead of asking Spark.
+- **Tagging and memory search:** lore, books and past sessions. Some of this
+  needs no model at all: plain indexing, as in the deja-vu approach noted in
+  the pickle repo's research.
+
+## Fit to the machine
+
+"The best with whatever the user has": on first run the studio looks at the
+machine (memory, CPU cores and instruction set, any GPU, free disk) and
+pre-selects the largest profile that fits comfortably, then shows what it
+chose and why. Every role degrades gracefully: a smaller model, then rules,
+then "not available on this machine" with the reason, never a crash. A
+provider can be tied to any single role to lift it beyond the machine.
+
 ## Draft profiles (to confirm by the bake-off)
 
 | Profile | Roles | Rough download |
