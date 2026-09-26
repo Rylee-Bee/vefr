@@ -324,6 +324,24 @@ def _journal_section(entries: list[dict], exclude: set[str]) -> str:
 
 # ---- public API ----
 
+def _library_section(books: list[dict]) -> str:
+    """The Library: the world's authored books, each with its pages.
+
+    Books are the author's own words (library/*.md), so they are copied
+    as written, page breaks kept as scene breaks. Deterministic, like
+    every section here.
+    """
+    if not books:
+        return ""
+    from .library import found_words
+    out = ["## The Library"]
+    for b in books:
+        out.append(f"### {b['title'] or b['id']}")
+        out.append(f"_{found_words(b)}_")
+        out.append("\n\n* * *\n\n".join(p for p in b["pages"] if p))
+    return "\n\n".join(out)
+
+
 # The kinds that have a dedicated tab section. Everything else goes
 # into the catch-all "Journal" tab at the end.
 _TAB_KINDS = {"rumor", "item_forged", "stefna_letter", "npc_line", "move"}
@@ -341,6 +359,7 @@ def export_story(world: str | None = None, sid: str | None = None) -> str:
       ## The Stefna
       ## The Voices Heard
       ## The Journal    (anything the per-tab sections did not cover)
+      ## The Library    (the world's authored books, when it has any)
 
     `sid` selects the play session the tree is woven from; None is
     the default session.
@@ -373,6 +392,8 @@ def export_story(world: str | None = None, sid: str | None = None) -> str:
     if journal:
         parts.append(journal)
 
+    library = _library_section(w.get("library") or [])
+
     if not any([
         _town_section(entries),
         _rumors_section(entries),
@@ -382,6 +403,9 @@ def export_story(world: str | None = None, sid: str | None = None) -> str:
         _journal_section(entries, _TAB_KINDS),
     ]):
         parts.append("Nothing has happened here yet. The world is waiting.")
+
+    if library:
+        parts.append(library)
 
     return "\n\n".join(parts).rstrip() + "\n"
 

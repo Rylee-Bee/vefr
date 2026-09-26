@@ -22,11 +22,12 @@ becomes the **launch title** later.
 | Act 1 — cooking | Ruleset + act-runner, PR #24 | BJ: paused (launch title later) |
 | Act 2 — desk | Ruleset + world-knowledge loop, PR #27 | BJ: paused |
 | Rulesets guide | `docs/guides/rulesets.md`, PR #28 | — |
-| **Library** (next) | Ruleset: authored books, notes and terminals found in the world, kept, fed to the book export | First studio project |
+| **Library** | L1 landed: the book format, validator, API, Urðr's Library room, the export chapter. Next: L2, finding books in play | First studio project |
 | Delve (proposed) | Ruleset: floors, items, weight, spells, turns | First studio project |
 
-**The one next step:** the Library ruleset, built through the checklist
-in `docs/guides/rulesets.md`. The owner approved this pack-contract
+**The one next step:** Library slice L2, finding books in play (map
+pickup, a resident gives one, earned), through the checklist in
+`docs/guides/rulesets.md`. The owner approved this pack-contract
 change on 2026-09-25; each later ruleset is its own ask-first.
 The old "play Act 2 before Act 3+ engine work" gate is retired by owner
 decision (estate vision doc Q9).

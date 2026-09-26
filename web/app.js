@@ -171,6 +171,7 @@
   /* ── The rooms ────────────────────────────────────────── */
 
   var SCREEN_TITLES = {
+    library:    'The Library',
     floor:      'The Studio Floor',
     launcher:   'The Studio',
     workshop:   'The Desk',
@@ -185,6 +186,7 @@
   };
 
   var SCREEN_SUBTITLES = {
+    library:    'Every book the studio keeps, and every book its worlds hide. Pull one off the shelf to read it.',
     floor:      'Ten rooms, one resident each. Every room is a department a real studio has, and every game passes through them.',
     launcher:   'come in, sit by the fire',
     workshop:   'where worlds begin',
@@ -204,6 +206,7 @@
     workshop: ['The candle has been waiting. So have I.', 'Sit. The page is still warm from last time.'],
     map: ['Mind the edges; they are not finished yet.', 'I drew a road last night. It goes somewhere now.'],
     characters: ['Someone knocked while you were out. Shall we see who?', 'Every face here wants something. Let us ask what.'],
+    library: ['Every book on these shelves was written by a person. Read slowly.', 'Take one down. I will know where it goes.'],
     items: ['Please do not lick the rings.', 'I polished the small things. The big things polished themselves.'],
     journal: ['I heard that. I hear everything.', 'The ink dried on the last page. Ready for the next?'],
     runes: ['The stones are quiet today. That is also an answer.', 'Pick one without looking. That is the whole trick.'],
@@ -222,7 +225,7 @@
   var DOOR_NOTES = {
     workshop: 'the candle is still going', map: 'unfinished edges, mind your step',
     characters: 'a chair by the window is still warm', items: 'please do not lick the rings',
-    journal: 'Urðr hears everything', runes: 'the stones will not flatter you',
+    journal: 'Urðr hears everything', library: 'read everything; that is what it is for', runes: 'the stones will not flatter you',
     evidence: 'watch the third step', hall: 'dusted on Tuesdays, by tail',
     settings: 'Bolt is napping on the boiler'
   };
@@ -235,7 +238,7 @@
 
   // The department each room is, in studio words
   var SCREEN_DEPTS = {
-    launcher: 'Welcome', floor: 'Every department', workshop: 'Concept \u00B7 the brief',
+    launcher: 'Welcome', floor: 'Every department', library: 'Books \u00B7 kept by Ur\u00F0r', workshop: 'Concept \u00B7 the brief',
     map: 'Level design', characters: 'Characters', items: 'Items \u0026 economy',
     journal: 'Production records', runes: 'Inspiration', evidence: 'The story bible',
     hall: 'Launch \u00B7 on display', settings: 'The machinery'
@@ -708,11 +711,11 @@
   var RESIDENT_ART = {
     hall: 'ratatoskr', workshop: 'storyteller', journal: 'urdr', map: 'cartographer',
     characters: 'keeper-of-faces', items: 'hoard-keeper', runes: 'rune-carver',
-    evidence: 'skuld', settings: 'volundr', spark: 'bolt'
+    evidence: 'skuld', settings: 'volundr', spark: 'bolt', library: 'urdr'
   };
   var ROOM_BANNERS = {
     workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
-    runes: 'casting-table', evidence: 'archives', hall: 'hall', settings: 'boiler-room', floor: 'library'
+    runes: 'casting-table', evidence: 'archives', hall: 'hall', settings: 'boiler-room', floor: 'hall', library: 'library'
   };
   /* A resident's action pose, set beside the thing they tend. Decorative:
      the words around it always carry the meaning. */
@@ -800,6 +803,17 @@
         'Summarize the arc in one breath',
         'Which moment should we honor?',
         'What threads are still open?'
+      ]
+    },
+    library: {
+      name: 'Ur\u00F0r', mark: '\u2767',
+      craft: 'keeper of the Library',
+      greeting: 'Read everything. That is what it is for.',
+      roles: [
+        'Which book should I read first?',
+        'What would a found note in this world sound like?',
+        'Where could a book be hidden in this town?',
+        'What should the next book be about?'
       ]
     },
     runes: {
@@ -1076,6 +1090,7 @@
     ['characters', 'i-folks', 'Characters: who lives here, what they want, what they fear.'],
     ['items', 'i-vault', 'Items and economy: what you carry, and what it means.'],
     ['journal', 'i-chronicle', 'Production records: what happened, and when.'],
+    ['library', 'i-library', 'Books: the studio handbook, and every book the worlds hide.'],
     ['runes', 'i-runes', 'Inspiration, for when you are stuck.'],
     ['evidence', 'i-archives', 'The story bible: the truth beneath the world.'],
     ['hall', 'i-hall', 'Launch and display: finished work on the walls.'],
@@ -2985,6 +3000,125 @@
       });
       obj.appendChild(deepenBtn);
       return obj;
+    }
+    function leave() {}
+    return { init: init, enter: enter, leave: leave };
+  })();
+
+  /* ══════════════════════════════════════════════════════
+     THE LIBRARY — Urðr's shelves: the studio's books and the world's
+     ══════════════════════════════════════════════════════ */
+
+  screens.library = (function () {
+    var el_screen, reader = null, open = { book: null, page: 0 };
+    var L = window.VEFR_LIBRARY;
+    var SPINES = ['#2F5553', '#563F63', '#6B4B28', '#3F5A38', '#6A3535', '#33496A', '#4E5A2E', '#5A4B38'];
+    function init() {
+      el_screen = h('div', { className: 'screen', id: 'screen-library' });
+      main.appendChild(el_screen);
+    }
+    function shelf(title, sub, books, empty) {
+      var s = h('section', { className: 'carved lib-shelf', 'aria-label': title });
+      var head = h('div', { className: 'lib-shelf__head' });
+      head.appendChild(h('h2', { className: 'lib-shelf__title', textContent: title }));
+      head.appendChild(h('span', { className: 'label', textContent: sub }));
+      s.appendChild(head);
+      var row = h('div', { className: 'lib-books', role: 'group', 'aria-label': title + ' books' });
+      if (!books.length) {
+        row.appendChild(empty);
+      }
+      books.forEach(function (b, i) {
+        var spine = h('button', { className: 'lib-spine lib-spine--' + (b.kind || 'book'), type: 'button',
+          'aria-pressed': 'false', 'aria-label': b.title + ', ' + b.pages.length + ' page' + (b.pages.length === 1 ? '' : 's') });
+        spine.style.setProperty('--spine', SPINES[i % SPINES.length]);
+        spine.style.setProperty('--spine-h', (118 + ((i * 37) % 30)) + 'px');
+        spine.appendChild(h('span', { className: 'lib-spine__title', textContent: b.title }));
+        spine.addEventListener('click', function () { read(b, spine); });
+        row.appendChild(spine);
+      });
+      s.appendChild(row);
+      return s;
+    }
+    function read(book, spine) {
+      open.book = book;
+      open.page = 0;
+      el_screen.querySelectorAll('.lib-spine').forEach(function (x) { x.setAttribute('aria-pressed', x === spine ? 'true' : 'false'); });
+      paint();
+      var title = reader.querySelector('.lib-reader__title');
+      if (title) title.focus();
+    }
+    function paint() {
+      var b = open.book;
+      reader.innerHTML = '';
+      if (!b) {
+        reader.appendChild(h('span', { className: 'label', textContent: 'The reading desk' }));
+        reader.appendChild(h('p', { className: 'lib-reader__hint', textContent: 'Pull a book off a shelf to read it here, one page at a time.' }));
+        return;
+      }
+      var n = b.pages.length;
+      open.page = L.clampPage(open.page, n);
+      reader.appendChild(h('span', { className: 'label', textContent: b.found_words }));
+      reader.appendChild(h('h2', { className: 'lib-reader__title', tabindex: '-1', textContent: b.title }));
+      var page = h('div', { className: 'lib-page', 'aria-live': 'polite' });
+      page.innerHTML = L.renderPage(b.pages[open.page]);
+      reader.appendChild(page);
+      var nav = h('div', { className: 'lib-reader__nav' });
+      var prev = h('button', { className: 'cta cta--line', type: 'button', textContent: 'Previous page' });
+      var next = h('button', { className: 'cta cta--gold', type: 'button', textContent: open.page >= n - 1 ? 'Close the book' : 'Next page' });
+      prev.disabled = open.page === 0;
+      prev.addEventListener('click', function () { open.page -= 1; paint(); focusPage(); });
+      next.addEventListener('click', function () {
+        if (open.page >= n - 1) { open.book = null; paint(); return; }
+        open.page += 1; paint(); focusPage();
+      });
+      nav.appendChild(prev);
+      nav.appendChild(h('span', { className: 'lib-reader__count', textContent: L.pageLabel(open.page, n) }));
+      nav.appendChild(next);
+      reader.appendChild(nav);
+    }
+    function focusPage() {
+      var t = reader.querySelector('.lib-reader__title');
+      if (t) t.focus();
+    }
+    function enter() {
+      el_screen.innerHTML = '';
+      var wrap = h('div', { className: 'wrap band lib-room' });
+      var rl = residentLine('library');
+      if (rl) wrap.appendChild(rl);
+      var grid = h('div', { className: 'lib-grid' });
+      var shelves = h('div', { className: 'lib-shelves' });
+      shelves.appendChild(loadingState('Urðr is dusting the shelves…'));
+      reader = h('aside', { className: 'carved lib-reader', 'aria-label': 'The reading desk' });
+      reader.addEventListener('keydown', function (e) {
+        if (!open.book) return;
+        if (e.key === 'ArrowRight' && open.page < open.book.pages.length - 1) { open.page += 1; paint(); focusPage(); }
+        if (e.key === 'ArrowLeft' && open.page > 0) { open.page -= 1; paint(); focusPage(); }
+      });
+      grid.appendChild(shelves);
+      grid.appendChild(reader);
+      wrap.appendChild(grid);
+      el_screen.appendChild(wrap);
+      open = { book: null, page: 0 };
+      paint();
+      API.library()
+        .then(function (data) {
+          shelves.innerHTML = '';
+          var ladder = spot('urdr-library-ladder', 'spot--inline lib-ladder');
+          var intro = h('div', { className: 'spot-row' });
+          intro.appendChild(h('p', { className: 'archives-intro',
+            textContent: 'Books are written by people, never by the model. A world keeps its own in its library folder.' }));
+          intro.appendChild(ladder);
+          shelves.appendChild(intro);
+          var worldName = data.world || 'this world';
+          var empty = h('p', { className: 'lib-empty',
+            textContent: worldName + ' has no books yet. Write one as a markdown file in the pack’s library/ folder; it will appear here.' });
+          shelves.appendChild(shelf('Found in ' + worldName, (data.books || []).length + ' written', data.books || [], empty));
+          shelves.appendChild(shelf('How games are made', 'the studio handbook', data.studio || [], h('p', { className: 'lib-empty', textContent: 'The studio shelf is empty.' })));
+        })
+        .catch(function () {
+          shelves.innerHTML = '';
+          shelves.appendChild(emptyState('The Library is locked right now.', 'Try again in a moment.'));
+        });
     }
     function leave() {}
     return { init: init, enter: enter, leave: leave };
