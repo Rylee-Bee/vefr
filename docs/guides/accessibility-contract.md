@@ -2,98 +2,91 @@
 
 **Every story deserves every audience.**
 
-Weave your world tree. An AI sits beside you — not above you — figuring
-it out together. Make a story, learn something about stories, and maybe
-about yourself. Then share it with anyone, anywhere.
+Weave your world tree. An AI works beside you, not above you, and you figure
+things out together. Make a story, learn something about stories (and maybe
+about yourself), then share it with anyone, anywhere.
 
 ---
 
-## What VEFR Is
+## What VEFR is
 
-VEFR is an engine *and* a game. The building is the playing — when you're
-in the map editor placing tiles, tuning the forge, peeking at how the
-world's AI pipeline makes decisions, that's the game. The Norse naming runs
-deep because it's woven into the mythology that matters.
+VEFR is an engine *and* a game studio. Building is part of the fun: sketching
+a map, drafting an item, or peeking at how the engine decided something are all
+part of the experience. The Norse naming runs deep because the mythology matters
+to the project.
 
-Three things ship on this platform:
+Three things are built on it:
 
-- **VEFR itself** — the workshop. A creative tool that's also a game. You
-  weave worlds alongside an AI collaborator, and the weaving teaches you
-  about story structure, AI engineering, and yourself. Three panels define
-  the workspace: *The Loom* (world builder — map tiles, NPCs, lore, all
-  transparent), *The Thread* (AI chat — pair-programming conversation with
-  keep/try-again/discard), and *The Journal* (history — git-like but human,
-  with rewind, fork, bookmark, and export-as-e-book). The palette is
-  restrained — warm grays, soft cream, calm teal accent. A place you'd
-  spend hours in without fatigue. Super useful, lots to find.
-- **Burrito Journalism** — the engine demo. You sell breakfast burritos
-  from a truck. You're good at it. You roll into a new town, people try
-  your food, you get popular, you get trusted — then they start asking for
-  help. Eventually you're delivering newspapers AND burritos. "The Daily
-  Hash(browns)." Different locations, different game styles (Diablo-like
-  dungeon, food truck sim, journalism beat), one voice, one story. Also
-  there are mutant water polo players who steal a printing press because
-  they think it's neat. It's weird. It's an apocalypse. It's fun. Super fun.
-- **VEFR** — a personal RPG rooted in Norse myth. Crafted. Starts as a
-  Castle of the Winds homage — monochrome, constrained, the UI looks like
-  every RPG you've ever played. But nothing is what it seems. The HP bar
-  is actually the journey phase (whispers → doubts → feared → awed). The
-  inventory items have bonds, not types — "given" (it fits badly), "cold"
-  (a tool that doesn't care), "found" (rare — made for waiting hands).
-  The quest log is actually starred whispers — moments you chose to
-  remember. The decorative runes in the corner are a live cast (what was,
-  what is, what asks). As you play, as the AI learns your story, the world
-  itself transforms from monochrome tradition into a colorful, living
-  place that's uniquely yours. The UI blooms alongside the world — because
-  the transformation IS the game. You start thinking you're the hero out
-  to save the world from monsters, but the world thinks YOU are the
-  monster. The real journey is learning there is good, and the old shell
-  and skeleton isn't true. Crafted, old RPG that slowly gives way to a
-  colorful, livid, living world.
+- **The VEFR studio.** A game studio under the World Tree, and a creative tool
+  that feels like a game. Each room is a department with a resident who helps:
+  the Desk for writing, the Map Room, the Folks, the Vault, the Library, the
+  Chronicle for what has happened, and the Boiler Room for settings. Models
+  help in the studio; the games it makes are finished artifacts (ADR 0003).
+- **Burrito Journalism**, the engine demo and launch title. You sell breakfast
+  burritos from a truck. You're good at it. You roll into a new town, people
+  try your food, you get popular, you get trusted, and then they start asking
+  for help. Soon you're delivering newspapers *and* burritos: "The Daily
+  Hash(browns)". Different places play as different kinds of game (a
+  Diablo-like dungeon, a food-truck sim, a journalism beat) with one voice and
+  one story. There are also mutant water polo players who steal a printing
+  press because they think it's neat. It's weird. It's an apocalypse. It's fun.
+- **A personal RPG rooted in Norse myth.** It starts as a *Castle of the
+  Winds* homage: monochrome, constrained, a UI like every RPG you've played.
+  But nothing is what it seems. The health bar is really the journey's phase
+  (whispers, doubts, feared, awed). Items have bonds instead of types:
+  "given" (it fits badly), "cold" (a tool that doesn't care), "found" (rare,
+  made for waiting hands). The quest log is your starred whispers, the moments
+  you chose to remember. The runes in the corner are a live cast (what was,
+  what is, what asks). As you play and the world learns your story, it turns
+  from monochrome tradition into a colourful, living place that's yours; the
+  interface blooms with it, because the transformation *is* the game. You
+  start out thinking you're the hero saving the world from monsters, but the
+  world thinks *you* are the monster. The real journey is learning that there
+  is good, and that the old shell isn't the truth.
 
-All three share the same accessible foundation. All three feel completely
+All three share the same accessible foundation, and all three feel completely
 different. That's the point.
 
 ---
 
 ## Tone
 
-The platform has a voice. Here's how it sounds.
+### The AI is a collaborator
 
-### The AI is your pair programmer
+The model that helps you build is someone you think alongside, not a tool you
+command. The conversation is casual and back-and-forth. Residents speak for it
+in the studio, and nothing it drafts is kept until you choose it.
 
-The LLM that helps you build your game isn't a tool you command — it's a
-collaborator you think alongside. The conversation is casual, back-and-
-forth, two people figuring something out together.
+### Interface words: plain first
 
-**What this means for UI language:**
+Buttons, labels, errors and loading messages say plainly what is happening.
+Personality lives in the residents' greetings, the art and the ambience lines,
+never in a riddle you have to decode to use the tool.
 
 | Instead of | Write |
 |---|---|
-| `GENERATE WORLD` | `let's build this` |
-| `EXECUTE` | `try it` |
-| `REVERT TO CHECKPOINT` | `go back to when...` |
-| `COMMIT` | `bookmark this moment` |
-| `INSPECT PIPELINE STATE` | `see how this works` |
-| `CONFIGURE PARAMETERS` | `set this up` |
-| `ERROR: INVALID INPUT` | `that didn't work — want to try something else?` |
+| `GENERATE WORLD` | `Begin a new world` |
+| `EXECUTE` | `Try it` |
+| `REVERT TO CHECKPOINT` | `Go back to…` |
+| `COMMIT` | `Keep this` |
+| `INSPECT PIPELINE STATE` | `See how this works` |
+| `ERROR: INVALID INPUT` | `That didn't work. Check the name, then try again.` |
 
-Buttons are invitations, not commands. The journal is a notebook, not
-version control. The inspector is curiosity, not debugging.
+Buttons are invitations in sentence case. Errors say what went wrong and what
+to do next.
 
-### Every UI element is transparent
+### Every part can explain itself
 
-Each panel, knob, and setting has a way to see what it calls and what it
-does under the hood. This isn't hidden developer tooling — it's part of
-the game. You're learning AI engineering by building a world, and the
-platform lets you peek at the wiring whenever you're curious.
+Each panel and setting can show what it calls and what it does underneath.
+That isn't hidden developer tooling; it's part of the game. You learn how AI
+systems work by building a world, and you can look at the wiring whenever
+you're curious.
 
-### The journal is git for your story
+### The journal is version control for your story
 
-The journal system uses git-like mechanics — rewind, fork, bookmark — but
-the language stays human. You're not managing branches and commits. You're
-exploring paths your story could take, bookmarking moments you want to
-remember, and forking timelines to see what happens if.
+The Chronicle and the Hall work like git (go back, branch, bookmark), but the
+words stay human. You're not managing branches and commits; you're exploring
+paths your story could take and keeping the moments you want to remember.
 
 ---
 
@@ -275,9 +268,9 @@ the engine handles the plumbing.
    `VEFR_PREFS.preview({ contrast: 'high' })` for live preview
    without saving.
 
-Your choices stick — they persist across sessions, travel via shareable
-URL, and always respect OS accessibility settings. Set it once, it follows
-you.
+Your choices stick: they persist across sessions, can travel to another
+browser in a link (`?prefs=`, handled by `prefs.js`), and always respect the
+operating system's accessibility settings. Set them once and they follow you.
 
 ---
 
@@ -392,7 +385,7 @@ Import `vefr-foundation.css` — it provides all of these out of the box:
 - [ ] No player-facing text below 14px
 - [ ] Captions and visual pairing on by default
 - [ ] Language is neutral, warm, and assumes nothing about the player
-- [ ] AI chat follows pair-programming tone — invitations, not commands
+- [ ] Interface words are plain first; residents and AI chat offer, never command
 
 ### Layer 2 — The Skin (owned by you)
 
