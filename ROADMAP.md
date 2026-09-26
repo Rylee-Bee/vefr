@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **Studio Hall skin, slice 1 of the studio redesign** (2026-09-25):
+      the workshop now reads as a game studio the old Norse run: forged
+      iron, gold, rune bands and engraved lettering. One new stylesheet,
+      `web/studio-hall.css`, loaded last in `web/app.html`; restyle only,
+      no structure or behaviour, so removing its `<link>` restores the old
+      look. Room sign becomes a level iron plaque with a rune band; the
+      shelf becomes an iron bar of engraved placards (room descriptions
+      grow from 9.5px to 11px); room headings take the engraved face; the
+      Warm tier's charcoal becomes iron (Bright and Nothing Hides keep
+      their own contrast values). Phones: the sign no longer covers the
+      scene's first heading (`.main` clears it at <=640px). New font:
+      Cinzel (SIL OFL 1.1), self-hosted as `web/fonts/Cinzel-Variable.woff2`
+      and listed in `web/fonts/README.md` + `THIRD_PARTY_NOTICES.md`.
+      Gates: `ruff check` clean; `pytest -q` 550 passed, 1 skipped;
+      public-surface clean; axe-core over all ten rooms at 1280px:
+      zero serious/critical findings added (the one existing Archives
+      `scrollable-region-focusable` is identical on `main`).
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +

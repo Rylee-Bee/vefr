@@ -19,6 +19,18 @@ packaged file both work offline from the first byte.
   (design/HANDOFF.md, Typography) names Inter as the one UI family.
   Body/reading text stays on the prefs-driven reading font below.
 
+## Cinzel (engraved display face)
+
+- Source: https://github.com/NDISCOVER/Cinzel (Natanael Gama)
+- License: SIL Open Font License 1.1
+- Web file needed: `Cinzel-Variable.woff2` (one variable file,
+  weights 400-900)
+- Vendored: 2026-09-25, latin subset, from the `Cinzel` Google Fonts
+  CSS2 endpoint with a browser UA (single variable woff2).
+- Used by: `web/studio-hall.css` (`--font-display`): room signs,
+  shelf placards and screen headings. Display only; body text stays
+  on the UI and reading fonts.
+
 ## Atkinson Hyperlegible Next
 
 - Source: https://www.brailleinstitute.org/freefont/
