@@ -7,6 +7,20 @@
 
 ## Landed
 
+- [x] **Screenshots gallery + docs at current truth** (2026-09-26):
+      `scripts/capture-screenshots.py` now photographs the studio as it is
+      (every room at 1440px night, three rooms in daylight, three at 390px, a
+      book open in the Library, a resident's chat, the woven player dark and
+      light) as JPEG (2.5 MB, was ~12 MB as PNG) and writes
+      `docs/screenshots/README.md`, the gallery page, from exactly the
+      pictures it took. The old workshop screenshots are gone. The
+      `screenshots` workflow runs on any `web/` or `src/vefr/` change
+      (it only watched pre-redesign files), is read-only (its comment
+      claimed it committed back; it never did), and uploads the gallery as an
+      artifact; the committed gallery is refreshed by running the script.
+      README, GETTING_STARTED, AGENTS and design/UI-REFERENCES describe the
+      studio as it is. The sample world gains three demo books (CC0; "Writing
+      a Book" teaches the format).
 - [x] **The Library, slice L1** (2026-09-26): books a world keeps. A pack
       may carry `library/*.md` (front matter: title, found = shelf | map |
       resident | earned, at, speaker, when, kind; `* * *` breaks pages).
