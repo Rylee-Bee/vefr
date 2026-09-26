@@ -16,12 +16,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .paths import app_home
+from .paths import app_home, world_scoped
 from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 
 JOURNAL = Path(
     os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
 )
+
+# Each world keeps its own history (paths.world_scoped). Off only while
+# a caller points the base at an explicit file (weave --with-bundle).
+SCOPE_BY_WORLD = True
 
 KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "move", "fork")
 
@@ -42,7 +46,8 @@ def _sync_undo_stash() -> None:
 
 def journal_path(sid: str | None = None) -> Path:
     """The journal file for a session; the base file when default."""
-    return derive(JOURNAL, sid)
+    base = world_scoped(JOURNAL) if SCOPE_BY_WORLD else JOURNAL
+    return derive(base, sid)
 
 
 def entries(sid: str | None = None) -> list[dict]:
