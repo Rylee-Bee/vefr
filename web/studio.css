@@ -181,7 +181,7 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 /* ------------------------------------------------------------
    4. The iron top bar
    ------------------------------------------------------------ */
-.topbar { position: sticky; top: 0; z-index: 50; background: var(--studio-iron); color: var(--studio-iron-ink); border-bottom: 1px solid var(--studio-iron-edge); }
+.topbar { position: sticky; top: 0; z-index: 50; background: linear-gradient(rgba(17, 19, 23, 0.88), rgba(17, 19, 23, 0.88)), url('/static/art/textures/aged-iron.webp') repeat center / 256px, var(--studio-iron); color: var(--studio-iron-ink); border-bottom: 1px solid var(--studio-iron-edge); }
 .topbar__bar { display: flex; align-items: center; gap: 24px; min-height: 68px; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-height: 44px; }
 .brand__tree { width: 40px; height: 40px; }
@@ -283,7 +283,7 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .poster__body { display: grid; gap: 10px; align-content: start; padding: 16px 18px 20px; }
 .poster__meta { margin: 0; font-size: 0.9rem; }
 
-.creed-band { background: var(--studio-wood); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 9px); color: #F4EBD6; }
+.creed-band { background: linear-gradient(rgba(42, 30, 18, 0.55), rgba(42, 30, 18, 0.55)), url('/static/art/textures/carved-wood.webp') repeat center / 256px, var(--studio-wood); color: #F4EBD6; }
 .creed-band:empty { display: none; }
 .creed-band__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding-block: 40px; }
 .creed-band__line { display: grid; gap: 8px; }
@@ -337,10 +337,15 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 /* ------------------------------------------------------------
    7. The Floor
    ------------------------------------------------------------ */
+.floor-room { display: grid; gap: 32px; }
+.floor-cutaway { margin: 0; padding: 10px; }
+.floor-cutaway img { display: block; width: 100%; height: auto; border-radius: 2px; }
+.floor-cutaway figcaption { padding: 10px 6px 2px; font-size: 0.9rem; font-style: italic; color: var(--color-ink-dim); }
 .floor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
 .dept { display: grid; gap: 6px; align-content: start; min-height: 180px; padding: 26px 22px 22px; text-decoration: none; color: var(--color-ink-dim); }
 .dept:hover { background: color-mix(in srgb, var(--color-card) 80%, var(--color-ink) 6%); }
 .dept__icon { width: 30px; height: 30px; color: var(--studio-gold); }
+.dept__emblem { width: 64px; height: 64px; }
 .dept__name { margin: 6px 0 0; font: 700 1.1rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); }
 .dept__who { font: 0.7rem var(--studio-mono); letter-spacing: 0.08em; text-transform: uppercase; }
 .dept__what { margin: 0; font-size: 0.95rem; }
@@ -580,7 +585,7 @@ html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(-
 .watch-strip__list { display: grid; gap: 4px; }
 .hall-shelf { display: grid; gap: 12px; padding: 20px 20px 0; background: var(--color-card); border: 1px solid var(--color-card-edge); border-radius: 4px; }
 .hall-shelf__label { font: 700 0.95rem var(--studio-engraved); letter-spacing: 0.06em; color: var(--color-ink); text-transform: none; }
-.hall-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding-bottom: 16px; border-bottom: 10px solid var(--studio-wood-light); box-shadow: 0 4px 0 var(--studio-wood); }
+.hall-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding-bottom: 16px; border-bottom: 10px solid var(--studio-wood-light); border-image: url('/static/art/textures/carved-wood.webp') 30 round; box-shadow: 0 4px 0 var(--studio-wood); }
 .hall-keepsake { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 14px; max-width: none; background: color-mix(in srgb, var(--studio-gold) 7%, var(--color-card)); border: 1px solid var(--color-card-edge); border-radius: 3px; }
 .hall-keepsake__mark { color: var(--studio-gold); font-size: 1.2rem; }
 .hall-keepsake__name { font: 700 0.95rem var(--studio-engraved); letter-spacing: 0.03em; color: var(--color-ink); }
@@ -824,6 +829,24 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
   .walk-rail { left: 12px; right: 12px; width: auto; max-height: 44vh; }
   .sheet__paper { padding: 18px 16px; }
   .sheet__room { width: 96px; }
+}
+
+/* ------------------------------------------------------------
+   9d. Spot illustrations and faces (decorative; words carry meaning)
+   ------------------------------------------------------------ */
+.spot { display: block; object-fit: contain; pointer-events: none; }
+.spot--right { position: absolute; top: 14px; right: 18px; width: clamp(110px, 14vw, 170px); height: auto; }
+:is(.desk-sheet, .cast-card, .forge, .folk-invite, .map-draw):has(> .spot--right) { position: relative; padding-right: calc(clamp(110px, 14vw, 170px) + 40px); min-height: 200px; }
+.spot-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.spot--inline { width: clamp(90px, 12vw, 140px); height: auto; flex: none; }
+.folio__mark { overflow: hidden; background: #1E2A26; width: 56px; height: 56px; }
+.folio__mark img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; }
+.foot-joke { display: inline-flex; align-items: center; gap: 8px; }
+.foot-wave { width: 40px; height: 40px; object-fit: contain; }
+@media (max-width: 640px) {
+  .spot--right { width: 84px; top: 10px; right: 10px; }
+  :is(.desk-sheet, .cast-card, .forge, .folk-invite, .map-draw):has(> .spot--right) { padding-right: 20px; padding-top: 96px; }
+  .spot--inline { width: 84px; }
 }
 
 /* ------------------------------------------------------------

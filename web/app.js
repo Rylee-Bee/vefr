@@ -111,6 +111,7 @@
   }
 
   function setLantern(lit, text) {
+    storytellerAwake = !!lit;
     var lantern = document.getElementById('lantern');
     var label = document.getElementById('lantern-label');
     if (!lantern || !label) return;
@@ -685,7 +686,12 @@
     slot.innerHTML = '';
     if (!resident) { slot.hidden = true; return; }
     slot.hidden = false;
-    slot.appendChild(portrait(id, resident, 'greeter__portrait'));
+    var face = portrait(id, resident, 'greeter__portrait');
+    if (!storytellerAwake) {
+      var fimg = face.querySelector('img');
+      if (fimg && faceSrc(id, 'sleepy')) fimg.src = faceSrc(id, 'sleepy');
+    }
+    slot.appendChild(face);
     var who = h('div', { className: 'greeter__who' });
     who.appendChild(h('b', { className: 'greeter__name', textContent: resident.name }));
     who.appendChild(h('span', { className: 'greeter__craft', textContent: resident.craft }));
@@ -708,6 +714,22 @@
     workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
     runes: 'casting-table', evidence: 'archives', hall: 'hall', settings: 'boiler-room', floor: 'library'
   };
+  /* A resident's action pose, set beside the thing they tend. Decorative:
+     the words around it always carry the meaning. */
+  function spot(pose, cls) {
+    return h('img', { className: 'spot ' + (cls || ''), src: ART + 'poses/' + pose + '.webp',
+      alt: '', 'aria-hidden': 'true', loading: 'lazy', width: '180', height: '180' });
+  }
+  var EXPRESSIVE = ['storyteller', 'urdr', 'cartographer', 'keeper-of-faces', 'hoard-keeper', 'rune-carver', 'skuld', 'volundr'];
+  /* A resident's face for a moment: 'thinking', 'happy', 'sleepy' or the plain portrait */
+  function faceSrc(id, mood) {
+    var art = RESIDENT_ART[id];
+    if (!art) return null;
+    if (mood && EXPRESSIVE.indexOf(art) !== -1) return ART + 'expressions/' + art + '-' + mood + '.webp';
+    return ART + 'residents/' + art + '.webp';
+  }
+  var storytellerAwake = true;
+
   function portrait(id, resident, cls) {
     var art = RESIDENT_ART[id];
     var wrap = h('span', { className: 'portrait ' + (cls || ''), role: 'img', 'aria-label': resident.name });
@@ -887,7 +909,7 @@
     folioResident = screenId;
     folioOpener = opener || null;
 
-    folio.querySelector('#folio-mark').textContent = resident.mark;
+    setFolioFace(storytellerAwake ? null : 'sleepy');
     folio.querySelector('#folio-name').textContent = resident.name;
     folio.querySelector('#folio-craft').textContent = resident.craft;
 
@@ -924,6 +946,19 @@
     folioInput.focus();
   }
 
+  function setFolioFace(mood) {
+    var mark = folio && folio.querySelector('#folio-mark');
+    if (!mark || !folioResident) return;
+    var src = faceSrc(folioResident, mood);
+    if (src) {
+      mark.textContent = '';
+      var img = mark.querySelector('img') || mark.appendChild(h('img', { alt: '', width: '64', height: '64' }));
+      img.src = src;
+    } else {
+      mark.textContent = (RESIDENTS[folioResident] || {}).mark || '';
+    }
+  }
+
   function closeFolio(returnFocus) {
     if (!folio || !folio.classList.contains('folio--open')) return;
     folio.classList.remove('folio--open');
@@ -956,6 +991,7 @@
     folioLog.appendChild(h('div', { className: 'folio__msg folio__msg--user', textContent: text }));
     var status = h('div', { className: 'folio__status', role: 'status', 'aria-live': 'polite', textContent: ferryLine() });
     folioLog.appendChild(status);
+    setFolioFace('thinking');
     folioLog.scrollTop = folioLog.scrollHeight;
 
     var history = histories[folioResident] || [];
@@ -965,6 +1001,14 @@
       .then(function (data) {
         var reply = (data && data.reply) ? data.reply : '';
         if (status.parentNode) status.parentNode.removeChild(status);
+        // chat.py answers a failed model call with a sentinel reply, not an error
+        if (reply.indexOf('(draft failed') === 0) {
+          setFolioFace('sleepy');
+          folioLog.appendChild(h('div', { className: 'folio__error', role: 'status',
+            textContent: (RESIDENTS[folioResident] || {}).name + ' is napping: no model is answering right now. Ask again later, or keep your own words.' }));
+          return;
+        }
+        setFolioFace('happy');
         if (!reply) {
           folioLog.appendChild(h('div', { className: 'folio__error', role: 'status',
             textContent: 'The resident drew nothing usable \u2014 ask again, or keep your own words.' }));
@@ -990,6 +1034,7 @@
         folioLog.scrollTop = folioLog.scrollHeight;
       })
       .catch(function () {
+        setFolioFace('sleepy');
         if (status.parentNode) status.parentNode.removeChild(status);
         folioLog.appendChild(h('div', { className: 'folio__error', role: 'status',
           textContent: 'The resident couldn\u2019t reach you just now. Your words are still on the page \u2014 ask again.' }));
@@ -1063,12 +1108,18 @@
     }
     function enter() {
       el_screen.innerHTML = '';
-      var wrap = h('div', { className: 'wrap band' });
+      var wrap = h('div', { className: 'wrap band floor-room' });
+      var cut = h('figure', { className: 'carved floor-cutaway' });
+      cut.appendChild(h('img', { src: ART + 'illustrations/floor-cutaway.webp', width: '1400', height: '933', loading: 'lazy',
+        alt: 'The World Tree cut open like a dollhouse: a desk and a portrait gallery near the top, a map room and a library on the right, a vault and a spiral staircase in the trunk, a table of rune stones, an archive, and a boiler room among the roots.' }));
+      cut.appendChild(h('figcaption', { textContent: 'The studio, cut open. Every door below leads into one of these rooms.' }));
+      wrap.appendChild(cut);
       var grid = h('div', { className: 'floor-grid' });
       DEPARTMENTS.forEach(function (d) {
         var r = RESIDENTS[d[0]] || {};
         var card = carved('a', 'dept go', { href: '#' + d[0], 'data-screen': d[0] });
-        card.innerHTML = '<svg class="dept__icon" aria-hidden="true"><use href="#' + d[1] + '"/></svg>';
+        card.appendChild(h('img', { className: 'dept__emblem', src: ART + 'emblems/' + (ROOM_BANNERS[d[0]] || 'hall') + '.svg',
+          alt: '', 'aria-hidden': 'true', width: '64', height: '64' }));
         card.appendChild(h('h3', { className: 'dept__name', textContent: SCREEN_TITLES[d[0]] || d[0] }));
         card.appendChild(h('span', { className: 'dept__who', textContent: r.name || '' }));
         card.appendChild(h('p', { className: 'dept__what', textContent: d[2] }));
@@ -1489,6 +1540,7 @@
         + '<div class="wrap band workshop">'
         + '  <div class="workshop__story">'
         + '    <article class="carved desk-sheet">'
+        + '      <img class="spot spot--right" src="/static/art/poses/storyteller-quill-notebook.webp" alt="" aria-hidden="true" width="180" height="180">'
         + '      <div class="workshop__story-header">'
         + '        <span class="label">The brief \u00B7 on the table</span>'
         + '        <h2 class="workshop__chapter" id="ws-chapter"></h2>'
@@ -1983,6 +2035,7 @@
       var legendKeys = Object.keys(legend);
 
       var section = h('section', { className: 'map-draw' });
+      section.appendChild(spot('cartographer-long-map', 'spot--right'));
       section.appendChild(h('h3', { className: 'map-draw__title', textContent: 'The drawing table' }));
       section.appendChild(h('p', { className: 'map-draw__hint',
         textContent: 'No markdown here \u2014 dip a brush and press the ground. The engine checks every sketch; only you decide what\u2019s kept.' }));
@@ -2558,6 +2611,7 @@
 
     function inviteBench() {
       var bench = h('section', { className: 'folk-invite' });
+      bench.appendChild(spot('keeper-of-faces-show-sketch', 'spot--right'));
       bench.appendChild(h('h3', { className: 'map-draw__title', textContent: 'Invite a new face' }));
       bench.appendChild(h('p', { className: 'map-draw__hint',
         textContent: 'Ask the Keeper to name someone who belongs here. They stand on real ground \u2014 reachable, unclaimed, dry \u2014 and they only join the house when you keep them.' }));
@@ -2688,6 +2742,7 @@
 
           /* The forge — the fire has a draft for you; shape it, keep it */
           var forgeWrap = h('div', { className: 'forge' });
+          forgeWrap.appendChild(spot('hoard-keeper-inspect-gem', 'spot--right'));
           forgeWrap.appendChild(h('div', { className: 'forge__title', textContent: 'The forge' }));
           forgeWrap.appendChild(h('p', { className: 'forge__hint',
             textContent: 'Ask the fire for a keepsake the world would offer \u2014 then shape it by hand and keep it. The vault remembers everything it\u2019s given.' }));
@@ -3000,6 +3055,7 @@
       if (rl) container.appendChild(rl);
 
       var castCard = h('section', { className: 'carved cast-card', 'aria-labelledby': 'cast-title' });
+      castCard.appendChild(spot('rune-carver-offer-stone', 'spot--right'));
       castCard.appendChild(h('span', { className: 'label', textContent: 'Stuck? Ask the stones' }));
       castCard.appendChild(h('h2', { className: 'section-head__title', id: 'cast-title', textContent: 'Pick three without looking' }));
       castCard.appendChild(h('p', { className: 'cast-card__hint', textContent: 'What was, what is, and what it asks of you. Not a prophecy: a nudge for the next thing you write.' }));
@@ -3066,9 +3122,11 @@
         var rl = residentLine('evidence');
         if (rl) container.appendChild(rl);
 
-        var intro = h('p', { className: 'archives-intro',
-          textContent: 'Each step goes further down. Start at the surface; go as deep as you need.' });
-        container.appendChild(intro);
+        var introRow = h('div', { className: 'spot-row' });
+        introRow.appendChild(h('p', { className: 'archives-intro',
+          textContent: 'Each step goes further down. Start at the surface; go as deep as you need.' }));
+        introRow.appendChild(spot('skuld-point-stairs', 'spot--inline'));
+        container.appendChild(introRow);
 
         addLevel(container, 'What is true', function (box) {
           if (world && world.title) {
@@ -3237,7 +3295,10 @@
 
         // The household — who lives here
         var house = h('div', { className: 'hall-household' });
-        house.appendChild(h('div', { className: 'hall-household__heading', textContent: 'The household' }));
+        var houseHead = h('div', { className: 'spot-row' });
+        houseHead.appendChild(h('div', { className: 'hall-household__heading', textContent: 'The household' }));
+        houseHead.appendChild(spot('ratatoskr-large-envelope', 'spot--inline'));
+        house.appendChild(houseHead);
         house.appendChild(h('p', { className: 'hall-household__note',
           textContent: 'One engine, many faces. Each room is tended by someone who knows its craft.' }));
         var list = h('div', { className: 'hall-household__list' });
@@ -3357,8 +3418,11 @@
       el_screen.innerHTML = '<div class="wrap band settings-room" id="settings-content"></div>';
       var container = el_screen.querySelector('#settings-content');
 
-      container.appendChild(h('p', { className: 'archives-intro',
+      var boilerRow = h('div', { className: 'spot-row' });
+      boilerRow.appendChild(h('p', { className: 'archives-intro',
         textContent: 'The boiler room. Even a loved studio keeps its pipes plain.' }));
+      boilerRow.appendChild(spot('volundr-pipe-with-bolt', 'spot--inline'));
+      container.appendChild(boilerRow);
       var rl = residentLine('settings');
       if (rl) container.appendChild(rl);
 
