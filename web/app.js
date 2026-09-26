@@ -137,7 +137,7 @@
     var children = [];
     if (squirrel) {
       var sq = h('div', { className: 'empty__squirrel', 'aria-hidden': 'true' });
-      sq.innerHTML = '<svg viewBox="0 0 60 30"><use href="#peek-squirrel"/></svg>';
+      sq.innerHTML = '<img src="' + ART + 'poses/ratatoskr-asleep-letter-pile.webp" alt="" width="140" height="140">';
       children.push(sq);
     }
     children.push(h('p', { className: 'empty__text', textContent: text }));
@@ -161,7 +161,7 @@
   function loadingState(text) {
     return h('div', { className: 'loading', role: 'status', 'aria-live': 'polite' },
       [
-        h('span', { className: 'loading__squirrel', 'aria-hidden': 'true', innerHTML: '<svg viewBox="0 0 60 30"><use href="#peek-squirrel"/></svg>' }),
+        h('span', { className: 'loading__squirrel', 'aria-hidden': 'true', innerHTML: '<img src="/static/art/poses/ratatoskr-searching-lantern.webp" alt="" width="56" height="56">' }),
         h('span', { textContent: text || ferryLine() })
       ]
     );
@@ -672,6 +672,8 @@
     document.getElementById('rs-title').textContent = SCREEN_TITLES[id] || '';
     document.getElementById('rs-subtitle').textContent = SCREEN_SUBTITLES[id] || '';
     document.getElementById('rs-dept').textContent = SCREEN_DEPTS[id] || '';
+    var head = document.getElementById('room-sign');
+    if (head) head.style.setProperty('--room-banner', ROOM_BANNERS[id] ? 'url(' + ART + 'banners/' + ROOM_BANNERS[id] + '.webp)' : 'none');
     renderGreeter(id);
   }
 
@@ -696,12 +698,21 @@
 
   /* A resident's portrait: a drawn face where the studio has one,
      otherwise their carved mark in a round frame. */
-  var PORTRAITS = { hall: 'p-ratatoskr', workshop: 'p-storyteller', journal: 'p-urdr' };
+  var ART = '/static/art/';
+  var RESIDENT_ART = {
+    hall: 'ratatoskr', workshop: 'storyteller', journal: 'urdr', map: 'cartographer',
+    characters: 'keeper-of-faces', items: 'hoard-keeper', runes: 'rune-carver',
+    evidence: 'skuld', settings: 'volundr', spark: 'bolt'
+  };
+  var ROOM_BANNERS = {
+    workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
+    runes: 'casting-table', evidence: 'archives', hall: 'hall', settings: 'boiler-room', floor: 'library'
+  };
   function portrait(id, resident, cls) {
-    var sym = PORTRAITS[id];
+    var art = RESIDENT_ART[id];
     var wrap = h('span', { className: 'portrait ' + (cls || ''), role: 'img', 'aria-label': resident.name });
-    if (sym) {
-      wrap.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#' + sym + '"/></svg>';
+    if (art) {
+      wrap.appendChild(h('img', { src: ART + 'residents/' + art + '.webp', alt: '', loading: 'lazy', width: '160', height: '160' }));
     } else {
       var icon = (DEPARTMENTS.filter(function (d) { return d[0] === id; })[0] || [])[1] || 'i-hall';
       wrap.innerHTML = '<svg class="portrait__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#' + icon + '"/></svg>';
@@ -1095,20 +1106,9 @@
   var actionsLine = window.VEFR_CHRONICLE.actions;
 
   /* The hero's night: hills, a lit town, wind, and the World Tree */
-  var HERO_ART = '<svg class="hero__art" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
-    + '<defs><linearGradient id="hero-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#08131A"/><stop offset=".6" stop-color="#16333A"/><stop offset="1" stop-color="#2A4A45"/></linearGradient>'
-    + '<linearGradient id="hero-scrim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#060A0D" stop-opacity=".92"/><stop offset=".55" stop-color="#060A0D" stop-opacity=".5"/><stop offset=".85" stop-color="#060A0D" stop-opacity="0"/></linearGradient></defs>'
-    + '<rect width="1200" height="560" fill="url(#hero-sky)"/>'
-    + '<g fill="#E9DDB8"><circle cx="640" cy="70" r="1.6"/><circle cx="720" cy="130" r="1.2"/><circle cx="820" cy="54" r="1.8"/><circle cx="900" cy="150" r="1.2"/><circle cx="1110" cy="40" r="1.2"/><circle cx="560" cy="160" r="1.1"/></g>'
-    + '<circle cx="1000" cy="130" r="52" fill="#EADFBC"/>'
-    + '<g fill="none" stroke="#E9DDB8" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"><path d="M520 210 C620 180 700 230 800 200 S960 170 1040 210"/><path d="M600 262 C700 240 780 280 880 256 S1020 238 1100 262"/></g>'
-    + '<path d="M0 420 L140 330 L260 380 L380 300 L520 370 L640 320 L780 390 L900 330 L1040 380 L1200 320 V560 H0 Z" fill="#12272A"/>'
-    + '<path d="M560 560 C640 470 720 440 820 430 C920 420 1000 436 1080 470 L1200 500 V560 Z" fill="#0C1B1D"/>'
-    + '<g fill="#0A1618"><path d="M800 440 L840 404 L880 440 Z"/><rect x="808" y="438" width="64" height="40"/><path d="M890 430 L940 380 L990 430 Z"/><rect x="900" y="428" width="80" height="50"/><rect x="996" y="360" width="26" height="118"/><path d="M990 362 L1009 330 L1028 362 Z"/></g>'
-    + '<g fill="#E8B25A"><rect x="930" y="446" width="10" height="14"/><rect x="830" y="452" width="8" height="12"/><circle cx="1009" cy="380" r="4"/></g>'
-    + '<g transform="translate(1090 330)"><path d="M20 140 V70 M20 92 Q4 84 -4 96 M20 84 Q36 76 44 88" stroke="#1E2A20" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="20" cy="48" r="42" fill="#15251B"/><circle cx="-12" cy="66" r="24" fill="#15251B"/><circle cx="52" cy="66" r="24" fill="#15251B"/><rect x="-2" y="36" width="12" height="16" rx="2" fill="#3E6B6A"/><rect x="30" y="26" width="12" height="16" rx="2" fill="#9C5A3E"/><rect x="42" y="60" width="11" height="14" rx="2" fill="#D6C590"/></g>'
-    + '<g transform="translate(1150 380)" fill="#15251B"><ellipse cx="0" cy="0" rx="7" ry="6"/><circle cx="6" cy="-6" r="4"/><path d="M8 -9 L10 -14 L11 -8 Z"/><path d="M-6 2 C-18 -2 -20 -18 -10 -22 C-4 -24 -2 -16 -8 -12 C-6 -8 -4 -4 -6 2 Z"/></g>'
-    + '<rect width="1200" height="560" fill="url(#hero-scrim)"/></svg>';
+  /* The hero: the owner's World Tree key art, calm on the left for words */
+  var HERO_ART = '<img class="hero__art" src="' + ART + 'banners/studio-hero.webp" alt="" width="2000" height="833">'
+    + '<span class="hero__scrim" aria-hidden="true"></span>';
 
   /* ══════════════════════════════════════════════════════
      THE DESK — the writing desk where worlds are made
@@ -1388,7 +1388,7 @@
         key.appendChild(h('h3', { className: 'poster__title', textContent: p.title || p.name }));
         if (current) {
           var seal = h('span', { className: 'wax-seal', 'aria-hidden': 'true' });
-          seal.innerHTML = '<svg viewBox="0 0 64 64"><use href="#tree"/></svg>';
+          seal.innerHTML = '<img src="' + ART + 'wax-seal.webp" alt="" width="64" height="64">';
           key.appendChild(seal);
         }
         card.appendChild(key);
@@ -3366,7 +3366,7 @@
       // in words whether Spark is running, and how he is doing.
       var bolt = h('section', { className: 'settings-card spark-card', 'aria-labelledby': 'spark-title' });
       bolt.appendChild(portrait('spark', { name: 'Bolt, the face of Spark' }, 'spark-card__face'));
-      bolt.querySelector('.spark-card__face').innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-spark"/></svg>';
+      var boltImg = bolt.querySelector('.spark-card__face img');
       var boltText = h('div', { className: 'spark-card__text' });
       boltText.appendChild(h('h3', { className: 'settings-card__title', id: 'spark-title', textContent: 'Bolt \u00B7 Spark, the little local brain' }));
       var boltStatus = h('p', { className: 'spark-card__status', role: 'status', textContent: 'checking on Bolt\u2026' });
@@ -3379,9 +3379,11 @@
         .then(function (sp) {
           if (sp && sp.ok) {
             bolt.classList.add('spark-card--awake');
+            if (boltImg) boltImg.src = ART + 'residents/bolt.webp';
             boltStatus.textContent = 'Awake. Spark is running' + (sp.profile ? ' (' + sp.profile + ' profile)' : '') + '.';
           } else {
             boltStatus.textContent = 'Napping on the boiler. Spark is not running on this machine yet.';
+            if (boltImg) boltImg.src = ART + 'poses/bolt-boiler-nap.webp';
           }
         })
         .catch(function () { boltStatus.textContent = 'Napping on the boiler. Spark could not be reached.'; });
