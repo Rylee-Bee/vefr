@@ -108,24 +108,45 @@ def capture_studio(browser, shots):
 
 
 def capture_player(browser, shots):
-    """The woven single-file player: title card and play surface."""
+    """The woven single-file player: title, first run, and in game."""
     woven = sorted((ROOT / "dist").glob("sample-world-*.html"))
     if not woven:
         print("  skip player: no woven HTML in dist/ (run ratatoskr weave first)")
         return
+    uri = woven[-1].as_uri()
+
+    def begin(page):
+        page.goto(uri, wait_until="networkidle", timeout=20000)
+        page.wait_for_timeout(800)
+
     for scheme in ("dark", "light"):
         suffix = "" if scheme == "dark" else "-light"
         page = browser.new_page(viewport={"width": 1280, "height": 900}, color_scheme=scheme)
-        page.goto(woven[-1].as_uri(), wait_until="networkidle", timeout=20000)
-        page.wait_for_timeout(1500)
+        begin(page)
         page.screenshot(path=str(OUT / f"export-title-card{suffix}.jpg"), **SHOT)
-        shots.append(("The shareable file", f"export-title-card{suffix}.jpg", f"The woven player's title card ({scheme})"))
-        enter = page.locator("#ts-enter")
-        if enter.count() and enter.first.is_visible():
-            enter.first.click()
-            page.wait_for_timeout(1500)
-            page.screenshot(path=str(OUT / f"export-play-surface{suffix}.jpg"), **SHOT)
-            shots.append(("The shareable file", f"export-play-surface{suffix}.jpg", f"The woven player, ready to play ({scheme})"))
+        shots.append(("The shareable file", f"export-title-card{suffix}.jpg", f"The title screen ({scheme})"))
+        page.click("#ts-enter")
+        page.wait_for_timeout(400)
+        if page.is_visible("#config"):
+            page.screenshot(path=str(OUT / f"export-before-play{suffix}.jpg"), **SHOT)
+            shots.append(("The shareable file", f"export-before-play{suffix}.jpg", f"Before you play: offline, or bring a model ({scheme})"))
+        page.close()
+
+    # In game: the view fills the screen; a whisper lands in the speech box.
+    for tag, vp, touch in (("", {"width": 1280, "height": 900}, False),
+                           ("-phone", {"width": 390, "height": 844}, True)):
+        page = browser.new_page(viewport=vp, color_scheme="dark", has_touch=touch, is_mobile=touch)
+        begin(page)
+        page.click("#ts-enter")
+        page.wait_for_timeout(400)
+        if page.is_visible("#cfg-offline"):
+            page.click("#cfg-offline")
+            page.wait_for_timeout(800)
+        page.click("#whisper")
+        page.wait_for_timeout(800)
+        page.screenshot(path=str(OUT / f"export-in-game{tag}.jpg"), **SHOT)
+        where = "on a phone" if touch else "on a computer"
+        shots.append(("The shareable file", f"export-in-game{tag}.jpg", f"In game {where}: speech box, health, mood and actions over the map"))
         page.close()
 
 

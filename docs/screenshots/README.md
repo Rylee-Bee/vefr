@@ -40,5 +40,6 @@ page together.
 
 | | |
 |---|---|
-| ![The woven player's title card (dark)](export-title-card.jpg)<br>The woven player's title card (dark) | ![The woven player, ready to play (dark)](export-play-surface.jpg)<br>The woven player, ready to play (dark) |
-| ![The woven player's title card (light)](export-title-card-light.jpg)<br>The woven player's title card (light) | ![The woven player, ready to play (light)](export-play-surface-light.jpg)<br>The woven player, ready to play (light) |
+| ![The title screen (dark)](export-title-card.jpg)<br>The title screen (dark) | ![Before you play: offline, or bring a model (dark)](export-before-play.jpg)<br>Before you play: offline, or bring a model (dark) |
+| ![The title screen (light)](export-title-card-light.jpg)<br>The title screen (light) | ![Before you play: offline, or bring a model (light)](export-before-play-light.jpg)<br>Before you play: offline, or bring a model (light) |
+| ![In game on a computer: speech box, health, mood and actions over the map](export-in-game.jpg)<br>In game on a computer: speech box, health, mood and actions over the map | ![In game on a phone: speech box, health, mood and actions over the map](export-in-game-phone.jpg)<br>In game on a phone: speech box, health, mood and actions over the map |
