@@ -321,6 +321,75 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .entry--starred .entry__text { font-family: var(--studio-engraved); letter-spacing: 0.02em; }
 
 /* ------------------------------------------------------------
+   8b. The Desk
+   ------------------------------------------------------------ */
+.workshop { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; height: auto; overflow: visible; align-items: start; }
+.workshop--no-context { grid-template-columns: minmax(0, 1fr); }
+.workshop__story { display: grid; gap: 18px; overflow: visible; min-height: 0; background: none; border: 0; }
+.desk-sheet { padding: 30px 32px 28px; display: grid; gap: 16px; }
+.workshop__story-header { display: grid; gap: 6px; padding: 0; border: 0; background: none; }
+.workshop__chapter { margin: 0; font: 700 clamp(1.7rem, 3.2vw, 2.4rem)/1.1 var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink); }
+.workshop__meta { display: flex; flex-wrap: wrap; gap: 8px; font: inherit; }
+.workshop__meta span { padding: 3px 9px; border: 1px solid var(--color-card-edge); border-radius: 3px; font: 600 0.68rem var(--studio-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink); font-style: normal; }
+.workshop__body, .workshop__content { overflow: visible; padding: 0; max-width: none; }
+.workshop__content { display: grid; gap: 18px; font-size: 1rem; color: var(--color-ink-dim); }
+.workshop__content p { margin: 0; }
+.desk-hint { font-size: 0.95rem; }
+.workshop__creed {
+  position: relative; margin: 0; padding: 18px 22px; border-radius: 3px;
+  background: color-mix(in srgb, var(--studio-gold) 12%, var(--color-card)); border: 1px solid color-mix(in srgb, var(--studio-gold) 45%, transparent);
+  font: 700 1.2rem/1.35 var(--studio-engraved); letter-spacing: 0.03em; color: var(--color-ink); font-style: normal; text-align: center;
+}
+.workshop__creed::before { content: none; }
+.workshop__map {
+  position: relative; justify-self: start; max-width: 100%; overflow-x: auto; margin: 6px 0 0; padding: 22px 26px 20px;
+  background: #EFE6CF; color: #3A2E1E; border-radius: 2px; transform: rotate(-0.6deg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); border: 0;
+  font: 600 0.95rem/1.25 var(--studio-mono); letter-spacing: 0.18em; white-space: pre;
+}
+.workshop__map::before {
+  content: ''; position: absolute; top: -8px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #E07A6A, #8E2F24); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4); opacity: 1;
+}
+.workshop__map::after { content: 'the map · a scrap pinned to the desk'; position: static; display: block; margin-top: 10px; font: italic 0.8rem var(--studio-body); letter-spacing: 0; color: #6B5B45; background: none; }
+.workshop__status { display: flex; flex-wrap: wrap; gap: 12px 28px; padding: 14px 0 0; border-top: 1px solid var(--color-card-edge); background: none; }
+.workshop__status::before { content: none; }
+.workshop__status-item { display: grid; gap: 2px; }
+.workshop__status-label { font: 600 0.68rem var(--studio-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-dim); }
+.workshop__status-value { font-size: 1.05rem; color: var(--color-ink); }
+.workshop__status-hearts { font-size: 0.9rem; letter-spacing: 0.1em; margin-left: 6px; }
+.desk-tools { padding: 18px 20px; display: grid; gap: 12px; position: relative; border-top: 1px solid var(--color-card-edge); }
+.workshop__footer { background: var(--color-card); }
+.desk-tools__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.desk-tools__weave { padding-top: 12px; border-top: 1px dashed var(--color-card-edge); }
+.desk-tools__hint { margin: 0; font-size: 0.85rem; font-style: italic; }
+.weave-status { font-size: 0.92rem; color: var(--color-ink); }
+.workshop__context { display: grid; gap: 16px; background: none; border: 0; overflow: visible; position: static; }
+.workshop__context::before { content: none; }
+.context__section { padding: 22px 22px 18px; display: grid; gap: 8px; }
+.context__section + .context__section::before { content: none; }
+.context__heading { margin: 0 0 4px; font: 700 0.95rem var(--studio-engraved); letter-spacing: 0.08em; text-transform: none; color: var(--color-ink); }
+.context__item { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--color-card-edge) 60%, transparent); }
+.context__item:first-child { border-top: 0; }
+.context__item-label, .context__event-time { font: 600 0.66rem var(--studio-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-dim); }
+.context__item-value { font-size: 0.98rem; color: var(--color-ink); }
+.context__event { display: grid; gap: 2px; padding: 8px 0; font-size: 0.92rem; line-height: 1.45; border-top: 1px solid color-mix(in srgb, var(--color-card-edge) 60%, transparent); }
+.context__event:first-child { border-top: 0; }
+.context__event-text { color: var(--color-ink); }
+.context__empty { font-size: 0.92rem; font-style: italic; }
+.context__more { min-height: 44px; display: inline-flex; align-items: center; color: var(--studio-gold); font-weight: 700; text-decoration: none; }
+.context__link {
+  display: grid; gap: 6px; justify-items: start; width: 100%; min-height: 44px; padding: 20px 22px; cursor: pointer; text-align: left;
+  font: 700 1rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--color-ink);
+}
+.context__link:hover { background: color-mix(in srgb, var(--color-card) 80%, var(--color-ink) 6%); color: var(--color-ink); }
+.context__link .door-note { font-family: var(--studio-body); letter-spacing: 0; font-weight: 400; }
+@media (max-width: 960px) {
+  .workshop { grid-template-columns: minmax(0, 1fr); }
+  .desk-sheet { padding: 24px 20px 22px; }
+}
+
+/* ------------------------------------------------------------
    9. States, notes, and panels
    ------------------------------------------------------------ */
 .empty, .loading { display: grid; justify-items: center; gap: 6px; padding: 36px 16px; text-align: center; color: var(--color-ink-dim); }

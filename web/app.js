@@ -1482,35 +1482,45 @@
     function init() {
       el_screen = h('div', { className: 'screen', id: 'screen-workshop' });
       el_screen.innerHTML = ''
-        + '<div class="workshop">'
+        + '<div class="wrap band workshop">'
         + '  <div class="workshop__story">'
-        + '    <div class="workshop__story-header">'
-        + '      <h2 class="workshop__chapter" id="ws-chapter"></h2>'
-        + '      <div class="workshop__meta" id="ws-meta"></div>'
-        + '    </div>'
-        + '    <div class="workshop__body"><div class="workshop__content" id="ws-content"></div></div>'
-        + '    <div class="workshop__footer">'
-        + '      <button class="btn btn--bell" id="ws-bell">\u{1F514} Ring for the Storyteller</button>'
-        + '      <button class="btn btn--ghost" id="ws-continue" aria-label="Continue the story">What happens next?</button>'
-        + '      <button class="btn btn--ghost" id="ws-toggle-ctx" aria-expanded="true" aria-label="Toggle context">Notes</button>'
-        + '      <button class="btn btn--warm" id="ws-weave" aria-describedby="ws-weave-status">Make shareable file</button>'
-        + '      <span class="weave-status" id="ws-weave-status" role="status" aria-live="polite"></span>'
-        + '      <a class="btn btn--ghost weave-action" id="ws-weave-download" download hidden>Download</a>'
-        + '      <button class="btn btn--ghost weave-action" id="ws-weave-share" hidden>Share</button>'
+        + '    <article class="carved desk-sheet">'
+        + '      <div class="workshop__story-header">'
+        + '        <span class="label">The brief \u00B7 on the table</span>'
+        + '        <h2 class="workshop__chapter" id="ws-chapter"></h2>'
+        + '        <div class="workshop__meta" id="ws-meta"></div>'
+        + '      </div>'
+        + '      <div class="workshop__body"><div class="workshop__content" id="ws-content"></div></div>'
+        + '    </article>'
+        + '    <div class="carved desk-tools workshop__footer" role="group" aria-label="Desk tools">'
+        + '      <div class="desk-tools__row">'
+        + '        <button class="cta cta--gold" id="ws-bell" type="button">Ring for the Storyteller</button>'
+        + '        <button class="cta cta--line" id="ws-continue" type="button" aria-label="Continue the story">What happens next?</button>'
+        + '        <button class="cta cta--line" id="ws-toggle-ctx" type="button" aria-expanded="true" aria-label="Show or hide the notes">Notes</button>'
+        + '      </div>'
+        + '      <div class="desk-tools__row desk-tools__weave">'
+        + '        <button class="cta cta--line" id="ws-weave" type="button" aria-describedby="ws-weave-status">Make shareable file</button>'
+        + '        <span class="weave-status" id="ws-weave-status" role="status" aria-live="polite"></span>'
+        + '        <a class="cta cta--line weave-action" id="ws-weave-download" download hidden>Download</a>'
+        + '        <button class="cta cta--line weave-action" id="ws-weave-share" type="button" hidden>Share</button>'
+        + '      </div>'
+        + '      <p class="desk-tools__hint">One file, plays offline, no install. Send it to a friend.</p>'
         + '    </div>'
         + '  </div>'
         + '  <aside class="workshop__context" id="ws-context" role="complementary" aria-label="What the world knows">'
-        + '    <div class="context__section">'
+        + '    <section class="carved context__section">'
         + '      <h3 class="context__heading">What the world knows</h3>'
         + '      <div id="ws-ctx-items"></div>'
-        + '    </div>'
-        + '    <div class="context__section">'
+        + '    </section>'
+        + '    <section class="carved context__section">'
         + '      <h3 class="context__heading">Recent</h3>'
         + '      <div id="ws-ctx-recent"></div>'
-        + '    </div>'
-        + '    <div class="context__section">'
-        + '      <button class="context__link" id="ws-evidence">Descend into the archives \u2192</button>'
-        + '    </div>'
+        + '      <a class="go context__more" href="#journal" data-screen="journal">The whole Chronicle \u2192</a>'
+        + '    </section>'
+        + '    <button class="carved context__link" id="ws-evidence" type="button">'
+        + '      <span class="label">The story bible</span><span>Descend into the archives \u2192</span>'
+        + '      <span class="door-note">watch the third step</span>'
+        + '    </button>'
         + '  </aside>'
         + '</div>';
 
@@ -1586,6 +1596,7 @@
 
       // The room's quiet sound — pinned at the top of the desk
       parts.push('<p class="room-ambience">' + esc(AMBIENCE.workshop) + '</p>');
+      parts.push('<p class="desk-hint">This is the brief everything else follows. The Storyteller keeps it open; the words are yours.</p>');
 
       // The creed — cast in brass above the desk
       if (world.creed) {
@@ -1612,8 +1623,9 @@
             hearts += i < world.hp.current ? '\u2764\uFE0F' : '\u{1F90D}';
           }
           parts.push('<div class="workshop__status-item">'
-            + '<span class="workshop__status-label">You have</span>'
-            + '<span class="workshop__status-value workshop__status-hearts">' + hearts + '</span>'
+            + '<span class="workshop__status-label">Hearts</span>'
+            + '<span class="workshop__status-value">' + world.hp.current + ' of ' + world.hp.max
+            + ' <span class="workshop__status-hearts" aria-hidden="true">' + hearts + '</span></span>'
             + '</div>');
         }
         parts.push('</div>');
@@ -1656,12 +1668,11 @@
         container.innerHTML = '<div class="context__empty">Nothing yet. The chronicle is waiting.</div>';
         return;
       }
-      container.innerHTML = journal.slice(-5).reverse().map(function (entry) {
-        var text = entry.text || entry.content || entry.event || entry.whisper || '';
-        var time = entry.timestamp || entry.time || entry.at || '';
+      container.innerHTML = foldChronicle(journal).slice(-5).reverse().map(function (f) {
+        var line = f.kind === 'combat_action' ? actionsLine(f) : chronicleLine(f.entry);
         return '<div class="context__event">'
-          + '<span class="context__event-time">' + esc(formatTime(time)) + '</span>'
-          + '<span class="context__event-text">' + esc(truncate(text, 80)) + '</span>'
+          + '<span class="context__event-time">' + esc(formatTime(f.at)) + ' \u00B7 ' + esc(line.kind) + '</span>'
+          + '<span class="context__event-text">' + esc(truncate(line.text || '', 90)) + '</span>'
           + '</div>';
       }).join('');
     }
