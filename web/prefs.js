@@ -90,7 +90,7 @@
       'motion=' + p.motion,
       'focus=' + p.focus,
       'density=' + p.density
-    ].join(';');
+    ].join(' ');  /* space-separated: the CSS reads tokens with [data-prefs~="..."] */
   }
 
   function apply(p) {
