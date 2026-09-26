@@ -30,6 +30,8 @@ file retains its upstream license and attribution in
 | Inter | SIL OFL 1.1 | https://rsms.me/inter/ |
 | Atkinson Hyperlegible Next | SIL OFL 1.1 | https://www.brailleinstitute.org/freefont/ |
 | OpenDyslexic | SIL OFL 1.1 | https://opendyslexic.org/ |
+| Cinzel | SIL OFL 1.1 | https://github.com/NDISCOVER/Cinzel |
+| Noto Sans Runic | SIL OFL 1.1 | https://fonts.google.com/noto/specimen/Noto+Sans+Runic |
 
 The SIL OFL 1.1 permits redistribution of the font files themselves
 with the license notice; it does not impose copyleft on code that

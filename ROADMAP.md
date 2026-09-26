@@ -7,6 +7,52 @@
 
 ## Landed
 
+- [x] **Studio Hall: the workshop UI, completely replaced** (2026-09-25, owner: "complete replace", "never wanna see the old one
+      again"). A game studio the old Norse run: iron top bar, room header
+      with its resident, rune bands, engraved lettering (Cinzel, SIL OFL
+      1.1, self-hosted), night by candle / day in the hall
+      (`data-light`, separate from the contrast tiers, which keep
+      working). New shell in `web/app.html`, all look in
+      `web/studio.css`; `web/app.css` is deleted when the last room is
+      rebuilt. Rebuilt so far: the Studio home (was the Foyer: hero from
+      the world on the table, worlds as posters, news from the Chronicle,
+      begin-a-world, the residents, the mantel), the Floor (new: every
+      department), the Chronicle, the Desk, the Casting Table (all 24
+      stones as carved tiles, plus "Cast the stones": a three-stone spread
+      from `/api/runes/cast`; runes render via self-hosted Noto Sans Runic,
+      SIL OFL 1.1, since most systems ship no Runic font), the Archives (a
+      staircase that darkens with each step; raw truth is a keyboard-
+      reachable disclosure, fixing the old `scrollable-region-focusable`),
+      the Folks and the Vault (the forge and its drafting panel restyled;
+      empty and loading states draw the squirrel instead of an emoji, which
+      rendered as a missing-glyph box on systems without an emoji font), the
+      Hall (creed plaque, the town window framed in wood, keepsake shelves,
+      the household with portraits; its pressed-leaves shelf had the same
+      blank-text bug as the Chronicle, now fixed) and Settings (Bolt, the
+      face of Spark, gets a card that says in words whether Spark runs), and
+      the Map Room (regions as pinned scraps with their survey, the drawing
+      table with ink pots and a 44px tile grid in a wooden frame). Map fix:
+      the pack check posted no JSON body, so `/api/builder/validate`
+      answered 422 and the room always read "the pack won't answer";
+      `web/js/api.js` now sends `{}` and the check reads "ok".
+      Old `app.css` rules for rebuilt rooms are deleted as each room lands.
+      Chronicle fix: actions, npc lines and
+      letters no longer render as blank rows; runs of actions fold into
+      one line (`web/js/chronicle.js`, pinned by
+      `tests/test_web_chronicle.py`). The first walk, the resident folio and
+      the house sheet are restyled too, and `web/app.css` is deleted.
+      Accessibility fixes found on the way: `prefs.js` joined the
+      `data-prefs` tokens with `;`, but every stylesheet reads them with
+      `[data-prefs~=...]` (whitespace-separated), so no reading preference
+      ever applied (font, text size, motion, spacing); tokens are now
+      space-separated and `tests/fixtures/prefs_harness.mjs` pins it. The
+      workshop never declared the OpenDyslexic face, so that choice fell
+      back to Georgia; `web/studio.css` declares it, and with OpenDyslexic
+      chosen the headings drop their engraved capitals. Text size now
+      scales the root, so the whole page grows with it. Gates: `pytest -q`
+      551 passed, 1 skipped; `ruff` clean; public-surface clean; axe-core
+      over all 11 rooms in night and day: zero serious/critical; 1440px and
+      390px screenshots of every room: no page errors, no sideways scroll.
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +

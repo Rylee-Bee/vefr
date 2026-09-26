@@ -1,125 +1,188 @@
 <!doctype html>
-<html lang="en" data-theme="warm">
+<html lang="en" data-theme="warm" data-light="night">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>vefr · the workshop</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>vefr · the studio</title>
   <link rel="stylesheet" href="/static/vefr-theme.css">
   <link rel="stylesheet" href="/static/vefr-foundation.css">
-  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/studio.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- knotwork corner -->
+    <symbol id="knot" viewBox="0 0 40 40"><path d="M4 36 V14 Q4 4 14 4 H36"/><path d="M10 36 V16 Q10 10 16 10 H36"/><path d="M4 22 Q14 22 14 12"/></symbol>
+    <!-- leaf rule -->
+    <symbol id="leafrule" viewBox="0 0 140 16"><path d="M0 8 H56 M84 8 H140" stroke="currentColor" fill="none" stroke-width="1.5"/><path d="M70 2 C62 6 62 10 70 14 C78 10 78 6 70 2 Z" fill="currentColor"/></symbol>
+
+    <!-- Ratatoskr: squirrel in a horned helm -->
+    <symbol id="p-ratatoskr" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#26352F"/>
+      <path d="M78 96 C98 70 92 40 74 44 C66 46 70 62 76 70" fill="#B7703C"/>
+      <circle cx="50" cy="62" r="26" fill="#C98049"/>
+      <ellipse cx="50" cy="72" rx="15" ry="11" fill="#F2DCC0"/>
+      <path d="M30 44 L26 26 L40 38 Z" fill="#C98049"/><path d="M70 44 L74 26 L60 38 Z" fill="#C98049"/>
+      <path d="M28 46 Q50 22 72 46 Z" fill="#8E949B"/><rect x="28" y="44" width="44" height="6" rx="3" fill="#6F757C"/>
+      <path d="M30 40 Q16 36 18 22 Q24 32 34 34 Z" fill="#EFE6D2"/><path d="M70 40 Q84 36 82 22 Q76 32 66 34 Z" fill="#EFE6D2"/>
+      <path d="M40 60 Q43 56 46 60" stroke="#3A2618" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 60 Q57 56 60 60" stroke="#3A2618" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="67" r="3.4" fill="#E79A8A" opacity=".7"/><circle cx="62" cy="67" r="3.4" fill="#E79A8A" opacity=".7"/>
+      <path d="M45 70 Q50 75 55 70" stroke="#3A2618" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M30 86 Q50 80 70 86 L70 100 L30 100 Z" fill="#4F7A4A"/>
+    </symbol>
+
+    <!-- Urðr: the Norn who writes what has happened -->
+    <symbol id="p-urdr" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#233331"/>
+      <path d="M18 100 Q16 40 50 22 Q84 40 82 100 Z" fill="#3E6B6A"/>
+      <circle cx="50" cy="56" r="21" fill="#F1D3B6"/>
+      <path d="M29 52 Q34 30 50 30 Q66 30 71 52 Q60 40 50 42 Q40 40 29 52 Z" fill="#E9E4D6"/>
+      <path d="M40 57 Q43 53 46 57" stroke="#3B2A22" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 57 Q57 53 60 57" stroke="#3B2A22" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="63" r="3.2" fill="#E59C8C" opacity=".65"/><circle cx="62" cy="63" r="3.2" fill="#E59C8C" opacity=".65"/>
+      <path d="M46 65 Q50 69 54 65" stroke="#3B2A22" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M50 24 C45 26 45 30 50 32 C55 30 55 26 50 24 Z" fill="#8CB07C"/>
+      <rect x="30" y="80" width="40" height="18" rx="2" fill="#7A5A33"/><path d="M50 80 V98" stroke="#E9DCC0" stroke-width="1.6"/>
+      <path d="M33 84 H47 M33 88 H45 M53 84 H67 M53 88 H65" stroke="#E9DCC0" stroke-width="1.2"/>
+    </symbol>
+
+    <!-- The Storyteller: a lantern spirit -->
+    <symbol id="p-storyteller" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#2A2E26"/>
+      <path d="M50 10 V20" stroke="#A7A08A" stroke-width="3"/><circle cx="50" cy="10" r="4" fill="none" stroke="#A7A08A" stroke-width="3"/>
+      <path d="M30 26 H70 L66 20 H34 Z" fill="#6B5238"/>
+      <rect x="28" y="26" width="44" height="54" rx="14" fill="#F3D9A0"/>
+      <rect x="28" y="26" width="44" height="54" rx="14" fill="none" stroke="#6B5238" stroke-width="4"/>
+      <path d="M50 34 C44 42 46 48 50 50 C54 48 56 42 50 34 Z" fill="#E8A64B"/>
+      <path d="M40 60 Q43 56 46 60" stroke="#4A3524" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M54 60 Q57 56 60 60" stroke="#4A3524" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="66" r="3" fill="#E59C8C" opacity=".6"/><circle cx="62" cy="66" r="3" fill="#E59C8C" opacity=".6"/>
+      <path d="M46 67 Q50 71 54 67" stroke="#4A3524" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M32 80 H68 L64 88 H36 Z" fill="#6B5238"/>
+    </symbol>
+
+    <!-- generic resident silhouette for rooms still to be decorated -->
+    <symbol id="p-waiting" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#222A27"/>
+      <circle cx="50" cy="44" r="18" fill="none" stroke="#7C8A80" stroke-width="2.5" stroke-dasharray="4 5"/>
+      <path d="M22 92 Q50 60 78 92" fill="none" stroke="#7C8A80" stroke-width="2.5" stroke-dasharray="4 5"/>
+    </symbol>
+
+    <!-- small World Tree mark -->
+    <symbol id="tree" viewBox="0 0 64 64">
+      <path d="M32 60 V36 M32 44 Q24 40 20 46 M32 40 Q40 36 44 42" stroke="#8A6B4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M26 60 Q32 54 38 60" stroke="#8A6B4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="32" cy="22" r="17" fill="#5E8C57"/><circle cx="18" cy="30" r="10" fill="#6F9A62"/><circle cx="46" cy="30" r="10" fill="#6F9A62"/>
+      <rect x="20" y="16" width="7" height="9" rx="1" fill="#3E6B6A"/><rect x="36" y="12" width="7" height="9" rx="1" fill="#C27A5A"/><rect x="42" y="26" width="6" height="8" rx="1" fill="#E7D7A8"/>
+      <path d="M27 28 Q29.5 25.5 32 28 M32 28 Q34.5 25.5 37 28" stroke="#2D4A2A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M29 32 Q32 35 35 32" stroke="#2D4A2A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- line icons -->
+    <symbol id="i-hall" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-desk" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-folks" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2 5 5"/></symbol>
+    <symbol id="i-vault" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></symbol>
+    <symbol id="i-chronicle" viewBox="0 0 24 24"><path d="M6 3h11a1 1 0 0 1 1 1v17H7a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 20V5h3v15M9 20V4h3v16M14 20l2-15 3 .4-2 15"/><path d="M3 20h18"/></symbol>
+    <symbol id="i-runes" viewBox="0 0 24 24"><path d="M8 4v16M8 4l7 5-7 4M16 13v7"/></symbol>
+    <symbol id="i-archives" viewBox="0 0 24 24"><path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
+
+    <symbol id="p-spark" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#1F2A30"/>
+      <path d="M50 12 V22" stroke="#8FB8C8" stroke-width="3"/><circle cx="50" cy="10" r="5" fill="#7FD0E6"/>
+      <rect x="24" y="22" width="52" height="44" rx="20" fill="#F2F0EA"/>
+      <rect x="31" y="31" width="38" height="26" rx="12" fill="#152029"/>
+      <path d="M38 45 Q42 40 46 45" stroke="#7FD0E6" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M54 45 Q58 40 62 45" stroke="#7FD0E6" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M46 51 Q50 54 54 51" stroke="#7FD0E6" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <rect x="30" y="68" width="40" height="28" rx="10" fill="#F2F0EA"/>
+      <circle cx="50" cy="80" r="6" fill="#7FD0E6"/>
+    </symbol>
+    <symbol id="i-floor" viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12"/><path d="M3 21h18M8 21v-6h8v6"/></symbol>
+    <symbol id="knotmark" viewBox="0 0 44 20"><g fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10 C10 0 16 0 22 10 C28 20 34 20 40 10"/><path d="M4 10 C10 20 16 20 22 10 C28 0 34 0 40 10"/></g></symbol>
+
+    <symbol id="m-quill" viewBox="0 0 24 24"><path d="M20 4C12 5 7 10 5 19"/><path d="M20 4c-1 6-5 10-11 11"/><path d="M4 20l2-2"/></symbol>
+    <symbol id="m-speech" viewBox="0 0 24 24"><path d="M4 5h16v10H10l-4 4v-4H4z"/></symbol>
+    <symbol id="m-letter" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="m-swords" viewBox="0 0 24 24"><path d="M4 4l10 10M20 4L10 14M6 18l-2 2M18 18l2 2M8 16l-2-2M16 16l2-2"/></symbol>
+    <symbol id="m-moment" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></symbol>
+    <symbol id="peek-squirrel" viewBox="0 0 60 30"><path d="M10 30 C4 18 10 6 22 8 C16 12 16 20 20 30 Z" fill="#B7703C"/><ellipse cx="34" cy="26" rx="12" ry="10" fill="#C98049"/><path d="M26 18 L24 8 L31 15 Z M42 18 L44 8 L37 15 Z" fill="#C98049"/><path d="M29 24 q2 -2 4 0 M36 24 q2 -2 4 0" stroke="#3A2618" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="34.5" cy="27" r="1.2" fill="#3A2618"/></symbol>
+  </defs>
+</svg>
+
   <div class="vefr-shell">
 
-    <!-- ══ The Room — a place you step into ═══════════════ -->
+    <!-- The iron bar: the studio's front door on every page -->
+    <header class="topbar">
+      <div class="wrap topbar__bar">
+        <a class="brand go" href="#launcher" data-screen="launcher" aria-label="The studio, home">
+          <svg class="brand__tree" aria-hidden="true"><use href="#tree"/></svg>
+          <span><b class="brand__word">VEFR</b><small class="brand__sub">a studio under the world tree</small></span>
+        </a>
+        <nav class="topnav" id="shelf" aria-label="The studio">
+          <a class="go" href="#launcher" data-screen="launcher">Studio</a>
+          <a class="go" href="#floor" data-screen="floor">The Floor</a>
+          <a class="go" href="#workshop" data-screen="workshop">The Desk</a>
+          <a class="go" href="#journal" data-screen="journal">Chronicle</a>
+          <a class="go" href="#hall" data-screen="hall">The Hall</a>
+        </nav>
+        <div class="topbar__tools">
+          <div class="lantern" id="lantern" role="status" aria-live="polite">
+            <span class="lantern__flame" id="lantern-flame" aria-hidden="true"></span>
+            <span class="lantern__label" id="lantern-label">finding the storyteller</span>
+          </div>
+          <button class="iconbtn" type="button" id="light-toggle" aria-label="Switch to day"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
+        </div>
+      </div>
+      <div class="runeband runeband--acorn" aria-hidden="true"></div>
+      <svg class="peek" aria-hidden="true"><use href="#peek-squirrel"/></svg>
+    </header>
+
     <div class="vefr-room" id="room" data-phase="dawn">
 
-      <!-- The hanging sign over the door -->
-      <header class="room-sign" id="room-sign">
-        <span class="room-sign__rope room-sign__rope--l" aria-hidden="true"></span>
-        <span class="room-sign__rope room-sign__rope--r" aria-hidden="true"></span>
-        <div class="room-sign__board">
-          <div class="room-sign__row">
-            <h1 class="room-sign__title" id="rs-title">The Desk</h1>
-            <span class="room-sign__world" id="rs-world"></span>
+      <!-- The room's own header: where you are, and who tends it -->
+      <section class="pagehead" id="room-sign">
+        <div class="wrap pagehead__row">
+          <div class="pagehead__text">
+            <span class="label"><span id="rs-dept"></span><span class="label__world" id="rs-world"></span></span>
+            <h1 class="pagehead__title" id="rs-title">The Studio</h1>
+            <p class="pagehead__lede" id="rs-subtitle"></p>
+            <p class="mood-note" id="mood-note" aria-hidden="true"></p>
           </div>
-          <span class="room-sign__subtitle" id="rs-subtitle">where worlds begin</span>
+          <div class="greeter" id="rs-greeter" hidden></div>
         </div>
-      </header>
+      </section>
+      <div class="runeband" aria-hidden="true"></div>
 
-      <!-- A whisper from the world itself -->
-      <div class="mood-note" id="mood-note" aria-hidden="true"></div>
+      <!-- The room's work happens here -->
+      <main class="main" id="main"></main>
 
       <!-- A note from the ferry, pinned where you'll see it -->
       <div class="ferry-note" id="ferry-note" role="status" aria-live="polite"></div>
-
-      <!-- The scene works here -->
-      <main class="main" id="main"></main>
-
-      <!-- The lantern — lit when the storyteller is reachable -->
-      <div class="lantern" id="lantern" role="status" aria-live="polite">
-        <span class="lantern__flame" id="lantern-flame" aria-hidden="true"></span>
-        <span class="lantern__wick" aria-hidden="true"></span>
-        <span class="lantern__label" id="lantern-label"></span>
-      </div>
     </div>
 
-    <!-- Candlelight against the walls -->
-    <div class="vignette" aria-hidden="true"></div>
+    <footer class="studio-foot"><div class="wrap"><span>VEFR · a studio under the world tree</span><span class="foot-joke" id="foot-joke"></span><span id="foot-world"></span></div></footer>
 
-    <!-- ══ The Shelf — a low shelf of carved placards ═════ -->
-    <nav class="shelf" id="shelf" aria-label="Rooms of the workshop">
-
-      <button class="placard placard--active" data-screen="launcher" aria-current="page"
-        aria-label="The Foyer, the door into the house">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        <span class="placard__name">The Foyer</span>
-        <span class="placard__sub">the door into the house</span>
-      </button>
-
-      <button class="placard" data-screen="workshop" aria-label="The Desk, where worlds begin">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        <span class="placard__name">The Desk</span>
-        <span class="placard__sub">where worlds begin</span>
-      </button>
-
-      <button class="placard" data-screen="map" aria-label="The Map Room, the world laid out">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-        <span class="placard__name">Map Room</span>
-        <span class="placard__sub">the world laid out</span>
-      </button>
-
-      <button class="placard" data-screen="characters" aria-label="The Folks, who lives here">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <span class="placard__name">The Folks</span>
-        <span class="placard__sub">who lives here</span>
-      </button>
-
-      <button class="placard" data-screen="items" aria-label="The Vault, what you have gathered">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-        <span class="placard__name">The Vault</span>
-        <span class="placard__sub">what you've gathered</span>
-      </button>
-
-      <button class="placard" data-screen="journal" aria-label="The Chronicle, what has happened">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-        <span class="placard__name">Chronicle</span>
-        <span class="placard__sub">what has happened</span>
-      </button>
-
-      <button class="placard" data-screen="runes" aria-label="The Casting Table, the elder futhark">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-        <span class="placard__name">Casting Table</span>
-        <span class="placard__sub">the elder futhark</span>
-      </button>
-
-      <button class="placard" data-screen="evidence" aria-label="The Archives, descending through truth">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <span class="placard__name">Archives</span>
-        <span class="placard__sub">descending through truth</span>
-      </button>
-
-      <button class="placard" data-screen="hall" aria-label="The Hall, what you have kept">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></svg>
-        <span class="placard__name">The Hall</span>
-        <span class="placard__sub">what you've kept</span>
-      </button>
-
-      <button class="placard placard--plain" data-screen="settings" aria-label="Settings, the boiler room">
-        <svg class="placard__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span class="placard__name">Settings</span>
-        <span class="placard__sub">the boiler room</span>
-      </button>
-
+    <!-- Phones: the same doors, at the thumb -->
+    <nav class="tabbar" aria-label="The studio">
+      <a class="go" href="#launcher" data-screen="launcher"><svg aria-hidden="true"><use href="#i-hall"/></svg>Studio</a>
+      <a class="go" href="#floor" data-screen="floor"><svg aria-hidden="true"><use href="#i-floor"/></svg>Floor</a>
+      <a class="go" href="#workshop" data-screen="workshop"><svg aria-hidden="true"><use href="#i-desk"/></svg>Desk</a>
+      <a class="go" href="#journal" data-screen="journal"><svg aria-hidden="true"><use href="#i-chronicle"/></svg>Chronicle</a>
+      <a class="go" href="#hall" data-screen="hall"><svg aria-hidden="true"><use href="#i-library"/></svg>Hall</a>
     </nav>
   </div>
 
   <script src="/static/state.js"></script>
   <script src="/static/prefs.js"></script>
   <script src="/static/js/api.js"></script>
+  <script src="/static/js/chronicle.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

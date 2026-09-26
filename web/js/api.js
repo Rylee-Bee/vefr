@@ -86,7 +86,7 @@
     mapPropose:   function (q)    { return post('/api/builder/map/propose', q); },
     mapCheck:     function (q)    { return post('/api/builder/map/check', q); },
     faceRoll:     function (q)    { return post('/api/builder/face/roll', q); },
-    validate:     function ()     { return post('/api/builder/validate'); },
+    validate:     function ()     { return post('/api/builder/validate', {}); },
     verify:       function ()     { return post('/api/builder/verify'); },
     handoff:      function ()     { return post('/api/handoff'); }
   };

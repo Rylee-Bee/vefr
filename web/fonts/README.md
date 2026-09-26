@@ -19,6 +19,28 @@ packaged file both work offline from the first byte.
   (design/HANDOFF.md, Typography) names Inter as the one UI family.
   Body/reading text stays on the prefs-driven reading font below.
 
+## Cinzel (engraved display face)
+
+- Source: https://github.com/NDISCOVER/Cinzel (Natanael Gama)
+- License: SIL Open Font License 1.1
+- Web file needed: `Cinzel-Variable.woff2` (one variable file,
+  weights 400-900)
+- Vendored: 2026-09-25, latin subset, from the `Cinzel` Google Fonts
+  CSS2 endpoint with a browser UA (single variable woff2).
+- Used by: `web/studio.css` (`--studio-engraved`): the top bar,
+  room headers, headings and buttons. Display only; body text stays
+  on the UI and reading fonts.
+
+## Noto Sans Runic (rune staves)
+
+- Source: https://fonts.google.com/noto/specimen/Noto+Sans+Runic
+- License: SIL Open Font License 1.1
+- Web file needed: `NotoSansRunic-Regular.woff2`
+- Vendored: 2026-09-25 from the Google Fonts CSS2 endpoint with a browser
+  UA. Most systems ship no Runic font, so without it the Casting Table's
+  staves render as empty boxes.
+- Used by: `web/studio.css` (`.rune-stone__stave`).
+
 ## Atkinson Hyperlegible Next
 
 - Source: https://www.brailleinstitute.org/freefont/
@@ -37,6 +59,8 @@ packaged file both work offline from the first byte.
   `OpenDyslexic-Bold.woff2`
 - Vendored from: Fontsource (`@fontsource/opendyslexic`, latin
   subset, 400/700 normal) via cdn.jsdelivr.net, 2026-09-01.
+- Declared for the workshop in `web/studio.css` (2026-09-25; before
+  that the workshop never loaded it and fell back to Georgia).
 
 ## Install
 
