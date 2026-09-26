@@ -108,8 +108,26 @@ VEFR_LLAMACPP_URL=http://127.0.0.1:8083 \
 `--pool N` needs a live model: it pre-generates N real lines per
 combination (dry run: 10 lines across `rumor:dusk`, `rumor:dawn`,
 `letter`, `forge`), then writes `dist/your-world-<date>.html`. Open
-it anywhere - the file carries the pack; you set the LLM URL + model
-when you play (or leave both blank and the pool carries you).
+it in any browser: the file carries the whole pack. Players choose
+"Play offline" (the pool and the characters' own lines carry the
+world) or connect their own model.
+
+### The title screen
+
+The shared file opens on a title picture. By default it's the World
+Tree's front door; give your game its own, and an accent colour for
+its buttons, in `world.json`:
+
+```json
+"player": {
+  "title_art": "assets/title.webp",
+  "accent": "#C98049"
+}
+```
+
+`title_art` is a path inside your pack (WebP, PNG or JPEG; around
+1400px wide keeps the file small). `accent` is a six-digit hex colour;
+the button text turns dark or light to stay readable on it.
 
 ## Where your world lives
 

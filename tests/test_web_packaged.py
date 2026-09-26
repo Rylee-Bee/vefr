@@ -132,11 +132,11 @@ def test_packaged_pool_draw_semantics(tmp_path, monkeypatch, canned_generators):
     # The banks are inlined and the status lines are honest about
     # provenance: pool, pool's cloth, fragments, silence.
     assert "window.VEFR_FRAGMENTS = " in html
-    assert "from the woven pool." in html
-    assert "woven anew from the pool's cloth." in html
-    assert "from the pack's own fragments." in html
-    assert "from their own fragments." in html
-    assert "nothing came back (" in html
+    assert "From the game's saved lines." in html
+    assert "Mixed from the game's saved lines." in html
+    assert "From the characters' own lines." in html
+    assert "From this character's own lines." in html
+    assert "Nothing came back (" in html
 
     code = _extract(html)
 
@@ -264,3 +264,29 @@ def test_packaged_carries_the_surface_costume(tmp_path, monkeypatch, canned_gene
         assert f"'{phase_key}'" not in template, (
             f"packaged template must not hardcode phase name '{phase_key}'"
         )
+
+
+def test_player_title_art_and_accent(tmp_path):
+    """The woven title screen carries a picture: the pack's own when
+    world.json names one inside the pack, else the engine's default;
+    a valid accent colour comes with readable button text."""
+    from vefr.cli import _player_title_art, _player_fonts_css
+
+    web = Path(__file__).resolve().parents[1] / "web"
+    pack = tmp_path / "pack"
+    (pack / "assets").mkdir(parents=True)
+    (pack / "assets" / "title.png").write_bytes(b"\x89PNG\r\n\x1a\nfake")
+
+    own = _player_title_art(pack, {"player": {"title_art": "assets/title.png", "accent": "#C98049"}}, web)
+    assert 'src="data:image/png;base64,' in own
+    assert "--accent: #C98049; --accent-on: #1B1206;" in own
+
+    default = _player_title_art(pack, {}, web)
+    assert 'src="data:image/webp;base64,' in default
+
+    outside = tmp_path / "secret.png"
+    outside.write_bytes(b"\x89PNG\r\n\x1a\nsecret")
+    escaped = _player_title_art(pack, {"player": {"title_art": "../secret.png", "accent": "red"}}, web)
+    assert "image/png" not in escaped and "--accent" not in escaped
+
+    assert "font-family: 'Cinzel'" in _player_fonts_css(web)

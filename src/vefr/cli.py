@@ -560,6 +560,63 @@ def _template_candidates() -> list[Path]:
     ]
 
 
+_PLAYER_FONTS = (
+    ('Cinzel', 'Cinzel-Variable.woff2', '400 900'),
+    ('Atkinson Hyperlegible Next', 'AtkinsonHyperlegibleNext-Regular.woff2', '400'),
+    ('Atkinson Hyperlegible Next', 'AtkinsonHyperlegibleNext-Bold.woff2', '700'),
+)
+_ART_TYPES = {'.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg'}
+
+
+def _player_fonts_css(web_dir: Path) -> str:
+    """@font-face rules with the studio fonts inlined, so the woven file
+    looks the same with no internet. Missing files are skipped and the
+    player falls back to its system font stack."""
+    import base64
+    rules = []
+    for family, name, weight in _PLAYER_FONTS:
+        f = web_dir / 'fonts' / name
+        if f.is_file():
+            data = base64.b64encode(f.read_bytes()).decode('ascii')
+            rules.append(f"@font-face {{ font-family: '{family}'; font-weight: {weight}; font-display: swap; "
+                         f"src: url(data:font/woff2;base64,{data}) format('woff2'); }}")
+    return '\n  '.join(rules)
+
+
+def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
+    """The title screen's picture, inlined: the pack's own
+    (world.json "player": {"title_art": "<path in the pack>"}) or the
+    engine's default front door. Also carries the pack's accent colour,
+    when it names a valid hex one. Returns markup for the title screen."""
+    import base64
+    import re as _re
+    player = world.get('player') if isinstance(world.get('player'), dict) else {}
+    candidates = []
+    own = player.get('title_art')
+    if isinstance(own, str) and own:
+        # Only a file inside the pack: resolve symlinks and '..', then
+        # require the pack's own real path as the prefix.
+        base = os.path.realpath(pack)
+        target = os.path.realpath(os.path.join(base, own))
+        if target.startswith(base + os.sep):
+            candidates.append(Path(target))
+    candidates.append(web_dir / 'art' / 'illustrations' / 'player-title.webp')
+    art = ''
+    for p in candidates:
+        if p.is_file() and p.suffix.lower() in _ART_TYPES:
+            data = base64.b64encode(p.read_bytes()).decode('ascii')
+            art = (f'<img class="ts-art" src="data:{_ART_TYPES[p.suffix.lower()]};base64,{data}" alt="">')
+            break
+    accent = player.get('accent')
+    if isinstance(accent, str) and _re.fullmatch(r'#[0-9a-fA-F]{6}', accent):
+        r, g, b = (int(accent[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        lum = sum(w * (c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4)
+                  for w, c in zip((0.2126, 0.7152, 0.0722), (r, g, b)))
+        on = '#1B1206' if lum > 0.18 else '#FFF8E8'
+        art += f'<style>html:root {{ --accent: {accent}; --accent-on: {on}; }}</style>'
+    return art
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -619,6 +676,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
 
     tagline = world.get('creed') or 'the loom is strung; the world provides the thread.'
     out_html = template
+    out_html = out_html.replace('{{fonts_css}}', _player_fonts_css(template_path.parent))
+    out_html = out_html.replace('{{title_art_img}}', _player_title_art(pack, world, template_path.parent))
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)
     out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
@@ -724,7 +783,7 @@ def cmd_build_web(args) -> int:
     out_path = build_web(pack, out_dir, out_name=out_name, pool=pool)
     size_kb = out_path.stat().st_size / 1024
     print(f'wrote {out_path} ({size_kb:.1f} KB)')
-    print('open it in a browser, set your LLM URL + model, and play.')
+    print('open it in any browser to play: offline, or connected to a model.')
 
     # Optional: also write <name>-<date>.tree.md alongside the HTML,
     # weaving every dev-UI tab into one document. The vault and
