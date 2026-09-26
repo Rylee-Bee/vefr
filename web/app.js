@@ -103,6 +103,8 @@
     // The surface mood adds a subtle warmth to the work surface
     var foot = document.getElementById('foot-world');
     if (foot) foot.textContent = world.title ? 'on the table: ' + world.title : '';
+    var joke = document.getElementById('foot-joke');
+    if (joke) joke.textContent = FOOT_JOKES[Math.floor(Math.random() * FOOT_JOKES.length)];
 
     // The lantern burns: the storyteller is reachable
     setLantern(true, 'the lantern burns warm');
@@ -190,6 +192,41 @@
     hall:       'what you\u2019ve kept',
     settings:   'the boiler room'
   };
+
+  // Residents greet a little differently each visit (their first
+  // greeting stays in RESIDENTS; these are the other moods)
+  var MORE_GREETINGS = {
+    workshop: ['The candle has been waiting. So have I.', 'Sit. The page is still warm from last time.'],
+    map: ['Mind the edges; they are not finished yet.', 'I drew a road last night. It goes somewhere now.'],
+    characters: ['Someone knocked while you were out. Shall we see who?', 'Every face here wants something. Let us ask what.'],
+    items: ['Please do not lick the rings.', 'I polished the small things. The big things polished themselves.'],
+    journal: ['I heard that. I hear everything.', 'The ink dried on the last page. Ready for the next?'],
+    runes: ['The stones are quiet today. That is also an answer.', 'Pick one without looking. That is the whole trick.'],
+    evidence: ['Watch the third step; it has opinions.', 'The truth is down here. It is patient.'],
+    hall: ['I dusted every frame. Twice. With my tail.', 'Acorns counted, letters carried, doors propped. Hello!'],
+    settings: ['Bolt is napping on the boiler. Speak softly.', 'Every knob down here does exactly one thing. I checked.']
+  };
+  var visits = {};
+  function greetingFor(id) {
+    var r = RESIDENTS[id];
+    var all = [r.greeting].concat(MORE_GREETINGS[id] || []);
+    var n = visits[id] = (visits[id] || 0) + 1;
+    return all[(n - 1) % all.length];
+  }
+  // A note pinned to each door on the Floor
+  var DOOR_NOTES = {
+    workshop: 'the candle is still going', map: 'unfinished edges, mind your step',
+    characters: 'a chair by the window is still warm', items: 'please do not lick the rings',
+    journal: 'Urðr hears everything', runes: 'the stones will not flatter you',
+    evidence: 'watch the third step', hall: 'dusted on Tuesdays, by tail',
+    settings: 'Bolt is napping on the boiler'
+  };
+  var FOOT_JOKES = [
+    'no squirrels were harmed in the making of this studio',
+    'Ratatoskr has counted every acorn. twice.',
+    'the boiler hums in a minor key; nobody minds',
+    'made under the world tree, one page at a time'
+  ];
 
   // The department each room is, in studio words
   var SCREEN_DEPTS = {
@@ -646,7 +683,7 @@
     var who = h('div', { className: 'greeter__who' });
     who.appendChild(h('b', { className: 'greeter__name', textContent: resident.name }));
     who.appendChild(h('span', { className: 'greeter__craft', textContent: resident.craft }));
-    who.appendChild(h('p', { className: 'greeter__says', textContent: '\u201C' + resident.greeting + '\u201D' }));
+    who.appendChild(h('p', { className: 'greeter__says', textContent: '\u201C' + greetingFor(id) + '\u201D' }));
     var ask = h('button', { className: 'cta cta--line greeter__ask', type: 'button', textContent: 'Ask ' + resident.name });
     ask.addEventListener('click', function () { openFolio(id, ask); });
     who.appendChild(ask);
@@ -1020,6 +1057,7 @@
         card.appendChild(h('h3', { className: 'dept__name', textContent: SCREEN_TITLES[d[0]] || d[0] }));
         card.appendChild(h('span', { className: 'dept__who', textContent: r.name || '' }));
         card.appendChild(h('p', { className: 'dept__what', textContent: d[2] }));
+        if (DOOR_NOTES[d[0]]) card.appendChild(h('span', { className: 'door-note', textContent: DOOR_NOTES[d[0]] }));
         grid.appendChild(card);
       });
       wrap.appendChild(grid);
@@ -1047,6 +1085,7 @@
   }
 
   /* The Chronicle's reading rules live in js/chronicle.js (tested alone) */
+  var KIND_MARKS = { rumor: 'm-quill', npc_line: 'm-speech', stefna_letter: 'm-letter', combat_action: 'm-swords' };
   var chronicleLine = window.VEFR_CHRONICLE.line;
   var foldChronicle = window.VEFR_CHRONICLE.fold;
   var actionsLine = window.VEFR_CHRONICLE.actions;
@@ -1064,6 +1103,7 @@
     + '<g fill="#0A1618"><path d="M800 440 L840 404 L880 440 Z"/><rect x="808" y="438" width="64" height="40"/><path d="M890 430 L940 380 L990 430 Z"/><rect x="900" y="428" width="80" height="50"/><rect x="996" y="360" width="26" height="118"/><path d="M990 362 L1009 330 L1028 362 Z"/></g>'
     + '<g fill="#E8B25A"><rect x="930" y="446" width="10" height="14"/><rect x="830" y="452" width="8" height="12"/><circle cx="1009" cy="380" r="4"/></g>'
     + '<g transform="translate(1090 330)"><path d="M20 140 V70 M20 92 Q4 84 -4 96 M20 84 Q36 76 44 88" stroke="#1E2A20" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="20" cy="48" r="42" fill="#15251B"/><circle cx="-12" cy="66" r="24" fill="#15251B"/><circle cx="52" cy="66" r="24" fill="#15251B"/><rect x="-2" y="36" width="12" height="16" rx="2" fill="#3E6B6A"/><rect x="30" y="26" width="12" height="16" rx="2" fill="#9C5A3E"/><rect x="42" y="60" width="11" height="14" rx="2" fill="#D6C590"/></g>'
+    + '<g transform="translate(1150 380)" fill="#15251B"><ellipse cx="0" cy="0" rx="7" ry="6"/><circle cx="6" cy="-6" r="4"/><path d="M8 -9 L10 -14 L11 -8 Z"/><path d="M-6 2 C-18 -2 -20 -18 -10 -22 C-4 -24 -2 -16 -8 -12 C-6 -8 -4 -4 -6 2 Z"/></g>'
     + '<rect width="1200" height="560" fill="url(#hero-scrim)"/></svg>';
 
   /* ══════════════════════════════════════════════════════
@@ -1342,6 +1382,11 @@
         var key = h('div', { className: 'poster__key' });
         key.innerHTML = posterSvg(p, i);
         key.appendChild(h('h3', { className: 'poster__title', textContent: p.title || p.name }));
+        if (current) {
+          var seal = h('span', { className: 'wax-seal', 'aria-hidden': 'true' });
+          seal.innerHTML = '<svg viewBox="0 0 64 64"><use href="#tree"/></svg>';
+          key.appendChild(seal);
+        }
         card.appendChild(key);
         var body = h('div', { className: 'poster__body' });
         body.appendChild(h('span', { className: 'status' + (current ? ' status--now' : ''), textContent: current ? 'On the table' : 'On the wall' }));
@@ -2851,7 +2896,10 @@
             var row = h('li', { className: 'entry' + (starred ? ' entry--starred' : '') });
             row.appendChild(h('span', { className: 'entry__date', textContent: formatTime(f.at) }));
             var body = h('div', { className: 'entry__body' });
-            body.appendChild(h('span', { className: 'entry__kind', textContent: line.kind + (starred ? ' \u00B7 kept in the Hall' : '') }));
+            var kindRow = h('span', { className: 'entry__kind' });
+            kindRow.innerHTML = '<svg class="entry__mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#' + (KIND_MARKS[f.kind] || 'm-moment') + '"/></svg>';
+            kindRow.appendChild(document.createTextNode(line.kind + (starred ? ' \u00B7 kept in the Hall' : '')));
+            body.appendChild(kindRow);
             body.appendChild(h('p', { className: 'entry__text', textContent: line.text || '' }));
             if (line.who) body.appendChild(h('span', { className: 'entry__who', textContent: '\u2014 ' + line.who }));
             row.appendChild(body);
