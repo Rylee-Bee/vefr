@@ -134,11 +134,20 @@
 
   /* ── States — honest and warm ─────────────────────────── */
 
+  /* Each room's resident waits in it while it is empty. */
+  var ROOM_EMPTY = {
+    workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
+    library: 'library', runes: 'casting-table', evidence: 'archives', hall: 'hall'
+  };
+
   function emptyState(text, hint, squirrel) {
     var children = [];
     if (squirrel) {
-      var sq = h('div', { className: 'empty__squirrel', 'aria-hidden': 'true' });
-      sq.innerHTML = '<img src="' + ART + 'poses/ratatoskr-asleep-letter-pile.webp" alt="" width="140" height="140">';
+      var room = ROOM_EMPTY[document.documentElement.getAttribute('data-screen')];
+      var sq = h('div', { className: 'empty__squirrel' + (room ? ' empty__squirrel--room' : ''), 'aria-hidden': 'true' });
+      sq.innerHTML = room
+        ? '<img src="' + ART + 'poses/' + room + '-empty.webp" alt="" width="240" height="160">'
+        : '<img src="' + ART + 'poses/ratatoskr-asleep-letter-pile.webp" alt="" width="140" height="140">';
       children.push(sq);
     }
     children.push(h('p', { className: 'empty__text', textContent: text }));
@@ -3214,7 +3223,10 @@
     function stone(rune, big) {
       var st = h('button', { className: 'rune-stone' + (big ? ' rune-stone--cast' : ''), type: 'button',
         'aria-expanded': big ? 'true' : 'false', 'aria-label': rune.name + ': ' + rune.short });
-      st.appendChild(h('span', { className: 'rune-stone__stave', 'aria-hidden': 'true', textContent: rune.stave }));
+      var pebble = h('span', { className: 'rune-stone__pebble', 'aria-hidden': 'true' });
+      pebble.style.setProperty('--pebble', 'url(' + ART + 'runes/pebble-' + (1 + (rune.name.length % 4)) + '.webp)');
+      pebble.appendChild(h('span', { className: 'rune-stone__stave', textContent: rune.stave }));
+      st.appendChild(pebble);
       st.appendChild(h('span', { className: 'rune-stone__name', textContent: rune.name }));
       st.appendChild(h('span', { className: 'rune-stone__short', textContent: rune.short }));
       if (rune.long) st.appendChild(h('span', { className: 'rune-stone__long', textContent: rune.long }));
