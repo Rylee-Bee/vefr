@@ -7,6 +7,16 @@
 
 ## Landed
 
+- [x] **The studio's own art** (2026-09-26): owner-commissioned art,
+      web-sized WebP in `web/art/` (1.2 MB): ten resident portraits replace
+      the placeholder drawings; every room header carries its banner under a
+      dark wash; the Studio home hero is the World Tree; Ratatoskr sleeps on
+      a letter pile in empty rooms and searches with a lantern while loading;
+      Bolt naps on the boiler when Spark is off; a new wax seal. License CC
+      BY-SA 4.0 (owner decision), recorded in `web/art/README.md`,
+      `THIRD_PARTY_NOTICES.md` and `README.md`. Gates: `pytest -q` 551
+      passed, 1 skipped; `ruff` clean; public-surface clean; axe-core over
+      all 11 rooms in night and day: zero serious/critical.
 - [x] **Studio Hall: the workshop UI, completely replaced** (2026-09-25, owner: "complete replace", "never wanna see the old one
       again"). A game studio the old Norse run: iron top bar, room header
       with its resident, rune bands, engraved lettering (Cinzel, SIL OFL

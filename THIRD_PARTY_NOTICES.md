@@ -48,6 +48,9 @@ references them.
   town map renders in code and does not require them.
 - `worlds/lore/<flavor>/` — Creative Commons Attribution-ShareAlike
   4.0 International (CC BY-SA 4.0); see each pack's `LICENSE.md`.
+- `web/art/` — the workshop's own studio art (resident portraits, room
+  banners, the studio hero, poses, the wax seal), owner-commissioned:
+  CC BY-SA 4.0; see `web/art/README.md`.
 
 ## Generated artifacts and runtime state
 
