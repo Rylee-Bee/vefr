@@ -5,298 +5,339 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{title}}</title>
 <style>
-  /* the packaged game UI - the bones, on a phone. Color and layout
-     match the engine's web/ style and the Figma design system
-     (design/tokens.md): charcoal surfaces, parchment ink, gold
-     accent, rank by luminance not hue, 44px tap targets, the
-     4/6/8/12 radius scale. Inlined into one file at `ratatoskr
-     weave` time, with the world's pack baked in. Values kept in
-     step with web/vefr-theme.css (this file is standalone, so the
-     primitives are spelled out here). */
+  /* The woven player: one self-contained file, a world pack baked in.
+     The studio's storybook frame (Cinzel for titles, Atkinson for
+     reading, iron and gold) around the game itself. The game view
+     fills the screen; speech, choices, health and the world's mood
+     sit over it in framed boxes, as real text so screen readers and
+     text sizing keep working. A pack can bring its own title art
+     and accent (world.json "player"). Accessibility contract: 44px
+     targets, nothing moves by default, visible focus, works at 390px. */
+  {{fonts_css}}
   :root {
-    --bg: #131311;        /* charcoal/900 */
-    --card: #1D1B17;      /* charcoal/800 */
-    --card-edge: #3A352C; /* charcoal/600 */
-    --ink: #E8E5DF;       /* parchment/100 */
-    --ink-dim: #A39E92;   /* parchment/dim */
-    --accent: #C9AD6B;    /* gold/500 */
-    --danger: #B8543F;    /* red/500 */
-    --church: #2A2E33;    /* charcoal/700 */
+    --bg: #0B0C0E; --card: #15181D; --card-edge: #33363C;
+    --ink: #E8E5DF; --ink-dim: #A39E92;
+    --accent: #D8AA4E; --accent-on: #1B1206;
+    --danger: #D4644C; --church: #2A2E33;
+    --glass: rgba(17, 19, 23, 0.86); --glass-edge: rgba(216, 170, 78, 0.45);
+    --glass-ink: #F4EEDD;
+    --display: 'Cinzel', Georgia, 'Times New Roman', serif;
+    --read: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: dark;
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #E8E5DF;
-      --card: #F5F3EC;
-      --card-edge: #A39E92;
-      --ink: #1D1B17;
-      --ink-dim: #5A5347;
-      --accent: #8a6a30;
-      --danger: #6a3020;
-      --church: #2A2E33;
+      --bg: #EEEAE0; --card: #F8F5EE; --card-edge: #CFC7B6;
+      --ink: #1E1A14; --ink-dim: #5A5244;
+      --accent: #74500F; --accent-on: #FFF8E8; --danger: #8A2F1F;
+      color-scheme: light;
     }
   }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    min-height: 100vh;
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--read); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  button { font: inherit; }
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* buttons: one family */
+  .cta, button.primary, .verb-row button, #kitchen button, #desk button, .dpad button, .gbtn {
+    min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 8px 18px; border-radius: 4px; cursor: pointer;
+    font: 700 0.8rem/1.25 var(--display); letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--card-edge); background: transparent; color: var(--ink);
   }
-  header {
-    padding: 1rem 1.2rem 0.6rem; border-bottom: 1px solid var(--card-edge);
+  .cta--gold, button.primary { background: var(--accent); color: var(--accent-on); border-color: transparent; }
+  button:disabled { opacity: 0.55; cursor: default; }
+  kbd { font: 600 0.72rem ui-monospace, Menlo, monospace; border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; opacity: 0.85; }
+
+  /* carved panel */
+  .carved, .card, #config {
+    position: relative; background: var(--card); border: 1px solid var(--card-edge); border-radius: 4px;
+    box-shadow: inset 0 0 0 5px var(--card), inset 0 0 0 6px var(--card-edge);
+    padding: 22px 24px; overflow-wrap: anywhere;
   }
-  h1 { margin: 0 0 0.2rem; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.04em; }
-  .tagline { margin: 0; color: var(--ink-dim); font-size: 0.85rem; }
-  main { padding: 0.8rem 1.2rem; max-width: 720px; margin: 0 auto; }
-  .phase-rail { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 1rem; }
-  .phase-rail button {
-    font: inherit; font-size: 0.92rem; padding: 0.6rem 0.9rem;
-    min-height: 44px; min-width: 44px;
-    background: transparent; color: var(--ink-dim);
-    border: 1px solid var(--card-edge); border-radius: 6px;
-    cursor: pointer; text-transform: lowercase;
+  .carved::before, .carved::after, #config::before, #config::after {
+    content: ''; position: absolute; top: 10px; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); opacity: 0.55;
   }
-  .phase-rail button[aria-pressed="true"] {
-    color: var(--ink); border-color: var(--accent);
-  }
-  .controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-  button.primary {
-    font: inherit; font-size: 0.95rem; padding: 0.65rem 1.1rem;
-    min-height: 44px; min-width: 88px;
-    background: transparent; color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 6px;
-    cursor: pointer;
-  }
-  button.primary:hover, button.primary:focus-visible {
-    border-color: var(--accent); outline: none;
-  }
-  .card {
-    background: var(--card); border: 1px solid var(--card-edge);
-    border-radius: 6px; padding: 1rem 1.2rem; margin-top: 1rem;
-    overflow-wrap: anywhere;
-  }
-  .card .speaker { color: var(--ink-dim); font-size: 0.85rem; letter-spacing: 0.06em; }
-  .card .whisper { margin: 0.5rem 0 0; }
-  .empty { color: var(--ink-dim); font-style: italic; margin-top: 1.4rem; }
-  .error { color: var(--danger); margin-top: 1.4rem; }
-  .status { color: var(--ink-dim); font-size: 0.85rem; margin-top: 0.6rem; }
-  .npc-box {
-    background: var(--card); border: 1px solid var(--card-edge);
-    border-radius: 6px; padding: 1rem 1.1rem; margin-top: 1rem;
-  }
-  .npc-line { margin: 0.4rem 0 0.9rem; }
-  /* The surface costume - hp bar, encounter prompt, verbs. Only a
-     combat-surface pack shows any of it; plain/investigation packs
-     never do. Mirrors web/index.html's costume. */
-  .hud-hp { display: flex; align-items: center; gap: 0.6rem; margin: 0.8rem 0 0; }
-  .hud-hp-label { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  .hud-hp-bar { flex: 1; max-width: 220px; height: 10px; background: var(--bg); border: 1px solid var(--card-edge); border-radius: 4px; }
-  .hud-hp-fill { height: 100%; background: var(--accent); width: 100%; }
-  .hud-hp-value { color: var(--ink-dim); font-size: 0.82rem; }
+  .carved::before, #config::before { left: 10px; }
+  .carved::after, #config::after { right: 10px; }
+  .label { font: 600 0.7rem/1.3 ui-monospace, Menlo, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+  .card { margin-top: 12px; padding: 14px 16px; box-shadow: none; }
+  .card .speaker { font: 700 0.8rem var(--display); letter-spacing: 0.06em; color: var(--ink); }
+  .card .whisper { margin: 4px 0 0; font-style: italic; }
+  .empty { color: var(--ink-dim); font-style: italic; }
+  .status { color: var(--ink-dim); font-size: 0.9rem; margin: 6px 0 0; }
+
+  /* ---- title screen ---- */
+  #title-screen { position: fixed; inset: 0; z-index: 100; display: grid; align-items: end; background: #0B0C0E; overflow: hidden; }
+  #title-screen[aria-hidden="true"] { display: none; }
+  .ts-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
+  #title-screen::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(8, 9, 11, 0) 35%, rgba(8, 9, 11, 0.6) 62%, rgba(8, 9, 11, 0.92) 100%); }
+  .ts-copy { position: relative; z-index: 1; padding: 0 8% 9vh; display: grid; gap: 12px; justify-items: start; max-width: 900px; }
+  #title-screen h1 { margin: 0; font: 800 clamp(2.4rem, 7vw, 4.6rem)/1 var(--display); letter-spacing: 0.06em; color: #FFF8E8; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55); }
+  #title-screen .title-tagline { margin: 0 0 8px; font-size: 1.1rem; font-style: italic; color: #EDE4CF; }
+  #title-screen button { min-height: 48px; padding: 10px 28px; background: var(--accent); color: var(--accent-on); border: 0; }
+  .ts-byline { position: absolute; z-index: 1; left: 8%; bottom: 16px; margin: 0; font-size: 0.75rem; letter-spacing: 0.06em; color: #CFC5AE; }
+
+  /* ---- before you play ---- */
+  header.game-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 12px 20px; border-bottom: 1px solid var(--card-edge); background: var(--card); }
+  header.game-head h1 { margin: 0; font: 700 1.05rem var(--display); letter-spacing: 0.06em; }
+  header.game-head .tagline { margin: 0; color: var(--ink-dim); font-size: 0.85rem; font-style: italic; }
+  body.in-game header.game-head { display: none; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+  body.in-game main { max-width: none; padding: 0; }
+  #config h2 { margin: 4px 0 6px; font: 700 1.3rem/1.2 var(--display); letter-spacing: 0.04em; }
+  #config p { margin: 0; }
+  #config label { display: block; margin: 14px 0 4px; font-weight: 700; font-size: 0.9rem; }
+  #config input { width: 100%; font: inherit; padding: 8px 12px; min-height: 44px; background: var(--bg); color: var(--ink); border: 1px solid var(--card-edge); border-radius: 4px; }
+  #config .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  #config .hint { color: var(--ink-dim); font-size: 0.85rem; margin: 12px 0 0; }
+  #cfg-error { color: var(--danger); font-weight: 700; margin: 10px 0 0; }
+
+  /* ---- the game view ---- */
+  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
+  #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; }
+  .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hud--tl { left: 12px; }
+  .hud--tr { right: 12px; justify-content: flex-end; max-width: 60%; }
+  .glass { background: var(--glass); border: 1px solid var(--glass-edge); border-radius: 4px; color: var(--glass-ink); }
+  .hud-hp { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
+  .hud-hp-label { font: 700 0.7rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #E2BC6E; }
+  .hud-hp-bar { width: 110px; height: 10px; background: #2A2E33; border-radius: 999px; overflow: hidden; }
+  .hud-hp-fill { height: 100%; background: #6EA88A; width: 100%; }
+  .hud-hp-value { font-size: 0.82rem; }
   body[data-surface="plain"] .hud-hp,
   body[data-surface="investigation"] .hud-hp { display: none; }
-  .encounter-prompt { margin: 0.6rem 0 0; color: var(--ink); font-style: italic; }
+  .phase-rail { display: flex; gap: 6px; }
+  .phase-rail button { min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+    background: var(--glass); border: 1px solid rgba(242, 236, 221, 0.35); color: var(--glass-ink); font: 0.85rem var(--read); text-transform: capitalize; }
+  .phase-rail button[aria-pressed="true"] { border-color: #D8AA4E; color: #E2BC6E; }
+  .gbtn { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
+  .gbtn--gold, .stage button.primary { background: #D8AA4E; color: #1B1206; border-color: transparent; }
+  .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; }
+  .toasts { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 2; display: grid; gap: 6px; justify-items: center; width: min(92%, 560px); pointer-events: none; }
+  .toasts p { margin: 0; padding: 6px 12px; text-align: center; font-size: 0.9rem; }
+  .toasts p:empty { display: none; }
+  .encounter-prompt { font-style: italic; }
   body[data-surface="plain"] .encounter-prompt,
   body[data-surface="investigation"] .encounter-prompt { display: none; }
-  .verb-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  /* speech box */
+  .npc-box { position: absolute; left: 5%; right: 5%; bottom: 84px; z-index: 3; max-width: 820px; margin: 0 auto;
+    background: rgba(21, 24, 29, 0.95); border: 2px solid #D8AA4E; border-radius: 6px; padding: 24px 22px 14px; color: var(--glass-ink);
+    box-shadow: inset 0 0 0 4px rgba(21, 24, 29, 0.95), inset 0 0 0 5px rgba(216, 170, 78, 0.35); }
+  .npc-box .speaker { position: absolute; top: -15px; left: 16px; margin: 0; background: #D8AA4E; color: #1B1206;
+    font: 700 0.78rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; }
+  .npc-line { margin: 0 0 10px; font-size: 1.15rem; line-height: 1.5; }
+  .npc-note { margin: 0 0 8px; font-size: 0.85rem; color: #CFC5AE; }
+  .npc-box #npc-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
+  /* choices */
+  .verb-row { position: absolute; left: 16px; bottom: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
+  .verb-row button { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.4); text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
+  .verb-row button::before { content: '\25B6'; color: #D8AA4E; font-size: 0.7rem; }
   body[data-surface="plain"] .verb-row,
   body[data-surface="investigation"] .verb-row { display: none; }
-  .verb-row button {
-    font: inherit; font-size: 0.92rem; padding: 0.55rem 0.9rem;
-    min-height: 44px; min-width: 44px;
-    background: transparent; color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 6px; cursor: pointer;
+  #combat-log { position: absolute; left: 16px; bottom: 70px; z-index: 2; margin: 0; max-width: 45%; font-size: 0.85rem; }
+  #combat-log:empty { display: none; }
+  /* move pad: phones and touch */
+  .dpad { position: absolute; left: 12px; bottom: 76px; z-index: 2; display: none;
+    grid-template-areas: ". u ." "l . r" ". d ."; grid-template-columns: repeat(3, 52px); gap: 4px; }
+  .dpad button { width: 52px; height: 52px; padding: 0; border-radius: 50%; background: rgba(17, 19, 23, 0.6); color: #F4EEDD; border-color: rgba(242, 236, 221, 0.45); font: 1.1rem var(--read); }
+  @media (pointer: coarse), (max-width: 700px) {
+    .dpad { display: grid; }
+    .verb-row { left: auto; right: 12px; bottom: 196px; flex-direction: column; align-items: flex-end; max-width: 60%; }
+    .acts { flex-direction: column; right: 12px; bottom: 16px; }
+    .acts .gbtn { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 0.66rem; }
+    .acts kbd { display: none; }
+    .npc-box { left: 10px; right: 10px; bottom: 12px; }
+    .toasts { top: 68px; bottom: auto; }
+    .hud-hp-bar { width: 56px; }
+    .hud-hp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .hud--tr { max-width: 70%; }
   }
-  .verb-row button:hover, .verb-row button:focus-visible { border-color: var(--accent); outline: none; }
-  .verb-row button:disabled { opacity: 0.45; cursor: wait; }
+  /* pause menu */
+  #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
+    grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
+  #menu .pm { list-style: none; margin: 10px 0 14px; padding: 0; display: grid; gap: 2px; }
+  #menu .pm button { width: 100%; justify-content: flex-start; border: 0; background: transparent; color: var(--ink); text-transform: none; letter-spacing: 0.04em; font: 700 0.95rem var(--display); }
+  #menu .pm button[aria-current="true"] { background: rgba(216, 170, 78, 0.16); color: var(--accent); }
+  #menu-panel h2 { margin: 4px 0 8px; font: 700 1.2rem var(--display); letter-spacing: 0.04em; }
+  #menu-panel ul { margin: 0; padding-left: 1.1rem; }
+  @media (max-width: 700px) { #menu { grid-template-columns: 1fr; } }
 
-  /* The kitchen (cooking ruleset v0): tickets on a rail, pantry
-     chips, a wrapper, and the morning page. No timers anywhere -
-     the truck arrives, the tickets wait. */
-  #kitchen button { min-height: 44px; }
-  #kitchen h2 { font-weight: normal; font-size: 1rem; color: var(--ink-dim); margin: 1.6rem 0 0.5rem; }
+  /* the kitchen and the desk: page surfaces, in carved panels */
+  #kitchen, #desk { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  #kitchen h2, #desk h2 { font: 700 1rem var(--display); letter-spacing: 0.06em; color: var(--ink); margin: 1.6rem 0 0.5rem; }
+  .controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  #kitchen button, #desk button { text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
+  #kitchen button.primary, #desk button.primary { background: var(--accent); color: var(--accent-on); border-color: transparent; }
   #k-tickets { display: flex; flex-direction: column; gap: 0.8rem; }
   #k-tickets .card.done { opacity: 0.6; }
   #k-tickets .order-voice { margin: 0.35rem 0 0; font-style: italic; }
-  #k-tickets .epitaph { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--ink-dim); }
+  #k-tickets .epitaph { margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--ink-dim); }
   #k-pantry { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  #k-pantry button { padding: 0.55rem 1.1rem; }
   #k-pantry button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
   #k-wrap { min-height: 1.4rem; font-style: italic; }
-  #k-headlines button { display: block; width: 100%; text-align: left; margin-top: 0.5rem; padding: 0.7rem 0.9rem; }
+  #k-headlines button, #d-headlines button { display: flex; width: 100%; justify-content: flex-start; text-align: left; margin-top: 0.5rem; }
   #k-page { margin-top: 1.6rem; padding: 1.4rem 1.2rem; border: 2px solid var(--ink); }
   #k-page .masthead { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
-  #k-page h3 { margin: 0.6rem 0; font-size: 1.3rem; line-height: 1.25; }
+  #k-page h3 { margin: 0.6rem 0; font: 700 1.3rem/1.25 var(--display); }
   #k-page .byline { color: var(--ink-dim); font-size: 0.85rem; font-style: italic; }
   #k-page ul { margin: 0.8rem 0 0; padding-left: 1.1rem; }
   #k-page .creed { margin-top: 0.9rem; font-style: italic; }
   #d-feed .card { margin-top: 0.8rem; }
-  #d-headlines button { display: block; width: 100%; text-align: left;
-    margin-top: 0.5rem; padding: 0.7rem 0.9rem; min-height: 44px; }
   #d-facts li.confirmed { color: var(--accent); }
   #d-facts li.debunked { color: var(--ink-dim); text-decoration: line-through; }
   #d-feed .card .verdict { margin-top: 0.4rem; font-size: 0.85rem; font-style: italic; }
-  #combat-log { min-height: 1.2em; }
-  .dpad {
-    display: grid; grid-template-areas: ". u ." "l d r"; width: 132px;
-    gap: 4px; margin: 1rem auto;
-  }
-  .dpad button { font-size: 1rem; padding: 0.5rem; min-height: 44px; min-width: 44px; }
-  #town-canvas { max-width: 100%; height: auto; border: 1px solid var(--card-edge); display: block; margin: 0.6rem 0; }
-  #config {
-    margin: 1rem 0; padding: 0.8rem 1rem; background: var(--card);
-    border: 1px dashed var(--card-edge); border-radius: 6px;
-  }
-  #config label { display: block; margin: 0.4rem 0 0.2rem; color: var(--ink-dim); font-size: 0.85rem; }
-  #config input {
-    width: 100%; box-sizing: border-box; font: inherit; padding: 0.5rem 0.6rem;
-    background: var(--bg); color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 6px; min-height: 44px;
-  }
-  #config .hint { color: var(--ink-dim); font-size: 0.82rem; margin: 0.4rem 0 0; }
-  /* ---- title screen ---- */
-  #title-screen {
-    position: fixed; inset: 0; z-index: 100;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: var(--bg);
-    opacity: 1; transition: opacity 0.6s ease;
-  }
-  #title-screen[aria-hidden="true"] {
-    pointer-events: none; opacity: 0;
-  }
-  #title-screen h1 {
-    margin: 0; font-size: 2.4rem; font-weight: 700;
-    letter-spacing: 0.06em;
-    font-family: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
-    color: var(--ink);
-    animation: title-fade-in 0.8s ease both;
-  }
-  #title-screen .title-tagline {
-    margin: 0.6rem 0 2.4rem;
-    font-size: 1rem; color: var(--ink-dim);
-    letter-spacing: 0.03em;
-    font-family: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
-    animation: title-fade-in 0.8s ease 0.3s both;
-  }
-  #title-screen button {
-    font: inherit; font-size: 1rem; padding: 0.7rem 2rem;
-    min-height: 48px; min-width: 88px;
-    background: transparent; color: var(--ink);
-    border: 1px solid var(--card-edge); border-radius: 6px;
-    cursor: pointer; letter-spacing: 0.06em;
-    text-transform: lowercase;
-    animation: title-fade-in 0.8s ease 0.5s both;
-  }
-  #title-screen button:hover,
-  #title-screen button:focus-visible {
-    border-color: var(--accent); outline: none;
-  }
-  @keyframes title-fade-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <div id="title-screen" role="banner" aria-label="Title screen">
-  <h1 id="ts-title">{{title}}</h1>
-  <p class="title-tagline">{{tagline}}</p>
-  <button type="button" id="ts-enter" autofocus>enter</button>
+  {{title_art_img}}
+  <div class="ts-copy">
+    <h1 id="ts-title">{{title}}</h1>
+    <p class="title-tagline">{{tagline}}</p>
+    <button type="button" id="ts-enter" autofocus>Begin</button>
+  </div>
+  <p class="ts-byline">Made with VEFR</p>
 </div>
-<header>
+<header class="game-head">
   <h1>{{title}}</h1>
   <p class="tagline">{{tagline}}</p>
 </header>
 <main>
-  <section id="config" hidden>
-    <strong>first run - point me at your model</strong>
-    <label for="cfg-url">LLM URL (any OpenAI-compatible endpoint)</label>
-    <input id="cfg-url" type="text" placeholder="http://192.168.x.x:11434/v1" autocomplete="off">
+  <section id="config" hidden aria-labelledby="cfg-title">
+    <span class="label">Before you play</span>
+    <h2 id="cfg-title">Play offline, or bring a model</h2>
+    <p>This game plays fine on its own. If you run a language model, it can write the characters' lines fresh each time.</p>
+    <label for="cfg-url">Model address (any OpenAI-compatible server)</label>
+    <input id="cfg-url" type="text" placeholder="http://localhost:11434/v1" autocomplete="off">
     <label for="cfg-model">Model name</label>
     <input id="cfg-model" type="text" placeholder="qwen3-1.7b" autocomplete="off">
-    <button type="button" id="cfg-save" class="primary">save & play</button>
-    <p class="hint">e.g. a llama.cpp server on your local network (<code>http://198.51.100.10:8081</code>),
-       an ollama instance on the same network, an iPhone running "Local LLM Server"
-       from the App Store, or any OpenAI-compatible endpoint. Your data never leaves
-       your device. Leave both blank to play offline - the woven pool carries the world.</p>
+    <p id="cfg-error" role="alert" hidden></p>
+    <div class="btns">
+      <button type="button" id="cfg-offline" class="cta cta--gold">Play offline</button>
+      <button type="button" id="cfg-save" class="cta">Connect and play</button>
+    </div>
+    <p class="hint">Works with llama.cpp, Ollama, LM Studio, or a phone running a local model server. Leave both blank to play offline; the game's own lines carry the world. Nothing leaves your device.</p>
   </section>
-
   <div id="play" hidden>
-    <div class="phase-rail" id="phase" role="group" aria-label="The world's tone"></div>
-    <section class="controls">
-      <button type="button" id="whisper" class="primary">Whisper</button>
-      <span class="status" id="status">ready.</span>
-    </section>
-    <section id="feed" aria-live="polite">
-      <p class="empty">Press Whisper.</p>
-    </section>
-
-    <h2 style="font-weight:normal;font-size:1rem;color:var(--ink-dim);margin:2rem 0 0.5rem;">Town</h2>
-    <p class="status">walk with the pad or arrow keys.</p>
-    <div class="hud-hp" id="hud-hp" role="status" aria-live="polite">
-      <span class="hud-hp-label">hp</span>
-      <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
-      <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+    <div class="stage" id="stage">
+      <canvas id="town-canvas" width="480" height="336" role="img" aria-label="The town, seen from above"></canvas>
+      <div class="hud hud--tl">
+        <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
+          <span class="hud-hp-label">Health</span>
+          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+          <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+        </div>
+      </div>
+      <div class="hud hud--tr">
+        <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
+        <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
+      </div>
+      <div class="toasts">
+        <p class="glass" id="status" role="status" aria-live="polite"></p>
+        <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
+        <p class="glass" id="near" aria-live="polite"></p>
+        <p class="glass" id="poi" aria-live="polite"></p>
+      </div>
+      <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
+        <p class="speaker" id="npc-name"></p>
+        <p class="npc-line" id="npc-line"></p>
+        <p class="npc-note" id="npc-note" hidden></p>
+        <button type="button" id="npc-close" class="cta">Continue</button>
+      </div>
+      <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
+      <p class="glass" id="combat-log" aria-live="polite"></p>
+      <div class="dpad" id="dpad" aria-label="Move">
+        <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
+        <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
+        <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
+        <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
+      </div>
+      <div class="acts">
+        <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
+        <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
+      </div>
     </div>
-    <p class="encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
-    <canvas id="town-canvas" width="480" height="336"></canvas>
-    <p class="status" id="near" aria-live="polite"></p>
-    <p class="status" id="poi" aria-live="polite"></p>
-    <div class="dpad" id="dpad" aria-label="Move">
-      <button type="button" data-dir="up" style="grid-area:u">&#8593;</button>
-      <button type="button" data-dir="left" style="grid-area:l">&#8592;</button>
-      <button type="button" data-dir="down" style="grid-area:d">&#8595;</button>
-      <button type="button" data-dir="right" style="grid-area:r">&#8594;</button>
-    </div>
-    <div class="npc-box" id="npc-box" hidden>
-      <p class="speaker" id="npc-name"></p>
-      <p class="npc-line" id="npc-line"></p>
-      <button type="button" id="npc-close" class="primary">close</button>
-    </div>
-    <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
-    <p class="status" id="combat-log" aria-live="polite"></p>
-
     <section id="kitchen" hidden>
       <p class="status" id="k-open" aria-live="polite"></p>
-      <h2>the rail</h2>
+      <h2>The rail</h2>
       <div id="k-tickets"></div>
-      <h2>the pantry</h2>
+      <h2>The pantry</h2>
       <div id="k-pantry" role="group" aria-label="Pantry"></div>
-      <h2>the wrapper</h2>
+      <h2>The wrapper</h2>
       <p id="k-wrap" aria-live="polite"></p>
       <div class="controls">
-        <button type="button" id="k-serve" class="primary">serve</button>
-        <button type="button" id="k-undo">take back</button>
-        <button type="button" id="k-aside">set aside</button>
+        <button type="button" id="k-serve" class="primary">Serve</button>
+        <button type="button" id="k-undo">Take back</button>
+        <button type="button" id="k-aside">Set aside</button>
       </div>
       <p class="status" id="k-line" aria-live="polite"></p>
       <section id="k-headlines" hidden>
-        <h2>the morning page</h2>
-        <p class="status">what does the paper say?</p>
+        <h2>The morning page</h2>
+        <p class="status">What does the paper say?</p>
         <div id="k-headline-list"></div>
       </section>
       <section id="k-page" hidden tabindex="-1"></section>
       <div class="controls" id="k-again" hidden>
-        <button type="button" id="k-sleep">sleep &middot; wake again</button>
+        <button type="button" id="k-sleep">Sleep and wake again</button>
       </div>
     </section>
-
     <section id="desk" hidden>
       <p class="status" id="d-open" aria-live="polite"></p>
       <div class="controls">
-        <button type="button" id="d-whisper" class="primary">listen for whispers</button>
-        <span class="status" id="d-status">the well is quiet.</span>
+        <button type="button" id="d-whisper" class="primary">Listen for whispers</button>
+        <span class="status" id="d-status">No whispers yet.</span>
       </div>
       <section id="d-feed" aria-live="polite"></section>
-      <h2>the morning page</h2>
+      <h2>The morning page</h2>
       <div id="d-headlines"></div>
-      <h2>on the wire</h2>
+      <h2>On the wire</h2>
       <ul id="d-printed"></ul>
-      <h2>what the world knows</h2>
+      <h2>What the world knows</h2>
       <ul id="d-facts"></ul>
     </section>
   </div>
 </main>
+<div id="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" hidden>
+  <div class="carved">
+    <span class="label" id="menu-title">Paused</span>
+    <ul class="pm">
+      <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
+      <li><button type="button" data-panel="help">How to play</button></li>
+      <li><button type="button" data-panel="model">Model settings</button></li>
+    </ul>
+    <button type="button" id="menu-close" class="cta cta--gold">Resume</button>
+  </div>
+  <div class="carved" id="menu-panel">
+    <div data-panel-body="journal">
+      <h2>Journal</h2>
+      <section id="feed" aria-live="polite">
+        <p class="empty">Nothing yet. Press Whisper to hear what people are saying.</p>
+      </section>
+    </div>
+    <div data-panel-body="help" hidden>
+      <h2>How to play</h2>
+      <ul>
+        <li>Move with the arrow keys, or the pad on a touch screen.</li>
+        <li>Talk to someone nearby with <kbd>E</kbd>, <kbd>Space</kbd> or the Talk button.</li>
+        <li>Hear a rumor with <kbd>Q</kbd> or the Whisper button.</li>
+        <li>Open and close this menu with <kbd>Esc</kbd>.</li>
+      </ul>
+    </div>
+    <div data-panel-body="model" hidden>
+      <h2>Model settings</h2>
+      <p>Change which language model writes the lines, or play offline.</p>
+      <button type="button" id="menu-model" class="cta">Change model</button>
+    </div>
+  </div>
+</div>
 <script>
 // ---- inlined world pack ----
 window.VEFR_WORLD = {{world_json}};
@@ -363,6 +404,7 @@ var play = document.getElementById('play');
 var configBox = document.getElementById('config');
 // Title screen shows first; config/play revealed after "enter" click.
 // Wire up the config-save handler now so it's ready when needed.
+var cfgError = document.getElementById('cfg-error');
 document.getElementById('cfg-save').addEventListener('click', function () {
   llmUrl = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
   llmModel = document.getElementById('cfg-model').value.trim();
@@ -370,23 +412,41 @@ document.getElementById('cfg-save').addEventListener('click', function () {
   // other can never reach an endpoint. Both blank is a real choice -
   // play offline, the woven pool carries the world.
   if (!!llmUrl !== !!llmModel) {
-    alert('URL and model go together - fill in both, or leave both blank to play offline.');
+    cfgError.textContent = 'The address and the model name go together: fill in both, or leave both blank to play offline.';
+    cfgError.hidden = false;
     return;
   }
+  cfgError.hidden = true;
   saveConfig({ llmUrl: llmUrl, llmModel: llmModel, configured: true });
+  enterGame();
+});
+document.getElementById('cfg-offline').addEventListener('click', function () {
+  llmUrl = ''; llmModel = '';
+  cfgError.hidden = true;
+  saveConfig({ llmUrl: '', llmModel: '', configured: true });
+  enterGame();
+});
+function enterGame() {
   configBox.hidden = true; play.hidden = false;
   startPlaySurface();
-});
+}
 
 /* Which surface does the active act play on? A cooking act
    opens the kitchen; everything else keeps the town. */
+var surfaceStarted = false;
 function startPlaySurface() {
+  // Coming back from Model settings keeps the game running.
+  if (surfaceStarted) return;
+  surfaceStarted = true;
   var act0 = (VEFR_WORLD.acts && VEFR_WORLD.acts[0]) || {};
   if (act0.ruleset === 'cooking' && act0.cooking && act0.cooking.tickets) {
+    document.getElementById('stage').hidden = true;
     initKitchen();
   } else if (act0.ruleset === 'desk' && act0.desk && act0.desk.headlines) {
+    document.getElementById('stage').hidden = true;
     initDesk();
   } else {
+    document.body.classList.add('in-game');
     bootstrap();
   }
 }
@@ -397,6 +457,57 @@ function bootstrap() {
   buildPhaseRail();
   bindWhisper();
   setupTown();
+  bindMenu();
+  var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  document.getElementById('status').textContent = touch
+    ? 'Use the pad to move. Tap Talk when someone is near.'
+    : 'Use the arrow keys to move. Press E to talk.';
+}
+
+// ---- speech box: whoever is talking, in a box over the game ----
+function showSpeech(speaker, line, note) {
+  document.getElementById('npc-name').textContent = speaker || '';
+  document.getElementById('npc-line').textContent = line || '';
+  var n = document.getElementById('npc-note');
+  n.textContent = note || ''; n.hidden = !note;
+  document.getElementById('npc-box').hidden = false;
+  document.getElementById('npc-close').focus();
+}
+
+// ---- pause menu: journal, help, model settings ----
+function bindMenu() {
+  var menu = document.getElementById('menu');
+  var opener = document.getElementById('menu-open');
+  function showPanel(name) {
+    menu.querySelectorAll('[data-panel]').forEach(function (b) {
+      b.setAttribute('aria-current', b.dataset.panel === name ? 'true' : 'false');
+    });
+    menu.querySelectorAll('[data-panel-body]').forEach(function (d) {
+      d.hidden = d.dataset.panelBody !== name;
+    });
+  }
+  window.openMenu = function () {
+    menu.hidden = false; showPanel('journal');
+    document.getElementById('menu-close').focus();
+  };
+  window.closeMenu = function () { menu.hidden = true; opener.focus(); };
+  opener.addEventListener('click', window.openMenu);
+  document.getElementById('menu-close').addEventListener('click', window.closeMenu);
+  menu.querySelectorAll('[data-panel]').forEach(function (b) {
+    b.addEventListener('click', function () { showPanel(b.dataset.panel); });
+  });
+  document.getElementById('menu-model').addEventListener('click', function () {
+    menu.hidden = true;
+    play.hidden = true; configBox.hidden = false;
+    document.body.classList.remove('in-game');
+    document.getElementById('cfg-url').value = llmUrl;
+    document.getElementById('cfg-model').value = llmModel;
+    document.getElementById('cfg-url').focus();
+    // Returning keeps the running game; only the in-game frame comes back.
+    var back = function () { document.body.classList.add('in-game'); };
+    document.getElementById('cfg-save').addEventListener('click', back, { once: true });
+    document.getElementById('cfg-offline').addEventListener('click', back, { once: true });
+  });
 }
 
 // ---- the surface costume (hp bar, encounter prompt, verbs) ----
@@ -440,7 +551,7 @@ function renderEncounter() {
     el.hidden = true; el.textContent = ''; return;
   }
   el.hidden = false;
-  el.textContent = 'something stirs nearby.';
+  el.textContent = 'Something stirs nearby.';
 }
 
 function applySurface() {
@@ -516,7 +627,7 @@ function bindWhisper() {
   var feed = document.getElementById('feed');
   btn.addEventListener('click', async function () {
     btn.disabled = true;
-    status.textContent = 'listening\u2026';
+    status.textContent = 'Listening\u2026';
     var ph = STATE.get().phase;
     var tone = window.VEFR_WORLD.phases[ph] || '';
     var system = 'You are the whisper that flies out every day and comes home.\n'
@@ -552,9 +663,10 @@ function bindWhisper() {
       div.className = 'card';
       div.innerHTML = '<div class="speaker">' + esc(card.speaker) + '</div>'
         + '<p class="whisper">&ldquo;' + esc(card.whisper) + '&rdquo;</p>'
-        + (card.is_true ? '' : '<p class="status">a lie, or close enough</p>');
+        + (card.is_true ? '' : '<p class="status">A lie, or close enough.</p>');
       feed.insertBefore(div, feed.firstChild);
-      status.textContent = 'whispered.';
+      status.textContent = '';
+      showSpeech(card.speaker, '\u201C' + card.whisper + '\u201D', card.is_true ? '' : 'A lie, or close enough.');
     } catch (err) {
       // No live endpoint (or it failed): draw from the woven pool -
       // real model output, pre-generated at weave time. Pool spent?
@@ -573,14 +685,16 @@ function bindWhisper() {
         pdiv.className = 'card';
         pdiv.innerHTML = '<div class="speaker">' + esc(card.speaker) + '</div>'
           + '<p class="whisper">&ldquo;' + esc(card.whisper) + '&rdquo;</p>'
-          + (card.is_true ? '' : '<p class="status">a lie, or close enough</p>');
+          + (card.is_true ? '' : '<p class="status">A lie, or close enough.</p>');
         feed.insertBefore(pdiv, feed.firstChild);
-        status.textContent = pooled ? 'from the woven pool.'
-          : respliced ? "woven anew from the pool's cloth."
-          : fromFragments ? "from the pack's own fragments."
-          : 'nothing came back (' + (err.message || 'failed') + ').';
+        status.textContent = '';
+        showSpeech(card.speaker, '\u201C' + card.whisper + '\u201D',
+          (pooled ? "From the game's saved lines."
+            : respliced ? "Mixed from the game's saved lines."
+            : fromFragments ? "From the characters' own lines." : '')
+          + (card.is_true ? '' : ' A lie, or close enough.'));
       } else {
-        status.textContent = 'nothing came back (' + (err.message || 'failed') + ').';
+        status.textContent = 'Nothing came back (' + (err.message || 'failed') + ').';
       }
     } finally {
       btn.disabled = false;
@@ -818,7 +932,7 @@ function setupTown() {
       if (d < dmin) { dmin = d; nearest = { key: key, spec: s, dist: d }; }
     }
     if (!nearest || nearest.dist > 2) {
-      document.getElementById('near').textContent = 'no voice close enough to hear.';
+      document.getElementById('near').textContent = 'No one is close enough to talk to.';
       return;
     }
     var seed = (nearest.spec.seeds || {})[ph] || '';
@@ -839,31 +953,30 @@ function setupTown() {
       chat_template_kwargs: { reasoning_effort: 'low' },
     }).then(function (r) { return r.json(); }).then(function (j) {
       var line = JSON.parse(j.choices[0].message.content);
-      document.getElementById('npc-name').textContent = nearest.spec.name;
-      document.getElementById('npc-line').textContent = line.line;
-      document.getElementById('npc-box').hidden = false;
+      document.getElementById('near').textContent = '';
+      showSpeech(nearest.spec.name, line.line, '');
     }).catch(function () {
       var key = 'npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?');
       var pooled = poolDraw(key);
       var respliced = pooled ? null : composeLine(key);
       var card = pooled || respliced || composeFromFragments(nearest.key, 'line');
       if (card) {
-        document.getElementById('npc-name').textContent = card.speaker;
-        document.getElementById('npc-line').textContent = card.line;
-        document.getElementById('npc-box').hidden = false;
-        document.getElementById('near').textContent = pooled
+        document.getElementById('near').textContent = '';
+        showSpeech(card.speaker, card.line, pooled
           ? ''
-          : respliced ? "woven anew from the pool's cloth."
-          : "from their own fragments.";
+          : respliced ? "Mixed from the game's saved lines."
+          : "From this character's own lines.");
       } else {
-        document.getElementById('near').textContent = 'the voice did not answer.';
+        document.getElementById('near').textContent = "They didn't answer.";
       }
     });
   }
 
   document.getElementById('npc-close').addEventListener('click', function () {
     document.getElementById('npc-box').hidden = true;
+    document.getElementById('talk').focus();
   });
+  document.getElementById('talk').addEventListener('click', tryNPC);
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
@@ -902,11 +1015,22 @@ function setupTown() {
   });
   document.addEventListener('keydown', function (e) {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-    if (e.key === 'ArrowUp') move(0, -1);
-    else if (e.key === 'ArrowDown') move(0, 1);
-    else if (e.key === 'ArrowLeft') move(-1, 0);
-    else if (e.key === 'ArrowRight') move(1, 0);
-    else if (e.key === ' ' || e.key === 'Enter') tryNPC();
+    var menuOpen = !document.getElementById('menu').hidden;
+    if (e.key === 'Escape') { if (menuOpen) window.closeMenu(); else window.openMenu(); return; }
+    if (menuOpen || play.hidden) return;
+    var box = document.getElementById('npc-box');
+    // A focused button handles its own Enter and Space.
+    var onButton = e.target && e.target.tagName === 'BUTTON';
+    if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
+    else if (e.key === 'e' || e.key === 'E') tryNPC();
+    else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
+    else if (!onButton && (e.key === ' ' || e.key === 'Enter')) {
+      e.preventDefault();
+      if (!box.hidden) box.hidden = true; else tryNPC();
+    }
   });
   draw();
 }
@@ -1320,20 +1444,18 @@ tsEnter.addEventListener('click', function () {
   titleScreen.setAttribute('aria-hidden', 'true');
   // After fade completes, remove from flow and show the game
   setTimeout(function () {
-    titleScreen.style.display = 'none';
     // Now reveal config or play surface. configured:true (saved even
     // when both fields were left blank) means "setup decided - play",
     // so offline players don't get re-prompted on every load. The
     // llmUrl && llmModel check keeps pre-flag saves working.
     if (config.configured || (llmUrl && llmModel)) {
-      configBox.hidden = true; play.hidden = false;
-      startPlaySurface();
+      enterGame();
     } else {
       configBox.hidden = false; play.hidden = true;
       document.getElementById('cfg-url').value = llmUrl;
       document.getElementById('cfg-model').value = llmModel;
     }
-  }, 600);
+  }, 0);
 });
 // Focus the enter button after paint
 requestAnimationFrame(function () { tsEnter.focus(); });

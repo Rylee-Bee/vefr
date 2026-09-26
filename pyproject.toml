@@ -55,3 +55,7 @@ packages = ["src/vefr"]
 # weave's player template ships as package data so a pip-installed
 # engine can weave from a pack author's repo (site-packages/vefr/web/).
 "web/packaged.html" = "vefr/web/packaged.html"
+"web/art/illustrations/player-title.webp" = "vefr/web/art/illustrations/player-title.webp"
+"web/fonts/Cinzel-Variable.woff2" = "vefr/web/fonts/Cinzel-Variable.woff2"
+"web/fonts/AtkinsonHyperlegibleNext-Regular.woff2" = "vefr/web/fonts/AtkinsonHyperlegibleNext-Regular.woff2"
+"web/fonts/AtkinsonHyperlegibleNext-Bold.woff2" = "vefr/web/fonts/AtkinsonHyperlegibleNext-Bold.woff2"

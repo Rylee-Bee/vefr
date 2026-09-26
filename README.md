@@ -69,8 +69,10 @@ No terminal? The studio's Desk has a **Make shareable file** button.
 It builds the current world the same way and offers a download (or your
 phone's Share sheet, where the browser supports sharing files).
 
-The file opens on a title screen with the world's name, its tagline and
-an "enter" button. Everything the world needs is inside the file.
+The file opens on a title screen with the world's title picture, its
+name and tagline, and a Begin button. The game fills the screen, with
+speech, choices and health drawn over it and a pause menu (`Esc`) for
+the journal. Everything the world needs is inside the file.
 
 Send it to someone and they can play it in any browser, on a phone,
 tablet or computer, with no Python, server or internet. They can point
