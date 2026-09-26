@@ -59,6 +59,8 @@ packaged file both work offline from the first byte.
   `OpenDyslexic-Bold.woff2`
 - Vendored from: Fontsource (`@fontsource/opendyslexic`, latin
   subset, 400/700 normal) via cdn.jsdelivr.net, 2026-09-01.
+- Declared for the workshop in `web/studio.css` (2026-09-25; before
+  that the workshop never loaded it and fell back to Georgia).
 
 ## Install
 

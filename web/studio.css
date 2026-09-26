@@ -23,6 +23,20 @@
   src: url('/static/fonts/Cinzel-Variable.woff2') format('woff2');
 }
 @font-face {
+  font-family: 'OpenDyslexic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/OpenDyslexic-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/OpenDyslexic-Bold.woff2') format('woff2');
+}
+@font-face {
   font-family: 'Noto Sans Runic';
   font-style: normal;
   font-weight: 400;
@@ -80,8 +94,8 @@ html[data-light="day"]:not([data-theme="max-contrast"]) {
   --color-card-edge: #CFC7B6;
   --color-ink: #1E1A14;
   --color-ink-dim: #5A5244;
-  --color-accent: #8A5E12;
-  --studio-gold: #8A5E12;
+  --color-accent: #74500F;
+  --studio-gold: #74500F;
   --studio-gold-on: #FFF8E8;
   --studio-plate: #DDE3D2;
 }
@@ -104,8 +118,12 @@ body {
 }
 .vefr-room::before, .vefr-room::after { content: none; }
 .main { overflow: visible; min-height: 50vh; padding: 0; background: none !important; }
-.screen { height: auto; }
+*, *::before, *::after { box-sizing: border-box; }
+button, input, textarea, select { font: inherit; }
+img { max-width: 100%; }
+.screen { display: none; height: auto; }
 .screen--active { display: block; }
+[hidden] { display: none !important; }
 .wrap { width: 100%; max-width: var(--studio-wrap); margin-inline: auto; padding-inline: 24px; box-sizing: border-box; }
 .band { padding-block: 48px; }
 .band--last { padding-bottom: 72px; }
@@ -140,7 +158,7 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 .cta, .btn {
   min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 0 18px; border-radius: 4px; cursor: pointer; text-decoration: none;
-  font: 700 0.8rem/1 var(--studio-engraved); letter-spacing: 0.12em; text-transform: uppercase;
+  font: 700 0.8rem/1.25 var(--studio-engraved); letter-spacing: 0.12em; text-transform: uppercase; padding-block: 8px; text-align: center;
   border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink);
   box-shadow: none;
 }
@@ -173,7 +191,7 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 .topnav a {
   min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; text-decoration: none;
   font: 700 0.78rem var(--studio-engraved); letter-spacing: 0.12em; text-transform: uppercase;
-  color: #D6CCB5; border-bottom: 2px solid transparent;
+  color: #D6CCB5; border-bottom: 2px solid transparent; white-space: nowrap;
 }
 .topnav a:hover { color: #FFF6E0; }
 .topnav a[aria-current="page"] { color: #FFF6E0; border-bottom-color: #D8AA4E; }
@@ -443,6 +461,9 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .evidence-level--3 { margin-left: 6%; background: color-mix(in srgb, var(--color-card) 90%, black); }
 .evidence-level--4 { margin-left: 9%; background: color-mix(in srgb, var(--color-card) 80%, black); }
 .evidence-level--5 { margin-left: 12%; background: color-mix(in srgb, var(--color-card) 70%, black); }
+html[data-light="day"] .evidence-level--3 { background: color-mix(in srgb, var(--color-card) 96%, black); }
+html[data-light="day"] .evidence-level--4 { background: color-mix(in srgb, var(--color-card) 93%, black); }
+html[data-light="day"] .evidence-level--5 { background: color-mix(in srgb, var(--color-card) 90%, black); }
 .evidence-title { font: 700 1.3rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--studio-gold); }
 .evidence-creed { font-style: italic; }
 .evidence-empty { font-style: italic; }
@@ -712,6 +733,92 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 .entry__kind { display: inline-flex; align-items: center; gap: 8px; }
 .entry__mark { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .foot-joke { font-style: italic; }
+
+/* ------------------------------------------------------------
+   9b. Reading preferences reach the whole page
+   ------------------------------------------------------------ */
+/* Text size scales the root, so every rem in the studio grows with it */
+html[data-prefs~="text=xs"]  { font-size: 92%; }
+html[data-prefs~="text=s"]   { font-size: 96%; }
+html[data-prefs~="text=l"]   { font-size: 108%; }
+html[data-prefs~="text=xl"]  { font-size: 116%; }
+html[data-prefs~="text=2xl"] { font-size: 128%; }
+html[data-prefs~="text"] body { font-size: 1rem; }
+/* OpenDyslexic reaches the headings too: no engraved capitals */
+html[data-prefs~="font=opendyslexic"] {
+  --studio-engraved: 'OpenDyslexic', Georgia, serif;
+  --studio-body: 'OpenDyslexic', Georgia, serif;
+}
+html[data-prefs~="font=opendyslexic"] :is(h1, h2, h3, .cta, .btn, .topnav a, .tabbar a, .label) { text-transform: none; letter-spacing: 0.02em; }
+html[data-prefs~="font=serif"] { --studio-body: Georgia, 'Times New Roman', serif; }
+html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+/* ------------------------------------------------------------
+   9c. The resident's folio, the first walk, and the house sheet
+   ------------------------------------------------------------ */
+.folio { display: none; flex-direction: column; overflow: hidden; }
+.folio--open { display: flex; }
+.folio__card { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px 14px; border-bottom: 1px solid var(--studio-iron-edge); }
+.folio__mark { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--studio-gold); color: #E2BC6E; font: 700 1.1rem var(--studio-engraved); }
+.folio__who { flex: 1; min-width: 0; }
+.folio__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-weight: 700; color: #FFF8E8; }
+.folio__craft { font: 0.68rem var(--studio-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--studio-iron-dim); }
+.folio__honest { margin-top: 3px; font-size: 0.8rem; font-style: italic; color: var(--studio-iron-dim); }
+.folio__close { flex: none; min-width: 44px; min-height: 44px; border-radius: 4px; border: 1px solid var(--studio-iron-edge); background: transparent; color: var(--studio-iron-ink); font-size: 1.3rem; cursor: pointer; }
+.folio__roles { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 6px; }
+.folio__role { min-height: 44px; padding: 6px 12px; border-radius: 3px; border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink); font: 600 0.88rem var(--studio-body); cursor: pointer; text-align: left; }
+.folio__role:hover { background: color-mix(in srgb, var(--color-card) 75%, var(--color-ink) 8%); }
+.folio__log { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.folio__msg { max-width: 88%; padding: 10px 14px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: break-word; color: var(--color-ink); }
+.folio__msg--user { align-self: flex-end; background: color-mix(in srgb, var(--studio-gold) 14%, var(--color-card)); border: 1px solid color-mix(in srgb, var(--studio-gold) 40%, transparent); }
+.folio__msg--resident { align-self: flex-start; background: var(--color-bg); border: 1px solid var(--color-card-edge); }
+.folio__status { align-self: center; padding: 2px 10px; font-size: 0.85rem; font-style: italic; color: var(--color-ink-dim); }
+.folio__error { align-self: center; padding: 8px 12px; text-align: center; font-weight: 700; color: var(--color-ink); border: 1px dashed var(--color-card-edge); border-radius: 3px; }
+.folio__keep { min-height: 44px; margin-top: 8px; padding: 0 12px; border-radius: 3px; border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink); cursor: pointer; font: 600 0.85rem var(--studio-body); }
+.folio__composer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--color-card-edge); }
+.folio__input { flex: 1 1 200px; min-height: 44px; padding: 10px 12px; resize: none; border-radius: 3px; border: 1px solid var(--color-card-edge); background: var(--color-bg); color: var(--color-ink); font: 1rem var(--studio-body); }
+.folio__send { min-height: 44px; min-width: 64px; padding: 0 16px; border-radius: 4px; border: 0; cursor: pointer; font: 700 0.8rem var(--studio-engraved); letter-spacing: 0.12em; text-transform: uppercase; }
+.folio__forget { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--color-ink-dim); text-decoration: underline; cursor: pointer; font: 0.85rem var(--studio-body); white-space: nowrap; }
+
+.walk-rail { overflow-y: auto; padding: 16px 18px; }
+.walk-rail__head { margin-bottom: 8px; }
+.walk-rail__title { margin: 0 0 2px; font-size: 1.05rem; }
+.walk-rail__byline { margin: 0 0 10px; font-size: 0.82rem; font-style: italic; color: var(--color-ink-dim); }
+.walk-rail__steps { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 4px; }
+.walk-rail__step { display: flex; align-items: baseline; gap: 8px; padding: 6px 8px; border-radius: 3px; color: var(--color-ink-dim); }
+.walk-rail__step--now { outline: 1px solid color-mix(in srgb, var(--studio-gold) 55%, transparent); color: var(--color-ink); }
+.walk-rail__step--done { text-decoration: line-through; text-decoration-color: var(--color-card-edge); }
+.walk-rail__tick { flex: none; width: 14px; text-align: center; color: var(--studio-gold); }
+.walk-rail__room { font-weight: 700; color: var(--color-ink); }
+.walk-rail__live { margin: 0 0 10px; padding: 8px 10px; border-radius: 3px; background: color-mix(in srgb, var(--studio-gold) 10%, var(--color-card)); color: var(--color-ink); }
+.walk-rail__go { width: 100%; margin: 2px 0 10px; }
+.walk-rail__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.walk-rail__btn { min-height: 44px; padding: 0 14px; border-radius: 4px; border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink); cursor: pointer; font: 600 0.88rem var(--studio-body); }
+.walk-rail__btn--ghost { border-style: dashed; }
+.walk-rail__done-line { margin: 0 0 4px; font-weight: 700; color: var(--color-ink); }
+.walk-rail__done-sub { margin: 0 0 10px; font-size: 0.9rem; }
+
+.sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(6, 8, 10, 0.72); }
+.sheet[hidden] { display: none; }
+.sheet__paper { width: min(560px, 100%); max-height: calc(100vh - 96px); overflow-y: auto; padding: 24px 26px; border-radius: 4px; background: var(--color-card); border: 1px solid var(--studio-iron-edge); color: var(--color-ink-dim); }
+.sheet__paper h2 { margin: 0 0 4px; font: 700 1.3rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); }
+.sheet__byline { margin: 0 0 16px; font-style: italic; font-size: 0.88rem; }
+.sheet__rows { margin: 0; }
+.sheet__row { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--color-card-edge); }
+.sheet__room { flex: none; width: 130px; font-weight: 700; color: var(--color-ink); }
+.sheet__how { margin: 0; }
+.sheet__rules { margin: 16px 0; }
+.sheet__close { min-height: 44px; padding: 0 18px; border-radius: 4px; border: 1px solid var(--color-card-edge); background: transparent; color: var(--color-ink); cursor: pointer; font: 700 0.8rem var(--studio-engraved); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.watch-whisper { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--color-card-edge) 60%, transparent); }
+.watch-whisper__time { flex: none; min-width: 84px; font: 0.7rem var(--studio-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink-dim); }
+.watch-whisper__word { color: var(--color-ink); }
+.settings-row__btn { margin: 0; }
+@media (max-width: 640px) {
+  .walk-rail { left: 12px; right: 12px; width: auto; max-height: 44vh; }
+  .sheet__paper { padding: 18px 16px; }
+  .sheet__room { width: 96px; }
+}
 
 /* ------------------------------------------------------------
    10. Footer and the phone tab bar

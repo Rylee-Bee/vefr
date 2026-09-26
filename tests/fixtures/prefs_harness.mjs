@@ -113,6 +113,9 @@ function expect(cond, msg) { if (!cond) throw new Error('FAIL: ' + msg); }
   expect(JSON.parse(store['vefr-prefs']).textSize === 'xl', 'set() persisted to localStorage');
   expect(attrs['data-prefs'].includes('text=xl'), 'data-prefs reflects text=xl');
   expect(attrs['data-prefs'].includes('font=opendyslexic'), 'data-prefs reflects font');
+  // CSS matches with [data-prefs~="font=..."], which needs whitespace-separated tokens
+  expect(attrs['data-prefs'].split(/\s+/).includes('font=opendyslexic'), 'data-prefs tokens are space-separated for ~= selectors');
+  expect(attrs['data-prefs'].split(/\s+/).includes('text=xl'), 'text token matches as its own word');
   expect(called === 1, 'subscriber fired once on set()');
   console.log('PASS set-persists');
 }

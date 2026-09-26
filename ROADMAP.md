@@ -7,8 +7,7 @@
 
 ## Landed
 
-- [ ] **Studio Hall: the workshop UI, completely replaced** (in progress,
-      2026-09-25, owner: "complete replace", "never wanna see the old one
+- [x] **Studio Hall: the workshop UI, completely replaced** (2026-09-25, owner: "complete replace", "never wanna see the old one
       again"). A game studio the old Norse run: iron top bar, room header
       with its resident, rune bands, engraved lettering (Cinzel, SIL OFL
       1.1, self-hosted), night by candle / day in the hall
@@ -40,8 +39,20 @@
       Chronicle fix: actions, npc lines and
       letters no longer render as blank rows; runs of actions fold into
       one line (`web/js/chronicle.js`, pinned by
-      `tests/test_web_chronicle.py`). Still to rebuild: first walk, resident
-      folio; then `web/app.css` is deleted.
+      `tests/test_web_chronicle.py`). The first walk, the resident folio and
+      the house sheet are restyled too, and `web/app.css` is deleted.
+      Accessibility fixes found on the way: `prefs.js` joined the
+      `data-prefs` tokens with `;`, but every stylesheet reads them with
+      `[data-prefs~=...]` (whitespace-separated), so no reading preference
+      ever applied (font, text size, motion, spacing); tokens are now
+      space-separated and `tests/fixtures/prefs_harness.mjs` pins it. The
+      workshop never declared the OpenDyslexic face, so that choice fell
+      back to Georgia; `web/studio.css` declares it, and with OpenDyslexic
+      chosen the headings drop their engraved capitals. Text size now
+      scales the root, so the whole page grows with it. Gates: `pytest -q`
+      551 passed, 1 skipped; `ruff` clean; public-surface clean; axe-core
+      over all 11 rooms in night and day: zero serious/critical; 1440px and
+      390px screenshots of every room: no page errors, no sideways scroll.
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +
