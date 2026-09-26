@@ -966,3 +966,16 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* The Map Room explains itself: a plain primer, symbols tucked away,
+   and brushes that say what they do. */
+.map-primer { margin: 0 0 20px; padding: 14px 18px; border: 1px solid var(--color-card-edge);
+  border-radius: 8px; background: var(--color-card); }
+.map-primer__title { cursor: pointer; font-family: var(--studio-engraved); font-size: 1.05rem;
+  min-height: 44px; display: flex; align-items: center; }
+.map-primer__list { margin: 4px 0 0; padding-left: 1.2em; line-height: 1.5; }
+.map-primer__list li { margin: 4px 0; }
+.map-symbols { margin: 8px 0; }
+.map-symbols__toggle { cursor: pointer; min-height: 44px; display: inline-flex; align-items: center;
+  color: var(--color-ink-dim, var(--studio-iron-dim)); font-size: 0.9rem; }
+.map-inked__means { display: block; font-size: 0.78rem; opacity: 0.8; }
