@@ -3364,7 +3364,7 @@
       var rl = residentLine('settings');
       if (rl) container.appendChild(rl);
 
-      // Spark, the little local brain, has a face: Bolt. His card says
+      // Spark, the little local brain, has a face: Bolt. The card says
       // in words whether Spark is running, and how he is doing.
       var bolt = h('section', { className: 'settings-card spark-card', 'aria-labelledby': 'spark-title' });
       bolt.appendChild(portrait('spark', { name: 'Bolt, the face of Spark' }, 'spark-card__face'));
