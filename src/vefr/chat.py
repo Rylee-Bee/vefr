@@ -94,11 +94,61 @@ class Draft(BaseModel):
     text: str
 
 
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _repeat_key(part: str) -> str:
+    """What makes two sentences "the same": case, whitespace, a list
+    marker and the closing stop all stop mattering."""
+    bare = re.sub(r"^\s*(?:[-*]|\d+[.)])?\s*", "", part)
+    return re.sub(r"\s+", " ", bare).strip().lower().rstrip(".,;:!?")
+
+
+def dedupe_repeats(text: str) -> str:
+    """Drop sentences (and bullet lines) the model already said.
+
+    A small brain sampling at 0.85 can fall into a loop and emit one
+    sentence over and over inside a single draft - the WP5 test
+    build's voice file was exactly that. `format` only pins the JSON
+    shape, so the loop came back as valid prose and got written into
+    `voices/<name>.md` verbatim. Keep the first occurrence of each
+    sentence, in order, line breaks intact; never invent text.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            if out and out[-1] != "":
+                out.append("")  # one blank line between blocks
+            continue
+        body = line.lstrip()
+        kept = []
+        for part in _SENTENCE_SPLIT.split(body):
+            key = _repeat_key(part)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            kept.append(part.strip())
+        if kept:
+            # keep the line's own indentation: a wrapped sentence's
+            # continuation line must still read as a continuation
+            out.append(line[: len(line) - len(body)] + " ".join(kept))
+    while out and out[-1] == "":
+        out.pop()
+    return "\n".join(out)
+
+
 def draft(prompt: str, system: str = ASSISTANT_SYSTEM) -> str:
     """One LLM call, schema-constrained to a single text field.
 
-    Falls back to a plain placeholder if the model fails twice - the
-    author always gets something to edit, never a crash mid-interview.
+    The schema pins the shape, never the content: a model that loops
+    returns valid JSON full of the same sentence. Every draft therefore
+    goes through dedupe_repeats() - the author's logbok, bonds, seeds
+    and voice files carry no repetition loop.
+
+    Falls back to a plain placeholder if the model fails twice (or
+    comes back empty) - the author always gets something to edit,
+    never a crash mid-interview.
     """
     payload = {
         "model": generator.MODEL,
@@ -113,7 +163,9 @@ def draft(prompt: str, system: str = ASSISTANT_SYSTEM) -> str:
     for _ in range(2):
         try:
             raw = generator._completion(payload)
-            return Draft.model_validate_json(raw).text
+            text = dedupe_repeats(Draft.model_validate_json(raw).text)
+            if text:
+                return text
         except (httpx.HTTPError, generator.GeneratorUnavailable,
                 generator.GeneratorFailed, ValidationError, KeyError, ValueError):
             continue

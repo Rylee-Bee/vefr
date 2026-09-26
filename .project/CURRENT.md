@@ -72,8 +72,12 @@ superseded); the local test packs deleted; commit `948df78` accepted as risk.
   `docs/guides/brain-socket.md` name the demo game as a product (not
   its canon). Leave them unless the owner wants the docs fully
   game-agnostic.
-- `norns chat` voice drafting can loop: the WP5 test build's voice
-  file repeated the same sentences. Worth a look.
+
+Closed 2026-09-26: `norns chat` voice drafting looping (the WP5 voice
+file repeated itself). The draft seam now dedupes repeated sentences —
+see `ROADMAP.md`. Left open, found while fixing it: the interview writes
+the first speaker's draft to the pack root's `voices/<name>.md` while an
+acts-shape pack's live voice file is the region one.
 
 ## Branches
 

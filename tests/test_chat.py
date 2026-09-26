@@ -7,6 +7,7 @@ depends on.
 """
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -322,3 +323,73 @@ def test_dead_endpoint_falls_back_instead_of_crashing(tmp_path, monkeypatch):
     calls.clear()
     assert chat.propose_face('a story', 'a mood', w) is None
     assert len(calls) == 2
+
+
+# ---- the draft never carries the model's repetition loop -------------
+# WP5's norns chat run left a voice file that said the same sentence
+# over and over: a small brain in a sampling loop, written verbatim
+# because `format` pins the JSON shape, never the content.
+
+_LOOP_LINE = 'The keeper speaks in short sentences.'
+
+
+def _looping_backend(text):
+    """A fake brain that answers every call with the same JSON text."""
+    return lambda payload, max_tokens=1024: json.dumps({'text': text})
+
+
+def _sentences(text):
+    """Split for the assertion, independently of the engine's helper."""
+    return [s.strip().lower() for s in re.split(r'(?<=[.!?])\s+|\n+', text) if s.strip()]
+
+
+def test_dedupe_repeats_keeps_the_first_copy_and_the_order():
+    assert chat.dedupe_repeats('One line. One line. Two lines.') == 'One line. Two lines.'
+    # a bullet list repeats without a closing stop too
+    assert chat.dedupe_repeats('- Rule.\n- Rule.\n- Other.') == '- Rule.\n- Other.'
+    assert chat.dedupe_repeats('- Rule\n- rule\n- Other') == '- Rule\n- Other'
+    # a wrapped sentence's continuation keeps its indent, and prose
+    # that never repeats comes back untouched
+    wrapped = '- By the light; in the dusk\n  phase, by the warmth.'
+    assert chat.dedupe_repeats(wrapped) == wrapped
+    assert chat.dedupe_repeats('') == ''
+
+
+def test_draft_returns_one_copy_of_a_looping_model(monkeypatch):
+    from vefr import generator
+
+    monkeypatch.setattr(generator, '_completion', _looping_backend(' '.join([_LOOP_LINE] * 4)))
+    assert _REAL_DRAFT('write a voice') == _LOOP_LINE
+
+
+def test_interview_voice_file_has_no_repeated_sentences(tmp_path, monkeypatch):
+    """The WP5 debt: the drafted voices/<name>.md repeated itself. The
+    interview writes what draft() returns, so the guard must hold
+    there - feed a looping model and read the file off disk."""
+    from vefr import generator
+
+    dest = tmp_path / 'looping-world'
+    monkeypatch.setattr(generator, '_completion', _looping_backend(' '.join([_LOOP_LINE] * 4)))
+    monkeypatch.setattr(chat, 'draft', _REAL_DRAFT)  # the autouse stub hides the real one
+    monkeypatch.setattr(
+        'builtins.input',
+        _answers(
+            '', '', '',              # title/premise/protagonist blank
+            '',                      # theme mood blank
+            '',                      # phase rename blank
+            '', '',                  # phase tone hints blank
+            '',                      # bond rename blank
+            '', '', '',              # bond flavors blank
+            '',                      # map mood blank
+            '',                      # speaker count blank (= 1)
+            'The Keeper',            # speaker name
+            'quiet and kind',        # personality - triggers the voice draft
+        ),
+    )
+    assert chat.run_interview(dest, SCAFFOLD) == 0
+
+    spec = next(iter(maplab.load_pack(dest)['speakers'].values()))
+    voice = (dest / spec['voice_file']).read_text(encoding='utf-8')
+    assert _LOOP_LINE in voice, 'the drafted voice must land in the file'
+    said = _sentences(voice)
+    assert len(said) == len(set(said)), f'the voice file repeats itself:\n{voice}'
