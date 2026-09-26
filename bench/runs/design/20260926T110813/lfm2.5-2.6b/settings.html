@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings · Local Tool</title>
+<link rel="stylesheet" href="/workbench.css">
+</head>
+<body class="wb-page">
+<a class="wb-btn wb-btn--quiet" href="#main" style="position:absolute;left:-999px">Skip to content</a>
+<header class="wb-topbar"><div class="wb-wrap">
+  <nav aria-label="Breadcrumb"><ol class="wb-crumbs">
+    <li><a href="/">Tool name</a></li><li aria-current="page">Settings</li>
+  </ol></nav>
+</div></header>
+
+<main id="main" class="wb-wrap">
+  <!-- Theme Section -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Theme</h2>
+    <div class="wb-cards">
+      <a class="wb-card" href="/settings/theme/dark" role="button" tabindex="0">
+        <span class="wb-card__title">Dark</span>
+        <span class="wb-card__meta">Selected</span>
+      </a>
+      <a class="wb-card" href="/settings/theme/light" role="button" tabindex="0">
+        <span class="wb-card__title">Light</span>
+      </a>
+      <a class="wb-card" href="/settings/theme/high-contrast" role="button" tabindex="0">
+        <span class="wb-card__title">High contrast</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Storage Section -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Storage</h2>
+    <div class="wb-table-wrap">
+      <table class="wb-table">
+        <thead>
+          <tr>
+            <th scope="col">Folder</th>
+            <th scope="col">Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="wb-mono">/projects/photos</td>
+            <td class="wb-mono">1.24 GiB</td>
+          </tr>
+          <tr>
+            <td class="wb-mono">/assets/icons</td>
+            <td class="wb-mono">48.7 MiB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Danger Zone -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Danger zone</h2>
+    <div class="wb-tag wb-tag--danger">
+      <span>⚠</span> This action cannot be undone.
+    </div>
+    <a class="wb-btn wb-btn--primary" href="/settings/clear-cache">Clear cache</a>
+  </section>
+</main>
+</body>
+</html>

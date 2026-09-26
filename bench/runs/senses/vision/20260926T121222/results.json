@@ -1,0 +1,1270 @@
+{
+ "threads": 4,
+ "question": "What object is shown in this picture? Answer with one or two words.",
+ "read_question": "What does the highlighted main button say? Reply with its exact text only.",
+ "results": [
+  {
+   "model": "smolvlm2-256m",
+   "params_b": 0.26,
+   "licence": "Apache-2.0",
+   "size_mb": 279,
+   "answers": {
+    "bell": {
+     "answer": "bell",
+     "pass": true,
+     "seconds": 21.51
+    },
+    "book": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 18.85
+    },
+    "chat": {
+     "answer": "chatbot",
+     "pass": false,
+     "seconds": 12.7
+    },
+    "check": {
+     "answer": "checkmark",
+     "pass": true,
+     "seconds": 11.79
+    },
+    "chronicle": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 11.47
+    },
+    "export": {
+     "answer": "boat",
+     "pass": true,
+     "seconds": 9.8
+    },
+    "floor": {
+     "answer": "tree stump",
+     "pass": true,
+     "seconds": 15.71
+    },
+    "heart": {
+     "answer": "heart",
+     "pass": true,
+     "seconds": 11.67
+    },
+    "help": {
+     "answer": "lantern",
+     "pass": true,
+     "seconds": 14.53
+    },
+    "home": {
+     "answer": "door",
+     "pass": true,
+     "seconds": 19.49
+    },
+    "info": {
+     "answer": "ball",
+     "pass": true,
+     "seconds": 13.53
+    },
+    "library": {
+     "answer": "stack of books",
+     "pass": true,
+     "seconds": 18.13
+    },
+    "lock": {
+     "answer": "lock",
+     "pass": true,
+     "seconds": 15.34
+    },
+    "map-pin": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 21.0
+    },
+    "new": {
+     "answer": "plant",
+     "pass": true,
+     "seconds": 17.72
+    },
+    "open": {
+     "answer": "Treasure chest",
+     "pass": true,
+     "seconds": 13.0
+    },
+    "play": {
+     "answer": "game button",
+     "pass": true,
+     "seconds": 16.48
+    },
+    "quill": {
+     "answer": "quill",
+     "pass": true,
+     "seconds": 24.77
+    },
+    "save": {
+     "answer": "egg",
+     "pass": false,
+     "seconds": 19.01
+    },
+    "search": {
+     "answer": "magnifying glass",
+     "pass": true,
+     "seconds": 25.08
+    },
+    "settings": {
+     "answer": "gear",
+     "pass": true,
+     "seconds": 14.87
+    },
+    "share": {
+     "answer": "envelope",
+     "pass": true,
+     "seconds": 15.96
+    },
+    "sparkle": {
+     "answer": "Starbucks",
+     "pass": false,
+     "seconds": 18.77
+    },
+    "star": {
+     "answer": "star",
+     "pass": true,
+     "seconds": 17.4
+    },
+    "trash": {
+     "answer": "basket",
+     "pass": true,
+     "seconds": 5.74
+    },
+    "undo": {
+     "answer": "letter",
+     "pass": false,
+     "seconds": 20.18
+    },
+    "warning": {
+     "answer": "mushroom",
+     "pass": true,
+     "seconds": 17.02
+    }
+   },
+   "named": 23,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play new build.",
+     "pass": false,
+     "seconds": 12.34
+    },
+    "Clear cache": {
+     "answer": "The highlighted main button says 'Clear cache'.",
+     "pass": true,
+     "seconds": 17.95
+    },
+    "Open the vault": {
+     "answer": "The highlighted main button says \"Back\".",
+     "pass": false,
+     "seconds": 25.84
+    },
+    "Rename world": {
+     "answer": "The highlighted main button says \"Back\".",
+     "pass": false,
+     "seconds": 18.91
+    },
+    "Export chronicle": {
+     "answer": "The highlighted main button says \"Export Chronicle\".",
+     "pass": true,
+     "seconds": 16.84
+    },
+    "Undo last move": {
+     "answer": "The highlighted main button says \"Help\".",
+     "pass": false,
+     "seconds": 23.99
+    },
+    "Share with a friend": {
+     "answer": "The highlighted main button says \"Share with a friend\".",
+     "pass": true,
+     "seconds": 12.37
+    },
+    "Start the delve": {
+     "answer": "The highlighted main button says \"Back\".",
+     "pass": false,
+     "seconds": 17.06
+    },
+    "Save this floor": {
+     "answer": "The highlighted main button says \"Save this floor\".",
+     "pass": true,
+     "seconds": 12.56
+    },
+    "Pack the satchel": {
+     "answer": "The highlighted main button says \"Cancel\".",
+     "pass": false,
+     "seconds": 14.08
+    },
+    "Ring the bell": {
+     "answer": "The highlighted main button says \"Back\".",
+     "pass": false,
+     "seconds": 16.43
+    },
+    "Carve a rune": {
+     "answer": "The highlighted main button says \"Back\".",
+     "pass": false,
+     "seconds": 16.32
+    }
+   },
+   "read": 4,
+   "of": 27,
+   "median_s": 16.48
+  },
+  {
+   "model": "lfm2.5-vl-450m",
+   "params_b": 0.45,
+   "licence": "LFM Open",
+   "size_mb": 482,
+   "answers": {
+    "bell": {
+     "answer": "Bell",
+     "pass": true,
+     "seconds": 4.35
+    },
+    "book": {
+     "answer": "Book.",
+     "pass": true,
+     "seconds": 1.06
+    },
+    "chat": {
+     "answer": "Speech bubble.",
+     "pass": true,
+     "seconds": 1.7
+    },
+    "check": {
+     "answer": "V checkmark.",
+     "pass": true,
+     "seconds": 1.52
+    },
+    "chronicle": {
+     "answer": "Book.",
+     "pass": true,
+     "seconds": 2.14
+    },
+    "export": {
+     "answer": "Paper crown.",
+     "pass": false,
+     "seconds": 1.25
+    },
+    "floor": {
+     "answer": "Tree stump.",
+     "pass": true,
+     "seconds": 3.53
+    },
+    "heart": {
+     "answer": "Heart",
+     "pass": true,
+     "seconds": 2.84
+    },
+    "help": {
+     "answer": "Lamp",
+     "pass": true,
+     "seconds": 1.14
+    },
+    "home": {
+     "answer": "Door.",
+     "pass": true,
+     "seconds": 6.21
+    },
+    "info": {
+     "answer": "Earring",
+     "pass": false,
+     "seconds": 4.62
+    },
+    "library": {
+     "answer": "Book",
+     "pass": true,
+     "seconds": 1.08
+    },
+    "lock": {
+     "answer": "Lock",
+     "pass": true,
+     "seconds": 2.49
+    },
+    "map-pin": {
+     "answer": "Acorn",
+     "pass": true,
+     "seconds": 6.06
+    },
+    "new": {
+     "answer": "Apple.",
+     "pass": false,
+     "seconds": 4.6
+    },
+    "open": {
+     "answer": "Treasure chest.",
+     "pass": true,
+     "seconds": 3.27
+    },
+    "play": {
+     "answer": "Play button.",
+     "pass": true,
+     "seconds": 4.01
+    },
+    "quill": {
+     "answer": "Quill pen.",
+     "pass": true,
+     "seconds": 4.83
+    },
+    "save": {
+     "answer": "Acorn box.",
+     "pass": true,
+     "seconds": 3.99
+    },
+    "search": {
+     "answer": "Magnifying glass.",
+     "pass": true,
+     "seconds": 3.68
+    },
+    "settings": {
+     "answer": "Gear",
+     "pass": true,
+     "seconds": 1.78
+    },
+    "share": {
+     "answer": "Envelope.",
+     "pass": true,
+     "seconds": 3.6
+    },
+    "sparkle": {
+     "answer": "Star.",
+     "pass": true,
+     "seconds": 2.02
+    },
+    "star": {
+     "answer": "Star.",
+     "pass": true,
+     "seconds": 1.56
+    },
+    "trash": {
+     "answer": "Basket.",
+     "pass": true,
+     "seconds": 1.5
+    },
+    "undo": {
+     "answer": "Arrow",
+     "pass": true,
+     "seconds": 3.86
+    },
+    "warning": {
+     "answer": "Mushroom.",
+     "pass": true,
+     "seconds": 2.23
+    }
+   },
+   "named": 24,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build",
+     "pass": true,
+     "seconds": 1.74
+    },
+    "Clear cache": {
+     "answer": "Clear cache",
+     "pass": true,
+     "seconds": 2.52
+    },
+    "Open the vault": {
+     "answer": "Open the vault",
+     "pass": true,
+     "seconds": 1.58
+    },
+    "Rename world": {
+     "answer": "The highlighted main button says \"Rename world\".",
+     "pass": true,
+     "seconds": 2.3
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle",
+     "pass": true,
+     "seconds": 3.66
+    },
+    "Undo last move": {
+     "answer": "The highlighted main button says \"Undo last move\".",
+     "pass": true,
+     "seconds": 2.46
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend",
+     "pass": true,
+     "seconds": 1.93
+    },
+    "Start the delve": {
+     "answer": "Start the delve",
+     "pass": true,
+     "seconds": 3.3
+    },
+    "Save this floor": {
+     "answer": "Save this floor",
+     "pass": true,
+     "seconds": 5.6
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel",
+     "pass": true,
+     "seconds": 2.39
+    },
+    "Ring the bell": {
+     "answer": "Ring the bell",
+     "pass": true,
+     "seconds": 1.71
+    },
+    "Carve a rune": {
+     "answer": "Carve a rune",
+     "pass": true,
+     "seconds": 1.57
+    }
+   },
+   "read": 12,
+   "of": 27,
+   "median_s": 2.46
+  },
+  {
+   "model": "smolvlm2-500m",
+   "params_b": 0.5,
+   "licence": "Apache-2.0",
+   "size_mb": 546,
+   "answers": {
+    "bell": {
+     "answer": "bell",
+     "pass": true,
+     "seconds": 2.07
+    },
+    "book": {
+     "answer": "book.",
+     "pass": true,
+     "seconds": 2.58
+    },
+    "chat": {
+     "answer": "speech bubble",
+     "pass": true,
+     "seconds": 4.59
+    },
+    "check": {
+     "answer": "check mark",
+     "pass": true,
+     "seconds": 5.92
+    },
+    "chronicle": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 3.78
+    },
+    "export": {
+     "answer": "crown",
+     "pass": false,
+     "seconds": 3.14
+    },
+    "floor": {
+     "answer": "tree trunk",
+     "pass": true,
+     "seconds": 2.49
+    },
+    "heart": {
+     "answer": "heart.",
+     "pass": true,
+     "seconds": 3.7
+    },
+    "help": {
+     "answer": "lantern",
+     "pass": true,
+     "seconds": 4.71
+    },
+    "home": {
+     "answer": "door",
+     "pass": true,
+     "seconds": 3.26
+    },
+    "info": {
+     "answer": "ball",
+     "pass": true,
+     "seconds": 2.97
+    },
+    "library": {
+     "answer": "books",
+     "pass": true,
+     "seconds": 3.63
+    },
+    "lock": {
+     "answer": "padlock",
+     "pass": true,
+     "seconds": 4.86
+    },
+    "map-pin": {
+     "answer": "acorn.",
+     "pass": true,
+     "seconds": 3.79
+    },
+    "new": {
+     "answer": "pot.",
+     "pass": false,
+     "seconds": 7.03
+    },
+    "open": {
+     "answer": "treasure chest",
+     "pass": true,
+     "seconds": 2.57
+    },
+    "play": {
+     "answer": "circle",
+     "pass": false,
+     "seconds": 5.03
+    },
+    "quill": {
+     "answer": "feather pen",
+     "pass": true,
+     "seconds": 7.53
+    },
+    "save": {
+     "answer": "box",
+     "pass": true,
+     "seconds": 6.25
+    },
+    "search": {
+     "answer": "magnifying glass",
+     "pass": true,
+     "seconds": 4.79
+    },
+    "settings": {
+     "answer": "gear.",
+     "pass": true,
+     "seconds": 6.51
+    },
+    "share": {
+     "answer": "envelope",
+     "pass": true,
+     "seconds": 2.56
+    },
+    "sparkle": {
+     "answer": "cookie.",
+     "pass": false,
+     "seconds": 2.19
+    },
+    "star": {
+     "answer": "star.",
+     "pass": true,
+     "seconds": 2.21
+    },
+    "trash": {
+     "answer": "basket",
+     "pass": true,
+     "seconds": 6.36
+    },
+    "undo": {
+     "answer": "wreath",
+     "pass": false,
+     "seconds": 7.22
+    },
+    "warning": {
+     "answer": "mushroom.",
+     "pass": true,
+     "seconds": 4.82
+    }
+   },
+   "named": 22,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build.",
+     "pass": true,
+     "seconds": 2.92
+    },
+    "Clear cache": {
+     "answer": "Clear cache.",
+     "pass": true,
+     "seconds": 4.48
+    },
+    "Open the vault": {
+     "answer": "Open the vault.",
+     "pass": true,
+     "seconds": 2.39
+    },
+    "Rename world": {
+     "answer": "Rename world.",
+     "pass": true,
+     "seconds": 8.48
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle.",
+     "pass": true,
+     "seconds": 2.2
+    },
+    "Undo last move": {
+     "answer": "Undo Last move.",
+     "pass": true,
+     "seconds": 10.79
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend.",
+     "pass": true,
+     "seconds": 6.46
+    },
+    "Start the delve": {
+     "answer": "Start the devel.",
+     "pass": false,
+     "seconds": 4.44
+    },
+    "Save this floor": {
+     "answer": "Save this floor.",
+     "pass": true,
+     "seconds": 4.01
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel.",
+     "pass": true,
+     "seconds": 5.27
+    },
+    "Ring the bell": {
+     "answer": "Ring the bell.",
+     "pass": true,
+     "seconds": 2.52
+    },
+    "Carve a rune": {
+     "answer": "Carve a rune.",
+     "pass": true,
+     "seconds": 5.4
+    }
+   },
+   "read": 11,
+   "of": 27,
+   "median_s": 4.44
+  },
+  {
+   "model": "qwen3.5-0.8b-q8",
+   "params_b": 0.8,
+   "licence": "Apache-2.0",
+   "size_mb": 1017,
+   "answers": {
+    "bell": {
+     "answer": "bell",
+     "pass": true,
+     "seconds": 6.24
+    },
+    "book": {
+     "answer": "Book",
+     "pass": true,
+     "seconds": 3.77
+    },
+    "chat": {
+     "answer": "speech bubble",
+     "pass": true,
+     "seconds": 4.36
+    },
+    "check": {
+     "answer": "check mark",
+     "pass": true,
+     "seconds": 4.11
+    },
+    "chronicle": {
+     "answer": "Book",
+     "pass": true,
+     "seconds": 8.08
+    },
+    "export": {
+     "answer": "Paper boat",
+     "pass": true,
+     "seconds": 7.55
+    },
+    "floor": {
+     "answer": "Treehouse",
+     "pass": false,
+     "seconds": 2.88
+    },
+    "heart": {
+     "answer": "heart",
+     "pass": true,
+     "seconds": 3.24
+    },
+    "help": {
+     "answer": "Lantern",
+     "pass": true,
+     "seconds": 6.31
+    },
+    "home": {
+     "answer": "Treehouse",
+     "pass": false,
+     "seconds": 6.91
+    },
+    "info": {
+     "answer": "gem",
+     "pass": true,
+     "seconds": 2.31
+    },
+    "library": {
+     "answer": "Books",
+     "pass": true,
+     "seconds": 4.99
+    },
+    "lock": {
+     "answer": "padlock",
+     "pass": true,
+     "seconds": 6.62
+    },
+    "map-pin": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 4.09
+    },
+    "new": {
+     "answer": "Easter egg",
+     "pass": false,
+     "seconds": 11.56
+    },
+    "open": {
+     "answer": "treasure chest",
+     "pass": true,
+     "seconds": 2.73
+    },
+    "play": {
+     "answer": "Play button",
+     "pass": true,
+     "seconds": 6.75
+    },
+    "quill": {
+     "answer": "pen",
+     "pass": true,
+     "seconds": 2.77
+    },
+    "save": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 5.21
+    },
+    "search": {
+     "answer": "magnifying glass",
+     "pass": true,
+     "seconds": 6.88
+    },
+    "settings": {
+     "answer": "gear",
+     "pass": true,
+     "seconds": 2.97
+    },
+    "share": {
+     "answer": "envelope",
+     "pass": true,
+     "seconds": 4.64
+    },
+    "sparkle": {
+     "answer": "Star",
+     "pass": true,
+     "seconds": 6.45
+    },
+    "star": {
+     "answer": "Star",
+     "pass": true,
+     "seconds": 5.23
+    },
+    "trash": {
+     "answer": "Basket",
+     "pass": true,
+     "seconds": 7.2
+    },
+    "undo": {
+     "answer": "arrow",
+     "pass": true,
+     "seconds": 2.37
+    },
+    "warning": {
+     "answer": "mushroom",
+     "pass": true,
+     "seconds": 7.21
+    }
+   },
+   "named": 24,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build",
+     "pass": true,
+     "seconds": 9.91
+    },
+    "Clear cache": {
+     "answer": "Clear cache",
+     "pass": true,
+     "seconds": 7.81
+    },
+    "Open the vault": {
+     "answer": "Open the vault",
+     "pass": true,
+     "seconds": 9.51
+    },
+    "Rename world": {
+     "answer": "Rename world",
+     "pass": true,
+     "seconds": 3.79
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle",
+     "pass": true,
+     "seconds": 2.86
+    },
+    "Undo last move": {
+     "answer": "Undo last move",
+     "pass": true,
+     "seconds": 7.03
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend",
+     "pass": true,
+     "seconds": 6.11
+    },
+    "Start the delve": {
+     "answer": "Start the delve",
+     "pass": true,
+     "seconds": 3.31
+    },
+    "Save this floor": {
+     "answer": "Save this floor",
+     "pass": true,
+     "seconds": 9.99
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel",
+     "pass": true,
+     "seconds": 8.09
+    },
+    "Ring the bell": {
+     "answer": "Ring the bell",
+     "pass": true,
+     "seconds": 5.18
+    },
+    "Carve a rune": {
+     "answer": "Carve a rune",
+     "pass": true,
+     "seconds": 5.66
+    }
+   },
+   "read": 12,
+   "of": 27,
+   "median_s": 5.66
+  },
+  {
+   "model": "minicpm-v-4.6",
+   "params_b": 1.3,
+   "licence": "Apache-2.0",
+   "size_mb": 1257,
+   "answers": {},
+   "error": "podman run failed: Error: pasta failed with exit code 1:\nListen failed for HOST TCP port */9005: Address already in use\nCouldn't listen on requested ports\n\n"
+  },
+  {
+   "model": "lfm2.5-vl-1.6b",
+   "params_b": 1.6,
+   "licence": "LFM Open",
+   "size_mb": 1314,
+   "answers": {
+    "bell": {
+     "answer": "Bell.",
+     "pass": true,
+     "seconds": 5.35
+    },
+    "book": {
+     "answer": "Book.",
+     "pass": true,
+     "seconds": 2.14
+    },
+    "chat": {
+     "answer": "Speech bubble.",
+     "pass": true,
+     "seconds": 4.13
+    },
+    "check": {
+     "answer": "Checkmark.",
+     "pass": true,
+     "seconds": 4.74
+    },
+    "chronicle": {
+     "answer": "Book.",
+     "pass": true,
+     "seconds": 2.55
+    },
+    "export": {
+     "answer": "Boat.",
+     "pass": true,
+     "seconds": 2.61
+    },
+    "floor": {
+     "answer": "Tree.",
+     "pass": true,
+     "seconds": 3.46
+    },
+    "heart": {
+     "answer": "Heart.",
+     "pass": true,
+     "seconds": 3.93
+    },
+    "help": {
+     "answer": "Lantern.",
+     "pass": true,
+     "seconds": 5.82
+    },
+    "home": {
+     "answer": "House.",
+     "pass": true,
+     "seconds": 2.87
+    },
+    "info": {
+     "answer": "Pearl.",
+     "pass": true,
+     "seconds": 2.52
+    },
+    "library": {
+     "answer": "Books.",
+     "pass": true,
+     "seconds": 1.87
+    },
+    "lock": {
+     "answer": "Lock.",
+     "pass": true,
+     "seconds": 5.0
+    },
+    "map-pin": {
+     "answer": "Acorn.",
+     "pass": true,
+     "seconds": 3.9
+    },
+    "new": {
+     "answer": "Plant.",
+     "pass": true,
+     "seconds": 2.91
+    },
+    "open": {
+     "answer": "Treasure chest.",
+     "pass": true,
+     "seconds": 2.92
+    },
+    "play": {
+     "answer": "Play button.",
+     "pass": true,
+     "seconds": 2.81
+    },
+    "quill": {
+     "answer": "Feather quill.",
+     "pass": true,
+     "seconds": 8.59
+    },
+    "save": {
+     "answer": "Acorn.",
+     "pass": true,
+     "seconds": 2.87
+    },
+    "search": {
+     "answer": "Magnifying glass.",
+     "pass": true,
+     "seconds": 4.16
+    },
+    "settings": {
+     "answer": "Cog.",
+     "pass": true,
+     "seconds": 2.27
+    },
+    "share": {
+     "answer": "Envelope.",
+     "pass": true,
+     "seconds": 3.69
+    },
+    "sparkle": {
+     "answer": "Star.",
+     "pass": true,
+     "seconds": 3.18
+    },
+    "star": {
+     "answer": "Star.",
+     "pass": true,
+     "seconds": 2.18
+    },
+    "trash": {
+     "answer": "Basket.",
+     "pass": true,
+     "seconds": 5.71
+    },
+    "undo": {
+     "answer": "Arrow.",
+     "pass": true,
+     "seconds": 2.94
+    },
+    "warning": {
+     "answer": "Mushroom.",
+     "pass": true,
+     "seconds": 6.02
+    }
+   },
+   "named": 27,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build",
+     "pass": true,
+     "seconds": 6.68
+    },
+    "Clear cache": {
+     "answer": "Clear cache",
+     "pass": true,
+     "seconds": 3.15
+    },
+    "Open the vault": {
+     "answer": "Open the vault",
+     "pass": true,
+     "seconds": 2.55
+    },
+    "Rename world": {
+     "answer": "Rename world",
+     "pass": true,
+     "seconds": 0.61
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle",
+     "pass": true,
+     "seconds": 0.88
+    },
+    "Undo last move": {
+     "answer": "Undo last move",
+     "pass": true,
+     "seconds": 1.0
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend",
+     "pass": true,
+     "seconds": 1.06
+    },
+    "Start the delve": {
+     "answer": "Start the delve",
+     "pass": true,
+     "seconds": 0.85
+    },
+    "Save this floor": {
+     "answer": "Save this floor",
+     "pass": true,
+     "seconds": 0.9
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel",
+     "pass": true,
+     "seconds": 0.99
+    },
+    "Ring the bell": {
+     "answer": "Ring the bell",
+     "pass": true,
+     "seconds": 0.73
+    },
+    "Carve a rune": {
+     "answer": "Carve a rune",
+     "pass": true,
+     "seconds": 0.63
+    }
+   },
+   "read": 12,
+   "of": 27,
+   "median_s": 2.87
+  },
+  {
+   "model": "gemma4-e2b",
+   "params_b": 5.1,
+   "licence": "Apache-2.0",
+   "size_mb": 4336,
+   "answers": {
+    "bell": {
+     "answer": "Bell",
+     "pass": true,
+     "seconds": 0.96
+    },
+    "book": {
+     "answer": "Book",
+     "pass": true,
+     "seconds": 0.64
+    },
+    "chat": {
+     "answer": "Speech bubble",
+     "pass": true,
+     "seconds": 0.65
+    },
+    "check": {
+     "answer": "Checkmark",
+     "pass": true,
+     "seconds": 0.62
+    },
+    "chronicle": {
+     "answer": "Book",
+     "pass": true,
+     "seconds": 0.62
+    },
+    "export": {
+     "answer": "Paper fan",
+     "pass": false,
+     "seconds": 0.88
+    },
+    "floor": {
+     "answer": "Tree",
+     "pass": true,
+     "seconds": 0.96
+    },
+    "heart": {
+     "answer": "Heart",
+     "pass": true,
+     "seconds": 1.16
+    },
+    "help": {
+     "answer": "Lantern",
+     "pass": true,
+     "seconds": 1.04
+    },
+    "home": {
+     "answer": "Tree door",
+     "pass": true,
+     "seconds": 1.12
+    },
+    "info": {
+     "answer": "Orb",
+     "pass": true,
+     "seconds": 1.0
+    },
+    "library": {
+     "answer": "Books",
+     "pass": true,
+     "seconds": 1.12
+    },
+    "lock": {
+     "answer": "Padlock",
+     "pass": true,
+     "seconds": 1.1
+    },
+    "map-pin": {
+     "answer": "Nut",
+     "pass": true,
+     "seconds": 1.03
+    },
+    "new": {
+     "answer": "Fruit",
+     "pass": false,
+     "seconds": 1.02
+    },
+    "open": {
+     "answer": "Trunk",
+     "pass": true,
+     "seconds": 1.04
+    },
+    "play": {
+     "answer": "Button",
+     "pass": true,
+     "seconds": 1.09
+    },
+    "quill": {
+     "answer": "Quill pen",
+     "pass": true,
+     "seconds": 1.22
+    },
+    "save": {
+     "answer": "Pinecone",
+     "pass": false,
+     "seconds": 1.08
+    },
+    "search": {
+     "answer": "Magnifying glass",
+     "pass": true,
+     "seconds": 1.1
+    },
+    "settings": {
+     "answer": "Gear",
+     "pass": true,
+     "seconds": 1.02
+    },
+    "share": {
+     "answer": "Envelope",
+     "pass": true,
+     "seconds": 0.92
+    },
+    "sparkle": {
+     "answer": "Star cookie",
+     "pass": true,
+     "seconds": 1.07
+    },
+    "star": {
+     "answer": "Star",
+     "pass": true,
+     "seconds": 1.12
+    },
+    "trash": {
+     "answer": "Basket",
+     "pass": true,
+     "seconds": 1.15
+    },
+    "undo": {
+     "answer": "Wreath",
+     "pass": false,
+     "seconds": 1.21
+    },
+    "warning": {
+     "answer": "Mushroom",
+     "pass": true,
+     "seconds": 1.17
+    }
+   },
+   "named": 23,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build",
+     "pass": true,
+     "seconds": 1.46
+    },
+    "Clear cache": {
+     "answer": "Help",
+     "pass": false,
+     "seconds": 1.13
+    },
+    "Open the vault": {
+     "answer": "Open the vault",
+     "pass": true,
+     "seconds": 1.45
+    },
+    "Rename world": {
+     "answer": "Rename world",
+     "pass": true,
+     "seconds": 1.42
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle",
+     "pass": true,
+     "seconds": 1.39
+    },
+    "Undo last move": {
+     "answer": "Undo last move",
+     "pass": true,
+     "seconds": 1.51
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend",
+     "pass": true,
+     "seconds": 1.25
+    },
+    "Start the delve": {
+     "answer": "Start the delve",
+     "pass": true,
+     "seconds": 1.37
+    },
+    "Save this floor": {
+     "answer": "Save this floor",
+     "pass": true,
+     "seconds": 2.36
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel",
+     "pass": true,
+     "seconds": 1.7
+    },
+    "Ring the bell": {
+     "answer": "Cancel",
+     "pass": false,
+     "seconds": 0.97
+    },
+    "Carve a rune": {
+     "answer": "Back",
+     "pass": false,
+     "seconds": 1.14
+    }
+   },
+   "read": 9,
+   "of": 27,
+   "median_s": 1.1
+  }
+ ],
+ "rescored": "gold lists widened 12:40 (trunk, pearl); passes recomputed from saved answers"
+}

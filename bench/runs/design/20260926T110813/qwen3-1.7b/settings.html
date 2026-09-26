@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tool name · Settings</title>
+<link rel="stylesheet" href="/workbench.css">
+</head>
+<body class="wb-page">
+<a class="wb-btn wb-btn--quiet" href="#main" style="position:absolute;left:-999px">Skip to content</a>
+<header class="wb-topbar"><div class="wb-wrap">
+  <nav aria-label="Breadcrumb"><ol class="wb-crumbs">
+    <li><a href="/">Tool name</a></li><li aria-current="page">Settings</li>
+  </ol></nav>
+</div></header>
+<main id="main" class="wb-wrap">
+  <h1 class="wb-h1">Settings</h1>
+  <p class="wb-lede">Customize your tool's behavior.</p>
+  <div class="wb-section wb-section--theme">
+    <h2 class="wb-h2">Theme</h2>
+    <nav class="wb-nav">
+      <button class="wb-btn wb-btn--primary" data-theme="dark">Dark</button>
+      <button class="wb-btn" data-theme="light">Light</button>
+      <button class="wb-btn" data-theme="high-contrast">High contrast</button>
+    </nav>
+    <p class="wb-text wb-text--dark">Currently: <span class="wb-text--light">Dark</span></p>
+  </div>
+  <div class="wb-section wb-section--storage">
+    <h2 class="wb-h2">Storage</h2>
+    <div class="wb-table-wrap">
+      <table class="wb-table">
+        <thead><tr><th scope="col">Folder</th><th scope="col">Size</th></tr></thead>
+        <tbody>
+          <tr><td class="wb-mono">Projects</td><td class="wb-mono">2.3GB</td></tr>
+          <tr><td class="wb-mono">Art</td><td class="wb-mono">1.1GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="wb-section wb-section--danger">
+    <h2 class="wb-h2">Danger zone</h2>
+    <div class="wb-warning">
+      <span class="wb-tag wb-tag--danger">⚠️</span>
+      <p class="wb-text wb-text--danger">Clear cache</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

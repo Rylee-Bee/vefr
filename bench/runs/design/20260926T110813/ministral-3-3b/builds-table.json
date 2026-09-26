@@ -1,0 +1,17 @@
+{
+ "participant": "ministral-3-3b",
+ "brief": "builds-table",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": false,
+ "required_parts": true,
+ "seconds": 54.8,
+ "tokens_out": 805,
+ "axe": [],
+ "error": null,
+ "score": 5,
+ "pass": true
+}

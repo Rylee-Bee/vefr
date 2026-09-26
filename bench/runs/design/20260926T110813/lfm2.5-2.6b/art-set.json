@@ -1,0 +1,17 @@
+{
+ "participant": "lfm2.5-2.6b",
+ "brief": "art-set",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 209.9,
+ "tokens_out": 3377,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

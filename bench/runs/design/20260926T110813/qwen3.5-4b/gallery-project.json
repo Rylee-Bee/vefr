@@ -1,0 +1,17 @@
+{
+ "participant": "qwen3.5-4b",
+ "brief": "gallery-project",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 332.3,
+ "tokens_out": 1781,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

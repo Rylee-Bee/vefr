@@ -1,0 +1,17 @@
+{
+ "participant": "qwen3.5-4b",
+ "brief": "art-set",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 890.0,
+ "tokens_out": 2003,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

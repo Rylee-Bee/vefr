@@ -1,0 +1,17 @@
+{
+ "participant": "lfm2.5-2.6b",
+ "brief": "gallery-project",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": false,
+ "seconds": 92.2,
+ "tokens_out": 1430,
+ "axe": [],
+ "error": null,
+ "score": 5,
+ "pass": true
+}

@@ -1,0 +1,152 @@
+{
+ "threads": 4,
+ "question": "What object is shown in this picture? Answer with one or two words.",
+ "results": [
+  {
+   "model": "smolvlm2-256m",
+   "params_b": 0.26,
+   "licence": "Apache-2.0",
+   "size_mb": 279,
+   "answers": {
+    "bell": {
+     "answer": "bell",
+     "pass": true,
+     "seconds": 16.75
+    },
+    "book": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 14.27
+    },
+    "chat": {
+     "answer": "chatbot",
+     "pass": true,
+     "seconds": 15.23
+    },
+    "check": {
+     "answer": "checkmark",
+     "pass": true,
+     "seconds": 14.19
+    },
+    "chronicle": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 14.72
+    },
+    "export": {
+     "answer": "boat",
+     "pass": true,
+     "seconds": 17.39
+    },
+    "floor": {
+     "answer": "tree stump",
+     "pass": true,
+     "seconds": 18.9
+    },
+    "heart": {
+     "answer": "heart",
+     "pass": true,
+     "seconds": 20.34
+    },
+    "help": {
+     "answer": "lantern",
+     "pass": true,
+     "seconds": 17.54
+    },
+    "home": {
+     "answer": "door",
+     "pass": true,
+     "seconds": 13.29
+    },
+    "info": {
+     "answer": "ball",
+     "pass": true,
+     "seconds": 17.11
+    },
+    "library": {
+     "answer": "stack of books",
+     "pass": true,
+     "seconds": 18.31
+    },
+    "lock": {
+     "answer": "lock",
+     "pass": true,
+     "seconds": 19.86
+    },
+    "map-pin": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 14.13
+    },
+    "new": {
+     "answer": "plant",
+     "pass": true,
+     "seconds": 10.86
+    },
+    "open": {
+     "answer": "Treasure chest",
+     "pass": true,
+     "seconds": 22.24
+    },
+    "play": {
+     "answer": "game button",
+     "pass": true,
+     "seconds": 16.55
+    },
+    "quill": {
+     "answer": "quill",
+     "pass": true,
+     "seconds": 14.98
+    },
+    "save": {
+     "answer": "egg",
+     "pass": false,
+     "seconds": 16.24
+    },
+    "search": {
+     "answer": "magnifying glass",
+     "pass": true,
+     "seconds": 11.16
+    },
+    "settings": {
+     "answer": "gear",
+     "pass": true,
+     "seconds": 12.17
+    },
+    "share": {
+     "answer": "envelope",
+     "pass": true,
+     "seconds": 11.36
+    },
+    "sparkle": {
+     "answer": "Starbucks",
+     "pass": true,
+     "seconds": 15.11
+    },
+    "star": {
+     "answer": "star",
+     "pass": true,
+     "seconds": 14.15
+    },
+    "trash": {
+     "answer": "basket",
+     "pass": true,
+     "seconds": 17.23
+    },
+    "undo": {
+     "answer": "letter",
+     "pass": false,
+     "seconds": 14.02
+    },
+    "warning": {
+     "answer": "mushroom",
+     "pass": true,
+     "seconds": 16.67
+    }
+   },
+   "named": 25,
+   "of": 27,
+   "median_s": 15.23
+  }
+ ]
+}

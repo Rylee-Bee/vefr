@@ -1,0 +1,17 @@
+{
+ "participant": "lfm2.5-2.6b",
+ "brief": "empty-project",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 136.6,
+ "tokens_out": 2524,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

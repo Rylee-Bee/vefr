@@ -1,0 +1,217 @@
+{
+ "threads": 4,
+ "question": "What object is shown in this picture? Answer with one or two words.",
+ "read_question": "What does the highlighted main button say? Reply with its exact text only.",
+ "results": [
+  {
+   "model": "minicpm-v-4.6",
+   "params_b": 1.3,
+   "licence": "Apache-2.0",
+   "size_mb": 1257,
+   "answers": {
+    "bell": {
+     "answer": "bell",
+     "pass": true,
+     "seconds": 0.94
+    },
+    "book": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 0.58
+    },
+    "chat": {
+     "answer": "speech bubble",
+     "pass": true,
+     "seconds": 4.66
+    },
+    "check": {
+     "answer": "check mark",
+     "pass": true,
+     "seconds": 1.55
+    },
+    "chronicle": {
+     "answer": "book",
+     "pass": true,
+     "seconds": 6.04
+    },
+    "export": {
+     "answer": "paper boat",
+     "pass": true,
+     "seconds": 5.97
+    },
+    "floor": {
+     "answer": "tree",
+     "pass": true,
+     "seconds": 12.58
+    },
+    "heart": {
+     "answer": "heart",
+     "pass": true,
+     "seconds": 3.58
+    },
+    "help": {
+     "answer": "lantern",
+     "pass": true,
+     "seconds": 6.67
+    },
+    "home": {
+     "answer": "house",
+     "pass": true,
+     "seconds": 4.29
+    },
+    "info": {
+     "answer": "stone",
+     "pass": true,
+     "seconds": 4.15
+    },
+    "library": {
+     "answer": "books",
+     "pass": true,
+     "seconds": 5.01
+    },
+    "lock": {
+     "answer": "lock",
+     "pass": true,
+     "seconds": 4.16
+    },
+    "map-pin": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 5.47
+    },
+    "new": {
+     "answer": "plant",
+     "pass": true,
+     "seconds": 8.16
+    },
+    "open": {
+     "answer": "treasure chest",
+     "pass": true,
+     "seconds": 9.03
+    },
+    "play": {
+     "answer": "button",
+     "pass": true,
+     "seconds": 6.23
+    },
+    "quill": {
+     "answer": "quill",
+     "pass": true,
+     "seconds": 8.71
+    },
+    "save": {
+     "answer": "acorn",
+     "pass": true,
+     "seconds": 8.14
+    },
+    "search": {
+     "answer": "magnifying glass",
+     "pass": true,
+     "seconds": 6.38
+    },
+    "settings": {
+     "answer": "gear",
+     "pass": true,
+     "seconds": 6.78
+    },
+    "share": {
+     "answer": "envelope",
+     "pass": true,
+     "seconds": 3.29
+    },
+    "sparkle": {
+     "answer": "star",
+     "pass": true,
+     "seconds": 7.14
+    },
+    "star": {
+     "answer": "star",
+     "pass": true,
+     "seconds": 1.15
+    },
+    "trash": {
+     "answer": "basket",
+     "pass": true,
+     "seconds": 0.47
+    },
+    "undo": {
+     "answer": "arrow",
+     "pass": true,
+     "seconds": 0.62
+    },
+    "warning": {
+     "answer": "mushroom",
+     "pass": true,
+     "seconds": 6.5
+    }
+   },
+   "named": 27,
+   "reads": {
+    "Play newest build": {
+     "answer": "Play newest build",
+     "pass": true,
+     "seconds": 8.43
+    },
+    "Clear cache": {
+     "answer": "Clear cache",
+     "pass": true,
+     "seconds": 8.59
+    },
+    "Open the vault": {
+     "answer": "Open the vault",
+     "pass": true,
+     "seconds": 9.23
+    },
+    "Rename world": {
+     "answer": "Rename world",
+     "pass": true,
+     "seconds": 10.78
+    },
+    "Export chronicle": {
+     "answer": "Export chronicle",
+     "pass": true,
+     "seconds": 10.12
+    },
+    "Undo last move": {
+     "answer": "Undo last move",
+     "pass": true,
+     "seconds": 4.07
+    },
+    "Share with a friend": {
+     "answer": "Share with a friend",
+     "pass": true,
+     "seconds": 5.4
+    },
+    "Start the delve": {
+     "answer": "Start the delve",
+     "pass": true,
+     "seconds": 13.24
+    },
+    "Save this floor": {
+     "answer": "Save this floor",
+     "pass": true,
+     "seconds": 8.41
+    },
+    "Pack the satchel": {
+     "answer": "Pack the satchel",
+     "pass": true,
+     "seconds": 11.5
+    },
+    "Ring the bell": {
+     "answer": "Ring the bell",
+     "pass": true,
+     "seconds": 12.52
+    },
+    "Carve a rune": {
+     "answer": "Carve a rune",
+     "pass": true,
+     "seconds": 11.75
+    }
+   },
+   "read": 12,
+   "of": 27,
+   "median_s": 6.38
+  }
+ ],
+ "rescored": "gold lists widened 12:40 (trunk, pearl); passes recomputed from saved answers"
+}

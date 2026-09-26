@@ -1,0 +1,17 @@
+{
+ "participant": "minicpm5-2b",
+ "brief": "settings",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": false,
+ "seconds": 77.1,
+ "tokens_out": 941,
+ "axe": [],
+ "error": null,
+ "score": 5,
+ "pass": true
+}

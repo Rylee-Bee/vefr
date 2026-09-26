@@ -1,0 +1,17 @@
+{
+ "participant": "ministral-3-3b",
+ "brief": "art-set",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 64.6,
+ "tokens_out": 945,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

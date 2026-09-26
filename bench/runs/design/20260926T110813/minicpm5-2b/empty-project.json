@@ -1,0 +1,20 @@
+{
+ "participant": "minicpm5-2b",
+ "brief": "empty-project",
+ "backend": "cpu",
+ "renders": false,
+ "workbench_only": false,
+ "accessible": false,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": false,
+ "seconds": 262.4,
+ "tokens_out": 3500,
+ "axe": [
+  "document-title",
+  "html-has-lang"
+ ],
+ "error": null,
+ "score": 2,
+ "pass": false
+}

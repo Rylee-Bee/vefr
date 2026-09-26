@@ -1,0 +1,17 @@
+{
+ "participant": "endpoint:local-35b",
+ "brief": "settings",
+ "backend": "endpoint",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 8.0,
+ "tokens_out": 608,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

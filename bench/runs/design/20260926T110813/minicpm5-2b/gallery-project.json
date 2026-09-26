@@ -1,0 +1,19 @@
+{
+ "participant": "minicpm5-2b",
+ "brief": "gallery-project",
+ "backend": "cpu",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": false,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 138.6,
+ "tokens_out": 1485,
+ "axe": [
+  "listitem"
+ ],
+ "error": null,
+ "score": 5,
+ "pass": true
+}

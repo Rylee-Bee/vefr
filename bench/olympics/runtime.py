@@ -170,13 +170,15 @@ class ModelServer:
             return {"healthy": False, "error": str(e)}
 
 
-_AGE = 0
 
 
 def _free_port():
-    global _AGE
-    _AGE += 1
-    return config.SERVE_PORT_BASE + _AGE
+    """A port the OS says is free right now. A per-process counter collided
+    when two bench processes ran side by side (both started at BASE+1)."""
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
 
 
 def chat_on(

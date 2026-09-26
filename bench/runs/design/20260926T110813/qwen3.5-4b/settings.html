@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings · Local Tool</title>
+<link rel="stylesheet" href="/workbench.css">
+</head>
+<body class="wb-page">
+<a class="wb-btn wb-btn--quiet" href="#main" style="position:absolute;left:-999px">Skip to content</a>
+<header class="wb-topbar"><div class="wb-wrap">
+  <nav aria-label="Breadcrumb"><ol class="wb-crumbs">
+    <li><a href="/">Local Tool</a></li><li><a href="/settings/">Settings</a></li>
+  </ol></nav>
+</div></header>
+<main id="main" class="wb-wrap">
+  <h1 class="wb-h1">Settings</h1>
+  <p class="wb-lede">Manage your local tool preferences.</p>
+
+  <!-- Theme Section -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Theme</h2>
+    <div class="wb-actions">
+      <button class="wb-btn wb-btn--primary wb-raise" aria-pressed="true">Dark</button>
+      <button class="wb-btn">Light</button>
+      <button class="wb-btn">High contrast</button>
+    </div>
+  </section>
+
+  <!-- Storage Section -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Storage</h2>
+    <div class="wb-table-wrap">
+      <table class="wb-table">
+        <thead>
+          <tr>
+            <th scope="col">Folder</th>
+            <th scope="col">Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cache</td>
+            <td class="wb-mono">124 MB</td>
+          </tr>
+          <tr>
+            <td>Logs</td>
+            <td class="wb-mono">45 MB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Danger Zone Section -->
+  <section class="wb-section">
+    <h2 class="wb-h2">Danger zone</h2>
+    <div class="wb-actions">
+      <span class="wb-tag wb-tag--danger">⚠️ This action can't be undone</span>
+      <button class="wb-btn wb-btn--primary" aria-disabled="false">Clear cache</button>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

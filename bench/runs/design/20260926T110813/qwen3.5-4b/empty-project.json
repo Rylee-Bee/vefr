@@ -1,0 +1,7 @@
+{
+ "participant": "qwen3.5-4b",
+ "brief": "empty-project",
+ "backend": "cpu",
+ "error": "timed out",
+ "score": 0
+}

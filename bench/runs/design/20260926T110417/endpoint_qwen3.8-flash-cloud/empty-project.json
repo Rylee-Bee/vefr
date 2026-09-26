@@ -1,0 +1,17 @@
+{
+ "participant": "endpoint:qwen3.8-flash-cloud",
+ "brief": "empty-project",
+ "backend": "endpoint",
+ "renders": true,
+ "workbench_only": true,
+ "accessible": true,
+ "phone_fit": true,
+ "targets_44": true,
+ "required_parts": true,
+ "seconds": 23.1,
+ "tokens_out": 1838,
+ "axe": [],
+ "error": null,
+ "score": 6,
+ "pass": true
+}

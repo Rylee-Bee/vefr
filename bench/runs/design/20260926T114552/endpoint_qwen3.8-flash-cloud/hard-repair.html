@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab builds</title>
+<link rel="stylesheet" href="/workbench.css">
+</head>
+<body class="wb-page">
+<a class="wb-btn wb-btn--quiet" href="#main" style="position:absolute;left:-999px">Skip to content</a>
+<header class="wb-topbar"><div class="wb-wrap">
+  <nav aria-label="Breadcrumb"><ol class="wb-crumbs">
+    <li><a href="/">Workbench</a></li><li aria-current="page">Lab builds</li>
+  </ol></nav>
+</div></header>
+<main id="main" class="wb-wrap">
+  <h1 class="wb-h1">Lab builds</h1>
+  <p class="wb-lede">Recent lab builds and their status.</p>
+
+  <div class="wb-actions">
+    <button class="wb-btn wb-btn--primary" type="button">Play</button>
+    <button class="wb-btn" type="button">Delete all</button>
+  </div>
+
+  <figure class="wb-tile">
+    <a href="art/1.webp"><img src="art/1.webp" alt="Lab build art preview"></a>
+    <figcaption>Art 1</figcaption>
+  </figure>
+
+  <h2 class="wb-h2">Builds</h2>
+  <div class="wb-table-wrap"><table class="wb-table">
+    <thead><tr><th scope="col">Date</th><th scope="col">Status</th></tr></thead>
+    <tbody>
+      <tr><td class="wb-mono">26 Sep</td><td><span class="wb-tag wb-tag--success">✓ ok</span></td></tr>
+      <tr><td class="wb-mono">25 Sep</td><td><span class="wb-tag wb-tag--danger">✕ failed</span></td></tr>
+    </tbody>
+  </table></div>
+</main>
+</body>
+</html>
