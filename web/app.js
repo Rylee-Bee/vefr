@@ -137,7 +137,7 @@
   /* Each room's resident waits in it while it is empty. */
   var ROOM_EMPTY = {
     workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
-    library: 'library', runes: 'casting-table', evidence: 'archives', hall: 'hall'
+    library: 'library', runes: 'casting-table', evidence: 'archives', hall: 'hall', settings: 'boiler-room'
   };
 
   function emptyState(text, hint, squirrel) {
@@ -1182,7 +1182,8 @@
 
   /* The hero's night: hills, a lit town, wind, and the World Tree */
   /* The hero: the owner's World Tree key art, calm on the left for words */
-  var HERO_ART = '<img class="hero__art" src="' + ART + 'banners/studio-hero.webp" alt="" width="2000" height="833">'
+  var HERO_ART = '<img class="hero__art hero__art--night" src="' + ART + 'banners/studio-hero.webp" alt="" width="2000" height="833">'
+    + '<img class="hero__art hero__art--day" src="' + ART + 'banners/studio-hero-day.webp" alt="" width="1920" height="800">'
     + '<span class="hero__scrim" aria-hidden="true"></span>';
 
   /* ══════════════════════════════════════════════════════
@@ -1241,6 +1242,8 @@
 
       var team = h('section', { className: 'wrap band', 'aria-labelledby': 'home-team' });
       team.appendChild(sectionHead('The team', 'Meet the residents', 'home-team', door('floor', 'Every department')));
+      team.appendChild(h('img', { className: 'team-photo', src: ART + 'illustrations/team-photo.webp', width: 1600, height: 1000, loading: 'lazy',
+        alt: 'All ten residents together on a branch of the World Tree, smiling for a group photo.' }));
       team.appendChild(teamGrid());
       c.appendChild(team);
 
@@ -3066,7 +3069,12 @@
       }
       var n = b.pages.length;
       open.page = L.clampPage(open.page, n);
-      reader.appendChild(h('span', { className: 'label', textContent: b.found_words }));
+      var FOUND_ICON = { shelf: 'shelf', map: 'map', resident: 'given', earned: 'earned' };
+      var found = h('span', { className: 'label lib-reader__found' });
+      found.appendChild(h('img', { src: ART + 'icons/library/found-' + (FOUND_ICON[b.found] || 'shelf') + '.webp', alt: '', width: 28, height: 28 }));
+      found.appendChild(h('img', { src: ART + 'icons/library/kind-' + (['note', 'terminal'].indexOf(b.kind) >= 0 ? b.kind : 'book') + '.webp', alt: '', width: 28, height: 28 }));
+      found.appendChild(h('span', { textContent: b.found_words }));
+      reader.appendChild(found);
       reader.appendChild(h('h2', { className: 'lib-reader__title', tabindex: '-1', textContent: b.title }));
       var page = h('div', { className: 'lib-page', 'aria-live': 'polite' });
       page.innerHTML = L.renderPage(b.pages[open.page]);
@@ -3646,6 +3654,7 @@
       var boltText = h('div', { className: 'spark-card__text' });
       boltText.appendChild(h('h3', { className: 'settings-card__title', id: 'spark-title', textContent: 'Bolt \u00B7 Spark, the little local brain' }));
       var boltStatus = h('p', { className: 'spark-card__status', role: 'status', textContent: 'checking on Bolt\u2026' });
+      if (boltImg) boltImg.src = ART + 'poses/bolt-thinking.webp';
       boltText.appendChild(boltStatus);
       boltText.appendChild(h('p', { className: 'settings-card__note',
         textContent: 'Spark is a small model that runs on this machine and helps every resident. Nothing leaves the house.' }));
@@ -3655,14 +3664,17 @@
         .then(function (sp) {
           if (sp && sp.ok) {
             bolt.classList.add('spark-card--awake');
-            if (boltImg) boltImg.src = ART + 'residents/bolt.webp';
+            if (boltImg) boltImg.src = ART + 'poses/bolt-awake-wave.webp';
             boltStatus.textContent = 'Awake. Spark is running' + (sp.profile ? ' (' + sp.profile + ' profile)' : '') + '.';
           } else {
             boltStatus.textContent = 'Napping on the boiler. Spark is not running on this machine yet.';
             if (boltImg) boltImg.src = ART + 'poses/bolt-boiler-nap.webp';
           }
         })
-        .catch(function () { boltStatus.textContent = 'Napping on the boiler. Spark could not be reached.'; });
+        .catch(function () {
+          boltStatus.textContent = 'Unplugged. Spark could not be reached.';
+          if (boltImg) boltImg.src = ART + 'poses/bolt-unplugged.webp';
+        });
 
       // Appearance — one voice for all of it: the prefs engine
       current = (P && P.get) ? P.get() : current;

@@ -18,8 +18,19 @@ the Floor's cutaway illustration, textures, the app icon and the wax seal.
   - `poses/<room>-empty.webp`: each room's resident waiting while the room
     is empty (480px).
   - `icons/ui/*.webp`: the sticker icon set (96px, shown at 28px or
-    larger). The phone tab bar uses `home`, `floor`, `new`, `chronicle`
+    larger). The phone tab bar uses `home`, `floor`, `quill`, `chronicle`
     and `library`.
+- Generated 2026-09-26 with Alibaba's Wan 2.7 Image Pro (the owner's model
+  plan), using finished Codex icons and resident portraits as style
+  references; the exact prompt for each file is kept beside its original:
+  - `banners/studio-hero-day.webp`: the studio hero at sunrise, for Day.
+  - `icons/library/found-*.webp`, `kind-*.webp`: how a book was found and
+    what it is, shown in the Library's reader.
+  - `poses/bolt-thinking|awake-wave|unplugged.webp`: Bolt's Spark moods in
+    the Boiler Room; `poses/boiler-room-empty.webp`.
+  - `icons/ui/quill|sparkle|check|warning|info|map-pin.webp`.
+  - `illustrations/team-photo.webp` (Studio home) and
+    `illustrations/lost-in-the-tree.webp` (not yet used).
 - Engine-neutral: residents and rooms belong to the workshop, not to any
   game pack.
 - License: Creative Commons Attribution-ShareAlike 4.0 International
