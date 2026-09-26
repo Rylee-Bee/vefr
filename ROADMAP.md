@@ -7,6 +7,16 @@
 
 ## Landed
 
+- [x] **`ratatoskr spark status` tells the truth about a remote Spark**
+      (2026-09-26): with Spark on another machine, the status command
+      looked for the model file on this one and asked systemd over SSH
+      for a `spark` unit (the appliance runs it under compose), so a
+      healthy Spark always read "model FAIL / service unknown". Now a
+      remote `VEFR_SPARK_URL` is checked by asking the server which GGUF it
+      serves (`/props`) against the pinned file, and by health; local
+      Spark keeps the file + service checks. `spark.is_remote`,
+      `spark.served_model`; tests in `tests/test_spark.py`.
+      `docs/guides/spark.md` no longer claims an engine-host fallback copy.
 - [x] **Screenshots gallery + docs at current truth** (2026-09-26):
       `scripts/capture-screenshots.py` now photographs the studio as it is
       (every room at 1440px night, three rooms in daylight, three at 390px, a

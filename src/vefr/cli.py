@@ -1950,19 +1950,29 @@ def cmd_spark_install(args) -> int:
 def cmd_spark_status(args) -> int:
     """The four facts: model verified? service running? health green?
     does Spark still know what is not its job?"""
-    host = _spark_host(args)
     from . import spark as spark_mod
     prof = spark_mod.profile(args.profile)
+    url = args.spark_url or spark_mod.spark_url()
     rows = []
-    ok, detail = spark_mod.verify_model(prof)
-    rows.append(('model', 'ok' if ok else 'FAIL', detail))
-    svc = subprocess.run(
-        ('ssh', '-o', 'ConnectTimeout=6', host,
-         'systemctl --user is-active spark'),
-        capture_output=True, text=True, timeout=15).stdout.strip() or 'unknown'
-    rows.append(('service', 'ok' if svc == 'active' else svc, f'systemctl --user is-active -> {svc}'))
+    if spark_mod.is_remote(url):
+        # Spark on another machine (e.g. a homelab appliance): its model file
+        # and its service manager live there. Ask the server which file it
+        # serves; the health probe below is the service's proof of life.
+        host = url
+        ok, detail = spark_mod.served_model(prof, url=url)
+        rows.append(('model', 'ok' if ok else 'FAIL', detail))
+        rows.append(('service', 'ok', 'runs on the Spark host; proven by health below'))
+    else:
+        host = _spark_host(args)
+        ok, detail = spark_mod.verify_model(prof)
+        rows.append(('model', 'ok' if ok else 'FAIL', detail))
+        svc = subprocess.run(
+            ('ssh', '-o', 'ConnectTimeout=6', host,
+             'systemctl --user is-active spark'),
+            capture_output=True, text=True, timeout=15).stdout.strip() or 'unknown'
+        rows.append(('service', 'ok' if svc == 'active' else svc, f'systemctl --user is-active -> {svc}'))
     try:
-        h = spark_mod.health(timeout=5, url=args.spark_url or None)
+        h = spark_mod.health(timeout=5, url=url)
         rows.append(('health', 'ok', f'{h["status"]} in {h["probe_ms"]}ms'))
     except Exception as exc:  # noqa: BLE001
         rows.append(('health', 'DOWN', f'{exc.__class__.__name__}'))

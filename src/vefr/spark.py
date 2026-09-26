@@ -362,6 +362,29 @@ def inspect_context(task: str, user: str, **kw) -> dict:
 
 # --- the Spark client (fail-closed) -------------------------------------
 
+def is_remote(url: str | None = None) -> bool:
+    """True when Spark is served by another machine (not this host's loopback)."""
+    from urllib.parse import urlparse
+    host = urlparse(url or spark_url()).hostname or ""
+    return host not in ("127.0.0.1", "localhost", "::1", "")
+
+
+def served_model(prof: dict, url: str | None = None, timeout: float = 5.0,
+                 fetch=None) -> tuple[bool, str]:
+    """Which GGUF the Spark server is actually serving, from llama.cpp's
+    /props (model_path). The check for a remote Spark, whose model file
+    lives on its own host: the served file must be the profile's pin."""
+    base = (url or spark_url()).rstrip("/")
+    try:
+        props = fetch(f"{base}/props") if fetch else httpx.get(f"{base}/props", timeout=timeout).json()
+    except Exception as exc:  # noqa: BLE001 - reported, never raised
+        return False, f"could not read {base}/props ({exc.__class__.__name__})"
+    served = Path(str(props.get("model_path", ""))).name
+    if served == prof["file"]:
+        return True, f"serves {served} (the pinned file) at {base}"
+    return False, f"serves {served or 'an unknown model'}, pinned is {prof['file']}"
+
+
 def health(timeout: float = 4.0, url: str | None = None) -> dict:
     """Spark's liveness, with a tiny end-to-end latency probe. Raises
     SparkUnavailable - the route layer turns that into a graded,
