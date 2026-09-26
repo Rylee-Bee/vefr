@@ -8,6 +8,7 @@
  *   The Map Room → The Cartographer   The Casting   → The Rune-Carver
  *   The Folks    → The Keeper of Faces The Archives  → Skuld
  *   The Vault    → The Hoard-Keeper   The Hall      → Ratatoskr, the ferry
+ *   The Library  → Fróði, who writes on a paddle and never speaks
  *
  * Each resident has its own little toolkit of role templates and uses
  * the smallest model that passes its job (docs/guides/brain-roles.md),
@@ -235,7 +236,7 @@
   var DOOR_NOTES = {
     workshop: 'the candle is still going', map: 'unfinished edges, mind your step',
     characters: 'a chair by the window is still warm', items: 'please do not lick the rings',
-    journal: 'Urðr hears everything', library: 'read everything; that is what it is for', runes: 'the stones will not flatter you',
+    journal: 'Urðr hears everything', library: 'no book is lost here', runes: 'the stones will not flatter you',
     evidence: 'watch the third step', hall: 'dusted on Tuesdays, by tail',
     settings: 'Bolt is napping on the boiler'
   };
@@ -248,7 +249,7 @@
 
   // The department each room is, in studio words
   var SCREEN_DEPTS = {
-    launcher: 'Welcome', floor: 'Every department', library: 'Books \u00B7 kept by Ur\u00F0r', workshop: 'Concept \u00B7 the brief',
+    launcher: 'Welcome', floor: 'Every department', library: 'Books \u00B7 kept by Fr\u00F3\u00F0i', workshop: 'Concept \u00B7 the brief',
     map: 'Level design', characters: 'Characters', items: 'Items \u0026 economy',
     journal: 'Production records', runes: 'Inspiration', evidence: 'The story bible',
     hall: 'Launch \u00B7 on display', settings: 'The machinery'
@@ -721,7 +722,7 @@
   var RESIDENT_ART = {
     hall: 'ratatoskr', workshop: 'storyteller', journal: 'urdr', map: 'cartographer',
     characters: 'keeper-of-faces', items: 'hoard-keeper', runes: 'rune-carver',
-    evidence: 'skuld', settings: 'volundr', spark: 'bolt', library: 'urdr'
+    evidence: 'skuld', settings: 'volundr', spark: 'bolt', library: 'frodi'
   };
   var ROOM_BANNERS = {
     workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
@@ -816,9 +817,11 @@
       ]
     },
     library: {
-      name: 'Ur\u00F0r', mark: '\u2767',
+      /* Fr\u00F3\u00F0i never speaks: he writes on a notepad on a little wooden
+         paddle (Rylee, 2026-09-26; docs/guides/residents.md). */
+      name: 'Fr\u00F3\u00F0i', mark: '\u16A0',
       craft: 'keeper of the Library',
-      greeting: 'Read everything. That is what it is for.',
+      greeting: '(The paddle comes up.) No book is lost here.',
       roles: [
         'Which book should I read first?',
         'What would a found note in this world sound like?',
@@ -3021,7 +3024,7 @@
   })();
 
   /* ══════════════════════════════════════════════════════
-     THE LIBRARY — Urðr's shelves: the studio's books and the world's
+     THE LIBRARY — Fróði's shelves: the studio's books and the world's
      ══════════════════════════════════════════════════════ */
 
   screens.library = (function () {
@@ -3123,7 +3126,7 @@
       API.library()
         .then(function (data) {
           shelves.innerHTML = '';
-          var ladder = spot('urdr-library-ladder', 'spot--inline lib-ladder');
+          var ladder = spot('frodi-library-ladder', 'spot--inline lib-ladder');
           var intro = h('div', { className: 'spot-row' });
           intro.appendChild(h('p', { className: 'archives-intro',
             textContent: 'Books are written by people, never by the model. A world keeps its own in its library folder.' }));
