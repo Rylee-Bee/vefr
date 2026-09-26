@@ -7,12 +7,16 @@ from pydantic import BaseModel, ValidationError
 
 from . import generator
 from .bonds import bond_keys, bond_prompt
-from .paths import app_home
+from .paths import app_home, world_scoped
 from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 from .saga import system_prompt
 from .world import load_world
 
 VAULT = Path(os.environ.get("VEFR_VAULT", str(app_home() / "data" / "vault.json")))
+
+# Each world keeps its own history (paths.world_scoped). Off only while
+# a caller points the base at an explicit file (weave --with-bundle).
+SCOPE_BY_WORLD = True
 
 _UNDO = UndoBuffer(UNDO_WINDOW_S)
 _LAST_REMOVED = _UNDO._stash
@@ -26,7 +30,8 @@ def _sync_undo_stash() -> None:
 
 def vault_path(sid: str | None = None) -> Path:
     """The vault file for a session; the base file when default."""
-    return derive(VAULT, sid)
+    base = world_scoped(VAULT) if SCOPE_BY_WORLD else VAULT
+    return derive(base, sid)
 
 
 class ItemCard(BaseModel):

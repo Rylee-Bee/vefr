@@ -1383,7 +1383,7 @@
         .then(function () { return API.world(); })
         .then(function (w) {
           inhabitWorld(w);
-          ferryNote('Now working on “' + name + '”.');
+          ferryNote('Now working on “' + ((w && w.title) || name) + '”.');
           loadProjects(hearth, pantry);
         })
         .catch(function (err) {
