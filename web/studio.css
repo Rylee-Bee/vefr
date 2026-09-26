@@ -23,6 +23,13 @@
   src: url('/static/fonts/Cinzel-Variable.woff2') format('woff2');
 }
 @font-face {
+  font-family: 'Noto Sans Runic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/NotoSansRunic-Regular.woff2') format('woff2');
+}
+@font-face {
   font-family: 'Atkinson Hyperlegible Next';
   font-style: normal;
   font-weight: 400;
@@ -198,7 +205,7 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 .label__world:not(:empty)::before { content: '\00B7'; margin-right: 10px; }
 .pagehead__title { margin: 8px 0 0; font: 700 clamp(2rem, 4.4vw, 3.1rem)/1.05 var(--studio-engraved); letter-spacing: 0.05em; color: #FFF8E8; }
 .pagehead__lede { margin: 10px 0 0; max-width: 62ch; font-size: 1.05rem; color: #D9D0BC; }
-.mood-note { position: static; margin: 8px 0 0; font-size: 0.85rem; font-style: italic; color: var(--studio-iron-dim); opacity: 1; transform: none; }
+.mood-note { position: static; margin: 8px 0 0; font-family: var(--studio-body); letter-spacing: 0; font-size: 0.85rem; font-style: italic; color: var(--studio-iron-dim); opacity: 1; transform: none; }
 .mood-note:empty { display: none; }
 .greeter {
   display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; align-items: center; max-width: 380px;
@@ -216,7 +223,7 @@ html[data-light="day"] .runeband { filter: brightness(0.6); }
 }
 .portrait svg { width: 100%; height: 100%; display: block; }
 .portrait svg.portrait__icon { width: 44%; height: 44%; stroke: #E2BC6E; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.room-ambience { margin: 0 0 20px; font-size: 0.9rem; font-style: italic; color: var(--color-ink-dim); }
+.room-ambience { margin: 0 0 20px; font-family: var(--studio-body); font-size: 0.9rem; font-style: italic; letter-spacing: 0; color: var(--color-ink-dim); }
 
 /* On the Studio home the hero IS the header */
 html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead + .runeband { display: none; }
@@ -387,6 +394,59 @@ html[data-screen="launcher"] .pagehead, html[data-screen="launcher"] .pagehead +
 @media (max-width: 960px) {
   .workshop { grid-template-columns: minmax(0, 1fr); }
   .desk-sheet { padding: 24px 20px 22px; }
+}
+
+/* ------------------------------------------------------------
+   8c. The Casting Table
+   ------------------------------------------------------------ */
+.casting-room { display: grid; gap: 40px; }
+.cast-card { padding: 28px 28px 30px; display: grid; gap: 12px; justify-items: start; }
+.cast-card__hint { margin: 0; max-width: 60ch; }
+.cast-spread { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; margin-top: 8px; }
+.cast-spread:empty { display: none; }
+.cast-spread > .loading, .cast-spread > .empty { grid-column: 1 / -1; }
+.cast-slot { display: grid; gap: 8px; }
+.rune-scatter { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.rune-stone {
+  display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 150px; padding: 18px 12px 16px; cursor: pointer;
+  border-radius: 38% 42% 36% 40% / 30% 32% 28% 30%; border: 1px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
+  background: radial-gradient(ellipse at 35% 25%, #5A5F66, #3A3E44 60%, #2C2F34); color: #EDE7DA; text-align: center;
+  box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.3); font: inherit;
+  transform: none; width: auto; height: auto;
+}
+.rune-stone:hover { background: radial-gradient(ellipse at 35% 25%, #666B72, #43474E 60%, #32353A); }
+.rune-stone__stave { font: 400 2.6rem/1 'Noto Sans Runic', var(--studio-engraved); color: #E9C274; text-shadow: 0 1px 0 rgba(0,0,0,0.6); }
+.rune-stone__name { font: 700 0.95rem var(--studio-engraved); letter-spacing: 0.06em; color: #F4EEDD; }
+.rune-stone__short { font-size: 0.82rem; color: #D6CFBF; }
+.rune-stone__long { display: none; font-size: 0.85rem; font-style: italic; color: #F0E9D8; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.15); }
+.rune-stone[aria-expanded="true"] .rune-stone__long { display: block; }
+.rune-stone--cast { min-height: 200px; cursor: default; }
+.rune-stone--cast .rune-stone__stave { font-size: 3.6rem; }
+
+/* ------------------------------------------------------------
+   8d. The Archives: a staircase, darker with every step
+   ------------------------------------------------------------ */
+.archives-room { display: grid; gap: 14px; }
+.archives-intro { margin: 0 0 10px; font-size: 1.02rem; }
+.evidence-level { padding: 22px 24px; display: grid; gap: 10px; }
+.evidence-level__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.evidence-level__head .label { width: 100%; }
+.evidence-level__heading { margin: 0; font: 700 1.15rem var(--studio-engraved); letter-spacing: 0.05em; color: var(--color-ink); text-transform: none; }
+.evidence-level__content { display: grid; gap: 6px; color: var(--color-ink-dim); }
+.evidence-level__content p { margin: 0; }
+.evidence-level__content strong { color: var(--color-ink); }
+.evidence-level--2 { margin-left: 3%; }
+.evidence-level--3 { margin-left: 6%; background: color-mix(in srgb, var(--color-card) 90%, black); }
+.evidence-level--4 { margin-left: 9%; background: color-mix(in srgb, var(--color-card) 80%, black); }
+.evidence-level--5 { margin-left: 12%; background: color-mix(in srgb, var(--color-card) 70%, black); }
+.evidence-title { font: 700 1.3rem var(--studio-engraved); letter-spacing: 0.04em; color: var(--studio-gold); }
+.evidence-creed { font-style: italic; }
+.evidence-empty { font-style: italic; }
+.evidence-raw summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; color: var(--color-ink); }
+.evidence-raw pre { max-height: 360px; overflow: auto; margin: 8px 0 0; padding: 14px; border-radius: 3px; background: var(--color-bg); border: 1px solid var(--color-card-edge); font: 0.8rem/1.5 var(--studio-mono); color: var(--color-ink-dim); white-space: pre; }
+@media (max-width: 640px) {
+  .cast-spread { grid-template-columns: 1fr; }
+  .evidence-level--2, .evidence-level--3, .evidence-level--4, .evidence-level--5 { margin-left: 0; }
 }
 
 /* ------------------------------------------------------------

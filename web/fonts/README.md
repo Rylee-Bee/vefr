@@ -31,6 +31,16 @@ packaged file both work offline from the first byte.
   room headers, headings and buttons. Display only; body text stays
   on the UI and reading fonts.
 
+## Noto Sans Runic (rune staves)
+
+- Source: https://fonts.google.com/noto/specimen/Noto+Sans+Runic
+- License: SIL Open Font License 1.1
+- Web file needed: `NotoSansRunic-Regular.woff2`
+- Vendored: 2026-09-25 from the Google Fonts CSS2 endpoint with a browser
+  UA. Most systems ship no Runic font, so without it the Casting Table's
+  staves render as empty boxes.
+- Used by: `web/studio.css` (`.rune-stone__stave`).
+
 ## Atkinson Hyperlegible Next
 
 - Source: https://www.brailleinstitute.org/freefont/

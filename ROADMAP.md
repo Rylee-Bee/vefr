@@ -18,12 +18,18 @@
       rebuilt. Rebuilt so far: the Studio home (was the Foyer: hero from
       the world on the table, worlds as posters, news from the Chronicle,
       begin-a-world, the residents, the mantel), the Floor (new: every
-      department), the Chronicle. Chronicle fix: actions, npc lines and
+      department), the Chronicle, the Desk, the Casting Table (all 24
+      stones as carved tiles, plus "Cast the stones": a three-stone spread
+      from `/api/runes/cast`; runes render via self-hosted Noto Sans Runic,
+      SIL OFL 1.1, since most systems ship no Runic font), the Archives (a
+      staircase that darkens with each step; raw truth is a keyboard-
+      reachable disclosure, fixing the old `scrollable-region-focusable`).
+      Old `app.css` rules for rebuilt rooms are deleted as each room lands.
+      Chronicle fix: actions, npc lines and
       letters no longer render as blank rows; runs of actions fold into
       one line (`web/js/chronicle.js`, pinned by
-      `tests/test_web_chronicle.py`). Still to rebuild: Desk, Map Room,
-      Folks, Vault, Casting Table, Archives, Hall, Settings, first walk,
-      resident folio.
+      `tests/test_web_chronicle.py`). Still to rebuild: Map Room, Folks,
+      Vault, Hall, Settings, first walk, resident folio.
 - [x] **Weave from the web: a phone user with no terminal can make the
       shareable file** (2026-09-25): `ratatoskr weave` was terminal-only.
       The packaging core moved out of `cmd_build_web` into `weave_html` +

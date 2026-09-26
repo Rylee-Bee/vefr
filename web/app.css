@@ -440,319 +440,6 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════
-   THE DESK — the writing desk where worlds are made
-   ══════════════════════════════════════════════════════════ */
-
-.workshop {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  height: 100%;
-  overflow: hidden;
-}
-.workshop--no-context { grid-template-columns: 1fr; }
-.workshop--no-context .workshop__context { display: none; }
-
-.workshop__story {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: linear-gradient(180deg,
-    rgba(201, 173, 107, 0.02) 0%,
-    transparent 220px
-  );
-}
-
-.workshop__story-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 84px 36px 16px;
-  flex-shrink: 0;
-}
-
-.workshop__chapter {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 22px;
-  font-weight: 500;
-  color: var(--text-primary, #F5F3EC);
-  letter-spacing: 0.01em;
-}
-.workshop__meta {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  color: var(--text-dim, #A39E92);
-  display: flex;
-  gap: 14px;
-  font-style: italic;
-  letter-spacing: 0.04em;
-}
-
-.workshop__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 36px 28px;
-}
-.workshop__content {
-  max-width: 600px;
-  line-height: 1.85;
-  color: var(--text-body, #E8E5DF);
-  font-size: 15px;
-}
-.workshop__content p { margin: 0 0 1.3em; }
-.workshop__content p:last-child { margin-bottom: 0; }
-
-/* The creed — cast in brass above the desk */
-.workshop__creed {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 17px;
-  color: var(--gold, #C9AD6B);
-  margin-bottom: 26px;
-  line-height: 1.6;
-  padding: 14px 18px;
-  border: 1px solid rgba(201, 173, 107, 0.22);
-  border-radius: 4px 8px 5px 7px;
-  background:
-    linear-gradient(180deg, rgba(201, 173, 107, 0.05) 0%, rgba(201, 173, 107, 0.015) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(245, 243, 236, 0.04),
-    0 2px 8px rgba(0, 0, 0, 0.25);
-  position: relative;
-  transform: rotate(-0.25deg);
-}
-.workshop__creed::before {
-  content: '✦';
-  position: absolute;
-  right: 10px; top: 8px;
-  font-size: 10px;
-  color: var(--gold, #C9AD6B);
-  opacity: 0.35;
-}
-
-/* The map — a scrap pinned to the desk */
-.workshop__map {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 16px;
-  line-height: 1.15;
-  letter-spacing: 0.2em;
-  color: var(--text-muted, #C2BDB0);
-  background: rgba(26, 24, 20, 0.6);
-  border: 1px solid rgba(139, 119, 90, 0.12);
-  border-radius: 4px;
-  padding: 20px 24px;
-  margin: 20px 0;
-  overflow-x: auto;
-  white-space: pre;
-  position: relative;
-  transform: rotate(-0.3deg);
-}
-.workshop__map::before {
-  content: 'the map';
-  position: absolute;
-  top: -8px; left: 16px;
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 9px;
-  font-style: italic;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim, #A39E92);
-  background: var(--bg-primary, #1e1b16);
-  padding: 0 8px;
-  transform: rotate(1.1deg);
-}
-.workshop__map::after {
-  content: '📌';
-  position: absolute;
-  top: -4px; right: 12px;
-  font-size: 12px;
-  opacity: 0.35;
-}
-
-/* Status — the instruments on the desk */
-.workshop__status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  font-size: 13px;
-  color: var(--text-dim, #A39E92);
-  margin-top: 24px;
-  padding-top: 14px;
-  position: relative;
-}
-.workshop__status::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    rgba(201, 173, 107, 0.15) 0%,
-    rgba(201, 173, 107, 0.05) 50%,
-    transparent 100%
-  );
-}
-.workshop__status-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.workshop__status-label {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim, #A39E92);
-  opacity: 0.7;
-}
-.workshop__status-value {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 15px;
-  color: var(--text-muted, #C2BDB0);
-}
-.workshop__status-hearts {
-  font-size: 14px;
-  letter-spacing: 0.08em;
-}
-
-/* The footer — where you speak to the household */
-.workshop__footer {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 14px 36px;
-  border-top: 1px solid rgba(139, 119, 90, 0.08);
-  flex-shrink: 0;
-}
-
-/* The bell — ring for the storyteller */
-.btn--bell {
-  background: linear-gradient(180deg, #4a3b22 0%, #33291a 100%);
-  color: var(--gold, #C9AD6B);
-  border-color: rgba(201, 173, 107, 0.35);
-  font-family: 'Spectral', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  box-shadow: inset 0 1px 0 rgba(245, 243, 236, 0.05);
-}
-.btn--bell:hover {
-  background: linear-gradient(180deg, #57462a 0%, #3b2f1e 100%);
-  border-color: rgba(201, 173, 107, 0.55);
-}
-.btn--bell:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* The shareable file — weave status words + its two follow-on actions */
-.weave-status {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  font-style: italic;
-  color: var(--text-muted, #C2BDB0);
-}
-/* .btn sets display, so [hidden] needs to out-specify it. */
-.weave-action[hidden] { display: none; }
-#ws-weave:focus-visible,
-.weave-action:focus-visible {
-  outline: 2px solid var(--ring, var(--gold, #C9AD6B));
-  outline-offset: 2px;
-}
-
-/* ── Context Panel — the folio beside the desk ──────────── */
-.workshop__context {
-  background: rgba(30, 28, 24, 0.6);
-  border-left: 1px solid rgba(139, 119, 90, 0.1);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-.workshop__context::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg,
-    transparent 0%,
-    rgba(201, 173, 107, 0.06) 30%,
-    rgba(201, 173, 107, 0.06) 70%,
-    transparent 100%
-  );
-}
-
-.context__section { padding: 18px 20px; position: relative; }
-.context__section + .context__section::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 1px;
-  background: rgba(139, 119, 90, 0.08);
-}
-.context__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--teal, #5B8A72);
-  margin: 0 0 12px;
-  opacity: 0.8;
-}
-.context__item { display: flex; flex-direction: column; gap: 3px; padding: 7px 0; }
-.context__item + .context__item { border-top: 1px solid rgba(255, 255, 255, 0.02); }
-.context__item-label {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 9px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim, #A39E92);
-  opacity: 0.7;
-}
-.context__item-value {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  color: var(--text-secondary, #F5F3EC);
-  line-height: 1.4;
-}
-.context__empty {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-dim, #A39E92);
-  opacity: 0.6;
-  padding: 6px 0;
-}
-.context__event { display: flex; gap: 8px; padding: 5px 0; font-size: 12px; line-height: 1.4; }
-.context__event + .context__event { border-top: 1px solid rgba(255, 255, 255, 0.02); }
-.context__event-time {
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-dim, #A39E92);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  flex-shrink: 0;
-  padding-top: 1px;
-  opacity: 0.6;
-}
-.context__event-text {
-  font-family: 'Spectral', Georgia, serif;
-  color: var(--text-secondary, #F5F3EC);
-}
-.context__link {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  font-style: italic;
-  color: var(--teal, #5B8A72);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px 0;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s;
-}
-.context__link:hover { color: var(--teal-light, #6EA88A); }
-
-/* ══════════════════════════════════════════════════════════
    THE MAP ROOM — spatial, the world laid out
    ══════════════════════════════════════════════════════════ */
 
@@ -966,274 +653,6 @@ body {
 .vault-object__star:hover { color: var(--gold, #C9AD6B); }
 .vault-object--starred { border-color: rgba(201, 173, 107, 0.25); }
 .vault-object--starred .vault-object__star { color: var(--gold, #C9AD6B); }
-
-/* ══════════════════════════════════════════════════════════
-   THE CHRONICLE — written over time
-   ══════════════════════════════════════════════════════════ */
-
-.chronicle-room {
-  padding: 88px 36px 32px;
-  overflow-y: auto;
-  flex: 1;
-  max-width: 760px;
-}
-.chronicle-room__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim, #A39E92);
-  margin-bottom: 24px;
-  opacity: 0.7;
-}
-.chronicle-entries { display: flex; flex-direction: column; }
-
-/* Journal entries — like lines in a book, not rows in a table */
-.chronicle-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 4px;
-  position: relative;
-}
-.chronicle-entry + .chronicle-entry::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 44px; right: 4px;
-  height: 1px;
-  background: rgba(139, 119, 90, 0.06);
-}
-.chronicle-entry--starred {
-  background: rgba(201, 173, 107, 0.02);
-  border-radius: 4px;
-}
-.chronicle-entry__time {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim, #A39E92);
-  white-space: nowrap;
-  flex-shrink: 0;
-  width: 40px;
-  padding-top: 4px;
-  opacity: 0.5;
-}
-.chronicle-entry__text {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-secondary, #F5F3EC);
-  flex: 1;
-  padding-top: 2px;
-}
-.chronicle-entry--starred .chronicle-entry__text { color: var(--gold, #C9AD6B); }
-.chronicle-entry__star {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-dim, #A39E92);
-  font-size: 15px;
-  min-height: 44px;
-  min-width: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  border-radius: 50%;
-  transition: color 0.15s;
-}
-.chronicle-entry__star:hover { color: var(--gold, #C9AD6B); }
-.chronicle-entry--starred .chronicle-entry__star { color: var(--gold, #C9AD6B); }
-
-/* ══════════════════════════════════════════════════════════
-   THE CASTING TABLE — tactile objects for examination
-   ══════════════════════════════════════════════════════════ */
-
-.casting-room {
-  padding: 88px 36px 32px;
-  overflow-y: auto;
-  flex: 1;
-}
-.casting-room__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim, #A39E92);
-  margin-bottom: 24px;
-  opacity: 0.7;
-}
-
-/* Runes scattered on the table — organic, not a grid */
-.rune-scatter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-/* Each rune is a carved object */
-.rune-stone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 160px;
-  padding: 20px 14px 16px;
-  cursor: pointer;
-  border-radius: 8px;
-  border: 1px solid rgba(139, 119, 90, 0.1);
-  background: rgba(26, 24, 20, 0.4);
-  transition: background 0.15s, border-color 0.2s, transform 0.15s;
-  position: relative;
-}
-.rune-stone:hover {
-  background: rgba(201, 173, 107, 0.04);
-  border-color: rgba(201, 173, 107, 0.2);
-  transform: translateY(-2px);
-}
-.rune-stone--expanded {
-  background: rgba(201, 173, 107, 0.04);
-  border-color: rgba(201, 173, 107, 0.15);
-}
-.rune-stone__stave {
-  font-size: 44px;
-  line-height: 1;
-  margin-bottom: 12px;
-  color: var(--gold, #C9AD6B);
-  text-shadow: 0 0 16px rgba(201, 173, 107, 0.12);
-  transition: text-shadow 0.2s;
-}
-.rune-stone:hover .rune-stone__stave {
-  text-shadow: 0 0 20px rgba(201, 173, 107, 0.2);
-}
-.rune-stone__name {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary, #F5F3EC);
-  margin-bottom: 4px;
-  letter-spacing: 0.02em;
-}
-.rune-stone__short {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-muted, #C2BDB0);
-  line-height: 1.4;
-  opacity: 0.8;
-}
-.rune-stone__long {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  color: var(--text-dim, #A39E92);
-  margin-top: 10px;
-  line-height: 1.45;
-  display: none;
-  padding-top: 10px;
-  text-align: left;
-}
-.rune-stone--expanded .rune-stone__long { display: block; }
-
-/* ══════════════════════════════════════════════════════════
-   THE ARCHIVES — descending through truth
-   ══════════════════════════════════════════════════════════ */
-
-.archives-room {
-  padding: 88px 36px 32px;
-  overflow-y: auto;
-  flex: 1;
-  max-width: 760px;
-}
-.archives-room__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim, #A39E92);
-  margin-bottom: 24px;
-  opacity: 0.7;
-}
-.archives-intro {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--text-muted, #C2BDB0);
-  margin-bottom: 28px;
-  line-height: 1.6;
-  opacity: 0.7;
-}
-
-/* Evidence levels — unfolding downward, each deeper */
-.evidence-level {
-  margin-bottom: 20px;
-  position: relative;
-  padding-left: 20px;
-}
-.evidence-level::before {
-  content: '';
-  position: absolute;
-  left: 4px; top: 24px; bottom: -20px;
-  width: 1px;
-  background: rgba(139, 119, 90, 0.1);
-}
-.evidence-level:last-child::before { display: none; }
-.evidence-level__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--teal, #5B8A72);
-  margin-bottom: 10px;
-  position: relative;
-}
-.evidence-level__heading::before {
-  content: '';
-  position: absolute;
-  left: -20px; top: 5px;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--teal, #5B8A72);
-  opacity: 0.4;
-}
-.evidence-level:nth-child(1) .evidence-level__heading::before { opacity: 0.7; }
-.evidence-level:nth-child(4) .evidence-level__heading { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
-.evidence-level:nth-child(5) .evidence-level__heading { font-family: 'JetBrains Mono', monospace; font-size: 9px; opacity: 0.6; }
-.evidence-level__content {
-  background: rgba(26, 24, 20, 0.3);
-  border: 1px solid rgba(139, 119, 90, 0.08);
-  border-radius: 4px;
-  padding: 16px;
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text-secondary, #F5F3EC);
-}
-.evidence-level:nth-child(4) .evidence-level__content {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  background: rgba(26, 24, 20, 0.5);
-}
-.evidence-level:nth-child(5) .evidence-level__content {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  background: rgba(26, 24, 20, 0.6);
-  color: var(--text-dim, #A39E92);
-}
-.evidence-level__content pre {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--text-dim, #A39E92);
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin-top: 10px;
-  line-height: 1.5;
-}
 
 /* ══════════════════════════════════════════════════════════
    THE HALL — a keepsake wall of what you have kept
@@ -1732,24 +1151,17 @@ body {
 
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .workshop { grid-template-columns: 1fr; }
-  .workshop__context {
-    border-left: none;
-    border-top: 1px solid rgba(139, 119, 90, 0.1);
-    max-height: 40vh;
-  }
-  .workshop__story-header, .workshop__body, .workshop__footer {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-  .map-room, .folks-room, .vault-room, .chronicle-room,
-  .casting-room, .archives-room, .hall-room, .settings-room {
+
+
+
+  .map-room, .folks-room, .vault-room,
+  .hall-room, .settings-room {
     padding-left: 24px;
     padding-right: 24px;
   }
   .room-sign__title { font-size: 20px; }
   .room-sign { top: 14px; }
-  .workshop__story-header { padding-top: 68px; }
+
   .folio { right: 12px; top: 84px; bottom: 84px; }
 }
 
@@ -1760,19 +1172,14 @@ body {
   .room-sign__subtitle { font-size: 11px; }
   .mood-note { left: 14px; top: 84px; font-size: 11px; }
   .lantern { right: 14px; bottom: 12px; }
-  .workshop__story-header {
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-    padding: 66px 20px 12px;
-  }
-  .workshop__body { padding: 16px 20px; }
-  .workshop__footer { padding: 12px 20px; }
-  .map-room, .folks-room, .vault-room, .chronicle-room,
-  .casting-room, .archives-room, .hall-room, .settings-room {
+
+
+
+  .map-room, .folks-room, .vault-room,
+  .hall-room, .settings-room {
     padding: 66px 20px 24px;
   }
-  .rune-stone { width: 130px; }
+
   .folk-token { width: 120px; }
   .folk-token__portrait { width: 48px; height: 48px; font-size: 18px; }
   .folio {
@@ -1867,7 +1274,7 @@ body {
   margin: 0 0 26px;
   transform: rotate(-0.4deg);
 }
-.workshop__content .room-ambience { margin: 0 0 16px; }
+
 
 /* The folio reads as parchment, not plastic */
 .folio__log {
@@ -1923,11 +1330,11 @@ body {
    ══════════════════════════════════════════════════════════ */
 
 /* Rooms span the full screen; their content stays a readable column */
-.chronicle-room, .archives-room, .hall-room, .map-room, .vault-room, .casting-room {
+.hall-room, .map-room, .vault-room {
   max-width: none;
 }
-.chronicle-room > *, .archives-room > *, .hall-room > *,
-.map-room > *, .vault-room > *, .casting-room > * {
+.hall-room > *,
+.map-room > *, .vault-room > * {
   max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
@@ -1936,8 +1343,6 @@ body {
 /* Centered quiet states, wherever they land */
 .loading, .empty { max-width: 640px; margin-left: auto; margin-right: auto; }
 
-/* The desk can breathe a little wider too */
-.workshop__content { max-width: 680px; }
 
 /* Settings — the boiler room spreads into a proper grid */
 .settings-room {
@@ -1949,39 +1354,18 @@ body {
   margin-right: auto;
   align-items: start;
 }
-.settings-room > .archives-intro { grid-column: 1 / -1; }
+
 .settings-room > .resident-line,
 .settings-room > .room-ambience { grid-column: 1 / -1; }
 .settings-card { margin: 0; }
 
-/* The Archives — readable at every depth, raw truth contained */
-.evidence-level:nth-child(4) .evidence-level__heading,
-.evidence-level:nth-child(5) .evidence-level__heading {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  opacity: 1;
-}
-.evidence-level:nth-child(4) .evidence-level__content,
-.evidence-level:nth-child(5) .evidence-level__content {
-  font-size: 12.5px;
-  color: var(--text-secondary, #F5F3EC);
-}
-.evidence-level__content pre {
-  font-size: 12px;
-  max-height: 340px;
-  overflow-y: auto;
-}
+
+
 
 /* The Hall — keepsakes fill their shelves */
 .hall-keepsake { flex: 1 1 240px; max-width: 460px; }
 
 /* The Casting Table and The Folks reach for the edges too */
-.rune-stone {
-  flex: 1 1 150px;
-  width: auto;
-  max-width: 190px;
-  min-width: 130px;
-}
 .folk-token {
   flex: 1 1 110px;
   width: auto;
@@ -3052,61 +2436,18 @@ body {
    what the house remembers, and the quick options at the
    mantel. Same bones as every room: plain English, honest
    data, ≥44px targets, no motion of its own. */
-.foyer {
-  padding: 6px 0 0;
-  /* Same centered readable column as every other room; keeps the
-     walk rail clear of the cards on desktop. */
-  max-width: min(680px, calc(100vw - 32px));
-  margin: 0 auto;
-  width: 100%;
-}
-.foyer .archives-intro { margin-bottom: 14px; }
-.foyer-h2 {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--gold, #C9AD6B);
-  margin: 20px 0 10px;
-}
-.foyer .foyer-h2:first-of-type { margin-top: 4px; }
-.foyer-holder { min-height: 44px; }
 
-.project-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 16px;
-  border-radius: 12px 6px 10px 8px;
-  border: 1px solid rgba(201, 173, 107, 0.22);
-  background: linear-gradient(180deg, rgba(42, 35, 26, 0.85) 0%, rgba(31, 28, 22, 0.85) 100%);
-}
-.project-card__title {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 17px;
-  font-weight: 600;
-  color: #F5F3EC;
-}
-.project-card__meta {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  color: var(--text-dim, #A39E92);
-}
-.project-card--table { border-color: rgba(91, 138, 114, 0.5); }
-.project-card__enter { align-self: flex-start; }
-.project-card__pantry-note {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-dim, #A39E92);
-  margin: 0;
-}
-.foyer-pantry__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
-  gap: 10px;
-}
+
+
+
+
+
+
+
+
+
+
+
 /* Begin a new world — the served UI's twin of `norns chat` */
 .world-begin {
   display: grid;
@@ -3118,86 +2459,25 @@ body {
   border: 1px solid rgba(201, 173, 107, 0.22);
   background: linear-gradient(180deg, rgba(42, 35, 26, 0.85) 0%, rgba(31, 28, 22, 0.85) 100%);
 }
-.world-begin__field { display: flex; flex-direction: column; gap: 4px; }
-.world-begin__label {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-body, #E8E5DF);
-}
-.world-begin__input {
-  min-height: 44px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(201, 173, 107, 0.35);
-  background: rgba(20, 18, 15, 0.9);
-  color: var(--text-body, #E8E5DF);
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 15px;
-}
-.world-begin__input::placeholder { color: var(--text-dim, #A39E92); }
-.world-begin__input:focus-visible {
-  outline: 2px solid var(--ring, var(--gold, #C9AD6B));
-  outline-offset: 1px;
-}
-.world-begin__hint {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-dim, #A39E92);
-}
-.world-begin__submit {
-  justify-self: start;
-  align-self: end;
-  min-height: 44px;
-}
-.world-begin__status {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--text-body, #E8E5DF);
-}
-.world-begin__status:empty { display: none; }
-.project-card__table { align-self: flex-start; min-height: 44px; }
-.foyer-memories__row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
-  gap: 10px;
-}
-.foyer-mem {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(139, 119, 90, 0.18);
-  background: rgba(31, 28, 22, 0.55);
-}
-.foyer-mem__title {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: var(--teal, #5B8A72);
-  margin: 0 0 6px;
-}
-.foyer-mem__line {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-body, #E8E5DF);
-  margin: 3px 0;
-}
-.foyer-mem__empty {
-  font-family: 'Spectral', Georgia, serif;
-  font-style: italic;
-  font-size: 12px;
-  color: var(--text-dim, #A39E92);
-  margin: 2px 0;
-}
-.foyer-options { margin: 8px 0 14px; }
-.foyer-options .settings-row__options { flex-wrap: wrap; gap: 8px; }
-.foyer-options .settings-row { align-items: flex-start; }
-.foyer-options .settings-row__btn { margin-top: 2px; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* The walk's shoulder-tap: one press and Ratatoskr walks you */
 .walk-rail__go {

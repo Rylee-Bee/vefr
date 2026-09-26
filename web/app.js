@@ -2953,59 +2953,85 @@
 
   screens.runes = (function () {
     var el_screen;
+    var POSITIONS = { what_was: 'What was', what_is: 'What is', what_asks: 'What it asks of you' };
     function init() {
       el_screen = h('div', { className: 'screen', id: 'screen-runes' });
       main.appendChild(el_screen);
     }
-    function enter() {
-      el_screen.innerHTML = '<div class="casting-room" id="casting-content"></div>';
-      var container = el_screen.querySelector('#casting-content');
-      container.appendChild(loadingState('The runes are settling\u2026'));
-      API.runes()
+    function stone(rune, big) {
+      var st = h('button', { className: 'rune-stone' + (big ? ' rune-stone--cast' : ''), type: 'button',
+        'aria-expanded': big ? 'true' : 'false', 'aria-label': rune.name + ': ' + rune.short });
+      st.appendChild(h('span', { className: 'rune-stone__stave', 'aria-hidden': 'true', textContent: rune.stave }));
+      st.appendChild(h('span', { className: 'rune-stone__name', textContent: rune.name }));
+      st.appendChild(h('span', { className: 'rune-stone__short', textContent: rune.short }));
+      if (rune.long) st.appendChild(h('span', { className: 'rune-stone__long', textContent: rune.long }));
+      if (!big) {
+        st.addEventListener('click', function () {
+          var open = st.getAttribute('aria-expanded') !== 'true';
+          st.setAttribute('aria-expanded', String(open));
+        });
+      }
+      return st;
+    }
+    function cast(spread, btn) {
+      btn.disabled = true;
+      spread.innerHTML = '';
+      spread.appendChild(loadingState('The stones are tumbling…'));
+      API.castRune()
         .then(function (data) {
-          container.innerHTML = '';
-          var runes = (data && data.runes) || [];
-          if (!runes.length) {
-            container.appendChild(emptyState(
-              'The casting table is bare.',
-              'The elder futhark awaits.'
-            ));
-            return;
-          }
-          var heading = h('div', { className: 'casting-room__heading', textContent: 'The elder futhark' });
-          container.appendChild(heading);
-          var rl = residentLine('runes');
-          if (rl) container.appendChild(rl);
-          var scatter = h('div', { className: 'rune-scatter' });
-          runes.forEach(function (rune) {
-            var stone = h('div', { className: 'rune-stone', tabindex: '0', role: 'button',
-              'aria-label': rune.name + ': ' + rune.short,
-              'ariaExpanded': 'false' });
-            stone.appendChild(h('div', { className: 'rune-stone__stave', textContent: rune.stave }));
-            stone.appendChild(h('div', { className: 'rune-stone__name', textContent: rune.name }));
-            stone.appendChild(h('div', { className: 'rune-stone__short', textContent: rune.short }));
-            if (rune.long) stone.appendChild(h('div', { className: 'rune-stone__long', textContent: rune.long }));
-            stone.addEventListener('click', function () {
-              var expanded = stone.classList.toggle('rune-stone--expanded');
-              stone.setAttribute('aria-expanded', String(expanded));
-            });
-            stone.addEventListener('keydown', function (e) {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                var expanded = stone.classList.toggle('rune-stone--expanded');
-                stone.setAttribute('aria-expanded', String(expanded));
-              }
-            });
-            scatter.appendChild(stone);
+          spread.innerHTML = '';
+          (data.positions || []).forEach(function (p) {
+            var slot = h('div', { className: 'cast-slot' });
+            slot.appendChild(h('span', { className: 'label', textContent: POSITIONS[p.position] || p.position }));
+            slot.appendChild(stone(p, true));
+            spread.appendChild(slot);
           });
-          container.appendChild(scatter);
+          studioAudio.squeak();
+          ferryNote('three stones, cast at ' + (data.phase || 'this hour') + '. the Rune-Carver nods.');
         })
         .catch(function () {
-          container.innerHTML = '';
-          container.appendChild(emptyState(
-            'Couldn\u2019t reach the casting table.',
-            'The runes might need a moment.'
-          ));
+          spread.innerHTML = '';
+          spread.appendChild(emptyState('The stones would not tumble.', 'Try again in a moment.'));
+        })
+        .finally(function () { btn.disabled = false; btn.textContent = 'Cast again'; });
+    }
+    function enter() {
+      el_screen.innerHTML = '<div class="wrap band casting-room" id="casting-content"></div>';
+      var container = el_screen.querySelector('#casting-content');
+      var rl = residentLine('runes');
+      if (rl) container.appendChild(rl);
+
+      var castCard = h('section', { className: 'carved cast-card', 'aria-labelledby': 'cast-title' });
+      castCard.appendChild(h('span', { className: 'label', textContent: 'Stuck? Ask the stones' }));
+      castCard.appendChild(h('h2', { className: 'section-head__title', id: 'cast-title', textContent: 'Pick three without looking' }));
+      castCard.appendChild(h('p', { className: 'cast-card__hint', textContent: 'What was, what is, and what it asks of you. Not a prophecy: a nudge for the next thing you write.' }));
+      var btn = h('button', { className: 'cta cta--gold', type: 'button', textContent: 'Cast the stones' });
+      var spread = h('div', { className: 'cast-spread', 'aria-live': 'polite' });
+      btn.addEventListener('click', function () { cast(spread, btn); });
+      castCard.appendChild(btn);
+      castCard.appendChild(spread);
+      container.appendChild(castCard);
+
+      var all = h('section', { className: 'rune-all', 'aria-labelledby': 'futhark-title' });
+      all.appendChild(sectionHead('The elder futhark', 'All twenty-four stones', 'futhark-title'));
+      var grid = h('div', { className: 'rune-scatter' });
+      grid.appendChild(loadingState('The runes are settling…'));
+      all.appendChild(grid);
+      container.appendChild(all);
+
+      API.runes()
+        .then(function (data) {
+          grid.innerHTML = '';
+          var runes = (data && data.runes) || [];
+          if (!runes.length) {
+            grid.appendChild(emptyState('The casting table is bare.', 'The elder futhark awaits.'));
+            return;
+          }
+          runes.forEach(function (rune) { grid.appendChild(stone(rune, false)); });
+        })
+        .catch(function () {
+          grid.innerHTML = '';
+          grid.appendChild(emptyState('Couldn’t reach the casting table.', 'The runes might need a moment.'));
         });
     }
     function leave() {}
@@ -3023,7 +3049,7 @@
       main.appendChild(el_screen);
     }
     function enter() {
-      el_screen.innerHTML = '<div class="archives-room" id="archives-content"></div>';
+      el_screen.innerHTML = '<div class="wrap band archives-room" id="archives-content"></div>';
       var container = el_screen.querySelector('#archives-content');
       container.appendChild(loadingState('Descending into the archives\u2026'));
 
@@ -3039,25 +3065,19 @@
         var world = results[0], aspects = results[1], resolved = results[2],
             weave = results[3], trace = results[4], spark = results[5];
 
-        var heading = h('div', { className: 'archives-room__heading', textContent: 'The evidence beneath' });
-        container.appendChild(heading);
         var rl = residentLine('evidence');
         if (rl) container.appendChild(rl);
 
-        var intro = h('div', { className: 'archives-intro',
-          textContent: 'Each layer descends further into truth. Start at the surface. Go as deep as you need.' });
+        var intro = h('p', { className: 'archives-intro',
+          textContent: 'Each step goes further down. Start at the surface; go as deep as you need.' });
         container.appendChild(intro);
 
         addLevel(container, 'What is true', function (box) {
           if (world && world.title) {
-            box.innerHTML = '<p style="font-family:Spectral,serif;font-size:17px;color:var(--gold,#C9AD6B);margin-bottom:8px">'
-              + esc(world.title) + '</p>';
-            if (world.creed) {
-              box.innerHTML += '<p style="font-family:Spectral,serif;font-style:italic;color:var(--text-muted,#C2BDB0)">'
-                + esc(world.creed) + '</p>';
-            }
+            box.innerHTML = '<p class="evidence-title">' + esc(world.title) + '</p>';
+            if (world.creed) box.innerHTML += '<p class="evidence-creed">' + esc(world.creed) + '</p>';
           } else {
-            box.innerHTML = '<p style="color:var(--text-dim,#A39E92)">No world loaded.</p>';
+            box.innerHTML = '<p class="evidence-empty">No world loaded.</p>';
           }
         });
 
@@ -3068,8 +3088,8 @@
           if (world && world.phases) parts.push('Phases: ' + esc(world.phases.join(', ')));
           if (world && world.surface) parts.push('Surface: ' + esc(world.surface));
           box.innerHTML = parts.length
-            ? parts.map(function (p) { return '<p style="margin-bottom:4px">' + p + '</p>'; }).join('')
-            : '<p style="color:var(--text-dim,#A39E92)">No context available.</p>';
+            ? parts.map(function (p) { return '<p>' + p + '</p>'; }).join('')
+            : '<p class="evidence-empty">No context available.</p>';
         });
 
         addLevel(container, 'The evidence', function (box) {
@@ -3084,7 +3104,7 @@
             parts.push('<p><strong>Weave events:</strong> ' + weave.events.length + '</p>');
           }
           box.innerHTML = parts.length ? parts.join('')
-            : '<p style="color:var(--text-dim,#A39E92)">No evidence yet.</p>';
+            : '<p class="evidence-empty">No evidence yet.</p>';
         });
 
         addLevel(container, 'The engine', function (box) {
@@ -3098,14 +3118,21 @@
 
         addLevel(container, 'Raw truth', function (box) {
           var raw = { world: world, aspects: aspects, resolved: resolved, spark: spark };
-          box.innerHTML = '<pre>' + esc(JSON.stringify(raw, null, 2)) + '</pre>';
+          box.innerHTML = '<details class="evidence-raw"><summary>Show the raw truth (JSON)</summary>'
+            + '<pre tabindex="0" aria-label="Raw truth, as JSON">' + esc(JSON.stringify(raw, null, 2)) + '</pre></details>';
         });
       });
     }
 
+    var STEP_NOTES = { 3: 'this step has opinions' };
     function addLevel(container, title, renderFn) {
-      var section = h('div', { className: 'evidence-level' });
-      section.appendChild(h('h3', { className: 'evidence-level__heading', textContent: title }));
+      var depth = container.querySelectorAll('.evidence-level').length + 1;
+      var section = h('section', { className: 'carved evidence-level evidence-level--' + depth });
+      var head = h('div', { className: 'evidence-level__head' });
+      head.appendChild(h('span', { className: 'label', textContent: 'Step ' + depth + (depth === 1 ? ' \u00B7 the surface' : depth === 5 ? ' \u00B7 the bottom' : '') }));
+      head.appendChild(h('h3', { className: 'evidence-level__heading', textContent: title }));
+      if (STEP_NOTES[depth]) head.appendChild(h('span', { className: 'door-note', textContent: STEP_NOTES[depth] }));
+      section.appendChild(head);
       var content = h('div', { className: 'evidence-level__content' });
       renderFn(content);
       section.appendChild(content);
