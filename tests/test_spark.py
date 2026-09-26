@@ -231,3 +231,26 @@ def test_escalate_route_payload_contract():
     choice = schema['properties']['decisions']['items']['properties']['choice']
     assert choice['enum'] == ['LOCAL', 'ESCALATE']
     assert schema['required'] == ['decisions']
+
+
+def test_remote_spark_is_recognised_by_host():
+    from vefr import spark as spark_mod
+    assert spark_mod.is_remote("http://spark.example:8082")
+    assert not spark_mod.is_remote("http://127.0.0.1:8082")
+    assert not spark_mod.is_remote("http://localhost:8082")
+
+
+def test_served_model_reads_the_remote_props():
+    from vefr import spark as spark_mod
+    prof = spark_mod.profile("quality")
+    good = spark_mod.served_model(prof, url="http://spark:8082",
+                                  fetch=lambda u: {"model_path": "/models/" + prof["file"]})
+    assert good[0] and prof["file"] in good[1]
+    wrong = spark_mod.served_model(prof, url="http://spark:8082",
+                                   fetch=lambda u: {"model_path": "/models/other.gguf"})
+    assert not wrong[0] and "other.gguf" in wrong[1]
+
+    def boom(u):
+        raise OSError("down")
+    down = spark_mod.served_model(prof, url="http://spark:8082", fetch=boom)
+    assert not down[0] and "could not read" in down[1]

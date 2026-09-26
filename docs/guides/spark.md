@@ -72,7 +72,7 @@ Spark over HTTP via `VEFR_SPARK_URL`, not by SSH).
 - Project: `homelab-spark` (or whatever the operator named it at
   install time); service `spark`
 - Model: `${SPARK_MODELS_DIR}/Phi-4-mini-instruct-Q4_K_M.gguf`
-  (sha256 verified on copy; the engine host keeps a fallback copy)
+  (sha256 verified on copy; the file lives on the Spark host only)
 - Image: `ghcr.io/ggml-org/llama.cpp:server`, pinned by digest
 - Flags: `-ngl 0 -c 8192 -t 4 --jinja` - CPU-only, 4 threads, 8K
   context, native chat template, `reasoning_effort: low` via env var
@@ -136,8 +136,15 @@ probes found them within one run. **Any future model swap, runtime
 bump, or context change must pass the real Spark smoke/integration
 path below, not merely unit tests.**
 
+`ratatoskr spark status` checks where Spark actually is. When
+`VEFR_SPARK_URL` points at another machine (the appliance setup above),
+it asks the server which GGUF it serves (llama.cpp `/props`, `model_path`)
+and compares it to the profile's pinned file, and the health probe is
+the service's proof of life. On a local Spark it verifies the model file
+(size + sha256) and the `spark` user service directly.
+
 ```sh
-uv run ratatoskr spark status    # model verified? service active? health?
+VEFR_SPARK_URL=<spark url> uv run ratatoskr spark status    # model served? health?
 uv run ratatoskr spark smoke     # 4 functional probes through the live engine
 uv run --group test pytest tests/test_spark.py -q   # the subsystem contract
 ```
