@@ -46,7 +46,7 @@ def test_descriptor_offers_the_library(client):
     d = client.get("/room", headers=H).json()
     assert d["contract"] == "room/0" and d["id"] == "vefr"
     assert d["status"] in {"healthy", "degraded", "unhealthy", "unknown"}
-    assert set(d["offers"]) == {"art", "library"}
+    assert set(d["offers"]) == {"art", "library", "views"}
 
 
 def test_cards_needs_and_actions(client):

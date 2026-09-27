@@ -1034,3 +1034,53 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 .paddle-note__lead { font: inherit; font-size: 1rem; font-weight: 400; margin: 0 0 6px; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ── Ratatoskr's sticker book (achievements for using the studio) ── */
+.sticker-pops { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: flex; flex-direction: column; gap: 10px;
+  max-width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.sticker-pop { pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px;
+  background: #f3e7c9; color: #2b241a; border-radius: 10px; border-bottom: 5px solid #8a6a3f;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35); animation: sticker-slap 520ms cubic-bezier(.2,1.6,.4,1) both; }
+.sticker-pop__art { flex: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); animation: sticker-spin 620ms ease-out both; }
+.sticker-pop__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sticker-pop__kicker { font: 700 0.72rem var(--studio-engraved, serif); letter-spacing: .12em; text-transform: uppercase; color: #8a5a1f; }
+.sticker-pop__text strong { font-size: 1.05rem; }
+.sticker-pop__how { font-size: 0.85rem; opacity: .8; }
+.sticker-pop--leaving { opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s; }
+@keyframes sticker-slap { from { opacity: 0; transform: translateY(24px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes sticker-spin { from { transform: rotate(-25deg) scale(1.6); } 60% { transform: rotate(6deg) scale(.95); } to { transform: rotate(-4deg); } }
+[data-prefs~="motion=off"] .sticker-pop, [data-prefs~="motion=off"] .sticker-pop__art { animation: none; }
+[data-prefs~="motion=off"] .sticker-pop--leaving { transition: none; }
+@media (prefers-reduced-motion: reduce) { .sticker-pop, .sticker-pop__art { animation: none; } }
+
+.sticker-book__count { margin: 4px 0 12px; opacity: .85; }
+.sticker-book__group { font: 700 0.9rem var(--studio-engraved, serif); letter-spacing: .08em; text-transform: uppercase;
+  margin: 18px 0 8px; opacity: .8; }
+.sticker-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.sticker { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 10px 8px 12px;
+  border-radius: 10px; border: 1px dashed color-mix(in srgb, var(--color-ink, #eee) 25%, transparent); }
+.sticker__art { width: 88px; height: 88px; object-fit: contain; filter: grayscale(1); opacity: .35; }
+.sticker--earned { border-style: solid; background: color-mix(in srgb, var(--studio-gold, #c9ad6b) 10%, transparent); }
+.sticker--earned .sticker__art { filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); opacity: 1; transform: rotate(-3deg); }
+.sticker__riddle-art { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+  font: 700 2.4rem var(--studio-engraved, serif); color: #8a7350;
+  background: repeating-linear-gradient(45deg, #efe6d2 0 8px, #e6dbc3 8px 16px); box-shadow: 0 0 0 4px #fff8e7; }
+.sticker--riddle .sticker__how { font-style: italic; }
+.sticker--foil.sticker--earned .sticker__art, .sticker--holo.sticker--earned .sticker__art {
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)) saturate(1.15) brightness(1.05); }
+.sticker--foil.sticker--earned { background: linear-gradient(135deg, color-mix(in srgb, #f0c775 22%, transparent), transparent 60%); }
+.sticker--holo.sticker--earned { background: linear-gradient(135deg, rgba(255,214,245,.18), rgba(201,240,255,.18), rgba(255,242,196,.18)); }
+.sticker__shine { font: 700 .68rem var(--studio-engraved, serif); letter-spacing: .12em; text-transform: uppercase; color: var(--studio-gold, #c9ad6b); }
+.sticker-pop--foil { background: linear-gradient(135deg, #fff3d0, #f3e7c9 60%); }
+.sticker-pop--holo { background: linear-gradient(135deg, #ffe8f7, #e5f6ff 50%, #fff5d8); }
+.sticker__name { font-size: .95rem; }
+.sticker__how, .sticker__when { font-size: .8rem; opacity: .75; }
+.sticker__progress { display: block; width: 80%; height: 6px; border-radius: 3px; overflow: hidden;
+  background: color-mix(in srgb, var(--color-ink, #eee) 15%, transparent); }
+.sticker__progress > span { display: block; height: 100%; background: var(--studio-gold, #c9ad6b); }
+
+.sticker-book { padding: clamp(16px, 3vw, 28px); }
+.sticker-book__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.sticker-book__art { flex: none; width: clamp(96px, 18vw, 170px); height: auto; margin: -8px 0 -4px; }
+@media (max-width: 480px) { .sticker-book__art { width: 88px; } }

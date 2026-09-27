@@ -201,7 +201,7 @@ def room() -> dict:
     t = _updated_at()
     return {"contract": "room/0", "id": "vefr", "name": "VEFR", "icon": "tree",
             "version": _version(), "commit": _commit(), "status": _status(),
-            "offers": ["art", "library"], "updated_at": _iso(t) if t else None}
+            "offers": ["art", "library", "views"], "updated_at": _iso(t) if t else None}
 
 
 @router.get("/room/cards", dependencies=guard, response_model=list[RoomCard])
@@ -243,8 +243,26 @@ def library() -> JSONResponse:
         return JSONResponse({"error": "The library can't be read right now."}, status_code=503)
 
 
+@router.get("/room/views/stickers", dependencies=guard)
+def stickers_view() -> JSONResponse:
+    """VEFR's page for the Worlds sticker album (Play-Nice stickers/0)."""
+    from . import achievements
+    try:
+        return JSONResponse(achievements.room_view())
+    except (OSError, ValueError):
+        return JSONResponse({"error": "The sticker book can't be read right now."}, status_code=503)
+
+
 @router.get("/room/art/{name}.webp", dependencies=guard)
 def art(name: str):
+    if name.startswith("stickers-"):          # a sticker's art, only for ids the book defines
+        from . import achievements
+        sid = name[len("stickers-"):]
+        known = {d["id"] for d in achievements.definitions()}
+        path = app_home() / "web" / "art" / "stickers" / f"{sid}.webp"
+        if sid in known and path.is_file():
+            return FileResponse(path, media_type="image/webp", headers={"Cache-Control": "private, max-age=3600"})
+        return JSONResponse({"error": "No such picture."}, status_code=404)
     rel = ART.get(name)
     path = app_home() / "web" / "art" / rel if rel else None
     if not path or not path.is_file():
