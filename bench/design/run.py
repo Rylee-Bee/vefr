@@ -72,8 +72,8 @@ ENDPOINTS = {
 }
 
 
-def _chat(url, model, key, messages, max_tokens=3500):
-    body = json.dumps({"model": model, "messages": messages, "temperature": 0.2, "max_tokens": max_tokens}).encode()
+def _chat(url, model, key, messages, max_tokens=3500, extra=None):
+    body = json.dumps({"model": model, "messages": messages, "temperature": 0.2, "max_tokens": max_tokens, **(extra or {})}).encode()
     h = {"Content-Type": "application/json"}
     if key:
         h["Authorization"] = "Bearer " + key

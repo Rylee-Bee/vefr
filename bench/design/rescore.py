@@ -25,8 +25,10 @@ def rescore(run_dir):
         if "brief" not in rec:
             continue
         b = BY_ID[rec["brief"]]
-        base = rec_path.with_suffix("")
-        pages = [base.with_suffix(".html")] + sorted(base.parent.glob(base.name + ".fix*.html"))
+        # "art-set.r1.json" -> "art-set.r1": Path.with_suffix would treat ".r1" as the
+        # extension and look for "art-set.html", silently keeping the old verdict.
+        stem = rec_path.name[:-len(".json")]
+        pages = [rec_path.parent / (stem + ".html")] + sorted(rec_path.parent.glob(stem + ".fix*.html"))
         best = None
         for hp in [p for p in pages if p.exists()]:
             res = check(hp, hp.with_suffix(".rescore.png"))
@@ -36,6 +38,8 @@ def rescore(run_dir):
             if best is None or score > best[0]:
                 best = (score, {k: bool(res.get(k)) for k in KEYS})
         new = dict(rec, was_score=rec.get("score"))
+        if best is None and "error" not in rec:
+            new["rescore_note"] = "no saved page found"
         if best:
             new.update(best[1], score=best[0])
             new["pass"] = new["renders"] and new["required_parts"] and new["score"] >= 5
