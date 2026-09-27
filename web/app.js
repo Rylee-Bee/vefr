@@ -744,7 +744,7 @@
   var REAL_NAMES = {
     workshop: 'writing and narrative design', map: 'level design', characters: 'character design',
     items: 'the item database', journal: 'version history (the log)', runes: 'procedural generation',
-    evidence: 'the source of truth (the spec)', hall: 'builds and releases', settings: 'settings and operations',
+    evidence: 'the story bible (the source of truth)', hall: 'the archive of everything kept', settings: 'settings and operations',
     library: 'documentation', spark: 'a local AI model'
   };
   var ROOM_BANNERS = {

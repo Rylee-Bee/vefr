@@ -72,7 +72,7 @@ def test_validator_names_each_broken_book(tmp_path, name, text, expect):
 
 def test_studio_shelf_is_the_handbook_and_validates():
     shelf = load_shelf(studio_shelf_dir())
-    assert len(shelf) == 15  # 8 handbook + 7 "How VEFR works"
+    assert len(shelf) == 23  # 8 handbook + 15 "How VEFR works"
     assert shelf[0]["title"] == "The Seven Stages"
     assert validate_books(shelf) == []
     assert all(b["found"] == "shelf" and len(b["pages"]) >= 2 for b in shelf)
@@ -106,7 +106,7 @@ def test_api_library_serves_world_and_studio_shelves(tmp_path, monkeypatch):
     r = TestClient(app).get("/api/library")
     assert r.status_code == 200
     data = r.json()
-    assert len(data["books"]) == len(BOOKS) and len(data["studio"]) == 15
+    assert len(data["books"]) == len(BOOKS) and len(data["studio"]) == 23
     note = next(b for b in data["books"] if b["id"] == "a-map-note")
     assert note["found_words"] == "lies on the map at 1, 1" and note["pages"] == ["It lay on the ground."]
     assert TestClient(app).get("/api/library", params={"world": "../x"}).status_code == 400
