@@ -182,7 +182,8 @@ def test_bold_names_in_books_are_real_buttons_and_screens():
     exist in the studio; emphasis and definitions end in '.' or ':' (web/library/README.md).
     Caught by hand before this test: 'Check the world' vs the real 'Check the map'."""
     import re
-    app = (STUDIO_SHELF.parents[0] / "app.js").read_text().lower()
+    web = STUDIO_SHELF.parents[0]
+    app = "\n".join(f.read_text() for f in [web / "app.js", *sorted((web / "js" / "rooms").glob("*.js"))]).lower()
     missing = []
     for f in sorted(STUDIO_SHELF.glob("[0-9]*.md")):
         for name in re.findall(r"\*\*([^*]+)\*\*", f.read_text()):
