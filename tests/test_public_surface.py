@@ -80,6 +80,7 @@ def test_guard_runs_clean_on_current_tree():
     ("homelab-hostname", r"<private-host>"),
     ("homelab-machine", r"ssh bazzite"),
     ("private-path", r"~/projects/vefr"),
+    ("private-path", r"~/llama-server/models"),  # plain /home slipped past (2026-09-27)
     ("private-ssh-user", r"ssh rylee@host"),
     ("private-gitea-owner", r"http://gitea.example/rylee/sample-pack"),
     ("private-email", r"owner@example.invalid"),

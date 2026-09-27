@@ -68,7 +68,7 @@ FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
      )),
     # Private filesystem paths.
     ("private-path",
-     re.compile(r"(/(?:var|home)~|/mnt/c/Users/ryleeb/(?:projects|Desktop|Documents))", re.I)),
+     re.compile(r"((?:/var)?~\b|/mnt/c/Users/ryleeb/(?:projects|Desktop|Documents))", re.I)),
     # Real operator SSH user / Gitea owner. `rylee/` as the
     # Gitea path prefix in URL examples is allowed only when the
     # host is on the allowlist (handled via FORBIDDEN line-scope).
@@ -100,7 +100,6 @@ FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
 SKIP_PATH_PREFIXES: tuple[str, ...] = (
     "data/",          # runtime state, gitignored in spirit
     "artifacts/",     # local eval artifacts
-    "bench/",         # internal benchmark research, not public engine surface
     ".git/",
 )
 
