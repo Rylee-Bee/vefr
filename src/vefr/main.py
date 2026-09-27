@@ -3,6 +3,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from .replies import GotItReply, LibraryReply, TeachReply, TeachState
+
 import json
 import os
 import re
@@ -584,7 +586,7 @@ class TeachTerm(BaseModel):
     term: str
 
 
-@app.post("/api/teach/recognize")
+@app.post("/api/teach/recognize", response_model=TeachReply)
 def teach_recognize(turn: TeachTurn):
     """After a builder reply: did the author just use a design idea Fróði can name?
 
@@ -597,7 +599,7 @@ def teach_recognize(turn: TeachTurn):
     return teach.recognize(turn.message, load_glossary())
 
 
-@app.post("/api/teach/got-it")
+@app.post("/api/teach/got-it", response_model=GotItReply)
 def teach_got_it(req: TeachTerm):
     """The author tapped Got it: two of those and the idea counts as familiar."""
     from . import teach
@@ -609,7 +611,7 @@ def teach_got_it(req: TeachTerm):
     return {"term": req.term, "stage": teach.stage(rec), "got_it": rec["got_it"]}
 
 
-@app.get("/api/teach")
+@app.get("/api/teach", response_model=TeachState)
 def teach_state():
     """Every idea Fróði teaches, with where this person is with each."""
     from . import teach
@@ -755,7 +757,7 @@ def spark_escalate():
         return {"ok": False, "error": f"{exc}", "decisions": []}
 
 
-@app.get("/api/library")
+@app.get("/api/library", response_model=LibraryReply)
 def library_shelves(world: str | None = None):
     """The Library: the current world's books and the studio's own shelf.
 
