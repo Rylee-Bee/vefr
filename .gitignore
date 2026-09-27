@@ -88,3 +88,11 @@ node_modules/
 # teach while building: what this person has learned (src/vefr/teach.py)
 /data/learning.json
 /data/.learning.json.*.tmp
+
+# raw benchmark output (pages, screenshots, per-run JSON): keep locally, commit summaries to bench/results/
+/bench/runs/design/
+/bench/runs/senses/
+/bench/runs/story/
+/bench/runs/ea/
+/bench/runs/pictures/
+/bench/runs/transcode-*/
