@@ -68,7 +68,7 @@ FORBIDDEN: list[tuple[str, re.Pattern[str]]] = [
      )),
     # Private filesystem paths.
     ("private-path",
-     re.compile(r"((?:/var)?~\b|/mnt/c/Users/ryleeb/(?:projects|Desktop|Documents))", re.I)),
+     re.compile(r"((?:/var)?/home/r[y]lee\b|/mnt/c/Users/ryleeb/(?:projects|Desktop|Documents))", re.I)),
     # Real operator SSH user / Gitea owner. `rylee/` as the
     # Gitea path prefix in URL examples is allowed only when the
     # host is on the allowlist (handled via FORBIDDEN line-scope).

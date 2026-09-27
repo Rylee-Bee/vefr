@@ -992,7 +992,7 @@ def cmd_deploy(args) -> int:
     # Probe the deploy via an SSH-tunnelled localhost when the
     # operator didn't pass --url. This avoids depending on the dev
     # box's local DNS or /etc/hosts for the deploy host (the
-    # "bazzite alias resolved to <lan-host>" failure mode).
+    # "bazzite alias resolved to a stale LAN address" failure mode).
     import os as _os
     if url == DEFAULT_URL:
         local_port = '8820'
