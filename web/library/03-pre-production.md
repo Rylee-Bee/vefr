@@ -13,7 +13,7 @@ Ugly is fine. Boring is the only failure.
 
 Pick the look: a palette and a few sample frames. Choose how it's built.
 
-End by planning a **vertical slice**: one small piece of the game at
+End by planning a *vertical slice*: one small piece of the game at
 final quality, with art, sound and words, all of it. It proves the full
 game is possible.
 
