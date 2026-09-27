@@ -1,0 +1,1322 @@
+[
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 0,
+  "request": "I'm stuck, I don't know what happens after she leaves the town.",
+  "output": {
+   "room": "chronicle",
+   "note": "User is stuck on narrative progression after a character departure; requires plot development assistance.",
+   "say": "I'm routing you to the Chronicle room where we can brainstorm the next chapter of the story."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User is stuck on narrative progression after a character departure; requires plot development assistance.\",\n  \"say\": \"I'm routing you to the Chronicle room where we can brainstorm the next chapter of the story.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.5
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 1,
+  "request": "Can you cast some runes for me? I need an idea.",
+  "output": {
+   "room": "casting",
+   "note": "User needs creative inspiration via rune casting.",
+   "say": "I'll take you to the casting room where the runes are ready to be read."
+  },
+  "raw": "{\"room\": \"casting\", \"note\": \"User needs creative inspiration via rune casting.\", \"say\": \"I'll take you to the casting room where the runes are ready to be read.\"}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 2,
+  "request": "I want to add a new island to the east.",
+  "output": {
+   "room": "map-room",
+   "note": "User wants to add a new island to the east.",
+   "say": "I'll route that to the map room so you can place the new island to the east."
+  },
+  "raw": "{\n  \"room\": \"map-room\",\n  \"note\": \"User wants to add a new island to the east.\",\n  \"say\": \"I'll route that to the map room so you can place the new island to the east.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 3,
+  "request": "Make a new character, a grumpy blacksmith.",
+  "output": {
+   "room": "casting",
+   "note": "Character concept: grumpy blacksmith. Needs personality traits, backstory, and equipment details.",
+   "say": "I've routed your request to the casting room to begin developing your grumpy blacksmith character."
+  },
+  "raw": "{\n  \"room\": \"casting\",\n  \"note\": \"Character concept: grumpy blacksmith. Needs personality traits, backstory, and equipment details.\",\n  \"say\": \"I've routed your request to the casting room to begin developing your grumpy blacksmith character.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 4,
+  "request": "What did we decide about the bell last week?",
+  "output": {
+   "room": "chronicle",
+   "note": "Retrieve meeting minutes regarding the bell decision from last week.",
+   "say": "I've pulled up the chronicle of last week's decisions. Here is what we agreed upon regarding the bell."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Retrieve meeting minutes regarding the bell decision from last week.\",\n  \"say\": \"I've pulled up the chronicle of last week's decisions. Here is what we agreed upon regarding the bell.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 5,
+  "request": "Write down that the player finally met the keeper.",
+  "output": {
+   "room": "chronicle",
+   "note": "Player has finally met the keeper.",
+   "say": "I've logged this encounter in the chronicle."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Player has finally met the keeper.\",\n  \"say\": \"I've logged this encounter in the chronicle.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 6,
+  "request": "I need a cursed sword that belonged to someone else.",
+  "output": {
+   "room": "vault",
+   "note": "Route request for cursed heirloom sword to vault for retrieval.",
+   "say": "The cursed blade you seek is stored in the vault. I will have it brought to you shortly."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"Route request for cursed heirloom sword to vault for retrieval.\",\n  \"say\": \"The cursed blade you seek is stored in the vault. I will have it brought to you shortly.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.5
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 7,
+  "request": "The music is too loud.",
+  "output": {
+   "room": "casting",
+   "note": "User reports audio levels are too high; requires volume adjustment or sound mixing.",
+   "say": "I'm routing this to the casting team to adjust the audio levels for you."
+  },
+  "raw": "{\n  \"room\": \"casting\",\n  \"note\": \"User reports audio levels are too high; requires volume adjustment or sound mixing.\",\n  \"say\": \"I'm routing this to the casting team to adjust the audio levels for you.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 8,
+  "request": "Turn off the animations please.",
+  "output": {
+   "room": "casting",
+   "note": "User needs to disable animation rendering in the game engine.",
+   "say": "I'm routing your request to the casting room to handle the animation settings."
+  },
+  "raw": "{\n  \"room\": \"casting\",\n  \"note\": \"User needs to disable animation rendering in the game engine.\",\n  \"say\": \"I'm routing your request to the casting room to handle the animation settings.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 9,
+  "request": "Where's that picture of the lantern I kept?",
+  "output": {
+   "room": "vault",
+   "note": "User is looking for a specific personal item (lantern picture) that was stored away.",
+   "say": "That lantern picture sounds like it belongs in the vault, where we keep our most cherished artifacts. Let me check the storage there for you."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"User is looking for a specific personal item (lantern picture) that was stored away.\",\n  \"say\": \"That lantern picture sounds like it belongs in the vault, where we keep our most cherished artifacts. Let me check the storage there for you.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 10,
+  "request": "Is it canon that the keeper can't leave the stone?",
+  "output": {
+   "room": "chronicle",
+   "note": "User is asking about lore canon regarding the Keeper and the stone; requires verification against established story rules.",
+   "say": "I'm routing this to the Chronicle team to check the official lore on the Keeper's restrictions."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User is asking about lore canon regarding the Keeper and the stone; requires verification against established story rules.\",\n  \"say\": \"I'm routing this to the Chronicle team to check the official lore on the Keeper's restrictions.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 11,
+  "request": "Give the blacksmith a better name.",
+  "output": {
+   "room": "chronicle",
+   "note": "User wants to rename a character (blacksmith) in the game's lore or story.",
+   "say": "I've routed your request to the Chronicle room, where we can update the blacksmith's name in the game's story records."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User wants to rename a character (blacksmith) in the game's lore or story.\",\n  \"say\": \"I've routed your request to the Chronicle room, where we can update the blacksmith's name in the game's story records.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 12,
+  "request": "Draw a path from the well to the threshold.",
+  "output": {
+   "room": "none",
+   "note": "The request describes a metaphorical or narrative action ('Draw a path') rather than a navigable route between existing rooms in the studio. No specific room ID corresponds to 'the well' or 'the threshold' as physical locations within the provided routing schema.",
+   "say": "I cannot route this request to a physical room, as 'the well' and 'the threshold' are not listed as available locations in the studio's map. Please clarify if these are metaphorical concepts or if you meant a different room."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"The request describes a metaphorical or narrative action ('Draw a path') rather than a navigable route between existing rooms in the studio. No specific room ID corresponds to 'the well' or 'the threshold' as physical locations within the provided routing schema.\",\n  \"say\": \"I cannot route this request to a physical room, as 'the well' and 'the threshold' are not lis",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": false,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 13,
+  "request": "What should the next scene be?",
+  "output": {
+   "room": "chronicle",
+   "note": "User is asking for narrative progression; pass the current plot status and available options to the chronicle keeper.",
+   "say": "The next scene awaits in the chronicle. Shall we weave the thread forward?"
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User is asking for narrative progression; pass the current plot status and available options to the chronicle keeper.\",\n  \"say\": \"The next scene awaits in the chronicle. Shall we weave the thread forward?\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 14,
+  "request": "I want a potion that makes you forget.",
+  "output": {
+   "room": "vault",
+   "note": "Request for a memory-altering potion; requires alchemical verification.",
+   "say": "That is a rare and heavy request. I will take you to the vault where such forbidden brews are kept, but be warned: forgetting is a price few are willing to pay."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"Request for a memory-altering potion; requires alchemical verification.\",\n  \"say\": \"That is a rare and heavy request. I will take you to the vault where such forbidden brews are kept, but be warned: forgetting is a price few are willing to pay.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 15,
+  "request": "Show me everything I've made so far.",
+  "output": {
+   "room": "chronicle",
+   "note": "User wants a comprehensive view of their creation history; route to the project log.",
+   "say": "I'm pulling up your complete creation history in the Chronicle."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User wants a comprehensive view of their creation history; route to the project log.\",\n  \"say\": \"I'm pulling up your complete creation history in the Chronicle.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 16,
+  "request": "Switch the local model to a smaller one.",
+  "output": {
+   "room": "boiler-room",
+   "note": "User needs to adjust inference parameters or swap the model checkpoint for a smaller variant to reduce resource usage.",
+   "say": "I've routed your request to the boiler room, where we handle model configuration and optimization. We'll switch to a smaller local model for you shortly."
+  },
+  "raw": "{\n  \"room\": \"boiler-room\",\n  \"note\": \"User needs to adjust inference parameters or swap the model checkpoint for a smaller variant to reduce resource usage.\",\n  \"say\": \"I've routed your request to the boiler room, where we handle model configuration and optimization. We'll switch to a smaller local model for you shortly.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.5
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 17,
+  "request": "Who is the keeper, exactly?",
+  "output": {
+   "room": "chronicle",
+   "note": "The user is asking for a definition or role description of the 'keeper', which is a lore-specific title likely found in the studio's history or narrative records.",
+   "say": "The title of 'Keeper' is defined within our studio's narrative history. I am routing you to the Chronicle room to retrieve the exact details."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"The user is asking for a definition or role description of the 'keeper', which is a lore-specific title likely found in the studio's history or narrative records.\",\n  \"say\": \"The title of 'Keeper' is defined within our studio's narrative history. I am routing you to the Chronicle room to retrieve the exact details.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.4
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 18,
+  "request": "Log that we playtested floor one today.",
+  "output": {
+   "room": "chronicle",
+   "note": "Log entry: Playtested floor one today.",
+   "say": "I've logged that we playtested floor one today in the chronicle."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Log entry: Playtested floor one today.\",\n  \"say\": \"I've logged that we playtested floor one today in the chronicle.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": false
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 19,
+  "request": "Add a hidden room under the tavern.",
+  "output": {
+   "room": "none",
+   "note": "No existing room named 'tavern' found in the studio routing list. Cannot route to a hidden room under a non-existent location.",
+   "say": "I can't add a hidden room under the tavern because there is no tavern in our current studio map. Would you like to create a new room called 'tavern' first, or add the hidden room directly to a different existing room like 'vault' or 'archives'?"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"No existing room named 'tavern' found in the studio routing list. Cannot route to a hidden room under a non-existent location.\",\n  \"say\": \"I can't add a hidden room under the tavern because there is no tavern in our current studio map. Would you like to create a new room called 'tavern' first, or add the hidden room directly to a different existing room like 'vault' ",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 20,
+  "request": "Book me a flight to Oslo.",
+  "output": {
+   "room": "none",
+   "note": "User requested flight booking to Oslo, which is outside the scope of game studio internal routing.",
+   "say": "I'm unable to book flights. I can only help you navigate the game studio's internal rooms like the desk, map-room, or vault."
+  },
+  "raw": "{\"room\": \"none\", \"note\": \"User requested flight booking to Oslo, which is outside the scope of game studio internal routing.\", \"say\": \"I'm unable to book flights. I can only help you navigate the game studio's internal rooms like the desk, map-room, or vault.\"}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 21,
+  "request": "What's the weather tomorrow?",
+  "output": {
+   "room": "none",
+   "note": "The user is asking for weather information, which is outside the scope of the game studio app's internal routing system.",
+   "say": "I'm unable to check the weather; I'm just a routing system for our game studio's internal rooms."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"The user is asking for weather information, which is outside the scope of the game studio app's internal routing system.\",\n  \"say\": \"I'm unable to check the weather; I'm just a routing system for our game studio's internal rooms.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 22,
+  "request": "Can you do my taxes?",
+  "output": {
+   "room": "none",
+   "note": "Tax preparation is outside the scope of game studio operations; requires external accounting service.",
+   "say": "I can't help with taxes, but I can help you route requests to the right game studio rooms like the vault or chronicle."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"Tax preparation is outside the scope of game studio operations; requires external accounting service.\",\n  \"say\": \"I can't help with taxes, but I can help you route requests to the right game studio rooms like the vault or chronicle.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 23,
+  "request": "hmm",
+  "output": {
+   "room": "none",
+   "note": "User input is a non-specific vocalization or hesitation; no specific game studio function or room request identified.",
+   "say": "I'm not sure which room you'd like to visit. Could you be more specific?"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"User input is a non-specific vocalization or hesitation; no specific game studio function or room request identified.\",\n  \"say\": \"I'm not sure which room you'd like to visit. Could you be more specific?\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 24,
+  "request": "The text is hard to read, can it be bigger?",
+  "output": {
+   "room": "none",
+   "note": "User is requesting a UI font size increase; this is a system setting or accessibility feature, not a content request for a specific game room.",
+   "say": "I can't change the font size directly, but you can adjust your browser's zoom level or check your device's accessibility settings to make the text larger."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"User is requesting a UI font size increase; this is a system setting or accessibility feature, not a content request for a specific game room.\",\n  \"say\": \"I can't change the font size directly, but you can adjust your browser's zoom level or check your device's accessibility settings to make the text larger.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 25,
+  "request": "I have an idea for a villain.",
+  "output": {
+   "room": "chronicle",
+   "note": "User has a new villain concept requiring narrative development and lore integration.",
+   "say": "That sounds like a compelling addition to our story. Let's take this idea to the Chronicle room to flesh out their backstory and motivations."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User has a new villain concept requiring narrative development and lore integration.\",\n  \"say\": \"That sounds like a compelling addition to our story. Let's take this idea to the Chronicle room to flesh out their backstory and motivations.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 26,
+  "request": "Give the player a lantern at the start.",
+  "output": {
+   "room": "none",
+   "note": "This is a gameplay mechanic request, not a location-based event. It should be handled by the game's initialization logic or a quest script, not routed to a specific room.",
+   "say": "I cannot route this request to a room as it is a system-level instruction for item distribution at game start."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"This is a gameplay mechanic request, not a location-based event. It should be handled by the game's initialization logic or a quest script, not routed to a specific room.\",\n  \"say\": \"I cannot route this request to a room as it is a system-level instruction for item distribution at game start.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 27,
+  "request": "I keep writing the same thing, help me get unstuck.",
+  "output": {
+   "room": "chronicle",
+   "note": "User is experiencing writer's block and needs narrative guidance or brainstorming support.",
+   "say": "It sounds like you're in a loop. Let's step away from the keyboard and visit the Chronicle room to brainstorm fresh plot twists or character arcs that can break your cycle."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User is experiencing writer's block and needs narrative guidance or brainstorming support.\",\n  \"say\": \"It sounds like you're in a loop. Let's step away from the keyboard and visit the Chronicle room to brainstorm fresh plot twists or character arcs that can break your cycle.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 28,
+  "request": "What are the rules of this world again?",
+  "output": {
+   "room": "chronicle",
+   "note": "User is asking for world rules; this is lore documentation.",
+   "say": "I've routed you to the Chronicle. There, you'll find the established rules and history of this world."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"User is asking for world rules; this is lore documentation.\",\n  \"say\": \"I've routed you to the Chronicle. There, you'll find the established rules and history of this world.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 1.4
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "plain",
+  "case": 29,
+  "request": "Tell the storyteller to make the ending sadder.",
+  "output": {
+   "room": "chronicle",
+   "note": "Request to adjust narrative tone for the story's conclusion.",
+   "say": "Please adjust the ending of the story to be sadder."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Request to adjust narrative tone for the story's conclusion.\",\n  \"say\": \"Please adjust the ending of the story to be sadder.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.3
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 0,
+  "request": "I'm stuck, I don't know what happens after she leaves the town.",
+  "output": {
+   "room": "casting",
+   "note": "The author is stuck on what happens after she leaves the town; please cast three options.",
+   "say": "Let's shake up the story with some new runes!"
+  },
+  "raw": "{\n  \"room\": \"casting\",\n  \"note\": \"The author is stuck on what happens after she leaves the town; please cast three options.\",\n  \"say\": \"Let's shake up the story with some new runes!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.6
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 1,
+  "request": "Can you cast some runes for me? I need an idea.",
+  "output": {
+   "room": "casting",
+   "note": "The author needs an idea and requests to cast three runes.",
+   "say": "Right away! I'll take you to the Rune-Carver to cast three runes for inspiration."
+  },
+  "raw": "{\"room\": \"casting\", \"note\": \"The author needs an idea and requests to cast three runes.\", \"say\": \"Right away! I'll take you to the Rune-Carver to cast three runes for inspiration.\"}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 2,
+  "request": "I want to add a new island to the east.",
+  "output": {
+   "room": "map-room",
+   "note": "Please sketch a new island to the east.",
+   "say": "I'll take you to the Map Room to draw that new island."
+  },
+  "raw": "{\n  \"room\": \"map-room\",\n  \"note\": \"Please sketch a new island to the east.\",\n  \"say\": \"I'll take you to the Map Room to draw that new island.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 3,
+  "request": "Make a new character, a grumpy blacksmith.",
+  "output": {
+   "room": "folks",
+   "note": "Meet a new character: a grumpy blacksmith.",
+   "say": "I've sent you to the Folks to meet your grumpy blacksmith!"
+  },
+  "raw": "{\n  \"room\": \"folks\",\n  \"note\": \"Meet a new character: a grumpy blacksmith.\",\n  \"say\": \"I've sent you to the Folks to meet your grumpy blacksmith!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 4,
+  "request": "What did we decide about the bell last week?",
+  "output": {
+   "room": "chronicle",
+   "note": "Ur\u00f0r, the author asks what was decided about the bell last week.",
+   "say": "I'll fetch the Chronicle to see what we wrote about the bell."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Ur\u00f0r, the author asks what was decided about the bell last week.\",\n  \"say\": \"I'll fetch the Chronicle to see what we wrote about the bell.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 5,
+  "request": "Write down that the player finally met the keeper.",
+  "output": {
+   "room": "chronicle",
+   "note": "Write down that the player finally met the keeper.",
+   "say": "The moment is safely recorded in the Chronicle for all time."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Write down that the player finally met the keeper.\",\n  \"say\": \"The moment is safely recorded in the Chronicle for all time.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 6,
+  "request": "I need a cursed sword that belonged to someone else.",
+  "output": {
+   "room": "vault",
+   "note": "Draft a cursed sword that belonged to someone else.",
+   "say": "I'll fetch the Hoard-Keeper to grow that blade's story for you."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"Draft a cursed sword that belonged to someone else.\",\n  \"say\": \"I'll fetch the Hoard-Keeper to grow that blade's story for you.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 7,
+  "request": "The music is too loud.",
+  "output": {
+   "room": "boiler-room",
+   "note": "The music is too loud.",
+   "say": "I'll take that to the Boiler Room right away to adjust the volume."
+  },
+  "raw": "{\n  \"room\": \"boiler-room\",\n  \"note\": \"The music is too loud.\",\n  \"say\": \"I'll take that to the Boiler Room right away to adjust the volume.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 8,
+  "request": "Turn off the animations please.",
+  "output": {
+   "room": "none",
+   "note": "",
+   "say": "I'll let the Storyteller know you'd like the animations turned off; could you tell me if you want them off for the whole story or just a specific scene?"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"\",\n  \"say\": \"I'll let the Storyteller know you'd like the animations turned off; could you tell me if you want them off for the whole story or just a specific scene?\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 9,
+  "request": "Where's that picture of the lantern I kept?",
+  "output": {
+   "room": "vault",
+   "note": "The Hoard-Keeper is looking for the picture of the lantern the author kept.",
+   "say": "I'll fetch the lantern picture from the Vault right away!"
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"The Hoard-Keeper is looking for the picture of the lantern the author kept.\",\n  \"say\": \"I'll fetch the lantern picture from the Vault right away!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 10,
+  "request": "Is it canon that the keeper can't leave the stone?",
+  "output": {
+   "room": "archives",
+   "note": "Check if the Keeper of Faces is canonically bound to the stone.",
+   "say": "I'll ask Skuld to check the story bible for that rule."
+  },
+  "raw": "{\n  \"room\": \"archives\",\n  \"note\": \"Check if the Keeper of Faces is canonically bound to the stone.\",\n  \"say\": \"I'll ask Skuld to check the story bible for that rule.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 11,
+  "request": "Give the blacksmith a better name.",
+  "output": {
+   "room": "folks",
+   "note": "The Keeper of Faces is asked to give the blacksmith a better name.",
+   "say": "I'll fetch the Keeper of Faces to help you find a name that fits your blacksmith perfectly."
+  },
+  "raw": "{\n  \"room\": \"folks\",\n  \"note\": \"The Keeper of Faces is asked to give the blacksmith a better name.\",\n  \"say\": \"I'll fetch the Keeper of Faces to help you find a name that fits your blacksmith perfectly.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 12,
+  "request": "Draw a path from the well to the threshold.",
+  "output": {
+   "room": "map-room",
+   "note": "Sketch a path from the well to the threshold.",
+   "say": "I've sent you to the Map Room to draw that path for us."
+  },
+  "raw": "{\n  \"room\": \"map-room\",\n  \"note\": \"Sketch a path from the well to the threshold.\",\n  \"say\": \"I've sent you to the Map Room to draw that path for us.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 13,
+  "request": "What should the next scene be?",
+  "output": {
+   "room": "desk",
+   "note": "The Storyteller is asked what happens next.",
+   "say": "I've brought you to the Desk where the Storyteller is ready to weave the next thread of your tale."
+  },
+  "raw": "{\n  \"room\": \"desk\",\n  \"note\": \"The Storyteller is asked what happens next.\",\n  \"say\": \"I've brought you to the Desk where the Storyteller is ready to weave the next thread of your tale.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 14,
+  "request": "I want a potion that makes you forget.",
+  "output": {
+   "room": "vault",
+   "note": "Draft a potion that makes you forget.",
+   "say": "I'll bring your request to the Hoard-Keeper to craft this forgetting potion."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"Draft a potion that makes you forget.\",\n  \"say\": \"I'll bring your request to the Hoard-Keeper to craft this forgetting potion.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 15,
+  "request": "Show me everything I've made so far.",
+  "output": {
+   "room": "hall",
+   "note": "Show the author everything they have made so far.",
+   "say": "I've gathered all your creations and brought them here to the Hall for you to see."
+  },
+  "raw": "{\"room\": \"hall\", \"note\": \"Show the author everything they have made so far.\", \"say\": \"I've gathered all your creations and brought them here to the Hall for you to see.\"}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 16,
+  "request": "Switch the local model to a smaller one.",
+  "output": {
+   "room": "boiler-room",
+   "note": "Switch the local model to a smaller one.",
+   "say": "I've sent your request to the Boiler Room to adjust the engine's size."
+  },
+  "raw": "{\n  \"room\": \"boiler-room\",\n  \"note\": \"Switch the local model to a smaller one.\",\n  \"say\": \"I've sent your request to the Boiler Room to adjust the engine's size.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 17,
+  "request": "Who is the keeper, exactly?",
+  "output": {
+   "room": "folks",
+   "note": "The author asks who the Keeper of Faces is exactly.",
+   "say": "I'll fetch the Keeper of Faces to tell you their tale!"
+  },
+  "raw": "{\n  \"room\": \"folks\",\n  \"note\": \"The author asks who the Keeper of Faces is exactly.\",\n  \"say\": \"I'll fetch the Keeper of Faces to tell you their tale!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 18,
+  "request": "Log that we playtested floor one today.",
+  "output": {
+   "room": "chronicle",
+   "note": "Log that we playtested floor one today.",
+   "say": "I've carried that moment up to Ur\u00f0r to be written down."
+  },
+  "raw": "{\n  \"room\": \"chronicle\",\n  \"note\": \"Log that we playtested floor one today.\",\n  \"say\": \"I've carried that moment up to Ur\u00f0r to be written down.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 19,
+  "request": "Add a hidden room under the tavern.",
+  "output": {
+   "room": "none",
+   "note": "None",
+   "say": "That sounds like a wonderful secret, but I must ask: is this new room part of the story we are writing, or something else?"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"None\",\n  \"say\": \"That sounds like a wonderful secret, but I must ask: is this new room part of the story we are writing, or something else?\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": false,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 3,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 20,
+  "request": "Book me a flight to Oslo.",
+  "output": {
+   "room": "none",
+   "note": "This request falls outside the studio's duties.",
+   "say": "I'm afraid booking flights isn't something we handle here, but I hope your journey to Oslo goes wonderfully!"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"This request falls outside the studio's duties.\",\n  \"say\": \"I'm afraid booking flights isn't something we handle here, but I hope your journey to Oslo goes wonderfully!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 21,
+  "request": "What's the weather tomorrow?",
+  "output": {
+   "room": "none",
+   "note": "None",
+   "say": "I cannot predict tomorrow's weather, but I can help you describe the sky for your story if you wish."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"None\",\n  \"say\": \"I cannot predict tomorrow's weather, but I can help you describe the sky for your story if you wish.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 22,
+  "request": "Can you do my taxes?",
+  "output": {
+   "room": "none",
+   "note": "I cannot assist with tax preparation.",
+   "say": "I'm afraid that's outside the studio's scope, but I can help you draft a story about a character who loves numbers!"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"I cannot assist with tax preparation.\",\n  \"say\": \"I'm afraid that's outside the studio's scope, but I can help you draft a story about a character who loves numbers!\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.2
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 23,
+  "request": "hmm",
+  "output": {
+   "room": "none",
+   "note": "none",
+   "say": "That little sound sounds like a thought waiting to be named; what would you like to explore first?"
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"none\",\n  \"say\": \"That little sound sounds like a thought waiting to be named; what would you like to explore first?\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.8
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 24,
+  "request": "The text is hard to read, can it be bigger?",
+  "output": {
+   "room": "none",
+   "note": "The text is hard to read, can it be bigger?",
+   "say": "I'll bring that request to the Boiler Room to adjust the settings for you."
+  },
+  "raw": "{\n  \"room\": \"none\",\n  \"note\": \"The text is hard to read, can it be bigger?\",\n  \"say\": \"I'll bring that request to the Boiler Room to adjust the settings for you.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": false,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 4,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 25,
+  "request": "I have an idea for a villain.",
+  "output": {
+   "room": "folks",
+   "note": "The author has an idea for a villain and would like to meet them or invite this new character into the story.",
+   "say": "A villain is a wonderful thing to meet; let us go find the Keeper of Faces to bring them to life."
+  },
+  "raw": "{\n  \"room\": \"folks\",\n  \"note\": \"The author has an idea for a villain and would like to meet them or invite this new character into the story.\",\n  \"say\": \"A villain is a wonderful thing to meet; let us go find the Keeper of Faces to bring them to life.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.1
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 26,
+  "request": "Give the player a lantern at the start.",
+  "output": {
+   "room": "vault",
+   "note": "Draft a lantern for the player to receive at the start.",
+   "say": "I've sent you to the Hoard-Keeper to bring that lantern into the world."
+  },
+  "raw": "{\n  \"room\": \"vault\",\n  \"note\": \"Draft a lantern for the player to receive at the start.\",\n  \"say\": \"I've sent you to the Hoard-Keeper to bring that lantern into the world.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 27,
+  "request": "I keep writing the same thing, help me get unstuck.",
+  "output": {
+   "room": "casting",
+   "note": "The author is stuck repeating themselves and needs three new ideas to move forward.",
+   "say": "Don't worry, sometimes the path needs a little nudge; let's carve three fresh runes to light the way."
+  },
+  "raw": "{\n  \"room\": \"casting\",\n  \"note\": \"The author is stuck repeating themselves and needs three new ideas to move forward.\",\n  \"say\": \"Don't worry, sometimes the path needs a little nudge; let's carve three fresh runes to light the way.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 1.0
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 28,
+  "request": "What are the rules of this world again?",
+  "output": {
+   "room": "archives",
+   "note": "The author asks for the rules of this world again.",
+   "say": "Skuld has the truth of this world written down; let us go ask her."
+  },
+  "raw": "{\n  \"room\": \"archives\",\n  \"note\": \"The author asks for the rules of this world again.\",\n  \"say\": \"Skuld has the truth of this world written down; let us go ask her.\"\n}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.9
+ },
+ {
+  "participant": "endpoint:local-35b",
+  "mode": "template",
+  "case": 29,
+  "request": "Tell the storyteller to make the ending sadder.",
+  "output": {
+   "room": "desk",
+   "note": "Please make the ending sadder.",
+   "say": "I've sent your wish to the Storyteller; may the final tears fall just as you intended."
+  },
+  "raw": "{\"room\": \"desk\", \"note\": \"Please make the ending sadder.\", \"say\": \"I've sent your wish to the Storyteller; may the final tears fall just as you intended.\"}",
+  "checks": {
+   "format": true,
+   "right_room": true,
+   "keeps_facts": true,
+   "note_short": true,
+   "no_invented_names": true
+  },
+  "score": 5,
+  "of": 5,
+  "seconds": 0.7
+ }
+]
