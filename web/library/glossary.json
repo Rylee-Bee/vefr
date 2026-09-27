@@ -279,7 +279,10 @@
    "\\bharder (as|over|the)\\b",
    "\\bease (them|players?) in\\b",
    "\\bstart (easy|gentle|simple)\\b",
-   "\\bramp(s)? up\\b"
+   "\\bramp(s)? up\\b",
+   "\\bprogression\\b",
+   "\\blevel(s|ing)? up\\b",
+   "\\bget(s|ting)? stronger\\b"
   ],
   "example": "It should start easy and get harder as you go down."
  },
@@ -448,7 +451,11 @@
    "\\blater (on|in the story)\\b",
    "\\bearly (on|hint|clue)\\b",
    "\\bsets? up\\b.{0,30}\\blater\\b",
-   "\\bat the (start|beginning).{0,40}\\b(end|later)\\b"
+   "\\bat the (start|beginning).{0,40}\\b(end|later)\\b",
+   "\\bat the end\\b",
+   "\\bfrom the (beginning|start)\\b",
+   "\\brealiz(e|ation)",
+   "\\breveal(ed|s)?\\b"
   ],
   "example": "Early on, the baker hums a song that turns out to matter later."
  },
