@@ -158,8 +158,7 @@ def test_every_real_word_on_the_how_vefr_works_shelf_is_in_the_glossary():
     import json
     import re
     web = Path(__file__).resolve().parents[1] / "web"
-    src = (web / "js/glossary.js").read_text()
-    glossary = json.loads(src[src.index("{"): src.rindex("}") + 1])
+    glossary = json.loads((web / "library" / "glossary.json").read_text())
     known = set(glossary) | {a for e in glossary.values() for a in e.get("also", [])}
     skip = {"art", "artists", "audio", "feels", "tree", "tile, wall, stone", "cups"}
     missing = set()

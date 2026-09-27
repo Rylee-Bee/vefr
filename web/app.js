@@ -3315,7 +3315,9 @@
       el_screen.appendChild(wrap);
       open = { book: null, page: 0 };
       paint();
-      API.library()
+      /* books and the glossary arrive together, so the first page is already tappable */
+      Promise.all([API.library(), window.VEFR_GLOSSARY_READY || Promise.resolve()])
+        .then(function (both) { return both[0]; })
         .then(function (data) {
           shelves.innerHTML = '';
           var ladder = spot('frodi-library-ladder', 'spot--inline lib-ladder');
