@@ -2,6 +2,8 @@
 title: Where Pictures Come From
 kind: book
 shelf: how-vefr-works
+short: Where the studio's pictures came from, and why it keeps a note of each one.
+source: web/art/README.md
 ---
 Every picture in a game is called an *asset*. So are the sounds, the
 music, and the words. Making them is *art* and *audio*, and the people

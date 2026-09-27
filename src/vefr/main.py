@@ -41,6 +41,12 @@ def _app_title() -> str:
 
 
 app = FastAPI(title=_app_title(), version="2.0.0", description=PURPOSE.capitalize())
+
+# VEFR as a Worlds room (Play-Nice room/0): its Library, for Worlds to gather.
+from .room import _Refused as _RoomRefused, refused_handler as _room_refused, router as _room_router  # noqa: E402
+
+app.include_router(_room_router)
+app.add_exception_handler(_RoomRefused, _room_refused)
 WEB = app_home() / "web"
 
 

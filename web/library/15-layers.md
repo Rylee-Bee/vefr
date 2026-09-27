@@ -2,6 +2,8 @@
 title: Layers, Like Paper on Paper
 kind: book
 shelf: how-vefr-works
+short: Games draw a picture back to front, one layer on top of another, like a painter.
+source: web/town.js
 ---
 Paint a picture of a meadow. Now paint a fox on top. The fox covers a
 bit of grass, and that's fine: the grass is still under there.

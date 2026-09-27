@@ -1,6 +1,9 @@
 ---
 title: VI · Launch, VII · After
 kind: book
+short: Put the game where people can play it, then learn from what they do.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 Put it where people can play it, and tell them it exists. Going public
 is always the author's call.

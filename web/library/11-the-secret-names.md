@@ -2,6 +2,8 @@
 title: The Secret Names
 kind: book
 shelf: how-vefr-works
+short: The studio's cosy words, next to the real words programmers use for the same things.
+source: web/js/glossary.js
 ---
 The studio uses cosy words. Real studios and programmers have their own
 words for the same things. Learn both, and you can talk to anyone.
