@@ -56,8 +56,11 @@ def test_two_gpu_jobs_never_overlap(isolated):
 
     a = threading.Thread(target=job, args=("painter",))
     b = threading.Thread(target=job, args=("student",))
-    a.start(); time.sleep(0.1); b.start()
-    a.join(); b.join()
+    a.start()
+    time.sleep(0.1)
+    b.start()
+    a.join()
+    b.join()
     (s1, e1), (s2, e2) = sorted(spans.values())
     assert e1 <= s2, "the second GPU job started before the first ended"
 
