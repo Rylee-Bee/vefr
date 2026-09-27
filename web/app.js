@@ -3186,8 +3186,32 @@
       reader.appendChild(found);
       reader.appendChild(h('h2', { className: 'lib-reader__title', tabindex: '-1', textContent: b.title }));
       var page = h('div', { className: 'lib-page', 'aria-live': 'polite' });
-      page.innerHTML = L.renderPage(b.pages[open.page]);
+      page.innerHTML = L.renderPage(b.pages[open.page], window.VEFR_GLOSSARY);
       reader.appendChild(page);
+      /* Tap a real word for its meaning (Gee: explicit information on demand). */
+      var card = h('div', { className: 'lib-term-card', role: 'status', 'aria-live': 'polite', hidden: true });
+      reader.appendChild(card);
+      page.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.lib-term');
+        if (!btn) return;
+        var was = btn.getAttribute('aria-expanded') === 'true';
+        page.querySelectorAll('.lib-term').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+        if (was) { card.hidden = true; return; }
+        var key = btn.getAttribute('data-term');
+        var g = (window.VEFR_GLOSSARY || {})[key];
+        if (!g) return;
+        btn.setAttribute('aria-expanded', 'true');
+        card.innerHTML = '';
+        card.appendChild(h('p', { className: 'lib-term-card__word', textContent: key }));
+        card.appendChild(h('p', { className: 'lib-term-card__plain', textContent: g.plain }));
+        if (g.vefr) card.appendChild(h('p', { className: 'lib-term-card__vefr', textContent: 'In VEFR: ' + g.vefr }));
+        var close = h('button', { className: 'cta cta--line lib-term-card__close', type: 'button', textContent: 'Got it' });
+        close.addEventListener('click', function () {
+          card.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.focus();
+        });
+        card.appendChild(close);
+        card.hidden = false;
+      });
       var nav = h('div', { className: 'lib-reader__nav' });
       var prev = h('button', { className: 'cta cta--line', type: 'button', textContent: 'Previous page' });
       var next = h('button', { className: 'cta cta--gold', type: 'button', textContent: open.page >= n - 1 ? 'Close the book' : 'Next page' });
