@@ -97,6 +97,15 @@
     chat:         function (q)    { return post('/api/builder/chat', q); },
     teachRecognize: function (q)  { return post('/api/teach/recognize', q); },
     teachGotIt:   function (q)    { return post('/api/teach/got-it', q); },
+    teachMode:    function (mode) {
+      var wrap = (window.VEFR_SESSION && window.VEFR_SESSION.wrap) || function (u) { return u; };
+      return fetch(wrap('/api/teach/mode'), { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode }) }).then(function (r) { return r.json(); });
+    },
+    teachState:   function ()     {
+      var wrap = (window.VEFR_SESSION && window.VEFR_SESSION.wrap) || function (u) { return u; };
+      return fetch(wrap('/api/teach')).then(function (r) { return r.json(); });
+    },
     enhanceItem:  function (q)    { return post('/api/builder/enhance/item', q); },
     enhanceMap:   function (q)    { return post('/api/builder/enhance/map', q); },
     mapPropose:   function (q)    { return post('/api/builder/map/propose', q); },
