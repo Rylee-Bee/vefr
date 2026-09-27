@@ -3,7 +3,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .replies import EventReply, GotItReply, LibraryReply, StickerBook, TeachReply, TeachState
+from .replies import (EventReply, GotItReply, LibraryReply, ModeReply, StickerBook, TeachReply,
+                      TeachState)
 
 import json
 import os
@@ -651,7 +652,24 @@ def teach_state():
         out[key] = {"group": e["teach"], "stage": teach.stage(rec) if rec else "new",
                     "offered": (rec or {}).get("offered", 0), "got_it": (rec or {}).get("got_it", 0),
                     "first_context": (rec or {}).get("first_context", "")}
-    return {"concepts": out}
+    home = teach.worlds("GET", "/api/learning")
+    mode = teach.MODE_FROM_WORLDS.get((home or {}).get("mode"))
+    return {"concepts": out, "mode": mode}
+
+
+class TeachMode(BaseModel):
+    mode: str  # build | tips | off (VEFR's words for Worlds' build | occasional | plain)
+
+
+@app.put("/api/teach/mode", response_model=ModeReply)
+def teach_mode(req: TeachMode):
+    """Fróði's notes setting, written through to Worlds so one person has one switch."""
+    from . import teach
+
+    if req.mode not in teach.MODE_TO_WORLDS:
+        raise HTTPException(status_code=422, detail="mode must be build, tips or off")
+    home = teach.worlds("PUT", "/api/learning/mode", {"mode": teach.MODE_TO_WORLDS[req.mode]})
+    return {"mode": req.mode, "shared": bool(home)}
 
 
 @app.get("/api/spark/health")

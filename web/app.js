@@ -1342,6 +1342,11 @@
 
   S.boot = function () {
     window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('visit');
+    /* Fróði's notes follow Worlds' learning setting when VEFR is connected (one switch) */
+    if (API.teachState) API.teachState().then(function (st) {
+      var P = window.VEFR_PREFS;
+      if (st && st.mode && P && P.get && P.get().teach !== st.mode) P.set({ teach: st.mode });
+    }).catch(function () {});
     /* ══════════════════════════════════════════════════════
        INIT — the room comes alive
        ══════════════════════════════════════════════════════ */

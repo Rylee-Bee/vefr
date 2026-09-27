@@ -96,3 +96,54 @@ def test_routes(monkeypatch):
     assert c.post("/api/teach/got-it", json={"term": "commit"}).status_code == 404
     state = c.get("/api/teach").json()["concepts"]
     assert state["sanctuary"]["stage"] == "again" and state["gating"]["stage"] == "new"
+
+
+# --- Worlds' shared memory (faked; the real one is never called in tests) --------
+
+def test_concept_ids_match_worlds():
+    assert teach.concept_id("secret area") == "secret-area"
+    assert teach.concept_id("chekhov's gun") == "chekhovs-gun"
+    assert teach.concept_id("gating") == "gating"
+
+
+def test_no_key_means_the_local_record_decides(monkeypatch):
+    monkeypatch.delenv("VEFR_WORLDS_LEARNING_TOKEN", raising=False)
+    assert teach.worlds("GET", "/api/learning") is None
+    card = teach.recognize("The tavern should be a safe place where nothing can hurt you.", G,
+                           model=_model("sanctuary", "the tavern"))["teach"]
+    assert card["stage"] == "first"
+
+
+def test_worlds_decides_the_stage_and_remembers_across_projects(monkeypatch):
+    calls = []
+
+    def fake(method, path, body=None, timeout=3.0):
+        calls.append((method, path, body))
+        return {"stage": "again", "first_context": "the hidden door in Worlds", "first_project": "worlds"}
+    monkeypatch.setattr(teach, "worlds", fake)
+    card = teach.recognize("The door stays locked until you find the key.", G, model=_model("gating", "the locked door"))["teach"]
+    assert calls[0][:2] == ("POST", "/api/learning/encounter")
+    assert calls[0][2] == {"concept": "gating", "project": "vefr", "context": "the locked door"}
+    assert card["stage"] == "again" and card["first_context"] == "the hidden door in Worlds"
+    assert teach.load()["concepts"]["gating"]["offered"] == 1          # mirrored locally
+
+
+def test_worlds_off_or_familiar_means_no_note(monkeypatch):
+    monkeypatch.setattr(teach, "worlds", lambda *a, **k: {"stage": "off"})
+    out = teach.recognize("You can't open it until you find the key.", G, model=_model("gating", "the door"))
+    assert out["teach"] is None and "plain words" in out["why_not"]
+
+
+def test_worlds_away_falls_back(monkeypatch):
+    monkeypatch.setattr(teach, "worlds", lambda *a, **k: None)
+    out = teach.recognize("You can't open it until you find the key.", G, model=_model("gating", "the door"))
+    assert out["teach"]["stage"] == "first"
+
+
+def test_mode_writes_through(monkeypatch):
+    from vefr.main import app
+    sent = []
+    monkeypatch.setattr(teach, "worlds", lambda m, p, b=None, timeout=3.0: sent.append((m, p, b)) or {"mode": "plain"})
+    r = TestClient(app).put("/api/teach/mode", json={"mode": "off"})
+    assert r.json() == {"mode": "off", "shared": True} and sent == [("PUT", "/api/learning/mode", {"mode": "plain"})]
+    assert TestClient(app).put("/api/teach/mode", json={"mode": "loud"}).status_code == 422
