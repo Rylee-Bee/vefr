@@ -41,9 +41,9 @@ def build(tok, ex, max_len=768):
 
 
 @torch.no_grad()
-def grade(model, tok, dev):
+def grade(model, tok, dev, cases=None):
     model.eval(); rows = []
-    for i, case in enumerate(ea.REQUESTS):
+    for i, case in enumerate(cases or ea.REQUESTS):
         ids = chat_ids(tok, ea.prompts("voice", case[0]), True)
         if isinstance(ids, dict): ids = ids["input_ids"]
         x = torch.tensor([ids], device=dev)
@@ -69,6 +69,8 @@ def main():
     ap.add_argument("--max-steps", type=int, default=0, help="stop early (smoke tests)")
     ap.add_argument("--no-grade", action="store_true", help="skip the held-out grade (smoke tests)")
     ap.add_argument("--checkpointing", action="store_true", help="recompute activations (3-4B on 16 GB)")
+    ap.add_argument("--cup", choices=["easy", "hard"], default="easy",
+                    help="easy: the 30 held-out requests; hard: 40 messier ones (HARD_REQUESTS)")
     a = ap.parse_args()
     dev = "cuda"
     out = ROOT / "runs" / a.name; out.mkdir(parents=True, exist_ok=True)
@@ -118,9 +120,9 @@ def main():
         model.save_pretrained(out / "merged"); tok.save_pretrained(out / "merged")
     if a.no_grade:
         return
-    g = grade(model, tok, dev)
+    g = grade(model, tok, dev, ea.HARD_REQUESTS if a.cup == "hard" else ea.REQUESTS)
     g.update(base=a.base, name=a.name, trained=not a.eval_only)
-    (out / "eval.json").write_text(json.dumps(g, indent=1))
+    (out / ("eval.json" if a.cup == "easy" else f"eval-{a.cup}.json")).write_text(json.dumps(g, indent=1))
     print(f"{a.name}: right room {g['right_room']}/{g['n']}, all checks {g['all_checks']}/{g['n']}", flush=True)
 
 

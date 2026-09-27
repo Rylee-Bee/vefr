@@ -1,6 +1,7 @@
 """Teach cup: does the local model name the right idea (and stay quiet when it should)?
 
     VEFR_LLAMACPP_URL=... python -m bench.teach.cup
+    VEFR_LLAMACPP_URL=... python -m bench.teach.cup --cases private.json [out.json]
 Positives: every teachable idea's own example. Negatives: ordinary requests that
 wake a cue but use no idea. Prints right / wrong / quiet, and the misses.
 """
@@ -25,7 +26,33 @@ NEGATIVES = [
 ]
 
 
+def real_cases(path):
+    """Outside cases: {"cases": [{"text", "want": [ideas or "none"]}]}. Kept outside the
+    public repo when they're someone's own words (e.g. the owner's Cottage messages)."""
+    g = load_glossary()
+    rows = []
+    for c in json.load(open(path))["cases"]:
+        cands = teach.candidates(c["text"], g)
+        got = teach.ask_model(c["text"], cands, g) if cands else ("none", "")
+        term = got[0] if got else None
+        rows.append({"text": c["text"], "want": c["want"], "got": term, "cands": cands,
+                     "context": got[1] if got else "", "ok": term in c["want"]})
+    right = sum(r["ok"] for r in rows)
+    wrong_note = sum(r["got"] not in (None, "none") and not r["ok"] for r in rows)
+    missed = sum(r["got"] in (None, "none") and "none" not in r["want"] for r in rows)
+    print(f"real cases: fair {right}/{len(rows)}; a wrong idea named {wrong_note}; stayed quiet on a real one {missed}")
+    for r in rows:
+        if not r["ok"]:
+            print(f"  got {r['got']!r} want {r['want']} from {r['cands']} :: {r['text'][:70]}")
+    return rows
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--cases":
+        rows = real_cases(sys.argv[2])
+        if len(sys.argv) > 3:
+            json.dump(rows, open(sys.argv[3], "w"), indent=1)
+        return
     g = load_glossary()
     rows, t0 = [], time.time()
     for key, e in teach.teachable(g).items():
