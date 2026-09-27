@@ -1,6 +1,9 @@
 ---
 title: I · Concept
 kind: book
+short: Talk the idea out until it fits on one page: what the player does, and how it should feel.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 Talk the idea out until it fits on one page. What is the player doing,
 minute to minute? What should it feel like? Who is it for?

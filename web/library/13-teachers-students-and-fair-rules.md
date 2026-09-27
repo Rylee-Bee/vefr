@@ -2,6 +2,8 @@
 title: Teachers, Students and Fair Rules
 kind: book
 shelf: how-vefr-works
+short: How a big helper teaches a small one, and the rules for what it's fair to learn from.
+source: docs/guides/studio-lessons.md
 ---
 Big AI models know a lot, but they need big computers. Small models fit
 on a laptop but know less. So the studio tries something clever: a big

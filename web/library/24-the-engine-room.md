@@ -2,6 +2,8 @@
 title: The Engine Room
 kind: book
 shelf: how-vefr-works
+short: The machine under every game that runs the rules and draws the world.
+source: web/town.js
 ---
 Under every game is a machine that runs the rules, draws the world,
 and listens to the player. That machine is the *engine*.

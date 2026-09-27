@@ -2,6 +2,8 @@
 title: Dice With Rules
 kind: book
 shelf: how-vefr-works
+short: How a computer, which always does the same thing, can still surprise you.
+source: src/vefr/runes.py
 ---
 Games need surprises, but computers can't really roll dice. Everything
 a computer does, it does exactly the same way every time. Programmers

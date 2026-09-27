@@ -1,6 +1,9 @@
 ---
 title: II · Pre-production
 kind: book
+short: Write the design down, then build the ugliest version of the core idea to find out if it's fun.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 Write the design down, then build the ugliest possible version of the
 core loop, just to find out whether it's fun. Placeholder art is fine.

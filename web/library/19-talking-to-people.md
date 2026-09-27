@@ -2,6 +2,8 @@
 title: Talking to People
 kind: book
 shelf: how-vefr-works
+short: How the people in a VEFR world find something new to say each time you visit.
+source: src/vefr/npc.py
 ---
 Anyone in a game who isn't the player is an *NPC*, a *non-player
 character*. The shopkeeper, the guard, the Keeper at the stone.

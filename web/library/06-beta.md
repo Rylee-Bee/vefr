@@ -1,6 +1,9 @@
 ---
 title: V · Beta
 kind: book
+short: The final art is in, so fix, smooth and tune while friends play.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 The final art is in. Fix bugs, smooth rough edges, tune how hard it is.
 

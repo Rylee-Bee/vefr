@@ -1,6 +1,9 @@
 ---
 title: The Seven Stages
 kind: book
+short: Every game moves through the same seven stages, and each one answers a question before the next begins.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 Every game, from a weekend toy to a big studio's epic, moves through the
 same seven stages. Each stage answers one question before the next begins.

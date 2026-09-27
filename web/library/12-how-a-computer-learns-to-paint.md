@@ -2,6 +2,8 @@
 title: How a Computer Learns to Paint
 kind: book
 shelf: how-vefr-works
+short: How a picture helper learns to paint by practising on thousands of pictures.
+source: docs/guides/studio-lessons.md
 ---
 Imagine a picture covered in snow, so thick you can't see anything. A
 painting model learns one trick: look at the snowy picture and guess

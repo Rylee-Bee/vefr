@@ -2,6 +2,8 @@
 title: Making It Real
 kind: book
 shelf: how-vefr-works
+short: How a world in the studio becomes one file you can hand to a friend.
+source: src/vefr/export.py
 ---
 A world in the studio is a folder of files. A game is something you
 can hand to a friend. Turning one into the other is the last step.
