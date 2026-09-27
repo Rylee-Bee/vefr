@@ -997,3 +997,16 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 
 /* the secret name under a resident (workings = show) */
 .greeter__real { margin: 0 0 6px; font-size: 0.82rem; letter-spacing: 0.02em; opacity: 0.85; }
+
+/* Library: code in books, and tappable real words (the glossary) */
+.lib-page pre { overflow-x: auto; padding: 10px 12px; border-radius: 6px; background: rgba(0,0,0,0.25); font-family: var(--studio-mono, monospace); line-height: 1.25; }
+.lib-page code { font-family: var(--studio-mono, monospace); font-size: 0.95em; }
+.lib-term { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px; min-height: 0; min-width: 0; display: inline; letter-spacing: inherit; text-transform: none; }
+.lib-term:hover, .lib-term[aria-expanded="true"] { text-decoration-style: solid; }
+.lib-term:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
+.lib-term-card { margin: 12px 0; padding: 12px 14px; border: 1px solid rgba(201,173,107,0.55); border-radius: 8px; }
+.lib-term-card p { margin: 0 0 6px; }
+.lib-term-card__word { font-weight: 700; text-transform: capitalize; }
+.lib-term-card__vefr { opacity: 0.85; font-style: italic; }
+.lib-term-card__close { min-height: 44px; margin-top: 4px; }
