@@ -725,7 +725,7 @@ def library_shelves(world: str | None = None):
 
     def shape(b: dict) -> dict:
         return {k: b[k] for k in ("id", "title", "kind", "found", "at", "speaker", "when", "pages")} | {
-            "found_words": found_words(b)}
+            "found_words": found_words(b), "shelf": str((b.get("extra") or {}).get("shelf", ""))}
 
     return {
         "world": title,
