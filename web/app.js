@@ -462,6 +462,11 @@
       walk.state = raw ? JSON.parse(raw) : null;
     } catch (e) { walk.state = null; }
     if (!walk.state) walk.state = { steps: {}, skipped: false, done: false };
+    /* ?tour=off: a link (or a browser test) that opens the studio without the walk,
+       for this visit only; nothing is saved, so the walk still waits for real visitors */
+    try {
+      if (/(^|[?&])tour=off(&|$)/.test(window.location.search.slice(1))) walk.state.skipped = true;
+    } catch (e) {}
   }
   function walkSave() {
     try { localStorage.setItem(WALK_KEY, JSON.stringify(walk.state)); } catch (e) {}
