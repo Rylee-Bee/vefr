@@ -72,6 +72,12 @@ class TeachConcept(Reply):
 
 class TeachState(Reply):
     concepts: dict[str, TeachConcept]
+    mode: Literal["build", "tips", "off"] | None = None   # Worlds' setting, when connected
+
+
+class ModeReply(Reply):
+    mode: Literal["build", "tips", "off"]
+    shared: bool          # True when Worlds took it (one switch across projects)
 
 
 # --- /room (Play-Nice room/0) --------------------------------------------------

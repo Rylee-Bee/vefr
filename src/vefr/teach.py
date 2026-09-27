@@ -123,6 +123,7 @@ def record_offer(term: str, context: str) -> dict:
 
 
 def record_got_it(term: str) -> dict:
+    worlds("POST", "/api/learning/got-it", {"concept": concept_id(term)})
     with _lock:
         data = load()
         rec = data["concepts"].setdefault(term, {"offered": 0, "got_it": 0})
@@ -174,6 +175,39 @@ def ask_model(message: str, cands: list[str], glossary: dict) -> tuple[str, str]
     return None
 
 
+# --- Worlds' shared learning memory ------------------------------------------
+# One memory across all of Rylee's projects (Book Girl): Worlds answers how to teach
+# an idea now (first / again / familiar / off, with its mode applied) and keeps
+# only a concept id and a few words. VEFR mirrors every answer locally, so a note
+# never waits on Worlds: unreachable (or no key) means the local record decides.
+
+MODE_TO_WORLDS = {"build": "build", "tips": "occasional", "off": "plain"}
+MODE_FROM_WORLDS = {v: k for k, v in MODE_TO_WORLDS.items()}
+
+
+def concept_id(term: str) -> str:
+    """Worlds' concept ids: lowercase, apostrophes dropped, spaces to dashes."""
+    return re.sub(r"[^a-z0-9-]+", "-", term.lower().replace("'", "").replace("\u2019", "")).strip("-")[:64]
+
+
+def worlds(method: str, path: str, body: dict | None = None, timeout: float = 3.0) -> dict | None:
+    """Call Worlds' /api/learning* with the learning-only key; None when unset or unreachable."""
+    import urllib.request
+
+    base, token = os.environ.get("VEFR_WORLDS_URL", ""), os.environ.get("VEFR_WORLDS_LEARNING_TOKEN", "")
+    if not base or not token:
+        return None
+    req = urllib.request.Request(base.rstrip("/") + path, method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            out = json.loads(r.read() or b"{}")
+        return out.get("data") if isinstance(out, dict) and out.get("ok") else None
+    except Exception:  # noqa: BLE001 - Worlds away is a normal state, never an error for the author
+        return None
+
+
 def recognize(message: str, glossary: dict, *, model=None) -> dict:
     """{"teach": card | None, "why_not": reason}. Records the offer when a card is made."""
     message = str(message or "").strip()[:2000]
@@ -186,12 +220,20 @@ def recognize(message: str, glossary: dict, *, model=None) -> dict:
     term, context = picked
     if term == "none":
         return {"teach": None, "why_not": "the model saw none of the woken ideas"}
+    context = _grounded(context, message)
+    home = worlds("POST", "/api/learning/encounter",
+                  {"concept": concept_id(term), "project": "vefr", "context": context})
+    if home and home.get("stage") in ("familiar", "off"):
+        record_offer(term, context)                       # mirror, for when Worlds is away
+        why = "the owner chose plain words" if home["stage"] == "off" else f"{term} is already familiar"
+        return {"teach": None, "why_not": why + " (Worlds)"}
     before = load()["concepts"].get(term)
-    st = stage(before)
+    st = home["stage"] if home and home.get("stage") in ("first", "again") else stage(before)
     if st == "familiar":
         return {"teach": None, "why_not": f"{term} is already familiar"}
-    context = _grounded(context, message)
     rec = record_offer(term, context)
+    if home and home.get("first_context"):
+        rec = {**rec, "first_context": home["first_context"]}
     e = glossary[term]
     card = {"term": term, "stage": st, "plain": e["plain"], "why": e.get("why", ""), "context": context}
     if e.get("vefr"):

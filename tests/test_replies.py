@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from vefr.main import app
 from vefr.replies import LibraryReply
 
-DECLARED = {"/api/library", "/api/teach", "/api/teach/recognize", "/api/teach/got-it", "/room", "/room/cards"}
+DECLARED = {"/api/library", "/api/teach", "/api/teach/mode", "/api/teach/recognize", "/api/teach/got-it", "/room", "/room/cards"}
 
 BOOK = {"id": "b", "title": "B", "kind": "book", "found": "shelf", "at": None, "speaker": "",
         "when": "", "pages": ["p"], "found_words": "on the shelf", "shelf": "how-vefr-works"}
