@@ -171,7 +171,20 @@ def library_document() -> dict:
         books.append(book)
     stamp = _updated_at() or _now()
     return {"contract": "library/0", "generated_at": _iso(stamp), "keeper": dict(KEEPER),
-            "shelves": [dict(s) for s in SHELVES], "books": books}
+            "shelves": [dict(s) for s in SHELVES], "books": books, "glossary": contract_glossary(glossary)}
+
+
+def contract_glossary(glossary: dict) -> dict:
+    """The tap-to-learn words in library 1.1.0's shape (VEFR's `vefr` name is `local`)."""
+    out = {}
+    for key, e in glossary.items():
+        entry = {"plain": e["plain"][:300]}
+        if e.get("vefr"):
+            entry["local"] = e["vefr"][:80]
+        if e.get("also"):
+            entry["also"] = [a[:60] for a in e["also"]][:20]
+        out[key] = entry
+    return out
 
 
 def _status() -> str:

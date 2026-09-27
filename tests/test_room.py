@@ -96,3 +96,8 @@ def test_shapes_match_the_play_nice_schemas(client):
     _validate(client.get("/room/actions", headers=H).json(), "room.schema.json", "actions_response")
     _validate(client.post("/room/actions/x", headers={**H, "Idempotency-Key": "k"}).json(),
               "room.schema.json", "action_receipt")
+
+
+def test_library_carries_the_glossary_for_tap_to_learn(client):
+    doc = client.get("/room/library", headers=H).json()
+    assert doc["glossary"]["commit"] == {"plain": "Saving a change for good, with a note of what changed.", "local": "Keep"}
