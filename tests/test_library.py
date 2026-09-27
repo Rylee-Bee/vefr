@@ -149,3 +149,28 @@ def test_api_library_says_which_shelf_a_studio_book_is_on(tmp_path, monkeypatch)
     shelves = {b["id"]: b["shelf"] for b in studio}
     assert shelves["14-how-maps-work"] == "how-vefr-works"
     assert shelves["01-the-seven-stages"] == ""
+
+
+def test_every_real_word_on_the_how_vefr_works_shelf_is_in_the_glossary():
+    """Tap any italic word in a 'How VEFR works' book and a meaning must be there."""
+    import json
+    import re
+    web = Path(__file__).resolve().parents[1] / "web"
+    src = (web / "js/glossary.js").read_text()
+    glossary = json.loads(src[src.index("{"): src.rindex("}") + 1])
+    known = set(glossary) | {a for e in glossary.values() for a in e.get("also", [])}
+    skip = {"art", "artists", "audio", "feels", "tree", "tile, wall, stone", "cups"}
+    missing = set()
+    for f in sorted((web / "library").glob("*.md")):
+        text = f.read_text()
+        if "shelf: how-vefr-works" not in text:
+            continue
+        text = re.sub(r"```.*?```", "", text, flags=re.S)
+        for page in text.split("* * *"):
+            for para in re.split(r"\n\s*\n", page):
+                para = re.sub(r"\*\*[^*]+\*\*", "", " ".join(para.split()))
+                for word in re.findall(r"\*([^*]+)\*", para):
+                    w = word.lower().strip()
+                    if w not in known and w not in skip:
+                        missing.add(f"{f.name}: {w}")
+    assert not missing, sorted(missing)

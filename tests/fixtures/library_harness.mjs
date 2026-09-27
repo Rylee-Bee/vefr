@@ -21,6 +21,20 @@ eq('bullets', L.renderPage('- a\n- b'), '<ul><li>a</li><li>b</li></ul>');
 eq('numbers', L.renderPage('1. a\n2. b'), '<ol><li>a</li><li>b</li></ol>');
 // The author's words are shown, never run: markup is escaped.
 eq('escapes html', L.renderPage('<img src=x onerror=alert(1)>'), '<p>&lt;img src=x onerror=alert(1)&gt;</p>');
-eq('line breaks', L.renderPage('a\nb'), '<p>a<br>b</p>');
+// Wrapped lines are one paragraph; two trailing spaces keep a break (poems).
+eq('soft wrap joins', L.renderPage('a\nb'), '<p>a b</p>');
+eq('hard break', L.renderPage('a  \nb'), '<p>a<br>b</p>');
+eq('italic across a wrap', L.renderPage('a *random number\ngenerator* here'), '<p>a <em>random number generator</em> here</p>');
+eq('inline code', L.renderPage('`#` is a wall'), '<p><code>#</code> is a wall</p>');
+eq('fenced block shown exactly', L.renderPage('Map:\n\n```\n#..#\n*a* <b>\n```\n\nDone.'),
+  '<p>Map:</p><pre><code>#..#\n*a* &lt;b&gt;</code></pre><p>Done.</p>');
+// The glossary: an italic word with an entry becomes a tappable button.
+const G = { commit: { plain: 'Saving for good.' }, 'draw order': { plain: 'x', also: ['z-order'] } };
+eq('glossary term', L.renderPage('a *commit*', G),
+  '<p>a <button type="button" class="lib-term" data-term="commit" aria-expanded="false"><em>commit</em></button></p>');
+eq('glossary alias', L.lookup(G, 'Z-Order'), 'draw order');
+eq('unknown word stays italic', L.renderPage('*nope*', G), '<p><em>nope</em></p>');
+eq('no glossary, no buttons', L.renderPage('*commit*'), '<p><em>commit</em></p>');
+eq('glossary cannot inject', L.renderPage('*<x>*', { '<x>': { plain: 'x' } }).includes('<x>'), false);
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }
 console.log('ALL PASS');
