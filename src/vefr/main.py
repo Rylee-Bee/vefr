@@ -576,6 +576,55 @@ def builder_chat(turn: BuilderChatTurn):
     return {"reply": text}
 
 
+class TeachTurn(BaseModel):
+    message: str  # the author's own words from the turn the builder just answered
+
+
+class TeachTerm(BaseModel):
+    term: str
+
+
+@app.post("/api/teach/recognize")
+def teach_recognize(turn: TeachTurn):
+    """After a builder reply: did the author just use a design idea Fróði can name?
+
+    Called by the page after the reply is shown (never blocks it). Returns
+    {"teach": card | null, "why_not": reason}; a card is recorded as offered.
+    """
+    from . import teach
+    from .room import load_glossary
+
+    return teach.recognize(turn.message, load_glossary())
+
+
+@app.post("/api/teach/got-it")
+def teach_got_it(req: TeachTerm):
+    """The author tapped Got it: two of those and the idea counts as familiar."""
+    from . import teach
+    from .room import load_glossary
+
+    if req.term not in teach.teachable(load_glossary()):
+        raise HTTPException(status_code=404, detail="that isn't an idea Fróði teaches")
+    rec = teach.record_got_it(req.term)
+    return {"term": req.term, "stage": teach.stage(rec), "got_it": rec["got_it"]}
+
+
+@app.get("/api/teach")
+def teach_state():
+    """Every idea Fróði teaches, with where this person is with each."""
+    from . import teach
+    from .room import load_glossary
+
+    seen = teach.load()["concepts"]
+    out = {}
+    for key, e in teach.teachable(load_glossary()).items():
+        rec = seen.get(key)
+        out[key] = {"group": e["teach"], "stage": teach.stage(rec) if rec else "new",
+                    "offered": (rec or {}).get("offered", 0), "got_it": (rec or {}).get("got_it", 0),
+                    "first_context": (rec or {}).get("first_context", "")}
+    return {"concepts": out}
+
+
 @app.get("/api/spark/health")
 def spark_health_route():
     """Spark's liveness as VEFR sees it: up, down, or timed out.

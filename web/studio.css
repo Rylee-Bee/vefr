@@ -1010,3 +1010,18 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 .lib-term-card__word { font-weight: 700; text-transform: capitalize; }
 .lib-term-card__vefr { opacity: 0.85; font-style: italic; }
 .lib-term-card__close { min-height: 44px; margin-top: 4px; }
+
+/* Fróði's paddle note: the name for an idea the author just used (teach.py) */
+.paddle-note { margin: 10px 0 4px; }
+.paddle-note__who { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; opacity: 0.85; margin-bottom: 4px; }
+.paddle-note__who img { border-radius: 50%; }
+.paddle-note__card { background: #f3e7c9; color: #2b241a; border-radius: 6px; padding: 12px 14px;
+  border-bottom: 6px solid #8a6a3f; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+.paddle-note__card p { margin: 0 0 6px; }
+.paddle-note__here { font-style: italic; }
+.paddle-note__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.paddle-note__actions .cta { min-height: 44px; }
+.paddle-note__lead { display: flex; gap: 8px; align-items: flex-start; }
+.paddle-note__lead img { flex: none; margin-top: 1px; }
+.paddle-note .cta--line { color: #2b241a; border-color: #8a6a3f; background: transparent; }
+.paddle-note .cta--line:focus-visible, .paddle-note .cta--gold:focus-visible { outline: 3px solid #2b241a; outline-offset: 2px; }
