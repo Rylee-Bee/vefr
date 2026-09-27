@@ -56,3 +56,23 @@ def test_just_plain_words_means_no_note_and_no_check(page, studio):
     page.locator(".folio__msg--resident", has_text="A tavern it is.").wait_for()
     page.wait_for_timeout(500)
     assert calls == [] and page.locator(".paddle-note").count() == 0
+
+
+ROOMS = ["launcher", "floor", "workshop", "map", "characters", "items", "library",
+         "journal", "runes", "evidence", "hall", "settings"]
+
+
+def test_every_room_opens_without_a_script_error(page, studio):
+    """The safety net for moving code around: each room renders, and nothing throws."""
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.on("console", lambda m: m.type == "error" and "Failed to load resource" not in m.text
+            and errors.append(m.text))
+    open_studio(page, studio, "launcher")
+    for room in ROOMS:
+        page.evaluate(f"location.hash = '#{room}'")
+        page.wait_for_timeout(700)
+        screen = page.locator(f"#screen-{room}")
+        assert screen.count() == 1 and screen.is_visible(), f"{room} didn't render"
+        assert len(screen.inner_text().strip()) > 20, f"{room} rendered empty"
+    assert errors == [], errors
