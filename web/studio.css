@@ -994,3 +994,6 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
   text-shadow: 0 0 3px #000, 0 0 2px #000; }
 .map-inked__tile { display: inline-block; width: 28px; height: 28px; border-radius: 4px; flex: none;
   background-size: cover; background-position: center; border: 1px solid rgba(0, 0, 0, 0.4); }
+
+/* the secret name under a resident (workings = show) */
+.greeter__real { margin: 0 0 6px; font-size: 0.82rem; letter-spacing: 0.02em; opacity: 0.85; }
