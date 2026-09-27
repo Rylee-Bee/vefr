@@ -27,7 +27,7 @@ import time
 from collections import deque
 from pathlib import Path
 
-from .paths import app_home
+from .paths import data_dir
 
 RING_SIZE = 500
 _file_lock = threading.Lock()
@@ -46,7 +46,7 @@ def file_path() -> Path:
     if env:
         _path = Path(env)
     else:
-        _path = app_home() / "data" / "weave.jsonl"
+        _path = data_dir() / "weave.jsonl"
     _path.parent.mkdir(parents=True, exist_ok=True)
     return _path
 

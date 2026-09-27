@@ -7,12 +7,12 @@ from pydantic import BaseModel, ValidationError
 
 from . import generator
 from .bonds import bond_keys, bond_prompt
-from .paths import app_home, world_scoped
+from .paths import world_scoped, data_dir
 from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 from .saga import system_prompt
 from .world import load_world
 
-VAULT = Path(os.environ.get("VEFR_VAULT", str(app_home() / "data" / "vault.json")))
+VAULT = Path(os.environ.get("VEFR_VAULT", str(data_dir() / "vault.json")))
 
 # Each world keeps its own history (paths.world_scoped). Off only while
 # a caller points the base at an explicit file (weave --with-bundle).
