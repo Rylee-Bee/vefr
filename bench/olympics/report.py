@@ -102,7 +102,7 @@ def participant_summary(key, image_mb=None):
         "help_pct": round(help_pct, 4) if help_pct is not None else None,
         "latency_mean": round(statistics.mean(lats), 3) if lats else None,
         "latency_med": round(statistics.median(lats), 3) if lats else None,
-        "artifact_mb": round(art_mb, 1),
+        "artifact_mb": round(art_mb, 1) if art_mb is not None else None,  # model file absent (e.g. report run off-host)
         "speed_idx": _speed_idx(lats) if lats else None,
     }
     summaries["medals"] = SC.medals(key, {**summaries,
@@ -146,7 +146,7 @@ def markdown_summary(s, title=None):
         L.append(f"- worst event floor (runs): {rel.get('worst_event_min')} "
                  f"({rel.get('worst_event')})")
     L.append(f"- latency mean/med {s['latency_mean']}s/{s['latency_med']}s; "
-             f"artifact {s['artifact_mb']}MB")
+             f"artifact {s['artifact_mb'] or '?'}MB")
     if s.get("medals"):
         L.append(f"- flags: {', '.join(s['medals'])}")
     return "\n".join(L)
@@ -184,7 +184,7 @@ def campaign_markdown(sums):
                 f"{s['tool_pct'] if s['tool_pct'] is not None else '-'}",
                 f"{s['struct_pct'] if s['struct_pct'] is not None else '-'}",
                 f"{s['clippy_pct'] if s['clippy_pct'] is not None else '-'}",
-                f"{s['latency_mean']}s", f"{s['artifact_mb']}MB"]
+                f"{s['latency_mean']}s", f"{s['artifact_mb'] or '?'}MB"]
         L.append("|" + "|".join(str(x) for x in row) + "|")
     return "\n".join(L)
 
