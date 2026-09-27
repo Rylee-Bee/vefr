@@ -43,8 +43,24 @@ def test_frodi_holds_up_a_note_after_the_reply(page, studio):
     assert "Sanctuary" in text and "In VEFR: safe squares." in text and "Here: the tavern." in text
     page.get_by_role("button", name="Why designers use this").click()
     assert page.locator(".paddle-note__why").is_visible()
+    # screen readers: never talked over, a labelled region, focus goes back to the reply
+    assert page.locator("#folio-log .paddle-note").count() == 0
+    assert page.get_by_role("region", name="There’s a name for part of what you just made.").count() == 1
+    assert page.locator("#folio-teach-live").inner_text() == ""
     page.get_by_role("button", name="Got it").click()
     assert note.count() == 0 and got_it == [{"term": "sanctuary"}]
+    assert page.evaluate("document.activeElement.classList.contains('folio__msg--resident')")
+
+
+def test_tell_me_when_theres_a_word_speaks_once(page, studio):
+    fake_reply(page, "A tavern it is.")
+    fake_teach(page, CARD)
+    open_studio(page, studio, "map")
+    page.evaluate("window.VEFR_PREFS.set({teachAnnounce: 'on'})")
+    ask_resident(page, "Ask the Cartographer", "The tavern should be a safe place.")
+    page.locator(".paddle-note").wait_for()
+    assert page.locator("#folio-teach-live").inner_text() == \
+        "Fróði has a word for what you just made: sanctuary."
 
 
 def test_just_plain_words_means_no_note_and_no_check(page, studio):

@@ -101,6 +101,10 @@
         { label: 'Occasional tips', value: 'tips' },
         { label: 'Just plain words', value: 'off' }
       ], 'teach');
+      addOptionRow(teachCard, 'Tell me when there’s a word', [
+        { label: 'Stay quiet', value: 'off' },
+        { label: 'Say it once, politely', value: 'on' }
+      ], 'teachAnnounce');
       container.appendChild(teachCard);
 
       // Motion
