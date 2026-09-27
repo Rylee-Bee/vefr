@@ -1,0 +1,487 @@
+[
+ {
+  "want": "affordance",
+  "got": "affordance",
+  "context": "Make the crates look pushable, so players know they can move them.",
+  "cands": [
+   "affordance"
+  ],
+  "text": "Make the crates look pushable, so players know they can move them."
+ },
+ {
+  "want": "branching narrative",
+  "got": "branching narrative",
+  "context": "player's choice sends the story down different paths",
+  "cands": [
+   "branching narrative"
+  ],
+  "text": "If you choose to help the thief, the story goes a different way."
+ },
+ {
+  "want": "collision",
+  "got": "collision",
+  "context": "The river should block the way, you can't walk through it.",
+  "cands": [
+   "collision"
+  ],
+  "text": "The river should block the way, you can't walk through it."
+ },
+ {
+  "want": "contrast",
+  "got": "contrast",
+  "context": "The grey text blends in with the stone, make it stand out.",
+  "cands": [
+   "contrast",
+   "visual hierarchy"
+  ],
+  "text": "The grey text blends in with the stone, make it stand out."
+ },
+ {
+  "want": "fallback",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "fallback"
+  ],
+  "text": "If the model isn't there, the keeper should just say one of the old lines instead."
+ },
+ {
+  "want": "flag",
+  "got": "none",
+  "context": "the nonethemore system",
+  "cands": [
+   "flag"
+  ],
+  "text": "The keeper should remember if you already talked to them and greet you differently."
+ },
+ {
+  "want": "layer",
+  "got": "layer",
+  "context": "The tree branches should be drawn on top of the path, so you walk under them.",
+  "cands": [
+   "layer"
+  ],
+  "text": "The tree branches should be drawn on top of the path, so you walk under them."
+ },
+ {
+  "want": "legend",
+  "got": "legend",
+  "context": "each kind of square on a map is given a meaning",
+  "cands": [
+   "legend"
+  ],
+  "text": "Let's say the letter T stands for a tree."
+ },
+ {
+  "want": "points of interest",
+  "got": "points of interest",
+  "context": "a named place meant to catch the player's eye and draw them in",
+  "cands": [
+   "motivation",
+   "points of interest"
+  ],
+  "text": "Let's have a place called the Weeping Stone that people want to visit."
+ },
+ {
+  "want": "procedural generation",
+  "got": "procedural generation",
+  "context": "The dungeon should be different every time you go down.",
+  "cands": [
+   "procedural generation"
+  ],
+  "text": "The dungeon should be different every time you go down."
+ },
+ {
+  "want": "sanctuary",
+  "got": "sanctuary",
+  "context": "the tavern where nothing can hurt the player",
+  "cands": [
+   "sanctuary"
+  ],
+  "text": "The tavern should be a safe place where nothing can hurt you."
+ },
+ {
+  "want": "spawn point",
+  "got": "spawn point",
+  "context": "the cottage kitchen",
+  "cands": [
+   "spawn point"
+  ],
+  "text": "The player should start in the cottage kitchen."
+ },
+ {
+  "want": "gating",
+  "got": "secret area",
+  "context": "I want a hidden door here, but you can't find it until you have the weird lantern.",
+  "cands": [
+   "gating",
+   "motivation",
+   "secret area"
+  ],
+  "text": "I want a hidden door here, but you can't find it until you have the weird lantern."
+ },
+ {
+  "want": "signposting",
+  "got": "signposting",
+  "context": "a trail of lanterns that indicates the direction or destination",
+  "cands": [
+   "signposting"
+  ],
+  "text": "Let's put a trail of lanterns so players know where to go next."
+ },
+ {
+  "want": "exploration reward",
+  "got": "exploration reward",
+  "context": "finding an old chest by wandering off the path into the woods",
+  "cands": [
+   "exploration reward"
+  ],
+  "text": "If players wander off the path into the woods, they find an old chest."
+ },
+ {
+  "want": "discoverability",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "discoverability"
+  ],
+  "text": "I'm worried players won't notice they can talk to the statue."
+ },
+ {
+  "want": "visual language",
+  "got": "visual language",
+  "context": "a look is used consistently so players learn what it means",
+  "cands": [
+   "visual language"
+  ],
+  "text": "Every door you can open should have the same blue glow, so players learn what it means."
+ },
+ {
+  "want": "foreshadowing",
+  "got": "foreshadowing",
+  "context": "the baker hums a song that turns out to matter later",
+  "cands": [
+   "chekhov's gun",
+   "foreshadowing"
+  ],
+  "text": "Early on, the baker hums a song that turns out to matter later."
+ },
+ {
+  "want": "red herring",
+  "got": "red herring",
+  "context": "Everyone should suspect the miller, but it's really the priest.",
+  "cands": [
+   "red herring"
+  ],
+  "text": "Everyone should suspect the miller, but it's really the priest."
+ },
+ {
+  "want": "chekhov's gun",
+  "got": "chekhov's gun",
+  "context": "The rusty sword over the fireplace turning out to be the one that breaks the curse.",
+  "cands": [
+   "chekhov's gun"
+  ],
+  "text": "The rusty sword over the fireplace turns out to be the one that breaks the curse."
+ },
+ {
+  "want": "cliffhanger",
+  "got": "cliffhanger",
+  "context": "Part one ends just as the cellar door creaks open.",
+  "cands": [
+   "cliffhanger"
+  ],
+  "text": "Part one ends just as the cellar door creaks open."
+ },
+ {
+  "want": "unreliable narrator",
+  "got": "unreliable narrator",
+  "context": "The old miller tells you the story, but the miller is lying about their part in it.",
+  "cands": [
+   "unreliable narrator"
+  ],
+  "text": "The old miller tells you the story, but the miller is lying about their part in it."
+ },
+ {
+  "want": "environmental storytelling",
+  "got": "environmental storytelling",
+  "context": "evidence of an older tavern that burned down, just scorched beams and a sign",
+  "cands": [
+   "environmental storytelling"
+  ],
+  "text": "There's evidence of an older tavern that burned down, just scorched beams and a sign."
+ },
+ {
+  "want": "landmark",
+  "got": "landmark",
+  "context": "a giant tree that serves as a navigational aid",
+  "cands": [
+   "landmark"
+  ],
+  "text": "A giant tree you can see from everywhere, so you always know where you are."
+ },
+ {
+  "want": "chokepoint",
+  "got": "chokepoint",
+  "context": "the narrow bridge that acts as a chokepoint for crossing the river",
+  "cands": [
+   "chokepoint"
+  ],
+  "text": "There's only one way across the river: a narrow bridge with a troll."
+ },
+ {
+  "want": "backtracking",
+  "got": "backtracking",
+  "context": "Once you have the lantern, you can come back to the first cave and see the hidden writing.",
+  "cands": [
+   "backtracking"
+  ],
+  "text": "Once you have the lantern, you can come back to the first cave and see the hidden writing."
+ },
+ {
+  "want": "secret area",
+  "got": "secret area",
+  "context": "Behind the bookshelf there's a hidden room.",
+  "cands": [
+   "secret area",
+   "exploration reward",
+   "layer"
+  ],
+  "text": "Behind the bookshelf there's a hidden room."
+ },
+ {
+  "want": "core loop",
+  "got": "exploration reward",
+  "context": "Most of the game you explore a room, find something, and bring it back to the cottage.",
+  "cands": [
+   "core loop",
+   "exploration reward"
+  ],
+  "text": "Most of the game you explore a room, find something, and bring it back to the cottage."
+ },
+ {
+  "want": "risk and reward",
+  "got": "risk and reward",
+  "context": "a more dangerous choice offers a better payoff",
+  "cands": [
+   "risk and reward"
+  ],
+  "text": "The deeper you go, the more dangerous it is, but the rarer the loot."
+ },
+ {
+  "want": "difficulty curve",
+  "got": "difficulty curve",
+  "context": "The game difficulty should start easy and get harder as you progress through the levels.",
+  "cands": [
+   "difficulty curve"
+  ],
+  "text": "It should start easy and get harder as you go down."
+ },
+ {
+  "want": "pacing",
+  "got": "pacing",
+  "context": "the game alternates tense and quiet moments on purpose",
+  "cands": [
+   "pacing"
+  ],
+  "text": "After the spider fight, give them a quiet room to catch their breath."
+ },
+ {
+  "want": "player agency",
+  "got": "player agency",
+  "context": "Let the player decide for themselves whether to open the sealed door.",
+  "cands": [
+   "player agency"
+  ],
+  "text": "Let the player decide for themselves whether to open the sealed door."
+ },
+ {
+  "want": "motivation",
+  "got": "motivation",
+  "context": "a character's actions come from something they want",
+  "cands": [
+   "motivation"
+  ],
+  "text": "The spell keeper wants to protect the cottage because the two sisters built it together."
+ },
+ {
+  "want": "foil",
+  "got": "foil",
+  "context": "Mira's brother is the foil to Mira, contrasting her quiet and careful nature with his loud",
+  "cands": [
+   "foil"
+  ],
+  "text": "Mira's brother is the opposite of Mira: loud where Mira is quiet, careless where Mira is careful."
+ },
+ {
+  "want": "mentor",
+  "got": "mentor",
+  "context": "The old bookkeeper teaches you how to read the runes.",
+  "cands": [
+   "mentor"
+  ],
+  "text": "The old bookkeeper teaches you how to read the runes."
+ },
+ {
+  "want": "character arc",
+  "got": "character arc",
+  "context": "a character is different at the end than at the start",
+  "cands": [
+   "character arc"
+  ],
+  "text": "At first the keeper doesn't trust you, but by the end the keeper gives you the key."
+ },
+ {
+  "want": "archetype",
+  "got": "archetype",
+  "context": "a gentle giant character",
+  "cands": [
+   "archetype"
+  ],
+  "text": "The smith is a gentle giant: huge and scary-looking, but kind to everyone."
+ },
+ {
+  "want": "feedback loop",
+  "got": "mentor",
+  "context": "The baker who teaches the hero as they earn more cakes",
+  "cands": [
+   "feedback loop",
+   "mentor"
+  ],
+  "text": "The more cakes you bring the baker, the more trust you earn, and the more the baker teaches you."
+ },
+ {
+  "want": "game economy",
+  "got": "none",
+  "context": "The spell keeper gives you a little discount on spells and a baked good when you visit.",
+  "cands": [
+   "game economy"
+  ],
+  "text": "The spell keeper gives you a little discount on spells and a baked good when you visit."
+ },
+ {
+  "want": "emergent gameplay",
+  "got": "emergent gameplay",
+  "context": "What if fire spreads through grass, and the wind can push it?",
+  "cands": [
+   "emergent gameplay"
+  ],
+  "text": "What if fire spreads through grass, and the wind can push it?"
+ },
+ {
+  "want": "visual hierarchy",
+  "got": "visual hierarchy",
+  "context": "world's name size on title screen",
+  "cands": [
+   "visual hierarchy"
+  ],
+  "text": "The world's name should be the biggest thing on the title screen so you notice it first."
+ },
+ {
+  "want": "legibility",
+  "got": "legibility",
+  "context": "sign text is too small, it's hard to read on a phone",
+  "cands": [
+   "legibility"
+  ],
+  "text": "The sign text is too small, it's hard to read on a phone."
+ },
+ {
+  "want": "typeface",
+  "got": "typeface",
+  "context": "The title should use old-fashioned letters, like a storybook.",
+  "cands": [
+   "typeface"
+  ],
+  "text": "The title should use old-fashioned letters, like a storybook."
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "gating"
+  ],
+  "text": "Can you fix the typo in the keeper's name until I get back?"
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "typeface",
+   "visual hierarchy"
+  ],
+  "text": "Make the font bigger please."
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "procedural generation"
+  ],
+  "text": "What colour should the random rug be?"
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "backtracking"
+  ],
+  "text": "I'll come back to this later."
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "motivation"
+  ],
+  "text": "The keeper wants a better name, can you suggest one?"
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "game economy"
+  ],
+  "text": "How much gold does the player start with?"
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "layer"
+  ],
+  "text": "Put the chair on top of the list."
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "legibility"
+  ],
+  "text": "The map is hard to read for me right now, can you describe it?"
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [
+   "flag"
+  ],
+  "text": "Remember that I prefer short answers."
+ },
+ {
+  "want": "none",
+  "got": "none",
+  "context": "",
+  "cands": [],
+  "text": "Is it safe to delete the old draft?"
+ }
+]

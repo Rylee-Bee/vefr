@@ -1029,6 +1029,70 @@
     }
   }
 
+  /* Teach while building (Book Girl): after a reply is on screen, ask whether the
+     author just used a design idea, and let Fróði hold up the paddle with its name.
+     Recognition, never correction; at most one note every few turns. */
+  var teachState = { turnsSince: 99, sessionNotes: 0 };
+  function maybeTeach(authorText) {
+    var P = window.VEFR_PREFS;
+    var mode = (P && P.get && P.get().teach) || 'build';
+    teachState.turnsSince += 1;
+    if (mode === 'off') return;
+    if (mode === 'tips' && teachState.sessionNotes >= 1) return;
+    if (mode === 'build' && teachState.turnsSince < 3) return;
+    API.teachRecognize({ message: authorText })
+      .then(function (res) {
+        var t = res && res.teach;
+        if (!t || !folioLog) return;
+        teachState.turnsSince = 0;
+        teachState.sessionNotes += 1;
+        folioLog.appendChild(teachNote(t));
+        folioLog.scrollTop = folioLog.scrollHeight;
+      })
+      .catch(function () { /* no note is always fine */ });
+  }
+
+  function teachNote(t) {
+    var note = h('aside', { className: 'paddle-note', 'aria-label': 'A note from Fróði' });
+    var who = h('div', { className: 'paddle-note__who' });
+    who.appendChild(h('img', { src: ART + 'residents/frodi.webp', alt: '', width: 40, height: 40 }));
+    who.appendChild(h('span', { textContent: 'Fróði holds up the paddle' }));
+    note.appendChild(who);
+    var card = h('div', { className: 'paddle-note__card' });
+    var name = t.term.charAt(0).toUpperCase() + t.term.slice(1);
+    var lead = h('p', { className: 'paddle-note__lead' });
+    lead.appendChild(h('img', { src: ART + 'icons/library/kind-book.webp', alt: '', width: 24, height: 24 }));
+    lead.appendChild(h('span', { textContent: (t.stage === 'again' && t.first_context)
+      ? 'You’ve seen this idea before. Remember ' + t.first_context + '? Same idea:'
+      : 'There’s a name for part of what you just made.' }));
+    card.appendChild(lead);
+    var def = h('p', {});
+    def.appendChild(h('strong', { textContent: name }));
+    def.appendChild(document.createTextNode(': ' + t.plain));
+    card.appendChild(def);
+    if (t.context) card.appendChild(h('p', { className: 'paddle-note__here', textContent: 'Here: ' + t.context + '.' }));
+    if (t.local) card.appendChild(h('p', { className: 'paddle-note__here', textContent: 'In VEFR: ' + t.local + '.' }));
+    var why = h('p', { className: 'paddle-note__why', textContent: t.why, hidden: true });
+    card.appendChild(why);
+    var row = h('div', { className: 'paddle-note__actions' });
+    var whyBtn = h('button', { className: 'cta cta--line', type: 'button', textContent: 'Why designers use this', 'aria-expanded': 'false' });
+    whyBtn.addEventListener('click', function () {
+      why.hidden = !why.hidden;
+      whyBtn.setAttribute('aria-expanded', String(!why.hidden));
+    });
+    var got = h('button', { className: 'cta cta--gold', type: 'button', textContent: 'Got it' });
+    got.addEventListener('click', function () {
+      API.teachGotIt({ term: t.term }).catch(function () {});
+      note.remove();
+      if (folioInput) folioInput.focus();
+    });
+    if (t.why) row.appendChild(whyBtn);
+    row.appendChild(got);
+    card.appendChild(row);
+    note.appendChild(card);
+    return note;
+  }
+
   function folioSendMessage() {
     if (!folioResident || folioPending) return;
     var text = folioInput.value.trim();
@@ -1082,6 +1146,7 @@
         box.appendChild(keep);
         folioLog.appendChild(box);
         folioLog.scrollTop = folioLog.scrollHeight;
+        maybeTeach(text);
       })
       .catch(function () {
         setFolioFace('sleepy');
@@ -3841,6 +3906,15 @@
         { label: 'Show me how things work', value: 'show' }
       ], 'workings');
       container.appendChild(workCard);
+
+      // Learning as you build: Fróði names the idea you just used (teach.py)
+      var teachCard = makeCard('Learning as you build');
+      addOptionRow(teachCard, 'Fróði’s notes', [
+        { label: 'Teach me as I build', value: 'build' },
+        { label: 'Occasional tips', value: 'tips' },
+        { label: 'Just plain words', value: 'off' }
+      ], 'teach');
+      container.appendChild(teachCard);
 
       // Motion
       var motionCard = makeCard('How it moves');

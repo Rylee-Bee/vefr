@@ -1,12 +1,24 @@
 /* vefr/web/js/glossary.js: the real words the Library's books teach.
  * Tap an italic word in a book to see it in plain words, and what VEFR calls it.
+ * Entries with `teach` are ideas Fróði can name while you build (src/vefr/teach.py):
+ * `when` is the shape, `cues` the phrasings that wake the check, `example` a sentence that must match.
  * Every italic word on the "How VEFR works" shelf needs an entry here (tests/test_library.py). */
 window.VEFR_GLOSSARY = {
  "accessibility": {
   "plain": "Making sure everyone can use it: small hands, tired eyes, screen readers, keyboards only."
  },
  "affordance": {
-  "plain": "Something about a control that shows how to use it, like a button looking pressable."
+  "plain": "Something about a control that shows how to use it, like a button looking pressable.",
+  "teach": "core",
+  "when": "something's look shows how to use it",
+  "why": "When a thing looks like what it does, nobody needs a tutorial.",
+  "cues": [
+   "\\blooks? (like|pushable|breakable|climbable|openable)\\b",
+   "\\b(should|so it) look(s)? (like )?(you can|it can|climbable|pushable)\\b",
+   "\\bso (people|players?) know (they|you) can\\b",
+   "\\b(handle|lever|ladder)\\b.{0,30}\\b(obvious|clear)\\b"
+  ],
+  "example": "Make the crates look pushable, so players know they can move them."
  },
  "ai model": {
   "plain": "A program that learned from lots of examples, instead of being written rule by rule.",
@@ -67,7 +79,18 @@ window.VEFR_GLOSSARY = {
   "plain": "A choice that sends the story one way or another."
  },
  "branching narrative": {
-  "plain": "A story full of choices that lead to different paths."
+  "plain": "A story full of choices that lead to different paths.",
+  "teach": "core",
+  "when": "a player's choice sends the story down different paths",
+  "why": "Branches make the player a co-author: the story is partly theirs.",
+  "cues": [
+   "\\bif (they|you|the player) (choose|chooses|pick|picks|decide|side)\\b",
+   "\\bdifferent ending",
+   "\\bthe story (goes|changes|splits)\\b",
+   "\\b(two|three|several) paths\\b",
+   "\\bdepending on (what|which|their|your) (choice|they|you)\\b"
+  ],
+  "example": "If you choose to help the thief, the story goes a different way."
  },
  "bug": {
   "plain": "A mistake that makes a program do the wrong thing."
@@ -101,7 +124,17 @@ window.VEFR_GLOSSARY = {
  },
  "collision": {
   "plain": "When two things bump. In maps: squares you can't walk through.",
-  "vefr": "solid squares"
+  "vefr": "solid squares",
+  "teach": "maps",
+  "when": "some squares or things can't be walked through",
+  "why": "Walls shape where players go, which is most of what a map is for.",
+  "cues": [
+   "\\bcan'?t (walk|go|pass|move) (through|past|over)\\b",
+   "\\bblocks? (the|your) (way|path)\\b",
+   "\\bimpassable\\b",
+   "\\bsolid\\b"
+  ],
+  "example": "The river should block the way, you can't walk through it."
  },
  "collision detection": {
   "plain": "The check that stops something moving into a solid thing."
@@ -117,7 +150,17 @@ window.VEFR_GLOSSARY = {
   "plain": "Checks that run themselves on every change, so mistakes show up early."
  },
  "contrast": {
-  "plain": "How different two colours are. Dark words on light paper have high contrast."
+  "plain": "How different two colours are. Dark words on light paper have high contrast.",
+  "teach": "type",
+  "when": "colours are chosen so things stand apart clearly",
+  "why": "Good contrast makes things readable for everyone, including tired eyes and bright rooms.",
+  "cues": [
+   "\\b(dark|light) (text|words|letters) on (a )?(dark|light)\\b",
+   "\\bstand(s)? out (against|from)\\b",
+   "\\bhard to see against\\b",
+   "\\bblend(s)? in\\b"
+  ],
+  "example": "The grey text blends in with the stone, make it stand out."
  },
  "cutout": {
   "plain": "A picture with its background removed."
@@ -180,13 +223,33 @@ window.VEFR_GLOSSARY = {
  },
  "fallback": {
   "plain": "A backup plan that takes over when the first plan fails.",
-  "vefr": "fallback lines"
+  "vefr": "fallback lines",
+  "teach": "core",
+  "when": "a backup takes over when the first plan fails",
+  "why": "Planning for failure keeps the game working even when something goes wrong.",
+  "cues": [
+   "\\bif (it|that|the model|this) (fails|breaks|isn'?t there|is down|doesn'?t work)\\b",
+   "\\bas a backup\\b",
+   "\\bjust in case\\b",
+   "\\binstead,? (use|show|say)\\b"
+  ],
+  "example": "If the model isn't there, the keeper should just say one of the old lines instead."
  },
  "feedback": {
   "plain": "The answer a game gives when you do something, like a sound or colour."
  },
  "flag": {
-  "plain": "One yes-or-no a game remembers, like \"met the keeper\"."
+  "plain": "One yes-or-no a game remembers, like \"met the keeper\".",
+  "teach": "core",
+  "when": "the world remembers a yes-or-no about what the player did and checks it later",
+  "why": "Flags let a small world react to the player, which makes their choices feel real.",
+  "cues": [
+   "\\bremember(s|ed)? (that|if|whether)\\b",
+   "\\bif (they|you|the player) (already|have|has|did)\\b",
+   "\\b(already|once you'?ve) (met|talked|spoken|visited|found)\\b",
+   "\\bafter (they|you)'?ve? (met|talked|spoken|visited|found)\\b"
+  ],
+  "example": "The keeper should remember if you already talked to them and greet you differently."
  },
  "format": {
   "plain": "The rules for how a file is laid out, so programs can read it."
@@ -214,10 +277,31 @@ window.VEFR_GLOSSARY = {
   "plain": "One sheet of drawing, stacked with others.",
   "also": [
    "tile layer"
-  ]
+  ],
+  "teach": "maps",
+  "when": "things are drawn on top of or behind other things",
+  "why": "Layers let you build a rich picture from simple parts and control what hides what.",
+  "cues": [
+   "\\bon top of\\b",
+   "\\b(behind|in front of) the\\b",
+   "\\bover the (path|floor|ground|grass)\\b",
+   "\\bunder(neath)? the\\b.{0,20}\\b(show|see)\\b"
+  ],
+  "example": "The tree branches should be drawn on top of the path, so you walk under them."
  },
  "legend": {
-  "plain": "The key that says what each map letter means."
+  "plain": "The key that says what each map letter means.",
+  "vefr": "the map's symbols",
+  "teach": "maps",
+  "when": "each kind of square on a map is given a meaning",
+  "why": "A clear key means anyone can read and change the map.",
+  "cues": [
+   "\\b(each|every) (letter|symbol|square|tile) (means|stands for|is)\\b",
+   "\\b(means|stands for) (a )?(wall|door|water|path|grass)\\b",
+   "\\bstands for\\b",
+   "\\b(letter|symbol|square|tile) \\w+ (means|is)\\b"
+  ],
+  "example": "Let's say the letter T stands for a tree."
  },
  "level design": {
   "plain": "Making the places a player moves through.",
@@ -270,7 +354,18 @@ window.VEFR_GLOSSARY = {
   "plain": "Named places on a map, like \"the stone\".",
   "also": [
    "point of interest"
-  ]
+  ],
+  "teach": "core",
+  "when": "a named place meant to catch the player's eye and draw them in",
+  "why": "Named places give a map shape and give players somewhere to aim for.",
+  "cues": [
+   "\\blandmarks?\\b.{0,30}\\bname",
+   "\\bcall (it|this place|the spot)\\b",
+   "\\ba place (called|named)\\b",
+   "\\bsomething to (walk|head|aim) toward\\b",
+   "\\bworth visiting\\b"
+  ],
+  "example": "Let's have a place called the Weeping Stone that people want to visit."
  },
  "preferences": {
   "plain": "Choices a person makes about how something works for them.",
@@ -284,7 +379,18 @@ window.VEFR_GLOSSARY = {
   "vefr": "the Casting Table",
   "also": [
    "random generation"
-  ]
+  ],
+  "teach": "core",
+  "when": "things are made from rules and chance instead of placed by hand",
+  "why": "A few good rules can make endless fresh places, so every visit can surprise.",
+  "cues": [
+   "\\brandom(ly)?\\b",
+   "\\bdifferent every (time|run|visit|game)\\b",
+   "\\bgenerated?\\b",
+   "\\bshuffle",
+   "\\bnever the same\\b"
+  ],
+  "example": "The dungeon should be different every time you go down."
  },
  "program": {
   "plain": "Instructions a computer follows."
@@ -335,7 +441,18 @@ window.VEFR_GLOSSARY = {
   "plain": "Running on your own computer, not someone else's."
  },
  "sanctuary": {
-  "plain": "A safe square where nothing can hurt you."
+  "plain": "A safe square where nothing can hurt you.",
+  "vefr": "safe squares",
+  "teach": "core",
+  "when": "a place where nothing can hurt the player",
+  "why": "Safe places let players breathe, plan and feel at home between tense moments.",
+  "cues": [
+   "\\bsafe (place|spot|room|zone|haven|square)\\b",
+   "\\bnothing can (hurt|harm|attack|reach)\\b",
+   "\\bplace to rest\\b",
+   "\\bno enemies\\b"
+  ],
+  "example": "The tavern should be a safe place where nothing can hurt you."
  },
  "sandbox": {
   "plain": "A safe place to try things without breaking the real one.",
@@ -372,7 +489,17 @@ window.VEFR_GLOSSARY = {
   "vefr": "the Archives"
  },
  "spawn point": {
-  "plain": "Where a player or thing appears at the start."
+  "plain": "Where a player or thing appears at the start.",
+  "vefr": "the hero's start",
+  "teach": "maps",
+  "when": "the place where the player or something appears when it starts",
+  "why": "Where you start sets the first impression and teaches the first direction.",
+  "cues": [
+   "\\b(start|starts|begin|begins|appear|appears) (in|at|by|next to|on)\\b",
+   "\\bwhere (you|the player|they) (start|begin|wake)\\b",
+   "\\brespawn\\b"
+  ],
+  "example": "The player should start in the cottage kitchen."
  },
  "sprite sheet": {
   "plain": "Many small pictures on one sheet, like frames of a flip book."
@@ -470,5 +597,434 @@ window.VEFR_GLOSSARY = {
  },
  "writer's block": {
   "plain": "Being stuck and not knowing what to write next."
+ },
+ "gating": {
+  "plain": "When getting to something depends on meeting a condition first.",
+  "teach": "core",
+  "when": "access to a place, item, ability or event depends on a condition",
+  "why": "It gives the player a goal and makes the reward feel earned, and it lets you control the order people meet things.",
+  "cues": [
+   "\\buntil\\b",
+   "\\bunless\\b",
+   "\\bonly (if|after|when|once)\\b",
+   "can'?t .{0,40}\\b(without|until|unless)\\b",
+   "\\blocked\\b",
+   "\\bneeds? (the|a|an|to have)\\b",
+   "\\bunlock"
+  ],
+  "example": "I want a hidden door here, but you can't find it until you have the weird lantern."
+ },
+ "signposting": {
+  "plain": "Quiet hints in the world that show where to go or what matters.",
+  "teach": "core",
+  "when": "the world hints where to go or what matters without saying it outright",
+  "why": "Players feel clever finding their own way, instead of being told.",
+  "cues": [
+   "\\bhint",
+   "\\bpoint(s|ing)? (the player|them|toward|to)\\b",
+   "\\blead(s)? (the player|them|you)\\b",
+   "\\bguide",
+   "\\bdraw(s)? (the eye|them|the player)\\b",
+   "\\btrail of\\b",
+   "\\bso (they|players?) know where\\b"
+  ],
+  "example": "Let's put a trail of lanterns so players know where to go next."
+ },
+ "exploration reward": {
+  "plain": "Something worth finding for going off the main path.",
+  "teach": "core",
+  "when": "going off the main path pays off with something worth finding",
+  "why": "It turns curiosity into a habit: players look around because looking around pays.",
+  "cues": [
+   "\\boff the (main )?path\\b",
+   "\\bexplor",
+   "\\bif (they|you|players?) (look|wander|search|poke)",
+   "\\btucked away\\b",
+   "\\bbehind the\\b",
+   "\\bsecret\\b.{0,30}\\b(treasure|reward|chest|item|book)\\b",
+   "\\bfor (the )?curious\\b"
+  ],
+  "example": "If players wander off the path into the woods, they find an old chest."
+ },
+ "discoverability": {
+  "plain": "How easily someone can find that a thing exists or can be used.",
+  "teach": "core",
+  "when": "whether a player can find out that something exists or can be used",
+  "why": "The best feature is wasted if nobody finds it, so designers make important things easy to notice.",
+  "cues": [
+   "\\b(won'?t|don'?t|never|might not) (notice|find|see|know)\\b",
+   "\\bhard to (find|notice|see|spot)\\b",
+   "\\beasy to (miss|find|notice|spot)\\b",
+   "\\bnoticeable\\b",
+   "\\bhow will (they|players?) know\\b"
+  ],
+  "example": "I'm worried players won't notice they can talk to the statue."
+ },
+ "visual language": {
+  "plain": "A look used the same way every time, so players learn what it means.",
+  "teach": "core",
+  "when": "a look is used consistently so players learn what it means",
+  "why": "Once players learn the language, they can read new places at a glance without being told.",
+  "cues": [
+   "\\b(all|every) (the )?\\w+ (should|will|always) (look|be|glow|have)\\b",
+   "\\bsame (colou?r|look|symbol|glow|mark)\\b",
+   "\\balways (glow|look|mean|marked)\\b",
+   "\\bso (players?|they) (learn|know) (that|what)\\b",
+   "\\bcracked walls?\\b"
+  ],
+  "example": "Every door you can open should have the same blue glow, so players learn what it means."
+ },
+ "foreshadowing": {
+  "plain": "Small early hints of something that happens later.",
+  "teach": "story",
+  "when": "an early detail hints at something that happens later",
+  "why": "When the payoff comes, players feel it was always meant to be, and want to look back.",
+  "cues": [
+   "\\bhint (at|that)\\b.{0,40}\\blater\\b",
+   "\\blater (on|in the story)\\b",
+   "\\bearly (on|hint|clue)\\b",
+   "\\bsets? up\\b.{0,30}\\blater\\b",
+   "\\bat the (start|beginning).{0,40}\\b(end|later)\\b"
+  ],
+  "example": "Early on, the baker hums a song that turns out to matter later."
+ },
+ "red herring": {
+  "plain": "A false clue that points the wrong way on purpose.",
+  "teach": "story",
+  "when": "a clue deliberately points the player toward the wrong answer",
+  "why": "It keeps mysteries honest and surprising, so the real answer lands harder.",
+  "cues": [
+   "\\bfalse (clue|lead|trail)\\b",
+   "\\bmislead",
+   "\\bthrow (them|players?) off\\b",
+   "\\bwrong (suspect|person|answer)\\b",
+   "\\bdistract(ion)?\\b",
+   "\\bsuspect",
+   "\\bbut it'?s really\\b"
+  ],
+  "example": "Everyone should suspect the miller, but it's really the priest."
+ },
+ "chekhov's gun": {
+  "plain": "If something is shown early, it should matter later.",
+  "teach": "story",
+  "when": "a thing shown early becomes important later",
+  "why": "It makes every detail feel purposeful, and it rewards players who pay attention.",
+  "cues": [
+   "\\b(the|an?) \\w+ (on|hanging on|over) the (wall|mantel|shelf)\\b.{0,60}\\blater\\b",
+   "\\bcomes back (later|at the end)\\b",
+   "\\bturns out to (matter|be important|be the)\\b",
+   "\\bpays? off later\\b"
+  ],
+  "example": "The rusty sword over the fireplace turns out to be the one that breaks the curse."
+ },
+ "cliffhanger": {
+  "plain": "Stopping at a tense moment so people want to know what happens next.",
+  "teach": "story",
+  "when": "a part ends on an unresolved, tense moment",
+  "why": "An open question is the strongest reason to come back tomorrow.",
+  "cues": [
+   "\\bend(s)? (on|with|right as|just as)\\b",
+   "\\bleave (them|players?|it) (hanging|wondering)\\b",
+   "\\bto be continued\\b",
+   "\\bjust as .{0,30}\\b(ends|cut)\\b"
+  ],
+  "example": "Part one ends just as the cellar door creaks open."
+ },
+ "unreliable narrator": {
+  "plain": "A storyteller who can't be fully trusted.",
+  "teach": "story",
+  "when": "the one telling the story is wrong, lying, or leaving things out",
+  "why": "It lets players become detectives of the story itself, and makes a twist feel fair.",
+  "cues": [
+   "\\b(lying|lies|lied)\\b",
+   "\\bcan'?t be trusted\\b",
+   "\\bnot telling the (whole )?truth\\b",
+   "\\bremembers? it wrong\\b",
+   "\\bleav(es|ing) (things|stuff|parts) out\\b"
+  ],
+  "example": "The old miller tells you the story, but the miller is lying about their part in it."
+ },
+ "environmental storytelling": {
+  "plain": "Letting a place tell its story through what's left in it.",
+  "teach": "world",
+  "when": "a place shows what happened there through objects and details, without words",
+  "why": "Players piece the story together themselves, which makes it stick.",
+  "cues": [
+   "\\bwithout (words|saying|telling|dialogue)\\b",
+   "\\bshow (what|that) happened\\b",
+   "\\b(left behind|burned|abandoned|overturned|scorch)",
+   "\\bevidence of\\b",
+   "\\bthe room (tells|shows)\\b"
+  ],
+  "example": "There's evidence of an older tavern that burned down, just scorched beams and a sign."
+ },
+ "landmark": {
+  "plain": "A big, easy-to-see thing players use to find their way.",
+  "teach": "world",
+  "when": "something big and memorable helps players know where they are",
+  "why": "Landmarks let players build a map in their heads, so they feel at home instead of lost.",
+  "cues": [
+   "\\b(see|visible) (it )?from (everywhere|anywhere|far|across)\\b",
+   "\\b(tall|big|giant|huge) (tower|tree|statue|mountain)\\b",
+   "\\bso (you|players?) (always )?know where (you|they) are\\b",
+   "\\blandmarks?\\b"
+  ],
+  "example": "A giant tree you can see from everywhere, so you always know where you are."
+ },
+ "chokepoint": {
+  "plain": "A narrow spot everyone has to pass through.",
+  "teach": "world",
+  "when": "the space narrows so every path must go through one spot",
+  "why": "It lets you stage an important moment where you know the player will be.",
+  "cues": [
+   "\\bonly (one|a single) way (in|through|out|across)\\b",
+   "\\bnarrow (bridge|pass|path|corridor|door)\\b",
+   "\\beveryone (has|must) (to )?(pass|go) through\\b",
+   "\\bbottleneck\\b"
+  ],
+  "example": "There's only one way across the river: a narrow bridge with a troll."
+ },
+ "backtracking": {
+  "plain": "Going back to places you've been, often to use something new.",
+  "teach": "world",
+  "when": "players return to earlier places, often with something new that opens them up",
+  "why": "Old places feel new again, and the world feels connected instead of a straight line.",
+  "cues": [
+   "\\bcome back (later|to)\\b",
+   "\\bgo back (to|later)\\b",
+   "\\breturn (to|later)\\b",
+   "\\bold (area|room|place)s?\\b.{0,30}\\bnew\\b"
+  ],
+  "example": "Once you have the lantern, you can come back to the first cave and see the hidden writing."
+ },
+ "secret area": {
+  "plain": "A hidden place most players won't find at first.",
+  "teach": "world",
+  "when": "a place is hidden and found only by looking carefully",
+  "why": "Secrets make a world feel deeper than it looks, and finding one feels like yours alone.",
+  "cues": [
+   "\\bhidden (room|door|place|passage|area|stair)",
+   "\\bsecret (room|door|passage|place|area|stair)",
+   "\\bbehind the (bookshelf|painting|wall|waterfall)\\b",
+   "\\bfalse wall\\b"
+  ],
+  "example": "Behind the bookshelf there's a hidden room."
+ },
+ "core loop": {
+  "plain": "The thing the player does over and over.",
+  "teach": "feel",
+  "when": "a small set of actions the player repeats throughout the game",
+  "why": "If the loop is fun, everything else is a bonus; if it isn't, nothing saves the game.",
+  "cues": [
+   "\\bover and over\\b",
+   "\\bagain and again\\b",
+   "\\bmost of the (time|game)\\b.{0,30}\\b(you|they|players?)\\b",
+   "\\bthe main thing (you|they|players?) do\\b",
+   "\\bevery (day|night|run|turn) (you|they)\\b"
+  ],
+  "example": "Most of the game you explore a room, find something, and bring it back to the cottage."
+ },
+ "risk and reward": {
+  "plain": "Bigger dangers pay bigger prizes.",
+  "teach": "feel",
+  "when": "a more dangerous choice offers a better payoff",
+  "why": "It turns every choice into a small, exciting decision instead of an obvious one.",
+  "cues": [
+   "\\b(more|bigger|greater) (danger|risk)\\b",
+   "\\brisky\\b",
+   "\\bworth the (risk|danger)\\b",
+   "\\b(better|bigger|rarer) (loot|reward|prize|treasure)\\b.{0,30}\\b(danger|deeper|harder)\\b",
+   "\\bdeeper .{0,20}\\b(better|rarer)\\b",
+   "\\bmore dangerous\\b",
+   "\\bthe (deeper|further|farther|harder) .{0,40}\\bthe (more|rarer|better)\\b"
+  ],
+  "example": "The deeper you go, the more dangerous it is, but the rarer the loot."
+ },
+ "difficulty curve": {
+  "plain": "How the game gets harder over time.",
+  "teach": "feel",
+  "when": "challenge rises gradually as the player gets better",
+  "why": "A smooth rise keeps players in the sweet spot between bored and overwhelmed.",
+  "cues": [
+   "\\bget(s|ting)? harder\\b",
+   "\\bharder (as|over|the)\\b",
+   "\\bease (them|players?) in\\b",
+   "\\bstart (easy|gentle|simple)\\b",
+   "\\bramp(s)? up\\b"
+  ],
+  "example": "It should start easy and get harder as you go down."
+ },
+ "pacing": {
+  "plain": "The rhythm of busy and calm moments.",
+  "teach": "feel",
+  "when": "the game alternates tense and quiet moments on purpose",
+  "why": "Rest makes the excitement land, and excitement makes the rest feel earned.",
+  "cues": [
+   "\\b(calm|quiet|rest|breather)\\b.{0,40}\\b(after|between|before)\\b",
+   "\\b(slow|fast)(er)? (part|bit|moment)s?\\b",
+   "\\btoo (much|many) .{0,20}\\b(in a row|at once)\\b",
+   "\\bbreak (it )?up\\b",
+   "\\bcatch (their|your) breath\\b",
+   "\\bquiet (room|moment|bit|part|place)\\b"
+  ],
+  "example": "After the spider fight, give them a quiet room to catch their breath."
+ },
+ "player agency": {
+  "plain": "The feeling that your choices really matter.",
+  "teach": "feel",
+  "when": "the player's own choices meaningfully change what happens",
+  "why": "People care most about stories they helped make.",
+  "cues": [
+   "\\b(let|letting) (the player|players?|them|you) (choose|decide|pick)\\b",
+   "\\b(their|your) (own )?choice\\b",
+   "\\bup to (the player|them|you)\\b",
+   "\\bdecide (for )?(themselves|yourself)\\b"
+  ],
+  "example": "Let the player decide for themselves whether to open the sealed door."
+ },
+ "motivation": {
+  "plain": "What a character wants, and why.",
+  "teach": "characters",
+  "when": "a character's actions come from something they want",
+  "why": "Characters who want something feel alive, and their wants create the story.",
+  "cues": [
+   "\\bwants? (to|a|an|the|more|nothing|everything)\\b",
+   "\\bbecause\\b",
+   "\\bwhy \\w+ (does|do|did)\\b",
+   "\\bdreams? of\\b",
+   "\\bdesperate (to|for)\\b"
+  ],
+  "example": "The spell keeper wants to protect the cottage because the two sisters built it together."
+ },
+ "foil": {
+  "plain": "A character who shows off another by being their opposite.",
+  "teach": "characters",
+  "when": "a character contrasts with another to highlight their traits",
+  "why": "Contrast makes both characters clearer without explaining either.",
+  "cues": [
+   "\\b(the )?opposite of\\b",
+   "\\bunlike\\b",
+   "\\b(where|while) \\w+ (is|are|'s) \\w+,",
+   "\\bcontrast\\b"
+  ],
+  "example": "Mira's brother is the opposite of Mira: loud where Mira is quiet, careless where Mira is careful."
+ },
+ "mentor": {
+  "plain": "A wiser character who helps the hero grow.",
+  "teach": "characters",
+  "when": "an experienced character guides or teaches the hero",
+  "why": "A mentor lets you teach the player through a relationship instead of a manual.",
+  "cues": [
+   "\\bteach(es|ing)? (you|the hero|the player)\\b",
+   "\\bguides? (you|the hero|the player)\\b",
+   "\\bshows? (you|the hero) (how|the ropes)\\b",
+   "\\bwise (old )?\\w+\\b.{0,30}\\bhelp"
+  ],
+  "example": "The old bookkeeper teaches you how to read the runes."
+ },
+ "character arc": {
+  "plain": "How a character changes over the story.",
+  "teach": "characters",
+  "when": "a character is different at the end than at the start",
+  "why": "Change is what makes a story feel like it went somewhere.",
+  "cues": [
+   "\\bby the end\\b",
+   "\\b(learns?|grows?|changes?) (to|into|over)\\b",
+   "\\bat first .{0,40}\\b(but|then|later)\\b",
+   "\\bcomes? to (trust|accept|forgive|love)\\b"
+  ],
+  "example": "At first the keeper doesn't trust you, but by the end the keeper gives you the key."
+ },
+ "archetype": {
+  "plain": "A familiar kind of character everyone recognises.",
+  "teach": "characters",
+  "when": "a character follows a pattern people know from many stories",
+  "why": "A familiar shape lets players understand someone instantly, so you can spend your words on what's different.",
+  "cues": [
+   "\\b(the )?(trickster|wise old|chosen one|mentor figure|lovable rogue|gentle giant|wise woman|village elder)\\b",
+   "\\bclassic (kind of )?(character|hero|villain)\\b",
+   "\\bkind of like (a|the) (typical|classic)\\b"
+  ],
+  "example": "The smith is a gentle giant: huge and scary-looking, but kind to everyone."
+ },
+ "feedback loop": {
+  "plain": "When a result feeds back into the thing that caused it.",
+  "teach": "systems",
+  "when": "the result of something makes that same thing stronger or weaker next time",
+  "why": "Loops explain why games snowball or balance out, and designers tune them on purpose.",
+  "cues": [
+   "\\bthe more .{0,40}\\bthe more\\b",
+   "\\bthe more .{0,40}\\bthe (less|fewer|harder|easier)\\b",
+   "\\bsnowball",
+   "\\bfeeds? (back|into)\\b",
+   "\\bso (you|they) can (buy|get) (more|better)\\b"
+  ],
+  "example": "The more cakes you bring the baker, the more trust you earn, and the more the baker teaches you."
+ },
+ "game economy": {
+  "plain": "How things of value come into the game, move around, and leave.",
+  "teach": "systems",
+  "when": "resources flow in, get traded or spent, and leave the game",
+  "why": "Balancing what comes in and goes out keeps rewards meaningful.",
+  "cues": [
+   "\\b(coins?|gold|money|currency|shop|price|buy|sell|trade|discount)\\b"
+  ],
+  "example": "The spell keeper gives you a little discount on spells and a baked good when you visit."
+ },
+ "emergent gameplay": {
+  "plain": "Surprising play that comes from simple rules meeting each other.",
+  "teach": "systems",
+  "when": "simple rules combine to create situations nobody scripted",
+  "why": "A few rules that interact can surprise even the designer, which keeps a game fresh.",
+  "cues": [
+   "\\bcombine\\b",
+   "\\binteract(s|ing)? with\\b",
+   "\\bnobody (planned|scripted|expected)\\b",
+   "\\bwhat if .{0,30}\\band\\b.{0,30}\\bboth\\b",
+   "\\bchain reaction\\b",
+   "\\bspreads?\\b",
+   "\\bwhat if\\b.{0,60}\\band\\b"
+  ],
+  "example": "What if fire spreads through grass, and the wind can push it?"
+ },
+ "visual hierarchy": {
+  "plain": "Making the most important thing the easiest to see first.",
+  "teach": "type",
+  "when": "size, weight, colour or position show what matters most",
+  "why": "People scan before they read; hierarchy tells their eyes where to go.",
+  "cues": [
+   "\\b(bigger|larger|bolder|stand out)\\b",
+   "\\bmost important\\b.{0,30}\\b(first|top|big)\\b",
+   "\\bat the top\\b",
+   "\\bnotice (it )?first\\b",
+   "\\bheadline\\b"
+  ],
+  "example": "The world's name should be the biggest thing on the title screen so you notice it first."
+ },
+ "legibility": {
+  "plain": "How easily letters can be read.",
+  "teach": "type",
+  "when": "text is sized, spaced and coloured so it reads easily",
+  "why": "If people strain to read, they stop reading, and your words are lost.",
+  "cues": [
+   "\\b(hard|easy|easier) to read\\b",
+   "\\breadable\\b",
+   "\\b(too )?(small|tiny) (text|letters|font|words)\\b",
+   "\\bsquint\\b"
+  ],
+  "example": "The sign text is too small, it's hard to read on a phone."
+ },
+ "typeface": {
+  "plain": "The design of the letters, like a handwriting for a font.",
+  "teach": "type",
+  "when": "a particular letter style is chosen to set a mood",
+  "why": "Letters have a voice before anyone reads the words; the right typeface sets the mood instantly.",
+  "cues": [
+   "\\bfont\\b",
+   "\\btypeface\\b",
+   "\\b(handwritten|old-?fashioned|serif|fancy|runic) (letters|writing|text)\\b",
+   "\\bletters (look|feel)\\b"
+  ],
+  "example": "The title should use old-fashioned letters, like a storybook."
  }
 };

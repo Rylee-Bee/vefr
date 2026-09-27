@@ -95,6 +95,8 @@
     lore:         function (q)    { return post('/api/builder/lore', q); },
     loreList:     function ()     { return post('/api/builder/lore/list'); },
     chat:         function (q)    { return post('/api/builder/chat', q); },
+    teachRecognize: function (q)  { return post('/api/teach/recognize', q); },
+    teachGotIt:   function (q)    { return post('/api/teach/got-it', q); },
     enhanceItem:  function (q)    { return post('/api/builder/enhance/item', q); },
     enhanceMap:   function (q)    { return post('/api/builder/enhance/map', q); },
     mapPropose:   function (q)    { return post('/api/builder/map/propose', q); },

@@ -84,3 +84,7 @@ web/static
 data/content.db
 **/data/content.db
 node_modules/
+
+# teach while building: what this person has learned (src/vefr/teach.py)
+/data/learning.json
+/data/.learning.json.*.tmp
