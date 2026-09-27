@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from .paths import app_home
+from .paths import data_dir
 
 DEFAULT = "default"
 UNDO_WINDOW_S = 60
@@ -125,7 +125,7 @@ def derive(base: Path, sid: str | None) -> Path:
 
 def sessions_dir() -> Path:
     """Where per-session metadata lives."""
-    return app_home() / "data" / "sessions"
+    return data_dir() / "sessions"
 
 
 def meta_path(sid: str) -> Path:

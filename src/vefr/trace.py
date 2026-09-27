@@ -20,7 +20,7 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .paths import app_home
+from .paths import data_dir
 
 MAX_EVENTS = 500
 MAX_FILE_BYTES = 2_000_000
@@ -32,7 +32,7 @@ def file_path() -> Path:
     env = os.environ.get("VEFR_TRACE")
     if env:
         return Path(env)
-    return app_home() / "data" / "trace.jsonl"
+    return data_dir() / "trace.jsonl"
 
 
 def _now() -> str:

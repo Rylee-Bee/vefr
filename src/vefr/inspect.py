@@ -21,7 +21,7 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from . import runes, trace, weave as weave_mod
-from .paths import app_home
+from .paths import data_dir
 from .world import current_act, load_world
 
 
@@ -158,7 +158,7 @@ def build_handoff(out_dir: Path | None = None) -> Path:
     The first two are auto-filled; the third is a template the
     author fills in before sharing. See docs/guides/handoff.md.
     """
-    out_dir = out_dir or app_home() / "data" / "handoffs"
+    out_dir = out_dir or data_dir() / "handoffs"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     path = out_dir / f"handoff-{stamp}.md"
@@ -228,7 +228,7 @@ def build_handoff(out_dir: Path | None = None) -> Path:
 def _ensure_data_dir() -> None:
     """The handoff directory may be on a read-only mount in some
     installs; surface a clean error rather than an OSError trace."""
-    target = app_home() / "data" / "handoffs"
+    target = data_dir() / "handoffs"
     try:
         target.mkdir(parents=True, exist_ok=True)
     except OSError as e:

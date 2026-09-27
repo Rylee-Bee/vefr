@@ -27,7 +27,7 @@ from .export import export_story
 from .forge import ItemCard, forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
-from .paths import app_home, safe_pack_name
+from .paths import app_home, safe_pack_name, data_dir
 from .world import load_world, current_act
 
 PURPOSE = "a rumor engine for playable worlds"
@@ -1512,9 +1512,8 @@ def handoff_create():
     handoff format; see docs/guides/handoff.md.
     """
     inspect_mod._ensure_data_dir()
-    from .paths import app_home
 
-    out_dir = app_home() / "data" / "handoffs"
+    out_dir = data_dir() / "handoffs"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = inspect_mod.build_handoff(out_dir)
     return {"path": str(path), "filename": path.name}

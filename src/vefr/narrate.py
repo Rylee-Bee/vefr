@@ -57,7 +57,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
-from .paths import app_home
+from .paths import data_dir
 
 
 class StorytellerUnavailable(RuntimeError):
@@ -85,7 +85,7 @@ def narrate_timeout() -> float:
 
 
 def storyteller_log_path() -> Path:
-    return app_home() / "data" / "storyteller.jsonl"
+    return data_dir() / "storyteller.jsonl"
 
 
 # --- presentation input envelope (facts, not authority) ------------------

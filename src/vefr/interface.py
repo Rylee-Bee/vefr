@@ -64,7 +64,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-from .paths import app_home
+from .paths import data_dir
 
 # Canonical engine action vocabulary (combat.record_combat_action's set
 # + speak + move). Do NOT extend this without an engine mechanic for the
@@ -183,7 +183,7 @@ def interface_timeout() -> float:
 
 
 def interface_log_path() -> Path:
-    return app_home() / "data" / "interface.jsonl"
+    return data_dir() / "interface.jsonl"
 
 
 # --- template-as-data (the fleet's template convention) -----------------
