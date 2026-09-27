@@ -1025,3 +1025,12 @@ html[data-prefs~="font=system"] { --studio-body: system-ui, -apple-system, 'Sego
 .paddle-note__lead img { flex: none; margin-top: 1px; }
 .paddle-note .cta--line { color: #2b241a; border-color: #8a6a3f; background: transparent; }
 .paddle-note .cta--line:focus-visible, .paddle-note .cta--gold:focus-visible { outline: 3px solid #2b241a; outline-offset: 2px; }
+
+/* Fróði's notes live under the log, outside the live region (screen readers aren't talked over) */
+.folio__scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.folio__scroll > .folio__log { flex: none; overflow: visible; }
+.folio__notes:empty { display: none; }
+.folio__notes { padding: 0 16px 12px; }
+.paddle-note__lead { font: inherit; font-size: 1rem; font-weight: 400; margin: 0 0 6px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

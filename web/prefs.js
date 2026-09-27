@@ -34,6 +34,7 @@
     density:  'comfortable', /* comfortable | compact */
     workings: 'simple',      /* simple | show: "Keep it simple / Show me how things work" (studio-modules.md) */
     teach:    'build',       /* build | tips | off: Fróði names the idea you just used (src/vefr/teach.py) */
+    teachAnnounce: 'off',    /* off | on: screen readers hear one line when Fróði has a word (never by default) */
     sound: {
       effects: 0.7, speech: 0.8, ambience: 0.5,
       pairWithVisual: true,

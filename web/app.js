@@ -932,7 +932,14 @@
       + '  <button class="folio__close" id="folio-close" aria-label="Close">\u00D7</button>'
       + '</div>'
       + '<div class="folio__roles" id="folio-roles" aria-label="Things you can ask"></div>'
-      + '<div class="folio__log" id="folio-log" aria-live="polite"></div>'
+      /* One scrolling area: the live log (read aloud as it grows), then Fróði's notes
+         outside it, so a note never talks over anyone. An opt-in setting ("Tell me
+         when there's a word") speaks one line instead. */
+      + '<div class="folio__scroll" id="folio-scroll">'
+      + '  <div class="folio__log" id="folio-log" aria-live="polite"></div>'
+      + '  <div class="folio__notes" id="folio-notes"></div>'
+      + '</div>'
+      + '<p class="sr-only" id="folio-teach-live" role="status" aria-live="polite"></p>'
       + '<div class="folio__composer">'
       + '  <textarea class="folio__input" id="folio-input" rows="1" placeholder="Ask the household\u2026" aria-label="Your message"></textarea>'
       + '  <button class="folio__send" id="folio-send">Ask</button>'
@@ -1054,24 +1061,37 @@
     API.teachRecognize({ message: authorText })
       .then(function (res) {
         var t = res && res.teach;
-        if (!t || !folioLog) return;
+        var notes = folio && folio.querySelector('#folio-notes');
+        if (!t || !notes) return;
         teachState.turnsSince = 0;
         teachState.sessionNotes += 1;
-        folioLog.appendChild(teachNote(t));
-        folioLog.scrollTop = folioLog.scrollHeight;
+        notes.innerHTML = '';
+        notes.appendChild(teachNote(t));
+        scrollFolio();
+        var live = folio.querySelector('#folio-teach-live');
+        var typing = document.activeElement === folioInput && folioInput.value.trim();
+        if (live && P && P.get && P.get().teachAnnounce === 'on' && !typing) {
+          live.textContent = 'Fróði has a word for what you just made: ' + t.term + '.';
+        }
       })
       .catch(function () { /* no note is always fine */ });
   }
 
+  function scrollFolio() {
+    var box = folio && folio.querySelector('#folio-scroll');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
+
   function teachNote(t) {
-    var note = h('aside', { className: 'paddle-note', 'aria-label': 'A note from Fróði' });
+    var headId = 'paddle-head-' + Date.now();
+    var note = h('section', { className: 'paddle-note', role: 'region', 'aria-labelledby': headId });
     var who = h('div', { className: 'paddle-note__who' });
     who.appendChild(h('img', { src: ART + 'residents/frodi.webp', alt: '', width: 40, height: 40 }));
     who.appendChild(h('span', { textContent: 'Fróði holds up the paddle' }));
     note.appendChild(who);
     var card = h('div', { className: 'paddle-note__card' });
     var name = t.term.charAt(0).toUpperCase() + t.term.slice(1);
-    var lead = h('p', { className: 'paddle-note__lead' });
+    var lead = h('h3', { className: 'paddle-note__lead', id: headId });
     lead.appendChild(h('img', { src: ART + 'icons/library/kind-book.webp', alt: '', width: 24, height: 24 }));
     lead.appendChild(h('span', { textContent: (t.stage === 'again' && t.first_context)
       ? 'You’ve seen this idea before. Remember ' + t.first_context + '? Same idea:'
@@ -1095,7 +1115,10 @@
     got.addEventListener('click', function () {
       API.teachGotIt({ term: t.term }).catch(function () {});
       note.remove();
-      if (folioInput) folioInput.focus();
+      /* back to the reply the note was about, not to the text box */
+      var replies = folioLog ? folioLog.querySelectorAll('.folio__msg--resident') : [];
+      var last = replies[replies.length - 1];
+      if (last) { last.setAttribute('tabindex', '-1'); last.focus(); } else if (folioInput) folioInput.focus();
     });
     if (t.why) row.appendChild(whyBtn);
     row.appendChild(got);
@@ -1109,6 +1132,10 @@
     var text = folioInput.value.trim();
     if (!text) return;
 
+    var oldNotes = folio && folio.querySelector('#folio-notes');
+    if (oldNotes) oldNotes.innerHTML = '';
+    var teachLive = folio && folio.querySelector('#folio-teach-live');
+    if (teachLive) teachLive.textContent = '';
     folioPending = true;
     folioSend.disabled = true;
     folioInput.disabled = true;
@@ -1117,7 +1144,7 @@
     var status = h('div', { className: 'folio__status', role: 'status', 'aria-live': 'polite', textContent: ferryLine() });
     folioLog.appendChild(status);
     setFolioFace('thinking');
-    folioLog.scrollTop = folioLog.scrollHeight;
+    scrollFolio();
 
     var history = histories[folioResident] || [];
     var requestHist = history.concat([{ role: 'user', content: text }]);
@@ -1156,7 +1183,7 @@
         });
         box.appendChild(keep);
         folioLog.appendChild(box);
-        folioLog.scrollTop = folioLog.scrollHeight;
+        scrollFolio();
         maybeTeach(text);
       })
       .catch(function () {
