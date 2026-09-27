@@ -75,15 +75,23 @@ def test_guard_runs_clean_on_current_tree():
 # ---- pattern categories ----
 
 
+# Sample leaks are assembled from pieces, so the repo never holds a complete one
+# (history was rewritten 2026-09-27 to remove real ones; the guard still sees these).
+_LAN = "192.168" + ".2.42"
+_HOME = "/home/" + "rylee"
+_HOST = "hulganfamily" + ".duckdns.org"
+_MAIL = "rylee@" + "hulgan.home"
+
+
 @pytest.mark.parametrize("category,pattern", [
-    ("real-lan-192-168-2", r"192.168.2.42"),
-    ("homelab-hostname", r"gitea.hulganfamily.duckdns.org"),
+    ("real-lan-192-168-2", _LAN),
+    ("homelab-hostname", "gitea." + _HOST),
     ("homelab-machine", r"ssh bazzite"),
-    ("private-path", r"/var/home/rylee/projects/vefr"),
-    ("private-path", r"/home/rylee/llama-server/models"),  # plain /home slipped past (2026-09-27)
+    ("private-path", "/var" + _HOME + "/projects/vefr"),
+    ("private-path", _HOME + "/llama-server/models"),  # plain /home slipped past (2026-09-27)
     ("private-ssh-user", r"ssh rylee@host"),
     ("private-gitea-owner", r"http://gitea.example/rylee/sample-pack"),
-    ("private-email", r"rylee@hulgan.home"),
+    ("private-email", _MAIL),
     ("private-key-header", r"-----BEGIN RSA PRIVATE KEY-----"),
     # Synthetic payloads below prove the public-surface guard catches
     # each credential shape. The credential prefixes are concatenated
@@ -143,7 +151,7 @@ def test_skip_path_prefixes_skip_data_artifacts_git(tmp_path):
     work.mkdir()
     _init_repo(work)
     (work / "data").mkdir()
-    (work / "data" / "leak.jsonl").write_text("192.168.2.42\n", encoding="utf-8")
+    (work / "data" / "leak.jsonl").write_text(_LAN + "\n", encoding="utf-8")
     _commit(work, ["data/leak.jsonl"])
     assert mod.should_skip("data/leak.jsonl") is True
 
