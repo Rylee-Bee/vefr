@@ -28,6 +28,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .library import load_shelf, studio_shelf_dir
 from .paths import app_home
+from .replies import RoomCard, RoomDescriptor
 
 router = APIRouter()
 
@@ -195,7 +196,7 @@ def _status() -> str:
     return "healthy" if _commit() else "unknown"
 
 
-@router.get("/room", dependencies=guard)
+@router.get("/room", dependencies=guard, response_model=RoomDescriptor)
 def room() -> dict:
     t = _updated_at()
     return {"contract": "room/0", "id": "vefr", "name": "VEFR", "icon": "tree",
@@ -203,7 +204,7 @@ def room() -> dict:
             "offers": ["art", "library"], "updated_at": _iso(t) if t else None}
 
 
-@router.get("/room/cards", dependencies=guard)
+@router.get("/room/cards", dependencies=guard, response_model=list[RoomCard])
 def cards() -> list[dict]:
     try:
         doc = library_document()
