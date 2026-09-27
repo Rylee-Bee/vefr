@@ -81,7 +81,7 @@ Diagnosis reproductions and verification in `bench/reports/DIAGNOSIS-2026-09-13-
 ## Reproduce
 
 ```bash
-cd /var/home/rylee/vefr
+cd ~/vefr
 python3 bench/cli.py many <keys> --stage qualifier   # suites 0.4.1
 python3 bench/cli.py report                          # per-participant summaries
 ```

@@ -1,6 +1,6 @@
 # VEFR Small-Model Benchmark — Recovery Report (2026-09-13)
 
-Host: bazzite (`rylee-bazzite`, 192.168.2.76). Scope: verify the benchmark
+Host: bazzite (`rylee-bazzite`, <lan-host>). Scope: verify the benchmark
 environment, prior results, model artifacts, runtime configuration, and
 production wiring survived the reboot, without starting a full new suite.
 
@@ -15,9 +15,9 @@ remain. One leaked container cleaned.
 
 | Repo | Branch | HEAD | Upstream (origin/main) | State |
 |---|---|---|---|---|
-| `/var/home/rylee/vefr` | main | `c7a1561` | `294ebce…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
-| `/var/home/rylee/projects/homelab` | main | `53169d2` | `53169d2` | clean, in sync |
-| `/var/home/rylee/munr` | main | `f8bf58e…` | — | dirty; unrelated personal project |
+| `~/vefr` | main | `c7a1561` | `294ebce…` | ahead 1 (unpushed), dirty: 5 modified `.project/*` + untracked `bench/`, `experiments/`, `.project/*` |
+| `~/projects/homelab` | main | `53169d2` | `53169d2` | clean, in sync |
+| `~/munr` | main | `f8bf58e…` | — | dirty; unrelated personal project |
 
 - The active harness `vefr/bench/` (Small Model Olympics) is **untracked WIP**.
 - `~/llama-server/` is a loose runtime dir (not a git repo) holding the
@@ -42,7 +42,7 @@ JSON-schema. Numbers above are supported by files (not chat memory).
 **UNVERIFIED / corrected handoff items:**
 - Handoff "production loopback 127.0.0.1:8082 Spark" — **outdated**. Live truth:
   bazzite `:8082` is the bge-m3 embedder (`llama-embed`); production Spark is
-  remote `192.168.2.141:8082` (vefr quadlet `VEFR_SPARK_URL`).
+  remote `<lan-host>:8082` (vefr quadlet `VEFR_SPARK_URL`).
 - Handoff "~21 tok/s" — evidence says 21–22 (22.2 table / 22.21 bench).
 - Handoff K2 "early-boot segfault/backoff" — **not reproduced** on this boot;
   K2 simply is not running (intentional rollback state).
@@ -51,7 +51,7 @@ JSON-schema. Numbers above are supported by files (not chat memory).
 
 | Endpoint | What | State | Confirmed |
 |---|---|---|---|
-| `192.168.2.141:8082` | Spark prod, `phi-4-mini-instruct-q4` | healthy | `/v1/models` returns alias; canonical: homelab `compose/transcode.yml`, `docs/spark-appliance.md`; pinned digest run b10818; model SHA `88c00229…` |
+| `<lan-host>:8082` | Spark prod, `phi-4-mini-instruct-q4` | healthy | `/v1/models` returns alias; canonical: homelab `compose/transcode.yml`, `docs/spark-appliance.md`; pinned digest run b10818; model SHA `88c00229…` |
 | `127.0.0.1:8081` | `llama-qwen-agent` (Qwen3.8-27B IQ4_XS, ROCm) | up 5d, healthy | `/v1/models`; quadlet `qwen-agent.container`; ROCm image `localhost/llama.cpp:server-rocm-k2` |
 | `127.0.0.1:8082` | `llama-embed` (bge-m3, CPU) | up 5d, healthy | `/v1/models`; quadlet `llama-embed.container` |
 | `127.0.0.1:8083/8087/8091` | hermod stack (qwen2.5-1.5b, granite fallback, granite-ref) | up ~5h | podman ps |
