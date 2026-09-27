@@ -112,7 +112,11 @@
     var foot = document.getElementById('foot-world');
     if (foot) foot.textContent = world.title ? 'on the table: ' + world.title : '';
     var joke = document.getElementById('foot-joke');
-    if (joke) joke.textContent = FOOT_JOKES[Math.floor(Math.random() * FOOT_JOKES.length)];
+    if (joke) {
+      var jk = Math.floor(Math.random() * FOOT_JOKES.length);
+      joke.textContent = FOOT_JOKES[jk];
+      window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('foot_joke', { joke: jk });
+    }
 
     // The lantern burns: the storyteller is reachable
     setLantern(true, 'Storyteller ready');
@@ -494,7 +498,7 @@
     if (!walk.state || walk.state.skipped || walk.state.done) return;
     if (walk.state.steps[id]) return;
     walk.state.steps[id] = true;
-    if (walkComplete()) walk.state.done = true;
+    if (walkComplete()) { walk.state.done = true; window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('walk_done'); }
     walkSave();
     walkRender();
     try { studioAudio.squeak(); } catch (e) {}
@@ -532,9 +536,11 @@
     if (!walk.state) return;
     walk.state.skipped = true;
     walkSave();
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('walk_skip');
     if (walk.rail) walk.rail.hidden = true;
   }
   function walkReset() {
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('walk_restart');
     try { localStorage.removeItem(WALK_KEY); } catch (e) {}
     walk.state = null;
     walkStart();
@@ -669,6 +675,7 @@
 
   function navigate(id) {
     if (!screens[id] || currentId === id) return;
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('room_visit', { room: id });
     if (currentScreen && currentScreen.leave) currentScreen.leave();
     var prev = main.querySelector('.screen--active');
     if (prev) prev.classList.remove('screen--active');
@@ -961,6 +968,7 @@
     });
     folio.querySelector('#folio-forget').addEventListener('click', function () {
       if (!folioResident) return;
+      window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('forget_talk');
       histories[folioResident] = [];
       saveHistories();
       openFolio(folioResident, folioOpener);
@@ -972,6 +980,7 @@
   function openFolio(screenId, opener) {
     var resident = RESIDENTS[screenId];
     if (!resident) return;
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('resident_ask', { room: screenId });
     if (!folio) initFolio();
 
     folioResident = screenId;
@@ -1067,6 +1076,7 @@
         teachState.sessionNotes += 1;
         notes.innerHTML = '';
         notes.appendChild(teachNote(t));
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('teach_note', { term: t.term, stage: t.stage });
         scrollFolio();
         var live = folio.querySelector('#folio-teach-live');
         var typing = document.activeElement === folioInput && folioInput.value.trim();
@@ -1114,6 +1124,7 @@
     var got = h('button', { className: 'cta cta--gold', type: 'button', textContent: 'Got it' });
     got.addEventListener('click', function () {
       API.teachGotIt({ term: t.term }).catch(function () {});
+      window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('teach_got_it');
       note.remove();
       /* back to the reply the note was about, not to the text box */
       var replies = folioLog ? folioLog.querySelectorAll('.folio__msg--resident') : [];
@@ -1136,6 +1147,7 @@
     if (oldNotes) oldNotes.innerHTML = '';
     var teachLive = folio && folio.querySelector('#folio-teach-live');
     if (teachLive) teachLive.textContent = '';
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('chat_sent');
     folioPending = true;
     folioSend.disabled = true;
     folioInput.disabled = true;
@@ -1177,6 +1189,7 @@
           API.vaultKeep({ name: name, kind: 'note', bond: 'tended', lore: reply })
             .then(function () {
               studioAudio.clank();
+              window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('keep');
               ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 32) + '\u201d into the vault\u2026');
             })
             .catch(function () { keep.disabled = false; });
@@ -1328,6 +1341,7 @@
   Object.defineProperty(S, 'folioInput', { get: function () { return folioInput; } });
 
   S.boot = function () {
+    window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('visit');
     /* Fróði's notes follow Worlds' learning setting when VEFR is connected (one switch) */
     if (API.teachState) API.teachState().then(function (st) {
       var P = window.VEFR_PREFS;
@@ -1347,6 +1361,7 @@
     window.addEventListener('hashchange', function () {
       var id = location.hash.slice(1);
       if (screens[id]) navigate(id);
+      else if (id) window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('unknown_room');
     });
 
     // Night by candle, or day in the hall. Separate from the contrast
@@ -1365,6 +1380,7 @@
     setLight(savedLight === 'day' ? 'day' : 'night');
     document.getElementById('light-toggle').addEventListener('click', function () {
       setLight(document.documentElement.getAttribute('data-light') === 'day' ? 'night' : 'day');
+      window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('light_toggle');
     });
 
     // The world hangs its name over the door; the lantern lights

@@ -1,0 +1,1018 @@
+{
+ "version": 2,
+ "achievements": [
+  {
+   "id": "hello-studio",
+   "name": "Hello, Studio",
+   "how": "Open the studio.",
+   "group": "start",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "visit",
+     1
+    ]
+   },
+   "sticker": "a small round wooden door with a welcome mat and a brass knocker"
+  },
+  {
+   "id": "five-small-steps",
+   "name": "Five Small Steps",
+   "how": "Finish your first walk.",
+   "group": "start",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "walk_done",
+     1
+    ]
+   },
+   "sticker": "five little paw-print footsteps in a curving row"
+  },
+  {
+   "id": "grand-tour",
+   "name": "Grand Tour",
+   "how": "Visit all twelve rooms.",
+   "group": "start",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "room_visit",
+     "room",
+     12
+    ]
+   },
+   "sticker": "a rolled parchment map with a dotted path and a tiny flag"
+  },
+  {
+   "id": "day-and-night",
+   "name": "Day and Night",
+   "how": "Switch the light.",
+   "group": "start",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "light_toggle",
+     1
+    ]
+   },
+   "sticker": "a round token that is half golden sun and half silver moon"
+  },
+  {
+   "id": "knob-twiddler",
+   "name": "Knob Twiddler",
+   "how": "Change a setting in the Boiler Room.",
+   "group": "start",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1
+    ]
+   },
+   "sticker": "a big shiny brass control knob with a tiny arrow"
+  },
+  {
+   "id": "first-question",
+   "name": "First Question",
+   "how": "Ask a resident anything.",
+   "group": "start",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "chat_sent",
+     1
+    ]
+   },
+   "sticker": "a speech bubble shaped like an acorn"
+  },
+  {
+   "id": "ding",
+   "name": "Ding!",
+   "how": "Ring for the Storyteller.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "bell",
+     1
+    ]
+   },
+   "sticker": "a small brass hand bell mid-ring with little motion lines"
+  },
+  {
+   "id": "first-square",
+   "name": "First Square",
+   "how": "Paint a square on the drawing table.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "map_paint",
+     1
+    ]
+   },
+   "sticker": "a paintbrush dabbing a single green grass tile"
+  },
+  {
+   "id": "it-checks-out",
+   "name": "It Checks Out",
+   "how": "Pass Check the map.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "map_check_ok",
+     1
+    ]
+   },
+   "sticker": "a folded map with a big green check mark stamp"
+  },
+  {
+   "id": "keeper",
+   "name": "Keeper",
+   "how": "Keep a note from a resident.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "keep",
+     1
+    ]
+   },
+   "sticker": "a small wooden treasure chest with gold corners, lid slightly open"
+  },
+  {
+   "id": "shipped-it",
+   "name": "Shipped It!",
+   "how": "Make a shareable file of your world.",
+   "group": "make",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "weave",
+     1
+    ]
+   },
+   "sticker": "a parcel tied with twine and a red wax seal"
+  },
+  {
+   "id": "pleased-to-meet-you",
+   "name": "Pleased to Meet You",
+   "how": "Open a character's card.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "folk_open",
+     1
+    ]
+   },
+   "sticker": "a small framed wooden portrait card showing a smiling round face with rosy cheeks"
+  },
+  {
+   "id": "stone-reader",
+   "name": "Stone Reader",
+   "how": "Cast the runes.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "cast",
+     1
+    ]
+   },
+   "sticker": "three smooth painted pebbles with glowing runes"
+  },
+  {
+   "id": "take-backsies",
+   "name": "Take Backsies",
+   "how": "Undo a brush stroke.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "map_undo",
+     1
+    ]
+   },
+   "sticker": "a curved wooden arrow bending backwards in a U-turn, like an undo symbol, with a leaf on it"
+  },
+  {
+   "id": "map-questions",
+   "name": "Map Reader",
+   "how": "Ask the Cartographer something.",
+   "group": "make",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "resident_ask",
+     1,
+     {
+      "room": "map"
+     }
+    ]
+   },
+   "sticker": "an open brass compass with a teal face and a golden needle",
+   "riddle": "The Cartographer loves a good question."
+  },
+  {
+   "id": "broke-it-fixed-it",
+   "name": "Broke It, Fixed It",
+   "how": "Fail a map check, then fix it.",
+   "group": "make",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "after": [
+     "map_check_fail",
+     "map_check_ok"
+    ]
+   },
+   "sticker": "a little wrench crossed with a paintbrush over a map",
+   "riddle": "Sometimes you have to break a thing to see how it holds together."
+  },
+  {
+   "id": "island-maker",
+   "name": "Island Maker",
+   "how": "Paint with three different brushes.",
+   "group": "make",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "distinct": [
+     "map_paint",
+     "brush",
+     3
+    ]
+   },
+   "sticker": "a tiny island map with a palm tree and a compass rose",
+   "riddle": "A map with only one kind of ground is a very quiet place."
+  },
+  {
+   "id": "for-real",
+   "name": "For Real",
+   "how": "Save a sketch as your world's real map.",
+   "group": "make",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "map_build",
+     1
+    ]
+   },
+   "sticker": "a rolled map sealed with a green wax seal",
+   "riddle": "A sketch is a promise. Keeping it is a choice.",
+   "whisper": "it-checks-out"
+  },
+  {
+   "id": "bookworm",
+   "name": "Bookworm",
+   "how": "Read a book to the last page.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "book_finish",
+     1
+    ]
+   },
+   "sticker": "a cute green bookworm with round glasses on an open book"
+  },
+  {
+   "id": "word-nerd",
+   "name": "Word Nerd",
+   "how": "Tap a real word in a book.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "word_tap",
+     1
+    ]
+   },
+   "sticker": "a round magnifying glass with a brass rim over a single glowing golden star (no letters)"
+  },
+  {
+   "id": "theres-a-name",
+   "name": "There's a Name for That",
+   "how": "Get your first note from Fróði.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "teach_note",
+     1
+    ]
+   },
+   "sticker": "a wooden paddle holding up a little parchment note"
+  },
+  {
+   "id": "behind-the-curtain",
+   "name": "Peek Behind the Curtain",
+   "how": "Turn on Show me how things work.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "workings",
+      "value": "show"
+     }
+    ]
+   },
+   "sticker": "a small velvet curtain pulled back to show brass gears"
+  },
+  {
+   "id": "whole-shelf",
+   "name": "Whole Shelf",
+   "how": "Finish every book on How VEFR works.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "book_finish",
+     "book",
+     15,
+     "shelf",
+     "how-vefr-works"
+    ]
+   },
+   "sticker": "a short wooden shelf of colorful books with a gold star"
+  },
+  {
+   "id": "seven-stages",
+   "name": "Seven Stages",
+   "how": "Finish every book in the studio handbook.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "book_finish",
+     "book",
+     8,
+     "shelf",
+     "how-games-are-made"
+    ]
+   },
+   "sticker": "seven little books stacked like stairs"
+  },
+  {
+   "id": "idea-collector",
+   "name": "Idea Collector",
+   "how": "Meet 10 different design ideas while you build.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "teach_note",
+     "term",
+     10
+    ]
+   },
+   "sticker": "a glass jar full of glowing little idea lights"
+  },
+  {
+   "id": "lexicon",
+   "name": "Lexicon",
+   "how": "Tap 25 different words.",
+   "group": "learn",
+   "kind": "open",
+   "shine": "holo",
+   "rule": {
+    "distinct": [
+     "word_tap",
+     "term",
+     25
+    ]
+   },
+   "sticker": "a thick leather dictionary with a ribbon bookmark"
+  },
+  {
+   "id": "urdrs-ledger",
+   "name": "Urðr's Ledger",
+   "how": "Visit the Chronicle.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "room_visit",
+     1,
+     {
+      "room": "journal"
+     }
+    ]
+   },
+   "sticker": "an old ledger book with a quill resting on it",
+   "riddle": "Someone in this house writes down everything. Go and see."
+  },
+  {
+   "id": "third-step",
+   "name": "Watch the Third Step",
+   "how": "Visit the Archives.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "room_visit",
+     1,
+     {
+      "room": "evidence"
+     }
+    ]
+   },
+   "sticker": "a stone staircase winding down with a little lantern on the third step",
+   "riddle": "The truth is down there. It is patient."
+  },
+  {
+   "id": "worlds-own-book",
+   "name": "A Book of Its Own",
+   "how": "Open a book that belongs to your world.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "book_open",
+     1,
+     {
+      "shelf": "world"
+     }
+    ]
+   },
+   "sticker": "a small leather book with a map on its cover",
+   "riddle": "Not every book on the shelves belongs to the studio.",
+   "whisper": "bookworm"
+  },
+  {
+   "id": "got-it",
+   "name": "Got It!",
+   "how": "Tap Got it on one of Fróði's notes.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "teach_got_it",
+     1
+    ]
+   },
+   "sticker": "a wooden paddle with a big happy check mark",
+   "riddle": "The paddle goes down when you say so.",
+   "whisper": "theres-a-name"
+  },
+  {
+   "id": "deja-vu",
+   "name": "Déjà Vu",
+   "how": "Meet an idea you've seen before.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "teach_note",
+     1,
+     {
+      "stage": "again"
+     }
+    ]
+   },
+   "sticker": "a swirly spiral with two tiny matching stars",
+   "riddle": "Haven't we met this idea somewhere before?",
+   "whisper": "theres-a-name"
+  },
+  {
+   "id": "ask-the-keeper",
+   "name": "Ask the Keeper of Books",
+   "how": "Ask Fróði something.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "resident_ask",
+     1,
+     {
+      "room": "library"
+     }
+    ]
+   },
+   "sticker": "a wooden paddle with a small heart drawn on its note",
+   "riddle": "The keeper of books never speaks. Ask anyway."
+  },
+  {
+   "id": "whole-household",
+   "name": "The Whole Household",
+   "how": "Ask every resident something.",
+   "group": "learn",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "resident_ask",
+     "room",
+     10
+    ]
+   },
+   "sticker": "a row of tiny residents' doors, each with a lit window",
+   "riddle": "Everyone in the house has something to say."
+  },
+  {
+   "id": "just-right",
+   "name": "Just Right",
+   "how": "Change the text size.",
+   "group": "comfort",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "textSize"
+     }
+    ]
+   },
+   "sticker": "a pair of round reading glasses"
+  },
+  {
+   "id": "stillness",
+   "name": "Stillness",
+   "how": "Set motion to Off.",
+   "group": "comfort",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "motion",
+      "value": "off"
+     }
+    ]
+   },
+   "sticker": "a sleeping cat curled up on a cushion"
+  },
+  {
+   "id": "easy-on-the-eyes",
+   "name": "Easy on the Eyes",
+   "how": "Try a different contrast.",
+   "group": "comfort",
+   "kind": "open",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "contrast"
+     }
+    ]
+   },
+   "sticker": "a pair of tinted round spectacles with a little sun"
+  },
+  {
+   "id": "read-your-way",
+   "name": "Read Your Way",
+   "how": "Pick a different font.",
+   "group": "comfort",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "font"
+     }
+    ]
+   },
+   "sticker": "a quill pen writing a loopy letter on parchment",
+   "riddle": "Letters come in more than one shape. So do readers."
+  },
+  {
+   "id": "every-colour",
+   "name": "Every Colour Counts",
+   "how": "Try the colour-blind-friendly palette.",
+   "group": "comfort",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "palette",
+      "value": "cb-safe"
+     }
+    ]
+   },
+   "sticker": "a paint palette with bright, clearly different blobs of colour",
+   "riddle": "Not everyone sees red and green the same way."
+  },
+  {
+   "id": "acorn-accountant",
+   "name": "Acorn Accountant",
+   "how": "Read 5 different squirrel jokes in the footer.",
+   "group": "silly",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "distinct": [
+     "foot_joke",
+     "joke",
+     5
+    ]
+   },
+   "sticker": "an acorn wearing tiny round spectacles, sitting beside a small wooden abacus with coloured beads",
+   "riddle": "Look down. Ratatoskr is always telling jokes down there."
+  },
+  {
+   "id": "do-not-lick",
+   "name": "Please Do Not Lick the Rings",
+   "how": "Visit the Vault.",
+   "group": "silly",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "room_visit",
+     1,
+     {
+      "room": "items"
+     }
+    ]
+   },
+   "sticker": "a golden ring on a little velvet pillow with a 'no' sparkle",
+   "riddle": "The Hoard-Keeper asked nicely. Did you listen?"
+  },
+  {
+   "id": "clean-slate",
+   "name": "Clean Slate",
+   "how": "Forget a conversation.",
+   "group": "silly",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "forget_talk",
+     1
+    ]
+   },
+   "sticker": "a pink eraser with a happy face and crumbs",
+   "riddle": "Every talk can be forgotten, if you ask it to be."
+  },
+  {
+   "id": "speedrunner",
+   "name": "Speedrunner",
+   "how": "Visit 5 rooms in 30 seconds.",
+   "group": "silly",
+   "kind": "riddle",
+   "shine": "paper",
+   "rule": {
+    "burst": [
+     "room_visit",
+     5,
+     30
+    ]
+   },
+   "sticker": "a winged boot with a tiny lightning bolt",
+   "riddle": "Five doors in half a minute."
+  },
+  {
+   "id": "same-stones",
+   "name": "Same Stones Twice",
+   "how": "Cast the same runes twice in a row.",
+   "group": "silly",
+   "kind": "riddle",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "cast_same",
+     1
+    ]
+   },
+   "sticker": "two identical rune pebbles side by side, winking",
+   "riddle": "The stones remember the minute.",
+   "whisper": "stone-reader"
+  },
+  {
+   "id": "old-magic",
+   "name": "Old Magic",
+   "how": "Enter the old code.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "holo",
+   "rule": {
+    "count": [
+     "konami",
+     1
+    ]
+   },
+   "sticker": "a glowing rune carved into a little stone controller"
+  },
+  {
+   "id": "i-know-my-way",
+   "name": "I Know My Way",
+   "how": "Skip the first walk.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "walk_skip",
+     1
+    ]
+   },
+   "sticker": "a confident orange squirrel tail curled around a folded blank map, no writing on the map"
+  },
+  {
+   "id": "off-the-map",
+   "name": "Off the Map",
+   "how": "Try to open a room that doesn't exist.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "unknown_room",
+     1
+    ]
+   },
+   "sticker": "a map edge with a tiny friendly sea dragon"
+  },
+  {
+   "id": "leave-me-be",
+   "name": "Leave Me Be, Fróði",
+   "how": "Turn Fróði's notes off.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "teach",
+      "value": "off"
+     }
+    ]
+   },
+   "sticker": "a wooden paddle turned around, showing a 'shh' finger"
+  },
+  {
+   "id": "poke-the-tree",
+   "name": "Poke the Tree",
+   "how": "Poke the World Tree logo 5 times.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "tree_click",
+     5
+    ]
+   },
+   "sticker": "a little tree with a surprised face and rosy cheeks"
+  },
+  {
+   "id": "disco-hall",
+   "name": "Disco Hall",
+   "how": "Switch the light 20 times.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "light_toggle",
+     20
+    ]
+   },
+   "sticker": "a disco ball with golden Norse knotwork"
+  },
+  {
+   "id": "noon-bell",
+   "name": "Noon Bell",
+   "how": "Ring for the Storyteller at noon.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "holo",
+   "rule": {
+    "count": [
+     "bell",
+     1,
+     {
+      "hour": 12
+     }
+    ]
+   },
+   "sticker": "a brass bell under a bright midday sun"
+  },
+  {
+   "id": "sunrise",
+   "name": "Sunrise",
+   "how": "Open the studio as the sun comes up (6 am).",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "hour": [
+     6,
+     6
+    ]
+   },
+   "sticker": "a cheerful robin holding a tiny cup of coffee at sunrise"
+  },
+  {
+   "id": "font-collector",
+   "name": "Font Collector",
+   "how": "Try every font.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "distinct": [
+     "setting_change",
+     "value",
+     4,
+     "key",
+     "font"
+    ]
+   },
+   "sticker": "a little wooden type case full of letter blocks"
+  },
+  {
+   "id": "talk-their-ears-off",
+   "name": "Chatterbox",
+   "how": "Ask the residents 25 things.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "chat_sent",
+     25
+    ]
+   },
+   "sticker": "a bundle of speech bubbles tied with twine"
+  },
+  {
+   "id": "magpie",
+   "name": "Magpie",
+   "how": "Keep 10 things.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "keep",
+     10
+    ]
+   },
+   "sticker": "a cozy twig nest full of shiny trinkets and a button"
+  },
+  {
+   "id": "big-print",
+   "name": "Big Print",
+   "how": "Set the text to the biggest size.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "setting_change",
+     1,
+     {
+      "key": "textSize",
+      "value": "2xl"
+     }
+    ]
+   },
+   "sticker": "a giant capital letter A on a little easel"
+  },
+  {
+   "id": "hello-squirrel",
+   "name": "Hello, Squirrel!",
+   "how": "Wave back at Ratatoskr in the footer.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "squirrel_click",
+     1
+    ]
+   },
+   "sticker": "a small orange squirrel waving with a tiny acorn"
+  },
+  {
+   "id": "paddle-wave",
+   "name": "Paddle Wave",
+   "how": "Tap Fróði's paddle.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "count": [
+     "paddle_click",
+     1
+    ]
+   },
+   "sticker": "a wooden paddle with a little drawn smiley face"
+  },
+  {
+   "id": "once-more",
+   "name": "Once More, With Feeling",
+   "how": "Start the first walk again.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "walk_restart",
+     1
+    ]
+   },
+   "sticker": "a looping ribbon path with footprints going around again"
+  },
+  {
+   "id": "keyboard-reader",
+   "name": "Page by Arrow",
+   "how": "Turn a book's page with the arrow keys.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "paper",
+   "rule": {
+    "count": [
+     "page_key",
+     1
+    ]
+   },
+   "sticker": "a keyboard arrow key shaped like a leaf, pointing right"
+  },
+  {
+   "id": "proud-collector",
+   "name": "Proud Collector",
+   "how": "Find 10 stickers.",
+   "group": "secret",
+   "kind": "secret",
+   "shine": "foil",
+   "rule": {
+    "earned": 10
+   },
+   "sticker": "a little corkboard covered in colourful stickers"
+  },
+  {
+   "id": "sticker-book-complete",
+   "name": "Sticker Book Complete",
+   "how": "Find every sticker.",
+   "group": "book",
+   "kind": "secret",
+   "shine": "holo",
+   "rule": {
+    "earned": "all"
+   },
+   "sticker": "a closed golden sticker book with a star on its cover, glowing softly, a few stickers peeking out"
+  },
+  {
+   "id": "halfway",
+   "name": "Halfway There",
+   "how": "Find half the stickers.",
+   "group": "book",
+   "kind": "open",
+   "shine": "foil",
+   "rule": {
+    "earned": "half"
+   },
+   "sticker": "a sticker book open to a half-filled page"
+  }
+ ]
+}

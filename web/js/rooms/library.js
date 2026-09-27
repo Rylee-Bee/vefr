@@ -42,6 +42,7 @@
       return s;
     }
     function read(book, spine) {
+      window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('book_open', { shelf: book.shelf || 'world' });
       open.book = book;
       open.page = 0;
       el_screen.querySelectorAll('.lib-spine').forEach(function (x) { x.setAttribute('aria-pressed', x === spine ? 'true' : 'false'); });
@@ -59,6 +60,7 @@
       }
       var n = b.pages.length;
       open.page = L.clampPage(open.page, n);
+      if (open.page === n - 1) window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('book_finish', { book: b.id, shelf: b.shelf });
       var FOUND_ICON = { shelf: 'shelf', map: 'map', resident: 'given', earned: 'earned' };
       var found = h('span', { className: 'label lib-reader__found' });
       found.appendChild(h('img', { src: ART + 'icons/library/found-' + (FOUND_ICON[b.found] || 'shelf') + '.webp', alt: '', width: 28, height: 28 }));
@@ -81,6 +83,7 @@
         var key = btn.getAttribute('data-term');
         var g = (window.VEFR_GLOSSARY || {})[key];
         if (!g) return;
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('word_tap', { term: key });
         btn.setAttribute('aria-expanded', 'true');
         card.innerHTML = '';
         card.appendChild(h('p', { className: 'lib-term-card__word', textContent: key }));
@@ -122,7 +125,7 @@
       reader = h('aside', { className: 'carved lib-reader', 'aria-label': 'The reading desk' });
       reader.addEventListener('keydown', function (e) {
         if (!open.book) return;
-        if (e.key === 'ArrowRight' && open.page < open.book.pages.length - 1) { open.page += 1; paint(); focusPage(); }
+        if (e.key === 'ArrowRight' && open.page < open.book.pages.length - 1) { open.page += 1; paint(); focusPage(); window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('page_key'); }
         if (e.key === 'ArrowLeft' && open.page > 0) { open.page -= 1; paint(); focusPage(); }
       });
       grid.appendChild(shelves);

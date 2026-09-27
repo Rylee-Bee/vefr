@@ -61,6 +61,7 @@
         + '</div>';
 
       el_screen.querySelector('#ws-bell').addEventListener('click', function (e) {
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('bell');
         firstWalk.attempt('bell');
         openFolio('workshop', e.currentTarget);
       });
@@ -273,6 +274,7 @@
       API.weaveBuild()
         .then(function (info) {
           lastWoven = info;
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('weave');
           dl.href = info.download_url;
           dl.setAttribute('download', info.name);
           dl.hidden = false;
