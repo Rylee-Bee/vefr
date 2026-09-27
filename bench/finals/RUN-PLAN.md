@@ -27,7 +27,7 @@ Status: FINALS READY — AWAITING LAUNCH
 | Phi-4-mini | `Phi-4-mini-Q4_K_M.gguf` | 2.4 GB | Q4_K_M |
 | Ministral 3 3B | `Ministral-3-3B-Q4_K_M.gguf` | 2.0 GB | Q4_K_M |
 
-All files present in `/var/home/rylee/llama-server/models/bench/`.
+All files present in `~/llama-server/models/bench/`.
 
 ## Backend/Runtime Detected
 

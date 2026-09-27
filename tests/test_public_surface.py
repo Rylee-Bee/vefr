@@ -80,6 +80,7 @@ def test_guard_runs_clean_on_current_tree():
     ("homelab-hostname", r"gitea.hulganfamily.duckdns.org"),
     ("homelab-machine", r"ssh bazzite"),
     ("private-path", r"/var/home/rylee/projects/vefr"),
+    ("private-path", r"/home/rylee/llama-server/models"),  # plain /home slipped past (2026-09-27)
     ("private-ssh-user", r"ssh rylee@host"),
     ("private-gitea-owner", r"http://gitea.example/rylee/sample-pack"),
     ("private-email", r"rylee@hulgan.home"),
