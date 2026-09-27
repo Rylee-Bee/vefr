@@ -43,7 +43,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, Field
 
-from .paths import app_home
+from .paths import data_dir
 
 
 class EmbedUnavailable(RuntimeError):
@@ -91,7 +91,7 @@ def lore_dir() -> Path:
     env = os.environ.get("VEFR_LORE_DIR")
     if env:
         return Path(env)
-    return app_home() / "data" / "lore"
+    return data_dir() / "lore"
 
 
 def facts_path() -> Path:

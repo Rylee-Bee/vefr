@@ -71,9 +71,11 @@ def worlds_dir() -> Path:
 def data_dir() -> Path:
     """Runtime state that isn't a world pack - sessions, journals,
     the active-world choice. Lives under the app home, next to the
-    tracked data/ tree, and is never committed.
+    tracked data/ tree, and is never committed. VEFR_DATA_DIR points it
+    elsewhere (a test copy of the studio must never write the real one).
     """
-    return app_home() / "data"
+    env = os.environ.get("VEFR_DATA_DIR")
+    return Path(env).expanduser() if env else app_home() / "data"
 
 
 def active_world_file() -> Path:

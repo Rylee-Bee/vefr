@@ -16,11 +16,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .paths import app_home, world_scoped
+from .paths import world_scoped, data_dir
 from .sessions import UndoBuffer, UNDO_WINDOW_S, derive
 
 JOURNAL = Path(
-    os.environ.get("VEFR_JOURNAL", str(app_home() / "data" / "journal.json"))
+    os.environ.get("VEFR_JOURNAL", str(data_dir() / "journal.json"))
 )
 
 # Each world keeps its own history (paths.world_scoped). Off only while
