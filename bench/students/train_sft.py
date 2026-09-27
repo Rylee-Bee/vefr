@@ -59,6 +59,10 @@ def main():
     ap.add_argument("--epochs", type=float, default=2); ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--rank", type=int, default=16); ap.add_argument("--accum", type=int, default=8)
     ap.add_argument("--eval-only", action="store_true")
+    ap.add_argument("--precision", choices=["fp32", "bf16", "fp16"], default="fp32",
+                    help="fp16 autocast without a grad scaler went to nan on granite-350m (2026-09-26)")
+    ap.add_argument("--max-steps", type=int, default=0, help="stop early (smoke tests)")
+    ap.add_argument("--no-grade", action="store_true", help="skip the held-out grade (smoke tests)")
     a = ap.parse_args()
     dev = "cuda"
     out = ROOT / "runs" / a.name; out.mkdir(parents=True, exist_ok=True)
@@ -73,6 +77,8 @@ def main():
         data = [build(tok, e) for e in exs]
         opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=0.0)
         total = math.ceil(len(data) * a.epochs / a.accum)
+        if a.max_steps: total = min(total, a.max_steps)
+        amp = {"fp32": None, "bf16": torch.bfloat16, "fp16": torch.float16}[a.precision]
         sched = lambda s: a.lr * min(1, s / 20) * 0.5 * (1 + math.cos(math.pi * min(1, s / total)))
         model.train(); step = 0; t0 = time.time(); i = 0
         print(f"{len(data)} examples, {total} optimizer steps, trainable "
@@ -81,16 +87,20 @@ def main():
             loss_acc = 0.0
             for _ in range(a.accum):
                 ids, labels = data[i % len(data)]; i += 1
-                with torch.autocast("cuda", dtype=torch.float16):
+                with torch.autocast("cuda", dtype=amp or torch.float32, enabled=amp is not None):
                     loss = model(input_ids=ids[None].to(dev), labels=labels[None].to(dev)).loss / a.accum
+                if not torch.isfinite(loss):
+                    raise SystemExit(f"loss is {loss.item()} at step {step} ({a.precision}); stopping instead of training on nan")
                 loss.backward(); loss_acc += loss.item()
             for g in opt.param_groups: g["lr"] = sched(step)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); opt.zero_grad(set_to_none=True); step += 1
-            if step % 20 == 0:
+            if step % 20 == 0 or step <= 3:
                 print(f"step {step}/{total} loss {loss_acc:.4f} {(time.time()-t0)/step:.2f}s/step", flush=True)
         model.save_pretrained(out / "adapter")
         model = model.merge_and_unload()
         model.save_pretrained(out / "merged"); tok.save_pretrained(out / "merged")
+    if a.no_grade:
+        return
     g = grade(model, tok, dev)
     g.update(base=a.base, name=a.name, trained=not a.eval_only)
     (out / "eval.json").write_text(json.dumps(g, indent=1))
