@@ -3240,8 +3240,8 @@
             textContent: worldName + ' has no books yet. Write one as a markdown file in the pack’s library/ folder; it will appear here.' });
           shelves.appendChild(shelf('Found in ' + worldName, (data.books || []).length + ' written', data.books || [], empty));
           var studio = data.studio || [];
-          var howVefr = studio.filter(function (b) { return (b.extra || {}).shelf === 'how-vefr-works'; });
-          var handbook = studio.filter(function (b) { return (b.extra || {}).shelf !== 'how-vefr-works'; });
+          var howVefr = studio.filter(function (b) { return b.shelf === 'how-vefr-works'; });
+          var handbook = studio.filter(function (b) { return b.shelf !== 'how-vefr-works'; });
           shelves.appendChild(shelf('How games are made', 'the studio handbook', handbook, h('p', { className: 'lib-empty', textContent: 'The studio shelf is empty.' })));
           if (howVefr.length) shelves.appendChild(shelf('How VEFR works', 'real words for what\u2019s inside', howVefr, null));
         })
