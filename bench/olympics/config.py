@@ -20,6 +20,11 @@ MODELS_DIR = Path(
 
 # server lifecycle
 IMAGE = os.environ.get("OLY_IMAGE", "ghcr.io/ggml-org/llama.cpp:server-vulkan")
+# Container engine and GPU device: podman + the host GPU by default; for a
+# plain-CPU host use OLY_ENGINE=docker OLY_GPU_DEVICE= OLY_NGPU=0 and a CPU
+# image (OLY_IMAGE=ghcr.io/ggml-org/llama.cpp:server).
+ENGINE = os.environ.get("OLY_ENGINE", "podman")
+GPU_DEVICE = os.environ.get("OLY_GPU_DEVICE", "/dev/dri:/dev/dri")
 SERVER_CTX = int(os.environ.get("OLY_CTX", "8192"))
 SERVER_THREADS = int(os.environ.get("OLY_THREADS", "8"))
 SERVE_PORT_BASE = int(os.environ.get("OLY_SERVE_PORT_BASE", "9000"))
