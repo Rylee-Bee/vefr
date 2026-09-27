@@ -30,7 +30,7 @@ rules for using it. Some say "use me for anything". Some say "not for
 money". Some say "don't train on my answers". The studio reads the rules
 first, and only uses teachers that allow it.
 
-**Public domain** means old work that now belongs to everyone, like
+*Public domain* means old work that now belongs to everyone, like
 fairy tales from long ago. It's free to learn from.
 
 Reading the rules before you build is part of being a good programmer,

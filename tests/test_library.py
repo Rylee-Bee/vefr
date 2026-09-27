@@ -19,6 +19,8 @@ from vefr import maplab
 from vefr.library import (found_words, load_library, load_shelf, parse_book,
                           studio_shelf_dir, validate_books)
 
+STUDIO_SHELF = Path(__file__).resolve().parents[1] / "web" / "library"
+
 ROOT = Path(__file__).resolve().parents[1]
 
 # The fixture builder is a script (like make_desk_pack.py); load it by path.
@@ -72,7 +74,7 @@ def test_validator_names_each_broken_book(tmp_path, name, text, expect):
 
 def test_studio_shelf_is_the_handbook_and_validates():
     shelf = load_shelf(studio_shelf_dir())
-    assert len(shelf) == 23  # 8 handbook + 15 "How VEFR works"
+    assert len(shelf) == len(list(STUDIO_SHELF.glob("[0-9]*.md")))  # every numbered book, nothing lost
     assert shelf[0]["title"] == "The Seven Stages"
     assert validate_books(shelf) == []
     assert all(b["found"] == "shelf" and len(b["pages"]) >= 2 for b in shelf)
@@ -106,7 +108,7 @@ def test_api_library_serves_world_and_studio_shelves(tmp_path, monkeypatch):
     r = TestClient(app).get("/api/library")
     assert r.status_code == 200
     data = r.json()
-    assert len(data["books"]) == len(BOOKS) and len(data["studio"]) == 23
+    assert len(data["books"]) == len(BOOKS) and len(data["studio"]) == len(list(STUDIO_SHELF.glob("[0-9]*.md")))
     note = next(b for b in data["books"] if b["id"] == "a-map-note")
     assert note["found_words"] == "lies on the map at 1, 1" and note["pages"] == ["It lay on the ground."]
     assert TestClient(app).get("/api/library", params={"world": "../x"}).status_code == 400
@@ -174,3 +176,29 @@ def test_every_real_word_on_the_how_vefr_works_shelf_is_in_the_glossary():
                     if w not in known and w not in skip:
                         missing.add(f"{f.name}: {w}")
     assert not missing, sorted(missing)
+
+
+def test_bold_names_in_books_are_real_buttons_and_screens():
+    """A bold phrase with no end punctuation names something on screen, so it must
+    exist in the studio; emphasis and definitions end in '.' or ':' (web/library/README.md).
+    Caught by hand before this test: 'Check the world' vs the real 'Check the map'."""
+    import re
+    app = (STUDIO_SHELF.parents[0] / "app.js").read_text().lower()
+    missing = []
+    for f in sorted(STUDIO_SHELF.glob("[0-9]*.md")):
+        for name in re.findall(r"\*\*([^*]+)\*\*", f.read_text()):
+            name = name.strip()
+            if name[-1] in ".:!?":
+                continue
+            if name.lower() not in app:
+                missing.append(f"{f.name}: {name}")
+    assert not missing, missing
+
+
+def test_every_studio_book_names_a_source_that_exists():
+    root = STUDIO_SHELF.parents[1]
+    for f in sorted(STUDIO_SHELF.glob("[0-9]*.md")):
+        head = f.read_text().split("\n---\n", 1)[0]
+        src = next((ln.split(":", 1)[1].strip() for ln in head.splitlines() if ln.startswith("source:")), "")
+        assert src, f"{f.name} has no source"
+        assert (root / src).exists(), f"{f.name}: source {src} is missing"

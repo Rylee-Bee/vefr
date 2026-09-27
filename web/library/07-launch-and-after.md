@@ -12,7 +12,7 @@ is always the author's call.
 
 * * *
 
-After launch, fix what players hit. Then write a short **postmortem**:
+After launch, fix what players hit. Then write a short *postmortem*:
 what went right, what went wrong, what you'd do differently.
 
 That's how a studio gets better with every game. Put the lessons where
