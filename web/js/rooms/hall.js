@@ -7,7 +7,7 @@
   var screens = S.screens, API = S.API, RESIDENTS = S.RESIDENTS, chronicleLine = S.chronicleLine,
       emptyState = S.emptyState, firstWalk = S.firstWalk, formatTime = S.formatTime, h = S.h,
       loadingState = S.loadingState, main = S.main, openFolio = S.openFolio, portrait = S.portrait,
-      residentLine = S.residentLine, spot = S.spot, truncate = S.truncate, watch = S.watch;
+      residentLine = S.residentLine, spot = S.spot, truncate = S.truncate, watch = S.watch, ART = S.ART;
 
   /* ══════════════════════════════════════════════════════
      THE HALL — a keepsake wall of what you have kept
@@ -19,6 +19,60 @@
       el_screen = h('div', { className: 'screen', id: 'screen-hall' });
       main.appendChild(el_screen);
     }
+    var STICKER_GROUPS = [['start', 'Starting out'], ['make', 'Making things'], ['learn', 'Learning'],
+      ['comfort', 'Comfort'], ['silly', 'Just for fun'], ['secret', 'Secrets'], ['book', 'The book itself']];
+    function stickerBook() {
+      var sec = h('section', { className: 'carved sticker-book', 'aria-labelledby': 'sticker-title' });
+      var head = h('div', { className: 'sticker-book__head' });
+      var words = h('div', {});
+      words.appendChild(h('span', { className: 'label', textContent: 'Kept by Ratatoskr' }));
+      words.appendChild(h('h2', { className: 'section-head__title', id: 'sticker-title', textContent: 'The sticker book' }));
+      var count = h('p', { className: 'sticker-book__count', textContent: 'Counting stickers…' });
+      words.appendChild(count);
+      head.appendChild(words);
+      head.appendChild(spot('ratatoskr-sticker-book', 'sticker-book__art'));
+      sec.appendChild(head);
+      var body = h('div', { className: 'sticker-book__body' });
+      sec.appendChild(body);
+      var wrap = (window.VEFR_SESSION && window.VEFR_SESSION.wrap) || function (u) { return u; };
+      fetch(wrap('/api/achievements')).then(function (r) { return r.json(); }).then(function (book) {
+        count.textContent = book.earned + ' found. Every sticker is earned just by using the studio.'
+          + (book.hidden ? ' Some are still hidden: ' + book.hidden + ' secrets and whispers you haven’t found yet.' : '');
+        STICKER_GROUPS.forEach(function (g) {
+          var rows = book.achievements.filter(function (a) { return a.group === g[0]; });
+          if (!rows.length) return;
+          body.appendChild(h('h3', { className: 'sticker-book__group', textContent: g[1] }));
+          var ul = h('ul', { className: 'sticker-grid' });
+          rows.forEach(function (a) {
+            var got = !!a.earned_at;
+            var riddle = a.kind === 'riddle' && !got;
+            var li = h('li', { className: 'sticker sticker--' + a.kind + (got ? ' sticker--earned sticker--' + a.shine : '') });
+            if (riddle) {
+              li.appendChild(h('span', { className: 'sticker__riddle-art', 'aria-hidden': 'true', textContent: '?' }));
+            } else {
+              li.appendChild(h('img', { className: 'sticker__art', alt: '', width: 96, height: 96, loading: 'lazy',
+                src: '/static/art/stickers/' + a.id + '.webp' }));
+            }
+            li.appendChild(h('strong', { className: 'sticker__name', textContent: a.name }));
+            li.appendChild(h('span', { className: 'sticker__how', textContent: riddle ? '“' + a.how + '”' : a.how }));
+            if (got && a.shine !== 'paper') li.appendChild(h('span', { className: 'sticker__shine', textContent: a.shine }));
+            if (got) {
+              li.appendChild(h('span', { className: 'sticker__when', textContent: 'Earned ' + formatTime(a.earned_at) }));
+            } else if (a.progress && a.progress[1] > 1) {
+              var bar = h('span', { className: 'sticker__progress', role: 'img',
+                'aria-label': a.progress[0] + ' of ' + a.progress[1] });
+              bar.appendChild(h('span', { style: 'width:' + Math.round(100 * a.progress[0] / a.progress[1]) + '%' }));
+              li.appendChild(bar);
+              li.appendChild(h('span', { className: 'sticker__when', textContent: a.progress[0] + ' of ' + a.progress[1] }));
+            }
+            ul.appendChild(li);
+          });
+          body.appendChild(ul);
+        });
+      }).catch(function () { count.textContent = 'The sticker book is stuck shut for a moment. Try again soon.'; });
+      return sec;
+    }
+
     function enter() {
       el_screen.innerHTML = '<div class="wrap band hall-room" id="hall-content"></div>';
       firstWalk.attempt('hall');
@@ -49,6 +103,9 @@
 
         // The fire keeps watch — real engine events, echoed quietly
         container.appendChild(watchStrip());
+
+        // Ratatoskr's sticker book: what you've earned just by using the studio
+        container.appendChild(stickerBook());
 
         var anyKept = false;
 

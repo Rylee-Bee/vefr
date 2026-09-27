@@ -271,6 +271,7 @@
       function undo() {
         if (!undoStack.length) return;
         grid = undoStack.pop().map(function (ln) { return ln.split(''); });
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_undo');
         saveSketch();
         render();
         if (undoBtn) undoBtn.hidden = undoStack.length === 0;
@@ -353,6 +354,7 @@
         if (grid[r][c] === brush) return;
         snapshot();
         grid[r][c] = brush;
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_paint', { brush: brush });
         dressCell(cell, brush);
         cell.classList.toggle('map-cell--solid', cellSolid(brush));
         cell.classList.toggle('map-cell--marked', !!(legend[brush] && legend[brush].deco));
@@ -377,6 +379,7 @@
           var cur = open.pop();
           var cr = cur[0], cc = cur[1];
           grid[cr][cc] = brush;
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_paint', { brush: brush });
           var cell = cells[cr] && cells[cr][cc];
           if (cell) {
             dressCell(cell, brush);
@@ -617,6 +620,7 @@
             /* The world's map is now the truth; the local sketch is redundant. */
             try { window.localStorage.removeItem(sketchKey); } catch (e) {}
             studioAudio.clank();
+            window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_build');
             ferryNote('Your map is saved to this world'
               + (res && res.backup_rel ? '. The old map is kept as a backup.' : '') + '.');
             enter();
@@ -663,12 +667,14 @@
               checkNote.textContent = 'The map checks out: every path connects and every door can be reached.';
               checkNote.classList.add('map-draw__check--good');
               studioAudio.squeak();
+              window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_check_ok');
             } else {
               var errs = (res && res.errors && res.errors.length)
                 ? res.errors.join(' \u00B7 ')
                 : 'This sketch doesn’t pass the map check yet.';
               checkNote.textContent = errs;
               checkNote.classList.add('map-draw__check--bad');
+              window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('map_check_fail');
             }
           })
           .catch(function () {

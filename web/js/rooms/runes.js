@@ -38,6 +38,7 @@
       }
       return st;
     }
+    var lastCast = null;
     function cast(spread, btn) {
       btn.disabled = true;
       spread.innerHTML = '';
@@ -52,6 +53,10 @@
             spread.appendChild(slot);
           });
           studioAudio.squeak();
+          var names = (data.positions || []).map(function (p) { return p.name; }).join(',');
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('cast');
+          if (names && names === lastCast) window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('cast_same');
+          lastCast = names;
           ferryNote('three stones, cast at ' + (data.phase || 'this hour') + '. the Rune-Carver nods.');
         })
         .catch(function () {

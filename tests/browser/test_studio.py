@@ -92,3 +92,24 @@ def test_every_room_opens_without_a_script_error(page, studio):
         assert screen.count() == 1 and screen.is_visible(), f"{room} didn't render"
         assert len(screen.inner_text().strip()) > 20, f"{room} rendered empty"
     assert errors == [], errors
+
+
+def test_stickers_pop_and_fill_the_hall_book(page, studio):
+    """A secret pops (only this test enters the code, and a sticker is earned once per
+    studio); the Hall's book shows riddles, keeps unfound secrets as a count, and
+    shows the found secret."""
+    open_studio(page, studio, "workshop")
+    page.locator("#screen-workshop").wait_for()
+    for key in ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight",
+                "ArrowLeft", "ArrowRight", "b", "a"]:
+        page.keyboard.press(key)
+    page.locator(".sticker-pop", has_text="Old Magic").wait_for(timeout=8000)
+    assert "secret sticker found!" in page.locator(".sticker-pop", has_text="Old Magic").inner_text().lower()
+    assert page.locator("#sticker-live").inner_text().startswith("Sticker earned:")
+    page.evaluate("location.hash = '#hall'")
+    book = page.locator(".sticker-book")
+    book.locator(".sticker").first.wait_for()
+    assert book.locator(".sticker--earned", has_text="Old Magic").count() == 1
+    assert book.locator(".sticker--riddle", has_text="A riddle").count() >= 5
+    assert "still hidden" in book.locator(".sticker-book__count").inner_text()
+    assert book.locator(".sticker", has_text="Chatterbox").count() == 0      # unfound secrets never shown

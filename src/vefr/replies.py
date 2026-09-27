@@ -107,3 +107,37 @@ class RoomCard(Reply):
     lane: Literal["personal", "work"]
     tone: Literal["good_news", "update", "when_ready"] | None = None
     freshness: Freshness
+
+
+# --- /api/achievements (Ratatoskr's sticker book) -----------------------------
+
+class Sticker(Reply):
+    id: str
+    group: str
+    kind: Literal["open", "riddle", "secret"]
+    shine: Literal["paper", "foil", "holo"]
+    name: str
+    how: str
+    earned_at: str | None
+    progress: list[int] | None
+
+
+class StickerBook(Reply):
+    achievements: list[Sticker]
+    earned: int
+    total: int
+    hidden: int          # secrets and whispered riddles not shown yet
+
+
+class JustEarned(Reply):
+    id: str
+    name: str
+    how: str
+    group: str
+    kind: str
+    shine: str
+
+
+class EventReply(Reply):
+    earned: list[JustEarned]
+    total: int

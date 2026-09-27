@@ -3,7 +3,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .replies import GotItReply, LibraryReply, ModeReply, TeachReply, TeachState
+from .replies import (EventReply, GotItReply, LibraryReply, ModeReply, StickerBook, TeachReply,
+                      TeachState)
 
 import json
 import os
@@ -576,6 +577,33 @@ def builder_chat(turn: BuilderChatTurn):
     text = draft(prompt, system=BUILDER_SYSTEM)
 
     return {"reply": text}
+
+
+class AchievementEvent(BaseModel):
+    event: str               # a name the sticker book listens for (visit, room_visit, map_paint, ...)
+    data: dict = {}          # short plain fields, e.g. {"room": "map"}
+    local: dict = {}         # the person's own clock: date, hour, minute, weekday (Mon=0)
+
+
+@app.post("/api/achievements/event", response_model=EventReply)
+def achievements_event(ev: AchievementEvent):
+    """Tally something the author did in the studio; say which stickers were just earned."""
+    from . import achievements
+
+    try:
+        out = achievements.record(ev.event, ev.data, ev.local)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"earned": [{k: d[k] for k in ("id", "name", "how", "group", "kind", "shine")} for d in out["earned"]],
+            "total": out["total"]}
+
+
+@app.get("/api/achievements", response_model=StickerBook)
+def achievements_book():
+    """Ratatoskr's sticker book: every sticker, earned or not (secrets stay ???)."""
+    from . import achievements
+
+    return achievements.book()
 
 
 class TeachTurn(BaseModel):

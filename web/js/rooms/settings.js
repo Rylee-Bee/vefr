@@ -205,6 +205,7 @@
             var patch = {};
             patch[prefKey] = opt.value;
             P.set(patch);
+            window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('setting_change', { key: prefKey, value: opt.value });
             if (prefKey === 'teach' && API.teachMode) API.teachMode(opt.value).catch(function () {});
             current = P.get();
           }

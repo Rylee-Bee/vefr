@@ -105,6 +105,7 @@
       card.appendChild(who);
       card.addEventListener('click', function () {
         firstWalk.attempt('folks');
+        window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('folk_open');
         openFolio('characters', card);
         S.folioInput.value = 'Tell me about ' + v.name + '. Who are they, and what do they want?';
         S.folioInput.focus();
