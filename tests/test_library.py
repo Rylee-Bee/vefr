@@ -135,3 +135,17 @@ def test_the_book_export_carries_the_library(tmp_path, monkeypatch):
     assert "## The Library" in out
     assert "### A Shelf Book" in out and "The first page.\n\n* * *\n\nThe second page." in out
     assert "_lies on the map at 1, 1_" in out
+
+
+def test_api_library_says_which_shelf_a_studio_book_is_on(tmp_path, monkeypatch):
+    """The 'How VEFR works' books must reach the page with their shelf, or they
+    all land on the handbook shelf (caught live after #72)."""
+    pack = build(tmp_path)
+    monkeypatch.setattr("vefr.paths.pack_dir", lambda name=None: pack)
+    from vefr.main import app
+    from vefr.world import load_world
+    load_world.cache_clear()
+    studio = TestClient(app).get("/api/library").json()["studio"]
+    shelves = {b["id"]: b["shelf"] for b in studio}
+    assert shelves["14-how-maps-work"] == "how-vefr-works"
+    assert shelves["01-the-seven-stages"] == ""
