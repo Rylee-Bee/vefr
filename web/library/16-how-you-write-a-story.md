@@ -2,6 +2,8 @@
 title: How You Write a Story
 kind: book
 shelf: how-vefr-works
+short: Every story is someone who wants something, and something in the way.
+source: docs/guides/world-creation.md
 ---
 Every story is someone who wants something, and something in the way.
 Writers call the first part the *premise*. That's enough to start.

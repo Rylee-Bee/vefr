@@ -2,6 +2,8 @@
 title: How VEFR Was Built
 kind: book
 shelf: how-vefr-works
+short: How VEFR went from an idea to a working studio, one small step at a time.
+source: docs/guides/studio-lessons.md
 ---
 VEFR is a game studio you can walk around in. Every room has a job, and
 every job has a helper who lives there. Nobody wrote it all at once. It

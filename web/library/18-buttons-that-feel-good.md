@@ -2,6 +2,8 @@
 title: Buttons That Feel Good
 kind: book
 shelf: how-vefr-works
+short: What makes a button easy to find, easy to press and kind to everyone.
+source: docs/guides/accessibility-contract.md
 ---
 Everything you press, read, or hear in a game is its *user interface*,
 or *UI*. How it *feels* to use is the *user experience*, or *UX*.

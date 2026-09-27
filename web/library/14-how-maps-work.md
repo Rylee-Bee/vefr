@@ -2,6 +2,8 @@
 title: How Maps Work
 kind: book
 shelf: how-vefr-works
+short: A game map is graph paper: every square holds one kind of ground.
+source: src/vefr/maplab.py
 ---
 A map is graph paper. Every square holds one kind of ground: grass,
 path, wall, water. That's all a map is, underneath.

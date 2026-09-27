@@ -148,7 +148,7 @@ def test_api_library_says_which_shelf_a_studio_book_is_on(tmp_path, monkeypatch)
     studio = TestClient(app).get("/api/library").json()["studio"]
     shelves = {b["id"]: b["shelf"] for b in studio}
     assert shelves["14-how-maps-work"] == "how-vefr-works"
-    assert shelves["01-the-seven-stages"] == ""
+    assert shelves["01-the-seven-stages"] == "how-games-are-made"
 
 
 def test_every_real_word_on_the_how_vefr_works_shelf_is_in_the_glossary():

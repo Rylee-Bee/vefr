@@ -2,6 +2,8 @@
 title: Saving Your Work
 kind: book
 shelf: how-vefr-works
+short: How the studio makes sure you never lose what you made.
+source: src/vefr/journal.py
 ---
 Losing work is the worst feeling in making things. Every good tool is
 built around one promise: you won't lose it.

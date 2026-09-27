@@ -1,6 +1,9 @@
 ---
 title: IV · Alpha
 kind: book
+short: The whole game exists end to end, so play it through and list what's broken.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 The whole game exists, end to end. Placeholder art and bugs are allowed.
 

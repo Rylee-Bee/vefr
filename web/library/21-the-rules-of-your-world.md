@@ -2,6 +2,8 @@
 title: The Rules of Your World
 kind: book
 shelf: how-vefr-works
+short: Every world keeps its truth in one place, and the studio checks it before using it.
+source: src/vefr/maplab.py
 ---
 Every world needs one place where the truth lives. If the Keeper is
 old in one room and young in another, something is broken.

@@ -1,6 +1,9 @@
 ---
 title: Studio Words
 kind: book
+short: The handful of words game studios use every day, in plain language.
+source: docs/guides/studio-modules.md
+shelf: how-games-are-made
 ---
 **Core loop:** the thing the player does over and over. If it isn't fun,
 nothing else saves the game.
