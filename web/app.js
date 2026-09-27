@@ -709,6 +709,12 @@
     var who = h('div', { className: 'greeter__who' });
     who.appendChild(h('b', { className: 'greeter__name', textContent: resident.name }));
     who.appendChild(h('span', { className: 'greeter__craft', textContent: resident.craft }));
+    /* The secret name: what this room's job is called in a real studio. Shown when
+       the slider says "Show me how things work" (Gee: just in time, on demand). */
+    if (REAL_NAMES[id]) {
+      who.appendChild(h('p', { className: 'greeter__real workings-only',
+        textContent: 'In a real studio: ' + REAL_NAMES[id] }));
+    }
     if (id === 'library') {
       /* Fr\u00F3\u00F0i never speaks: the words come up on a note pinned to a
          little wooden paddle (docs/guides/residents.md). */
@@ -732,6 +738,14 @@
     hall: 'ratatoskr', workshop: 'storyteller', journal: 'urdr', map: 'cartographer',
     characters: 'keeper-of-faces', items: 'hoard-keeper', runes: 'rune-carver',
     evidence: 'skuld', settings: 'volundr', spark: 'bolt', library: 'frodi'
+  };
+  /* Real-world names for each room's job (the Library book "The Secret Names"
+     says the same, so the cosy word and the real word always match). */
+  var REAL_NAMES = {
+    workshop: 'writing and narrative design', map: 'level design', characters: 'character design',
+    items: 'the item database', journal: 'version history (the log)', runes: 'procedural generation',
+    evidence: 'the source of truth (the spec)', hall: 'builds and releases', settings: 'settings and operations',
+    library: 'documentation', spark: 'a local AI model'
   };
   var ROOM_BANNERS = {
     workshop: 'desk', map: 'map-room', characters: 'folks', items: 'vault', journal: 'chronicle',
@@ -3225,7 +3239,11 @@
           var empty = h('p', { className: 'lib-empty',
             textContent: worldName + ' has no books yet. Write one as a markdown file in the pack’s library/ folder; it will appear here.' });
           shelves.appendChild(shelf('Found in ' + worldName, (data.books || []).length + ' written', data.books || [], empty));
-          shelves.appendChild(shelf('How games are made', 'the studio handbook', data.studio || [], h('p', { className: 'lib-empty', textContent: 'The studio shelf is empty.' })));
+          var studio = data.studio || [];
+          var howVefr = studio.filter(function (b) { return (b.extra || {}).shelf === 'how-vefr-works'; });
+          var handbook = studio.filter(function (b) { return (b.extra || {}).shelf !== 'how-vefr-works'; });
+          shelves.appendChild(shelf('How games are made', 'the studio handbook', handbook, h('p', { className: 'lib-empty', textContent: 'The studio shelf is empty.' })));
+          if (howVefr.length) shelves.appendChild(shelf('How VEFR works', 'real words for what\u2019s inside', howVefr, null));
         })
         .catch(function () {
           shelves.innerHTML = '';
