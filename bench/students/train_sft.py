@@ -63,15 +63,25 @@ def main():
                     help="fp16 autocast without a grad scaler went to nan on granite-350m (2026-09-26)")
     ap.add_argument("--max-steps", type=int, default=0, help="stop early (smoke tests)")
     ap.add_argument("--no-grade", action="store_true", help="skip the held-out grade (smoke tests)")
+    ap.add_argument("--checkpointing", action="store_true", help="recompute activations (3-4B on 16 GB)")
     a = ap.parse_args()
     dev = "cuda"
     out = ROOT / "runs" / a.name; out.mkdir(parents=True, exist_ok=True)
     tok = AutoTokenizer.from_pretrained(a.base)
-    model = AutoModelForCausalLM.from_pretrained(a.base, dtype=torch.float32).to(dev)
+    # bf16 keeps fp32's range (no overflow, unlike fp16) at half the memory: base weights
+    # in bf16, the LoRA weights in fp32. fp32 everywhere for the smallest students.
+    wdtype = torch.bfloat16 if a.precision == "bf16" else torch.float32
+    model = AutoModelForCausalLM.from_pretrained(a.base, dtype=wdtype).to(dev)
     if not a.eval_only:
         from peft import LoraConfig, get_peft_model
         model = get_peft_model(model, LoraConfig(r=a.rank, lora_alpha=2 * a.rank, lora_dropout=0.05,
                                                  target_modules="all-linear", task_type="CAUSAL_LM"))
+        for p in model.parameters():
+            if p.requires_grad:
+                p.data = p.data.float()
+        if a.checkpointing:
+            model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+            model.enable_input_require_grads()
         exs = [json.loads(l) for l in open(ROOT / "examples.jsonl")]
         random.Random(7).shuffle(exs)
         data = [build(tok, e) for e in exs]
@@ -97,6 +107,8 @@ def main():
             if step % 20 == 0 or step <= 3:
                 print(f"step {step}/{total} loss {loss_acc:.4f} {(time.time()-t0)/step:.2f}s/step", flush=True)
         model.save_pretrained(out / "adapter")
+        if wdtype != torch.float32:
+            model = model.to(wdtype)   # LoRA back to the base's dtype before merging
         model = model.merge_and_unload()
         model.save_pretrained(out / "merged"); tok.save_pretrained(out / "merged")
     if a.no_grade:
