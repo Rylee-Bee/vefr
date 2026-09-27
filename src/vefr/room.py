@@ -99,13 +99,12 @@ def _updated_at() -> datetime | None:
 
 
 def _glossary_path() -> Path:
-    return app_home() / "web" / "js" / "glossary.js"
+    return app_home() / "web" / "library" / "glossary.json"
 
 
 def load_glossary() -> dict:
-    """web/js/glossary.js is `window.VEFR_GLOSSARY = {json};`."""
-    src = _glossary_path().read_text(encoding="utf-8")
-    return json.loads(src[src.index("{"): src.rindex("}") + 1])
+    """web/library/glossary.json: every real word the Library, Fróði and the room teach."""
+    return json.loads(_glossary_path().read_text(encoding="utf-8"))
 
 
 def _lookup(glossary: dict, word: str) -> str | None:
