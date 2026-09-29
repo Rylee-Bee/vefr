@@ -387,6 +387,9 @@ window.VEFR_TILES = {{tiles_json}};
 // speaker key. The same art the pack's own folder holds, so a character
 // looks like someone, not a dot. Empty when the pack names none.
 window.VEFR_SPRITES = {{sprites_json}};
+// Ground tiles per region: two regions can share a symbol for different
+// ground (a town's '.' is grass, a dungeon's '.' is stone floor).
+window.VEFR_REGION_TILES = {{region_tiles_json}};
 window.VEFR_LOGBOK = {{logbok_json}};
 window.VEFR_LEDGER = {{ledger_json}};
 window.VEFR_VOICES = {{voices_json}};
@@ -1222,16 +1225,22 @@ function setupTown() {
   window.addEventListener('resize', function () { resize(); draw(); });
 
   // The ground tiles, preloaded from data URIs (instant); the map is
-  // redrawn once they decode. A symbol with no tile falls back to its
-  // base colour, exactly as before.
-  var tiles = window.VEFR_TILES || {};
+  // redrawn once they decode. Tiles travel with the region: two regions
+  // can use the same symbol for different ground. A symbol with no tile
+  // falls back to its base colour.
+  var regionTiles = window.VEFR_REGION_TILES || {};
   var tileImgs = {};
-  Object.keys(tiles).forEach(function (ch) {
-    var im = new Image();
-    im.onload = function () { draw(); };
-    im.src = tiles[ch];
-    tileImgs[ch] = im;
-  });
+  function loadTiles() {
+    var set = regionTiles[regionName] || window.VEFR_TILES || {};
+    tileImgs = {};
+    Object.keys(set).forEach(function (ch) {
+      var im = new Image();
+      im.onload = function () { draw(); };
+      im.src = set[ch];
+      tileImgs[ch] = im;
+    });
+  }
+  loadTiles();
 
   // The character sprites, preloaded the same way. A character with no
   // sprite keeps the drawn figure (a body and a head, or the hero's dot).
@@ -1410,6 +1419,7 @@ function setupTown() {
     pois = town.pois;
     speakers = regionSpeakers(name);
     hero = (at || town.hero_start).slice();
+    loadTiles();
     resize();
     draw();
     refreshPoi();

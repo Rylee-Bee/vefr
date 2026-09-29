@@ -648,41 +648,19 @@ def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
     return art
 
 
-def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
-    """Inline the ground tiles a pack's legend needs, keyed by map symbol.
+def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path) -> dict[str, str]:
+    """Resolve one legend's symbols to inlined tile pictures.
 
-    The studio's Map Room draws picture tiles; the woven player drew flat
-    colour rectangles, so a game looked plainer shipped than it did in the
-    room that made it. This resolves the same tile per symbol the room's
-    own `tileFor` does - an explicit `"tile"`, else solid/sanctuary/deco
-    pick stone-wall/rug/grass, else open ground picks grass or path by
-    order - and inlines each as a data URI. Every region's legend is
-    gathered (a room's table is a tile too, not only the town's ground).
-    A symbol with no tile on disk is skipped and the player falls back to
-    its base colour.
+    Mirrors the studio Map Room's own `tileFor`: an explicit `"tile"`, else
+    solid/sanctuary/deco pick stone-wall/rug/grass, else open ground picks
+    grass or path by order. A symbol with no tile on disk is skipped, and
+    the player falls back to its base colour.
     """
     import base64
 
-    legends: list[dict] = []
-    sanctuaries: set[str] = set()
-    town = world.get('town') if isinstance(world.get('town'), dict) else {}
-    if isinstance(town.get('legend'), dict):
-        legends.append(town['legend'])
-        sanctuaries.update(town.get('sanctuary_tiles') or [])
-    for act in (world.get('acts') or []):
-        for rdata in (act.get('regions') or {}).values():
-            contract = rdata.get('contract') if isinstance(rdata, dict) else None
-            if isinstance(contract, dict):
-                if isinstance(contract.get('legend'), dict):
-                    legends.append(contract['legend'])
-                sanctuaries.update(contract.get('sanctuary_tiles') or [])
-    # First legend wins on a shared symbol; keep the pack's own order.
-    legend: dict = {}
-    for lg in legends:
-        for ch, spec in lg.items():
-            legend.setdefault(ch, spec)
-    if not legend:
+    if not isinstance(legend, dict) or not legend:
         return {}
+    sanctuaries = set(sanctuaries or [])
     open_chars = [
         ch for ch, spec in legend.items()
         if isinstance(spec, dict) and not spec.get('solid')
@@ -706,6 +684,40 @@ def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
         if f.is_file():
             data = base64.b64encode(f.read_bytes()).decode('ascii')
             out[ch] = f'data:image/webp;base64,{data}'
+    return out
+
+
+def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
+    """The first region's ground tiles, keyed by map symbol.
+
+    Kept as the single global the player used before regions existed; a
+    pack with several regions also gets `_player_region_tiles`.
+    """
+    town = world.get('town') if isinstance(world.get('town'), dict) else {}
+    return _tiles_for_legend(town.get('legend') or {},
+                             town.get('sanctuary_tiles') or [], web_dir)
+
+
+def _player_region_tiles(world: dict, web_dir: Path) -> dict[str, dict[str, str]]:
+    """Every region's tiles, keyed by region name.
+
+    Two regions can share a symbol for different ground - a town's '.' is
+    grass, a dungeon's '.' is stone floor - so tiles travel with the
+    region instead of being merged by symbol.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for act in (world.get('acts') or []):
+        for rname, rdata in (act.get('regions') or {}).items():
+            contract = rdata.get('contract') if isinstance(rdata, dict) else None
+            contract = contract if isinstance(contract, dict) else {}
+            out[rname] = _tiles_for_legend(
+                contract.get('legend') or {},
+                contract.get('sanctuary_tiles') or [], web_dir)
+    if not out:
+        town = world.get('town') if isinstance(world.get('town'), dict) else {}
+        rname = world.get('_region') or 'town'
+        out[rname] = _tiles_for_legend(town.get('legend') or {},
+                                       town.get('sanctuary_tiles') or [], web_dir)
     return out
 
 
@@ -927,6 +939,9 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
     out_html = out_html.replace('{{tiles_json}}',
                                 _json.dumps(_player_tiles(world, template_path.parent),
+                                            ensure_ascii=False))
+    out_html = out_html.replace('{{region_tiles_json}}',
+                                _json.dumps(_player_region_tiles(world, template_path.parent),
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
