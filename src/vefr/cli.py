@@ -743,6 +743,17 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # convention walk as voice discovery (pack root + act regions).
     from .world import fragments_for_pack
     fragments = fragments_for_pack(pack)
+    # The pack's own books, baked into the file so a phone player can
+    # find and read them offline. Fixed key order (the reader's shape);
+    # `extra` is the pack's private notes and stays out of the file.
+    # A pack with no library/ folder reads as [].
+    from .library import found_words, load_library
+    books = [
+        {k: b.get(k) for k in
+         ("id", "title", "kind", "found", "at", "speaker", "when", "pages")}
+        | {"found_words": found_words(b)}
+        for b in load_library(pack)
+    ]
 
     template_candidates = _template_candidates()
     template_path = next(
@@ -763,6 +774,7 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
     out_html = out_html.replace('{{fragments_json}}', _json.dumps(fragments, ensure_ascii=False))
+    out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Empty unless
     # the caller generated one (the CLI's --pool; the web route never).

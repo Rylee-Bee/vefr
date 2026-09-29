@@ -7,6 +7,24 @@
 
 ## Landed
 
+- [x] **The Library, slice L2 — books found in play** (2026-09-29): the
+      woven single-file player now carries a pack's books and lets a player
+      find them. `weave_html` bakes `window.VEFR_LIBRARY` (fixed key order:
+      id, title, kind, found, at, speaker, when, pages, found_words; `extra`
+      dropped; no `library/` folder reads `[]`). `web/packaged.html` grants
+      by `found`: shelf from the start, map when the hero lands on `at`,
+      resident when the nearest speaker's key matches `speaker`, and earned
+      for the two events a player can see (`first-visit` on the first load,
+      `book:<id>` once that book is read) — `bell`, `act-complete` and
+      `rumor-verified` stay unfound rather than invent an event. Found ids
+      persist at `localStorage['vefr-library-<world>']`; a found book shows
+      an aria-live toast and opens an accessible reader (real buttons, 44px,
+      plain-text pages, arrow keys turn pages, Esc closes, movement guarded).
+      The pause menu gains a Books panel listing what's found and counting
+      what isn't. No model call, no timers. Guide: `docs/guides/rulesets.md`
+      → library. Tests:
+      `test_builder_weave.py::test_woven_file_bakes_the_packs_books` and
+      `test_woven_file_without_a_library_bakes_an_empty_list`.
 - [x] **The woven player draws the pack's ground tiles** (2026-09-29):
       a game looked plainer shipped than it did in the room that made it.
       The studio's Map Room draws picture tiles; the woven player drew flat

@@ -101,9 +101,15 @@ file names. The loader carries them as `world["library"]`;
 `GET /api/library` serves the current world's books plus the studio's
 own shelf (`web/library/`, the game-making handbook); the workshop's
 Library room reads them a page at a time (`web/js/library.js`); the book
-export adds a "The Library" chapter. Finding books in play (on the map,
-from a resident, earned) is the next slice. Code: `src/vefr/library.py`;
-tests: `tests/test_library.py` + `tests/fixtures/make_library_pack.py`.
+export adds a "The Library" chapter. Finding books in play has landed in
+the woven player: a map book is picked up on its tile, a resident hands
+one over when you talk, and earned books unlock on `first-visit` or after
+reading the `book:<id>` they name (`bell`, `act-complete` and
+`rumor-verified` wait for events the player can see). The pause menu's
+Books panel reopens anything found. Code: `src/vefr/library.py` +
+`src/vefr/cli.py` (bake) + `web/packaged.html` (reader); tests:
+`tests/test_library.py` + `tests/test_builder_weave.py` +
+`tests/fixtures/make_library_pack.py`.
 
 ## Adding a ruleset (the checklist later acts follow)
 

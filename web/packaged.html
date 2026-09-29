@@ -135,6 +135,22 @@
   .npc-line { margin: 0 0 10px; font-size: 1.15rem; line-height: 1.5; }
   .npc-note { margin: 0 0 8px; font-size: 0.85rem; color: #CFC5AE; }
   .npc-box #npc-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
+  /* the reader: the author's words, one page at a time, over the game.
+     Matches the speech box (dark in both colour schemes), because it
+     sits inside the always-dark stage. */
+  #reader { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center;
+            justify-content: center; padding: 20px; background: rgba(6, 7, 9, 0.8); }
+  .reader-card { width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto;
+                 background: rgba(21, 24, 29, 0.97); border: 2px solid #D8AA4E;
+                 border-radius: 6px; padding: 24px 22px 16px; color: var(--glass-ink); }
+  #reader .speaker { margin: 0 0 10px; font: 700 1rem var(--display);
+                     letter-spacing: 0.04em; color: #E2BC6E; }
+  .reader-page { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.55;
+                 white-space: pre-wrap; color: var(--glass-ink); }
+  #reader .status { color: rgba(244, 238, 221, 0.75); }
+  .reader-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .reader-controls .cta { color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
+  #reader #reader-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
   /* choices */
   .verb-row { position: absolute; left: 16px; bottom: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
   .verb-row button { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.4); text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
@@ -245,12 +261,26 @@
         <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
         <p class="glass" id="near" aria-live="polite"></p>
         <p class="glass" id="poi" aria-live="polite"></p>
+        <p class="glass" id="library-live" role="status" aria-live="polite"></p>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
         <p class="npc-line" id="npc-line"></p>
         <p class="npc-note" id="npc-note" hidden></p>
         <button type="button" id="npc-close" class="cta">Continue</button>
+      </div>
+      <div id="reader" role="dialog" aria-modal="true"
+           aria-labelledby="reader-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="reader-title"></p>
+          <p class="reader-page" id="reader-text"></p>
+          <p class="status" id="reader-page-num" aria-live="polite"></p>
+          <div class="reader-controls">
+            <button type="button" id="reader-back" class="cta">Back</button>
+            <button type="button" id="reader-next" class="cta cta--gold">Read on</button>
+            <button type="button" id="reader-close" class="cta">Close</button>
+          </div>
+        </div>
       </div>
       <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
       <p class="glass" id="combat-log" aria-live="polite"></p>
@@ -310,6 +340,7 @@
     <span class="label" id="menu-title">Paused</span>
     <ul class="pm">
       <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
+      <li><button type="button" data-panel="books">Books</button></li>
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
     </ul>
@@ -321,6 +352,11 @@
       <section id="feed" aria-live="polite">
         <p class="empty">Nothing yet. Press Whisper to hear what people are saying.</p>
       </section>
+    </div>
+    <div data-panel-body="books" hidden>
+      <h2>Books</h2>
+      <div id="book-list"></div>
+      <p class="status" id="book-count"></p>
     </div>
     <div data-panel-body="help" hidden>
       <h2>How to play</h2>
@@ -348,6 +384,11 @@ window.VEFR_TILES = {{tiles_json}};
 window.VEFR_LOGBOK = {{logbok_json}};
 window.VEFR_LEDGER = {{ledger_json}};
 window.VEFR_VOICES = {{voices_json}};
+
+// The pack's own books, baked at weave time: what a player can find in
+// play (shelf, on the map, from a resident, or earned) and read here.
+// Empty when the pack carries no library/ folder.
+window.VEFR_LIBRARY = {{library_json}};
 
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
@@ -468,6 +509,7 @@ function bootstrap() {
   bindWhisper();
   setupTown();
   bindMenu();
+  bindLibrary();
   var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   document.getElementById('status').textContent = touch
     ? 'Use the pad to move. Tap Talk when someone is near.'
@@ -482,6 +524,198 @@ function showSpeech(speaker, line, note) {
   n.textContent = note || ''; n.hidden = !note;
   document.getElementById('npc-box').hidden = false;
   document.getElementById('npc-close').focus();
+}
+
+// ---- the library: books a world keeps, found and read in play ----
+// A book is found on the map, from a resident, on the shelf from the
+// start, or earned by an event the player can observe. No timers, no
+// pressure: finding a book never costs anything. The baked list is
+// window.VEFR_LIBRARY; a pack with no books is [].
+var LIBRARY_KEY = 'vefr-library-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+
+function libraryBooks() {
+  return Array.isArray(window.VEFR_LIBRARY) ? window.VEFR_LIBRARY : [];
+}
+
+function booksFound() {
+  try {
+    var ids = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]');
+    return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
+  } catch (e) { return []; }
+}
+
+function bookIsFound(id) { return booksFound().indexOf(id) !== -1; }
+
+function libraryRemember(id) {
+  var ids = booksFound();
+  if (ids.indexOf(id) === -1) {
+    ids.push(id);
+    try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(ids)); } catch (e) {}
+  }
+}
+
+function libraryToast(book) {
+  var live = document.getElementById('library-live');
+  if (!live) return;
+  live.textContent = 'You found a book: ' + ((book && book.title) || 'a book')
+    + '. Open Books from the menu.';
+}
+
+function foundBook(book, how, open) {
+  if (!book || !book.id) return;
+  libraryRemember(book.id);
+  libraryToast(book);
+  renderBooksPanel();
+  if (open !== false) openReader(book);
+}
+
+// Map books: grant when the hero stands on the named tile.
+function libraryOnTile(x, y) {
+  libraryBooks().forEach(function (b) {
+    if (!b || b.found !== 'map' || !Array.isArray(b.at)) return;
+    if (b.at[0] === x && b.at[1] === y && !bookIsFound(b.id)) foundBook(b, 'map');
+  });
+}
+
+// Resident books: grant when the nearest speaker answers. The reader
+// stays closed here - the resident's own line is about to show in the
+// speech box, and the toast points at the Books panel.
+function libraryFromSpeaker(key) {
+  libraryBooks().forEach(function (b) {
+    if (!b || b.found !== 'resident' || b.speaker !== key) return;
+    if (!bookIsFound(b.id)) foundBook(b, 'resident', false);
+  });
+}
+
+// Earned books the player can see. `first-visit` fires on the first
+// load in a world (no saved found-list yet); `book:<id>` once that
+// book has been read. `bell`, `act-complete` and `rumor-verified` name
+// events the woven player has no way to observe, so they stay unfound
+// here rather than invent one.
+function libraryFirstVisit() {
+  if (localStorage.getItem(LIBRARY_KEY) !== null) return;
+  libraryBooks().forEach(function (b) {
+    if (b && b.found === 'earned' && b.when === 'first-visit' && !bookIsFound(b.id)) {
+      foundBook(b, 'first-visit');
+    }
+  });
+}
+
+function libraryAfterRead(book) {
+  if (!book || !book.id) return;
+  libraryBooks().forEach(function (b) {
+    if (!b || b.found !== 'earned') return;
+    if (b.when === 'book:' + book.id && !bookIsFound(b.id)) foundBook(b, 'read');
+  });
+}
+
+// The reader: one page at a time, the author's words as plain text.
+var readerBook = null;
+var readerPage = 0;
+var readerOpener = null;
+
+function readerPageCount(book) {
+  return Array.isArray(book && book.pages) ? book.pages.length : 0;
+}
+
+function renderReader() {
+  if (!readerBook) return;
+  var n = readerPageCount(readerBook);
+  document.getElementById('reader-text').textContent =
+    n ? String(readerBook.pages[readerPage] || '') : '';
+  document.getElementById('reader-page-num').textContent =
+    n ? 'Page ' + (readerPage + 1) + ' of ' + n : 'No pages';
+  document.getElementById('reader-back').disabled = readerPage <= 0;
+  document.getElementById('reader-next').disabled = readerPage >= n - 1;
+}
+
+function openReader(book) {
+  if (!book) return;
+  readerBook = book;
+  readerPage = 0;
+  readerOpener = document.activeElement;
+  document.getElementById('reader-title').textContent = book.title || 'A book';
+  document.getElementById('reader-page-num').textContent = '';
+  document.getElementById('reader').hidden = false;
+  renderReader();
+  document.getElementById('reader').focus();
+}
+
+function closeReader() {
+  var reader = document.getElementById('reader');
+  if (reader.hidden) return;
+  var read = readerBook;
+  var opener = readerOpener;
+  reader.hidden = true;
+  readerBook = null;
+  readerOpener = null;
+  // Put focus back where it came from; a body opener (arrow-key play)
+  // has nowhere to land, so fall back to the visible Menu button.
+  if (opener && opener !== document.body && opener !== document.documentElement
+      && opener.focus) {
+    try { opener.focus(); } catch (e) {}
+  } else {
+    var fallback = document.getElementById('menu-open') || document.getElementById('talk');
+    if (fallback && fallback.focus) { try { fallback.focus(); } catch (e) {} }
+  }
+  // A book just read can unlock an earned one (when: book:<id>).
+  libraryAfterRead(read);
+}
+
+function readerTurn(delta) {
+  if (!readerBook) return;
+  var n = readerPageCount(readerBook);
+  var next = readerPage + delta;
+  if (next < 0 || next > n - 1) return;
+  readerPage = next;
+  renderReader();
+}
+
+function renderBooksPanel() {
+  var list = document.getElementById('book-list');
+  var count = document.getElementById('book-count');
+  if (!list) return;
+  var books = libraryBooks();
+  list.textContent = '';
+  if (!books.length) {
+    if (count) count.textContent = 'No books in this world yet.';
+    return;
+  }
+  var found = books.filter(function (b) {
+    return b && (b.found === 'shelf' || bookIsFound(b.id));
+  });
+  found.forEach(function (b) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cta';
+    btn.textContent = b.title || 'A book';
+    btn.addEventListener('click', function () {
+      if (window.closeMenu) window.closeMenu();
+      openReader(b);
+    });
+    list.appendChild(btn);
+  });
+  if (!found.length) {
+    var p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = 'No books found yet.';
+    list.appendChild(p);
+  }
+  var remaining = books.filter(function (b) {
+    return b && !(b.found === 'shelf' || bookIsFound(b.id));
+  }).length;
+  if (count) {
+    count.textContent = remaining ? remaining + ' still to find'
+      : (found.length ? 'Every book found.' : '');
+  }
+}
+
+function bindLibrary() {
+  libraryFirstVisit();
+  renderBooksPanel();
+  document.getElementById('reader-close').addEventListener('click', closeReader);
+  document.getElementById('reader-back').addEventListener('click', function () { readerTurn(-1); });
+  document.getElementById('reader-next').addEventListener('click', function () { readerTurn(1); });
 }
 
 // ---- pause menu: journal, help, model settings ----
@@ -953,6 +1187,7 @@ function setupTown() {
     }
     document.getElementById('poi').textContent = here || '';
     if (here) journalVisit(here, nx, ny);
+    libraryOnTile(nx, ny);
   }
 
   function tryNPC() {
@@ -967,6 +1202,7 @@ function setupTown() {
       document.getElementById('near').textContent = 'No one is close enough to talk to.';
       return;
     }
+    libraryFromSpeaker(nearest.key);
     var seed = (nearest.spec.seeds || {})[ph] || '';
     var voice = window.VEFR_VOICES[nearest.key] || '';
     var tone = world.phases[ph] || '';
@@ -1047,6 +1283,14 @@ function setupTown() {
   });
   document.addEventListener('keydown', function (e) {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    // While the reader is open, its keys win and movement stops.
+    var readerOpen = !document.getElementById('reader').hidden;
+    if (readerOpen) {
+      if (e.key === 'Escape') { e.preventDefault(); closeReader(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); readerTurn(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); readerTurn(1); }
+      return;
+    }
     var menuOpen = !document.getElementById('menu').hidden;
     if (e.key === 'Escape') { if (menuOpen) window.closeMenu(); else window.openMenu(); return; }
     if (menuOpen || play.hidden) return;
