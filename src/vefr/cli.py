@@ -906,6 +906,13 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
             'voice_file': spec.get('voice_file', ''),
         }
 
+    # Where the game begins: the act's `start` when it names a real
+    # region, else empty (the player falls back to the first region).
+    start = first_act.get('start')
+    if not (isinstance(start, dict) and isinstance(start.get('region'), str)
+            and start.get('region') in regions):
+        start = {}
+
     template_candidates = _template_candidates()
     template_path = next(
         (p for p in template_candidates if p.exists()), template_candidates[0])
@@ -937,6 +944,7 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                 _json.dumps(transitions, ensure_ascii=False))
     out_html = out_html.replace('{{speakers_json}}',
                                 _json.dumps(speaker_groups, ensure_ascii=False))
+    out_html = out_html.replace('{{start_json}}', _json.dumps(start, ensure_ascii=False))
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Empty unless
     # the caller generated one (the CLI's --pool; the web route never).

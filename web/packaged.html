@@ -261,6 +261,7 @@
         <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
         <p class="glass" id="near" aria-live="polite"></p>
         <p class="glass" id="poi" aria-live="polite"></p>
+        <p class="glass" id="use-hint" aria-live="polite" hidden></p>
         <p class="glass" id="library-live" role="status" aria-live="polite"></p>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
@@ -291,6 +292,7 @@
         <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
       </div>
       <div class="acts">
+        <button type="button" id="interact" class="gbtn" hidden>Interact <kbd>F</kbd></button>
         <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
         <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
       </div>
@@ -404,6 +406,9 @@ window.VEFR_TRANSITIONS = {{transitions_json}};
 // The act's speakers, grouped by the region they belong to (a speaker
 // with no `region` belongs to the act's first region).
 window.VEFR_SPEAKERS = {{speakers_json}};
+// Where the game begins: {"region": "...", "at": [x, y]}. Empty when the
+// act does not say, and then the first region's own hero_start is used.
+window.VEFR_START = {{start_json}};
 // The door picture: drawn at each transition tile so a way out is not an
 // invisible hole in the floor. Empty when the engine has no door art.
 window.VEFR_DOOR = {{door_json}};
@@ -1140,14 +1145,42 @@ function setupTown() {
   // and `hero` stay `var`s so draw() and move() read the current
   // values instead of a stale capture.
   var regions = window.VEFR_REGIONS || {};
-  var regionName = world._region || Object.keys(regions)[0] || 'town';
   var transitions = window.VEFR_TRANSITIONS || [];
+  var start = window.VEFR_START || {};
 
-  var town = world.town;
+  // The current region's town data, from the baked regions (falling back
+  // to the unified town when a pack baked no regions).
+  function regionTown(name) {
+    var r = regions[name];
+    if (!r) return world.town;
+    return {
+      map: r.map || [],
+      legend: r.legend || {},
+      pois: r.pois || {},
+      poi_text: r.poi_text || {},
+      hero_start: r.hero_start || [1, 1],
+      sanctuary_tiles: r.sanctuary_tiles || [],
+      watch: r.watch || {},
+      water_by_phase: r.water_by_phase || {},
+      flood_tiles: r.flood_tiles || [],
+      tile: r.tile || 32,
+      bg: r.bg || '#131311',
+      hero_color: r.hero_color || '#e8e5df',
+      speaker_color: r.speaker_color || '#8b939c',
+      speaker_head: r.speaker_head || '#d8d5df',
+    };
+  }
+
+  // Where the game begins: the act's `start`, else the first region's
+  // own hero_start. So a pack can wake the player inside a room.
+  var regionName = (start.region && regions[start.region]) ? start.region
+    : (world._region || Object.keys(regions)[0] || 'town');
+  var town = regionTown(regionName);
   var legend = town.legend;
   var pois = town.pois || {};
   var speakers = regionSpeakers(regionName);
-  var hero = town.hero_start.slice();
+  var hero = (Array.isArray(start.at) && start.at.length === 2
+    ? start.at : town.hero_start).slice();
 
   // The current region's speakers. The baked group (window.VEFR_SPEAKERS)
   // says which keys belong here; a full spec from the world (with
@@ -1370,24 +1403,9 @@ function setupTown() {
   // Enter another region through a door: swap the current map,
   // speakers, and hero, then resize, draw, and refresh the POI line.
   function enterRegion(name, at) {
-    var r = regions[name];
-    if (!r) return;
+    if (!regions[name]) return;
     regionName = name;
-    town = {
-      map: r.map || [],
-      legend: r.legend || {},
-      pois: r.pois || {},
-      hero_start: r.hero_start || [1, 1],
-      sanctuary_tiles: r.sanctuary_tiles || [],
-      watch: r.watch || {},
-      water_by_phase: r.water_by_phase || {},
-      flood_tiles: r.flood_tiles || [],
-      tile: r.tile || 32,
-      bg: r.bg || '#131311',
-      hero_color: r.hero_color || '#e8e5df',
-      speaker_color: r.speaker_color || '#8b939c',
-      speaker_head: r.speaker_head || '#d8d5df',
-    };
+    town = regionTown(name);
     legend = town.legend;
     pois = town.pois;
     speakers = regionSpeakers(name);
@@ -1395,6 +1413,41 @@ function setupTown() {
     resize();
     draw();
     refreshPoi();
+    updateUse();
+  }
+
+  // The verb: use what you are standing on. A door is used, not walked
+  // through, so passing a doorway never yanks you to another map.
+  function useHere() {
+    if (transitionAt(hero[0], hero[1])) {
+      var door = transitionAt(hero[0], hero[1]);
+      enterRegion(door.to, door.to_at);
+      return;
+    }
+    var key = hero[0] + ',' + hero[1];
+    var text = (town.poi_text || {})[key];
+    if (text) showSpeech(pois[key] || '', text, '');
+  }
+
+  // The Interact control: shown only when there is something to use, so
+  // it lights up on a door or a named place.
+  function updateUse() {
+    var key = hero[0] + ',' + hero[1];
+    var door = transitionAt(hero[0], hero[1]);
+    var text = (town.poi_text || {})[key];
+    var btn = document.getElementById('interact');
+    var hint = document.getElementById('use-hint');
+    if (!btn) return;
+    if (door) {
+      btn.hidden = false;
+      if (hint) { hint.hidden = false; hint.textContent = 'A door. Use it to go through.'; }
+    } else if (text) {
+      btn.hidden = false;
+      if (hint) { hint.hidden = false; hint.textContent = 'Something to look at.'; }
+    } else {
+      btn.hidden = true;
+      if (hint) { hint.hidden = true; hint.textContent = ''; }
+    }
   }
 
   // The named place the hero now stands on, written to the POI line.
@@ -1411,15 +1464,12 @@ function setupTown() {
     var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
-    // A door is stepped on, not stood on: entering happens instead of
-    // the move, and the hero lands at the door's `to_at`.
-    var door = transitionAt(nx, ny);
-    if (door) { enterRegion(door.to, door.to_at); return; }
     hero = [nx, ny];
     draw();
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny, regionName);
+    updateUse();
   }
 
   function tryNPC() {
@@ -1477,6 +1527,7 @@ function setupTown() {
     document.getElementById('talk').focus();
   });
   document.getElementById('talk').addEventListener('click', tryNPC);
+  document.getElementById('interact').addEventListener('click', useHere);
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
@@ -1534,6 +1585,7 @@ function setupTown() {
     else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
     else if (e.key === 'e' || e.key === 'E') tryNPC();
+    else if (e.key === 'f' || e.key === 'F') useHere();
     else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
     else if (!onButton && (e.key === ' ' || e.key === 'Enter')) {
       e.preventDefault();
@@ -1542,6 +1594,7 @@ function setupTown() {
   });
   resize();
   draw();
+  updateUse();
 }
 // ---- the kitchen (cooking ruleset v0) ----
 // The morning is pack-authored; the engine only resolves it.

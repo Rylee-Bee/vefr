@@ -348,6 +348,7 @@ def _load_act(act_dir: Path) -> dict:
         "enemies": contract.get("enemies", []),
         "bosses": contract.get("bosses", []),
         "transitions": contract.get("transitions", []),
+        "start": contract.get("start", {}),
         "vault_intro": contract.get("vault_intro", ""),
         "verbs": contract.get("verbs", []),
         "floor": contract.get("floor", "costume"),
