@@ -164,6 +164,37 @@ def test_segments_build_a_valid_map(fixture_vefr_home):
     assert json.loads((pack / "world.json").read_text(encoding="utf-8"))["town"]["map"] == VALID
 
 
+def test_a_map_build_keeps_pack_fields_it_does_not_model(acts_home):
+    """The map route owns the map, not the game's own settings.
+
+    A pack may carry fields the builder does not model - a title picture
+    and accent in `player`, a key from a future engine. Building the map
+    used to drop them: `load_pack` never read them and `write_pack` never
+    wrote them, so the studio ate a game's title art on the first save.
+    """
+    pack = acts_home / "worlds" / "sample-world"
+    world_json = pack / "world.json"
+    config = json.loads(world_json.read_text(encoding="utf-8"))
+    config["player"] = {"title_art": "assets/title.webp", "accent": "#3F7E84"}
+    config["title_music"] = "assets/theme.ogg"  # a key no engine code knows
+    world_json.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+    map_path = pack / "acts" / "act-1" / "town" / "map.md"
+    rows = [ln for ln in map_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    rows[8] = rows[8][:5] + "#" + rows[8][6:]
+
+    r = TestClient(app).post(
+        "/api/builder/map/build",
+        json={"name": "sample-world", "grid": rows, "force": True},
+    )
+    assert r.status_code == 200, r.text
+
+    after = json.loads(world_json.read_text(encoding="utf-8"))
+    assert after["player"] == {"title_art": "assets/title.webp", "accent": "#3F7E84"}
+    assert after["title_music"] == "assets/theme.ogg"
+    assert map_path.read_text(encoding="utf-8") == "\n".join(rows) + "\n"
+
+
 def test_acts_pack_writes_map_md_backs_it_up_and_refreshes_the_view(acts_home):
     """The served builder's acts-shape worlds write + back up map.md."""
     pack = acts_home / "worlds" / "sample-world"

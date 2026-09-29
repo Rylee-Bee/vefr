@@ -3,8 +3,8 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .replies import (EventReply, GotItReply, LibraryReply, ModeReply, StickerBook, TeachReply,
-                      TeachState)
+from .replies import (CommissionsReply, DeferReply, EventReply, GotItReply, LibraryReply,
+                      ModeReply, StickerBook, TeachReply, TeachState)
 
 import json
 import os
@@ -1271,6 +1271,65 @@ def builder_aspects(phase: str | None = None):
     speaker seed matrices, current rune cast, and recent trace events.
     """
     return inspect_mod.pack_aspects(phase=phase)
+
+
+class CommissionRequest(BaseModel):
+    module: str
+    world: str | None = None  # pack to read (None = current), like the other builder routes
+
+
+@app.get("/api/builder/commissions", response_model=CommissionsReply)
+def builder_commissions():
+    """The commission board: the small jobs the residents are waiting on.
+
+    Reads the active pack through the same loader the rest of the studio
+    uses. A pack that can't be read is an empty board, not an error - the
+    Hall should still open and say nothing is waiting. Rules-only: no model
+    call is made anywhere behind this route.
+    """
+    from . import commissions
+    from .maplab import load_pack
+    from .paths import pack_dir, world_name
+
+    name = world_name()
+    try:
+        w = load_pack(pack_dir(name))
+    except Exception:  # noqa: BLE001 - an unreadable pack is an empty board, never a 500
+        return {"world": name, "commissions": []}
+    return {"world": name, "commissions": commissions.board(w)}
+
+
+@app.post("/api/builder/commissions/defer", response_model=DeferReply)
+def builder_commission_defer(req: CommissionRequest):
+    """Set a commission aside for later.
+
+    Deferral is the maker's own state, kept outside the pack, so the board
+    still shows a finished job as done no matter how it was once set aside.
+    An unknown module is the caller's mistake (400), not a silent no-op.
+    """
+    from . import commissions
+
+    # The body's world is validated only so a traversal-shaped name is
+    # refused at the edge; deferral itself is studio-wide, not per-pack.
+    _safe_world_name(req.world)
+    try:
+        commissions.defer(req.module)
+    except KeyError as exc:
+        raise HTTPException(status_code=400, detail=f"no commission named {req.module!r}") from exc
+    return {"ok": True, "module": req.module, "deferred": True}
+
+
+@app.post("/api/builder/commissions/resume", response_model=DeferReply)
+def builder_commission_resume(req: CommissionRequest):
+    """Take a commission back off the shelf, so the Hall offers it again."""
+    from . import commissions
+
+    _safe_world_name(req.world)
+    try:
+        commissions.resume(req.module)
+    except KeyError as exc:
+        raise HTTPException(status_code=400, detail=f"no commission named {req.module!r}") from exc
+    return {"ok": True, "module": req.module, "deferred": False}
 
 
 @app.post("/api/builder/enhance/map")

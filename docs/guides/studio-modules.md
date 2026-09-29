@@ -1,6 +1,7 @@
 # Studio modules
 
-A plan, agreed with the owner on 2026-09-26. Nothing here is built yet.
+A plan, agreed with the owner on 2026-09-26. The commission board
+(below) is the first slice built; the rest is still plan.
 
 VEFR is a whole game studio that publishes games in house. A **studio
 module** is one small helper a game maker can slot into their studio to
@@ -52,6 +53,22 @@ that runs entirely inside the studio.
 
 Rewards never lock features away: every module is available from the
 start. They celebrate progress; they don't gate it.
+
+## Built: the commission board (first slice)
+
+Built 2026-09-29. The first piece of the loop is real, in the Hall:
+
+- The **commission board** reads the current pack and shows one card
+  per module.
+- A commission is a **rule over the pack**, never a model call.
+  The Cartographer asks for the town's first places: a path, a wall,
+  and at least three kinds of ground with one marked as a place to
+  walk to. Every mark the rule wants, the Map Room can paint.
+- **Open the Map Room** takes the maker to the room that does the work.
+- **Not now** defers a commission; the board remembers, and a deferred
+  job simply waits. A job the pack already satisfies reads **done**.
+- Everything else here is still plan: the other modules, the learning
+  ladder, the spare parts shelf, and the Archives' two lists.
 
 ## Who it's for
 

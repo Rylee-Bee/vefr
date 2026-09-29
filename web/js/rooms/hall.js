@@ -7,7 +7,8 @@
   var screens = S.screens, API = S.API, RESIDENTS = S.RESIDENTS, chronicleLine = S.chronicleLine,
       emptyState = S.emptyState, firstWalk = S.firstWalk, formatTime = S.formatTime, h = S.h,
       loadingState = S.loadingState, main = S.main, openFolio = S.openFolio, portrait = S.portrait,
-      residentLine = S.residentLine, spot = S.spot, truncate = S.truncate, watch = S.watch, ART = S.ART;
+      residentLine = S.residentLine, spot = S.spot, truncate = S.truncate, watch = S.watch, ART = S.ART,
+      SCREEN_TITLES = S.SCREEN_TITLES, door = S.door;
 
   /* ══════════════════════════════════════════════════════
      THE HALL — a keepsake wall of what you have kept
@@ -73,6 +74,72 @@
       return sec;
     }
 
+    /* The commission board: small jobs a resident is waiting on. An open job
+       offers the room that does the work and a "not now"; a finished one is a
+       quiet line. Rules-only, so the board renders the engine's own answer. */
+    function commissionCard(c) {
+      var who = (RESIDENTS[c.resident] || {}).name || c.name;
+      var card = h('article', { className: 'commission' });
+      card.appendChild(h('span', { className: 'commission__who', textContent: who }));
+      card.appendChild(h('h3', { className: 'commission__name', textContent: c.name }));
+      card.appendChild(h('p', { className: 'commission__ask', textContent: c.ask }));
+      var actions = h('div', { className: 'commission__actions' });
+      var roomTitle = SCREEN_TITLES[c.room] || c.name;
+      actions.appendChild(door(c.room, 'Open ' + roomTitle, 'cta--gold'));
+      var notNow = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Not now' });
+      notNow.addEventListener('click', function () {
+        notNow.disabled = true;
+        notNow.textContent = 'Setting it aside…';
+        API.deferCommission(c.id).then(function () { enter(); })
+          .catch(function () {
+            notNow.disabled = false;
+            notNow.textContent = 'Couldn’t set that aside — try again';
+          });
+      });
+      actions.appendChild(notNow);
+      card.appendChild(actions);
+      return card;
+    }
+
+    function commissionDone(c) {
+      var who = (RESIDENTS[c.resident] || {}).name || c.name;
+      return h('p', { className: 'commission commission--done',
+        textContent: 'Done — ' + c.name + ', asked by ' + who + '.' });
+    }
+
+    function commissionsSection() {
+      var sec = h('section', { className: 'carved commissions', 'aria-labelledby': 'commissions-title' });
+      var head = h('div', { className: 'section-head' });
+      var words = h('div', {});
+      words.appendChild(h('span', { className: 'label', textContent: 'From the residents' }));
+      words.appendChild(h('h2', { className: 'section-head__title', id: 'commissions-title', textContent: 'Commissions' }));
+      head.appendChild(words);
+      sec.appendChild(head);
+      sec.appendChild(h('p', { className: 'commissions__note',
+        textContent: 'Small things a resident would love you to make. Take one on, or leave it.' }));
+      var body = h('div', { className: 'commissions__list' });
+      body.appendChild(loadingState('Looking for little jobs…'));
+      sec.appendChild(body);
+      API.commissions().then(function (data) {
+        var all = (data && data.commissions) || [];
+        var cards = all.filter(function (c) { return !c.deferred; });
+        body.innerHTML = '';
+        if (!cards.length) {
+          body.appendChild(h('p', { className: 'commissions__quiet',
+            textContent: 'Nothing is waiting on you. Everything is open.' }));
+          return;
+        }
+        cards.forEach(function (c) {
+          body.appendChild(c.done ? commissionDone(c) : commissionCard(c));
+        });
+      }).catch(function () {
+        body.innerHTML = '';
+        body.appendChild(h('p', { className: 'commissions__quiet',
+          textContent: 'The commission board is quiet for a moment. Try again soon.' }));
+      });
+      return sec;
+    }
+
     function enter() {
       el_screen.innerHTML = '<div class="wrap band hall-room" id="hall-content"></div>';
       firstWalk.attempt('hall');
@@ -103,6 +170,9 @@
 
         // The fire keeps watch — real engine events, echoed quietly
         container.appendChild(watchStrip());
+
+        // The commission board: what a resident is waiting on right now
+        container.appendChild(commissionsSection());
 
         // Ratatoskr's sticker book: what you've earned just by using the studio
         container.appendChild(stickerBook());

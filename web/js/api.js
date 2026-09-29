@@ -52,6 +52,11 @@
     aspects:      function ()     { return get('/api/builder/aspects'); },
     resolved:     function ()     { return get('/api/builder/resolved'); },
 
+    // Commissions (the Hall's board of small jobs the residents ask for)
+    commissions:      function ()   { return get('/api/builder/commissions'); },
+    deferCommission:  function (id) { return post('/api/builder/commissions/defer', { module: id }); },
+    resumeCommission: function (id) { return post('/api/builder/commissions/resume', { module: id }); },
+
     // Story
     rumor:        function ()     { return post('/api/rumor'); },
     forge:        function (item) { return post('/api/forge', item); },

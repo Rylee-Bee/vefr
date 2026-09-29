@@ -77,6 +77,10 @@ tests/canon-strings.local.txt
 
 # runtime journal single-file (siblings ignored since the runtime-data rule)
 /data/journal.json
+
+# the commission board's deferrals - the maker's own state, never pack content
+/data/commissions.json
+
 web/static
 
 # Generated content index (agent-config). Regenerable; binary; contains
