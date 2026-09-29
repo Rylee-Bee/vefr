@@ -1166,6 +1166,24 @@ function setupTown() {
         ctx.fillRect(t[0] * town.tile, t[1] * town.tile, town.tile, town.tile);
       });
     }
+    // The people: a body and a head at each speaker's tile - the same
+    // figure the studio's live player draws, so you can see who is
+    // here to talk to. Silence when a pack names no speakers.
+    Object.keys(speakers || {}).forEach(function (key) {
+      var s = speakers[key];
+      if (!s || !Array.isArray(s.at)) return;
+      var u = town.tile / 32;
+      var px = s.at[0] * town.tile, py = s.at[1] * town.tile;
+      ctx.fillStyle = town.speaker_color || '#8b939c';
+      ctx.beginPath();
+      ctx.arc(px + 16 * u, py + 21 * u, 6 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = town.speaker_head || '#d8d5df';
+      ctx.beginPath();
+      ctx.arc(px + 16 * u, py + 11 * u, 4 * u, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
     // The hero
     ctx.fillStyle = town.hero_color || '#e8e5df';
     ctx.beginPath();

@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **The woven player draws the people** (2026-09-29): speakers were
+      invisible in the shipped file - the studio's live player drew a
+      body-and-head figure per speaker (`web/town.js`), the woven player drew
+      only the map and the hero, so a player had no idea who was there to talk
+      to (and tapping the map near an unseen speaker fired their line). The
+      woven player now draws the same figure at each speaker's tile, scaled to
+      the pack's tile size, using the pack's `speaker_color`/`speaker_head`,
+      falling back to the engine's. Visual baseline updated deliberately.
 - [x] **The Library, slice L2 — books found in play** (2026-09-29): the
       woven single-file player now carries a pack's books and lets a player
       find them. `weave_html` bakes `window.VEFR_LIBRARY` (fixed key order:
