@@ -38,7 +38,11 @@ surface - lives in a pack directory. Two shapes are supported:
   list (or dict) of region names, one directory each. A region's map
   lives in its `map.md`; its geometry (legend, pois, poi_text,
   hero_start, sanctuary_tiles, watch, water_by_phase, flood_tiles,
-  tile, bg and the colours) lives in that region's `contract.json`.
+  tile, bg, `fog` and the colours) lives in that region's
+  `contract.json`. `fog` (true, or {"radius": N}) makes the woven player
+  draw the region dark until it is explored - a lit circle around the
+  hero, walked ground remembered dimmed, the rest black. Omit it and the
+  region is drawn whole (a town).
   An act's `transitions` is a list of doors between those maps:
 
       {"from": "town", "at": [4, 5],

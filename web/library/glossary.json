@@ -444,6 +444,9 @@
   ],
   "example": "Mira's brother is the opposite of Mira: loud where Mira is quiet, careless where Mira is careful."
  },
+ "fog of war": {
+  "plain": "A map that stays dark until you have walked it, with a small lit circle around you."
+ },
  "foreshadowing": {
   "plain": "Small early hints of something that happens later.",
   "teach": "story",

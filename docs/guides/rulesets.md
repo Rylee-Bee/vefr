@@ -117,7 +117,12 @@ Books panel reopens anything found. Code: `src/vefr/library.py` +
 Not an act loop yet: a build-time tool that generates dungeon floors the
 engine owns. `norns delve` draws a floor from a seed - rules only, no
 model call, deterministic - and writes it as a region of the act, wiring
-the stairs as transitions:
+the stairs as transitions.
+
+A region - generated or authored - may also carry `fog` in its
+`contract.json`: `true`, or `{"radius": N}`, draws it dark until explored
+(a lit circle around the hero, walked ground remembered dimmed, the rest
+black). The Cottage floors use `{"radius": 4}`; a town omits it.
 
 ```sh
 uv run norns delve --pack worlds/<name> --seed <text> --floors N \
