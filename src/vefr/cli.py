@@ -970,6 +970,13 @@ def _player_items(world: dict) -> dict[str, dict]:
     drop that names a missing item is dropped from what is baked, so the
     player never meets a thing the world cannot describe. `sprite` is
     optional; with none the marker falls back to a plain dot.
+
+    The reward fields are optional and ride along only when the pack
+    names them, so an older catalog bakes exactly as it always did:
+    `value` (a positive int) is what a shop pays and asks; `heal` (a
+    positive int) and `use` (a verb like "drink") make the item usable.
+    A value that is not a positive int simply cannot be sold; a heal or
+    use that is not a positive int / non-empty string is ignored.
     """
     listed = world.get('items')
     if not isinstance(listed, dict):
@@ -983,8 +990,16 @@ def _player_items(world: dict) -> dict[str, dict]:
         if not name:
             continue
         sprite = spec.get('sprite')
-        out[key] = {'name': name,
-                    'sprite': sprite if isinstance(sprite, str) else ''}
+        entry: dict = {'name': name,
+                       'sprite': sprite if isinstance(sprite, str) else ''}
+        for field in ('value', 'heal'):
+            n = spec.get(field)
+            if isinstance(n, int) and not isinstance(n, bool) and n > 0:
+                entry[field] = n
+        use = spec.get('use')
+        if isinstance(use, str) and use.strip():
+            entry['use'] = use.strip()
+        out[key] = entry
     return out
 
 
@@ -1238,7 +1253,12 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
             wake_at = [at[0], at[1]]
         else:
             wake_at = list(region.get('hero_start') or [1, 1])
-    hero = {'hp': hero_hp, 'atk': hero_atk,
+    # The hero's purse: `world.player.gold` (default 0). It is the
+    # starting gold a shop trades against; the player keeps it per world.
+    hero_gold = player.get('gold')
+    if not isinstance(hero_gold, int) or isinstance(hero_gold, bool) or hero_gold < 0:
+        hero_gold = 0
+    hero = {'hp': hero_hp, 'atk': hero_atk, 'gold': hero_gold,
             'wake': {'region': wake_region, 'at': wake_at}}
 
     transitions = first_act.get('transitions')
@@ -1262,6 +1282,21 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
             'seeds': spec.get('seeds', {}),
             'voice_file': spec.get('voice_file', ''),
         }
+
+    # The shopkeepers: a speaker whose spec carries `"shop": "true"`
+    # keeps the shop of its region. Baked as a small {region: key} map
+    # rather than a per-speaker flag, so a speaker entry's shape stays
+    # exactly what it always was (an old pack bakes no shops at all).
+    # One shop per region; the first shopkeeper named wins.
+    shops: dict = {}
+    for key, spec in act_speakers.items():
+        if not isinstance(spec, dict):
+            continue
+        if str(spec.get('shop', '')).strip().lower() not in ('true', 'yes', '1'):
+            continue
+        rname = spec.get('region', first_region_name)
+        if rname in regions and rname not in shops:
+            shops[rname] = key
 
     # Where the game begins: the act's `start` when it names a real
     # region, else empty (the player falls back to the first region).
@@ -1308,6 +1343,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                 _json.dumps(transitions, ensure_ascii=False))
     out_html = out_html.replace('{{speakers_json}}',
                                 _json.dumps(speaker_groups, ensure_ascii=False))
+    out_html = out_html.replace('{{shops_json}}',
+                                _json.dumps(shops, ensure_ascii=False))
     out_html = out_html.replace('{{enemies_json}}',
                                 _json.dumps(enemies_by_region, ensure_ascii=False))
     out_html = out_html.replace('{{hero_json}}', _json.dumps(hero, ensure_ascii=False))

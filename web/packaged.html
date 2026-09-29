@@ -111,6 +111,11 @@
   .hud-hp-bar { width: 110px; height: 10px; background: #2A2E33; border-radius: 999px; overflow: hidden; }
   .hud-hp-fill { height: 100%; background: #6EA88A; width: 100%; }
   .hud-hp-value { font-size: 0.82rem; }
+  /* the purse: a small words line beside the health and bag pips. It
+     is shown only when the world trades (a shop, or something with a
+     price), so a world with no reward end keeps its old HUD exactly. */
+  .hud-gold { padding: 6px 10px; font-size: 0.82rem; white-space: nowrap; }
+  .hud-gold[hidden] { display: none; }
   /* the bag at the top of the screen: one small sprite per thing carried */
   .hud-bag { display: flex; align-items: center; gap: 4px; padding: 4px 6px; max-width: 40vw; flex-wrap: wrap; }
   .bag-pip { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
@@ -118,6 +123,8 @@
   .bag-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
   .bag-row-art { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
   .bag-row-art--dot { display: inline-block; border-radius: 50%; background: #8B7A4E; }
+  .bag-row-name { flex: 1 1 auto; }
+  .bag-row button { min-height: 44px; }
   body[data-surface="plain"] .hud-hp,
   body[data-surface="investigation"] .hud-hp { display: none; }
   .phase-rail { display: flex; gap: 6px; }
@@ -145,19 +152,25 @@
   /* the reader: the author's words, one page at a time, over the game.
      Matches the speech box (dark in both colour schemes), because it
      sits inside the always-dark stage. */
-  #reader { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center;
+  #reader, #trade { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center;
             justify-content: center; padding: 20px; background: rgba(6, 7, 9, 0.8); }
   .reader-card { width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto;
                  background: rgba(21, 24, 29, 0.97); border: 2px solid #D8AA4E;
                  border-radius: 6px; padding: 24px 22px 16px; color: var(--glass-ink); }
-  #reader .speaker { margin: 0 0 10px; font: 700 1rem var(--display);
+  #reader .speaker, #trade .speaker { margin: 0 0 10px; font: 700 1rem var(--display);
                      letter-spacing: 0.04em; color: #E2BC6E; }
   .reader-page { margin: 0 0 10px; font-size: 1.05rem; line-height: 1.55;
                  white-space: pre-wrap; color: var(--glass-ink); }
-  #reader .status { color: rgba(244, 238, 221, 0.75); }
+  #reader .status, #trade .status { color: rgba(244, 238, 221, 0.75); }
   .reader-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .reader-controls .cta { color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
-  #reader #reader-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
+  #reader #reader-close, #trade #trade-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
+  /* the shop's Trade panel: sell what you carry, buy what the shop keeps */
+  #trade h2 { margin: 14px 0 6px; font: 700 0.95rem var(--display); letter-spacing: 0.06em; color: #E2BC6E; }
+  .trade-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .trade-row .trade-name { flex: 1 1 auto; }
+  .trade-row .trade-price { color: rgba(244, 238, 221, 0.75); font-size: 0.9rem; white-space: nowrap; }
+  .trade-row button { min-height: 44px; }
   /* choices */
   .verb-row { position: absolute; left: 16px; bottom: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
   .verb-row button { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.4); text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
@@ -258,6 +271,7 @@
           <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
           <span class="hud-hp-value" id="hud-hp-value">0/0</span>
         </div>
+        <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
         <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
       </div>
       <div class="hud hud--tr">
@@ -292,6 +306,21 @@
           </div>
         </div>
       </div>
+      <div id="trade" role="dialog" aria-modal="true"
+           aria-labelledby="trade-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="trade-title"></p>
+          <p class="status" id="trade-gold" aria-live="polite"></p>
+          <h2>Sell</h2>
+          <div id="trade-sell"></div>
+          <h2>Buy</h2>
+          <div id="trade-buy"></div>
+          <p class="status" id="trade-live" role="status" aria-live="polite"></p>
+          <div class="reader-controls">
+            <button type="button" id="trade-close" class="cta">Close</button>
+          </div>
+        </div>
+      </div>
       <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
       <p class="glass" id="combat-log" aria-live="polite"></p>
       <div class="dpad" id="dpad" aria-label="Move">
@@ -304,6 +333,7 @@
         <button type="button" id="interact" class="gbtn" hidden>Interact <kbd>F</kbd></button>
         <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
         <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
+        <button type="button" id="bagbtn" class="gbtn">Bag <kbd>B</kbd></button>
       </div>
     </div>
     <section id="kitchen" hidden>
@@ -372,8 +402,10 @@
     </div>
     <div data-panel-body="bag" hidden>
       <h2>Bag</h2>
+      <p class="status" id="bag-gold"></p>
       <div id="bag-list"></div>
       <p class="status" id="bag-count"></p>
+      <p class="status" id="bag-live" role="status" aria-live="polite"></p>
     </div>
     <div data-panel-body="help" hidden>
       <h2>How to play</h2>
@@ -428,6 +460,11 @@ window.VEFR_TRANSITIONS = {{transitions_json}};
 // The act's speakers, grouped by the region they belong to (a speaker
 // with no `region` belongs to the act's first region).
 window.VEFR_SPEAKERS = {{speakers_json}};
+// The shopkeepers, one per region: {region: speaker key}. A speaker
+// whose spec carries `"shop": "true"` keeps the shop of its region.
+// Empty when the pack has none, so a world with no reward end bakes
+// exactly the player it had before.
+window.VEFR_SHOPS = {{shops_json}};
 // Where the game begins: {"region": "...", "at": [x, y]}. Empty when the
 // act does not say, and then the first region's own hero_start is used.
 window.VEFR_START = {{start_json}};
@@ -572,6 +609,7 @@ function bootstrap() {
   bindLibrary();
   renderBagPanel();
   renderBagStrip();
+  renderGold();
   var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   document.getElementById('status').textContent = touch
     ? 'Use the pad to move. Tap Talk when someone is near.'
@@ -780,17 +818,50 @@ function bindLibrary() {
   document.getElementById('reader-close').addEventListener('click', closeReader);
   document.getElementById('reader-back').addEventListener('click', function () { readerTurn(-1); });
   document.getElementById('reader-next').addEventListener('click', function () { readerTurn(1); });
+  document.getElementById('trade-close').addEventListener('click', closeTrade);
 }
 
-// ---- the bag: what the hero is carrying (loot, first slice) ----
+// ---- the bag: what the hero is carrying (loot + reward, first slice) ----
 // A kill leaves its drop on the floor (see setupTown); walking onto it
 // takes it. The bag remembers what was taken, per playthrough, per
 // world: `vefr-bag-<world>` is a plain list of item ids. A duplicate id
 // is still added (two potions are two potions) - the bag is a list, not
-// a set, and the panel shows one row per thing carried. There is no
-// weight, no using, no dropping, no selling and no identifying: a
-// carried thing is only a name and a picture for now.
+// a set, and the panel shows one row per thing carried. A carried thing
+// can be used (when the pack gives it a `heal` and a `use`); selling and
+// buying happen at a shopkeeper's Trade panel (see below). No weight, no
+// dropping, no identifying yet.
 var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+
+// ---- gold: the hero's purse, persisted with the bag ----
+// `vefr-gold-<world>` holds one number; the baked `VEFR_HERO.gold` is
+// the starting purse (default 0). A world with no shop and no priced
+// item shows no gold line, so an old world's HUD is untouched.
+var GOLD_KEY = 'vefr-gold-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+
+function itemHasValue(def) {
+  return !!(def && typeof def.value === 'number' && def.value > 0);
+}
+
+// Does this world trade at all? A shop, or anything a shop would pay
+// for. When false the game is exactly the game it was before gold.
+var REWARD_ON = (function () {
+  if (Object.keys(window.VEFR_SHOPS || {}).length) return true;
+  var cat = window.VEFR_ITEMS || {};
+  return Object.keys(cat).some(function (id) { return itemHasValue(cat[id]); });
+})();
+
+function heroGold() {
+  var n = NaN;
+  try { n = parseInt(localStorage.getItem(GOLD_KEY), 10); } catch (e) {}
+  if (isFinite(n) && n >= 0) return n;
+  var baked = window.VEFR_HERO && window.VEFR_HERO.gold;
+  return (typeof baked === 'number' && baked >= 0) ? baked : 0;
+}
+function saveGold(n) {
+  n = Math.max(0, Math.floor(n));
+  try { localStorage.setItem(GOLD_KEY, String(n)); } catch (e) {}
+  return n;
+}
 
 function itemCatalog() {
   return (window.VEFR_ITEMS && typeof window.VEFR_ITEMS === 'object')
@@ -814,6 +885,14 @@ function bagItems() {
     }) : [];
   } catch (e) { return []; }
 }
+// Rebuild the harness-readable fight snapshot after bag/gold changes.
+// setupTown installs the real builder; before that (or in a pack with no
+// game surface) this is a no-op.
+function syncCombat() {
+  if (typeof window.refreshCombatSnapshot === 'function') {
+    try { window.refreshCombatSnapshot(); } catch (e) {}
+  }
+}
 function bagAdd(id) {
   if (!itemCatalog()[id]) return false;
   var ids = bagItems();
@@ -821,7 +900,66 @@ function bagAdd(id) {
   try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
   renderBagPanel();
   renderBagStrip();
+  syncCombat();
   return true;
+}
+// Take one copy of an id out of the bag. False when it was not carried.
+function bagRemoveOne(id) {
+  var ids = bagItems();
+  var i = ids.indexOf(id);
+  if (i === -1) return false;
+  ids.splice(i, 1);
+  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  renderBagPanel();
+  renderBagStrip();
+  syncCombat();
+  return true;
+}
+
+// Use a carried thing. Only an item the pack gave a `heal` can be used;
+// it raises health by `heal` (never above the max), takes one copy out
+// of the bag, and says so in the panel's live line.
+function useItem(id) {
+  var def = itemCatalog()[id];
+  if (!def || !(typeof def.heal === 'number' && def.heal > 0)) return false;
+  var verb = def.use || 'use';
+  // Whole already: say so and keep the thing. A potion is not spent on
+  // nothing, so the player never loses a heal by mis-tapping.
+  if (HERO_HP >= heroMax()) {
+    bagSay('You ' + verb + ' ' + itemName(id) + '. You are already whole.');
+    return true;
+  }
+  if (!bagRemoveOne(id)) return false;
+  var before = HERO_HP;
+  HERO_HP = Math.min(heroMax(), HERO_HP + def.heal);
+  saveHeroHp();
+  renderHp();
+  var gained = HERO_HP - before;
+  bagSay('You ' + verb + ' ' + itemName(id) + '. '
+    + 'You recover ' + gained + ' health.');
+  syncCombat();
+  return true;
+}
+
+// The Bag panel's live line (kept in the panel, not the game's toasts).
+function bagSay(msg) {
+  var el = document.getElementById('bag-live');
+  if (el) el.textContent = msg || '';
+}
+
+// Gold writes redraw both the HUD line and the Bag panel's line.
+function renderGold() {
+  var g = heroGold();
+  var hud = document.getElementById('hud-gold');
+  if (hud) { hud.hidden = !REWARD_ON; hud.textContent = g + ' gold'; }
+  var panel = document.getElementById('bag-gold');
+  if (panel) panel.textContent = REWARD_ON ? ('You carry ' + g + ' gold.') : '';
+  syncCombat();
+}
+function addGold(n) {
+  var g = saveGold(heroGold() + n);
+  renderGold();
+  return g;
 }
 
 // The top-of-screen strip: a small sprite per carried thing, beside the
@@ -869,6 +1007,7 @@ function renderBagPanel() {
     p.textContent = 'Nothing yet.';
     list.appendChild(p);
     if (count) count.textContent = '';
+    renderGold();
     return;
   }
   ids.forEach(function (id) {
@@ -888,14 +1027,183 @@ function renderBagPanel() {
       row.appendChild(dot);
     }
     var label = document.createElement('span');
+    label.className = 'bag-row-name';
     label.textContent = itemName(id);
     row.appendChild(label);
+    // Anything the pack gave a `heal` can be used from here. The words
+    // are the pack's own verb, so a potion is drunk and bread is eaten.
+    var def = itemCatalog()[id];
+    if (def && typeof def.heal === 'number' && def.heal > 0) {
+      var use = document.createElement('button');
+      use.type = 'button';
+      use.className = 'cta';
+      use.textContent = def.use || 'Use';
+      use.dataset.item = id;
+      use.dataset.action = 'use';
+      use.setAttribute('aria-label',
+        (def.use || 'Use') + ' ' + itemName(id));
+      use.addEventListener('click', function () { useItem(id); });
+      row.appendChild(use);
+    }
     list.appendChild(row);
   });
   if (count) {
     count.textContent = ids.length
       + (ids.length === 1 ? ' thing carried.' : ' things carried.');
   }
+  renderGold();
+}
+
+// ---- the Trade panel: sell and buy at a shopkeeper ----
+// A shop is one speaker per region, baked as window.VEFR_SHOPS =
+// {region: key}. Walking beside that speaker and pressing Interact
+// opens this dialog. Prices are the pack's own `value`s: selling takes
+// one copy from the bag, buying adds one. Nothing is random, timed, or
+// model-written - a trade is arithmetic on the pack's own numbers.
+var TRADE_KEY = '';
+var TRADE_OPENER = null;
+
+// The shop key of a region, if any.
+function shopKeyHere(region) {
+  return (window.VEFR_SHOPS || {})[region || ''] || '';
+}
+// A thing's price, or 0 when the pack gives it none.
+function itemValue(def) {
+  return (def && typeof def.value === 'number' && def.value > 0)
+    ? Math.floor(def.value) : 0;
+}
+function tradeSay(msg) {
+  var el = document.getElementById('trade-live');
+  if (el) el.textContent = msg || '';
+}
+// One trade row: art, name, price, then the verb button. Shared by the
+// sell and buy lists so they read as one panel.
+function tradeRow(id, price, action, label, disabled, onGo) {
+  var row = document.createElement('div');
+  row.className = 'trade-row';
+  var src = itemSpriteSrc(id);
+  if (src) {
+    var im = document.createElement('img');
+    im.src = src; im.alt = ''; im.className = 'bag-row-art';
+    row.appendChild(im);
+  }
+  var name = document.createElement('span');
+  name.className = 'trade-name';
+  name.textContent = label || itemName(id);
+  row.appendChild(name);
+  var p = document.createElement('span');
+  p.className = 'trade-price';
+  p.textContent = price + ' gold';
+  row.appendChild(p);
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'cta';
+  b.textContent = action;
+  b.dataset.item = id;
+  b.dataset.action = action.toLowerCase();
+  b.disabled = !!disabled;
+  b.setAttribute('aria-label',
+    action + ' ' + itemName(id) + ' for ' + price + ' gold');
+  b.addEventListener('click', onGo);
+  row.appendChild(b);
+  return row;
+}
+// After a trade the clicked button is rebuilt, so put focus back on the
+// same action (or on Close when it is gone or now disabled).
+function settleTradeFocus(action, id) {
+  var b = document.querySelector(
+    '#trade [data-action="' + action + '"][data-item="' + id + '"]');
+  if (!b || b.disabled) b = document.getElementById('trade-close');
+  if (b) b.focus();
+}
+function sellItem(id) {
+  var price = itemValue(itemCatalog()[id]);
+  if (!price) return false;
+  if (!bagRemoveOne(id)) return false;
+  addGold(price);
+  tradeSay('You sell ' + itemName(id) + ' for ' + price + ' gold.');
+  renderTrade();
+  settleTradeFocus('sell', id);
+  return true;
+}
+function buyItem(id) {
+  var price = itemValue(itemCatalog()[id]);
+  if (!price || heroGold() < price) return false;
+  if (!bagAdd(id)) return false;
+  addGold(-price);
+  tradeSay('You buy ' + itemName(id) + ' for ' + price + ' gold.');
+  renderTrade();
+  settleTradeFocus('buy', id);
+  return true;
+}
+// Draw both lists from the pack's numbers and the hero's purse.
+function renderTrade() {
+  var trade = document.getElementById('trade');
+  if (!trade || trade.hidden) return;
+  var goldEl = document.getElementById('trade-gold');
+  if (goldEl) goldEl.textContent = 'You carry ' + heroGold() + ' gold.';
+  var sell = document.getElementById('trade-sell');
+  if (sell) {
+    sell.textContent = '';
+    var seen = {}, group = [];
+    bagItems().forEach(function (id) {
+      if (!itemValue(itemCatalog()[id])) return;
+      if (seen[id]) { seen[id].n += 1; return; }
+      seen[id] = { id: id, n: 1 };
+      group.push(seen[id]);
+    });
+    if (!group.length) {
+      var p = document.createElement('p');
+      p.className = 'status';
+      p.textContent = 'Nothing here they will buy.';
+      sell.appendChild(p);
+    } else {
+      group.forEach(function (g) {
+        var label = itemName(g.id) + (g.n > 1 ? ' x' + g.n : '');
+        sell.appendChild(tradeRow(g.id, itemValue(itemCatalog()[g.id]),
+          'Sell', label, false, function () { sellItem(g.id); }));
+      });
+    }
+  }
+  var buy = document.getElementById('trade-buy');
+  if (buy) {
+    buy.textContent = '';
+    var cat = itemCatalog(), any = false, gold = heroGold();
+    Object.keys(cat).forEach(function (id) {
+      var price = itemValue(cat[id]);
+      if (!price) return;
+      any = true;
+      buy.appendChild(tradeRow(id, price, 'Buy', '', gold < price,
+        function () { buyItem(id); }));
+    });
+    if (!any) {
+      var q = document.createElement('p');
+      q.className = 'status';
+      q.textContent = 'Nothing for sale.';
+      buy.appendChild(q);
+    }
+  }
+}
+function openTrade(key, name, opener) {
+  var trade = document.getElementById('trade');
+  if (!trade) return;
+  TRADE_KEY = key || '';
+  TRADE_OPENER = opener || document.activeElement || null;
+  var title = document.getElementById('trade-title');
+  if (title) title.textContent = name || key || 'A trader';
+  tradeSay('');
+  trade.hidden = false;
+  renderTrade();
+  trade.focus();
+}
+function closeTrade() {
+  var trade = document.getElementById('trade');
+  if (!trade || trade.hidden) return;
+  trade.hidden = true;
+  TRADE_KEY = '';
+  var back = TRADE_OPENER;
+  TRADE_OPENER = null;
+  if (back && back.focus) back.focus();
 }
 
 // ---- pause menu: journal, help, model settings ----
@@ -916,6 +1224,11 @@ function bindMenu() {
   }
   window.openMenu = function () {
     menu.hidden = false; showPanel('journal');
+    document.getElementById('menu-close').focus();
+  };
+  // Straight to the bag: a key and a button, not only the pause menu.
+  window.openBag = function () {
+    menu.hidden = false; showPanel('bag');
     document.getElementById('menu-close').focus();
   };
   window.closeMenu = function () { menu.hidden = true; opener.focus(); };
@@ -1564,6 +1877,7 @@ function setupTown() {
     window.VEFR_COMBAT = {
       region: regionName,
       hero: { hp: HERO_HP, max: heroMax(), atk: heroAtk(), at: hero.slice() },
+      gold: heroGold(),
       enemies: enemies.map(function (e) {
         return { id: e.id, at: e.at.slice(), hp: e.hp, atk: e.atk,
                  sight: e.sight, alive: e.alive };
@@ -1576,6 +1890,10 @@ function setupTown() {
     };
     return window.VEFR_COMBAT;
   }
+  // The bag and gold code lives outside this closure; give it a way to
+  // refresh the snapshot after a change, so the harness always reads
+  // the current fight (precedent: window.VEFR_DESK_LAST).
+  window.refreshCombatSnapshot = combatSnapshot;
 
   // ---- the camera ----
   // A map smaller than the screen is scaled to fit and centred. A bigger
@@ -1719,6 +2037,18 @@ function setupTown() {
   }
   function hideUnseen(x, y) {
     return fogOn && !explored[x + ',' + y];
+  }
+
+  // The shopkeeper of this region, when the hero stands beside them.
+  // window.VEFR_SHOPS names one speaker key per region; "next to" is
+  // Manhattan distance one, the same reach as a bump.
+  function shopkeeperNear() {
+    var key = shopKeyHere(regionName);
+    if (!key) return null;
+    var spec = speakers[key];
+    if (!spec || !Array.isArray(spec.at)) return null;
+    var d = Math.abs(spec.at[0] - hero[0]) + Math.abs(spec.at[1] - hero[1]);
+    return d <= 1 ? { key: key, spec: spec } : null;
   }
 
   // The chest the hero is standing on, if any (a book with `chest: yes`).
@@ -1976,6 +2306,11 @@ function setupTown() {
       combatSnapshot();
       return;
     }
+    var shop = shopkeeperNear();
+    if (shop) {
+      openTrade(shop.key, shop.spec.name, document.getElementById('interact'));
+      return;
+    }
     var key = hero[0] + ',' + hero[1];
     var text = (town.poi_text || {})[key];
     if (text) showSpeech(pois[key] || '', text, '');
@@ -1996,6 +2331,9 @@ function setupTown() {
     } else if (chestHere()) {
       btn.hidden = false;
       if (hint) { hint.hidden = false; hint.textContent = 'A chest. Use it to open.'; }
+    } else if (shopkeeperNear()) {
+      btn.hidden = false;
+      if (hint) { hint.hidden = false; hint.textContent = 'A trader. Use it to trade.'; }
     } else if (text) {
       btn.hidden = false;
       if (hint) { hint.hidden = false; hint.textContent = 'Something to look at.'; }
@@ -2093,6 +2431,9 @@ function setupTown() {
   });
   document.getElementById('talk').addEventListener('click', tryNPC);
   document.getElementById('interact').addEventListener('click', useHere);
+  document.getElementById('bagbtn').addEventListener('click', function () {
+    if (window.openBag) window.openBag();
+  });
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
@@ -2139,6 +2480,12 @@ function setupTown() {
       else if (e.key === 'ArrowRight') { e.preventDefault(); readerTurn(1); }
       return;
     }
+    // While the Trade panel is open, Escape closes it and movement stops.
+    var tradeOpen = !document.getElementById('trade').hidden;
+    if (tradeOpen) {
+      if (e.key === 'Escape') { e.preventDefault(); closeTrade(); }
+      return;
+    }
     var menuOpen = !document.getElementById('menu').hidden;
     if (e.key === 'Escape') { if (menuOpen) window.closeMenu(); else window.openMenu(); return; }
     if (menuOpen || play.hidden) return;
@@ -2152,6 +2499,7 @@ function setupTown() {
     else if (e.key === 'e' || e.key === 'E') tryNPC();
     else if (e.key === 'f' || e.key === 'F') useHere();
     else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
+    else if (e.key === 'b' || e.key === 'B') { if (window.openBag) window.openBag(); }
     else if (!onButton && (e.key === ' ' || e.key === 'Enter')) {
       e.preventDefault();
       if (!box.hidden) box.hidden = true; else tryNPC();

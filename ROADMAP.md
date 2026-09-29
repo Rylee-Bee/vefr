@@ -7,6 +7,33 @@
 
 ## Landed
 
+- [x] **Reward, first slice — gold, a shop (sell + buy), and using a thing**
+      (2026-09-30): loot left a thing carried but did nothing with it. Three
+      optional, additive pack additions land the reward end. An item may now
+      carry `value` (a positive int: what a shop pays and asks), `heal` (a
+      positive int) and `use` (a verb such as `drink`); a speaker whose spec
+      carries `"shop": "true"` (also `yes`/`1`) keeps its region's shop (at
+      most one per region, the first named wins); and `world.player` may
+      carry `gold` (a non-negative int; default 0), the starting purse. None
+      are required, so an old pack bakes exactly the player it had before and
+      its HUD does not move. The woven player bakes `VEFR_HERO.gold` and
+      `VEFR_SHOPS` ({region: speaker key}) and the extra item fields. Gold is
+      one number at `localStorage['vefr-gold-<world>']`, shown in the top-left
+      HUD and as plain words in the Bag panel. Standing within one tile of
+      the region's shopkeeper and using the world's interact verb opens a
+      Trade dialog (44px targets, `aria-live` result, Escape/Close, focus
+      returns): Sell lists carried things with a `value`, Buy lists every
+      priced catalog thing, and an unaffordable Buy is disabled. A carried
+      thing with a `heal` gets a Use button in the Bag panel: it raises health
+      by `heal` (never above the max), spends one copy, and says so; at full
+      health it says "You are already whole." and keeps the thing. Talking
+      still gives the shopkeeper's own line; trading is a separate verb.
+      Deterministic arithmetic on fixed pack numbers - no timers, no
+      randomness, no model call, no new deps. Gaps: no haggling or variable
+      prices, no stock beyond the catalog, no effects other than healing, no
+      dropping or giving, and selling always pays exactly `value`. Guide:
+      `docs/guides/rulesets.md` → reward. Tests:
+      `tests/test_builder_weave.py`, `tests/test_combat_loop.py`.
 - [x] **Loot, first slice — drops and a simple bag** (2026-09-30): killing
       something gave only survival. A world's `world.json` may now carry an
       optional `items` catalog (`{"<id>": {"name": "...", "sprite": "..."}}`;
