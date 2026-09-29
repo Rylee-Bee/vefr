@@ -166,3 +166,65 @@ def test_the_loader_groups_speakers_by_region(tmp_path, monkeypatch):
     assert set(act["speakers"]) == {"keeper", "cook", "greeter"}
     assert set(act["regions"]["town"]["speakers"]) == {"keeper", "greeter"}
     assert set(act["regions"]["cottage"]["speakers"]) == {"cook"}
+
+
+# --- region enemies: the combat contract's hazards ---
+
+def _with_enemies(pack: Path, region: str, enemies: list) -> Path:
+    p = pack / "acts" / "act-1" / region / "contract.json"
+    contract = json.loads(p.read_text(encoding="utf-8"))
+    contract["enemies"] = enemies
+    p.write_text(json.dumps(contract), encoding="utf-8")
+    return pack
+
+
+def test_a_good_enemy_validates(tmp_path):
+    """A named hazard on open ground with real numbers is accepted."""
+    pack = _with_enemies(_make_pack(tmp_path), "town", [
+        {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 4, "atk": 1},
+    ])
+    assert _errors(pack) == []
+
+
+def test_an_enemy_on_a_wall_is_named(tmp_path):
+    pack = _with_enemies(_make_pack(tmp_path), "town", [
+        {"id": "a-rat", "name": "a rat", "at": [0, 0], "hp": 4, "atk": 1},
+    ])
+    errors = _errors(pack)
+    assert any("a rat" in e and "solid" in e and "(0,0)" in e for e in errors), errors
+
+
+def test_an_enemy_off_the_map_is_named(tmp_path):
+    pack = _with_enemies(_make_pack(tmp_path), "town", [
+        {"id": "a-rat", "name": "a rat", "at": [99, 99], "hp": 4, "atk": 1},
+    ])
+    errors = _errors(pack)
+    assert any("a rat" in e and "off the map" in e for e in errors), errors
+
+
+def test_an_enemy_needs_positive_numbers(tmp_path):
+    pack = _with_enemies(_make_pack(tmp_path), "town", [
+        {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 0, "atk": -1},
+    ])
+    errors = _errors(pack)
+    assert any("a rat" in e and "positive hp" in e for e in errors), errors
+    assert any("a rat" in e and "positive atk" in e for e in errors), errors
+
+
+def test_an_enemy_needs_an_id_and_a_name(tmp_path):
+    pack = _with_enemies(_make_pack(tmp_path), "town", [
+        {"at": [2, 2], "hp": 4, "atk": 1},
+    ])
+    errors = _errors(pack)
+    assert any("needs an id" in e for e in errors), errors
+    assert any("needs a name" in e for e in errors), errors
+
+
+def test_every_region_checks_its_own_enemies(tmp_path):
+    """The second region's hazards are checked too, not just the first's."""
+    pack = _with_enemies(_make_pack(tmp_path), "cottage", [
+        {"id": "a-rat", "name": "a rat", "at": [9, 9], "hp": 4, "atk": 1},
+    ])
+    errors = _errors(pack)
+    assert any("cottage" in e and "off the map" in e for e in errors), errors
+

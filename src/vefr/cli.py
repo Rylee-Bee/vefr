@@ -1125,6 +1125,65 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         if not regions[first].get('map') and town.get('map'):
             regions[first] = _region_entry(town, '\n'.join(town.get('map', [])))
 
+    # The living hazards of each region, from its contract's `enemies`
+    # list. The baked shape is fixed (id, name, at, hp, atk, sprite) so
+    # the player never has to guess; `sight` rides along only when the
+    # contract names it (the player defaults to 6). A region that names
+    # none - or has no contract - bakes [].
+    enemies_by_region: dict[str, list] = {rname: [] for rname in regions}
+    if isinstance(act_regions, dict):
+        for rname, rdata in act_regions.items():
+            if rname not in enemies_by_region:
+                continue
+            rdata = rdata if isinstance(rdata, dict) else {}
+            contract = rdata.get('contract')
+            contract = contract if isinstance(contract, dict) else {}
+            listed = contract.get('enemies')
+            listed = listed if isinstance(listed, list) else []
+            out = []
+            for e in listed:
+                if not isinstance(e, dict):
+                    continue
+                entry = {
+                    'id': e.get('id'),
+                    'name': e.get('name'),
+                    'at': e.get('at'),
+                    'hp': e.get('hp'),
+                    'atk': e.get('atk'),
+                    'sprite': e.get('sprite', ''),
+                }
+                if 'sight' in e:
+                    entry['sight'] = e.get('sight')
+                out.append(entry)
+            enemies_by_region[rname] = out
+
+    # The hero's own numbers and wake point. `hp`/`atk` default to 6/2;
+    # `wake` defaults to the act's first region at its hero_start. A
+    # wake that names a region which does not exist is dropped, and a
+    # wake tile that is missing or not walkable falls back to that
+    # region's hero_start - the baked point is always real.
+    player = world.get('player') if isinstance(world.get('player'), dict) else {}
+    hero_hp = player.get('hp') if isinstance(player.get('hp'), int) else 6
+    hero_hp = hero_hp if hero_hp > 0 else 6
+    hero_atk = player.get('atk') if isinstance(player.get('atk'), int) else 2
+    hero_atk = hero_atk if hero_atk > 0 else 2
+    wake_region = next(iter(regions), 'town')
+    wake_at = list(regions.get(wake_region, {}).get('hero_start') or [1, 1])
+    wake = player.get('wake')
+    if isinstance(wake, dict) and wake.get('region') in regions:
+        wake_region = wake['region']
+        region = regions[wake_region]
+        at = wake.get('at')
+        if (isinstance(at, list) and len(at) == 2
+                and all(isinstance(v, int) for v in at)
+                and _tile_walkable(region.get('map', []), region.get('legend', {}),
+                                   at[0], at[1])):
+            wake_at = [at[0], at[1]]
+        else:
+            wake_at = list(region.get('hero_start') or [1, 1])
+    hero = {'hp': hero_hp, 'atk': hero_atk,
+            'wake': {'region': wake_region, 'at': wake_at}}
+
     transitions = first_act.get('transitions')
     if transitions is None:
         transitions = world.get('transitions', [])
@@ -1190,6 +1249,9 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                 _json.dumps(transitions, ensure_ascii=False))
     out_html = out_html.replace('{{speakers_json}}',
                                 _json.dumps(speaker_groups, ensure_ascii=False))
+    out_html = out_html.replace('{{enemies_json}}',
+                                _json.dumps(enemies_by_region, ensure_ascii=False))
+    out_html = out_html.replace('{{hero_json}}', _json.dumps(hero, ensure_ascii=False))
     out_html = out_html.replace('{{start_json}}', _json.dumps(start, ensure_ascii=False))
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Empty unless

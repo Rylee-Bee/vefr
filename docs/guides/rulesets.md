@@ -211,6 +211,78 @@ validated today (rectangular map, reachable tiles, pois, sanctuary,
 water). Other regions' maps are read only for the door checks; their
 own geometry validation is a follow-on.
 
+## combat (first slice: bump to fight)
+
+The dungeon has floors, fog, doors and stairs; this is the first thing
+in them that moves on its own. Combat is **deterministic** - fixed
+numbers, no randomness, no clock, no model calls - and **Cozy**: going
+down never ends a story.
+
+A pack's `world.json` may give the hero its own numbers and a wake
+point:
+
+```json
+"player": {"hp": 6, "atk": 2,
+           "wake": {"region": "town", "at": [11, 11]}}
+```
+
+`hp`/`atk` default to 6/2. `wake` is where Cozy death wakes the hero;
+it defaults to the act's first region at its `hero_start`. A `wake`
+that names no real region is dropped, and one on a missing or solid
+tile falls back to that region's `hero_start` - the baked point is
+always real.
+
+A region's `contract.json` may carry `enemies`, one named hazard each:
+
+```json
+"enemies": [{"id": "cellar-rat", "name": "a cellar rat",
+             "at": [12, 9], "hp": 4, "atk": 1, "sprite": "rat"}]
+```
+
+`id` is unique within the region; `at` is a walkable tile; `hp`/`atk`
+are positive ints; `sprite` is optional and names an entry in the
+pack's `player.sprites` (the same map the hero and speakers use). No
+`sprite` draws the same body-and-head figure a speaker gets, in a
+hostile colour. `sight` is optional (default 6) and is Manhattan
+distance.
+
+**The turn.** Every *successful* move (a step, or a bump attack) is
+followed by one turn for each living enemy of the region:
+
+- adjacent (Manhattan distance 1) -> it attacks: hero hp drops by its
+  `atk`, clamped at zero.
+- else within `sight` -> it steps one tile toward the hero (the larger
+  axis first, the other axis if that tile is blocked; never onto a
+  solid tile, another enemy, or the hero - a step that would land on
+  the hero attacks instead).
+- else it holds still.
+
+**Bump to attack.** Walking into a living enemy does not move the
+hero; the hero strikes it instead for `hero.atk`. A killed enemy is
+remembered per region, per world (`vefr-slain-<world>-<region>` in the
+player's storage), so a cleared room stays cleared; a wounded one
+resets when the page reloads.
+
+**Cozy death.** At zero hp the hero is restored to `hp`, one plain
+line is shown ("You wake in the temple. You lost nothing that
+mattered."), and the hero wakes at `wake`. Nothing is lost.
+
+The HUD's health line shows the hero's real `hp/max`; a small
+`aria-live` line speaks each hit. Baked per region (`VEFR_ENEMIES`)
+and once for the hero (`VEFR_HERO`).
+
+Known gaps (this slice): no items or loot, no fleeing, no
+rooms-and-corridors AI (enemies only step and hit), no randomness, and
+only a move is a turn - a hero can stand still safely. Classic death
+is a later slice.
+
+`maplab.validate` checks the region `enemies` shape: a unique id, a
+name, a walkable `at`, and positive int `hp`/`atk`; a broken one is
+named in plain words. Code: `src/vefr/maplab.py` (validation) +
+`src/vefr/cli.py` (bake) + `web/packaged.html` (the turn); tests:
+`tests/test_combat_loop.py` + `tests/test_transitions.py` +
+`tests/test_builder_weave.py` + `tests/fixtures/make_combat_pack.py`.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).

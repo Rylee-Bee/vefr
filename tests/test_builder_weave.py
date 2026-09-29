@@ -351,3 +351,87 @@ def test_a_region_can_declare_fog(tmp_path):
     c.write_text(_json.dumps(cfg), encoding="utf-8")
     regions = _baked(cli.weave_html(pack), "VEFR_REGIONS")
     assert regions["cottage"]["fog"] is True
+
+
+def test_the_woven_file_bakes_enemies_per_region(tmp_path):
+    """Each region's contract names its own hazards; a silent one bakes []."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    town = pack / "acts" / "act-1" / "town" / "contract.json"
+    cfg = _json.loads(town.read_text(encoding="utf-8"))
+    cfg["enemies"] = [
+        {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 4, "atk": 1,
+         "sprite": "rat", "sight": 5},
+    ]
+    town.write_text(_json.dumps(cfg), encoding="utf-8")
+
+    enemies = _baked(cli.weave_html(pack), "VEFR_ENEMIES")
+    assert set(enemies) == {"town", "cottage"}
+    assert enemies["cottage"] == []
+    assert enemies["town"] == [
+        {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 4, "atk": 1,
+         "sprite": "rat", "sight": 5},
+    ]
+
+
+def test_enemy_sight_is_baked_only_when_the_contract_names_it(tmp_path):
+    """`sight` is optional; the player defaults a missing one to 6."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    town = pack / "acts" / "act-1" / "town" / "contract.json"
+    cfg = _json.loads(town.read_text(encoding="utf-8"))
+    cfg["enemies"] = [
+        {"id": "near", "name": "a near thing", "at": [2, 2], "hp": 2, "atk": 1},
+        {"id": "far", "name": "a far thing", "at": [3, 3], "hp": 2, "atk": 1,
+         "sight": 9},
+    ]
+    town.write_text(_json.dumps(cfg), encoding="utf-8")
+
+    enemies = _baked(cli.weave_html(pack), "VEFR_ENEMIES")["town"]
+    assert "sight" not in enemies[0]
+    assert enemies[0]["sprite"] == ""
+    assert enemies[1]["sight"] == 9
+
+
+def test_the_woven_file_bakes_the_hero_stats_and_wake(tmp_path):
+    """`world.player` hp/atk and the wake point ride into the file."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    cfg = _json.loads((pack / "world.json").read_text(encoding="utf-8"))
+    cfg["player"] = {"hp": 3, "atk": 2,
+                     "wake": {"region": "cottage", "at": [1, 1]}}
+    (pack / "world.json").write_text(_json.dumps(cfg), encoding="utf-8")
+
+    assert _baked(cli.weave_html(pack), "VEFR_HERO") == {
+        "hp": 3, "atk": 2, "wake": {"region": "cottage", "at": [1, 1]}}
+
+
+def test_the_hero_defaults_when_player_is_silent(tmp_path):
+    """A pack with no `player` block gets 6/2 and the first region's start."""
+    pack = _two_region_pack(tmp_path)
+    hero = _baked(cli.weave_html(pack), "VEFR_HERO")
+    assert hero == {"hp": 6, "atk": 2,
+                    "wake": {"region": "town", "at": [1, 1]}}
+
+
+def test_a_wake_point_that_is_not_real_falls_back(tmp_path):
+    """A wake must name a real region and a walkable tile, or it is dropped."""
+    import json as _json
+
+    def with_player(name, player):
+        pack = _two_region_pack(tmp_path / name)
+        cfg = _json.loads((pack / "world.json").read_text(encoding="utf-8"))
+        cfg["player"] = player
+        (pack / "world.json").write_text(_json.dumps(cfg), encoding="utf-8")
+        return _baked(cli.weave_html(pack), "VEFR_HERO")
+
+    # A region that does not exist: the default region and start stand.
+    assert with_player("bad-region", {"wake": {"region": "nowhere", "at": [1, 1]}})[
+        "wake"] == {"region": "town", "at": [1, 1]}
+    # A solid tile: the region's own hero_start stands.
+    assert with_player("solid-tile", {"wake": {"region": "town", "at": [0, 0]}})[
+        "wake"] == {"region": "town", "at": [1, 1]}
+
