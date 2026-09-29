@@ -10,8 +10,9 @@
 - [x] **The commission board, first slice** (2026-09-29): the studio-is-a-game
       loop starts. `src/vefr/commissions.py` is a rules-only module registry
       (one module, the Cartographer's map-sketches) plus a pack rule (`needs`):
-      a commission is done when the town has a landmark and at least three
-      kinds of ground, and open otherwise with a plain reason - no model call
+      a commission is done when the town draws at least three kinds of ground
+      and marks one as a place (a decorated or sanctuary square the Map Room
+      can paint), and open otherwise with a plain reason - no model call
       anywhere. `GET /api/builder/commissions` serves the board; defer/resume
       persist to `data/commissions.json` (gitignored) so "not now" survives a
       restart, and a done job reads done regardless. The Hall gains a

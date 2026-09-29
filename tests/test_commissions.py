@@ -47,6 +47,7 @@ def _make_pack(root: Path, *, rows: list[str], pois: dict) -> Path:
         "hero_start": [1, 1],
         "legend": {
             ".": {"base": ["#212a20"]},
+            "p": {"base": ["#332e26"]},
             "#": {"base": ["#2a2e33"], "solid": True},
             "S": {"base": ["#212a20"], "deco": "gold"},
         },
@@ -98,11 +99,20 @@ def test_bare_pack_leaves_the_commission_open(tmp_path):
     assert commissions.state(w) == {"map-sketches": reason}
 
 
-def test_a_landmark_and_three_grounds_satisfy_the_commission(tmp_path):
-    pack = _make_pack(tmp_path / "ready", rows=["###", "#.#", "#S#"], pois={"1,1": "a landmark"})
+def test_a_marked_place_and_three_grounds_satisfy_the_commission(tmp_path):
+    pack = _make_pack(tmp_path / "ready", rows=["###", "#.#", "#S#"], pois={})
     w = maplab.load_pack(pack)
     assert commissions.needs(w) is None
     assert commissions.state(w) == {"map-sketches": None}
+
+
+def test_three_grounds_with_no_marked_place_leave_it_open(tmp_path):
+    """A named `pois` entry needs a route the Map Room does not have; the mark
+    that satisfies the commission must be one a maker can actually paint."""
+    pack = _make_pack(tmp_path / "nomark", rows=["#p#", "#.#", "#.#"], pois={"1,1": "a landmark"})
+    w = maplab.load_pack(pack)
+    reason = commissions.needs(w)
+    assert isinstance(reason, str) and "landmark" in reason
 
 
 @pytest.mark.parametrize("w", [{}, {"town": {}}, {"town": {"map": ["#"], "legend": {}}},

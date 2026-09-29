@@ -61,8 +61,9 @@ Built 2026-09-29. The first piece of the loop is real, in the Hall:
 - The **commission board** reads the current pack and shows one card
   per module.
 - A commission is a **rule over the pack**, never a model call.
-  The Cartographer asks for the town's first places: a landmark to
-  walk to, and at least three kinds of ground drawn.
+  The Cartographer asks for the town's first places: a path, a wall,
+  and at least three kinds of ground with one marked as a place to
+  walk to. Every mark the rule wants, the Map Room can paint.
 - **Open the Map Room** takes the maker to the room that does the work.
 - **Not now** defers a commission; the board remembers, and a deferred
   job simply waits. A job the pack already satisfies reads **done**.

@@ -77,11 +77,31 @@ def _ground_kinds(rows) -> set[str]:
     return kinds
 
 
+def _landmark_marks(town: dict) -> set[str]:
+    """The legend symbols a maker can paint to mark a place: a decorated
+    square (the `deco` flag) or a sanctuary square. These are exactly the
+    marks the Map Room can paint, so the commission stays satisfiable in the
+    studio - a named `pois` entry needs a route the room does not have yet.
+    """
+    legend = town.get("legend") if isinstance(town, dict) else None
+    if not isinstance(legend, dict):
+        return set()
+    sanctuary = town.get("sanctuary_tiles") or []
+    marks: set[str] = set()
+    for ch, spec in legend.items():
+        if not isinstance(spec, dict):
+            continue
+        if spec.get("deco") or ch in sanctuary:
+            marks.add(ch)
+    return marks
+
+
 def needs(w: dict) -> str | None:
     """Why the map-sketches commission is still open, or None when it is done.
 
-    Satisfied when the town has somewhere to walk to (a non-empty `pois`)
-    and at least three kinds of ground are drawn. The reason is plain words
+    Satisfied when the town draws at least three kinds of ground and marks
+    at least one of them as a place - a decorated or sanctuary square,
+    which is what the Map Room can actually paint. The reason is plain words
     the resident can say, never an exception - a broken or missing town just
     reads as one more thing still to do.
     """
@@ -94,11 +114,11 @@ def needs(w: dict) -> str | None:
     legend = town.get("legend")
     if not isinstance(legend, dict) or not legend:
         return "the map has no legend yet"
-    pois = town.get("pois")
-    if not isinstance(pois, dict) or not pois:
-        return "no landmark to walk to yet"
-    if len(_ground_kinds(rows)) < 3:
+    kinds = _ground_kinds(rows)
+    if len(kinds) < 3:
         return "the ground is all one kind of thing - draw a path, a wall and a landmark"
+    if not (kinds & _landmark_marks(town)):
+        return "no landmark yet - mark one square as a place you can walk to"
     return None
 
 
