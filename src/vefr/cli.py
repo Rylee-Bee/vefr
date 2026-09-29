@@ -648,6 +648,50 @@ def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
     return art
 
 
+def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
+    """Inline the ground tiles a pack's legend needs, keyed by map symbol.
+
+    The studio's Map Room draws picture tiles; the woven player drew flat
+    colour rectangles, so a game looked plainer shipped than it did in the
+    room that made it. This resolves the same tile per symbol the room's
+    own `tileFor` does - an explicit `"tile"`, else solid/sanctuary/deco
+    pick stone-wall/rug/grass, else open ground picks grass or path by
+    order - and inlines each as a data URI. A symbol with no tile on disk
+    is skipped and the player falls back to its base colour.
+    """
+    import base64
+
+    town = world.get('town') if isinstance(world.get('town'), dict) else {}
+    legend = town.get('legend') if isinstance(town.get('legend'), dict) else {}
+    if not legend:
+        return {}
+    sanctuary = town.get('sanctuary_tiles') or []
+    open_chars = [
+        ch for ch, spec in legend.items()
+        if isinstance(spec, dict) and not spec.get('solid')
+        and ch not in sanctuary and not spec.get('deco')
+    ]
+    out: dict[str, str] = {}
+    for ch, spec in legend.items():
+        spec = spec if isinstance(spec, dict) else {}
+        own = spec.get('tile')
+        if isinstance(own, str) and own:
+            name = own
+        elif spec.get('solid') is True:
+            name = 'stone-wall'
+        elif ch in sanctuary:
+            name = 'rug'
+        elif spec.get('deco'):
+            name = 'grass'
+        else:
+            name = 'path' if open_chars.index(ch) > 0 else 'grass'
+        f = web_dir / 'art' / 'tiles' / f'{name}.webp'
+        if f.is_file():
+            data = base64.b64encode(f.read_bytes()).decode('ascii')
+            out[ch] = f'data:image/webp;base64,{data}'
+    return out
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -712,6 +756,9 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)
     out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
+    out_html = out_html.replace('{{tiles_json}}',
+                                _json.dumps(_player_tiles(world, template_path.parent),
+                                            ensure_ascii=False))
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))

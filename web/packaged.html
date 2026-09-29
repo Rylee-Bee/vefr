@@ -341,6 +341,10 @@
 <script>
 // ---- inlined world pack ----
 window.VEFR_WORLD = {{world_json}};
+// Ground tiles, keyed by map symbol: the same picture tiles the
+// studio's Map Room draws, so a game looks the same shipped as it did
+// in the room that made it. Empty when the pack's legend names none.
+window.VEFR_TILES = {{tiles_json}};
 window.VEFR_LOGBOK = {{logbok_json}};
 window.VEFR_LEDGER = {{ledger_json}};
 window.VEFR_VOICES = {{voices_json}};
@@ -882,6 +886,18 @@ function setupTown() {
   var pois = town.pois || {};
   var speakers = world.speakers;
 
+  // The ground tiles, preloaded from data URIs (instant); the map is
+  // redrawn once they decode. A symbol with no tile falls back to its
+  // base colour, exactly as before.
+  var tiles = window.VEFR_TILES || {};
+  var tileImgs = {};
+  Object.keys(tiles).forEach(function (ch) {
+    var im = new Image();
+    im.onload = function () { draw(); };
+    im.src = tiles[ch];
+    tileImgs[ch] = im;
+  });
+
   function draw() {
     var ph = phase();
     var water = (town.water_by_phase || {})[ph];
@@ -892,9 +908,15 @@ function setupTown() {
         var ch = town.map[y][x];
         var info = legend[ch] || {};
         var color = (info.base && info.base[0]) || '#222';
-        ctx.fillStyle = color;
-        ctx.fillRect(x * town.tile, y * town.tile, town.tile, town.tile);
-        if (info.solid) {
+        var tile = tileImgs[ch];
+        var hasTile = tile && tile.complete && tile.naturalWidth > 0;
+        if (hasTile) {
+          ctx.drawImage(tile, x * town.tile, y * town.tile, town.tile, town.tile);
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(x * town.tile, y * town.tile, town.tile, town.tile);
+        }
+        if (info.solid && !hasTile) {
           ctx.fillStyle = '#444';
           ctx.fillRect(x * town.tile + 4, y * town.tile + 4, town.tile - 8, town.tile - 8);
         }
