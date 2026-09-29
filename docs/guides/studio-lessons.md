@@ -4,6 +4,31 @@ What making a real game by hand taught us, and where each lesson belongs
 in the studio. Every workaround here is a feature the studio still owes
 the next person. Add to it as you go; newest first.
 
+## 2026-09-29: building Act 1 through the studio
+
+Made with the studio for the first time: accepted the Cartographer's commission,
+drew the town in the Map Room, and let the engine write it. Three things it
+taught us.
+
+- **Saving a map ate the maker's own settings.** The write path rebuilt
+  `world.json` from a fixed list of fields, so the game's `player` block (its
+  title picture and accent colour) vanished the first time a map was saved -
+  and the studio reported success.
+  *In the studio:* a writer owns only the fields it models; every other key is
+  the maker's and must survive a save. Now guarded by `tests/test_write_pack.py`
+  (every shipped pack written back, its keys checked) on top of the one-field
+  regression in `test_map_build.py`.
+- **A rule the room can't satisfy is a trap.** The first map commission asked
+  for a named landmark (`pois`), but no builder route can *set* a `pois` entry -
+  the Map Room only paints the grid - so the job could never be finished in the
+  studio. Caught before merge, but the next module will meet it too.
+  *In the studio:* a module's done-rule may only read what its own room can
+  write. The landmark became a square the Map Room can paint.
+- **A backup beside a pack file dirties the pack.** The map build keeps
+  `<file>.bak-<time>` beside the map, inside a git repo that never expected it.
+  *In the studio:* either the engine keeps its backups where packs already
+  ignore them, or every pack needs the pattern (`*.bak-*`).
+
 ## 2026-09-26 (evening): pictures
 
 - **One reference set can't serve thirteen worlds.** Painting every genre with the same few reference

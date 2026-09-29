@@ -1759,6 +1759,10 @@
       review.)
 
 ## Next
+- [ ] **Name a landmark in the Map Room** (from `studio-lessons.md`,
+      2026-09-29): a square can be marked today, but a `pois` entry - a
+      *named* place - still needs a route the Map Room does not have. The
+      map commission's first rule wanted it and had to settle for a mark.
 - [ ] **Interview template** (from `docs/guides/studio-lessons.md`): residents
       ask one question per turn, keep the author's words verbatim, recap before
       saving. First users: the Desk (the brief) and the Folks (a character).
