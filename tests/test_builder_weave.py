@@ -34,6 +34,19 @@ def woven(tmp_path, monkeypatch):
     return pack
 
 
+def test_woven_file_inlines_the_legend_tiles(woven):
+    """The shipped player draws the same ground tiles the Map Room does."""
+    import json as _json
+    import re
+
+    html = cli.weave_html(woven)
+    m = re.search(r"window\.VEFR_TILES = (\{.*?\});", html, re.S)
+    assert m, "the woven file must carry the tiles global"
+    tiles = _json.loads(m.group(1))
+    assert tiles, "a legend with mappable symbols must inline its tiles"
+    assert all(v.startswith("data:image/webp;base64,") for v in tiles.values())
+
+
 def test_weave_returns_metadata_and_a_real_download(woven):
     client = TestClient(app)
     r = client.post("/api/builder/weave", json={})

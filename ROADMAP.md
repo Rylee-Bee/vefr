@@ -7,6 +7,18 @@
 
 ## Landed
 
+- [x] **The woven player draws the pack's ground tiles** (2026-09-29):
+      a game looked plainer shipped than it did in the room that made it.
+      The studio's Map Room draws picture tiles; the woven player drew flat
+      colour rectangles, so a first playable build read as a dark, empty box.
+      `weave_html` now resolves the same tile per legend symbol the room's own
+      `tileFor` does (`cli._player_tiles` - explicit `"tile"`, else
+      solid/sanctuary/deco pick stone-wall/rug/grass, else open ground picks
+      grass or path by order), inlines each as a data URI (`window.VEFR_TILES`),
+      and the player draws it, falling back to the symbol's base colour when a
+      symbol has no tile. Tiles are ~2-4 KB each. Visual baseline updated
+      deliberately (`tests/baselines/packaged-sample.png`, `VISUAL_UPDATE=1`).
+      Test: `test_builder_weave.py::test_woven_file_inlines_the_legend_tiles`.
 - [x] **The commission board, first slice** (2026-09-29): the studio-is-a-game
       loop starts. `src/vefr/commissions.py` is a rules-only module registry
       (one module, the Cartographer's map-sketches) plus a pack rule (`needs`):
