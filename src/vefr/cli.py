@@ -754,6 +754,23 @@ def _player_door(web_dir: Path) -> str:
     return 'data:image/webp;base64,' + base64.b64encode(f.read_bytes()).decode('ascii')
 
 
+def _player_book_icons(web_dir: Path) -> dict[str, str]:
+    """The 'found on the map' and 'given by someone' icons, inlined.
+
+    A book with no picture is invisible: a map book is a floor tile you
+    step on and a gifted one is only a line of text. The woven player draws
+    these where a book can be found, so a player can see it.
+    """
+    import base64
+
+    out: dict[str, str] = {}
+    for kind, name in (('map', 'found-map'), ('resident', 'found-given')):
+        f = web_dir / 'art' / 'icons' / 'library' / f'{name}.webp'
+        if f.is_file():
+            out[kind] = 'data:image/webp;base64,' + base64.b64encode(f.read_bytes()).decode('ascii')
+    return out
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -808,11 +825,11 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # The pack's own books, baked into the file so a phone player can
     # find and read them offline. Fixed key order (the reader's shape);
     # `extra` is the pack's private notes and stays out of the file.
-    # A pack with no library/ folder reads as [].
+    # `region` scopes a map book to the map it lies on.
     from .library import found_words, load_library
     books = [
         {k: b.get(k) for k in
-         ("id", "title", "kind", "found", "at", "speaker", "when", "pages")}
+         ("id", "title", "kind", "found", "at", "speaker", "when", "pages", "region")}
         | {"found_words": found_words(b)}
         for b in load_library(pack)
     ]
@@ -908,6 +925,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
     out_html = out_html.replace('{{door_json}}',
                                 _json.dumps(_player_door(template_path.parent)))
+    out_html = out_html.replace('{{book_icons_json}}',
+                                _json.dumps(_player_book_icons(template_path.parent), ensure_ascii=False))
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))

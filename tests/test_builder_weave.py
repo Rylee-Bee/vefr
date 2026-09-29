@@ -131,6 +131,17 @@ def test_woven_file_bakes_regions_transitions_and_grouped_speakers(tmp_path):
     assert speakers["cottage"]["cook"]["name"] == "Cook"
 
 
+def test_the_woven_file_carries_the_book_markers():
+    """A book you have not found is marked where it can be found."""
+    pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
+    html = cli.weave_html(pack)
+    icons = _baked(html, "VEFR_BOOK_ICONS")
+    assert set(icons) == {"map", "resident"}
+    assert all(v.startswith("data:image/webp;base64,") for v in icons.values())
+    note = next(b for b in _baked(html, "VEFR_LIBRARY") if b["id"] == "a-note-by-the-path")
+    assert note["region"] == "town"
+
+
 def test_the_woven_file_carries_the_door_picture():
     """A transition is drawn with the door art, so it is not invisible."""
     pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
@@ -160,7 +171,7 @@ def test_woven_file_bakes_the_packs_books():
     assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger", "writing-a-book"}
     for b in books:
         assert list(b) == ["id", "title", "kind", "found", "at",
-                           "speaker", "when", "pages", "found_words"]
+                           "speaker", "when", "pages", "region", "found_words"]
         assert b["title"] and b["pages"] and b["found_words"]
     note = by_id["a-note-by-the-path"]
     assert note["found"] == "map" and note["at"] == [2, 2]
