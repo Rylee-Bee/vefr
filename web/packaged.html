@@ -1170,6 +1170,7 @@ function setupTown() {
       water_by_phase: r.water_by_phase || {},
       flood_tiles: r.flood_tiles || [],
       tile: r.tile || 32,
+      fog: r.fog,
       bg: r.bg || '#131311',
       hero_color: r.hero_color || '#e8e5df',
       speaker_color: r.speaker_color || '#8b939c',
@@ -1297,6 +1298,53 @@ function setupTown() {
     return chestImg && chestImg.complete && chestImg.naturalWidth > 0;
   }
 
+  // ---- fog of war ----
+  // A region may declare `fog`: only what the hero has seen is drawn, a
+  // radius around them is lit, and the rest of the memory is dimmed.
+  // Explored tiles are remembered per region, per world.
+  var fogOn = !!town.fog;
+  var fogRadius = (town.fog && town.fog.radius) || 6;
+  var explored = {};
+  function fogKey() {
+    var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+    return 'vefr-fog-' + w + '-' + regionName;
+  }
+  function loadFog() {
+    explored = {};
+    try {
+      var a = JSON.parse(localStorage.getItem(fogKey()) || '[]');
+      (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
+    } catch (e) { explored = {}; }
+  }
+  function saveFog() {
+    try { localStorage.setItem(fogKey(), JSON.stringify(Object.keys(explored))); } catch (e) {}
+  }
+  function litNow() {
+    var out = {};
+    if (!fogOn) return out;
+    for (var y = hero[1] - fogRadius; y <= hero[1] + fogRadius; y++) {
+      for (var x = hero[0] - fogRadius; x <= hero[0] + fogRadius; x++) {
+        if (x < 0 || y < 0 || y >= town.map.length || x >= town.map[0].length) continue;
+        if ((x - hero[0]) * (x - hero[0]) + (y - hero[1]) * (y - hero[1]) <= fogRadius * fogRadius) {
+          out[x + ',' + y] = 1;
+        }
+      }
+    }
+    return out;
+  }
+  function seeNow() {
+    var lit = litNow();
+    var changed = false;
+    Object.keys(lit).forEach(function (k) {
+      if (!explored[k]) { explored[k] = 1; changed = true; }
+    });
+    if (changed) saveFog();
+    return lit;
+  }
+  function hideUnseen(x, y) {
+    return fogOn && !explored[x + ',' + y];
+  }
+
   // The chest the hero is standing on, if any (a book with `chest: yes`).
   function chestHere() {
     var list = libraryBooks();
@@ -1344,6 +1392,7 @@ function setupTown() {
     var y1 = Math.min(rows - 1, Math.ceil((camY + viewH) / T));
     for (var y = y0; y <= y1; y++) {
       for (var x = x0; x <= x1; x++) {
+        if (hideUnseen(x, y)) continue;
         var ch = town.map[y][x];
         var info = legend[ch] || {};
         var color = (info.base && info.base[0]) || '#222';
@@ -1375,10 +1424,10 @@ function setupTown() {
     // way to another map is visible underfoot.
     if (doorReady()) {
       transitions.forEach(function (t) {
-        if (t && t.from === regionName && Array.isArray(t.at)) {
-          ctx.drawImage(doorImg, t.at[0] * T + T * 0.08, t.at[1] * T + T * 0.08,
-                        T * 0.84, T * 0.84);
-        }
+        if (!t || t.from !== regionName || !Array.isArray(t.at)) return;
+        if (hideUnseen(t.at[0], t.at[1])) return;
+        ctx.drawImage(doorImg, t.at[0] * T + T * 0.08, t.at[1] * T + T * 0.08,
+                      T * 0.84, T * 0.84);
       });
     }
     // Books you have not found yet: a marker where one can still be found
@@ -1394,6 +1443,7 @@ function setupTown() {
         at = speakers[b.speaker].at;
       }
       if (!at) return;
+      if (hideUnseen(at[0], at[1])) return;
       if (b.chest) {
         if (!chestReady()) return;
         ctx.drawImage(chestImg, at[0] * T + T * 0.08, at[1] * T + T * 0.08, T * 0.84, T * 0.84);
@@ -1408,6 +1458,7 @@ function setupTown() {
     Object.keys(speakers || {}).forEach(function (key) {
       var s = speakers[key];
       if (!s || !Array.isArray(s.at)) return;
+      if (hideUnseen(s.at[0], s.at[1])) return;
       if (spriteReady(key)) { drawSprite(key, s.at[0], s.at[1]); return; }
       var px = s.at[0] * T, py = s.at[1] * T;
       ctx.fillStyle = town.speaker_color || '#8b939c';
@@ -1428,6 +1479,18 @@ function setupTown() {
       ctx.beginPath();
       ctx.arc(hero[0] * T + T / 2, hero[1] * T + T / 2, T / 3, 0, Math.PI * 2);
       ctx.fill();
+    }
+    // Fog of war: explored but not currently lit is dimmed; never-seen
+    // tiles were skipped above and stay dark.
+    if (fogOn) {
+      var lit = litNow();
+      ctx.fillStyle = 'rgba(5, 6, 8, 0.62)';
+      for (var fy = y0; fy <= y1; fy++) {
+        for (var fx = x0; fx <= x1; fx++) {
+          var fk = fx + ',' + fy;
+          if (explored[fk] && !lit[fk]) ctx.fillRect(fx * T, fy * T, T, T);
+        }
+      }
     }
     ctx.restore();
   }
@@ -1452,7 +1515,11 @@ function setupTown() {
     pois = town.pois;
     speakers = regionSpeakers(name);
     hero = (at || town.hero_start).slice();
+    fogOn = !!town.fog;
+    fogRadius = (town.fog && town.fog.radius) || 6;
     loadTiles();
+    loadFog();
+    seeNow();
     resize();
     draw();
     refreshPoi();
@@ -1514,6 +1581,7 @@ function setupTown() {
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny, regionName);
+    seeNow();
     updateUse();
   }
 
@@ -1637,6 +1705,8 @@ function setupTown() {
       if (!box.hidden) box.hidden = true; else tryNPC();
     }
   });
+  loadFog();
+  seeNow();
   resize();
   draw();
   updateUse();

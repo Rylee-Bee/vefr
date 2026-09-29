@@ -338,3 +338,16 @@ def test_a_book_can_be_in_a_chest(tmp_path):
     books = {b["id"]: b for b in _baked(html, "VEFR_LIBRARY")}
     assert books["in-a-chest"]["chest"] is True
     assert _baked(html, "VEFR_CHEST_ICON").startswith("data:image/webp;base64,")
+
+
+def test_a_region_can_declare_fog(tmp_path):
+    """A region opts into fog of war; the flag rides to the player."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    c = pack / "acts" / "act-1" / "cottage" / "contract.json"
+    cfg = _json.loads(c.read_text(encoding="utf-8"))
+    cfg["fog"] = True
+    c.write_text(_json.dumps(cfg), encoding="utf-8")
+    regions = _baked(cli.weave_html(pack), "VEFR_REGIONS")
+    assert regions["cottage"]["fog"] is True
