@@ -703,6 +703,7 @@ def _player_sprites(pack: Path) -> dict[str, str]:
     """
     import base64
 
+    base = os.path.realpath(pack)
     roots = [pack / 'sprites']
     acts = pack / 'acts'
     if acts.is_dir():
@@ -717,10 +718,16 @@ def _player_sprites(pack: Path) -> dict[str, str]:
         if not root.is_dir():
             continue
         for f in sorted(root.iterdir()):
-            if f.is_file() and f.suffix.lower() in _ART_TYPES and f.stem not in out:
-                mime = _ART_TYPES[f.suffix.lower()]
-                data = base64.b64encode(f.read_bytes()).decode('ascii')
-                out[f.stem] = f'data:{mime};base64,{data}'
+            if not (f.is_file() and f.suffix.lower() in _ART_TYPES and f.stem not in out):
+                continue
+            # Only a file inside the pack: resolve symlinks and '..', then
+            # require the pack's own real path as the prefix (the same guard
+            # the title art takes). A pack never reads outside itself.
+            if not os.path.realpath(f).startswith(base + os.sep):
+                continue
+            mime = _ART_TYPES[f.suffix.lower()]
+            data = base64.b64encode(f.read_bytes()).decode('ascii')
+            out[f.stem] = f'data:{mime};base64,{data}'
     return out
 
 
