@@ -25,12 +25,31 @@ surface - lives in a pack directory. Two shapes are supported:
                               #   enemies, bosses, transitions, vault_intro
           town/
             map.md
+            contract.json     # region metadata (legend, pois, hero_start, ...)
             voices/*.md
             sprites/*
           dungeon/
             map.md
+            contract.json
             voices/*.md
             sprites/*
+
+  REGIONS + TRANSITIONS (doors between maps): an act's `regions` is a
+  list (or dict) of region names, one directory each. A region's map
+  lives in its `map.md`; its geometry (legend, pois, poi_text,
+  hero_start, sanctuary_tiles, watch, water_by_phase, flood_tiles,
+  tile, bg and the colours) lives in that region's `contract.json`.
+  An act's `transitions` is a list of doors between those maps:
+
+      {"from": "town", "at": [4, 5],
+       "to": "cottage", "to_at": [4, 3]}
+
+  `at` is the tile you step on in `from`; `to_at` is where the hero
+  lands in `to`. A speaker may carry `"region": "<region name>"`; a
+  speaker with no `region` belongs to the act's first region. Each
+  loaded region carries its own `speakers` dict (the act's speakers
+  filtered to that region), while the act's `speakers` keeps all of
+  them.
 
 The loader returns a single canonical shape regardless of which on-disk
 shape the pack uses: top-level keys are the world's metadata (title,
@@ -76,10 +95,15 @@ PACK LAW (per act): every act may declare how it plays -
   `verbs`   - the act's own action vocabulary. When declared, it
               replaces the engine's costume verbs entirely (a
               cooking act can offer plate/flip/serve).
-  `enemies` / `bosses` / `transitions` - reserved shape for the
-              rulesets that need them; validated, echoed by
-              inspect, consumed by ruleset modules as they land.
-All five are optional; absent means the engine's defaults, so
+  `enemies` / `bosses` - reserved shape for the rulesets that need
+              them; validated, echoed by inspect, consumed by
+              ruleset modules as they land.
+  `transitions` - the act's doors between regions: a list of
+              {from, at, to, to_at} steps (see REGIONS + TRANSITIONS
+              above). The woven player honours them; maplab.validate
+              checks the door tiles. Validated, echoed by inspect,
+              consumed by ruleset modules as they land.
+All of these are optional; absent means the engine's defaults, so
 every existing pack loads unchanged.
 
 STEFNA / BELL VOICE: a pack may declare an optional top-level
@@ -302,11 +326,25 @@ def _load_act(act_dir: Path) -> dict:
                                             region_name=region_name,
                                             act_id=act_id)
 
+    speakers = contract.get("speakers", {})
+    # A speaker belongs to the region it names (`region`); a speaker
+    # with no `region` belongs to the act's first region. The act
+    # keeps every speaker; each region gets only its own, so the
+    # player draws the right people on the right map.
+    first_region = next(iter(contract["regions"]), None)
+    for region_name, region in regions.items():
+        region["speakers"] = {
+            key: spec
+            for key, spec in speakers.items()
+            if (spec.get("region", first_region) if isinstance(spec, dict)
+                else first_region) == region_name
+        }
+
     act = {
         "id": act_id,
         "title": contract["title"],
         "regions": regions,
-        "speakers": contract.get("speakers", {}),
+        "speakers": speakers,
         "enemies": contract.get("enemies", []),
         "bosses": contract.get("bosses", []),
         "transitions": contract.get("transitions", []),
@@ -350,11 +388,14 @@ def _flat_to_act(config: dict, pack: Path) -> dict:
         "fragments": _discover_fragments(pack / "voices"),
         "sprites": _discover_sprites(pack / "sprites"),
     }
+    flat_speakers = config.get("speakers", {})
+    # The flat shape has one implicit region; every speaker belongs to it.
+    town_region["speakers"] = flat_speakers
     return {
         "id": pack.name,
         "title": config["title"],
         "regions": {"town": town_region},
-        "speakers": config.get("speakers", {}),
+        "speakers": flat_speakers,
         "enemies": config.get("enemies", []),
         "bosses": config.get("bosses", []),
         "transitions": config.get("transitions", []),

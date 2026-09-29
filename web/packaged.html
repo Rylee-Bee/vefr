@@ -394,6 +394,17 @@ window.VEFR_VOICES = {{voices_json}};
 // Empty when the pack carries no library/ folder.
 window.VEFR_LIBRARY = {{library_json}};
 
+// The act's regions, keyed by region name: each holds the region's map
+// rows and its geometry/colours. A single-region pack has one entry;
+// the woven player reassigns its town when it steps through a door.
+window.VEFR_REGIONS = {{regions_json}};
+// The act's doors: step on `at` in region `from` and land at `to_at`
+// in region `to`. Empty when the act declares none.
+window.VEFR_TRANSITIONS = {{transitions_json}};
+// The act's speakers, grouped by the region they belong to (a speaker
+// with no `region` belongs to the act's first region).
+window.VEFR_SPEAKERS = {{speakers_json}};
+
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
 window.VEFR_POOL = {{pool_json}};
@@ -1112,22 +1123,43 @@ function whisperFromFragments(seedOverride) {
 // fire a one-line ask to the same LLM with the active speaker's voice.
 function setupTown() {
   var world = window.VEFR_WORLD;
-  var town = world.town;
   var canvas = document.getElementById('town-canvas');
   var ctx = canvas.getContext('2d');
-  var hero = town.hero_start.slice();
   var phase = function () { return STATE.get().phase; };
 
+  // The town data is the current region's, and it changes when the
+  // hero steps through a door. `town`, `legend`, `pois`, `speakers`
+  // and `hero` stay `var`s so draw() and move() read the current
+  // values instead of a stale capture.
+  var regions = window.VEFR_REGIONS || {};
+  var regionName = world._region || Object.keys(regions)[0] || 'town';
+  var transitions = window.VEFR_TRANSITIONS || [];
+
+  var town = world.town;
   var legend = town.legend;
   var pois = town.pois || {};
-  var speakers = world.speakers;
+  var speakers = regionSpeakers(regionName);
+  var hero = town.hero_start.slice();
+
+  // The current region's speakers. The baked group (window.VEFR_SPEAKERS)
+  // says which keys belong here; a full spec from the world (with
+  // `near`, etc.) wins when present, so single-region behavior is
+  // exactly what it was.
+  function regionSpeakers(name) {
+    var grouped = (window.VEFR_SPEAKERS || {})[name];
+    if (!grouped) return {};
+    var all = (window.VEFR_WORLD && window.VEFR_WORLD.speakers) || {};
+    var out = {};
+    Object.keys(grouped).forEach(function (k) { out[k] = all[k] || grouped[k]; });
+    return out;
+  }
 
   // ---- the camera ----
-  // A map smaller than the screen is scaled to fit and centred, as before.
-  // A map bigger than the screen scrolls with the hero at a readable size,
-  // so a large floor never shrinks to a thumbnail. T is the on-screen tile
-  // size in CSS pixels; viewW/viewH are the visible area.
-  var cols = town.map[0].length, rows = town.map.length;
+  // A map smaller than the screen is scaled to fit and centred. A bigger
+  // map scrolls with the hero at a readable size, so a large floor (or a
+  // small room) never shrinks to a thumbnail. `cols`/`rows` are the current
+  // region's size, recomputed on every resize so a door can swap the map.
+  var cols = 0, rows = 0;
   var T = town.tile, viewW = 0, viewH = 0;
   var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
   function fitZoom() {
@@ -1136,6 +1168,8 @@ function setupTown() {
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
   }
   function resize() {
+    cols = town.map[0].length;
+    rows = town.map.length;
     var dpr = window.devicePixelRatio || 1;
     viewW = canvas.clientWidth || window.innerWidth;
     viewH = canvas.clientHeight || window.innerHeight;
@@ -1260,17 +1294,67 @@ function setupTown() {
     ctx.restore();
   }
 
+  // A door on the current region's tile (nx,ny), if any.
+  function transitionAt(nx, ny) {
+    for (var i = 0; i < transitions.length; i++) {
+      var t = transitions[i];
+      if (t && t.from === regionName && Array.isArray(t.at)
+          && t.at[0] === nx && t.at[1] === ny) return t;
+    }
+    return null;
+  }
+
+  // Enter another region through a door: swap the current map,
+  // speakers, and hero, then resize, draw, and refresh the POI line.
+  function enterRegion(name, at) {
+    var r = regions[name];
+    if (!r) return;
+    regionName = name;
+    town = {
+      map: r.map || [],
+      legend: r.legend || {},
+      pois: r.pois || {},
+      hero_start: r.hero_start || [1, 1],
+      sanctuary_tiles: r.sanctuary_tiles || [],
+      watch: r.watch || {},
+      water_by_phase: r.water_by_phase || {},
+      flood_tiles: r.flood_tiles || [],
+      tile: r.tile || 32,
+      bg: r.bg || '#131311',
+      hero_color: r.hero_color || '#e8e5df',
+      speaker_color: r.speaker_color || '#8b939c',
+      speaker_head: r.speaker_head || '#d8d5df',
+    };
+    legend = town.legend;
+    pois = town.pois;
+    speakers = regionSpeakers(name);
+    hero = (at || town.hero_start).slice();
+    resize();
+    draw();
+    refreshPoi();
+  }
+
+  // The named place the hero now stands on, written to the POI line.
+  function refreshPoi() {
+    var here = '';
+    for (var k in pois) {
+      if (k === hero[0] + ',' + hero[1]) { here = pois[k]; break; }
+    }
+    document.getElementById('poi').textContent = here || '';
+    return here;
+  }
+
   function move(dx, dy) {
     var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
+    // A door is stepped on, not stood on: entering happens instead of
+    // the move, and the hero lands at the door's `to_at`.
+    var door = transitionAt(nx, ny);
+    if (door) { enterRegion(door.to, door.to_at); return; }
     hero = [nx, ny];
     draw();
-    var here = '';
-    for (var k in pois) {
-      if (k === nx + ',' + ny) { here = pois[k]; break; }
-    }
-    document.getElementById('poi').textContent = here || '';
+    var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny);
   }

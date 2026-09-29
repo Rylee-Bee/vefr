@@ -7,6 +7,26 @@
 
 ## Landed
 
+- [x] **Regions + door transitions in the woven player** (2026-09-29): an act
+      can already declare several `regions`, but the woven player baked only
+      the first and `transitions` was a reserved field. An act's `transitions`
+      is now a list of doors (`{"from": "town", "at": [4, 5], "to":
+      "cottage", "to_at": [4, 3]}`), and a speaker may name its `region`
+      (default: the act's first). The loader keeps the act's speakers and
+      attaches each region its own `speakers`; `weave_html` bakes
+      `window.VEFR_REGIONS` (each region's map + contract), `VEFR_TRANSITIONS`
+      (the doors, verbatim), and `VEFR_SPEAKERS` (grouped by region);
+      `web/packaged.html` reassigns the current map, people and hero when the
+      hero steps on a door, so a town and the entry room inside it are two
+      maps joined by a door. A map with one region and no doors behaves exactly
+      as before (the sample's visual baseline does not move). `maplab.validate`
+      checks every door: `from`/`to` name declared regions, and `at`/`to_at`
+      are on their maps and walkable. Known gap: only the first region's full
+      geometry is validated today; the others are read for the door checks
+      only (a follow-on). Tests:
+      `test_builder_weave.py::test_woven_file_bakes_regions_transitions_and_grouped_speakers`,
+      `test_transitions.py`. Deterministic: no model call anywhere.
+
 - [x] **The manual names the camera and the sprites** (2026-09-29): "How Maps
       Work" now says a map can be bigger than the screen and is read through a
       *camera* that moves with the hero, and that the people on a map are

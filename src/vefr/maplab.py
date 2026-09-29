@@ -59,35 +59,66 @@ def load_pack(pack_dir: Path) -> dict:
         if first_act_dir is None:
             raise SystemExit(f'{pack}/acts has no act directories')
         act = json.loads((first_act_dir / 'world.json').read_text(encoding='utf-8'))
-        # Pick the first region for the validator (the canary has
-        # only `town`; multi-region acts will need a flag or a
-        # per-region validation in a follow-on).
-        region_name = next(iter(act.get('regions', {})), None)
+        # Pick the first region for the validator's unified `town` (the
+        # canary has only `town`; full per-region geometry is still a
+        # follow-on). Transition checks, however, read every region's
+        # map + legend, exposed below as `regions`.
+        regions_list = list(act.get('regions', {}) or {})
+        region_name = regions_list[0] if regions_list else None
+
+        def _region_geo(rname):
+            """One region's map rows + contract, read from disk."""
+            rdir = first_act_dir / rname
+            rcontract: dict = {}
+            cp = rdir / 'contract.json'
+            if cp.exists():
+                rcontract = json.loads(cp.read_text(encoding='utf-8'))
+            rows: list[str] = []
+            mp = rdir / 'map.md'
+            if mp.exists():
+                rows = [
+                    ln for ln in mp.read_text(encoding='utf-8').splitlines()
+                    if ln.strip()
+                ]
+            if not rows:
+                rows = rcontract.get('map', [])
+            return rcontract, rows
+
+        contract: dict = {}
+        map_lines: list[str] = []
+        if region_name:
+            contract, map_lines = _region_geo(region_name)
+        # Every region's geometry, for the door checks. `map` is the
+        # rows; `legend` is what makes a tile walkable.
+        regions_geo: dict[str, dict] = {}
+        for rname in regions_list:
+            rcontract, rrows = _region_geo(rname)
+            regions_geo[rname] = {
+                'map': rrows,
+                'legend': rcontract.get('legend', {}),
+            }
         # The town's metadata can live in three places, in priority
         # order: the region's contract.json (new, convention-driven),
         # the act's _town_legacy (transitional), or the act's
         # inline `town` block (the very first acts-shape PR had
         # this). Read all three, the highest priority wins.
-        contract: dict = {}
-        if region_name:
-            cp = first_act_dir / region_name / 'contract.json'
-            if cp.exists():
-                contract = json.loads(cp.read_text(encoding='utf-8'))
         region_legacy = act.get('_town_legacy', {}) or act.get('town', {})
         merged = {**region_legacy, **contract}
         # The map lives in acts/<id>/<region>/map.md in the new
         # shape. If it's there, parse it; otherwise fall back to
         # whatever the contract holds.
-        map_lines: list[str] = []
-        if region_name:
-            map_path = first_act_dir / region_name / 'map.md'
-            if map_path.exists():
-                map_lines = [
-                    ln for ln in map_path.read_text(encoding='utf-8').splitlines()
-                    if ln.strip()
-                ]
         if not map_lines:
             map_lines = merged.get('map', [])
+        # The validator checks speakers against the unified `town` (the
+        # first region). A speaker that belongs to another region lives
+        # on that region's map, so it is not checked here - its own
+        # region's geometry is a follow-on (see the ROADMAP entry).
+        all_speakers = act.get('speakers', {})
+        town_speakers = {
+            key: spec for key, spec in all_speakers.items()
+            if (spec.get('region', region_name) if isinstance(spec, dict) else region_name)
+            == region_name
+        }
         return {
             'name': pack.name,
             'title': config.get('title', act.get('title', pack.name)),
@@ -96,7 +127,7 @@ def load_pack(pack_dir: Path) -> dict:
             'phases': config['phases'],
             'voices': config.get('voices', {}),
             'bonds': config.get('bonds', {}),
-            'speakers': act.get('speakers', {}),
+            'speakers': town_speakers,
             'surface': config.get('surface', 'combat'),
             'town': {
                 'map': map_lines,
@@ -115,6 +146,8 @@ def load_pack(pack_dir: Path) -> dict:
             },
             '_act_id': first_act_dir.name,
             '_region': region_name,
+            'transitions': act.get('transitions', []),
+            'regions': regions_geo,
         }
     return config
 
@@ -129,6 +162,21 @@ def walkable(w: dict, x: int, y: int, flooded: set | None = None) -> bool:
     if isinstance(e.get('solid'), bool):
         return e['solid'] is False
     return m[y][x] not in BLOCKED_FALLBACK
+
+
+def _map_tile_walkable(map_rows: list, legend: dict,
+                       x: int, y: int) -> bool | None:
+    """Walkability of one tile on a named region's map. Mirrors
+    `walkable`, but takes the map + legend directly (the validator's
+    unified `town` is only the first region). Returns None when the
+    tile is off the map, so the caller can tell "outside" from
+    "solid"."""
+    if not map_rows or y < 0 or y >= len(map_rows) or x < 0 or x >= len(map_rows[0]):
+        return None
+    e = (legend or {}).get(map_rows[y][x], {})
+    if isinstance(e.get('solid'), bool):
+        return e['solid'] is False
+    return map_rows[y][x] not in BLOCKED_FALLBACK
 
 
 def reach(w: dict, start: tuple, flooded: set | None = None) -> set:
@@ -280,12 +328,16 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         ruleset = act.get('ruleset', 'ambient')
         if not isinstance(ruleset, str) or not ruleset.strip():
             errors.append(f"act '{aid}' ruleset must be a non-empty string")
-        for fname in ('verbs', 'enemies', 'bosses', 'transitions'):
+        for fname in ('verbs', 'enemies', 'bosses'):
             val = act.get(fname, [])
             if not isinstance(val, list):
                 errors.append(f"act '{aid}' {fname} must be a list")
             elif not all(isinstance(x, str) for x in val):
                 errors.append(f"act '{aid}' {fname} must be a list of strings")
+        # `transitions` is the act's doors now, not a string list; the
+        # shape and tiles are checked below.
+        if not isinstance(act.get('transitions', []), list):
+            errors.append(f"act '{aid}' transitions must be a list")
 
     # Cooking ruleset content (the act-1 loop): the morning is pack-
     # authored; the engine only resolves it. Orders must reference
@@ -344,6 +396,78 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                         or not all(isinstance(h, str) and h.strip() for h in dheads)):
                     errors.append(
                         f"act '{aid}' desk headlines must be at least two non-empty strings")
+
+    # Transitions: the act's doors between regions. A door is a tile
+    # you step on in `from` that lands the hero at `to_at` in `to`.
+    # Shape and door tiles are checked here; every region's *full*
+    # geometry (reachability, pois, water) is still a follow-on -
+    # only the first region's town is validated above.
+    transitions = w.get('transitions')
+    if transitions is None and w.get('acts'):
+        transitions = w['acts'][0].get('transitions', [])
+    transitions = transitions or []
+    region_geo = w.get('regions')
+    if not isinstance(region_geo, dict) and w.get('acts'):
+        region_geo = {}
+        for rname, rdata in (w['acts'][0].get('regions') or {}).items():
+            contract = rdata.get('contract') or {}
+            rows = [ln for ln in (rdata.get('map_text') or '').splitlines()
+                    if ln.strip()]
+            region_geo[rname] = {'map': rows,
+                                 'legend': contract.get('legend', {})}
+    if not isinstance(region_geo, dict):
+        region_geo = {}
+    if not region_geo and isinstance(w.get('town'), dict):
+        # A flat shape has one implicit region; name it so a door
+        # written against it can still be checked.
+        region_geo = {w.get('_region') or 'town': {
+            'map': w['town'].get('map', []),
+            'legend': w['town'].get('legend', {}),
+        }}
+
+    def _door_tile_errors(index, field, rname, at):
+        geo = region_geo.get(rname, {})
+        rows = geo.get('map') or []
+        legend = geo.get('legend') or {}
+        if (not isinstance(at, (list, tuple)) or len(at) != 2
+                or not all(isinstance(v, (int, float)) for v in at)):
+            errors.append(
+                f"transition {index} {field} in region '{rname}' "
+                f"must be a tile [x, y]")
+            return
+        x, y = int(at[0]), int(at[1])
+        ok = _map_tile_walkable(rows, legend, x, y)
+        if ok is None:
+            errors.append(
+                f"transition {index} {field} ({x},{y}) is off the map "
+                f"of region '{rname}'")
+        elif not ok:
+            errors.append(
+                f"transition {index} {field} ({x},{y}) is on a solid "
+                f"tile in region '{rname}'")
+
+    for i, t in enumerate(transitions):
+        if not isinstance(t, dict):
+            errors.append(
+                f'transition {i} must be an object with from, to, at, to_at')
+            continue
+        missing = [k for k in ('from', 'to', 'at', 'to_at') if k not in t]
+        if missing:
+            errors.append(f'transition {i} is missing {missing}')
+            continue
+        from_name, to_name = t['from'], t['to']
+        if from_name not in region_geo:
+            errors.append(
+                f"transition {i} leaves region '{from_name}', which is "
+                f"not a declared region")
+        else:
+            _door_tile_errors(i, 'at', from_name, t['at'])
+        if to_name not in region_geo:
+            errors.append(
+                f"transition {i} enters region '{to_name}', which is "
+                f"not a declared region")
+        else:
+            _door_tile_errors(i, 'to_at', to_name, t['to_at'])
 
     # The Library: authored books this pack keeps (library/*.md). Needs the
     # pack on disk; in-memory validation (chat drafts) has no books yet.
