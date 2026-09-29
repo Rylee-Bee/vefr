@@ -355,6 +355,25 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _preserve_unknown(path: Path, known: dict) -> dict:
+    """The previous file's keys, with `known` winning on conflict.
+
+    A pack may carry fields the builder does not model: a game's title
+    art and accent in `player`, a `stefna_voice`, a key from a future
+    engine. A write must never silently drop them, so the file already
+    on disk is the base and the writer overwrites only what it owns.
+    """
+    existing: dict = {}
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text(encoding='utf-8'))
+        except ValueError:
+            existing = {}
+    if not isinstance(existing, dict):
+        existing = {}
+    return {**existing, **known}
+
+
 def write_pack(pack_dir: Path, w: dict) -> None:
     """Atomic write - an interrupted build must never leave world.json
     truncated.
@@ -382,7 +401,7 @@ def write_pack(pack_dir: Path, w: dict) -> None:
         town = w.get('town', {})
         # The act contract: id, title, regions, speakers. Town
         # metadata lives in town/contract.json, not inline.
-        act_contract = {
+        act_contract = _preserve_unknown(act_dir / 'world.json', {
             'id': act_id,
             'title': w.get('title', pack.name),
             'regions': ['town'],
@@ -390,18 +409,21 @@ def write_pack(pack_dir: Path, w: dict) -> None:
             'enemies': w.get('enemies', []),
             'bosses': w.get('bosses', []),
             'transitions': w.get('transitions', []),
-        }
+        })
         act_tmp = act_dir / 'world.json.tmp'
         act_tmp.write_text(json.dumps(act_contract, indent=2,
-                                      ensure_ascii=False), encoding='utf-8')
+                                      ensure_ascii=False) + '\n', encoding='utf-8')
         act_tmp.replace(act_dir / 'world.json')
         # The town contract (every town-metadata field except map).
         town_dir = act_dir / 'town'
         town_dir.mkdir(parents=True, exist_ok=True)
-        town_contract = {k: v for k, v in town.items() if k != 'map'}
+        town_contract = _preserve_unknown(
+            town_dir / 'contract.json',
+            {k: v for k, v in town.items() if k != 'map'},
+        )
         if town_contract:
             (town_dir / 'contract.json').write_text(
-                json.dumps(town_contract, indent=2, ensure_ascii=False),
+                json.dumps(town_contract, indent=2, ensure_ascii=False) + '\n',
                 encoding='utf-8',
             )
         # The map moves to acts/<id>/town/map.md.
@@ -410,7 +432,7 @@ def write_pack(pack_dir: Path, w: dict) -> None:
                 '\n'.join(town['map']) + '\n', encoding='utf-8'
             )
         # The pack-level contract.
-        pack_contract = {
+        pack_contract = _preserve_unknown(pack / 'world.json', {
             'name': pack.name,
             'title': w.get('title', pack.name),
             'description': w.get('description', ''),
@@ -421,13 +443,13 @@ def write_pack(pack_dir: Path, w: dict) -> None:
             'bonds': w.get('bonds', {}),
             'bond_draw': w.get('bond_draw', ''),
             'forge_texture': w.get('forge_texture', ''),
-        }
+        })
         tmp.write_text(json.dumps(pack_contract, indent=2,
-                                  ensure_ascii=False), encoding='utf-8')
+                                  ensure_ascii=False) + '\n', encoding='utf-8')
         tmp.replace(pack / 'world.json')
     else:
         # Flat shape: a single world.json with the legacy keys.
-        legacy = {
+        legacy = _preserve_unknown(pack / 'world.json', {
             'name': pack.name,
             'title': w.get('title', pack.name),
             'description': w.get('description', ''),
@@ -440,9 +462,9 @@ def write_pack(pack_dir: Path, w: dict) -> None:
             'forge_texture': w.get('forge_texture', ''),
             'speakers': w.get('speakers', {}),
             'town': w.get('town', {}),
-        }
+        })
         tmp.write_text(json.dumps(legacy, indent=2,
-                                  ensure_ascii=False), encoding='utf-8')
+                                  ensure_ascii=False) + '\n', encoding='utf-8')
         tmp.replace(pack / 'world.json')
 
 
