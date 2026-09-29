@@ -751,6 +751,20 @@ def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     return out
 
 
+def _player_chest(web_dir: Path) -> str:
+    """The chest picture, inlined.
+
+    A chest is a container you open: the note inside it is a book, but the
+    chest is what you see on the floor and what you use.
+    """
+    import base64
+
+    f = web_dir / 'art' / 'icons' / 'ui' / 'open.webp'
+    if not f.is_file():
+        return ''
+    return 'data:image/webp;base64,' + base64.b64encode(f.read_bytes()).decode('ascii')
+
+
 def _player_door(web_dir: Path) -> str:
     """The door picture, inlined, so a transition can be drawn.
 
@@ -839,12 +853,16 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # `extra` is the pack's private notes and stays out of the file.
     # `region` scopes a map book to the map it lies on.
     from .library import found_words, load_library
-    books = [
-        {k: b.get(k) for k in
-         ("id", "title", "kind", "found", "at", "speaker", "when", "pages", "region")}
-        | {"found_words": found_words(b)}
-        for b in load_library(pack)
-    ]
+    books = []
+    for b in load_library(pack):
+        extra = b.get('extra') if isinstance(b.get('extra'), dict) else {}
+        entry = {k: b.get(k) for k in
+                 ("id", "title", "kind", "found", "at", "speaker", "when", "pages", "region")}
+        # `chest: yes` in a book's front matter puts it in a chest: the
+        # player opens the chest rather than stepping on the book.
+        entry['chest'] = str(extra.get('chest', '')).strip().lower() in ('yes', 'true', '1')
+        entry['found_words'] = found_words(b)
+        books.append(entry)
 
     # The act's regions, doors, and grouped speakers. A single-region
     # pack bakes one region and empty transitions; the woven player's
@@ -947,6 +965,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
     out_html = out_html.replace('{{door_json}}',
                                 _json.dumps(_player_door(template_path.parent)))
+    out_html = out_html.replace('{{chest_json}}',
+                                _json.dumps(_player_chest(template_path.parent)))
     out_html = out_html.replace('{{book_icons_json}}',
                                 _json.dumps(_player_book_icons(template_path.parent), ensure_ascii=False))
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))

@@ -191,8 +191,8 @@ def test_woven_file_bakes_the_packs_books():
     by_id = {b["id"]: b for b in books}
     assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger", "writing-a-book"}
     for b in books:
-        assert list(b) == ["id", "title", "kind", "found", "at",
-                           "speaker", "when", "pages", "region", "found_words"]
+        assert list(b) == ["id", "title", "kind", "found", "at", "speaker",
+                           "when", "pages", "region", "chest", "found_words"]
         assert b["title"] and b["pages"] and b["found_words"]
     note = by_id["a-note-by-the-path"]
     assert note["found"] == "map" and note["at"] == [2, 2]
@@ -324,3 +324,17 @@ def test_weave_refuses_world_paths(woven) -> None:
     for bad in ("../sample-world", "/etc", "a/b", ".hidden"):
         r = client.post("/api/builder/weave", json={"world": bad})
         assert r.status_code == 400, (bad, r.status_code)
+
+
+def test_a_book_can_be_in_a_chest(tmp_path):
+    """`chest: yes` marks a book as opened (used), and bakes the chest art."""
+    pack = _two_region_pack(tmp_path)
+    lib = pack / "library"
+    lib.mkdir(exist_ok=True)
+    (lib / "in-a-chest.md").write_text(
+        "---\ntitle: In a Chest\nfound: map\nat: [1, 1]\nchest: yes\nkind: note\n---\nwords\n",
+        encoding="utf-8")
+    html = cli.weave_html(pack)
+    books = {b["id"]: b for b in _baked(html, "VEFR_LIBRARY")}
+    assert books["in-a-chest"]["chest"] is True
+    assert _baked(html, "VEFR_CHEST_ICON").startswith("data:image/webp;base64,")

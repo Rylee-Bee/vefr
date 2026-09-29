@@ -418,6 +418,9 @@ window.VEFR_DOOR = {{door_json}};
 // Book markers ('map', 'resident'): drawn where a book you have not found
 // can be found, so a book is not invisible.
 window.VEFR_BOOK_ICONS = {{book_icons_json}};
+// The chest picture: a book with `chest: yes` is opened (used) instead of
+// stepped on, and drawn as a chest on the floor.
+window.VEFR_CHEST_ICON = {{chest_json}};
 
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
@@ -602,7 +605,7 @@ function foundBook(book, how, open) {
 // the book names (a room's book lies in that room, not the town).
 function libraryOnTile(x, y, region) {
   libraryBooks().forEach(function (b) {
-    if (!b || b.found !== 'map' || !Array.isArray(b.at)) return;
+    if (!b || b.chest || b.found !== 'map' || !Array.isArray(b.at)) return;
     if ((b.region || 'town') !== region) return;
     if (b.at[0] === x && b.at[1] === y && !bookIsFound(b.id)) foundBook(b, 'map');
   });
@@ -1282,6 +1285,30 @@ function setupTown() {
     return im && im.complete && im.naturalWidth > 0;
   }
 
+  // The chest picture, preloaded like the rest.
+  var chestSrc = window.VEFR_CHEST_ICON || '';
+  var chestImg = null;
+  if (chestSrc) {
+    chestImg = new Image();
+    chestImg.onload = function () { draw(); };
+    chestImg.src = chestSrc;
+  }
+  function chestReady() {
+    return chestImg && chestImg.complete && chestImg.naturalWidth > 0;
+  }
+
+  // The chest the hero is standing on, if any (a book with `chest: yes`).
+  function chestHere() {
+    var list = libraryBooks();
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      if (!b || !b.chest || b.found !== 'map' || !Array.isArray(b.at)) continue;
+      if ((b.region || 'town') !== regionName) continue;
+      if (b.at[0] === hero[0] && b.at[1] === hero[1] && !bookIsFound(b.id)) return b;
+    }
+    return null;
+  }
+
   function spriteReady(key) {
     var im = spriteImgs[key];
     return im && im.complete && im.naturalWidth > 0;
@@ -1366,7 +1393,13 @@ function setupTown() {
         if (!b.speaker || !speakers[b.speaker]) return;   // giver not in this room
         at = speakers[b.speaker].at;
       }
-      if (!at || !bookIconReady(b.found)) return;
+      if (!at) return;
+      if (b.chest) {
+        if (!chestReady()) return;
+        ctx.drawImage(chestImg, at[0] * T + T * 0.08, at[1] * T + T * 0.08, T * 0.84, T * 0.84);
+        return;
+      }
+      if (!bookIconReady(b.found)) return;
       ctx.drawImage(bookIconImgs[b.found], at[0] * T + T * 0.12, at[1] * T + T * 0.12,
                     T * 0.76, T * 0.76);
     });
@@ -1429,11 +1462,10 @@ function setupTown() {
   // The verb: use what you are standing on. A door is used, not walked
   // through, so passing a doorway never yanks you to another map.
   function useHere() {
-    if (transitionAt(hero[0], hero[1])) {
-      var door = transitionAt(hero[0], hero[1]);
-      enterRegion(door.to, door.to_at);
-      return;
-    }
+    var door = transitionAt(hero[0], hero[1]);
+    if (door) { enterRegion(door.to, door.to_at); return; }
+    var chest = chestHere();
+    if (chest) { foundBook(chest, 'map'); return; }
     var key = hero[0] + ',' + hero[1];
     var text = (town.poi_text || {})[key];
     if (text) showSpeech(pois[key] || '', text, '');
@@ -1451,6 +1483,9 @@ function setupTown() {
     if (door) {
       btn.hidden = false;
       if (hint) { hint.hidden = false; hint.textContent = 'A door. Use it to go through.'; }
+    } else if (chestHere()) {
+      btn.hidden = false;
+      if (hint) { hint.hidden = false; hint.textContent = 'A chest. Use it to open.'; }
     } else if (text) {
       btn.hidden = false;
       if (hint) { hint.hidden = false; hint.textContent = 'Something to look at.'; }
