@@ -119,8 +119,22 @@ ITEMS / LOOT (first slice): world.json may carry an optional top-level
   list of catalog ids in its front matter). A killed enemy leaves its
   drop on the floor it died on; walking onto a drop takes it into the
   bag (`localStorage['vefr-bag-<world>']`). The woven player bakes the
-  catalog (`VEFR_ITEMS`) and each drop. Nothing is used, sold or
-  identified yet.
+  catalog (`VEFR_ITEMS`) and each drop. An item may also carry optional
+  `value` (a positive int: what a shop pays and asks), `heal` (a positive
+  int) and `use` (a verb such as `drink`); with none of them the item
+  bakes exactly as before. Nothing is identified yet.
+
+REWARD (first slice): `world.player` may carry `gold`, the starting
+  purse (a non-negative int; default 0), kept per world at
+  `localStorage['vefr-gold-<world>']`. A speaker whose spec carries
+  `"shop": "true"` (also `yes`/`1`) keeps its region's shop - at most one
+  per region, the first named wins. Standing beside that speaker and
+  using the world's interact verb opens a Trade panel (sell carried
+  things with a `value`, buy catalog things with a `value`); a carried
+  thing with a `heal` can be used from the Bag panel. The woven player
+  bakes `VEFR_HERO.gold` and `VEFR_SHOPS` ({region: speaker key}). All of
+  it is optional: a pack that names none of it bakes the player it had
+  before.
 
 STEFNA / BELL VOICE: a pack may declare an optional top-level
 `stefna_voice` (string naming which speaker writes the sealed letter;

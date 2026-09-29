@@ -36,10 +36,30 @@ TOWN_ENEMIES = [
 ]
 
 # The item catalog: what a drop names and what the bag shows. Both have a
-# sprite so the marker and the bag draw a picture, not a dot.
+# sprite so the marker and the bag draw a picture, not a dot. The potion
+# is priced at 8 and heals 3 (one more than the hero's 3-hp max, so a
+# drink at 1 hp proves the cap); the ring is only worth selling.
 ITEMS = {
-    "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"},
-    "brass-ring": {"name": "a plain brass ring", "sprite": "ring"},
+    "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion",
+                      "value": 8, "heal": 3, "use": "drink"},
+    "brass-ring": {"name": "a plain brass ring", "sprite": "ring",
+                   "value": 3},
+}
+
+# A merchant stands beside the chest tile, in the town. `shop` marks the
+# region's trader; the hero starts with 5 gold, so trade is affordable
+# from the first step. The sample's own keeper is kept at the far stone.
+MERCHANT = {
+    "merchant": {
+        "name": "a dusty merchant",
+        "at": [2, 2],
+        "near": "the stall",
+        "shop": "true",
+        "seeds": {
+            "dusk": "Coin for coin, friend. Nothing here is free.",
+            "dawn": "Early custom. Pick what you like.",
+        },
+    },
 }
 
 # A chest book at [1, 2], below the hero's start, holding a note and two
@@ -100,7 +120,7 @@ def build(dest: Path) -> Path:
     world = json.loads(world_json.read_text(encoding="utf-8"))
     world["items"] = ITEMS
     world["player"] = {
-        "hp": 3, "atk": 2,
+        "hp": 3, "atk": 2, "gold": 5,
         "sprites": {"rat": "sprites/rat.png",
                     "potion": "sprites/potion.png",
                     "ring": "sprites/ring.png"},
@@ -115,6 +135,10 @@ def build(dest: Path) -> Path:
     act["transitions"] = [
         {"from": "town", "at": [5, 4], "to": "cellar", "to_at": [1, 1]},
     ]
+    # The trade fixture: the sample's keeper keeps its stone; a merchant
+    # sets up beside the chest and keeps the town's shop.
+    act.setdefault("speakers", {})
+    act["speakers"].update(MERCHANT)
     (act_dir / "world.json").write_text(json.dumps(act), encoding="utf-8")
 
     _write_region(act_dir / "town", TOWN_MAP, TOWN_ENEMIES)

@@ -4,10 +4,12 @@ The combat harness EXECUTES the woven single-file player against a stub
 DOM and plays the first fight end to end: bump the adjacent enemy, watch
 it hit back, kill it and see it stay dead, watch a distant enemy inside
 its sight step toward the hero, then take a fatal blow and wake whole at
-the baked wake point. It also plays the loot loop: the kill leaves its
+the baked wake point. It also plays the loot loop (the kill leaves its
 drop on the floor, stepping onto it takes it into the bag, and a chest
-gives its note and its items. Deterministic: the fixture is fixed, so
-every number here is pinned.
+gives its note and its items) and the reward loop (sell and buy at a
+shopkeeper's fixed prices, then drink a potion that heals up to the
+max and says so when there is nothing to heal). Deterministic: the
+fixture is fixed, so every number here is pinned.
 """
 
 import json
@@ -67,7 +69,11 @@ def test_the_fight_starts_where_the_fixture_says(fight):
     start = log["start"]
     assert start["region"] == "town"
     assert start["hero"] == {"hp": 3, "max": 3, "atk": 2, "at": [1, 1]}
+    assert start["gold"] == 5
     assert log["hp-line0"] == "3/3"
+    # A world that trades shows the purse in words, beside the health bar.
+    assert log["gold-line0"] == "5 gold"
+    assert log["gold-line0-hidden"] is False
     rat = _by_id(start)["cellar-rat"]
     assert rat == {"id": "cellar-rat", "at": [2, 1], "hp": 4, "atk": 1,
                    "sight": 6, "alive": True}
@@ -152,6 +158,43 @@ def test_a_chest_gives_its_note_and_its_items(fight):
     # The Bag panel draws one row per carried thing.
     assert log["bag-panel-rows"] == 3
     assert log["bag-panel-count"] == "3 things carried."
+
+
+def test_a_shopkeeper_sells_and_buys_at_his_prices(fight):
+    log = _log(fight)
+    assert log["trade-open"] is True
+    assert log["trade-title"] == "a dusty merchant"
+    assert log["trade-gold-open"] == "You carry 5 gold."
+    # Sell one potion for its 8 gold: the purse rises, one copy leaves.
+    assert log["gold-after-sell"] == 13
+    assert log["after-sell"]["gold"] == 13
+    assert log["after-sell"]["bag"] == ["cloudy-potion", "brass-ring"]
+    assert log["said-sell"] == "You sell a cloudy potion for 8 gold."
+    # Buy one back for the same 8: the purse falls, one copy returns.
+    assert log["gold-after-buy"] == 5
+    assert log["said-buy"] == "You buy a cloudy potion for 8 gold."
+    assert log["bag-after-buy"] == [
+        "cloudy-potion", "brass-ring", "cloudy-potion"]
+    assert log["trade-closed"] is True
+
+
+def test_a_potion_heals_but_never_past_the_max(fight):
+    log = _log(fight)
+    # One blow from the pale thing leaves the hero at 1 of 3.
+    assert log["after-blow"]["hero"]["hp"] == 1
+    assert log["after-blow"]["hero"]["at"] == [3, 1]
+    assert _by_id(log["after-blow"])["pale-thing"]["hp"] == 2
+    assert log["bag-gold-line"] == "You carry 5 gold."
+    # A 3-heal drink at 1 hp recovers only 2 (the cap) and spends a copy.
+    assert log["said-use"] == "You drink a cloudy potion. You recover 2 health."
+    assert log["hp-after-use"] == 3
+    assert log["after-use"]["hero"]["hp"] == 3
+    assert log["after-use"]["bag"] == ["brass-ring", "cloudy-potion"]
+    # A second drink at full health says so and keeps the potion.
+    assert log["said-use-full"] == (
+        "You drink a cloudy potion. You are already whole.")
+    assert log["bag-after-use-full"] == ["brass-ring", "cloudy-potion"]
+    assert log["after-use-full"]["hero"]["hp"] == 3
 
 
 def test_no_timers_anywhere(fight):

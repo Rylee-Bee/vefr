@@ -407,15 +407,35 @@ def test_the_woven_file_bakes_the_hero_stats_and_wake(tmp_path):
     (pack / "world.json").write_text(_json.dumps(cfg), encoding="utf-8")
 
     assert _baked(cli.weave_html(pack), "VEFR_HERO") == {
-        "hp": 3, "atk": 2, "wake": {"region": "cottage", "at": [1, 1]}}
+        "hp": 3, "atk": 2, "gold": 0,
+        "wake": {"region": "cottage", "at": [1, 1]}}
 
 
 def test_the_hero_defaults_when_player_is_silent(tmp_path):
-    """A pack with no `player` block gets 6/2 and the first region's start."""
+    """A pack with no `player` block gets 6/2, no gold, and region start."""
     pack = _two_region_pack(tmp_path)
     hero = _baked(cli.weave_html(pack), "VEFR_HERO")
-    assert hero == {"hp": 6, "atk": 2,
+    assert hero == {"hp": 6, "atk": 2, "gold": 0,
                     "wake": {"region": "town", "at": [1, 1]}}
+
+
+def test_the_hero_bakes_its_starting_gold(tmp_path):
+    """`world.player.gold` is the starting purse; a bad one defaults to 0."""
+    import json as _json
+
+    def with_gold(name, gold):
+        pack = _two_region_pack(tmp_path / name)
+        cfg = _json.loads((pack / "world.json").read_text(encoding="utf-8"))
+        cfg["player"] = {"gold": gold}
+        (pack / "world.json").write_text(_json.dumps(cfg), encoding="utf-8")
+        return _baked(cli.weave_html(pack), "VEFR_HERO")["gold"]
+
+    assert with_gold("rich", 12) == 12
+    assert with_gold("zero", 0) == 0
+    # Negative, non-int, and boolean purses are all no purse.
+    assert with_gold("negative", -4) == 0
+    assert with_gold("text", "a lot") == 0
+    assert with_gold("flag", True) == 0
 
 
 def test_a_wake_point_that_is_not_real_falls_back(tmp_path):
@@ -461,6 +481,61 @@ def test_the_woven_file_bakes_the_item_catalog(tmp_path):
     # A pack with no catalog bakes {} (never a missing global).
     bare = _two_region_pack(tmp_path / "bare")
     assert _baked(cli.weave_html(bare), "VEFR_ITEMS") == {}
+
+
+def test_item_value_heal_and_use_ride_along_only_when_named(tmp_path):
+    """A thing's price, heal, and use verb bake; junk is left out so an
+    old catalog bakes byte-for-byte what it did before rewards."""
+    pack = _with_items(_two_region_pack(tmp_path), {
+        "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion",
+                          "value": 8, "heal": 3, "use": "drink"},
+        "brass-ring": {"name": "a plain brass ring", "value": 3},
+        "junk": {"name": "a bit of junk", "value": 0, "heal": 0, "use": "  "},
+    })
+    assert _baked(cli.weave_html(pack), "VEFR_ITEMS") == {
+        "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion",
+                          "value": 8, "heal": 3, "use": "drink"},
+        "brass-ring": {"name": "a plain brass ring", "sprite": "",
+                       "value": 3},
+        "junk": {"name": "a bit of junk", "sprite": ""},
+    }
+
+
+def test_a_shopkeeper_is_baked_as_a_region_map(tmp_path):
+    """A speaker with `shop: true` keeps its region's shop; the first one
+    named wins, and a flag that is not true is no shop at all."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    act = pack / "acts" / "act-1" / "world.json"
+    cfg = _json.loads(act.read_text(encoding="utf-8"))
+    cfg["speakers"] = {
+        "trader": {"name": "a trader", "at": [2, 2], "shop": "true"},
+        "pitch": {"name": "a second pitch", "at": [3, 3], "shop": "yes"},
+        "shy": {"name": "a shy one", "at": [4, 4], "shop": "false"},
+        "singing": {"name": "a singer", "at": [5, 5]},
+    }
+    act.write_text(_json.dumps(cfg), encoding="utf-8")
+    assert _baked(cli.weave_html(pack), "VEFR_SHOPS") == {"town": "trader"}
+
+    # A pack with no shopkeeper bakes {} (never a missing global).
+    bare = _two_region_pack(tmp_path / "bare")
+    assert _baked(cli.weave_html(bare), "VEFR_SHOPS") == {}
+
+
+def test_a_shop_in_a_region_that_does_not_exist_is_dropped(tmp_path):
+    """A shopkeeper in no real region keeps no shop."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    act = pack / "acts" / "act-1" / "world.json"
+    cfg = _json.loads(act.read_text(encoding="utf-8"))
+    cfg["speakers"] = {
+        "ghost": {"name": "a ghost", "at": [1, 1], "region": "nowhere",
+                  "shop": "true"},
+    }
+    act.write_text(_json.dumps(cfg), encoding="utf-8")
+    assert _baked(cli.weave_html(pack), "VEFR_SHOPS") == {}
 
 
 def test_an_enemys_drops_carry_only_known_items(tmp_path):

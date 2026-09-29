@@ -2,8 +2,11 @@
    (jsdom, dev-only) and plays the first fight end to end. Bump the
    adjacent enemy, watch it hit back, kill it and see it stay dead;
    watch a distant enemy inside its sight step toward the hero; then
-   take a fatal blow and wake up whole at the baked wake point.
-   Deterministic: the fixture is fixed, so every number here is pinned.
+   take a fatal blow and wake up whole at the baked wake point. It then
+   plays the loot loop (a drop, a bag, a chest) and the reward loop
+   (trade at a shopkeeper's fixed prices, then drink a potion that
+   heals up to the max and says so when already whole). Deterministic:
+   the fixture is fixed, so every number here is pinned.
 
    usage: node combat_harness.mjs <woven.html> */
 import fs from 'node:fs';
@@ -60,6 +63,8 @@ try {
   const start = snap();
   log.push(['start', start]);
   log.push(['hp-line0', hpLine()]);
+  log.push(['gold-line0', document.getElementById('hud-gold').textContent]);
+  log.push(['gold-line0-hidden', document.getElementById('hud-gold').hidden]);
   log.push(['rat-start', byId(start)['cellar-rat']]);
   log.push(['pale-start', byId(start)['pale-thing']]);
 
@@ -120,6 +125,61 @@ try {
   log.push(['bag-panel-rows',
     document.getElementById('bag-list').querySelectorAll('.bag-row').length]);
   log.push(['bag-panel-count', document.getElementById('bag-count').textContent]);
+
+  // 6. Trade: a merchant stands beside the chest tile. Close the menu,
+  //    interact to open the Trade panel, sell a potion for its 8 gold,
+  //    then buy one back for 8. The purse and the bag move exactly.
+  document.getElementById('menu-close').click();
+  document.getElementById('interact').click();
+  log.push(['trade-open', !document.getElementById('trade').hidden]);
+  log.push(['trade-title', document.getElementById('trade-title').textContent]);
+  log.push(['trade-gold-open',
+    document.getElementById('trade-gold').textContent]);
+  const sellButton = document.querySelector(
+    '#trade-sell button[data-item="cloudy-potion"]');
+  sellButton.click();
+  s = snap();
+  log.push(['after-sell', s]);
+  log.push(['said-sell', document.getElementById('trade-live').textContent]);
+  log.push(['gold-after-sell', s.gold]);
+  const buyButton = document.querySelector(
+    '#trade-buy button[data-item="cloudy-potion"]');
+  buyButton.click();
+  s = snap();
+  log.push(['after-buy', s]);
+  log.push(['said-buy', document.getElementById('trade-live').textContent]);
+  log.push(['gold-after-buy', s.gold]);
+  log.push(['bag-after-buy', s.bag]);
+  document.getElementById('trade-close').click();
+  log.push(['trade-closed', document.getElementById('trade').hidden]);
+
+  // 7. Use: walk to the pale thing and take one blow (hp 3 -> 1), then
+  //    drink a 3-heal potion. The drink clamps at the 3-hp max (heals
+  //    only 2) and one copy leaves the bag; a second drink at full
+  //    health says so and costs nothing.
+  press('up');
+  press('right');
+  press('right');
+  press('right');
+  s = snap();
+  log.push(['after-blow', s]);
+  document.getElementById('menu-open').click();
+  document.querySelector('[data-panel="bag"]').click();
+  log.push(['bag-gold-line', document.getElementById('bag-gold').textContent]);
+  const useA = document.querySelector(
+    '#bag-list button[data-item="cloudy-potion"]');
+  useA.click();
+  s = snap();
+  log.push(['after-use', s]);
+  log.push(['said-use', document.getElementById('bag-live').textContent]);
+  log.push(['hp-after-use', s.hero.hp]);
+  const useB = document.querySelector(
+    '#bag-list button[data-item="cloudy-potion"]');
+  useB.click();
+  s = snap();
+  log.push(['after-use-full', s]);
+  log.push(['said-use-full', document.getElementById('bag-live').textContent]);
+  log.push(['bag-after-use-full', s.bag]);
 } catch (e) {
   log.push(['HARNESS-ERROR', String((e && e.message) || e)]);
 }

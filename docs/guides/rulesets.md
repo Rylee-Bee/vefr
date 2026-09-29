@@ -345,6 +345,89 @@ and no identifying - a carried thing is only a name and a picture for
 now. `maplab.validate` does not yet pin the `items`/`drops` shape; the
 bake drops an unknown id instead. The bag has no size limit.
 
+## reward (first slice: gold, trade, and using a thing)
+
+The loot slice left a thing carried but did nothing with it. This slice
+adds the reward end: a purse of gold, a shopkeeper who buys and sells,
+and using a carried thing. It is still deliberately small - no haggling,
+no stock limits, no equipping, no weight - and still deterministic:
+prices and heals are fixed pack numbers, no randomness, no model call,
+no clock.
+
+Three optional additions to the pack shape, all additive:
+
+An item may carry `value` (a positive int: what a shop pays and asks),
+`heal` (a positive int), and `use` (a verb such as `drink`):
+
+```json
+"items": {
+  "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion",
+                    "value": 8, "heal": 3, "use": "drink"},
+  "brass-ring":    {"name": "a plain brass ring", "sprite": "ring",
+                    "value": 3}
+}
+```
+
+A speaker may carry `"shop": "true"` (also `yes` or `1`). At most one
+shopkeeper per region; the first one named wins. A speaker with no
+`shop` is exactly the speaker it always was:
+
+```json
+"speakers": {
+  "merchant": {"name": "a dusty merchant", "at": [2, 2],
+               "near": "the stall", "shop": "true",
+               "seeds": {"dusk": "...", "dawn": "..."}}
+}
+```
+
+And `world.player` may carry `gold`, the starting purse (a non-negative
+int, default 0):
+
+```json
+"player": {"hp": 3, "atk": 2, "gold": 5, "wake": {"region": "town", "at": [1, 1]}}
+```
+
+None of the three is required. A pack that names none of them bakes
+exactly the player it had before, and its HUD does not move: the gold
+line appears only when the world trades at all (a shopkeeper exists, or
+some catalog item has a `value`).
+
+**The purse.** Gold is one number at `localStorage['vefr-gold-<world>']`,
+seeded from the baked `VEFR_HERO.gold`. It shows as a short line in the
+top-left HUD ("5 gold") and as plain words in the Bag panel ("You carry
+5 gold.").
+
+**The trade.** A shopkeeper's Trade panel opens when the hero stands
+within one tile of them (the same reach as a bump) and presses Interact
+(or `F`), the same verb that opens a door or a chest. Sell lists each
+carried thing with a `value` and its price, with a Sell button; Buy lists
+every catalog entry with a `value` and its price, with a Buy button. A
+Buy the purse cannot afford is disabled. Each trade updates both lists,
+the purse, and an `aria-live` line ("You sell a cloudy potion for 8
+gold."). The panel is a dialog: 44px targets, close with the Close button
+or `Escape`, and focus returns to the Interact button. Talking (Talk /
+`E`) still gives the shopkeeper's own line; trading is a separate verb.
+
+**Using a thing.** The Bag panel gives a Use button to any carried thing
+the pack gave a `heal`. Using it raises health by `heal`, never above the
+max, spends one copy, and says so ("You drink a cloudy potion. You
+recover 2 health."). At full health it says "You are already whole." and
+keeps the thing - a potion is never spent on nothing.
+
+Baked as `VEFR_HERO.gold`, `VEFR_SHOPS` (a `{region: speaker key}` map),
+and the extra `value`/`heal`/`use` fields on each `VEFR_ITEMS` entry.
+Code: `src/vefr/cli.py` (`_player_items`, the hero block, the shops map)
++ `web/packaged.html` (gold, bag, use, trade); tests:
+`tests/test_builder_weave.py` + `tests/test_combat_loop.py` +
+`tests/fixtures/combat_harness.mjs` + `tests/fixtures/make_combat_pack.py`.
+
+Known gaps (this slice): no haggling or variable prices, no stock or
+shop inventories beyond the catalog, no equipping or effects other than
+healing, no dropping or giving, no currency other than gold, and selling
+always pays exactly `value`. `maplab.validate` does not yet pin the
+reward fields; the bake ignores a `value`/`heal` that is not a positive
+int and a `use` that is blank.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).
