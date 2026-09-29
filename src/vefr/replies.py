@@ -141,3 +141,34 @@ class JustEarned(Reply):
 class EventReply(Reply):
     earned: list[JustEarned]
     total: int
+
+
+# --- /api/builder/commissions (the commission board) -------------------------
+
+class ModuleCard(Reply):
+    id: str
+    name: str
+    resident: str
+    room: str
+    tier: str
+    choosing: str
+    home: str
+    see_how: str
+    offline: str
+
+
+class CommissionCard(ModuleCard):
+    done: bool
+    deferred: bool
+    ask: str
+
+
+class CommissionsReply(Reply):
+    world: str
+    commissions: list[CommissionCard]
+
+
+class DeferReply(Reply):
+    ok: bool
+    module: str
+    deferred: bool

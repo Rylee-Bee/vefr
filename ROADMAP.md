@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **The commission board, first slice** (2026-09-29): the studio-is-a-game
+      loop starts. `src/vefr/commissions.py` is a rules-only module registry
+      (one module, the Cartographer's map-sketches) plus a pack rule (`needs`):
+      a commission is done when the town has a landmark and at least three
+      kinds of ground, and open otherwise with a plain reason - no model call
+      anywhere. `GET /api/builder/commissions` serves the board; defer/resume
+      persist to `data/commissions.json` (gitignored) so "not now" survives a
+      restart, and a done job reads done regardless. The Hall gains a
+      Commissions section: an open card offers the room (`Open the Map Room`)
+      and a real "Not now" button, a finished one a quiet line; tap targets
+      reuse the 44px `.cta`/`.btn` family, status is words not colour, no
+      motion. Reply shapes declared in `replies.py` (`extra="forbid"`). Tests:
+      `tests/test_commissions.py` (registry, the rule on bare vs satisfied temp
+      packs, deferral persistence, all three routes incl. unknown-id 400 and an
+      unreadable pack as an empty board). Guide:
+      `docs/guides/studio-modules.md`. Next: the other modules, the ladder, the
+      spare parts shelf.
 - [x] **chat: a drafted voice can't loop; dedupe at the draft seam**
       (2026-09-26): the WP5 `norns chat` acceptance build left a voice file
       that said the same sentence over and over (`.project/DECISIONS.md`,
