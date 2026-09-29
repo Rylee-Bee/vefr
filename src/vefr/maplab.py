@@ -96,6 +96,7 @@ def load_pack(pack_dir: Path) -> dict:
             regions_geo[rname] = {
                 'map': rrows,
                 'legend': rcontract.get('legend', {}),
+                'enemies': rcontract.get('enemies', []),
             }
         # The town's metadata can live in three places, in priority
         # order: the region's contract.json (new, convention-driven),
@@ -414,7 +415,8 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             rows = [ln for ln in (rdata.get('map_text') or '').splitlines()
                     if ln.strip()]
             region_geo[rname] = {'map': rows,
-                                 'legend': contract.get('legend', {})}
+                                 'legend': contract.get('legend', {}),
+                                 'enemies': contract.get('enemies', [])}
     if not isinstance(region_geo, dict):
         region_geo = {}
     if not region_geo and isinstance(w.get('town'), dict):
@@ -423,6 +425,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         region_geo = {w.get('_region') or 'town': {
             'map': w['town'].get('map', []),
             'legend': w['town'].get('legend', {}),
+            'enemies': w['town'].get('enemies', []),
         }}
 
     def _door_tile_errors(index, field, rname, at):
@@ -468,6 +471,60 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                 f"not a declared region")
         else:
             _door_tile_errors(i, 'to_at', to_name, t['to_at'])
+
+    # The region contracts' enemies: each is a named hazard with a
+    # walkable tile and real numbers. Every declared region is checked
+    # (not just the first); a broken one is named in plain words.
+    for rname, geo in region_geo.items():
+        if not isinstance(geo, dict):
+            continue
+        rows = geo.get('map') or []
+        legend = geo.get('legend') or {}
+        listed = geo.get('enemies')
+        if listed is None:
+            continue
+        if not isinstance(listed, list):
+            errors.append(f"region '{rname}' enemies must be a list")
+            continue
+        seen_ids: set = set()
+        for i, e in enumerate(listed):
+            if not isinstance(e, dict):
+                errors.append(f"region '{rname}' enemy {i} must be an object")
+                continue
+            who = str(e.get('name') or e.get('id') or f'#{i}')
+            eid = e.get('id')
+            if not str(eid or '').strip():
+                errors.append(f"enemy '{who}' in region '{rname}' needs an id")
+            elif eid in seen_ids:
+                errors.append(
+                    f"enemy '{who}' in region '{rname}' repeats the id '{eid}'")
+            else:
+                seen_ids.add(eid)
+            if not str(e.get('name', '')).strip():
+                errors.append(f"enemy '{who}' in region '{rname}' needs a name")
+            at = e.get('at')
+            if (not isinstance(at, (list, tuple)) or len(at) != 2
+                    or not all(isinstance(v, (int, float))
+                               and not isinstance(v, bool) for v in at)):
+                errors.append(
+                    f"enemy '{who}' in region '{rname}' needs a tile [x, y]")
+            else:
+                x, y = int(at[0]), int(at[1])
+                ok = _map_tile_walkable(rows, legend, x, y)
+                if ok is None:
+                    errors.append(
+                        f"enemy '{who}' in region '{rname}' at ({x},{y}) "
+                        f"is off the map")
+                elif not ok:
+                    errors.append(
+                        f"enemy '{who}' in region '{rname}' at ({x},{y}) "
+                        f"stands on a solid tile")
+            for stat in ('hp', 'atk'):
+                v = e.get(stat)
+                if not isinstance(v, int) or isinstance(v, bool) or v <= 0:
+                    errors.append(
+                        f"enemy '{who}' in region '{rname}' needs a "
+                        f"positive {stat}")
 
     # The Library: authored books this pack keeps (library/*.md). Needs the
     # pack on disk; in-memory validation (chat drafts) has no books yet.

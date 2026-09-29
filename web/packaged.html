@@ -263,6 +263,7 @@
         <p class="glass" id="poi" aria-live="polite"></p>
         <p class="glass" id="use-hint" aria-live="polite" hidden></p>
         <p class="glass" id="library-live" role="status" aria-live="polite"></p>
+        <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
@@ -421,6 +422,14 @@ window.VEFR_BOOK_ICONS = {{book_icons_json}};
 // The chest picture: a book with `chest: yes` is opened (used) instead of
 // stepped on, and drawn as a chest on the floor.
 window.VEFR_CHEST_ICON = {{chest_json}};
+// The living hazards, keyed by region. Each is
+// {id, name, at, hp, atk, sprite} (sight only when the contract names
+// it; the player defaults to 6). A region that names none bakes [].
+window.VEFR_ENEMIES = {{enemies_json}};
+// The hero's own numbers and wake point:
+// {"hp": 6, "atk": 2, "wake": {"region": "...", "at": [x, y]}}. Cozy
+// death restores the max and wakes the hero at `wake`.
+window.VEFR_HERO = {{hero_json}};
 
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
@@ -536,6 +545,7 @@ function startPlaySurface() {
 
 function bootstrap() {
   STATE.set({ world: window.VEFR_WORLD, phase: Object.keys(window.VEFR_WORLD.phases)[0] });
+  loadHeroHp();
   applySurface();
   buildPhaseRail();
   bindWhisper();
@@ -793,32 +803,44 @@ function bindMenu() {
 }
 
 // ---- the surface costume (hp bar, encounter prompt, verbs) ----
-// Mirrors src/vefr/combat.py: per-phase HP is positional, clamped,
-// current starts at the phase's value. No tick system here - the
-// number on the bar is the honest state, and it can never drop a
-// player to zero (the no-failure contract holds in the file too).
-var HP_BY_INDEX = [3, 4, 5, 6];
+// The hero's health is real now: `VEFR_HERO.hp` is the max, the
+// current value is carried per world in localStorage
+// (`vefr-hp-<world>`), and the bar shows it honestly. Deterministic:
+// fixed numbers, no randomness, no clock. A drop to zero is Cozy
+// (see setupTown).
+var DEATH_LINE = 'You wake in the temple. You lost nothing that mattered.';
 
-function perPhaseHp() {
-  var world = window.VEFR_WORLD || {};
-  var per = {};
-  Object.keys(world.phases || {}).forEach(function (k, i) {
-    per[k] = HP_BY_INDEX[Math.min(i, HP_BY_INDEX.length - 1)];
-  });
-  return per;
+function heroMax() {
+  var h = window.VEFR_HERO || {};
+  return (typeof h.hp === 'number' && h.hp > 0) ? h.hp : 6;
 }
-
+function heroAtk() {
+  var h = window.VEFR_HERO || {};
+  return (typeof h.atk === 'number' && h.atk > 0) ? h.atk : 2;
+}
+var HERO_HP = heroMax();
+function heroHpKey() {
+  var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+  return 'vefr-hp-' + w;
+}
+function loadHeroHp() {
+  var n = NaN;
+  try { n = parseInt(localStorage.getItem(heroHpKey()), 10); } catch (e) {}
+  var max = heroMax();
+  HERO_HP = (isFinite(n) && n > 0) ? Math.min(n, max) : max;
+  return HERO_HP;
+}
+function saveHeroHp() {
+  try { localStorage.setItem(heroHpKey(), String(HERO_HP)); } catch (e) {}
+}
 function renderHp() {
   var fill = document.getElementById('hud-hp-fill');
   var value = document.getElementById('hud-hp-value');
   if (!fill || !value) return;
-  var per = perPhaseHp();
-  var vals = Object.keys(per).map(function (k) { return per[k]; });
-  var max = vals.length ? Math.max.apply(null, vals) : 0;
-  var cur = per[STATE.get().phase] != null ? per[STATE.get().phase] : 0;
-  var pct = max > 0 ? Math.round((cur / max) * 100) : 0;
+  var max = heroMax();
+  var pct = max > 0 ? Math.round((HERO_HP / max) * 100) : 0;
   fill.style.width = pct + '%';
-  value.textContent = cur + '/' + max;
+  value.textContent = HERO_HP + '/' + max;
 }
 
 function renderEncounter() {
@@ -877,6 +899,14 @@ function renderCombatLog(log) {
   el.textContent = 'last action: ' + last.verb + ' (' + last.phase + ')';
 }
 
+// The combat line: one plain sentence for the eye and the screen
+// reader. A hit is said, never shown by colour alone. It rides the
+// same aria-live idiom as #library-live.
+function combatSay(msg) {
+  var el = document.getElementById('combat-live');
+  if (el) el.textContent = msg || '';
+}
+
 // ---- phase rail ----
 function buildPhaseRail() {
   var rail = document.getElementById('phase');
@@ -890,8 +920,8 @@ function buildPhaseRail() {
       rail.querySelectorAll('button').forEach(function (x) {
         x.setAttribute('aria-pressed', x.dataset.phase === k ? 'true' : 'false');
       });
-      // A new tone moves the costume too: per-phase HP and the
-      // encounter prompt follow the phase, same as the live app.
+      // A new tone moves the encounter prompt; the health line is
+      // the hero's own and does not follow the phase.
       renderHp();
       renderEncounter();
     });
@@ -1202,6 +1232,144 @@ function setupTown() {
     return out;
   }
 
+  // ---- the living hazards ----
+  // Each region's enemies ride in baked (`window.VEFR_ENEMIES`, one
+  // list per region). A slain enemy is remembered per region, per
+  // world, so a cleared room stays cleared; a wounded one resets on
+  // reload. Combat is deterministic: fixed numbers, no randomness, no
+  // clock. Enemy sight is Manhattan distance.
+  var enemiesByRegion = window.VEFR_ENEMIES || {};
+  var enemies = [];
+
+  function slainKey() {
+    var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+    return 'vefr-slain-' + w + '-' + regionName;
+  }
+  function loadSlain() {
+    try {
+      var a = JSON.parse(localStorage.getItem(slainKey()) || '[]');
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+  function saveSlain() {
+    var dead = enemies.filter(function (e) { return !e.alive; })
+      .map(function (e) { return e.id; });
+    try { localStorage.setItem(slainKey(), JSON.stringify(dead)); } catch (e) {}
+  }
+  function loadEnemies() {
+    var dead = loadSlain();
+    var list = enemiesByRegion[regionName] || [];
+    enemies = list.map(function (e) {
+      return {
+        id: e.id, name: e.name, sprite: e.sprite || '',
+        at: Array.isArray(e.at) ? e.at.slice() : [0, 0],
+        hp: (typeof e.hp === 'number') ? e.hp : 1,
+        atk: (typeof e.atk === 'number') ? e.atk : 1,
+        sight: (typeof e.sight === 'number') ? e.sight : 6,
+        alive: dead.indexOf(e.id) === -1
+      };
+    });
+  }
+  function enemyAt(x, y) {
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (e && e.alive && e.at[0] === x && e.at[1] === y) return e;
+    }
+    return null;
+  }
+  function tileOpenForEnemy(x, y) {
+    if (y < 0 || x < 0 || y >= town.map.length || x >= town.map[0].length) return false;
+    if ((town.legend[town.map[y][x]] || {}).solid) return false;
+    if (x === hero[0] && y === hero[1]) return false;
+    return !enemyAt(x, y);
+  }
+  function manhattan(x1, y1, x2, y2) {
+    return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+  }
+  // A hero bump: strike the enemy on the tile you tried to walk into.
+  function heroAttack(e) {
+    var dmg = heroAtk();
+    e.hp = Math.max(0, e.hp - dmg);
+    if (e.hp <= 0) {
+      e.alive = false;
+      saveSlain();
+      combatSay('You hit ' + e.name + ' for ' + dmg + '. ' + e.name + ' falls.');
+    } else {
+      combatSay('You hit ' + e.name + ' for ' + dmg + '.');
+    }
+    combatSnapshot();
+  }
+  // One enemy's attack: the hero loses its `atk`, clamped at zero.
+  function enemyAttack(e) {
+    HERO_HP = Math.max(0, HERO_HP - e.atk);
+    saveHeroHp();
+    renderHp();
+    combatSay(e.name + ' hits you for ' + e.atk + '.');
+    if (HERO_HP <= 0) { cozyDeath(); return true; }
+    return false;
+  }
+  // One enemy's turn. Adjacent -> attack. In sight -> step one tile
+  // toward the hero (the larger axis first; the other if blocked).
+  // Else it holds still.
+  function enemyAct(e) {
+    var d = manhattan(e.at[0], e.at[1], hero[0], hero[1]);
+    if (d === 1) return enemyAttack(e);
+    if (d > e.sight) return false;
+    var steps;
+    if (Math.abs(hero[0] - e.at[0]) >= Math.abs(hero[1] - e.at[1])) {
+      steps = [[Math.sign(hero[0] - e.at[0]), 0], [0, Math.sign(hero[1] - e.at[1])]];
+    } else {
+      steps = [[0, Math.sign(hero[1] - e.at[1])], [Math.sign(hero[0] - e.at[0]), 0]];
+    }
+    for (var i = 0; i < steps.length; i++) {
+      var nx = e.at[0] + steps[i][0], ny = e.at[1] + steps[i][1];
+      if (nx === hero[0] && ny === hero[1]) return enemyAttack(e);
+      if (tileOpenForEnemy(nx, ny)) { e.at = [nx, ny]; return false; }
+    }
+    return false;
+  }
+  // Every living enemy acts once, in order. The hero's death ends the
+  // turn early (and wakes them elsewhere).
+  function enemyTurn() {
+    var roster = enemies.slice();
+    for (var i = 0; i < roster.length; i++) {
+      if (!roster[i].alive) continue;
+      if (enemyAct(roster[i])) { draw(); combatSnapshot(); return; }
+    }
+    draw();
+    combatSnapshot();
+  }
+  // Death is Cozy: health back to max, one plain line, and a wake at
+  // the hero's baked wake point. Nothing is lost.
+  function cozyDeath() {
+    combatSay(DEATH_LINE);
+    HERO_HP = heroMax();
+    saveHeroHp();
+    renderHp();
+    var wake = (window.VEFR_HERO && window.VEFR_HERO.wake) || {};
+    if (wake.region && regions[wake.region]) {
+      enterRegion(wake.region, wake.at);
+    } else {
+      hero = (town.hero_start || [1, 1]).slice();
+      loadEnemies();
+      draw();
+    }
+    combatSnapshot();
+  }
+  // A harness-readable snapshot of the fight, refreshed every turn
+  // (precedent: window.VEFR_DESK_LAST).
+  function combatSnapshot() {
+    window.VEFR_COMBAT = {
+      region: regionName,
+      hero: { hp: HERO_HP, max: heroMax(), atk: heroAtk(), at: hero.slice() },
+      enemies: enemies.map(function (e) {
+        return { id: e.id, at: e.at.slice(), hp: e.hp, atk: e.atk,
+                 sight: e.sight, alive: e.alive };
+      })
+    };
+    return window.VEFR_COMBAT;
+  }
+
   // ---- the camera ----
   // A map smaller than the screen is scaled to fit and centred. A bigger
   // map scrolls with the hero at a readable size, so a large floor (or a
@@ -1472,6 +1640,27 @@ function setupTown() {
       ctx.fill();
     });
 
+    // The living hazards: their own sprite when the pack names one,
+    // else the same body-and-head figure as a speaker, in a hostile
+    // colour. A slain enemy is never drawn; fog hides the unseen.
+    enemies.forEach(function (e) {
+      if (!e || !e.alive || !Array.isArray(e.at)) return;
+      if (hideUnseen(e.at[0], e.at[1])) return;
+      if (e.sprite && spriteReady(e.sprite)) {
+        drawSprite(e.sprite, e.at[0], e.at[1]);
+        return;
+      }
+      var ex = e.at[0] * T, ey = e.at[1] * T;
+      ctx.fillStyle = '#8a3b34';
+      ctx.beginPath();
+      ctx.arc(ex + 16 * u, ey + 21 * u, 6 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#d9c3bd';
+      ctx.beginPath();
+      ctx.arc(ex + 16 * u, ey + 11 * u, 4 * u, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
     // The hero: their own sprite when the pack names one, else the dot.
     if (spriteReady('hero')) {
       drawSprite('hero', hero[0], hero[1]);
@@ -1521,6 +1710,8 @@ function setupTown() {
     loadTiles();
     loadFog();
     seeNow();
+    loadEnemies();
+    combatSnapshot();
     resize();
     draw();
     refreshPoi();
@@ -1576,14 +1767,22 @@ function setupTown() {
   function move(dx, dy) {
     var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
+    // Bump to attack: a living enemy on the destination tile is struck
+    // instead of walked into. Either way the enemies take their turn.
+    var target = enemyAt(nx, ny);
+    if (target) {
+      heroAttack(target);
+      enemyTurn();
+      return;
+    }
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
     hero = [nx, ny];
-    draw();
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny, regionName);
     seeNow();
     updateUse();
+    enemyTurn();
   }
 
   function tryNPC() {
@@ -1708,6 +1907,10 @@ function setupTown() {
   });
   loadFog();
   seeNow();
+  loadHeroHp();
+  renderHp();
+  loadEnemies();
+  combatSnapshot();
   resize();
   draw();
   updateUse();
@@ -1746,7 +1949,7 @@ function initKitchen() {
   document.querySelectorAll(
     '#phase, #play > section.controls, #feed, #hud-hp, #encounter-prompt,'
     + ' #town-canvas, #near, #poi, #dpad, #npc-box, #verb-row, #combat-log,'
-    + ' #play > h2, #play > p.status'
+    + ' #combat-live, #play > h2, #play > p.status'
   ).forEach(function (el) { el.hidden = true; });
   document.getElementById('kitchen').hidden = false;
   document.getElementById('k-open').textContent =
@@ -1976,7 +2179,7 @@ function initDesk() {
   document.querySelectorAll(
     '#phase, #play > section.controls, #feed, #hud-hp, #encounter-prompt,'
     + ' #town-canvas, #near, #poi, #dpad, #npc-box, #verb-row, #combat-log,'
-    + ' #play > h2, #play > p.status'
+    + ' #combat-live, #play > h2, #play > p.status'
   ).forEach(function (el) { el.hidden = true; });
   document.getElementById('desk').hidden = false;
   document.getElementById('d-open').textContent =

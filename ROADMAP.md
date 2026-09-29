@@ -7,6 +7,30 @@
 
 ## Landed
 
+- [x] **Combat, first slice — bump to fight, and monsters that come for you**
+      (2026-09-30): the dungeon had floors, fog, doors, stairs, books and a
+      chest - and nothing to fight. A region's `contract.json` may now carry
+      `enemies` (`{id, name, at, hp, atk, sprite, sight?}`; `sight` defaults
+      to 6, Manhattan), and `world.json`'s `player` block gains optional
+      `hp`/`atk` (default 6/2) and a `wake` point (default: the act's first
+      region at its `hero_start`; a wake that names no real region is dropped,
+      one on a missing or solid tile falls back to the region's start). The
+      woven player bakes both (`VEFR_ENEMIES` per region, `VEFR_HERO`) and
+      runs a turn-based, deterministic fight: walking into a living enemy
+      bumps to attack for `hero.atk`; after every successful move each living
+      enemy acts once - adjacent it strikes for its `atk`, else within
+      `sight` it steps one tile toward the hero (larger axis first, never
+      onto a solid tile, another enemy, or the hero), else it holds. A killed
+      enemy is remembered per region, per world
+      (`vefr-slain-<world>-<region>`) so a cleared room stays cleared. Zero
+      hp is Cozy death: hp restored, one plain line, wake at `wake`; nothing
+      is lost. The HUD health line now shows the hero's real `hp/max`
+      (replacing the per-phase costume) and an `aria-live` line speaks each
+      hit. Zero deps, no randomness, no clock, no model call. Gap: no
+      items/loot, no fleeing, no rooms-and-corridors AI, classic death later.
+      Guide: `docs/guides/rulesets.md` → combat. Tests:
+      `tests/test_combat_loop.py`, `tests/test_transitions.py`,
+      `tests/test_builder_weave.py`.
 - [x] **Fog of war, for regions that ask for it** (2026-09-29): a region may
       declare `fog` (true, or `{"radius": N}`); the woven player then draws
       only what the hero has seen - a lit circle around them, walked ground

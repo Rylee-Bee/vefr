@@ -43,6 +43,9 @@ Most of VEFR is deterministic on purpose: the map, the log, the saved
 things. The runes are the one place chance lives. The story's big shape
 is fixed; the cast is the surprise inside the shape.
 
+Fighting works the same way: turn by turn, with fixed numbers. The
+only surprise is what each side chooses to do.
+
 * * *
 
 **Try it.** Go to the Casting Table and cast. Cast again straight away:
