@@ -26,13 +26,30 @@ CELLAR_MAP = [
 ]
 
 # One enemy stands next to the hero's start (bump to attack); the other
-# waits across the room inside its sight (it walks in).
+# waits across the room inside its sight (it walks in). The rat carries
+# a drop; the pale thing does not.
 TOWN_ENEMIES = [
     {"id": "cellar-rat", "name": "a cellar rat", "at": [2, 1],
-     "hp": 4, "atk": 1, "sprite": "rat"},
+     "hp": 4, "atk": 1, "sprite": "rat", "drops": ["cloudy-potion"]},
     {"id": "pale-thing", "name": "a pale thing", "at": [7, 1],
      "hp": 4, "atk": 2, "sight": 6},
 ]
+
+# The item catalog: what a drop names and what the bag shows. Both have a
+# sprite so the marker and the bag draw a picture, not a dot.
+ITEMS = {
+    "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"},
+    "brass-ring": {"name": "a plain brass ring", "sprite": "ring"},
+}
+
+# A chest book at [1, 2], below the hero's start, holding a note and two
+# items. A chest is used, not stepped on, so it never interrupts the walk
+# to the fight.
+CHEST_BOOK = (
+    "---\ntitle: A Cellar Cache\nfound: map\nat: [1, 2]\n"
+    "chest: yes\ndrops: cloudy-potion, brass-ring\nkind: note\n---\n"
+    "A note left for whoever came down.\n"
+)
 
 # A 1x1 transparent PNG - enough for the bake to inline a sprite.
 _PNG = base64.b64decode(
@@ -70,17 +87,23 @@ def build(dest: Path) -> Path:
     shutil.copytree(SAMPLE, pack)
 
     # Engine-test canon only: the sample's books lie on the sample's own
-    # map, so they are not the fixture's.
+    # map, so they are not the fixture's. The fixture's own chest holds
+    # the note and the items its `drops` names.
     lib = pack / "library"
     if lib.exists():
         shutil.rmtree(lib)
+    lib.mkdir()
+    (lib / "cellar-cache.md").write_text(CHEST_BOOK, encoding="utf-8")
 
-    # The hero's numbers, its picture for the rat, and the wake point.
+    # The hero's numbers, its pictures, and the wake point.
     world_json = pack / "world.json"
     world = json.loads(world_json.read_text(encoding="utf-8"))
+    world["items"] = ITEMS
     world["player"] = {
         "hp": 3, "atk": 2,
-        "sprites": {"rat": "sprites/rat.png"},
+        "sprites": {"rat": "sprites/rat.png",
+                    "potion": "sprites/potion.png",
+                    "ring": "sprites/ring.png"},
         "wake": {"region": "town", "at": [1, 1]},
     }
     world_json.write_text(json.dumps(world), encoding="utf-8")
@@ -100,6 +123,8 @@ def build(dest: Path) -> Path:
     sprites = pack / "sprites"
     sprites.mkdir(exist_ok=True)
     (sprites / "rat.png").write_bytes(_PNG)
+    (sprites / "potion.png").write_bytes(_PNG)
+    (sprites / "ring.png").write_bytes(_PNG)
     return pack
 
 

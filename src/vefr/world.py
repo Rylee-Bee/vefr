@@ -110,6 +110,18 @@ PACK LAW (per act): every act may declare how it plays -
 All of these are optional; absent means the engine's defaults, so
 every existing pack loads unchanged.
 
+ITEMS / LOOT (first slice): world.json may carry an optional top-level
+  `items` catalog, keyed by id:
+      {"cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"}}
+  `name` is plain words; `sprite` names an entry in `player.sprites` and
+  is optional. A region enemy may carry `drops` (a list of catalog ids),
+  and a chest book (`chest: yes`) may carry `drops:` (a comma-separated
+  list of catalog ids in its front matter). A killed enemy leaves its
+  drop on the floor it died on; walking onto a drop takes it into the
+  bag (`localStorage['vefr-bag-<world>']`). The woven player bakes the
+  catalog (`VEFR_ITEMS`) and each drop. Nothing is used, sold or
+  identified yet.
+
 STEFNA / BELL VOICE: a pack may declare an optional top-level
 `stefna_voice` (string naming which speaker writes the sealed letter;
 absent means "the pack's first declared voice"). Every voice declared

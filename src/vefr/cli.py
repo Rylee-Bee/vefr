@@ -961,6 +961,54 @@ def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     return out
 
 
+def _player_items(world: dict) -> dict[str, dict]:
+    """The pack's item catalog, keyed by id.
+
+    A pack's `items` maps an id to `{"name", "sprite"}`: the words the
+    bag shows and the picture it draws (`sprite` names an entry in
+    `player.sprites`). An entry with no id or no name is dropped, and a
+    drop that names a missing item is dropped from what is baked, so the
+    player never meets a thing the world cannot describe. `sprite` is
+    optional; with none the marker falls back to a plain dot.
+    """
+    listed = world.get('items')
+    if not isinstance(listed, dict):
+        return {}
+    out: dict[str, dict] = {}
+    for iid, spec in listed.items():
+        key = str(iid).strip()
+        if not key or not isinstance(spec, dict):
+            continue
+        name = str(spec.get('name', '')).strip()
+        if not name:
+            continue
+        sprite = spec.get('sprite')
+        out[key] = {'name': name,
+                    'sprite': sprite if isinstance(sprite, str) else ''}
+    return out
+
+
+def _drop_ids(value, items: set) -> list[str]:
+    """The ids a `drops` value names, filtered to the catalog.
+
+    A region enemy's `drops` is a list; a chest book's is a comma-
+    separated string in its front matter. Both are read here so a drop
+    is kept only when the item exists, in the order written, once each.
+    """
+    if isinstance(value, str):
+        parts = value.split(',')
+    elif isinstance(value, list):
+        parts = value
+    else:
+        return []
+    out: list[str] = []
+    for part in parts:
+        pid = str(part).strip()
+        if pid and pid in items and pid not in out:
+            out.append(pid)
+    return out
+
+
 def _player_chest(web_dir: Path) -> str:
     """The chest picture, inlined.
 
@@ -1044,6 +1092,10 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         if loaded.get('acts'):
             world['acts'] = loaded['acts']
             world.setdefault('_current_act', 0)
+    # The pack's item catalog: the bag shows a name and draws a sprite;
+    # a drop that names a missing item is dropped from what is baked.
+    items = _player_items(world)
+    item_ids = set(items)
     title = world.get('title', pack.name)
     logbok = (pack / 'logbok.md').read_text(encoding='utf-8') if (pack / 'logbok.md').exists() else ''
     ledger = (pack / 'ledger.md').read_text(encoding='utf-8') if (pack / 'ledger.md').exists() else ''
@@ -1071,6 +1123,10 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         # `chest: yes` in a book's front matter puts it in a chest: the
         # player opens the chest rather than stepping on the book.
         entry['chest'] = str(extra.get('chest', '')).strip().lower() in ('yes', 'true', '1')
+        # A chest may also hold items: `drops` is a comma-separated list
+        # of catalog ids in the front matter, read from `extra` like
+        # `chest`. Ids the catalog does not name are dropped.
+        entry['drops'] = _drop_ids(extra.get('drops', ''), item_ids)
         entry['found_words'] = found_words(b)
         books.append(entry)
 
@@ -1151,6 +1207,7 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                     'hp': e.get('hp'),
                     'atk': e.get('atk'),
                     'sprite': e.get('sprite', ''),
+                    'drops': _drop_ids(e.get('drops', []), item_ids),
                 }
                 if 'sight' in e:
                     entry['sight'] = e.get('sight')
@@ -1233,6 +1290,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
+    out_html = out_html.replace('{{items_json}}',
+                                _json.dumps(items, ensure_ascii=False))
     out_html = out_html.replace('{{door_json}}',
                                 _json.dumps(_player_door(template_path.parent)))
     out_html = out_html.replace('{{chest_json}}',

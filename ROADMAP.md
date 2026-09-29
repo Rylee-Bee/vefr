@@ -7,6 +7,26 @@
 
 ## Landed
 
+- [x] **Loot, first slice — drops and a simple bag** (2026-09-30): killing
+      something gave only survival. A world's `world.json` may now carry an
+      optional `items` catalog (`{"<id>": {"name": "...", "sprite": "..."}}`;
+      `sprite` names an entry in `player.sprites`, optional), a region's
+      enemy may carry `drops` (a list of catalog ids), and a chest book
+      (`chest: yes`) may carry `drops:` (a comma-separated id list in its
+      front matter). The woven player bakes `VEFR_ITEMS` (an id with no name
+      is dropped, and a drop naming a missing item is dropped too) and a
+      `drops` list on each enemy and book. A killed enemy leaves its drops on
+      the tile it died on as a small marker (sprite, else a dot); fog rules
+      apply. Walking onto a drop takes it: it leaves the floor, one plain
+      line says so, and a small sprite appears in the HUD. The floor persists
+      per world (`vefr-floor-<world>`). The pause menu gains a Bag panel
+      (next to Journal and Books) listing what is carried, one row per thing
+      (`localStorage['vefr-bag-<world>']`, a list, so a duplicate id is a
+      second copy); opening a chest still gives its note and also its items.
+      Zero deps, deterministic, no model call. Gap: no weight, no using, no
+      dropping, no selling, no identifying. Guide: `docs/guides/rulesets.md`
+      → loot. Tests: `tests/test_builder_weave.py`,
+      `tests/test_combat_loop.py`.
 - [x] **Combat, first slice — bump to fight, and monsters that come for you**
       (2026-09-30): the dungeon had floors, fog, doors, stairs, books and a
       chest - and nothing to fight. A region's `contract.json` may now carry

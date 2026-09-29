@@ -71,23 +71,55 @@ try {
   log.push(['said-bump1', sayLine()]);
   log.push(['hp-line1', hpLine()]);
 
-  // 2. Bump again: the rat falls; its id is remembered as slain.
+  // 2. Bump again: the rat falls; its id is remembered as slain, and
+  //    its drop is left on the tile it died on.
   press('right');
   s = snap();
   log.push(['after-bump2', s]);
   log.push(['said-bump2', sayLine()]);
   log.push(['slain-after-kill',
     window.localStorage.getItem('vefr-slain-combat-test-town')]);
+  log.push(['floor-after-kill', s.floor]);
+  log.push(['bag-after-kill', s.bag]);
 
-  // 3. Walk toward the pale thing while it walks in. It is adjacent at
-  //    [4,1] by the time the hero reaches [3,1], and one blow of 2
-  //    empties a 2-hp hero: Cozy death, restored and woken whole.
+  // 3. Step onto the drop: it is taken, leaves the floor, and the bag
+  //    holds it. The pale thing keeps walking in.
   press('right');
+  s = snap();
+  log.push(['after-take', s]);
+  log.push(['said-take', sayLine()]);
+  log.push(['bag-after-take', s.bag]);
+  log.push(['floor-after-take', s.floor]);
+  log.push(['strip-hidden-after-take',
+    document.getElementById('bag-strip').hidden]);
+  log.push(['strip-count-after-take',
+    document.getElementById('bag-strip').children.length]);
+
+  // 4. Walk into the pale thing. It is adjacent now and one blow of 2
+  //    empties a 2-hp hero: Cozy death, restored and woken whole.
   press('right');
   s = snap();
   log.push(['after-death', s]);
   log.push(['said-death', sayLine()]);
   log.push(['hp-line-death', hpLine()]);
+
+  // 5. A chest at [1, 2] holds a note and two items. Step onto it and
+  //    use it: the note opens and the items join the bag (the potion a
+  //    second time - two potions are two potions).
+  press('down');
+  document.getElementById('interact').click();
+  s = snap();
+  log.push(['after-chest', s]);
+  log.push(['said-chest', sayLine()]);
+  log.push(['bag-after-chest', s.bag]);
+  log.push(['floor-after-chest', s.floor]);
+  log.push(['reader-title', document.getElementById('reader-title').textContent]);
+  // The Bag panel (pause menu) lists one row per carried thing.
+  document.getElementById('menu-open').click();
+  document.querySelector('[data-panel="bag"]').click();
+  log.push(['bag-panel-rows',
+    document.getElementById('bag-list').querySelectorAll('.bag-row').length]);
+  log.push(['bag-panel-count', document.getElementById('bag-count').textContent]);
 } catch (e) {
   log.push(['HARNESS-ERROR', String((e && e.message) || e)]);
 }

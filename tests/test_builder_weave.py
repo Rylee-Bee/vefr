@@ -192,7 +192,8 @@ def test_woven_file_bakes_the_packs_books():
     assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger", "writing-a-book"}
     for b in books:
         assert list(b) == ["id", "title", "kind", "found", "at", "speaker",
-                           "when", "pages", "region", "chest", "found_words"]
+                           "when", "pages", "region", "chest", "drops",
+                           "found_words"]
         assert b["title"] and b["pages"] and b["found_words"]
     note = by_id["a-note-by-the-path"]
     assert note["found"] == "map" and note["at"] == [2, 2]
@@ -371,7 +372,7 @@ def test_the_woven_file_bakes_enemies_per_region(tmp_path):
     assert enemies["cottage"] == []
     assert enemies["town"] == [
         {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 4, "atk": 1,
-         "sprite": "rat", "sight": 5},
+         "sprite": "rat", "sight": 5, "drops": []},
     ]
 
 
@@ -434,4 +435,64 @@ def test_a_wake_point_that_is_not_real_falls_back(tmp_path):
     # A solid tile: the region's own hero_start stands.
     assert with_player("solid-tile", {"wake": {"region": "town", "at": [0, 0]}})[
         "wake"] == {"region": "town", "at": [1, 1]}
+
+
+def _with_items(pack, items):
+    import json as _json
+
+    cfg = _json.loads((pack / "world.json").read_text(encoding="utf-8"))
+    cfg["items"] = items
+    (pack / "world.json").write_text(_json.dumps(cfg), encoding="utf-8")
+    return pack
+
+
+def test_the_woven_file_bakes_the_item_catalog(tmp_path):
+    """`world.items` rides in as {id: {name, sprite}}; blanks are dropped."""
+    pack = _with_items(_two_region_pack(tmp_path), {
+        "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"},
+        "brass-ring": {"name": "a plain brass ring"},
+        "no-name": {"sprite": "x"},
+        "": {"name": "nameless"},
+    })
+    assert _baked(cli.weave_html(pack), "VEFR_ITEMS") == {
+        "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"},
+        "brass-ring": {"name": "a plain brass ring", "sprite": ""},
+    }
+    # A pack with no catalog bakes {} (never a missing global).
+    bare = _two_region_pack(tmp_path / "bare")
+    assert _baked(cli.weave_html(bare), "VEFR_ITEMS") == {}
+
+
+def test_an_enemys_drops_carry_only_known_items(tmp_path):
+    """A drop that names no catalog id is dropped from what is baked."""
+    import json as _json
+
+    pack = _with_items(_two_region_pack(tmp_path),
+                       {"cloudy-potion": {"name": "a cloudy potion"}})
+    town = pack / "acts" / "act-1" / "town" / "contract.json"
+    cfg = _json.loads(town.read_text(encoding="utf-8"))
+    cfg["enemies"] = [
+        {"id": "a-rat", "name": "a rat", "at": [2, 2], "hp": 4, "atk": 1,
+         "drops": ["cloudy-potion", "no-such-item", "cloudy-potion"]},
+    ]
+    town.write_text(_json.dumps(cfg), encoding="utf-8")
+    enemy = _baked(cli.weave_html(pack), "VEFR_ENEMIES")["town"][0]
+    assert enemy["drops"] == ["cloudy-potion"]
+
+
+def test_a_chest_book_bakes_its_drops(tmp_path):
+    """`drops:` in a chest's front matter bakes its known item ids."""
+    pack = _with_items(_two_region_pack(tmp_path), {
+        "cloudy-potion": {"name": "a cloudy potion"},
+        "brass-ring": {"name": "a plain brass ring"},
+    })
+    lib = pack / "library"
+    lib.mkdir(exist_ok=True)
+    (lib / "in-a-chest.md").write_text(
+        "---\ntitle: In a Chest\nfound: map\nat: [1, 1]\nchest: yes\n"
+        "drops: cloudy-potion, no-such-item, brass-ring\nkind: note\n---\nwords\n",
+        encoding="utf-8")
+    books = {b["id"]: b for b in _baked(cli.weave_html(pack), "VEFR_LIBRARY")}
+    assert books["in-a-chest"]["chest"] is True
+    assert books["in-a-chest"]["drops"] == ["cloudy-potion", "brass-ring"]
 
