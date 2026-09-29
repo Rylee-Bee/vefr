@@ -93,7 +93,9 @@ def test_a_killed_enemy_stays_dead(fight):
     rat = _by_id(after)["cellar-rat"]
     assert rat["alive"] is False and rat["hp"] == 0
     assert "a cellar rat falls." in log["said-bump2"]
-    assert json.loads(log["slain-after-kill"]) == ["cellar-rat"]
+    slain = json.loads(log["slain-after-kill"])
+    assert len(slain) == 1
+    assert slain[0].startswith("cellar-rat#")  # id + the monster's signature
 
 
 def test_an_enemy_in_sight_steps_toward_the_hero(fight):
