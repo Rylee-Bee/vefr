@@ -130,6 +130,8 @@ def test_a_speaker_in_another_region_is_not_checked_against_the_town(tmp_path):
                  "seeds": {"dusk": "a", "dawn": "b"}},
     }
     pack = _make_pack(tmp_path, speakers=speakers)
+    (pack / "voices").mkdir(exist_ok=True)
+    (pack / "voices" / "cook.md").write_text("You are the cook.\n", encoding="utf-8")
     assert _errors(pack) == []
 
 

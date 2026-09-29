@@ -110,16 +110,9 @@ def load_pack(pack_dir: Path) -> dict:
         # whatever the contract holds.
         if not map_lines:
             map_lines = merged.get('map', [])
-        # The validator checks speakers against the unified `town` (the
-        # first region). A speaker that belongs to another region lives
-        # on that region's map, so it is not checked here - its own
-        # region's geometry is a follow-on (see the ROADMAP entry).
+        # Every speaker is carried: a book's giver may live in any region.
+        # The geometry check below looks only at the first region's own.
         all_speakers = act.get('speakers', {})
-        town_speakers = {
-            key: spec for key, spec in all_speakers.items()
-            if (spec.get('region', region_name) if isinstance(spec, dict) else region_name)
-            == region_name
-        }
         return {
             'name': pack.name,
             'title': config.get('title', act.get('title', pack.name)),
@@ -128,7 +121,7 @@ def load_pack(pack_dir: Path) -> dict:
             'phases': config['phases'],
             'voices': config.get('voices', {}),
             'bonds': config.get('bonds', {}),
-            'speakers': town_speakers,
+            'speakers': all_speakers,
             'surface': config.get('surface', 'combat'),
             'town': {
                 'map': map_lines,
@@ -253,7 +246,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             if m[y][x] in ('d', 'D') and (x, y) not in seen:
                 errors.append(f'door at ({x},{y}) is unreachable')
 
+    first_region = w.get('_region')
     for s in w.get('speakers', {}).values():
+        if first_region and s.get('region', first_region) != first_region:
+            continue   # a speaker of another region is checked on that map
         at = tuple(s['at'])
         if not walkable(w, *at):
             errors.append(f'speaker {s["name"]} stands on solid ground at {at}')
