@@ -47,6 +47,36 @@ def test_woven_file_inlines_the_legend_tiles(woven):
     assert all(v.startswith("data:image/webp;base64,") for v in tiles.values())
 
 
+def _baked_library(html):
+    """The JSON on the woven file's single `window.VEFR_LIBRARY = ...;` line."""
+    import json as _json
+
+    prefix = "window.VEFR_LIBRARY = "
+    line = next(ln for ln in html.splitlines() if ln.startswith(prefix))
+    return _json.loads(line[len(prefix):].rstrip(";"))
+
+
+def test_woven_file_bakes_the_packs_books():
+    """The sample pack's books ride into the file in the reader's shape."""
+    pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
+    books = _baked_library(cli.weave_html(pack))
+    by_id = {b["id"]: b for b in books}
+    assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger", "writing-a-book"}
+    for b in books:
+        assert list(b) == ["id", "title", "kind", "found", "at",
+                           "speaker", "when", "pages", "found_words"]
+        assert b["title"] and b["pages"] and b["found_words"]
+    note = by_id["a-note-by-the-path"]
+    assert note["found"] == "map" and note["at"] == [2, 2]
+    assert "2, 2" in note["found_words"]
+    assert by_id["the-keepers-ledger"]["speaker"] == "keeper"
+
+
+def test_woven_file_without_a_library_bakes_an_empty_list(woven):
+    """A pack with no library/ folder bakes [] (never a missing global)."""
+    assert _baked_library(cli.weave_html(woven)) == []
+
+
 def test_weave_returns_metadata_and_a_real_download(woven):
     client = TestClient(app)
     r = client.post("/api/builder/weave", json={})
