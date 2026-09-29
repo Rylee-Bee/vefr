@@ -407,6 +407,9 @@ window.VEFR_SPEAKERS = {{speakers_json}};
 // The door picture: drawn at each transition tile so a way out is not an
 // invisible hole in the floor. Empty when the engine has no door art.
 window.VEFR_DOOR = {{door_json}};
+// Book markers ('map', 'resident'): drawn where a book you have not found
+// can be found, so a book is not invisible.
+window.VEFR_BOOK_ICONS = {{book_icons_json}};
 
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
@@ -587,10 +590,12 @@ function foundBook(book, how, open) {
   if (open !== false) openReader(book);
 }
 
-// Map books: grant when the hero stands on the named tile.
-function libraryOnTile(x, y) {
+// Map books: grant when the hero stands on the named tile, on the map
+// the book names (a room's book lies in that room, not the town).
+function libraryOnTile(x, y, region) {
   libraryBooks().forEach(function (b) {
     if (!b || b.found !== 'map' || !Array.isArray(b.at)) return;
+    if ((b.region || 'town') !== region) return;
     if (b.at[0] === x && b.at[1] === y && !bookIsFound(b.id)) foundBook(b, 'map');
   });
 }
@@ -1219,6 +1224,22 @@ function setupTown() {
     return doorImg && doorImg.complete && doorImg.naturalWidth > 0;
   }
 
+  // The book markers, preloaded like the rest. A book with no marker is
+  // invisible: a map book is a tile you step on, a gifted one is a line
+  // of text. Draw where one can still be found.
+  var bookIconSrc = window.VEFR_BOOK_ICONS || {};
+  var bookIconImgs = {};
+  Object.keys(bookIconSrc).forEach(function (kind) {
+    var im = new Image();
+    im.onload = function () { draw(); };
+    im.src = bookIconSrc[kind];
+    bookIconImgs[kind] = im;
+  });
+  function bookIconReady(kind) {
+    var im = bookIconImgs[kind];
+    return im && im.complete && im.naturalWidth > 0;
+  }
+
   function spriteReady(key) {
     var im = spriteImgs[key];
     return im && im.complete && im.naturalWidth > 0;
@@ -1291,6 +1312,22 @@ function setupTown() {
         }
       });
     }
+    // Books you have not found yet: a marker where one can still be found
+    // (a map book on its tile, a gifted one on the person who gives it).
+    (window.VEFR_LIBRARY || []).forEach(function (b) {
+      if (!b || bookIsFound(b.id)) return;
+      var at = null;
+      if (b.found === 'map') {
+        if ((b.region || 'town') !== regionName) return;  // lies on another map
+        if (Array.isArray(b.at)) at = b.at;
+      } else if (b.found === 'resident') {
+        if (!b.speaker || !speakers[b.speaker]) return;   // giver not in this room
+        at = speakers[b.speaker].at;
+      }
+      if (!at || !bookIconReady(b.found)) return;
+      ctx.drawImage(bookIconImgs[b.found], at[0] * T + T * 0.12, at[1] * T + T * 0.12,
+                    T * 0.76, T * 0.76);
+    });
     // The people: their own sprite when the pack names one, else the
     // drawn figure (a body and a head), so you can see who is here.
     Object.keys(speakers || {}).forEach(function (key) {
@@ -1382,7 +1419,7 @@ function setupTown() {
     draw();
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
-    libraryOnTile(nx, ny);
+    libraryOnTile(nx, ny, regionName);
   }
 
   function tryNPC() {
