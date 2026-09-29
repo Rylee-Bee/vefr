@@ -101,7 +101,7 @@
 
   /* ---- the game view ---- */
   .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
-  #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; }
+  #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .hud--tl { left: 12px; }
   .hud--tr { right: 12px; justify-content: flex-end; max-width: 60%; }
@@ -1114,8 +1114,6 @@ function setupTown() {
   var world = window.VEFR_WORLD;
   var town = world.town;
   var canvas = document.getElementById('town-canvas');
-  canvas.width = town.map[0].length * town.tile;
-  canvas.height = town.map.length * town.tile;
   var ctx = canvas.getContext('2d');
   var hero = town.hero_start.slice();
   var phase = function () { return STATE.get().phase; };
@@ -1123,6 +1121,30 @@ function setupTown() {
   var legend = town.legend;
   var pois = town.pois || {};
   var speakers = world.speakers;
+
+  // ---- the camera ----
+  // A map smaller than the screen is scaled to fit and centred, as before.
+  // A map bigger than the screen scrolls with the hero at a readable size,
+  // so a large floor never shrinks to a thumbnail. T is the on-screen tile
+  // size in CSS pixels; viewW/viewH are the visible area.
+  var cols = town.map[0].length, rows = town.map.length;
+  var T = town.tile, viewW = 0, viewH = 0;
+  var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
+  function fitZoom() {
+    var fit = Math.min(viewW / (cols * town.tile), viewH / (rows * town.tile));
+    if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
+    return 32 / town.tile;   // a big map: scroll at a comfortable tile
+  }
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    viewW = canvas.clientWidth || window.innerWidth;
+    viewH = canvas.clientHeight || window.innerHeight;
+    canvas.width = Math.round(viewW * dpr);
+    canvas.height = Math.round(viewH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    T = town.tile * fitZoom();
+  }
+  window.addEventListener('resize', function () { resize(); draw(); });
 
   // The ground tiles, preloaded from data URIs (instant); the map is
   // redrawn once they decode. A symbol with no tile falls back to its
@@ -1154,44 +1176,59 @@ function setupTown() {
   // A character stands taller than its tile, feet on the tile's bottom.
   function drawSprite(key, tx, ty) {
     var im = spriteImgs[key];
-    var h = town.tile * 1.5;
+    var h = T * 1.5;
     var w = h * (im.naturalWidth / im.naturalHeight || 1);
-    ctx.drawImage(im, tx * town.tile + (town.tile - w) / 2,
-                  ty * town.tile + town.tile - h, w, h);
+    ctx.drawImage(im, tx * T + (T - w) / 2, ty * T + T - h, w, h);
   }
 
   function draw() {
     var ph = phase();
     var water = (town.water_by_phase || {})[ph];
     var flood = town.flood_tiles || [];
-    ctx.fillStyle = town.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (var y = 0; y < town.map.length; y++) {
-      for (var x = 0; x < town.map[y].length; x++) {
+    var mapW = cols * T, mapH = rows * T;
+    // The camera: follow the hero once the map is bigger than the screen,
+    // clamp to the edges, and centre it when it fits.
+    var camX = mapW <= viewW ? (mapW - viewW) / 2
+      : Math.min(Math.max(hero[0] * T + T / 2 - viewW / 2, 0), mapW - viewW);
+    var camY = mapH <= viewH ? (mapH - viewH) / 2
+      : Math.min(Math.max(hero[1] * T + T / 2 - viewH / 2, 0), mapH - viewH);
+
+    ctx.fillStyle = town.bg; ctx.fillRect(0, 0, viewW, viewH);
+    ctx.save();
+    ctx.translate(-camX, -camY);
+
+    var u = T / 32;   // the pack's mark sizes are authored for a 32px tile
+    var x0 = Math.max(0, Math.floor(camX / T));
+    var x1 = Math.min(cols - 1, Math.ceil((camX + viewW) / T));
+    var y0 = Math.max(0, Math.floor(camY / T));
+    var y1 = Math.min(rows - 1, Math.ceil((camY + viewH) / T));
+    for (var y = y0; y <= y1; y++) {
+      for (var x = x0; x <= x1; x++) {
         var ch = town.map[y][x];
         var info = legend[ch] || {};
         var color = (info.base && info.base[0]) || '#222';
         var tile = tileImgs[ch];
         var hasTile = tile && tile.complete && tile.naturalWidth > 0;
         if (hasTile) {
-          ctx.drawImage(tile, x * town.tile, y * town.tile, town.tile, town.tile);
+          ctx.drawImage(tile, x * T, y * T, T, T);
         } else {
           ctx.fillStyle = color;
-          ctx.fillRect(x * town.tile, y * town.tile, town.tile, town.tile);
+          ctx.fillRect(x * T, y * T, T, T);
         }
         if (info.solid && !hasTile) {
           ctx.fillStyle = '#444';
-          ctx.fillRect(x * town.tile + 4, y * town.tile + 4, town.tile - 8, town.tile - 8);
+          ctx.fillRect(x * T + 4 * u, y * T + 4 * u, T - 8 * u, T - 8 * u);
         }
         if (info.deco && info.deco_color) {
           ctx.fillStyle = info.deco_color;
-          ctx.fillRect(x * town.tile + 8, y * town.tile + 8, town.tile - 16, town.tile - 16);
+          ctx.fillRect(x * T + 8 * u, y * T + 8 * u, T - 16 * u, T - 16 * u);
         }
       }
     }
     if (water === 'high') {
       ctx.fillStyle = 'rgba(80,80,140,0.35)';
       flood.forEach(function (t) {
-        ctx.fillRect(t[0] * town.tile, t[1] * town.tile, town.tile, town.tile);
+        ctx.fillRect(t[0] * T, t[1] * T, T, T);
       });
     }
     // The people: their own sprite when the pack names one, else the
@@ -1200,8 +1237,7 @@ function setupTown() {
       var s = speakers[key];
       if (!s || !Array.isArray(s.at)) return;
       if (spriteReady(key)) { drawSprite(key, s.at[0], s.at[1]); return; }
-      var u = town.tile / 32;
-      var px = s.at[0] * town.tile, py = s.at[1] * town.tile;
+      var px = s.at[0] * T, py = s.at[1] * T;
       ctx.fillStyle = town.speaker_color || '#8b939c';
       ctx.beginPath();
       ctx.arc(px + 16 * u, py + 21 * u, 6 * u, 0, Math.PI * 2);
@@ -1218,11 +1254,10 @@ function setupTown() {
     } else {
       ctx.fillStyle = town.hero_color || '#e8e5df';
       ctx.beginPath();
-      ctx.arc(hero[0] * town.tile + town.tile / 2,
-              hero[1] * town.tile + town.tile / 2,
-              town.tile / 3, 0, Math.PI * 2);
+      ctx.arc(hero[0] * T + T / 2, hero[1] * T + T / 2, T / 3, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
   }
 
   function move(dx, dy) {
@@ -1358,6 +1393,7 @@ function setupTown() {
       if (!box.hidden) box.hidden = true; else tryNPC();
     }
   });
+  resize();
   draw();
 }
 // ---- the kitchen (cooking ruleset v0) ----
