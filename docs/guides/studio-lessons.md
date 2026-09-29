@@ -7,9 +7,17 @@ the next person. Add to it as you go; newest first.
 ## 2026-09-29: building Act 1 through the studio
 
 Made with the studio for the first time: accepted the Cartographer's commission,
-drew the town in the Map Room, and let the engine write it. Three things it
+drew the town in the Map Room, and let the engine write it. Four things it
 taught us.
 
+- **The shipped file lagged the studio - three times.** The Map Room drew
+  picture tiles while the woven player drew flat colour; then the studio drew
+  a figure for each speaker and the woven player drew none; then sprites.
+  Each time, the room that made a thing could draw more than the file that
+  shipped it.
+  *In the studio:* one renderer shared by the room that makes a thing and the
+  file that ships it, so the two cannot drift. Until then, every new drawing
+  feature lands in both players in the same change.
 - **Saving a map ate the maker's own settings.** The write path rebuilt
   `world.json` from a fixed list of fields, so the game's `player` block (its
   title picture and accent colour) vanished the first time a map was saved -

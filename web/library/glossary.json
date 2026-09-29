@@ -119,6 +119,9 @@
   "plain": "Turning your files into one finished thing you can run or share.",
   "vefr": "weaving"
  },
+ "camera": {
+  "plain": "The window onto a map that is bigger than the screen. It moves with the hero, so every square stays the same size."
+ },
  "canon": {
   "plain": "The official truth of a world. If it's in the canon, it happened.",
   "vefr": "the logbok"
