@@ -271,10 +271,11 @@ The HUD's health line shows the hero's real `hp/max`; a small
 `aria-live` line speaks each hit. Baked per region (`VEFR_ENEMIES`)
 and once for the hero (`VEFR_HERO`).
 
-Known gaps (this slice): no items or loot, no fleeing, no
+Known gaps (this slice): no fleeing, no
 rooms-and-corridors AI (enemies only step and hit), no randomness, and
 only a move is a turn - a hero can stand still safely. Classic death
-is a later slice.
+is a later slice. Loot - what a kill leaves and a bag holds - is the
+next slice (see "loot" below).
 
 `maplab.validate` checks the region `enemies` shape: a unique id, a
 name, a walkable `at`, and positive int `hp`/`atk`; a broken one is
@@ -282,6 +283,67 @@ named in plain words. Code: `src/vefr/maplab.py` (validation) +
 `src/vefr/cli.py` (bake) + `web/packaged.html` (the turn); tests:
 `tests/test_combat_loop.py` + `tests/test_transitions.py` +
 `tests/test_builder_weave.py` + `tests/fixtures/make_combat_pack.py`.
+
+## loot (first slice: drops and a simple bag)
+
+Killing something used to give survival and nothing else. Now a kill can
+leave a thing behind, the hero can carry it, and a Bag panel shows what
+is held. It is deliberately small: no weight, no grids, no identifying,
+and no using or selling. Deterministic like the rest - fixed ids, no
+randomness, no model call.
+
+A pack's `world.json` may carry an `items` catalog (optional), keyed by
+id:
+
+```json
+"items": {
+  "cloudy-potion": {"name": "a cloudy potion", "sprite": "potion"},
+  "brass-ring":    {"name": "a plain brass ring", "sprite": "ring"}
+}
+```
+
+`name` is plain words, shown in the bag. `sprite` names an entry in the
+pack's `player.sprites` (the same map the hero and speakers use) and is
+optional; with none the marker falls back to a small neutral dot. An
+entry with no name is dropped from what is baked, and a drop naming a
+missing item is dropped too - the player never meets a thing the world
+cannot describe.
+
+A region's enemy may carry `drops`, a list of catalog ids:
+
+```json
+{"id": "cellar-rat", "name": "a cellar rat", "at": [2, 1],
+ "hp": 4, "atk": 1, "sprite": "rat", "drops": ["cloudy-potion"]}
+```
+
+A chest book (`chest: yes` in its front matter) may also hold items:
+`drops: cloudy-potion, brass-ring` - a comma-separated list of catalog
+ids, read from `extra` like `chest` already is.
+
+**The drop.** A killed enemy's drops are left on the tile it died on, as
+a small item marker (the item's sprite, or a dot). Fog rules apply: a
+drop is drawn only where the light reaches. **Walking onto a drop takes
+it**: it leaves the floor, one plain line says so ("You pick up a cloudy
+potion."), and a small sprite appears in the HUD where the health bar is.
+The floor is remembered per world (`vefr-floor-<world>`), so leaving and
+coming back is honest about what is still lying there. **The bag** is a
+list of item ids at `localStorage['vefr-bag-<world>']`; a duplicate id is
+still added - two potions are two potions. The pause menu's Bag panel
+(next to Journal and Books) lists what is carried, one row per thing,
+sprite and name; empty it says "Nothing yet.". Opening a chest still
+gives its note, and also gives any items its `drops` names, with one
+line.
+
+Baked as `VEFR_ITEMS` (the catalog), a `drops` list on each enemy and
+each book. Code: `src/vefr/cli.py` (`_player_items`, `_drop_ids`) +
+`web/packaged.html` (floor, take, bag panel, HUD strip); tests:
+`tests/test_builder_weave.py` + `tests/test_combat_loop.py` +
+`tests/fixtures/combat_harness.mjs` + `tests/fixtures/make_combat_pack.py`.
+
+Known gaps (this slice): no weight, no using, no dropping, no selling,
+and no identifying - a carried thing is only a name and a picture for
+now. `maplab.validate` does not yet pin the `items`/`drops` shape; the
+bake drops an unknown id instead. The bag has no size limit.
 
 ## Adding a ruleset (the checklist later acts follow)
 

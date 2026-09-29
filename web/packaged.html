@@ -111,6 +111,13 @@
   .hud-hp-bar { width: 110px; height: 10px; background: #2A2E33; border-radius: 999px; overflow: hidden; }
   .hud-hp-fill { height: 100%; background: #6EA88A; width: 100%; }
   .hud-hp-value { font-size: 0.82rem; }
+  /* the bag at the top of the screen: one small sprite per thing carried */
+  .hud-bag { display: flex; align-items: center; gap: 4px; padding: 4px 6px; max-width: 40vw; flex-wrap: wrap; }
+  .bag-pip { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
+  .bag-pip--dot { display: inline-block; border-radius: 50%; background: #CBC6B6; }
+  .bag-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .bag-row-art { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
+  .bag-row-art--dot { display: inline-block; border-radius: 50%; background: #8B7A4E; }
   body[data-surface="plain"] .hud-hp,
   body[data-surface="investigation"] .hud-hp { display: none; }
   .phase-rail { display: flex; gap: 6px; }
@@ -251,6 +258,7 @@
           <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
           <span class="hud-hp-value" id="hud-hp-value">0/0</span>
         </div>
+        <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
       </div>
       <div class="hud hud--tr">
         <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
@@ -344,6 +352,7 @@
     <ul class="pm">
       <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
       <li><button type="button" data-panel="books">Books</button></li>
+      <li><button type="button" data-panel="bag">Bag</button></li>
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
     </ul>
@@ -360,6 +369,11 @@
       <h2>Books</h2>
       <div id="book-list"></div>
       <p class="status" id="book-count"></p>
+    </div>
+    <div data-panel-body="bag" hidden>
+      <h2>Bag</h2>
+      <div id="bag-list"></div>
+      <p class="status" id="bag-count"></p>
     </div>
     <div data-panel-body="help" hidden>
       <h2>How to play</h2>
@@ -388,6 +402,10 @@ window.VEFR_TILES = {{tiles_json}};
 // speaker key. The same art the pack's own folder holds, so a character
 // looks like someone, not a dot. Empty when the pack names none.
 window.VEFR_SPRITES = {{sprites_json}};
+// The pack's item catalog, keyed by id: {"name": "...", "sprite": "..."}.
+// A drop names one of these; the bag shows the name and draws the sprite
+// (a name in window.VEFR_SPRITES). Empty when the pack names none.
+window.VEFR_ITEMS = {{items_json}};
 // Ground tiles per region: two regions can share a symbol for different
 // ground (a town's '.' is grass, a dungeon's '.' is stone floor).
 window.VEFR_REGION_TILES = {{region_tiles_json}};
@@ -552,6 +570,8 @@ function bootstrap() {
   setupTown();
   bindMenu();
   bindLibrary();
+  renderBagPanel();
+  renderBagStrip();
   var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   document.getElementById('status').textContent = touch
     ? 'Use the pad to move. Tap Talk when someone is near.'
@@ -760,6 +780,122 @@ function bindLibrary() {
   document.getElementById('reader-close').addEventListener('click', closeReader);
   document.getElementById('reader-back').addEventListener('click', function () { readerTurn(-1); });
   document.getElementById('reader-next').addEventListener('click', function () { readerTurn(1); });
+}
+
+// ---- the bag: what the hero is carrying (loot, first slice) ----
+// A kill leaves its drop on the floor (see setupTown); walking onto it
+// takes it. The bag remembers what was taken, per playthrough, per
+// world: `vefr-bag-<world>` is a plain list of item ids. A duplicate id
+// is still added (two potions are two potions) - the bag is a list, not
+// a set, and the panel shows one row per thing carried. There is no
+// weight, no using, no dropping, no selling and no identifying: a
+// carried thing is only a name and a picture for now.
+var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+
+function itemCatalog() {
+  return (window.VEFR_ITEMS && typeof window.VEFR_ITEMS === 'object')
+    ? window.VEFR_ITEMS : {};
+}
+function itemName(id) {
+  var def = itemCatalog()[id];
+  return (def && def.name) || id;
+}
+function itemSpriteSrc(id) {
+  var def = itemCatalog()[id];
+  var name = def && def.sprite;
+  if (!name) return '';
+  return (window.VEFR_SPRITES || {})[name] || '';
+}
+function bagItems() {
+  try {
+    var ids = JSON.parse(localStorage.getItem(BAG_KEY) || '[]');
+    return Array.isArray(ids) ? ids.filter(function (id) {
+      return typeof id === 'string' && itemCatalog()[id];
+    }) : [];
+  } catch (e) { return []; }
+}
+function bagAdd(id) {
+  if (!itemCatalog()[id]) return false;
+  var ids = bagItems();
+  ids.push(id);
+  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  renderBagPanel();
+  renderBagStrip();
+  return true;
+}
+
+// The top-of-screen strip: a small sprite per carried thing, beside the
+// health bar. A thing with no ready sprite is a neutral dot.
+function renderBagStrip() {
+  var strip = document.getElementById('bag-strip');
+  if (!strip) return;
+  strip.textContent = '';
+  var ids = bagItems();
+  if (!ids.length) {
+    strip.hidden = true;
+    strip.setAttribute('aria-label', 'Nothing carried');
+    return;
+  }
+  strip.hidden = false;
+  ids.forEach(function (id) {
+    var src = itemSpriteSrc(id);
+    var node;
+    if (src) {
+      node = document.createElement('img');
+      node.src = src;
+      node.alt = '';
+      node.className = 'bag-pip';
+    } else {
+      node = document.createElement('span');
+      node.className = 'bag-pip bag-pip--dot';
+      node.setAttribute('aria-hidden', 'true');
+    }
+    strip.appendChild(node);
+  });
+  strip.setAttribute('aria-label',
+    'Carrying: ' + ids.map(itemName).join(', ') + '.');
+}
+
+// The pause-menu panel: one row per carried thing, sprite then name.
+function renderBagPanel() {
+  var list = document.getElementById('bag-list');
+  var count = document.getElementById('bag-count');
+  if (!list) return;
+  list.textContent = '';
+  var ids = bagItems();
+  if (!ids.length) {
+    var p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = 'Nothing yet.';
+    list.appendChild(p);
+    if (count) count.textContent = '';
+    return;
+  }
+  ids.forEach(function (id) {
+    var row = document.createElement('div');
+    row.className = 'bag-row';
+    var src = itemSpriteSrc(id);
+    if (src) {
+      var im = document.createElement('img');
+      im.src = src;
+      im.alt = '';
+      im.className = 'bag-row-art';
+      row.appendChild(im);
+    } else {
+      var dot = document.createElement('span');
+      dot.className = 'bag-row-art bag-row-art--dot';
+      dot.setAttribute('aria-hidden', 'true');
+      row.appendChild(dot);
+    }
+    var label = document.createElement('span');
+    label.textContent = itemName(id);
+    row.appendChild(label);
+    list.appendChild(row);
+  });
+  if (count) {
+    count.textContent = ids.length
+      + (ids.length === 1 ? ' thing carried.' : ' things carried.');
+  }
 }
 
 // ---- pause menu: journal, help, model settings ----
@@ -1266,6 +1402,7 @@ function setupTown() {
         hp: (typeof e.hp === 'number') ? e.hp : 1,
         atk: (typeof e.atk === 'number') ? e.atk : 1,
         sight: (typeof e.sight === 'number') ? e.sight : 6,
+        drops: Array.isArray(e.drops) ? e.drops.slice() : [],
         alive: dead.indexOf(e.id) === -1
       };
     });
@@ -1286,6 +1423,61 @@ function setupTown() {
   function manhattan(x1, y1, x2, y2) {
     return Math.abs(x1 - x2) + Math.abs(y1 - y2);
   }
+
+  // ---- loot on the floor ----
+  // A killed enemy leaves what it carried on the tile it died on; the
+  // floor is remembered per world (`vefr-floor-<world>`, one list of
+  // {region, at, item}) so leaving and coming back is honest about what
+  // is still lying there. Taking a drop removes it. No weight, no use,
+  // no drop, no sell, no identifying - this is the first slice only.
+  var floor = [];
+
+  function floorKey() {
+    var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+    return 'vefr-floor-' + w;
+  }
+  function loadFloor() {
+    var a = [];
+    try { a = JSON.parse(localStorage.getItem(floorKey()) || '[]'); } catch (e) { a = []; }
+    floor = Array.isArray(a) ? a.filter(function (d) {
+      return d && typeof d.item === 'string' && typeof d.region === 'string'
+        && Array.isArray(d.at) && d.at.length === 2 && itemCatalog()[d.item];
+    }) : [];
+  }
+  function saveFloor() {
+    try { localStorage.setItem(floorKey(), JSON.stringify(floor)); } catch (e) {}
+  }
+  function dropsAt(x, y) {
+    return floor.filter(function (d) {
+      return d.region === regionName && d.at[0] === x && d.at[1] === y;
+    });
+  }
+  // Leave a killed enemy's drops where it died. Only a catalog item is
+  // placed; the bake already dropped an unknown id.
+  function placeDrops(at, ids) {
+    var added = false;
+    (ids || []).forEach(function (id) {
+      if (!itemCatalog()[id]) return;
+      floor.push({ region: regionName, at: [at[0], at[1]], item: id });
+      added = true;
+    });
+    if (added) saveFloor();
+  }
+  // Walking onto a drop takes every item lying on that tile. One plain
+  // line says what was taken; the bag panel and the strip redraw.
+  function takeHere() {
+    var here = dropsAt(hero[0], hero[1]);
+    if (!here.length) return;
+    var names = [];
+    here.forEach(function (d) { if (bagAdd(d.item)) names.push(itemName(d.item)); });
+    floor = floor.filter(function (d) {
+      return !(d.region === regionName
+        && d.at[0] === hero[0] && d.at[1] === hero[1]);
+    });
+    saveFloor();
+    if (names.length) combatSay('You pick up ' + names.join(', ') + '.');
+  }
+
   // A hero bump: strike the enemy on the tile you tried to walk into.
   function heroAttack(e) {
     var dmg = heroAtk();
@@ -1293,6 +1485,7 @@ function setupTown() {
     if (e.hp <= 0) {
       e.alive = false;
       saveSlain();
+      placeDrops(e.at, e.drops);
       combatSay('You hit ' + e.name + ' for ' + dmg + '. ' + e.name + ' falls.');
     } else {
       combatSay('You hit ' + e.name + ' for ' + dmg + '.');
@@ -1365,7 +1558,12 @@ function setupTown() {
       enemies: enemies.map(function (e) {
         return { id: e.id, at: e.at.slice(), hp: e.hp, atk: e.atk,
                  sight: e.sight, alive: e.alive };
-      })
+      }),
+      bag: bagItems(),
+      floor: floor.filter(function (d) { return d.region === regionName; })
+        .map(function (d) {
+          return { at: d.at.slice(), item: d.item, name: itemName(d.item) };
+        })
     };
     return window.VEFR_COMBAT;
   }
@@ -1538,6 +1736,23 @@ function setupTown() {
     ctx.drawImage(im, tx * T + (T - w) / 2, ty * T + T - h, w, h);
   }
 
+  // An item marker on the floor: the item's sprite when the pack names a
+  // ready one, else a small neutral dot. Small - a thing, not a body.
+  function drawItemMarker(id, tx, ty) {
+    var def = itemCatalog()[id];
+    var sp = def && def.sprite;
+    var size = T * 0.6;
+    if (sp && spriteReady(sp)) {
+      ctx.drawImage(spriteImgs[sp], tx * T + (T - size) / 2,
+                    ty * T + (T - size) / 2, size, size);
+      return;
+    }
+    ctx.fillStyle = '#CBC6B6';
+    ctx.beginPath();
+    ctx.arc(tx * T + T / 2, ty * T + T / 2, T * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function draw() {
     var ph = phase();
     var water = (town.water_by_phase || {})[ph];
@@ -1665,6 +1880,14 @@ function setupTown() {
       ctx.fill();
     });
 
+    // Loot lying on the floor: a killed enemy's drop, at the tile it
+    // died on. Drawn only where the light reaches, like a living hazard.
+    floor.forEach(function (d) {
+      if (!d || d.region !== regionName || !Array.isArray(d.at)) return;
+      if (fogOn && !(litSet && litSet[d.at[0] + ',' + d.at[1]])) return;
+      drawItemMarker(d.item, d.at[0], d.at[1]);
+    });
+
     // The hero: their own sprite when the pack names one, else the dot.
     if (spriteReady('hero')) {
       drawSprite('hero', hero[0], hero[1]);
@@ -1722,13 +1945,28 @@ function setupTown() {
     updateUse();
   }
 
+  // A chest gives the note it holds (the book reader) and anything its
+  // `drops` names, added to the bag with one line. A chest is found
+  // after it opens, so its things are taken once.
+  function giveChestDrops(book) {
+    var ids = (book && Array.isArray(book.drops)) ? book.drops : [];
+    var names = [];
+    ids.forEach(function (id) { if (bagAdd(id)) names.push(itemName(id)); });
+    if (names.length) combatSay('You take ' + names.join(', ') + ' from the chest.');
+  }
+
   // The verb: use what you are standing on. A door is used, not walked
   // through, so passing a doorway never yanks you to another map.
   function useHere() {
     var door = transitionAt(hero[0], hero[1]);
     if (door) { enterRegion(door.to, door.to_at); return; }
     var chest = chestHere();
-    if (chest) { foundBook(chest, 'map'); return; }
+    if (chest) {
+      foundBook(chest, 'map');
+      giveChestDrops(chest);
+      combatSnapshot();
+      return;
+    }
     var key = hero[0] + ',' + hero[1];
     var text = (town.poi_text || {})[key];
     if (text) showSpeech(pois[key] || '', text, '');
@@ -1784,6 +2022,7 @@ function setupTown() {
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny, regionName);
+    takeHere();
     seeNow();
     updateUse();
     enemyTurn();
@@ -1913,6 +2152,7 @@ function setupTown() {
   seeNow();
   loadHeroHp();
   renderHp();
+  loadFloor();
   loadEnemies();
   combatSnapshot();
   resize();

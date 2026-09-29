@@ -4,8 +4,10 @@ The combat harness EXECUTES the woven single-file player against a stub
 DOM and plays the first fight end to end: bump the adjacent enemy, watch
 it hit back, kill it and see it stay dead, watch a distant enemy inside
 its sight step toward the hero, then take a fatal blow and wake whole at
-the baked wake point. Deterministic: the fixture is fixed, so every
-number here is pinned.
+the baked wake point. It also plays the loot loop: the kill leaves its
+drop on the floor, stepping onto it takes it into the bag, and a chest
+gives its note and its items. Deterministic: the fixture is fixed, so
+every number here is pinned.
 """
 
 import json
@@ -114,6 +116,40 @@ def test_death_is_cozy_and_the_hero_wakes_whole(fight):
     assert _by_id(after)["pale-thing"] == {
         "id": "pale-thing", "at": [7, 1], "hp": 4, "atk": 2,
         "sight": 6, "alive": True}
+
+
+def test_a_kill_leaves_its_drop_on_the_floor(fight):
+    log = _log(fight)
+    # The rat dies on [2, 1] and leaves its one drop there; the bag is
+    # still empty until the hero walks onto it.
+    assert log["floor-after-kill"] == [
+        {"at": [2, 1], "item": "cloudy-potion", "name": "a cloudy potion"}]
+    assert log["bag-after-kill"] == []
+
+
+def test_walking_onto_a_drop_takes_it(fight):
+    log = _log(fight)
+    assert log["bag-after-take"] == ["cloudy-potion"]
+    assert log["floor-after-take"] == []
+    assert log["said-take"] == "You pick up a cloudy potion."
+    # The HUD strip appears with one sprite for the one thing carried.
+    assert log["strip-hidden-after-take"] is False
+    assert log["strip-count-after-take"] == 1
+
+
+def test_a_chest_gives_its_note_and_its_items(fight):
+    log = _log(fight)
+    # The chest's note opens in the reader and both items join the bag.
+    # The potion is a second copy: the bag is a list, not a set.
+    assert log["reader-title"] == "A Cellar Cache"
+    assert log["bag-after-chest"] == [
+        "cloudy-potion", "cloudy-potion", "brass-ring"]
+    assert log["floor-after-chest"] == []
+    assert log["said-chest"] == (
+        "You take a cloudy potion, a plain brass ring from the chest.")
+    # The Bag panel draws one row per carried thing.
+    assert log["bag-panel-rows"] == 3
+    assert log["bag-panel-count"] == "3 things carried."
 
 
 def test_no_timers_anywhere(fight):
