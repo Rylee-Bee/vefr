@@ -112,6 +112,60 @@ Books panel reopens anything found. Code: `src/vefr/library.py` +
 `tests/test_library.py` + `tests/test_builder_weave.py` +
 `tests/fixtures/make_library_pack.py`.
 
+## delve (generated floors)
+
+Not an act loop yet: a build-time tool that generates dungeon floors the
+engine owns. `norns delve` draws a floor from a seed - rules only, no
+model call, deterministic - and writes it as a region of the act, wiring
+the stairs as transitions:
+
+```sh
+uv run norns delve --pack worlds/<name> --seed <text> --floors N \
+    --from-region town --from-at 4,5 \
+    [--width W] [--height H] [--rooms R] \
+    [--first-name floor-2] [--force]
+```
+
+`--from-region` is an existing region and `--from-at x,y` is the
+walkable tile there that the author placed as the down-stair; the command
+refuses (non-zero) if that tile is not walkable. Each generated floor is
+a directory (`acts/<id>/floor-2/`, `floor-3/`, ...) carrying a `map.md`
+and a `contract.json`. Numbering continues after the pack's existing
+`floor-*` regions unless `--first-name` names the start. The last floor
+generated is the bottom for now and keeps no down-stair; the output says
+so. An existing generated region is refused unless `--force`; nothing
+outside the pack is ever written.
+
+The stairs wire as doors: the `from-region`'s stair goes down to the
+first floor's `u`; each floor's `d` goes to the next floor's `u`; every
+floor's `u` climbs back to the previous floor's `d` (or to
+`from-region`/`from-at` for the first). The act's `regions` gains the new
+names at the end - the first region stays first - and `start` and the
+existing regions are untouched.
+
+A generated map uses one shared legend (`src/vefr/delve.py`):
+
+| char | meaning | tile |
+|---|---|---|
+| `#` | solid wall | `dungeon-wall` |
+| `.` | floor | `dungeon-floor` |
+| `u` | up-stair | `dungeon-stairs-up` |
+| `d` | down-stair | `dungeon-stairs-down` |
+
+`generate_floor(seed, width=30, height=20, rooms=8)` draws rectangular
+rooms joined by L-corridors, keeps a solid border, and guarantees one
+connected cave with the two stairs reachable from each other and far
+apart (at least `MIN_STAIR_DISTANCE` Manhattan tiles when the layout
+allows; it relaxes to the widest pair otherwise). `delve.contract(...)`
+writes the region `contract.json`.
+
+Known limits (this slice): floors are generated once, at build time,
+from a seed and then baked into the pack - per-playthrough generation is
+a later slice. Only the first region's full geometry is validated today;
+the generated floors are checked by the door rules (see
+"regions + transitions" below). Code: `src/vefr/delve.py` +
+`src/vefr/cli.py` (`cmd_delve`); tests: `tests/test_delve.py`.
+
 ## regions + transitions (doors between maps)
 
 An act may declare several `regions`, each its own directory under

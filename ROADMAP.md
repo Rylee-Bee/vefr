@@ -7,6 +7,29 @@
 
 ## Landed
 
+- [x] **The delve, first slice — generated dungeon floors** (2026-09-30): the
+      game has an authored first floor and a stair down, but nowhere to
+      fight or explore. `src/vefr/delve.py` is a rules-only floor generator:
+      `generate_floor(seed, width, height, rooms)` draws rooms joined by
+      L-corridors from `random.Random(seed)` alone (no global random, no
+      clock), keeps a solid border, and guarantees one connected cave with
+      `u`/`d` reachable from each other and at least `MIN_STAIR_DISTANCE`
+      (10) Manhattan tiles apart when the layout allows (it relaxes to the
+      widest pair otherwise). `LEGEND` maps `#`/`.`/`u`/`d` to the tile set's
+      `dungeon-*` pictures; `contract()` writes the region `contract.json`.
+      `norns delve` draws N floors, writes each as `acts/<id>/floor-N/`
+      (`map.md` + `contract.json`), continues the `floor-*` numbering (or
+      `--first-name`), and wires the stairs as transitions: the from-region's
+      tile down to the first floor, each floor's `d` to the next, and every
+      `u` back up; the last floor is the bottom for now. It refuses an
+      existing region without `--force` and never writes outside the pack.
+      The woven player is untouched — it already walks regions and uses
+      stairs. Gap: generated once at build time from a seed; per-playthrough
+      generation is a later slice, and only the first region's full geometry
+      is validated (generated floors ride the door checks). Zero deps, no
+      model call. Guide: `docs/guides/rulesets.md` → delve. Tests:
+      `tests/test_delve.py`.
+
 - [x] **Regions + door transitions in the woven player** (2026-09-29): an act
       can already declare several `regions`, but the woven player baked only
       the first and `transitions` was a reserved field. An act's `transitions`

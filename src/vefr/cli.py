@@ -8,7 +8,7 @@ Two CLI entry points:
                 (deploy / carry / fetch).
 
     norns     - the weavers. Craft commands for shaping the world:
-                chat, validate, build-map, verify.
+                chat, validate, build-map, delve, verify.
 
 Run from any checkout; git decides which. In the container, the
 same commands serve against the deployed world (deploy and
@@ -570,6 +570,216 @@ def cmd_map(args) -> int:
     else:
         raise SystemExit(f'unknown map command: {args.map_cmd}')
     return maplab_main(argv)
+
+
+def _floor_names(first: str, count: int) -> list[str]:
+    """The names for `count` generated floors, numbering from `first`.
+
+    A trailing number is stepped up (floor-2 -> floor-2, floor-3, ...);
+    a name with no number gets -2, -3, ... appended after the first.
+    """
+    import re
+
+    m = re.fullmatch(r'(.*?)(\d+)', first)
+    if m:
+        base, start = m.group(1), int(m.group(2))
+        return [f'{base}{start + i}' for i in range(count)]
+    return [first] + [f'{first}-{i}' for i in range(2, count + 1)]
+
+
+def _tile_walkable(rows: list[str], legend: dict, x: int, y: int) -> bool:
+    """Walkability of one tile, mirroring maplab's door check.
+
+    A legend `solid` flag wins; otherwise the legacy blocked-char
+    fallback decides. Off-map is not walkable.
+    """
+    from .maplab import BLOCKED_FALLBACK
+
+    if not rows or y < 0 or y >= len(rows) or x < 0 or x >= len(rows[0]):
+        return False
+    spec = legend.get(rows[y][x], {})
+    if isinstance(spec, dict) and isinstance(spec.get('solid'), bool):
+        return spec['solid'] is False
+    return rows[y][x] not in BLOCKED_FALLBACK
+
+
+def cmd_delve(args) -> int:
+    """`norns delve` - generate dungeon floors and wire their stairs.
+
+    Rules-only and deterministic: every floor comes from
+    `vefr.delve.generate_floor` with a seed per floor, no model call.
+    Each floor lands as a region directory (map.md + contract.json);
+    the act's `world.json` gains the regions and the doors that join
+    them: the `from-region`'s stair goes down to the first new floor,
+    each floor's down-stair goes to the next, and every floor's
+    up-stair climbs back. The last floor is the bottom for now and
+    keeps no down-stair. Everything is written inside the pack, and an
+    existing generated region is refused unless `--force` is passed.
+    """
+    import re
+
+    from . import delve as delve_mod
+    from .maplab import load_pack, validate
+
+    if args.floors < 1:
+        print('--floors must be at least 1')
+        return EXIT_USAGE
+
+    p = Path(args.pack)
+    if p.is_absolute() or '/' in str(args.pack):
+        pack = (p if p.is_dir() else p.parent).resolve()
+    else:
+        pack = (pack_root() / 'worlds' / p).resolve()
+    if not (pack / 'world.json').exists():
+        print(f'pack not found at {pack}; pass --pack NAME or a path')
+        return EXIT_ERROR
+
+    acts_dir = pack / 'acts'
+    act_dirs = ([d for d in sorted(acts_dir.iterdir())
+                 if d.is_dir() and not d.name.startswith('.')]
+                if acts_dir.is_dir() else [])
+    if not act_dirs:
+        print(f'{pack} has no acts/ tree - `norns delve` needs the acts shape')
+        return EXIT_ERROR
+    act_dir = act_dirs[0]
+    act_path = act_dir / 'world.json'
+    act = json.loads(act_path.read_text(encoding='utf-8'))
+    region_names = list(act.get('regions', []) or [])
+    transitions = list(act.get('transitions', []) or [])
+
+    if args.from_region not in region_names:
+        print(f'--from-region {args.from_region!r} is not a region of '
+              f'{act_dir.name} (regions: {region_names})')
+        return EXIT_ERROR
+
+    try:
+        fx, fy = (int(v) for v in str(args.from_at).split(','))
+    except (TypeError, ValueError):
+        print('--from-at must be x,y (for example 4,5)')
+        return EXIT_USAGE
+
+    region_dir = act_dir / args.from_region
+    map_path = region_dir / 'map.md'
+    rows = ([ln for ln in map_path.read_text(encoding='utf-8').splitlines()
+             if ln.strip()] if map_path.exists() else [])
+    contract_path = region_dir / 'contract.json'
+    legend = {}
+    if contract_path.exists():
+        legend = json.loads(
+            contract_path.read_text(encoding='utf-8')).get('legend', {})
+    if not _tile_walkable(rows, legend, fx, fy):
+        print(f'--from-at ({fx},{fy}) is not a walkable tile in region '
+              f"'{args.from_region}' - the author places the down-stair there")
+        return EXIT_ERROR
+
+    # Names: an explicit --first-name wins; otherwise continue the
+    # floor-N numbering after whatever the pack already has (a tool the
+    # author can extend without renumbering by hand).
+    if args.first_name:
+        first = args.first_name
+    else:
+        nums = [int(m.group(1)) for name in region_names
+                if (m := re.fullmatch(r'floor-(\d+)', name))]
+        for child in act_dir.iterdir():
+            if child.is_dir() and (m := re.fullmatch(r'floor-(\d+)', child.name)):
+                nums.append(int(m.group(1)))
+        first = f'floor-{max(nums) + 1}' if nums else 'floor-2'
+
+    names = _floor_names(first, args.floors)
+    collisions = [n for n in names
+                  if n in region_names or (act_dir / n).exists()]
+    if collisions and not args.force:
+        print('refusing to overwrite existing region(s): '
+              + ', '.join(collisions))
+        print('pass --force to overwrite them, or --first-name to pick '
+              'another start.')
+        return EXIT_ERROR
+
+    # Draw every floor in memory first, so a bad size writes nothing.
+    planned: list[tuple[str, list[str], tuple[int, int],
+                        tuple[int, int] | None, dict]] = []
+    try:
+        for i, name in enumerate(names):
+            floor_rows = delve_mod.generate_floor(
+                f'{args.seed}:{name}', args.width, args.height, args.rooms)
+            up = down = None
+            for y, row in enumerate(floor_rows):
+                for x, ch in enumerate(row):
+                    if ch == 'u':
+                        up = (x, y)
+                    elif ch == 'd':
+                        down = (x, y)
+            if up is None or down is None:
+                print(f'the generator produced no stairs for {name}; '
+                      'nothing written')
+                return EXIT_ERROR
+            if i == len(names) - 1:
+                # The bottom floor has no way down for now.
+                floor_rows = [row.replace('d', '.') for row in floor_rows]
+                down = None
+            planned.append((
+                name, floor_rows, up, down,
+                delve_mod.contract(args.width, args.height, up, down_at=down),
+            ))
+    except ValueError as e:
+        print(f'cannot generate: {e}')
+        return EXIT_USAGE
+
+    # Doors. Down: from-region -> first floor, then floor N -> N+1. Up:
+    # every floor climbs back to where it was entered from.
+    wired: list[dict] = [{
+        'from': args.from_region, 'at': [fx, fy],
+        'to': names[0], 'to_at': list(planned[0][2]),
+    }]
+    for i in range(len(planned) - 1):
+        wired.append({
+            'from': names[i], 'at': list(planned[i][3]),
+            'to': names[i + 1], 'to_at': list(planned[i + 1][2]),
+        })
+    for i, (name, _rows, up, _down, _c) in enumerate(planned):
+        if i == 0:
+            target, to_at = args.from_region, [fx, fy]
+        else:
+            target, to_at = names[i - 1], list(planned[i - 1][3])
+        wired.append({'from': name, 'at': list(up),
+                      'to': target, 'to_at': to_at})
+
+    for name, floor_rows, _up, _down, contract_obj in planned:
+        region = act_dir / name
+        region.mkdir(parents=True, exist_ok=True)
+        (region / 'map.md').write_text(
+            '\n'.join(floor_rows) + '\n', encoding='utf-8')
+        (region / 'contract.json').write_text(
+            json.dumps(contract_obj, indent=2, ensure_ascii=False) + '\n',
+            encoding='utf-8')
+
+    # Merge into the act contract: keep every existing region in order
+    # (the first stays first), drop only stale doors touching the names
+    # being (re)written, then append the new regions and doors.
+    kept = [t for t in transitions
+            if not (isinstance(t, dict)
+                    and (t.get('from') in names or t.get('to') in names))]
+    act['regions'] = [r for r in region_names if r not in names] + names
+    act['transitions'] = kept + wired
+    act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False) + '\n',
+                        encoding='utf-8')
+
+    for name, _rows, up, down, _c in planned:
+        where = 'up {0},{1}'.format(*up)
+        where += ' down {0},{1}'.format(*down) if down else ' bottom'
+        print(f'  wrote acts/{act_dir.name}/{name}/ ({where})')
+    print(f'generated {len(names)} floor(s) for {pack.name} from seed '
+          f'{args.seed!r}; wired {len(wired)} transition(s)')
+    print(f'  {names[-1]} is the bottom for now (no stair down)')
+
+    errors = validate(load_pack(pack), pack_dir=pack)
+    if errors:
+        print('the pack does not validate after the write:')
+        for e in errors:
+            print(f'  FAIL: {e}')
+        return EXIT_ERROR
+    print('the pack validates green')
+    return EXIT_OK
 
 
 def _template_candidates() -> list[Path]:
@@ -1507,6 +1717,9 @@ Subcommands for shaping what the engine makes:
   norns verify      validate a live deployment's served world (--url)
   norns build-map   rebuild the map from run-length rows (--segments,
                     --pack, --force)
+  norns delve       generate dungeon floors from a seed and wire their
+                    stairs as region transitions (--pack, --seed,
+                    --floors, --from-region, --from-at)
 
 The shape of every world, the town's grid, and the keepers'
 voices are yours - the bones and the flesh alike. The norns
@@ -2815,6 +3028,30 @@ def norns_main() -> int:
     mb.add_argument('--pack', default=None)
     mb.add_argument('--force', action='store_true')
     mb.set_defaults(fn=cmd_map, map_cmd='build')
+
+    mdl = craft.add_parser(
+        'delve',
+        help='generate dungeon floors from a seed and wire their stairs',
+    )
+    mdl.add_argument('--pack', required=True,
+                     help='world pack name (worlds/<name>) or a path')
+    mdl.add_argument('--seed', required=True,
+                     help='the determinism seed; the same seed redraws the same floors')
+    mdl.add_argument('--floors', type=int, default=1,
+                     help='how many floors to generate (default: 1)')
+    mdl.add_argument('--from-region', required=True,
+                     help='the region whose stair leads down')
+    mdl.add_argument('--from-at', required=True,
+                     help='the walkable stair tile in --from-region, as x,y')
+    mdl.add_argument('--width', type=int, default=30)
+    mdl.add_argument('--height', type=int, default=20)
+    mdl.add_argument('--rooms', type=int, default=8)
+    mdl.add_argument('--first-name', default=None,
+                     help='first generated region name (default: floor-2, or '
+                          'the next free floor-N after existing regions)')
+    mdl.add_argument('--force', action='store_true',
+                     help='overwrite an existing generated region')
+    mdl.set_defaults(fn=cmd_delve)
 
     mr = craft.add_parser('verify', help='validate a live deployment')
     mr.add_argument('--url', default=DEFAULT_URL)
