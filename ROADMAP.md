@@ -7,6 +7,22 @@
 
 ## Landed
 
+- [x] **The manual names the camera and the sprites** (2026-09-29): "How Maps
+      Work" now says a map can be bigger than the screen and is read through a
+      *camera* that moves with the hero, and that the people on a map are
+      *sprites* (a game can bring its own). The glossary gains `camera`;
+      `sprites` already existed (with `sprite` as an alias). The studio-lessons
+      note records the one class that bit us three times - the shipped player
+      lagging the studio - and points at its fix: one renderer shared by the
+      room and the file. Only what is true today is written; the *transition*
+      entry waits for regions to land.
+- [x] **The map scrolls with a camera** (2026-09-29): the woven player scaled
+      the whole map to fit, so a floor bigger than the screen would shrink to a
+      thumbnail. The canvas is now screen-sized and a camera follows the hero:
+      a map that still reads whole is fitted and centred as before, a bigger
+      one scrolls at a comfortable tile size, clamped at the edges. Only the
+      visible window is drawn, at device-pixel resolution. Ground for bigger
+      towns and dungeon floors. Visual baseline updated deliberately.
 - [x] **Characters in the pack, drawn in play** (2026-09-29): the hero and
       every speaker were code-drawn figures (a dot, a lollipop). A pack may now
       name a sprite per character in a `sprites/` folder - `hero.png`, and one

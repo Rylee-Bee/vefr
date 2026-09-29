@@ -43,6 +43,17 @@ hurt you there. The square where the hero starts is the *spawn point*.
 Special places get names: "the stone", "the threshold". When the hero
 stands there, the name shows up. Games call these *points of interest*.
 
+The people and things standing on a map are *sprites*: small pictures
+placed on squares. A game can bring its own, so the hero and the people
+look like themselves instead of a dot.
+
+* * *
+
+A map can be bigger than the screen. When it is, the view moves with the
+hero: the game keeps a *camera* on the map and slides it as you walk, so
+every square stays the same size and stays readable. A map that fits is
+shown whole; one that does not, scrolls.
+
 Some maps are drawn by hand. Others are built by the game from rules
 as you play. That's *procedural generation*, and the Rune Room is
 where it lives.
