@@ -1389,21 +1389,30 @@ function setupTown() {
   }
   function saveSlain() {
     var dead = enemies.filter(function (e) { return !e.alive; })
-      .map(function (e) { return e.id; });
+      .map(function (e) { return e.id + '#' + (e.sig || ''); });
     try { localStorage.setItem(slainKey(), JSON.stringify(dead)); } catch (e) {}
+  }
+  // A monster is remembered by what it *is*, not only by its name: move it,
+  // restat it, or regenerate the floor, and it is a new monster again. So a
+  // rebuild never leaves a floor mysteriously empty.
+  function enemySig(raw) {
+    return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
+            raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
   }
   function loadEnemies() {
     var dead = loadSlain();
     var list = enemiesByRegion[regionName] || [];
     enemies = list.map(function (e) {
+      var sig = enemySig(e);
       return {
         id: e.id, name: e.name, sprite: e.sprite || '',
+        sig: sig,
         at: Array.isArray(e.at) ? e.at.slice() : [0, 0],
         hp: (typeof e.hp === 'number') ? e.hp : 1,
         atk: (typeof e.atk === 'number') ? e.atk : 1,
         sight: (typeof e.sight === 'number') ? e.sight : 6,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
-        alive: dead.indexOf(e.id) === -1
+        alive: dead.indexOf(e.id + '#' + sig) === -1
       };
     });
   }
