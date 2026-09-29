@@ -148,19 +148,25 @@ def test_the_woven_file_carries_the_door_picture():
     assert _baked(cli.weave_html(pack), "VEFR_DOOR").startswith("data:image/webp;base64,")
 
 
-def test_a_second_regions_legend_tiles_are_baked(tmp_path):
-    """A room's own symbols are tiles too, not only the town's ground."""
+def test_each_region_keeps_its_own_tiles(tmp_path):
+    """Tiles travel with the region.
+
+    The same symbol can mean different ground on two maps (a town's '.' is
+    grass, a dungeon's '.' is stone floor), so a merged set would draw the
+    wrong picture on one of them.
+    """
     import json as _json
 
     pack = _two_region_pack(tmp_path)
     cottage = pack / "acts" / "act-1" / "cottage" / "contract.json"
     contract = _json.loads(cottage.read_text(encoding="utf-8"))
-    contract["legend"]["t"] = {"base": ["#332e26"], "tile": "table"}
+    contract["legend"]["."] = {"base": ["#332e26"], "tile": "table"}
     cottage.write_text(_json.dumps(contract), encoding="utf-8")
 
-    tiles = _baked(cli.weave_html(pack), "VEFR_TILES")
-    assert "t" in tiles
-    assert tiles["t"].startswith("data:image/webp;base64,")
+    by_region = _baked(cli.weave_html(pack), "VEFR_REGION_TILES")
+    assert set(by_region) == {"town", "cottage"}
+    assert "." in by_region["cottage"] and "." in by_region["town"]
+    assert by_region["cottage"]["."] != by_region["town"]["."]
 
 
 def test_the_woven_file_bakes_where_the_game_starts(tmp_path):
