@@ -163,6 +163,21 @@ def test_a_second_regions_legend_tiles_are_baked(tmp_path):
     assert tiles["t"].startswith("data:image/webp;base64,")
 
 
+def test_the_woven_file_bakes_where_the_game_starts(tmp_path):
+    """An act can say where the game begins; a silent act falls back."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    act = pack / "acts" / "act-1" / "world.json"
+    cfg = _json.loads(act.read_text(encoding="utf-8"))
+    cfg["start"] = {"region": "cottage", "at": [1, 1]}
+    act.write_text(_json.dumps(cfg), encoding="utf-8")
+    assert _baked(cli.weave_html(pack), "VEFR_START") == {"region": "cottage", "at": [1, 1]}
+
+    sample = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
+    assert _baked(cli.weave_html(sample), "VEFR_START") == {}
+
+
 def test_woven_file_bakes_the_packs_books():
     """The sample pack's books ride into the file in the reader's shape."""
     pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"

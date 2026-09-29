@@ -49,8 +49,10 @@ look like themselves instead of a dot.
 
 A door - or the stair - can lead to another map. Games call that a
 *transition*: the town outside and the entry room inside are two maps
-joined by one door. Step on the door and you are in the room; the room
-can be small and exact, the way a real inside is.
+joined by one door. Stand on the door and use it - press F, or tap
+Interact - and you are in the room. A door is used, never walked through,
+so passing a doorway does not carry you off. The room can be small and
+exact, the way a real inside is.
 
 * * *
 
