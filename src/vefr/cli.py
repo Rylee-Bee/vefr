@@ -739,6 +739,21 @@ def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     return out
 
 
+def _player_door(web_dir: Path) -> str:
+    """The door picture, inlined, so a transition can be drawn.
+
+    A door is a tile you step on to enter another map. Without a picture it
+    is an invisible hole in the floor, so the woven player draws this at
+    every transition tile of the region you are in.
+    """
+    import base64
+
+    f = web_dir / 'art' / 'tiles' / 'door.webp'
+    if not f.is_file():
+        return ''
+    return 'data:image/webp;base64,' + base64.b64encode(f.read_bytes()).decode('ascii')
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -891,6 +906,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
+    out_html = out_html.replace('{{door_json}}',
+                                _json.dumps(_player_door(template_path.parent)))
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))

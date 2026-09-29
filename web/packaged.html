@@ -404,6 +404,9 @@ window.VEFR_TRANSITIONS = {{transitions_json}};
 // The act's speakers, grouped by the region they belong to (a speaker
 // with no `region` belongs to the act's first region).
 window.VEFR_SPEAKERS = {{speakers_json}};
+// The door picture: drawn at each transition tile so a way out is not an
+// invisible hole in the floor. Empty when the engine has no door art.
+window.VEFR_DOOR = {{door_json}};
 
 // The woven pool - real model output baked in at weave time
 // (--pool N). Drawn when no live endpoint answers; see poolDraw.
@@ -1203,6 +1206,19 @@ function setupTown() {
     spriteImgs[key] = im;
   });
 
+  // The door picture, preloaded like the rest. A door is a transition
+  // tile; drawing it shows a way out instead of an invisible hole.
+  var doorSrc = window.VEFR_DOOR || '';
+  var doorImg = null;
+  if (doorSrc) {
+    doorImg = new Image();
+    doorImg.onload = function () { draw(); };
+    doorImg.src = doorSrc;
+  }
+  function doorReady() {
+    return doorImg && doorImg.complete && doorImg.naturalWidth > 0;
+  }
+
   function spriteReady(key) {
     var im = spriteImgs[key];
     return im && im.complete && im.naturalWidth > 0;
@@ -1263,6 +1279,16 @@ function setupTown() {
       ctx.fillStyle = 'rgba(80,80,140,0.35)';
       flood.forEach(function (t) {
         ctx.fillRect(t[0] * T, t[1] * T, T, T);
+      });
+    }
+    // Doors: every transition that leaves this region is drawn, so the
+    // way to another map is visible underfoot.
+    if (doorReady()) {
+      transitions.forEach(function (t) {
+        if (t && t.from === regionName && Array.isArray(t.at)) {
+          ctx.drawImage(doorImg, t.at[0] * T + T * 0.08, t.at[1] * T + T * 0.08,
+                        T * 0.84, T * 0.84);
+        }
       });
     }
     // The people: their own sprite when the pack names one, else the
