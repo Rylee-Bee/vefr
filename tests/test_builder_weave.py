@@ -131,6 +131,12 @@ def test_woven_file_bakes_regions_transitions_and_grouped_speakers(tmp_path):
     assert speakers["cottage"]["cook"]["name"] == "Cook"
 
 
+def test_the_woven_file_carries_the_door_picture():
+    """A transition is drawn with the door art, so it is not invisible."""
+    pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
+    assert _baked(cli.weave_html(pack), "VEFR_DOOR").startswith("data:image/webp;base64,")
+
+
 def test_a_second_regions_legend_tiles_are_baked(tmp_path):
     """A room's own symbols are tiles too, not only the town's ground."""
     import json as _json
