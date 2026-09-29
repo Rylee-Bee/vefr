@@ -13,15 +13,16 @@ never gates the player on numbers unless the act's `floor` says so.
 | `floor` | `costume` (default) · `story` · `stakes` | how hard numbers bite. `costume` = the classic vefr way: HP tracks, the player never drops to zero, the bar is a costume. `story`/`stakes` get their mechanics from future rulesets; until then they validate and wait |
 | `tone` | `literal` · `warm` · `deadpan` · `ridiculous` · `absurd` | the act's position on the ridiculous-literal dial; rides in every generation prompt for the act |
 | `verbs` | list of strings | the act's own action vocabulary; when declared it replaces the engine's costume verbs in the HUD and the `/api/combat/action` whitelist |
-| `transitions` | list of strings | the Road's seeds: where this act can lead (connective tissue, Phase 2) |
+| `transitions` | list of doors | the act's doors between `regions` (below) |
 | `cooking` | object | the cooking loop's content (below) |
 | `desk` | object | the desk loop's content (below) |
 
 All optional. Absent means the engine's defaults, so every existing pack
 loads unchanged. `maplab.validate` shape-checks whatever is declared
 (orders must reference real pantry ids; headlines must be at least two
-non-empty strings; verbs/enemies/bosses/transitions must be lists of
-strings).
+non-empty strings; verbs/enemies/bosses must be lists of strings;
+`transitions` is a list of doors and is checked against the regions'
+maps - see below).
 
 ## cooking (Act 1's loop)
 
@@ -110,6 +111,46 @@ Books panel reopens anything found. Code: `src/vefr/library.py` +
 `src/vefr/cli.py` (bake) + `web/packaged.html` (reader); tests:
 `tests/test_library.py` + `tests/test_builder_weave.py` +
 `tests/fixtures/make_library_pack.py`.
+
+## regions + transitions (doors between maps)
+
+An act may declare several `regions`, each its own directory under
+`acts/<id>/`: a `map.md`, a `contract.json` (legend, pois, poi_text,
+hero_start, sanctuary_tiles, watch, water_by_phase, flood_tiles, tile,
+bg and the colours), and `voices/` + `sprites/`. The first region is
+the act's home map.
+
+A `transition` is a door from one region to another - an **entry
+room** inside a building, or a floor below:
+
+```json
+"transitions": [
+  {"from": "town", "at": [4, 5], "to": "cottage", "to_at": [4, 3]}
+]
+```
+
+`at` is the tile you step on in `from`; `to_at` is where the hero
+lands in `to`. A door is stepped on, not stood on: the step enters the
+other region instead of placing the hero on the door tile. A speaker
+may carry `"region": "<region name>"`; a speaker with no `region`
+belongs to the act's first region. Each loaded region carries its own
+`speakers` dict (the act's speakers filtered to that region); the
+act's `speakers` keeps all of them.
+
+The woven player honours both: `weave_html` bakes `window.VEFR_REGIONS`
+(one entry per region, from its `map_text` + contract),
+`window.VEFR_TRANSITIONS` (the act's doors, verbatim), and
+`window.VEFR_SPEAKERS` (the act's speakers grouped by region), and
+`web/packaged.html` reassigns the current map, people and hero when a
+door is crossed. A single-region pack with no transitions bakes one
+region and behaves exactly as before. `maplab.validate` checks every
+door: `from`/`to` name declared regions, and `at`/`to_at` are inside
+their maps and walkable in their legends.
+
+Known gap (this slice): only the **first** region's full geometry is
+validated today (rectangular map, reachable tiles, pois, sanctuary,
+water). Other regions' maps are read only for the door checks; their
+own geometry validation is a follow-on.
 
 ## Adding a ruleset (the checklist later acts follow)
 

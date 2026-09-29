@@ -937,6 +937,9 @@
   "plain": "The box of square pictures you paint a map with.",
   "vefr": "the brushes"
  },
+ "transition": {
+  "plain": "A door or stair from one map to another, like a town and the room inside."
+ },
  "transparent": {
   "plain": "See-through."
  },

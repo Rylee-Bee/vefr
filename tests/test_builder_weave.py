@@ -56,6 +56,96 @@ def _baked_library(html):
     return _json.loads(line[len(prefix):].rstrip(";"))
 
 
+def _baked(html, name):
+    """The JSON on the woven file's single `window.<name> = ...;` line."""
+    import json as _json
+
+    prefix = f"window.{name} = "
+    line = next(ln for ln in html.splitlines() if ln.startswith(prefix))
+    return _json.loads(line[len(prefix):].rstrip(";"))
+
+
+def _two_region_pack(root):
+    """A two-region acts pack (town + a smaller cottage room) with one door."""
+    import json as _json
+
+    pack = root / "worlds" / "regions-pack"
+    (pack / "acts" / "act-1" / "town").mkdir(parents=True)
+    (pack / "acts" / "act-1" / "cottage").mkdir(parents=True)
+    (pack / "world.json").write_text(_json.dumps({
+        "name": pack.name, "title": "Regions Pack",
+        "phases": {"dusk": "quiet", "dawn": "warm"}, "voices": {},
+    }), encoding="utf-8")
+    (pack / "acts" / "act-1" / "world.json").write_text(_json.dumps({
+        "id": "act-1", "title": "Regions Pack",
+        "regions": ["town", "cottage"],
+        "speakers": {
+            "keeper": {"name": "Keeper", "at": [1, 1], "region": "town",
+                       "voice_file": "voices/keeper.md",
+                       "seeds": {"dusk": "a", "dawn": "b"}},
+            "cook": {"name": "Cook", "at": [1, 1], "region": "cottage",
+                     "voice_file": "voices/cook.md",
+                     "seeds": {"dusk": "c", "dawn": "d"}},
+        },
+        "transitions": [
+            {"from": "town", "at": [2, 3], "to": "cottage", "to_at": [1, 1]},
+        ],
+    }), encoding="utf-8")
+    for name, rows in (("town", ["#####", "#...#", "#...#", "#...#", "#####"]),
+                       ("cottage", ["#####", "#...#", "#####"])):
+        region = pack / "acts" / "act-1" / name
+        (region / "map.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+        (region / "contract.json").write_text(_json.dumps({
+            "tile": 32, "bg": "#131311", "hero_start": [1, 1],
+            "legend": {".": {"base": ["#212a20"]},
+                       "#": {"base": ["#2a2e33"], "solid": True}},
+            "sanctuary_tiles": ["."],
+            "water_by_phase": {"dusk": "low", "dawn": "low"},
+            "flood_tiles": [], "pois": {},
+        }), encoding="utf-8")
+    return pack
+
+
+def test_woven_file_bakes_regions_transitions_and_grouped_speakers(tmp_path):
+    """A two-region pack bakes every region's map, its doors, and the
+    act's speakers grouped by the region they name."""
+    pack = _two_region_pack(tmp_path)
+    html = cli.weave_html(pack)
+
+    regions = _baked(html, "VEFR_REGIONS")
+    assert set(regions) == {"town", "cottage"}
+    assert regions["town"]["map"] == ["#####", "#...#", "#...#", "#...#", "#####"]
+    assert regions["cottage"]["map"] == ["#####", "#...#", "#####"]
+    assert regions["cottage"]["hero_start"] == [1, 1]
+    assert regions["cottage"]["legend"]["#"]["solid"] is True
+
+    assert _baked(html, "VEFR_TRANSITIONS") == [
+        {"from": "town", "at": [2, 3], "to": "cottage", "to_at": [1, 1]},
+    ]
+
+    speakers = _baked(html, "VEFR_SPEAKERS")
+    assert set(speakers) == {"town", "cottage"}
+    assert set(speakers["town"]) == {"keeper"}
+    assert set(speakers["cottage"]) == {"cook"}
+    assert set(speakers["cottage"]["cook"]) == {"name", "at", "seeds", "voice_file"}
+    assert speakers["cottage"]["cook"]["name"] == "Cook"
+
+
+def test_a_second_regions_legend_tiles_are_baked(tmp_path):
+    """A room's own symbols are tiles too, not only the town's ground."""
+    import json as _json
+
+    pack = _two_region_pack(tmp_path)
+    cottage = pack / "acts" / "act-1" / "cottage" / "contract.json"
+    contract = _json.loads(cottage.read_text(encoding="utf-8"))
+    contract["legend"]["t"] = {"base": ["#332e26"], "tile": "table"}
+    cottage.write_text(_json.dumps(contract), encoding="utf-8")
+
+    tiles = _baked(cli.weave_html(pack), "VEFR_TILES")
+    assert "t" in tiles
+    assert tiles["t"].startswith("data:image/webp;base64,")
+
+
 def test_woven_file_bakes_the_packs_books():
     """The sample pack's books ride into the file in the reader's shape."""
     pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"

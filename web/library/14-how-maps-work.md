@@ -47,6 +47,11 @@ The people and things standing on a map are *sprites*: small pictures
 placed on squares. A game can bring its own, so the hero and the people
 look like themselves instead of a dot.
 
+A door - or the stair - can lead to another map. Games call that a
+*transition*: the town outside and the entry room inside are two maps
+joined by one door. Step on the door and you are in the room; the room
+can be small and exact, the way a real inside is.
+
 * * *
 
 A map can be bigger than the screen. When it is, the view moves with the

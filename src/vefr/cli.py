@@ -656,20 +656,37 @@ def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
     room that made it. This resolves the same tile per symbol the room's
     own `tileFor` does - an explicit `"tile"`, else solid/sanctuary/deco
     pick stone-wall/rug/grass, else open ground picks grass or path by
-    order - and inlines each as a data URI. A symbol with no tile on disk
-    is skipped and the player falls back to its base colour.
+    order - and inlines each as a data URI. Every region's legend is
+    gathered (a room's table is a tile too, not only the town's ground).
+    A symbol with no tile on disk is skipped and the player falls back to
+    its base colour.
     """
     import base64
 
+    legends: list[dict] = []
+    sanctuaries: set[str] = set()
     town = world.get('town') if isinstance(world.get('town'), dict) else {}
-    legend = town.get('legend') if isinstance(town.get('legend'), dict) else {}
+    if isinstance(town.get('legend'), dict):
+        legends.append(town['legend'])
+        sanctuaries.update(town.get('sanctuary_tiles') or [])
+    for act in (world.get('acts') or []):
+        for rdata in (act.get('regions') or {}).values():
+            contract = rdata.get('contract') if isinstance(rdata, dict) else None
+            if isinstance(contract, dict):
+                if isinstance(contract.get('legend'), dict):
+                    legends.append(contract['legend'])
+                sanctuaries.update(contract.get('sanctuary_tiles') or [])
+    # First legend wins on a shared symbol; keep the pack's own order.
+    legend: dict = {}
+    for lg in legends:
+        for ch, spec in lg.items():
+            legend.setdefault(ch, spec)
     if not legend:
         return {}
-    sanctuary = town.get('sanctuary_tiles') or []
     open_chars = [
         ch for ch, spec in legend.items()
         if isinstance(spec, dict) and not spec.get('solid')
-        and ch not in sanctuary and not spec.get('deco')
+        and ch not in sanctuaries and not spec.get('deco')
     ]
     out: dict[str, str] = {}
     for ch, spec in legend.items():
@@ -679,7 +696,7 @@ def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
             name = own
         elif spec.get('solid') is True:
             name = 'stone-wall'
-        elif ch in sanctuary:
+        elif ch in sanctuaries:
             name = 'rug'
         elif spec.get('deco'):
             name = 'grass'
@@ -785,6 +802,78 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         for b in load_library(pack)
     ]
 
+    # The act's regions, doors, and grouped speakers. A single-region
+    # pack bakes one region and empty transitions; the woven player's
+    # town stays exactly what VEFR_WORLD carried (the visual baseline
+    # must not move). Regions come from the act's own region dirs
+    # (map_text + contract); a pack woven without acts falls back to
+    # the unified `town`.
+    first_act = (world.get('acts') or [{}])[0]
+    if not isinstance(first_act, dict):
+        first_act = {}
+
+    def _region_entry(contract: dict, map_text: str) -> dict:
+        return {
+            'map': [ln for ln in (map_text or '').splitlines() if ln.strip()],
+            'legend': contract.get('legend', {}),
+            'pois': contract.get('pois', {}),
+            'poi_text': contract.get('poi_text', {}),
+            'hero_start': contract.get('hero_start', [1, 1]),
+            'sanctuary_tiles': contract.get('sanctuary_tiles', []),
+            'watch': contract.get('watch', {}),
+            'water_by_phase': contract.get('water_by_phase', {}),
+            'flood_tiles': contract.get('flood_tiles', []),
+            'tile': contract.get('tile', 32),
+            'bg': contract.get('bg', '#131311'),
+            'hero_color': contract.get('hero_color', '#e8e5df'),
+            'speaker_color': contract.get('speaker_color', '#8b939c'),
+            'speaker_head': contract.get('speaker_head', '#d8d5df'),
+        }
+
+    regions: dict = {}
+    act_regions = first_act.get('regions')
+    if isinstance(act_regions, dict):
+        for rname, rdata in act_regions.items():
+            rdata = rdata if isinstance(rdata, dict) else {}
+            regions[rname] = _region_entry(
+                rdata.get('contract', {}) or {}, rdata.get('map_text', ''))
+    if not regions:
+        # No acts on disk (raw/out-of-root pack): the unified town is
+        # the single region.
+        town = world.get('town') if isinstance(world.get('town'), dict) else {}
+        rname = world.get('_region') or 'town'
+        regions[rname] = _region_entry(town, '\n'.join(town.get('map', [])))
+    else:
+        # A synthesized flat act keeps its geometry in the unified town
+        # (the region dirs have no contract); fill the first region from
+        # it so VEFR_REGIONS is truthful for flat packs too.
+        first = next(iter(regions))
+        town = world.get('town') if isinstance(world.get('town'), dict) else {}
+        if not regions[first].get('map') and town.get('map'):
+            regions[first] = _region_entry(town, '\n'.join(town.get('map', [])))
+
+    transitions = first_act.get('transitions')
+    if transitions is None:
+        transitions = world.get('transitions', [])
+    if not isinstance(transitions, list):
+        transitions = []
+
+    first_region_name = next(iter(regions), 'town')
+    act_speakers = first_act.get('speakers')
+    if not isinstance(act_speakers, dict):
+        act_speakers = world.get('speakers', {}) or {}
+    speaker_groups: dict = {}
+    for key, spec in act_speakers.items():
+        if not isinstance(spec, dict):
+            continue
+        rname = spec.get('region', first_region_name)
+        speaker_groups.setdefault(rname, {})[key] = {
+            'name': spec.get('name', key),
+            'at': spec.get('at', [0, 0]),
+            'seeds': spec.get('seeds', {}),
+            'voice_file': spec.get('voice_file', ''),
+        }
+
     template_candidates = _template_candidates()
     template_path = next(
         (p for p in template_candidates if p.exists()), template_candidates[0])
@@ -807,6 +896,11 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
     out_html = out_html.replace('{{fragments_json}}', _json.dumps(fragments, ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
+    out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
+    out_html = out_html.replace('{{transitions_json}}',
+                                _json.dumps(transitions, ensure_ascii=False))
+    out_html = out_html.replace('{{speakers_json}}',
+                                _json.dumps(speaker_groups, ensure_ascii=False))
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Empty unless
     # the caller generated one (the CLI's --pool; the web route never).
