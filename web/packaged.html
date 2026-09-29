@@ -1211,6 +1211,7 @@ function setupTown() {
   var T = town.tile, viewW = 0, viewH = 0;
   var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
   function fitZoom() {
+    if (fogOn) return 32 / town.tile;   // a dark map is read up close, and scrolls
     var fit = Math.min(viewW / (cols * town.tile), viewH / (rows * town.tile));
     if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
