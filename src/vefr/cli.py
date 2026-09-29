@@ -692,6 +692,38 @@ def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
     return out
 
 
+def _player_sprites(pack: Path) -> dict[str, str]:
+    """Inline character sprites, keyed by name (the file stem).
+
+    A pack names one sprite per character in a `sprites/` folder: `hero`
+    for the player, and one named for each speaker key. Both the studio's
+    live player and the woven player draw them where a character stands,
+    falling back to the drawn figure when a name has no sprite. Every
+    image is inlined as a data URI, the way tiles and title art already are.
+    """
+    import base64
+
+    roots = [pack / 'sprites']
+    acts = pack / 'acts'
+    if acts.is_dir():
+        for act in sorted(acts.iterdir()):
+            if not act.is_dir():
+                continue
+            for region in sorted(act.iterdir()):
+                if (region / 'sprites').is_dir():
+                    roots.append(region / 'sprites')
+    out: dict[str, str] = {}
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for f in sorted(root.iterdir()):
+            if f.is_file() and f.suffix.lower() in _ART_TYPES and f.stem not in out:
+                mime = _ART_TYPES[f.suffix.lower()]
+                data = base64.b64encode(f.read_bytes()).decode('ascii')
+                out[f.stem] = f'data:{mime};base64,{data}'
+    return out
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -770,6 +802,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{tiles_json}}',
                                 _json.dumps(_player_tiles(world, template_path.parent),
                                             ensure_ascii=False))
+    out_html = out_html.replace('{{sprites_json}}',
+                                _json.dumps(_player_sprites(pack), ensure_ascii=False))
     out_html = out_html.replace('{{logbok_json}}', _json.dumps(logbok))
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))

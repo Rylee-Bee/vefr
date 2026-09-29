@@ -77,6 +77,26 @@ def test_woven_file_without_a_library_bakes_an_empty_list(woven):
     assert _baked_library(cli.weave_html(woven)) == []
 
 
+def test_woven_file_bakes_pack_sprites(woven):
+    """A pack's character sprites ride into the file, keyed by name."""
+    import base64 as _b64
+    import json as _json
+
+    png = _b64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    )
+    sprites = woven / "sprites"
+    sprites.mkdir()
+    (sprites / "hero.png").write_bytes(png)
+    (sprites / "keeper.png").write_bytes(png)
+
+    html = cli.weave_html(woven)
+    line = next(ln for ln in html.splitlines() if ln.startswith("window.VEFR_SPRITES = "))
+    data = _json.loads(line[len("window.VEFR_SPRITES = "):].rstrip(";"))
+    assert set(data) == {"hero", "keeper"}
+    assert all(v.startswith("data:image/png;base64,") for v in data.values())
+
+
 def test_weave_returns_metadata_and_a_real_download(woven):
     client = TestClient(app)
     r = client.post("/api/builder/weave", json={})

@@ -381,6 +381,10 @@ window.VEFR_WORLD = {{world_json}};
 // studio's Map Room draws, so a game looks the same shipped as it did
 // in the room that made it. Empty when the pack's legend names none.
 window.VEFR_TILES = {{tiles_json}};
+// Character sprites, keyed by name: `hero` for the player, and one per
+// speaker key. The same art the pack's own folder holds, so a character
+// looks like someone, not a dot. Empty when the pack names none.
+window.VEFR_SPRITES = {{sprites_json}};
 window.VEFR_LOGBOK = {{logbok_json}};
 window.VEFR_LEDGER = {{ledger_json}};
 window.VEFR_VOICES = {{voices_json}};
@@ -1132,6 +1136,30 @@ function setupTown() {
     tileImgs[ch] = im;
   });
 
+  // The character sprites, preloaded the same way. A character with no
+  // sprite keeps the drawn figure (a body and a head, or the hero's dot).
+  var sprites = window.VEFR_SPRITES || {};
+  var spriteImgs = {};
+  Object.keys(sprites).forEach(function (key) {
+    var im = new Image();
+    im.onload = function () { draw(); };
+    im.src = sprites[key];
+    spriteImgs[key] = im;
+  });
+
+  function spriteReady(key) {
+    var im = spriteImgs[key];
+    return im && im.complete && im.naturalWidth > 0;
+  }
+  // A character stands taller than its tile, feet on the tile's bottom.
+  function drawSprite(key, tx, ty) {
+    var im = spriteImgs[key];
+    var h = town.tile * 1.5;
+    var w = h * (im.naturalWidth / im.naturalHeight || 1);
+    ctx.drawImage(im, tx * town.tile + (town.tile - w) / 2,
+                  ty * town.tile + town.tile - h, w, h);
+  }
+
   function draw() {
     var ph = phase();
     var water = (town.water_by_phase || {})[ph];
@@ -1166,12 +1194,12 @@ function setupTown() {
         ctx.fillRect(t[0] * town.tile, t[1] * town.tile, town.tile, town.tile);
       });
     }
-    // The people: a body and a head at each speaker's tile - the same
-    // figure the studio's live player draws, so you can see who is
-    // here to talk to. Silence when a pack names no speakers.
+    // The people: their own sprite when the pack names one, else the
+    // drawn figure (a body and a head), so you can see who is here.
     Object.keys(speakers || {}).forEach(function (key) {
       var s = speakers[key];
       if (!s || !Array.isArray(s.at)) return;
+      if (spriteReady(key)) { drawSprite(key, s.at[0], s.at[1]); return; }
       var u = town.tile / 32;
       var px = s.at[0] * town.tile, py = s.at[1] * town.tile;
       ctx.fillStyle = town.speaker_color || '#8b939c';
@@ -1184,13 +1212,17 @@ function setupTown() {
       ctx.fill();
     });
 
-    // The hero
-    ctx.fillStyle = town.hero_color || '#e8e5df';
-    ctx.beginPath();
-    ctx.arc(hero[0] * town.tile + town.tile / 2,
-            hero[1] * town.tile + town.tile / 2,
-            town.tile / 3, 0, Math.PI * 2);
-    ctx.fill();
+    // The hero: their own sprite when the pack names one, else the dot.
+    if (spriteReady('hero')) {
+      drawSprite('hero', hero[0], hero[1]);
+    } else {
+      ctx.fillStyle = town.hero_color || '#e8e5df';
+      ctx.beginPath();
+      ctx.arc(hero[0] * town.tile + town.tile / 2,
+              hero[1] * town.tile + town.tile / 2,
+              town.tile / 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   function move(dx, dy) {

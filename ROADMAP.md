@@ -7,6 +7,15 @@
 
 ## Landed
 
+- [x] **Characters in the pack, drawn in play** (2026-09-29): the hero and
+      every speaker were code-drawn figures (a dot, a lollipop). A pack may now
+      name a sprite per character in a `sprites/` folder - `hero.png`, and one
+      named for each speaker key. `weave_html` inlines them as data URIs
+      (`cli._player_sprites` -> `window.VEFR_SPRITES`) and the woven player
+      draws them where a character stands, taller than its tile with feet on
+      the ground, falling back to the drawn figure when a name has no sprite.
+      Cottage's first two: the spell keeper (the owner's pick) and the hero.
+      Test: `test_builder_weave.py::test_woven_file_bakes_pack_sprites`.
 - [x] **The woven player draws the people** (2026-09-29): speakers were
       invisible in the shipped file - the studio's live player drew a
       body-and-head figure per speaker (`web/town.js`), the woven player drew
