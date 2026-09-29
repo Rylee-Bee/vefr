@@ -7,6 +7,15 @@
 
 ## Landed
 
+- [x] **Fog of war, for regions that ask for it** (2026-09-29): a region may
+      declare `fog` (true, or `{"radius": N}`); the woven player then draws
+      only what the hero has seen - a lit circle around them, walked ground
+      remembered dimmed, everything else black. Explored tiles persist per
+      region, per world. Opt-in, so a town stays bright; doors, books,
+      chests and people stay hidden until seen. The Cottage floors carry
+      `{"radius": 4}`. Baked per region
+      (`cli._region_entry` -> `VEFR_REGIONS[<name>].fog`) and recomputed on
+      entering a region. Test: `test_a_region_can_declare_fog`.
 - [x] **The delve, first slice — generated dungeon floors** (2026-09-30): the
       game has an authored first floor and a stair down, but nowhere to
       fight or explore. `src/vefr/delve.py` is a rules-only floor generator:

@@ -56,6 +56,13 @@ exact, the way a real inside is.
 
 * * *
 
+A map can be dark until you have walked it. Games call that *fog of war*:
+a small circle around you is lit, the ground you have crossed stays as a
+dim memory, and the rest is black. A world says which of its maps are
+dark - a town is open, and the floors below are dark.
+
+* * *
+
 A map can be bigger than the screen. When it is, the view moves with the
 hero: the game keeps a *camera* on the map and slides it as you walk, so
 every square stays the same size and stays readable. A map that fits is
