@@ -1096,6 +1096,7 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
             'water_by_phase': contract.get('water_by_phase', {}),
             'flood_tiles': contract.get('flood_tiles', []),
             'tile': contract.get('tile', 32),
+            'fog': contract.get('fog'),
             'bg': contract.get('bg', '#131311'),
             'hero_color': contract.get('hero_color', '#e8e5df'),
             'speaker_color': contract.get('speaker_color', '#8b939c'),
