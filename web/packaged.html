@@ -1553,6 +1553,7 @@ function setupTown() {
     ctx.fillStyle = town.bg; ctx.fillRect(0, 0, viewW, viewH);
     ctx.save();
     ctx.translate(-camX, -camY);
+    var litSet = fogOn ? litNow() : null;   // what is lit right now
 
     var u = T / 32;   // the pack's mark sizes are authored for a 32px tile
     var x0 = Math.max(0, Math.floor(camX / T));
@@ -1645,7 +1646,10 @@ function setupTown() {
     // colour. A slain enemy is never drawn; fog hides the unseen.
     enemies.forEach(function (e) {
       if (!e || !e.alive || !Array.isArray(e.at)) return;
-      if (hideUnseen(e.at[0], e.at[1])) return;
+      // A monster is only drawn where the light reaches: you cannot
+      // remember something that moves, and seeing through the dark
+      // would give the floor away.
+      if (fogOn && !(litSet && litSet[e.at[0] + ',' + e.at[1]])) return;
       if (e.sprite && spriteReady(e.sprite)) {
         drawSprite(e.sprite, e.at[0], e.at[1]);
         return;
@@ -1673,7 +1677,7 @@ function setupTown() {
     // Fog of war: explored but not currently lit is dimmed; never-seen
     // tiles were skipped above and stay dark.
     if (fogOn) {
-      var lit = litNow();
+      var lit = litSet || litNow();
       ctx.fillStyle = 'rgba(5, 6, 8, 0.62)';
       for (var fy = y0; fy <= y1; fy++) {
         for (var fx = x0; fx <= x1; fx++) {
