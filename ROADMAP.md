@@ -153,7 +153,7 @@
       (`cli._player_sprites` -> `window.VEFR_SPRITES`) and the woven player
       draws them where a character stands, taller than its tile with feet on
       the ground, falling back to the drawn figure when a name has no sprite.
-      Cottage's first two: the spell keeper (the owner's pick) and the hero.
+      Cottage's first two: a town character (the owner's pick) and the hero.
       Test: `test_builder_weave.py::test_woven_file_bakes_pack_sprites`.
 - [x] **The woven player draws the people** (2026-09-29): speakers were
       invisible in the shipped file - the studio's live player drew a

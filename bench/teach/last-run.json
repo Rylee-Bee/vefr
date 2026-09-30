@@ -93,12 +93,12 @@
  {
   "want": "core loop",
   "got": "exploration reward",
-  "context": "Most of the game you explore a room, find something, and bring it back to the cottage.",
+  "context": "Most of the game you explore a room, find something, and carry it home.",
   "cands": [
    "core loop",
    "exploration reward"
   ],
-  "text": "Most of the game you explore a room, find something, and bring it back to the cottage."
+  "text": "Most of the game you explore a room, find something, and carry it home."
  },
  {
   "want": "difficulty curve",
@@ -195,11 +195,11 @@
  {
   "want": "game economy",
   "got": "none",
-  "context": "The spell keeper gives you a little discount on spells and a baked good when you visit.",
+  "context": "A merchant you visit often starts giving you a small discount.",
   "cands": [
    "game economy"
   ],
-  "text": "The spell keeper gives you a little discount on spells and a baked good when you visit."
+  "text": "A merchant you visit often starts giving you a small discount."
  },
  {
   "want": "gating",
@@ -264,7 +264,7 @@
   "cands": [
    "motivation"
   ],
-  "text": "The spell keeper wants to protect the cottage because the two sisters built it together."
+  "text": "A character wants to protect a place because someone they loved built it."
  },
  {
   "want": "pacing",
@@ -353,11 +353,11 @@
  {
   "want": "spawn point",
   "got": "spawn point",
-  "context": "The player should start in the cottage kitchen.",
+  "context": "The player should start in a small room, not in the middle of the world.",
   "cands": [
    "spawn point"
   ],
-  "text": "The player should start in the cottage kitchen."
+  "text": "The player should start in a small room, not in the middle of the world."
  },
  {
   "want": "typeface",

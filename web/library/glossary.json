@@ -249,7 +249,7 @@
    "\\bthe main thing (you|they|players?) do\\b",
    "\\bevery (day|night|run|turn) (you|they)\\b"
   ],
-  "example": "Most of the game you explore a room, find something, and bring it back to the cottage."
+  "example": "Most of the game you explore a room, find something, and carry it home."
  },
  "cutout": {
   "plain": "A picture with its background removed."
@@ -476,7 +476,7 @@
   "cues": [
    "\\b(coins?|gold|money|currency|shop|price|buy|sell|trade|discount)\\b"
   ],
-  "example": "The spell keeper gives you a little discount on spells and a baked good when you visit."
+  "example": "A merchant you visit often starts giving you a small discount."
  },
  "game loop": {
   "plain": "Check buttons, move things, draw everything, repeat, many times a second."
@@ -614,7 +614,7 @@
    "\\bdreams? of\\b",
    "\\bdesperate (to|for)\\b"
   ],
-  "example": "The spell keeper wants to protect the cottage because the two sisters built it together."
+  "example": "A character wants to protect a place because someone they loved built it."
  },
  "narrative design": {
   "plain": "Writing for games: story, characters and choices.",
@@ -893,7 +893,7 @@
    "\\bwhere (you|the player|they) (start|begin|wake)\\b",
    "\\brespawn\\b"
   ],
-  "example": "The player should start in the cottage kitchen."
+  "example": "The player should start in a small room, not in the middle of the world."
  },
  "sprite sheet": {
   "plain": "Many small pictures on one sheet, like frames of a flip book."
