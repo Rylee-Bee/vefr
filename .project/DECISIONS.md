@@ -1,5 +1,35 @@
 # DECISIONS — vefr
 
+## 2026-09-30 — the day's design calls, recorded
+
+**Decision.** So the next agent does not re-litigate them:
+
+1. **Dependency updates: Renovate, not Dependabot.** `renovate.json`
+   (weekly, grouped, 7-day cooldown, Action digest pins, lockfile
+   maintenance); `.github/dependabot.yml` removed. Installing the Mend app is
+   the owner's step.
+2. **`sqlite-vec` is a default dependency.** The Lorekeeper's `ask` uses a
+   vec0 KNN index (`index/lore.db`); `facts.jsonl` stays authoritative, and a
+   brute-force cosine fallback keeps every fact safe if the extension fails.
+3. **Structured output has an opt-in grammar fallback.** A caller may set
+   `payload["grammar"] = True`; `schema_grammar.py` turns the same JSON Schema
+   into GBNF and the request carries `grammar` *instead of* `response_format`.
+   The default path is unchanged.
+4. **Two optional, additive pack blocks landed:** `grammars` (deterministic
+   sentence recipes for offline whispers, weather on arrival, and generated
+   floor names) and item `light` (`{radius, turns}` or `{reveal: true}`). A
+   pack with neither behaves byte-for-byte as before.
+5. **UAT contracts live in this repo.** `docs/uat/` holds a journey plus
+   machine-checkable acceptance triples, in the estate harness's format, so
+   "what good means" is public and versioned with the player.
+6. **The gate grew, and so did its documentation.** `dev-guards.yml` adds
+   vulture, deptry, lychee (offline) and Vale (advisory); AGENTS.md now lists
+   them and the deps list names sqlite-vec.
+
+**Status.** ACCEPTED.
+
+---
+
 ## 2026-09-30 — runtime state untracked; the last of the first game's name swept
 
 **Decision.** Two carry-overs from the 2026-09-30 audit:

@@ -69,6 +69,11 @@ python3 scripts/check_public_surface.py   # public-surface guard: catches privat
 uv run playwright install chromium   # once
 VEFR_BROWSER_REQUIRED=1 uv run pytest -q tests/browser
 
+# Static guards, same job (config lives in pyproject.toml)
+uv tool run vulture        # dead code
+uv tool run deptry .       # dependency hygiene
+# CI-only too: lychee (offline link check) and Vale (prose, advisory)
+
 # Session-start health
 uv run --group test norns doctor
 
@@ -103,7 +108,7 @@ uv run ratatoskr weave --pool 5
 
 ## Style
 
-- Python 3.11+, hatchling, `src/` layout. Deps: fastapi, uvicorn, httpx, pydantic — keep it short.
+- Python 3.11+, hatchling, `src/` layout. Deps: fastapi, uvicorn, httpx, pydantic, sqlite-vec (the Lorekeeper's vector index) — keep it short.
 - Markdown: one idea per line, prose lines short.
 - JS in `web/`: no framework; `state.js` is a plain object + subscribers. Shipped JS tested via node-vm harnesses.
 - Engine voice: Norse-named, story-agnostic. Game-specific names belong in packs, never here.
@@ -120,6 +125,9 @@ uv run ratatoskr weave --pool 5
 |---|---|
 | `AGENT_POLICY.md` | Agent decision kernel: preflight, DoD, evidence requirements |
 | `docs/guides/world-creation.md` | World authoring: norns chat -> validate -> build-map -> weave |
+| `docs/guides/grammars.md` | Author grammars: offline whispers, weather, names |
+| `docs/guides/lore.md` | The Lorekeeper: facts, the derived index, `vefr-lore` |
+| `docs/uat/` | UAT contracts: a journey + machine-checkable acceptance triples |
 | `README.md` | Design philosophy + screenshots + quickstart |
 | `CONTRIBUTING.md` | How to contribute (human + agent onboarding) |
 | `docs/guides/brain-socket.md` | Architecture: VEFR owns reality; brains plug in |

@@ -350,7 +350,7 @@ standards. See the
 
 ## Attribution
 
-- Dependencies: fastapi, uvicorn, httpx, pydantic (MIT/BSD-3),
+- Dependencies: fastapi, uvicorn, httpx, pydantic, sqlite-vec (MIT/BSD-3/Apache-2.0),
   declared in `pyproject.toml`; their notices ship in the wheels.
 - Model: Qwen (Apache-2.0); outputs are shaped by this repo's
   prompts and reviewed by a human before they become canon.
