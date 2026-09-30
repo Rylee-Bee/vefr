@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **The 2026-09-30 audit: runtime state untracked, and an enhancement
+      packet** (2026-09-30): six runtime-state files that `.gitignore` (and
+      the repo's own rule) already disowned were still tracked; they left
+      the index (`#126`), and the last tracked mentions of the first game's
+      name were swept. The open-source survey that will feed the next
+      slices landed as `docs/research/2026-09-30-enhancement-packet.md`
+      (`#127`), with its first wave filed as `#128`-`#133`.
+
 - [x] **Reward, first slice — gold, a shop (sell + buy), and using a thing**
       (2026-09-30): loot left a thing carried but did nothing with it. Three
       optional, additive pack additions land the reward end. An item may now
@@ -1945,6 +1953,27 @@
       review.)
 
 ## Next
+
+### Enhancement wave 1 (2026-09-30 packet)
+
+From `docs/research/2026-09-30-enhancement-packet.md`. Six small,
+low-risk moves that compound; each has its own issue.
+
+- [ ] **Grammar-constrained output** so any local model returns valid JSON
+      (#128): a GBNF grammar for llama.cpp and/or Outlines /
+      lm-format-enforcer for backends that ignore `response_format`.
+- [ ] **An embedded vector index for the Lorekeeper** (#129): SQLite +
+      `sqlite-vec`, with `facts.jsonl` still authoritative and `rebuild`
+      still able to recreate the index from facts alone.
+- [ ] **Gate hardening** (#130): vulture (dead code), deptry (deps),
+      lychee (links), guidepup (screen readers).
+- [ ] **Property tests** (#131) for delve determinism, reachability, and
+      fog - same seed gives the same floor; no orphaned rooms; no seeing
+      through a wall.
+- [ ] **Dependency freshness** (#132): dependabot misses npm; evaluate
+      Renovate and cover the workflow pins.
+- [ ] **Vale** (#133) to enforce the house voice in docs.
+
 - [ ] **Name a landmark in the Map Room** (from `studio-lessons.md`,
       2026-09-29): a square can be marked today, but a `pois` entry - a
       *named* place - still needs a route the Map Room does not have. The
