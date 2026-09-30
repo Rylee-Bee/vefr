@@ -100,3 +100,7 @@ node_modules/
 /bench/runs/ea/
 /bench/runs/pictures/
 /bench/runs/transcode-*/
+
+# per-user agent overrides - never shared
+/.claude/settings.local.json
+/CLAUDE.local.md
