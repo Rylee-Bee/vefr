@@ -1,6 +1,7 @@
 {
   "tile": 32,
   "bg": "#131311",
+  "fog": { "radius": 4 },
   "hero_start": [3, 4],
   "watch": {
     "tower": [5, 1],

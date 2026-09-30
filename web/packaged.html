@@ -286,6 +286,7 @@
         <p class="glass" id="use-hint" aria-live="polite" hidden></p>
         <p class="glass" id="library-live" role="status" aria-live="polite"></p>
         <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
+        <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
@@ -334,6 +335,7 @@
         <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
         <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
         <button type="button" id="bagbtn" class="gbtn">Bag <kbd>B</kbd></button>
+        <button type="button" id="explore" class="gbtn" aria-pressed="false">Explore <kbd>O</kbd></button>
       </div>
     </div>
     <section id="kitchen" hidden>
@@ -385,6 +387,7 @@
       <li><button type="button" data-panel="bag">Bag</button></li>
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
+      <li><button type="button" data-panel="display">Display</button></li>
     </ul>
     <button type="button" id="menu-close" class="cta cta--gold">Resume</button>
   </div>
@@ -413,6 +416,8 @@
         <li>Move with the arrow keys, or the pad on a touch screen.</li>
         <li>Talk to someone nearby with <kbd>E</kbd>, <kbd>Space</kbd> or the Talk button.</li>
         <li>Hear a rumor with <kbd>Q</kbd> or the Whisper button.</li>
+        <li>Walk the unexplored dark with <kbd>O</kbd> or the Explore button.</li>
+        <li>Turn the dark off with <kbd>V</kbd>, or in Display.</li>
         <li>Open and close this menu with <kbd>Esc</kbd>.</li>
       </ul>
     </div>
@@ -420,6 +425,12 @@
       <h2>Model settings</h2>
       <p>This game can use your own language model for fresh lines. It plays fully without one.</p>
       <button type="button" id="menu-model" class="cta">Model settings</button>
+    </div>
+    <div data-panel-body="display" hidden>
+      <h2>Display</h2>
+      <p>The dark shows only the ground you have walked and lit. Turn it off to see the whole map.</p>
+      <button type="button" id="fog-toggle" class="cta" aria-pressed="true">Darkness: on</button>
+      <p class="status" id="fog-live" role="status" aria-live="polite"></p>
     </div>
   </div>
 </div>
@@ -1996,7 +2007,21 @@ function setupTown() {
   // A region may declare `fog`: only what the hero has seen is drawn, a
   // radius around them is lit, and the rest of the memory is dimmed.
   // Explored tiles are remembered per region, per world.
-  var fogOn = !!town.fog;
+  // A player preference on top of the pack's choice: a region may declare
+  // fog, and the player may still turn the dark off for themselves. Kept
+  // per world, beside the explored tiles.
+  function fogPrefKey() {
+    var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+    return 'vefr-fogpref-' + w;
+  }
+  function fogPrefOn() {
+    try { return localStorage.getItem(fogPrefKey()) !== 'off'; } catch (e) { return true; }
+  }
+  function setFogPref(on) {
+    try { localStorage.setItem(fogPrefKey(), on ? 'on' : 'off'); } catch (e) {}
+  }
+  function fogEnabled() { return !!town.fog && fogPrefOn(); }
+  var fogOn = fogEnabled();
   var fogRadius = (town.fog && town.fog.radius) || 6;
   var explored = {};
   function fogKey() {
@@ -2271,7 +2296,7 @@ function setupTown() {
     pois = town.pois;
     speakers = regionSpeakers(name);
     hero = (at || town.hero_start).slice();
-    fogOn = !!town.fog;
+    fogOn = fogEnabled();
     fogRadius = (town.fog && town.fog.radius) || 6;
     loadTiles();
     loadFog();
@@ -2282,6 +2307,7 @@ function setupTown() {
     draw();
     refreshPoi();
     updateUse();
+    renderFogToggle();
   }
 
   // A chest gives the note it holds (the book reader) and anything its
@@ -2434,6 +2460,187 @@ function setupTown() {
   document.getElementById('bagbtn').addEventListener('click', function () {
     if (window.openBag) window.openBag();
   });
+
+  // ---- autoexplore ----
+  // Step the hero toward the nearest unexplored tile, on a timer, and
+  // stop the moment a person is needed: a lit monster, a wound, a dead
+  // end, or the safety cap. Every step goes through move(), so turns,
+  // monsters, fog and pickups stay honest. The status line speaks only
+  // at start and stop - never each step - so a screen reader is not
+  // drowned in a hundred tile names.
+  var EXPLORE_PACE = 80;   // ms between steps: visible, still responsive
+  var EXPLORE_CAP = 400;   // hard ceiling, so a strange map cannot loop
+  var exploreTimer = null;
+  var exploreSteps = 0;
+  var exploreBtn = document.getElementById('explore');
+  var exploreStatus = document.getElementById('explore-status');
+
+  function exploring() { return exploreTimer !== null; }
+  function exploreSay(msg) {
+    if (exploreStatus) exploreStatus.textContent = msg || '';
+  }
+  function exploreStop(msg) {
+    if (exploreTimer !== null) { window.clearTimeout(exploreTimer); exploreTimer = null; }
+    exploreSteps = 0;
+    if (exploreBtn) exploreBtn.setAttribute('aria-pressed', 'false');
+    exploreSay(msg);
+  }
+  // A tile the hero may stand on: inside the map and not solid.
+  function exploreOpen(x, y) {
+    if (x < 0 || y < 0 || y >= town.map.length || x >= town.map[0].length) return false;
+    return !((town.legend[town.map[y][x]] || {}).solid);
+  }
+  // Breadth-first over walkable tiles, from the hero. Enemies are walls
+  // to the search: the fight belongs to the player, so route around it.
+  // `order` is BFS order, so the first frontier tile found is nearest.
+  function exploreBfs() {
+    var dist = {}, parent = {}, order = [];
+    var start = hero[0] + ',' + hero[1];
+    dist[start] = 0;
+    order.push(start);
+    var queue = [[hero[0], hero[1]]];
+    var dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+    for (var qi = 0; qi < queue.length; qi++) {
+      var cx = queue[qi][0], cy = queue[qi][1];
+      var ck = cx + ',' + cy;
+      for (var i = 0; i < dirs.length; i++) {
+        var nx = cx + dirs[i][0], ny = cy + dirs[i][1];
+        var nk = nx + ',' + ny;
+        if (dist[nk] !== undefined) continue;
+        if (!exploreOpen(nx, ny) || enemyAt(nx, ny)) continue;
+        dist[nk] = dist[ck] + 1;
+        parent[nk] = ck;
+        order.push(nk);
+        queue.push([nx, ny]);
+      }
+    }
+    return { dist: dist, parent: parent, order: order };
+  }
+  // Is this reachable tile itself dark, or beside a dark tile? If so,
+  // reaching it (and the light the hero carries) reveals something new.
+  function exploreFrontier(x, y) {
+    if (!explored[x + ',' + y]) return true;
+    var dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+    for (var i = 0; i < dirs.length; i++) {
+      if (!explored[(x + dirs[i][0]) + ',' + (y + dirs[i][1])]) return true;
+    }
+    return false;
+  }
+  // The nearest reachable tile that borders the dark; return only the
+  // first step toward it. Null means there is nowhere left to walk.
+  function exploreNextStep(bfs) {
+    var start = hero[0] + ',' + hero[1];
+    for (var i = 0; i < bfs.order.length; i++) {
+      var key = bfs.order[i];
+      if (bfs.dist[key] < 1) continue;   // never the hero's own tile
+      var parts = key.split(',');
+      if (!exploreFrontier(parseInt(parts[0], 10), parseInt(parts[1], 10))) continue;
+      var cur = key;
+      while (bfs.parent[cur] !== undefined && bfs.parent[cur] !== start) cur = bfs.parent[cur];
+      if (bfs.parent[cur] === undefined) return null;
+      var step = cur.split(',');
+      return { dx: parseInt(step[0], 10) - hero[0], dy: parseInt(step[1], 10) - hero[1] };
+    }
+    return null;
+  }
+  // The nearest living enemy the light currently reaches, if any.
+  function exploreSeenEnemy() {
+    var lit = litNow();
+    var best = null, bestDist = Infinity;
+    enemies.forEach(function (e) {
+      if (!e || !e.alive || !Array.isArray(e.at)) return;
+      if (!lit[e.at[0] + ',' + e.at[1]]) return;
+      var d = Math.abs(e.at[0] - hero[0]) + Math.abs(e.at[1] - hero[1]);
+      if (d < bestDist) { bestDist = d; best = e; }
+    });
+    return best;
+  }
+  // "A rat comes into view.", "The Gaunt Wolf comes into view." - the
+  // name's own article is kept rather than doubled.
+  function enemyInView(name) {
+    var n = String(name || 'something');
+    var lower = n.toLowerCase();
+    if (lower.indexOf('a ') === 0 || lower.indexOf('an ') === 0 || lower.indexOf('the ') === 0) {
+      return n.charAt(0).toUpperCase() + n.slice(1) + ' comes into view.';
+    }
+    return 'A ' + n + ' comes into view.';
+  }
+  function exploreTick() {
+    exploreTimer = null;
+    var readerOpen = !document.getElementById('reader').hidden;
+    var tradeOpen = !document.getElementById('trade').hidden;
+    var menuOpen = !document.getElementById('menu').hidden;
+    if (readerOpen || tradeOpen || menuOpen) { exploreStop('Stopped.'); return; }
+    if (exploreSteps >= EXPLORE_CAP) { exploreStop('Stopped.'); return; }
+    var seen = exploreSeenEnemy();
+    if (seen) { exploreStop(enemyInView(seen.name)); return; }
+    var step = exploreNextStep(exploreBfs());
+    if (!step || (step.dx === 0 && step.dy === 0)) {
+      exploreStop('Nothing left to explore here.');
+      return;
+    }
+    var hpBefore = HERO_HP;
+    var regionBefore = regionName;
+    exploreSteps += 1;
+    move(step.dx, step.dy);
+    // A wound, a death-wake, or the enemy's own line stops the walk.
+    var live = document.getElementById('combat-live');
+    var said = live ? live.textContent : '';
+    if (HERO_HP < hpBefore || regionName !== regionBefore
+        || said === DEATH_LINE || said.indexOf(' hits you ') !== -1) {
+      exploreStop('Stopped.');
+      return;
+    }
+    exploreTimer = window.setTimeout(exploreTick, EXPLORE_PACE);
+  }
+  function startExplore() {
+    if (exploring()) { exploreStop('Stopped.'); return; }
+    if (!fogOn) { exploreSay("This place isn't dark enough to explore."); return; }
+    exploreSteps = 0;
+    exploreSay('Exploring...');
+    if (exploreBtn) exploreBtn.setAttribute('aria-pressed', 'true');
+    exploreTimer = window.setTimeout(exploreTick, EXPLORE_PACE);
+  }
+  if (exploreBtn) exploreBtn.addEventListener('click', startExplore);
+  // A click anywhere else also stops the walk.
+  document.addEventListener('click', function (e) {
+    if (!exploring()) return;
+    if (e.target && e.target.closest && e.target.closest('#explore')) return;
+    exploreStop('Stopped.');
+  });
+
+  // ---- the dark, on the player's terms ----
+  // The pack says whether a region is dark; the player can still turn it
+  // off for themselves (remembered per world). `V`, or the Display switch.
+  var fogToggle = document.getElementById('fog-toggle');
+  var fogLive = document.getElementById('fog-live');
+  function renderFogToggle() {
+    if (!fogToggle) return;
+    fogToggle.setAttribute('aria-pressed', fogOn ? 'true' : 'false');
+    if (!town.fog) {
+      fogToggle.textContent = 'No darkness here';
+      fogToggle.disabled = true;
+    } else {
+      fogToggle.disabled = false;
+      fogToggle.textContent = 'Darkness: ' + (fogOn ? 'on' : 'off');
+    }
+  }
+  function toggleFog() {
+    if (!town.fog) {
+      if (fogLive) fogLive.textContent = 'This place has no darkness.';
+      return;
+    }
+    setFogPref(!fogOn);
+    fogOn = fogEnabled();
+    if (!fogOn && exploring()) exploreStop('Stopped.');
+    resize();
+    draw();
+    renderFogToggle();
+    if (fogLive) fogLive.textContent = fogOn ? 'Darkness on.' : 'Darkness off.';
+  }
+  if (fogToggle) fogToggle.addEventListener('click', toggleFog);
+  renderFogToggle();
+
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
@@ -2472,6 +2679,8 @@ function setupTown() {
   });
   document.addEventListener('keydown', function (e) {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    // Any key but the toggle itself halts an autoexplore walk.
+    if (exploring() && e.key !== 'o' && e.key !== 'O') exploreStop('Stopped.');
     // While the reader is open, its keys win and movement stops.
     var readerOpen = !document.getElementById('reader').hidden;
     if (readerOpen) {
@@ -2500,6 +2709,8 @@ function setupTown() {
     else if (e.key === 'f' || e.key === 'F') useHere();
     else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
     else if (e.key === 'b' || e.key === 'B') { if (window.openBag) window.openBag(); }
+    else if (e.key === 'o' || e.key === 'O') startExplore();
+    else if (e.key === 'v' || e.key === 'V') toggleFog();
     else if (!onButton && (e.key === ' ' || e.key === 'Enter')) {
       e.preventDefault();
       if (!box.hidden) box.hidden = true; else tryNPC();
