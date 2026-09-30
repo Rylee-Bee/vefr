@@ -219,13 +219,13 @@ def _cos(a: list[float], b: list[float]) -> float:
 # --- vector search --------------------------------------------------
 #
 # `vectors.jsonl` stays the derived, portable index (facts.jsonl is
-# authoritative above it). When the optional sqlite-vec extension is
-# installed we also write `index/lore.db`, a vec0 table, and `ask` uses
-# it for a KNN search instead of scanning every vector in Python. If the
-# extension is absent or fails to load, we fall back to the brute-force
-# cosine over the JSONL index - the answer is the same, only slower.
-# The accelerator is derived state: deleting it loses nothing, and
-# `rebuild` recreates it from the facts.
+# authoritative above it). We also write `index/lore.db`, a vec0 table,
+# and `ask` uses it for a KNN search instead of scanning every vector in
+# Python. sqlite-vec is a bundled dependency, but if it fails to import or
+# load we fall back to the brute-force cosine over the JSONL index - the
+# answer is the same, only slower, so a fact is never lost to it. The
+# accelerator is derived state: deleting it loses nothing, and `rebuild`
+# recreates it from the facts.
 
 VEC_DB_NAME = "lore.db"
 
@@ -234,7 +234,7 @@ _VEC = None  # cached sqlite_vec module, or False once found missing
 
 def _vec_module():
     """The sqlite_vec module when importable, else None. Cached so the
-    optional dependency is probed once per process."""
+    dependency is probed once per process."""
     global _VEC
     if _VEC is None:
         try:

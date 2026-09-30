@@ -14,14 +14,11 @@ dependencies = [
     "uvicorn>=0.30",
     "httpx>=0.28",
     "pydantic>=2.10",
+    # The Lorekeeper's vector index (src/vefr/lore_shell.py). Bundled: `ask`
+    # still falls back to a brute-force cosine if the extension fails to
+    # load, so a fact is never lost to it.
+    "sqlite-vec>=0.1.9",
 ]
-
-[project.optional-dependencies]
-# The Lorekeeper's fast vector index. Optional on purpose: without it,
-# `ask` falls back to a brute-force cosine over the same derived vectors
-# (same answer, slower). The test group installs it so CI covers both
-# paths.
-fast-lore = ["sqlite-vec>=0.1.9"]
 
 [dependency-groups]
 test = [
@@ -29,7 +26,6 @@ test = [
     "playwright>=1.63.0",
     "pytest>=8.3",
     "ruff>=0.8",
-    "sqlite-vec>=0.1.9",
 ]
 
 [tool.ruff]
