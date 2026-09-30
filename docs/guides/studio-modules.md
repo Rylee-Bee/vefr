@@ -129,7 +129,7 @@ Rules for the ladder:
 - **Opt in, one rung at a time.** "Keep it simple" stays the default; nobody is marched up.
 - **Every quest uses the person's own world,** so the lesson is about something they care about.
 - **Break things safely.** Each quest starts from a saved version and can always be undone.
-- **Playtest on Cottage of the Breeze first, with Rylee as the first player.** A rung is ready when it
+- **Playtest on the studio's first game, with Rylee as the first player.** A rung is ready when it
   makes something click; confusion or boredom is the bug to fix.
 - **The residents are the dev roles in costume:** the Cartographer (level design), Skuld (tests and
   truth), Urðr (version history), Völundr (settings and ops), Ratatoskr (shipping), Fróði (files and

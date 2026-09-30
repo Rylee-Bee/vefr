@@ -1,5 +1,26 @@
 # DECISIONS — vefr
 
+## 2026-09-30 — runtime state untracked; the last of the first game's name swept
+
+**Decision.** Two carry-overs from the 2026-09-30 audit:
+
+1. **Runtime state leaves the tree.** `data/interface.jsonl`,
+   `data/storyteller.jsonl`, `data/lore/facts.jsonl`,
+   `data/lore/index/{meta,vectors}.jsonl`, and `data/vault.json` were
+   tracked although the repo's own runtime-state rule and `.gitignore`
+   say they never should be (`data/vault.json` was not even ignored).
+   They are removed from the index, not from disk, and `/data/vault.json`
+   joins the ignore list. **They remain in git history** (added by
+   `50a9fad`); rewriting that history is a separate, owner-gated decision.
+2. **The first game's name is gone from tracked files.** The 2026-09-29
+   sweep (#123) fixed the glossary, tests, and ROADMAP; a second pass
+   neutralized the remaining mentions in `docs/guides/studio-lessons.md`,
+   `docs/guides/studio-modules.md`, and `bench/design/briefs.py`.
+
+**Status.** ACCEPTED.
+
+---
+
 ## 2026-09-25 — owner rulings: munr kept, test packs deleted, old art accepted
 
 **Decision.** Three open items closed by the owner:

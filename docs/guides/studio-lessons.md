@@ -55,10 +55,10 @@ taught us.
   own floorboards from one reference in 10 seconds: good for the studio's "Refine", and as a teacher
   for the small painter.
 
-## 2026-09-26: Cottage of the Breeze, day one
+## 2026-09-26: the first game, day one
 
 Made by hand with Rylee: the brief, a title picture, a colour, stickers,
-the spell keeper, Ratatoskr's voice. Then a live walkthrough of the
+a town character, Ratatoskr's voice. Then a live walkthrough of the
 studio found what got in the way.
 
 ### What made it fun and easy

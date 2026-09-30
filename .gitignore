@@ -33,6 +33,7 @@ __pycache__/
 # writes them under VEFR_HOME/data on the deploy host.
 /data/sessions/
 /data/vault-*.json
+/data/vault.json
 /data/journal-*.json
 /data/trace.jsonl
 /data/trace.jsonl.old
