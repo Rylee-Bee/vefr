@@ -140,17 +140,6 @@ def _entry(e: dict) -> str:
     return render(e)
 
 
-def _carried(items: list[dict]) -> str:
-    lines = []
-    for item in items:
-        name = _para(item.get("name") or "something without a name")
-        bond = _para(item.get("bond") or "")
-        lore = _para(item.get("lore") or "")
-        head = f"- **{name}**" + (f" ({bond})" if bond else "")
-        lines.append(head + (f" \u2014 {lore}" if lore else ""))
-    return "\n".join(lines)
-
-
 # ---- the title + canon preface (shared by every shape) ----
 
 def _preface(world: dict, name: str | None = None) -> list[str]:
