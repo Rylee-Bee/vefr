@@ -21,6 +21,7 @@ from vefr.lore_shell import (
     rebuild,
     status,
     vectors_path,
+    vec_db_path,
     _cos,
 )
 
@@ -197,3 +198,57 @@ def repo_root():
 def test_cosine(a, b, expected):
     got = _cos(a, b)
     assert got == pytest.approx(expected)
+
+
+# --- vector accelerator ---------------------------------------------
+
+def _has_sqlite_vec() -> bool:
+    from vefr import lore_shell
+    return lore_shell._vec_module() is not None
+
+
+def test_vec_accelerator_is_derived_and_rebuilt(lore_home, monkeypatch):
+    if not _has_sqlite_vec():
+        pytest.skip("sqlite-vec not installed")
+    monkeypatch.setattr("vefr.lore_shell.embed_texts", _fixed_vectors)
+    add_fact("The western gate was destroyed.")
+    assert vec_db_path().exists()
+    # The accelerator is derived: deleting it loses no facts, and
+    # rebuild recreates it from the authoritative store.
+    vec_db_path().unlink()
+    assert len(list_facts()) == 1
+    rebuild()
+    assert vec_db_path().exists()
+
+
+def test_ask_agrees_on_fast_and_fallback_paths(lore_home, monkeypatch):
+    def _vec(texts: list[str]) -> list[list[float]]:
+        return [{
+            "The western gate was destroyed.": [0.95, 0.1, 0.0, 0.0],
+            "The northern tower stands tall.": [0.1, 0.95, 0.0, 0.0],
+            "western gate": [0.9, 0.0, 0.0, 0.0],
+        }[texts[0]]]
+
+    monkeypatch.setattr("vefr.lore_shell.embed_texts", _vec)
+    add_fact("The western gate was destroyed.")
+    add_fact("The northern tower stands tall.")
+    fast = ask("western gate", k=2)
+    # Force the brute-force path (as if the extension were missing) and
+    # require the same ordering.
+    from vefr import lore_shell
+    monkeypatch.setattr(lore_shell, "_vec_rank", lambda q, k: None)
+    slow = ask("western gate", k=2)
+    assert [m["id"] for m in fast["matches"]] == [m["id"] for m in slow["matches"]]
+    assert fast["matches"][0]["text"] == "The western gate was destroyed."
+
+
+def test_ask_works_without_the_extension(lore_home, monkeypatch):
+    from vefr import lore_shell
+
+    monkeypatch.setattr("vefr.lore_shell.embed_texts", _fixed_vectors)
+    monkeypatch.setattr(lore_shell, "_vec_module", lambda: None)
+    add_fact("Fact one.")
+    assert vectors_path().exists()
+    assert not vec_db_path().exists()
+    result = ask("Fact one.")
+    assert result["matches"][0]["text"] == "Fact one."
