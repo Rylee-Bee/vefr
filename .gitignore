@@ -105,3 +105,6 @@ node_modules/
 # per-user agent overrides - never shared
 /.claude/settings.local.json
 /CLAUDE.local.md
+
+# Hypothesis's example database - regenerated per run, never committed.
+/.hypothesis/
