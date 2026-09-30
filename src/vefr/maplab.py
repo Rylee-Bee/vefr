@@ -19,6 +19,7 @@ least restrictive water state (low water everywhere).
 
 import argparse
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -28,6 +29,10 @@ from .world import VALID_FLOORS, VALID_TONES
 from .world import creed_from as _creed_from
 
 BLOCKED_FALLBACK = ['~', 'B', '#', 'T', 'M']
+
+# A `#rule#` reference inside a grammar entry; the same pattern the
+# expander (grammar.py) and the woven player walk.
+_GRAMMAR_REF = re.compile(r"#([A-Za-z0-9_][A-Za-z0-9_.-]*)#")
 
 
 def load_pack(pack_dir: Path) -> dict:
@@ -123,6 +128,7 @@ def load_pack(pack_dir: Path) -> dict:
             'bonds': config.get('bonds', {}),
             'speakers': all_speakers,
             'surface': config.get('surface', 'combat'),
+            'grammars': config.get('grammars', {}),
             'town': {
                 'map': map_lines,
                 'legend': merged.get('legend', {}),
@@ -186,6 +192,46 @@ def reach(w: dict, start: tuple, flooded: set | None = None) -> set:
     return seen
 
 
+def grammar_errors(grammars) -> list[str]:
+    """Every problem with a pack's `grammars` block (empty = good).
+
+    The block is optional and additive: a pack with none passes. A
+    pack with one gets it checked here rather than at play time,
+    because a grammar that cannot expand is a pack-authoring typo, and
+    the author should read about it from `norns validate` and not
+    from a silent whisper.
+
+    The three laws (see grammar.py): every grammar is an object of
+    rules, every rule is a non-empty list of strings, `origin` is
+    required, and every `#rule#` names a rule in the same grammar.
+    Messages name the grammar and the rule, so one line says which
+    `#thing#` to fix.
+    """
+    errors: list[str] = []
+    if not isinstance(grammars, dict):
+        return ["grammars must be an object of named grammars"]
+    for gname, rules in grammars.items():
+        if not isinstance(rules, dict):
+            errors.append(f"grammar '{gname}' must be an object of rules")
+            continue
+        if 'origin' not in rules:
+            errors.append(f"grammar '{gname}' needs an 'origin' rule - "
+                          'expansion starts there')
+        for rname, entries in rules.items():
+            if not isinstance(entries, list) or not entries or not all(
+                    isinstance(e, str) for e in entries):
+                errors.append(f"grammar '{gname}' rule '{rname}' must be a "
+                              'non-empty list of strings')
+                continue
+            for entry in entries:
+                for ref in _GRAMMAR_REF.findall(entry):
+                    if ref not in rules:
+                        errors.append(
+                            f"grammar '{gname}' rule '{rname}' references "
+                            f"'{ref}', which is not a rule in that grammar")
+    return errors
+
+
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every geometry check. Returns a list of problems (empty = good).
 
@@ -207,6 +253,9 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             'town': act.get('_town_legacy', {}),
             'speakers': act.get('speakers', w.get('speakers', {})),
         }
+    # The pack's grammars (optional): checked first so a broken
+    # grammar is reported even when the map is wrong too.
+    errors.extend(grammar_errors(w.get('grammars', {})))
     town = w['town']
     m = town['map']
     legend = town['legend']
