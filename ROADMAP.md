@@ -7,6 +7,12 @@
 
 ## Landed
 
+- [x] **Vale (prose) in CI, advisory** (2026-09-30): a `prose` job runs Vale
+      3.23.0 over `docs/` and the Library with `fail_on_error: false`, using
+      the built-in style (no network, no `vale sync`). It reports the house
+      voice without blocking a PR; rules promote to errors once the existing
+      docs pass.
+
 - [x] **Static guards and link checks in CI** (2026-09-30): `dev-guards.yml`
       gains a `static` job (vulture dead code, deptry dependency hygiene, both
       configured in `pyproject.toml`) and a `links` job (lychee, offline, so no
