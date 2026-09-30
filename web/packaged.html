@@ -116,6 +116,10 @@
      price), so a world with no reward end keeps its old HUD exactly. */
   .hud-gold { padding: 6px 10px; font-size: 0.82rem; white-space: nowrap; }
   .hud-gold[hidden] { display: none; }
+  /* a burning light's turns, beside the purse and the bag pips. Shown
+     only while a torch is lit, so a world with no light keeps its HUD. */
+  .hud-light { padding: 6px 10px; font-size: 0.82rem; white-space: nowrap; }
+  .hud-light[hidden] { display: none; }
   /* the bag at the top of the screen: one small sprite per thing carried */
   .hud-bag { display: flex; align-items: center; gap: 4px; padding: 4px 6px; max-width: 40vw; flex-wrap: wrap; }
   .bag-pip { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
@@ -273,6 +277,7 @@
         </div>
         <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
         <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
+        <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
       </div>
       <div class="hud hud--tr">
         <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
@@ -934,12 +939,18 @@ function bagRemoveOne(id) {
   return true;
 }
 
-// Use a carried thing. Only an item the pack gave a `heal` can be used;
-// it raises health by `heal` (never above the max), takes one copy out
-// of the bag, and says so in the panel's live line.
+// Use a carried thing. A thing the pack gave a `light` lights the dark
+// (see setupTown); a thing with a `heal` raises health by `heal` (never
+// above the max). Either way it takes one copy out of the bag and says
+// so in the panel's live line. With neither, nothing happens.
 function useItem(id) {
   var def = itemCatalog()[id];
-  if (!def || !(typeof def.heal === 'number' && def.heal > 0)) return false;
+  if (!def) return false;
+  if (def.light && typeof def.light === 'object'
+      && typeof window.useLightItem === 'function') {
+    return window.useLightItem(id, def);
+  }
+  if (!(typeof def.heal === 'number' && def.heal > 0)) return false;
   var verb = def.use || 'use';
   // Whole already: say so and keep the thing. A potion is not spent on
   // nothing, so the player never loses a heal by mis-tapping.
@@ -1048,10 +1059,12 @@ function renderBagPanel() {
     label.className = 'bag-row-name';
     label.textContent = itemName(id);
     row.appendChild(label);
-    // Anything the pack gave a `heal` can be used from here. The words
-    // are the pack's own verb, so a potion is drunk and bread is eaten.
+    // Anything the pack gave a `heal` or a `light` can be used from
+    // here. The words are the pack's own verb, so a potion is drunk,
+    // bread is eaten, and a torch is lit.
     var def = itemCatalog()[id];
-    if (def && typeof def.heal === 'number' && def.heal > 0) {
+    if (def && ((typeof def.heal === 'number' && def.heal > 0)
+        || (def.light && typeof def.light === 'object'))) {
       var use = document.createElement('button');
       use.type = 'button';
       use.className = 'cta';
@@ -2165,6 +2178,89 @@ function setupTown() {
     return fogOn && !explored[x + ',' + y];
   }
 
+  // ---- light: a torch, or a one-shot reveal ----
+  // An item with `light` is used from the Bag. `radius`/`turns` widen the
+  // lit circle for a while, then it gutters out; `reveal` marks every
+  // tile of the region explored at once. The pack's own base radius is
+  // restored when the turns run out or a new region is entered.
+  var lightTurns = 0;   // hero turns left on a burning torch
+  var lightBonus = 0;   // extra tiles the torch adds to the lit circle
+  function lightBase() {
+    return (town.fog && town.fog.radius) || 6;
+  }
+  function renderLightHud() {
+    var el = document.getElementById('light-live');
+    if (!el) return;
+    if (lightTurns > 0) {
+      el.hidden = false;
+      el.textContent = 'Turns of light: ' + lightTurns;
+    } else {
+      el.hidden = true;
+      el.textContent = '';
+    }
+  }
+  // Put the dark back the way the pack declared it (a torch has died).
+  function restoreLightRadius() {
+    lightTurns = 0;
+    lightBonus = 0;
+    fogRadius = lightBase();
+    renderLightHud();
+  }
+  // A new region is a fresh dark: a burning light does not travel.
+  function resetLight() {
+    lightTurns = 0;
+    lightBonus = 0;
+    renderLightHud();
+  }
+  // One hero turn passes: the torch burns one turn lower and gutters out
+  // on the last. Announced once, on the turn it dies.
+  function lightTick() {
+    if (lightTurns <= 0) return;
+    lightTurns -= 1;
+    if (lightTurns <= 0) {
+      restoreLightRadius();
+      resize();
+      draw();
+      combatSay('The light gutters out.');
+      return;
+    }
+    renderLightHud();
+  }
+  // The Bag's Use control for a `light` item. Returns true only when a
+  // copy was actually spent; in a region with no dark (or the player's
+  // fog turned off) it says so and keeps the thing.
+  window.useLightItem = function (id, def) {
+    var light = def && def.light;
+    if (!light || typeof light !== 'object') return false;
+    if (!fogOn || !town.fog) {
+      bagSay('There is no dark here to light.');
+      return false;
+    }
+    var reveal = light.reveal === true;
+    var radius = light.radius, turns = light.turns;
+    if (!reveal && (!(radius > 0) || !(turns > 0))) return false;
+    // Spend only now that the item can actually be used (the row was
+    // drawn from this bag, so this cannot normally fail).
+    if (!bagRemoveOne(id)) return false;
+    if (reveal) {
+      for (var y = 0; y < town.map.length; y++) {
+        for (var x = 0; x < town.map[0].length; x++) explored[x + ',' + y] = 1;
+      }
+      saveFog();
+      draw();
+      bagSay('The whole place is laid out.');
+      return true;
+    }
+    lightBonus = radius;
+    lightTurns = turns;
+    fogRadius = lightBase() + lightBonus;
+    renderLightHud();
+    resize();
+    draw();
+    bagSay('The torch catches: ' + radius + ' wider for ' + turns + ' turns.');
+    return true;
+  };
+
   // The shopkeeper of this region, when the hero stands beside them.
   // window.VEFR_SHOPS names one speaker key per region; "next to" is
   // Manhattan distance one, the same reach as a bump.
@@ -2411,6 +2507,7 @@ function setupTown() {
     hero = (at || town.hero_start).slice();
     fogOn = fogEnabled();
     fogRadius = (town.fog && town.fog.radius) || 6;
+    resetLight();
     loadTiles();
     loadFog();
     seeNow();
@@ -2501,6 +2598,7 @@ function setupTown() {
     var target = enemyAt(nx, ny);
     if (target) {
       heroAttack(target);
+      lightTick();
       enemyTurn();
       return;
     }
@@ -2512,6 +2610,7 @@ function setupTown() {
     takeHere();
     seeNow();
     updateUse();
+    lightTick();
     enemyTurn();
   }
 

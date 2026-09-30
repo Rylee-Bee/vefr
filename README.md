@@ -75,9 +75,10 @@ speech, choices and health drawn over it and a pause menu (`Esc`) for
 the journal. Everything the world needs is inside the file. In a region
 that declares fog, press `O` or tap **Explore** to walk to the nearest
 unexplored ground; the walk stops on its own when a monster comes into
-the light, the hero is wounded, or there is nothing left to see. The dark
-is yours to set, too: press `V`, or use Display in the pause menu, to see
-the whole map.
+the light, the hero is wounded, or there is nothing left to see. A
+carried torch can widen that circle for a few turns, and a chalked map
+can lay the whole place open at once. The dark is yours to set, too:
+press `V`, or use Display in the pause menu, to see the whole map.
 
 Send it to someone and they can play it in any browser, on a phone,
 tablet or computer, with no Python, server, internet or model. A pack
