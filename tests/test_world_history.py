@@ -1,6 +1,6 @@
 """Each world keeps its own play history: kept items and whispers never
 bleed between worlds (Rylee's walkthrough, 2026-09-26: Emberfield's old
-whispers turned up in Cottage of the Breeze's Chronicle and world tree)."""
+whispers turned up in another world's Chronicle and world tree)."""
 
 import pytest
 
@@ -27,28 +27,28 @@ def test_legacy_world_keeps_the_base_files(data, monkeypatch):
 
 
 def test_other_worlds_get_their_own_files(data, monkeypatch):
-    _serve(monkeypatch, "cottage-of-the-breeze")
-    assert journal.journal_path() == data / "journal.cottage-of-the-breeze.json"
-    assert forge.vault_path() == data / "vault.cottage-of-the-breeze.json"
+    _serve(monkeypatch, "another-world")
+    assert journal.journal_path() == data / "journal.another-world.json"
+    assert forge.vault_path() == data / "vault.another-world.json"
 
 
 def test_whispers_stay_in_their_world(data, monkeypatch):
     _serve(monkeypatch, "sample-world")
     journal.log("rumor", speaker="Ironfoot", whisper="from Emberfield")
-    _serve(monkeypatch, "cottage-of-the-breeze")
+    _serve(monkeypatch, "another-world")
     assert journal.entries() == []
-    journal.log("rumor", speaker="The Keeper", whisper="from the Cottage")
-    assert [e["whisper"] for e in journal.entries()] == ["from the Cottage"]
+    journal.log("rumor", speaker="A Keeper", whisper="from another world")
+    assert [e["whisper"] for e in journal.entries()] == ["from another world"]
     _serve(monkeypatch, "sample-world")
     assert [e["whisper"] for e in journal.entries()] == ["from Emberfield"]
 
 
 def test_sessions_nest_inside_the_world(data, monkeypatch):
-    _serve(monkeypatch, "cottage-of-the-breeze")
-    assert journal.journal_path("alpha").name == "journal.cottage-of-the-breeze-alpha.json"
+    _serve(monkeypatch, "another-world")
+    assert journal.journal_path("alpha").name == "journal.another-world-alpha.json"
 
 
 def test_scoping_can_be_bypassed_for_explicit_files(data, monkeypatch):
-    _serve(monkeypatch, "cottage-of-the-breeze")
+    _serve(monkeypatch, "another-world")
     monkeypatch.setattr(journal, "SCOPE_BY_WORLD", False)
     assert journal.journal_path() == data / "journal.json"
