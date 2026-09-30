@@ -232,6 +232,41 @@ def grammar_errors(grammars) -> list[str]:
     return errors
 
 
+def item_light_errors(item_id, spec) -> list[str]:
+    """Every problem with an item's optional `light` field (empty = good).
+
+    `light` is optional and additive: an item without one passes. An
+    item with one must name exactly one usable form - a radius form
+    (`radius` and `turns` together, in range) or a reveal form
+    (`reveal: true`). A pack author reads a clear, named line from
+    `norns validate` instead of meeting a torch that does nothing.
+    """
+    light = spec.get('light')
+    if light is None:
+        return []
+    label = str(spec.get('name') or item_id)
+    where = f"item '{label}'"
+    if not isinstance(light, dict) or isinstance(light, bool):
+        return [f"{where} light must be an object"]
+    errors: list[str] = []
+    has_radius, has_turns = 'radius' in light, 'turns' in light
+    radius, turns = light.get('radius'), light.get('turns')
+    reveal = light.get('reveal')
+    if has_radius and (isinstance(radius, bool) or not isinstance(radius, int)
+                       or not 1 <= radius <= 20):
+        errors.append(f"{where} light radius must be an integer 1..20")
+    if has_turns and (isinstance(turns, bool) or not isinstance(turns, int)
+                      or not 1 <= turns <= 999):
+        errors.append(f"{where} light turns must be an integer 1..999")
+    if 'reveal' in light and not isinstance(reveal, bool):
+        errors.append(f"{where} light reveal must be true or false")
+    radius_form = has_radius and has_turns
+    reveal_form = reveal is True
+    if not radius_form and not reveal_form:
+        errors.append(f"{where} light needs radius and turns, or reveal: true")
+    return errors
+
+
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every geometry check. Returns a list of problems (empty = good).
 
@@ -256,6 +291,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # The pack's grammars (optional): checked first so a broken
     # grammar is reported even when the map is wrong too.
     errors.extend(grammar_errors(w.get('grammars', {})))
+    # The item catalog's optional `light` field: checked here so a bad
+    # torch is a pack-authoring error, not a silent no-op in play.
+    items = w.get('items')
+    if isinstance(items, dict):
+        for iid, spec in items.items():
+            if isinstance(spec, dict):
+                errors.extend(item_light_errors(iid, spec))
     town = w['town']
     m = town['map']
     legend = town['legend']

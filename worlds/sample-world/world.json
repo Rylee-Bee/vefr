@@ -48,5 +48,15 @@
     }
   },
   "bond_draw": "Weight the random draw honestly: most are given or cold. Found is rare - maybe one in five. rarity is the point.",
-  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was made for someone else."
+  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was made for someone else.",
+  "items": {
+    "torch": {
+      "name": "a pitch torch",
+      "light": { "radius": 2, "turns": 6 }
+    },
+    "chalked-map": {
+      "name": "a chalked map",
+      "light": { "reveal": true }
+    }
+  }
 }

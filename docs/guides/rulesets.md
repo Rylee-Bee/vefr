@@ -428,6 +428,51 @@ always pays exactly `value`. `maplab.validate` does not yet pin the
 reward fields; the bake ignores a `value`/`heal` that is not a positive
 int and a `use` that is blank.
 
+## light (first slice: a torch and a one-shot reveal)
+
+Some regions are dark (their `contract.json` declares `fog`). A pack can
+give a carried thing a `light` so the player can widen that circle or
+lay the whole map open. It is additive: an item without a `light` bakes
+exactly as before, and a pack with no `light` anywhere plays as it always
+did. Still deterministic - fixed numbers, no randomness, no model call.
+
+An item's `light` takes one of two forms:
+
+```json
+"items": {
+  "torch":       {"name": "a pitch torch",
+                  "light": {"radius": 2, "turns": 6}},
+  "chalked-map": {"name": "a chalked map",
+                  "light": {"reveal": true}}
+}
+```
+
+`radius` (an int 1..20) widens the lit circle by that many tiles for
+`turns` (an int 1..999) hero turns; when the turns run out the region's
+own base radius returns and the light gutters out (announced once).
+`reveal: true` marks every tile of the current region explored in a
+single use. A `light` must name at least one form.
+
+**Use.** A `light` item gets a Use control in the Bag panel, like a
+`heal`. Using a torch from the Bag widens the light, spends one copy, and
+says so ("The torch catches: 2 wider for 6 turns."); using a reveal map
+spends one copy and says "The whole place is laid out.". In a region with
+no dark (or after the player turns the dark off with `V` / Display) it
+says "There is no dark here to light." and **keeps the thing**. While a
+light burns, the top-left HUD shows a small "Turns of light: N"; the
+counter is for glancing, and the news rides the ordinary announcements.
+Entering another region ends the light (a fresh region is a fresh dark).
+
+Baked as the extra `light` field on each `VEFR_ITEMS` entry (only a
+usable form is baked). Code: `src/vefr/cli.py` (`_player_items`) +
+`src/vefr/maplab.py` (`item_light_errors`) + `web/packaged.html` (the
+Bag use, the HUD, the turn); tests: `tests/test_light.py`. The sample
+world carries a torch and a chalked map in a chest for a live look.
+
+Known gaps (this slice): one burning light at a time (a second torch
+replaces the first), no light on the floor (drops are not lamps), and no
+colour or animation - the lit circle simply grows.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).

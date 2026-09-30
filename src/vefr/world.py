@@ -123,6 +123,15 @@ ITEMS / LOOT (first slice): world.json may carry an optional top-level
   `value` (a positive int: what a shop pays and asks), `heal` (a positive
   int) and `use` (a verb such as `drink`); with none of them the item
   bakes exactly as before. Nothing is identified yet.
+  An item may carry an optional `light`, in one of two forms:
+      {"light": {"radius": 2, "turns": 5}}   # wider for a while
+      {"light": {"reveal": true}}            # the whole region at once
+  `radius` (int 1..20) widens the fog's lit circle by that many tiles for
+  `turns` (int 1..999) hero turns, then it gutters out; `reveal` marks
+  every tile of the region explored in one use. Using either from the Bag
+  spends one copy; in a region with no dark (or the player's fog turned
+  off) it says so and spends nothing. With no `light` the item bakes
+  exactly as before. maplab checks the shape and ranges.
 
 REWARD (first slice): `world.player` may carry `gold`, the starting
   purse (a non-negative int; default 0), kept per world at

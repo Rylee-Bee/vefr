@@ -189,7 +189,8 @@ def test_woven_file_bakes_the_packs_books():
     pack = Path(__file__).resolve().parents[1] / "worlds" / "sample-world"
     books = _baked_library(cli.weave_html(pack))
     by_id = {b["id"]: b for b in books}
-    assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger", "writing-a-book"}
+    assert set(by_id) == {"a-note-by-the-path", "the-keepers-ledger",
+                          "writing-a-book", "a-travellers-satchel"}
     for b in books:
         assert list(b) == ["id", "title", "kind", "found", "at", "speaker",
                            "when", "pages", "region", "chest", "drops",

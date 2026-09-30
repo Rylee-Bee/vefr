@@ -1025,6 +1025,8 @@ def _player_items(world: dict) -> dict[str, dict]:
     positive int) and `use` (a verb like "drink") make the item usable.
     A value that is not a positive int simply cannot be sold; a heal or
     use that is not a positive int / non-empty string is ignored.
+    `light` (a torch's `radius`/`turns`, or `reveal: true`) rides along
+    only when it forms a usable shape; maplab reports a broken one.
     """
     listed = world.get('items')
     if not isinstance(listed, dict):
@@ -1047,6 +1049,22 @@ def _player_items(world: dict) -> dict[str, dict]:
         use = spec.get('use')
         if isinstance(use, str) and use.strip():
             entry['use'] = use.strip()
+        # `light`: a torch's radius/turns or a one-shot reveal. Only a
+        # valid, usable form is baked, so a broken one is a silent no-op
+        # rather than a thing the player cannot use. maplab names it.
+        light = spec.get('light')
+        if isinstance(light, dict) and not isinstance(light, bool):
+            lum: dict = {}
+            radius, turns = light.get('radius'), light.get('turns')
+            if (isinstance(radius, int) and not isinstance(radius, bool)
+                    and 1 <= radius <= 20
+                    and isinstance(turns, int) and not isinstance(turns, bool)
+                    and 1 <= turns <= 999):
+                lum = {'radius': radius, 'turns': turns}
+            if light.get('reveal') is True:
+                lum['reveal'] = True
+            if lum:
+                entry['light'] = lum
         out[key] = entry
     return out
 
