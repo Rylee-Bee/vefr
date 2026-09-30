@@ -173,3 +173,21 @@ jobs:
             --exclude-path bench/runs --exclude-path .git
             --exclude-path .pytest_cache --exclude-path .ruff_cache
             './**/*.md'
+
+  prose:
+    name: Vale (house voice, advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Vale
+        uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # v3.0.0
+        with:
+          # Advisory: report style, never fail the PR (see .vale.ini).
+          fail_on_error: false
+          version: 3.23.0
+          files: >-
+            docs web/library README.md GETTING_STARTED.md AGENTS.md
+            CONTRIBUTING.md ROADMAP.md AGENT_POLICY.md
