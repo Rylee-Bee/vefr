@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **Static guards and link checks in CI** (2026-09-30): `dev-guards.yml`
+      gains a `static` job (vulture dead code, deptry dependency hygiene, both
+      configured in `pyproject.toml`) and a `links` job (lychee, offline, so no
+      network flakiness). The 2026-09-30 audit found dangling files and stale
+      references by hand; these make that class mechanical. Screen-reader
+      automation (guidepup) is deferred - it needs a macOS/Windows runner
+      (VoiceOver/NVDA only), which is an owner cost decision.
+
 - [x] **The 2026-09-30 audit: runtime state untracked, and an enhancement
       packet** (2026-09-30): six runtime-state files that `.gitignore` (and
       the repo's own rule) already disowned were still tracked; they left
