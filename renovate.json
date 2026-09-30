@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "UTC",
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "7 days",
+  "prConcurrentLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "One PR for the runtime Python deps (pyproject [project.dependencies])",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["dependencies"],
+      "groupName": "python runtime deps"
+    },
+    {
+      "description": "One PR for the dev/test Python deps ([dependency-groups])",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["dependency-groups"],
+      "groupName": "python dev deps"
+    },
+    {
+      "description": "One PR for the npm dev tooling",
+      "matchManagers": ["npm"],
+      "groupName": "npm dev deps"
+    },
+    {
+      "description": "One PR for GitHub Actions (digests maintained by the pin helper)",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    }
+  ]
+}

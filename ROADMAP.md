@@ -7,6 +7,13 @@
 
 ## Landed
 
+- [x] **Renovate replaces Dependabot** (2026-09-30): `renovate.json` groups
+      pip runtime, pip dev, npm and Actions updates, keeps a 7-day cooldown,
+      and maintains Action digest pins; `lockFileMaintenance` keeps `uv.lock`
+      fresh. The owner chose Renovate (the Mend app) after first choosing
+      Dependabot; `dependabot.yml` is removed so the two do not open duplicate
+      PRs. The app install is the one remaining step.
+
 - [x] **Vale (prose) in CI, advisory** (2026-09-30): a `prose` job runs Vale
       3.23.0 over `docs/` and the Library with `fail_on_error: false`, using
       the built-in style (no network, no `vale sync`). It reports the house
