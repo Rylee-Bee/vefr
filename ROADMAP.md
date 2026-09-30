@@ -7,6 +7,22 @@
 
 ## Landed
 
+- [x] **Autoexplore for the woven player, and its UAT contract** (2026-09-30):
+      a dark region can now be uncovered without tapping every step. The
+      packaged player's action row gains an `Explore` control (`O`): it
+      breadth-first searches the walkable tiles for the nearest unexplored
+      ground and steps the hero there through `move()`, paced on a timer, so
+      turns, monsters, fog and pickups stay honest. It stops the moment a
+      living enemy is lit, the hero takes damage, no reachable dark tile
+      remains, or a 400-step safety cap is hit; pressing `O` again, any other
+      key, or a click elsewhere stops it. A `role="status"` line speaks only
+      at start and stop. The sample world's town now declares
+      `"fog": {"radius": 4}` so the demo lives in the dark, and the
+      estate-format UAT contract lives at `docs/uat/autoexplore.md`. The dark
+      is the player's to set: `V`, or the Display switch in the pause menu,
+      turns it off for that world (remembered), which also seeds a future
+      light mechanic (`fogRadius` is the lever).
+
 - [x] **Renovate replaces Dependabot** (2026-09-30): `renovate.json` groups
       pip runtime, pip dev, npm and Actions updates, keeps a 7-day cooldown,
       and maintains Action digest pins; `lockFileMaintenance` keeps `uv.lock`
