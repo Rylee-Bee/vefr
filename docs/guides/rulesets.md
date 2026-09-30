@@ -247,15 +247,29 @@ hostile colour. `sight` is optional (default 6) and is Manhattan
 distance.
 
 **The turn.** Every *successful* move (a step, or a bump attack) is
-followed by one turn for each living enemy of the region:
+followed by one turn for each living enemy of the region. A monster
+walks the floor, not a straight line: at the start of the turn the
+walkable tiles are flooded once, breadth-first, from the hero (and, for
+a monster that cannot see the hero, from the monster it is drifting
+toward), and each monster steps to the neighbour closest to - or
+furthest from - that flood. Walls, corners and rooms are therefore
+walked round rather than into.
 
 - adjacent (Manhattan distance 1) -> it attacks: hero hp drops by its
   `atk`, clamped at zero.
-- else within `sight` -> it steps one tile toward the hero (the larger
-  axis first, the other axis if that tile is blocked; never onto a
-  solid tile, another enemy, or the hero - a step that would land on
-  the hero attacks instead).
-- else it holds still.
+- else within `sight`, and hurt to a third of the `hp` it walked into
+  the region with -> it steps one tile *away*: the neighbour furthest
+  from the hero down the map.
+- else within `sight` -> it steps one tile toward the hero, the short
+  way round.
+- else (out of sight) -> if another monster is alive it steps toward
+  the nearest one, so a pack stays a pack; alone, it holds still.
+
+A step never lands on a solid tile, another living monster, or the
+hero - a step that would land on the hero attacks instead. Ties go to
+a fixed neighbour order (up, down, left, right), so the same floor
+always plays out the same way. There is no randomness and no clock
+anywhere in the movement.
 
 **Bump to attack.** Walking into a living enemy does not move the
 hero; the hero strikes it instead for `hero.atk`. A killed enemy is

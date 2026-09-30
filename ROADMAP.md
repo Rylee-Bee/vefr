@@ -7,6 +7,29 @@
 
 ## Landed
 
+- [x] **Monsters that think with a map** (2026-09-30): a monster no longer
+      walks in a straight line and stalls on a corner. Each turn the
+      walkable tiles of the region are flooded once, breadth-first, from the
+      hero, and every monster steps to the neighbour closest to that flood -
+      so it walks round walls, corners and rooms instead of into them. A
+      monster hurt to a third of the `hp` it walked into the region with
+      (`hp0`, recorded in `loadEnemies`) steps the other way, to the
+      furthest tile down the map, instead of closing; a monster that cannot
+      see the hero drifts toward the nearest other living monster, by
+      walking distance, so a pack stays a pack. Adjacent is still a hit,
+      still for `atk`. The floods are built once per turn and shared,
+      lazily, so a turn that never moves a monster never pays for one; a
+      fixed neighbour order (up, down, left, right) breaks every tie, and
+      there is no randomness or clock anywhere in the movement - the same
+      floor always plays out the same way. Still no step onto a solid tile,
+      another living monster, or the hero. The change is inside the
+      movement functions only: combat, drops, the slain book, Cozy death,
+      autoexplore, the fog toggle and the light item are untouched. Gap,
+      on purpose: monsters still do not pick up loot. Guide:
+      `docs/guides/rulesets.md` -> combat. Tests: a fixture floor with a
+      wall in it, played in Chromium through the woven file
+      (`tests/browser/test_monster_walking.py`, `tests/fixtures/make_wall_pack.py`).
+
 - [x] **Pack grammars: the world's own words, expanded offline** (2026-09-30):
       an author can now ship a small grammar in `world.json` and a woven
       player keeps its voice with no model and no baked pool - the
