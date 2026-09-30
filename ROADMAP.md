@@ -1988,6 +1988,20 @@ low-risk moves that compound; each has its own issue.
       Renovate and cover the workflow pins.
 - [ ] **Vale** (#133) to enforce the house voice in docs.
 
+### Enhancement wave 2 (2026-09-30 packet; owner-picked)
+
+- [ ] **Autoexplore + Dijkstra-map AI** (#141): one key rolls toward the
+      unexplored; monsters use desire-weighted maps. Movement, accessibility,
+      and AI from one technique.
+- [ ] **Tracery-style deterministic text** (#142): rumours, names, weather -
+      seedable, offline, no model call.
+- [ ] **Optional Ink conversations** (#143): richer per-speaker dialogue, with
+      `inkjs` in the single-file player.
+- [ ] **Audio pairing** (#144): every sound paired with a visual event; silence
+      stays a fully playable mode.
+- [ ] **Richer floors** (#145): wave-function-collapse ideas for deeper floors
+      and outdoor regions.
+
 - [ ] **Name a landmark in the Map Room** (from `studio-lessons.md`,
       2026-09-29): a square can be marked today, but a `pois` entry - a
       *named* place - still needs a route the Map Room does not have. The
