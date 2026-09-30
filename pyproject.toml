@@ -16,12 +16,20 @@ dependencies = [
     "pydantic>=2.10",
 ]
 
+[project.optional-dependencies]
+# The Lorekeeper's fast vector index. Optional on purpose: without it,
+# `ask` falls back to a brute-force cosine over the same derived vectors
+# (same answer, slower). The test group installs it so CI covers both
+# paths.
+fast-lore = ["sqlite-vec>=0.1.9"]
+
 [dependency-groups]
 test = [
     "jsonschema>=4.26.0",
     "playwright>=1.63.0",
     "pytest>=8.3",
     "ruff>=0.8",
+    "sqlite-vec>=0.1.9",
 ]
 
 [tool.ruff]
