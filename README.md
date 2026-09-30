@@ -80,7 +80,10 @@ is yours to set, too: press `V`, or use Display in the pause menu, to see
 the whole map.
 
 Send it to someone and they can play it in any browser, on a phone,
-tablet or computer, with no Python, server, internet or model. Models
+tablet or computer, with no Python, server, internet or model. A pack
+can also ship a few lines of grammars (whispers, names, weather) in
+`world.json`, expanded offline with no model at all
+([docs/guides/grammars.md](docs/guides/grammars.md)). Models
 help while you make the game, in the studio; the finished file is
 complete on its own ([ADR 0003](docs/adr/0003-models-in-the-studio.md)).
 A game can still offer players an optional model of their own for fresh

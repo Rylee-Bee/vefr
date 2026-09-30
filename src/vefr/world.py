@@ -136,6 +136,33 @@ REWARD (first slice): `world.player` may carry `gold`, the starting
   it is optional: a pack that names none of it bakes the player it had
   before.
 
+GRAMMARS: `world.json` may carry a top-level `grammars` object: a
+set of tiny, hand-written sentence recipes the engine expands
+offline, with no model and no baked pool. Each grammar maps a rule
+name to a non-empty list of strings and must carry an `origin` rule,
+where expansion starts; `#rule#` inside a string expands to one
+entry of that rule, and every other character is kept as written:
+
+  "grammars": {
+    "whisper": {"origin": ["#who# says #news#."],
+                "who": ["the innkeeper"],
+                "news": ["the road east is watched"]},
+    "weather": {"origin": ["#sky# over #place#."],
+                "sky": ["Rain"], "place": ["the town"]},
+    "name":    {"origin": ["#adj# #noun#"],
+                "adj": ["Grey"], "noun": ["Hollow"]}
+  }
+
+Every `#rule#` must name a rule in the same grammar, and the
+expander caps one expansion at 200 draws, so a grammar that points at
+itself stops instead of looping. The engine reads `whisper` when a
+woven player has no live endpoint, no pool, and no fragment banks
+(the woven file carries the same algorithm in `web/packaged.html`);
+`weather` on arriving in a region; `name` to name a floor that
+`norns delve` generates. Every part is optional and a pack with no
+`grammars` behaves exactly as it always has. maplab validates the
+block. See grammar.py and docs/guides/grammars.md.
+
 STEFNA / BELL VOICE: a pack may declare an optional top-level
 `stefna_voice` (string naming which speaker writes the sealed letter;
 absent means "the pack's first declared voice"). Every voice declared
@@ -561,6 +588,7 @@ def load_world(name: str | None = None) -> dict:
         "bond_draw": config.get("bond_draw", ""),
         "forge_texture": config.get("forge_texture", ""),
         "surface": config.get("surface", "combat"),
+        "grammars": config.get("grammars", {}),
         "acts": acts,
         # The Library: authored books (library/*.md); see library.py.
         "library": _load_library(d),

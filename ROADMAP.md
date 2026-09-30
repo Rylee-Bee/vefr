@@ -7,6 +7,35 @@
 
 ## Landed
 
+- [x] **Pack grammars: the world's own words, expanded offline** (2026-09-30):
+      an author can now ship a small grammar in `world.json` and a woven
+      player keeps its voice with no model and no baked pool - the
+      tracery-style deterministic text of enhancement wave 2 (#142), the
+      first third of it. A grammar is `{rule: [strings]}` with an `origin`
+      rule; `#rule#` inside a string draws one entry of that rule and every
+      other character is kept. Three laws keep it safe: `origin` required,
+      every reference resolves inside the same grammar, and one expansion
+      draws at most 200 entries - a self-feeding grammar stops rather than
+      loops. Two implementations of the same algorithm: `expand()` in the
+      new `src/vefr/grammar.py` (standard library only, seeded through
+      `random.Random`) and `grammarExpand()` in `web/packaged.html`, so the
+      woven file needs no engine at all. The block is additive and every
+      part optional: a pack with no `grammars` plays exactly as before.
+      Wired: the `whisper` grammar speaks when a player has no endpoint,
+      no pool and no fragment bank (speaker from `grammars.name`, else
+      "someone"; truth from the seeded stream); the `weather` grammar says
+      once in the status line on arriving in a region, journaled like any
+      other arrival, never per step; the `name` grammar names a floor that
+      `norns delve` generates, drawn from the delve seed and written into
+      the region's `contract.json` (the `floor-N` directory name and every
+      door are unchanged). `maplab.grammar_errors` checks the block with
+      pack-level messages, so a typo is a line from `norns validate` rather
+      than a silence at play time. Guide: `docs/guides/grammars.md`. Gate:
+      843 passed, 4 skipped (`uv run --group test pytest -q`), 8 browser
+      passed, ruff clean, `norns validate --pack worlds/sample-world` ok,
+      public-surface guard clean. No model call anywhere in the path, and no
+      new runtime dependency.
+
 - [x] **Autoexplore for the woven player, and its UAT contract** (2026-09-30):
       a dark region can now be uncovered without tapping every step. The
       packaged player's action row gains an `Explore` control (`O`): it

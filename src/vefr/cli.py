@@ -603,6 +603,26 @@ def _tile_walkable(rows: list[str], legend: dict, x: int, y: int) -> bool:
     return rows[y][x] not in BLOCKED_FALLBACK
 
 
+def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
+    """A generated floor's contract, named from the pack's grammar.
+
+    A pack without a `name` grammar gets the contract exactly as
+    `delve.contract` wrote it. With one, the drawn name rides in
+    `name` and `title` (both carry it, so either key reads) beside
+    the unchanged geometry. A grammar that refuses expands to the
+    empty string, and then the floor is simply unnamed - a broken
+    grammar never writes half a name.
+    """
+    from .grammar import expand_seeded
+
+    if not isinstance(name_grammar, dict):
+        return contract_obj
+    drawn = expand_seeded(name_grammar, seed)
+    if not drawn:
+        return contract_obj
+    return {**contract_obj, 'name': drawn, 'title': drawn}
+
+
 def cmd_delve(args) -> int:
     """`norns delve` - generate dungeon floors and wire their stairs.
 
@@ -613,8 +633,11 @@ def cmd_delve(args) -> int:
     them: the `from-region`'s stair goes down to the first new floor,
     each floor's down-stair goes to the next, and every floor's
     up-stair climbs back. The last floor is the bottom for now and
-    keeps no down-stair. Everything is written inside the pack, and an
-    existing generated region is refused unless `--force` is passed.
+    keeps no down-stair. A pack that carries a `grammars.name`
+    grammar also gets each floor named from it (the drawn name rides
+    in the region's contract; the directory keeps its `floor-N` name).
+    Everything is written inside the pack, and an existing generated
+    region is refused unless `--force` is passed.
     """
     import re
 
@@ -644,6 +667,16 @@ def cmd_delve(args) -> int:
     act_dir = act_dirs[0]
     act_path = act_dir / 'world.json'
     act = json.loads(act_path.read_text(encoding='utf-8'))
+    # The pack-level grammars block (optional, additive). Only `name`
+    # is read here; a pack with no block keeps today's naming exactly.
+    try:
+        grammars = json.loads(
+            (pack / 'world.json').read_text(encoding='utf-8')).get(
+                'grammars', {}) or {}
+    except (OSError, ValueError):
+        grammars = {}
+    if not isinstance(grammars, dict):
+        grammars = {}
     region_names = list(act.get('regions', []) or [])
     transitions = list(act.get('transitions', []) or [])
 
@@ -686,6 +719,15 @@ def cmd_delve(args) -> int:
         first = f'floor-{max(nums) + 1}' if nums else 'floor-2'
 
     names = _floor_names(first, args.floors)
+    # The pack's own name grammar (optional): when it has one, every
+    # generated floor is also NAMED from it - drawn from the same seed
+    # as the layout, so the same seed always names the same floor. The
+    # region directory keeps its `floor-N` name (paths, doors and the
+    # act's regions list are unchanged); the drawn name rides in the
+    # contract for the player to read. A pack with no grammar keeps
+    # exactly the naming it has today.
+    name_grammar = (grammars.get('name')
+                    if isinstance(grammars.get('name'), dict) else None)
     collisions = [n for n in names
                   if n in region_names or (act_dir / n).exists()]
     if collisions and not args.force:
@@ -719,7 +761,10 @@ def cmd_delve(args) -> int:
                 down = None
             planned.append((
                 name, floor_rows, up, down,
-                delve_mod.contract(args.width, args.height, up, down_at=down),
+                _named_floor_contract(
+                    delve_mod.contract(args.width, args.height, up,
+                                       down_at=down),
+                    name_grammar, f'{args.seed}:{name}:name'),
             ))
     except ValueError as e:
         print(f'cannot generate: {e}')
@@ -764,9 +809,12 @@ def cmd_delve(args) -> int:
     act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False) + '\n',
                         encoding='utf-8')
 
-    for name, _rows, up, down, _c in planned:
+    for name, _rows, up, down, contract_obj in planned:
         where = 'up {0},{1}'.format(*up)
         where += ' down {0},{1}'.format(*down) if down else ' bottom'
+        drawn = contract_obj.get('name')
+        if drawn:
+            where += f', named "{drawn}"'
         print(f'  wrote acts/{act_dir.name}/{name}/ ({where})')
     print(f'generated {len(names)} floor(s) for {pack.name} from seed '
           f'{args.seed!r}; wired {len(wired)} transition(s)')
@@ -1337,6 +1385,13 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{ledger_json}}', _json.dumps(ledger))
     out_html = out_html.replace('{{voices_json}}', _json.dumps(voices, ensure_ascii=False))
     out_html = out_html.replace('{{fragments_json}}', _json.dumps(fragments, ensure_ascii=False))
+    # The pack's own grammars (optional): the offline sentence recipes
+    # the woven file expands with no model and no pool. A pack with
+    # none bakes an empty block, which is exactly the silence it has
+    # always had.
+    out_html = out_html.replace('{{grammars_json}}',
+                                _json.dumps(world.get('grammars') or {},
+                                            ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
