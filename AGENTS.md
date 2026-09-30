@@ -63,13 +63,11 @@ npm ci                    # jsdom for the node-vm harnesses; without it pytest e
 uv run --group test ruff check src tests scripts
 uv run --group test pytest -q
 uv run --group test norns validate --pack worlds/sample-world
+python3 scripts/check_public_surface.py   # public-surface guard: catches private data in tracked files
 
 # PR-only extras (dev-guards.yml): browser tests need Playwright chromium
 uv run playwright install chromium   # once
 VEFR_BROWSER_REQUIRED=1 uv run pytest -q tests/browser
-
-# Public-surface guard (CI runs this; catches private data in tracked files)
-python3 scripts/check_public_surface.py
 
 # Session-start health
 uv run --group test norns doctor
@@ -98,9 +96,9 @@ uv run ratatoskr weave --pool 5
 | **Always** | No model calls in deterministic surfaces: `export.py`, `weave.py`, `maplab.py`, `journal.py`. |
 | **Always** | One ROADMAP.md entry per landed change. Keep README/GETTING_STARTED in sync. |
 | **Ask first** | Changing the pack contract, adding a tracked world pack, or a new public API route. |
-| **Never** | Commit story content from a private pack, or name any specific game in engine code. |
-| **Never** | Commit runtime state (sessions, vaults, journals, weave logs). Tracked `data/*.jsonl`, `data/lore/`, `data/vault.json` are a legacy snapshot (commit `50a9fad`) that `.gitignore` now ignores — untracking them is an owner call; don't refresh them. |
 | **Ask first** | Deploys (`ratatoskr ferry`, `deploy/`, `docs/guides/deploy.md`) and anything under CODEOWNERS (`scripts/`, `.github/workflows/`, licensing, `.gitleaks.toml`). |
+| **Never** | Commit story content from a private pack, or name any specific game in engine code. |
+| **Never** | Commit runtime state (sessions, vaults, journals, weave logs). Tracked runtime files already exist: `data/interface.jsonl`, `data/storyteller.jsonl`, `data/lore/` (snapshot commit `50a9fad`, now gitignored) and `data/vault.json` (committed with `7c74190`, not ignored). Untracking them is an owner call; don't refresh or stage them. |
 | **Never** | Hand-edit `uv.lock` or drop `strict: true` on schema-constrained calls. |
 
 ## Style
