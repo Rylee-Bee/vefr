@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 test = [
+    "hypothesis>=6.100",
     "jsonschema>=4.26.0",
     "playwright>=1.63.0",
     "pytest>=8.3",
