@@ -424,3 +424,27 @@ Import `vefr-foundation.css` — it provides all of these out of the box:
   - Roadmap: node `20:4`
   - VEFR workshop concept: node `23:4`
   - VEFR workshop concept: node `25:244`
+
+## Screen-reader testing (local, not in CI)
+
+CI covers the automated half: axe-core on every woven player, plus the
+contrast, target-size and motion rules above. It does not drive a real
+screen reader, because the library that does - Guidepup
+(`@guidepup/playwright`) - supports only VoiceOver on macOS and NVDA on
+Windows, with no Linux runner. Running it in CI would mean paying
+macOS/Windows minutes, so it stays a local check for now.
+
+On a machine with a screen reader:
+
+1. Install the dev tools once:
+   `npm i -D @playwright/test @guidepup/guidepup @guidepup/playwright`.
+2. Write a short Playwright script that starts the driver
+   (`voiceOver.start()` or `nvda.start()`), opens a woven HTML file at a
+   `file://` URL, and asserts the spoken output mentions the room
+   description, the verb buttons, and the newest journal line.
+3. Stop the driver (`voiceOver.stop()` / `nvda.stop()`).
+
+Guidepup API: <https://www.guidepup.dev/docs/api/class-voiceover>
+
+Revisit a scheduled (not per-PR) macOS job once the player has more
+interaction worth speaking.
