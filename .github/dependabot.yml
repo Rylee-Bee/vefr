@@ -1,8 +1,11 @@
 # Dependabot configuration for VEFR
 #
 # VEFR's runtime deps are short: fastapi, uvicorn, httpx, pydantic
-# (see pyproject.toml). GitHub Actions are pinned by SHA in
-# .github/workflows/*.yml. Dependabot checks both.
+# (see pyproject.toml). The npm dev tooling is dev-only (jsdom for the
+# kitchen harness). GitHub Actions are pinned by SHA in
+# .github/workflows/*.yml. Dependabot checks all three. (Renovate was
+# considered and declined, 2026-09-30: it needs the Mend app or a token
+# secret, and Dependabot covers what we need.)
 
 version: 2
 updates:
@@ -21,6 +24,18 @@ updates:
           - "uvicorn"
           - "httpx"
           - "pydantic"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      dev:
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
