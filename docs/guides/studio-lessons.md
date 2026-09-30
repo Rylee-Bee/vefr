@@ -4,6 +4,31 @@ What making a real game by hand taught us, and where each lesson belongs
 in the studio. Every workaround here is a feature the studio still owes
 the next person. Add to it as you go; newest first.
 
+## 2026-09-30: the engine grew by being used
+
+A long stretch of building the engine *through* the game. What it taught.
+
+- **The north star (owner, 2026-09-30): anyone can make their own game, their
+  own way - and it is documented and taught.** Every choice below answers to it.
+- **Delegation needs review, and the review earns its keep.** Two builds from a
+  cheap worker looked finished and were not: the schema-to-grammar converter
+  emitted *optional* commas (so the grammar could produce invalid JSON) and
+  sent its constraint alongside the one it was meant to replace (so it could
+  break a backend that already worked). Reading the diff caught both. The
+  worker is fast; the review is the craft.
+- **Small, interactive decisions beat a plan dump.** One question at a time
+  (2-3 options) kept the owner in the loop and caught course corrections a
+  single big plan would have missed.
+- **A test can catch a coupling you forgot.** Adding one book to a shelf broke
+  the "whole shelf" achievement count; the test said so before a player could.
+  Add a book - check the achievement.
+- **Document the contract where it lives.** `world.py` carries the pack
+  contract, `docs/uat/` carries "what good means", `docs/guides/` carries the
+  how-to. A capability with no home has no documentation.
+- **Name the honest silence.** The woven player says plainly when it has
+  nothing to say; the grammar work turned that silence into a last-resort
+  voice rather than a bug.
+
 ## 2026-09-29: building Act 1 through the studio
 
 Made with the studio for the first time: accepted the Cartographer's commission,

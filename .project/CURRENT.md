@@ -4,7 +4,7 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-09-25.
+> Last refreshed: 2026-09-30.
 
 ## Phase
 
@@ -16,21 +16,20 @@ private pack. The owner learns game-making by building it; the engine
 gets fun and accessible by carrying it. The BJ pack is paused and
 becomes the **launch title** later.
 
-| Slice | Engine (this repo) | Pack |
-|---|---|---|
-| Phase 0 — boundary | Done, PR #23 | — |
-| Act 1 — cooking | Ruleset + act-runner, PR #24 | BJ: paused (launch title later) |
-| Act 2 — desk | Ruleset + world-knowledge loop, PR #27 | BJ: paused |
-| Rulesets guide | `docs/guides/rulesets.md`, PR #28 | — |
-| **Library** | L1 landed: the book format, validator, API, Urðr's Library room, the export chapter. Next: L2, finding books in play | First studio project |
-| Delve (proposed) | Ruleset: floors, items, weight, spells, turns | First studio project |
+Landed so far (all in `ROADMAP.md`): boundary, cooking, desk, rulesets guide,
+Library L1 and L2, delve, fog of war, combat, loot + bag, the reward end
+(gold, shop, using a thing), regions + doors, and - this stretch - the
+commission board, the woven camera and sprites, the studio handbook, books
+found in play, **autoexplore**, the **fog toggle**, **author grammars**, and
+the **torch/reveal light**.
 
-**The one next step:** Library slice L2, finding books in play (map
-pickup, a resident gives one, earned), through the checklist in
-`docs/guides/rulesets.md`. The owner approved this pack-contract
-change on 2026-09-25; each later ruleset is its own ask-first.
-The old "play Act 2 before Act 3+ engine work" gate is retired by owner
-decision (estate vision doc Q9).
+**The one next step:** the open `Next` entries in `ROADMAP.md` (enhancement
+waves 1-2 and the studio items). Each pack-contract change is its own
+ask-first. The old "play Act 2 before Act 3+" gate is retired by owner
+decision (estate vision Q9).
+
+**The north star (owner, 2026-09-30):** anyone can make their own game, their
+own way - documented and taught. It decides what gets built next.
 
 ## Where things live
 
@@ -68,10 +67,9 @@ superseded); the local test packs deleted; commit `948df78` accepted as risk.
   the kitchen (seen in headless Chromium, 2026-09-25). Cosmetic; the
   kitchen loop itself plays clean.
 
-- `docs/guides/accessibility-contract.md` and
-  `docs/guides/brain-socket.md` name the demo game as a product (not
-  its canon). Leave them unless the owner wants the docs fully
-  game-agnostic.
+- `docs/guides/accessibility-contract.md` and `docs/guides/brain-socket.md`
+  kept the demo game's name in a few places until the 2026-09-29/30 sweeps;
+  both are now game-neutral, and the name sweep is recorded in `DECISIONS.md`.
 
 Closed 2026-09-26: `norns chat` voice drafting looping (the WP5 voice
 file repeated itself). The draft seam now dedupes repeated sentences —
