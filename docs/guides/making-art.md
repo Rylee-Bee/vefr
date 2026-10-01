@@ -45,8 +45,8 @@ The studio never assumes a look or a tool. A game has its own **style kit** (pal
 wall as anchors, the shared style words); two games never share one. The generator is just a script that
 takes a folder, a name, a count, a brief and some reference pictures, and leaves numbered pictures plus
 their credits lines. Any tool that fits that shape drops in. Sizes, tile sets, variants and character
-sheets belong to the pack. (Today a pack cannot yet bring its own tiles or animated sheets; that is a
-proposed engine change, so check `design/` for its status.)
+sheets belong to the pack. A pack now brings its own tiles and variants; animated character sheets are
+still proposed.
 
 ## A prompt recipe that worked
 

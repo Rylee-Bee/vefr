@@ -139,6 +139,36 @@ its buttons, in `world.json`:
 the button text turns dark or light to stay readable on it. `model` is
 optional too; leave it out and the game offers no model at all.
 
+### Your own tiles and variants
+
+A region may bring its own ground pictures in a `tiles/` directory beside
+`sprites/` (a flat pack keeps `tiles/` at the pack root). A legend entry
+with `"tile": "stone-wall"` looks in the region's `tiles/` first and then
+in the engine's own art, so one region can repaint any ground:
+
+```text
+worlds/your-world/acts/act-1/town/
+├── map.md
+├── contract.json      # legend: { ".": { "tile": "grass" } }
+├── sprites/
+└── tiles/
+    ├── grass.webp      # variant 1 - optional
+    ├── grass.2.webp    # variant 2
+    └── grass.3.webp    # variant 3
+```
+
+The unnumbered file is variant 1 and is optional; `name.2.webp`,
+`name.3.webp`, ... are the other variants, in numeric order. The player
+picks a variant from the cell's own map coordinates, so the same world
+always looks the same and a save and a screenshot agree. One picture
+behaves exactly as before.
+
+Bake at 2x the on-screen tile size (192px for a 96px tile). The engine
+bakes the file as it is and never resizes, so the resizing is your pack's
+own processing step. A tile the region and the engine both lack is a
+validation error in a region that has a `tiles/`, while a region without
+one still falls back to the engine set silently.
+
 ## Where your world lives
 
 ```text
@@ -179,3 +209,4 @@ rm -rf worlds/your-world    # gitignored - git status stays clean
 - `GETTING_STARTED.md` - install, run, first checks
 - `docs/guides/bundled-brain.md` - the model fleet and how to swap brains
 - `docs/guides/brain-socket.md` - the provider seam behind `VEFR_LLAMACPP_URL`
+- `docs/guides/making-art.md` - style kits, tiles and character art

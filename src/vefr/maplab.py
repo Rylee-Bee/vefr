@@ -267,6 +267,141 @@ def item_light_errors(item_id, spec) -> list[str]:
     return errors
 
 
+def _engine_tiles_dir() -> Path | None:
+    """The engine's own ground pictures, found the way the woven
+    player finds web/packaged.html: the first candidate whose sibling
+    `art/tiles/` directory exists. None when the engine's own web tree
+    cannot be resolved at all."""
+    from .cli import _template_candidates
+
+    for candidate in _template_candidates():
+        tiles = candidate.parent / 'art' / 'tiles'
+        if tiles.is_dir():
+            return tiles
+    # NOTE: an engine tile directory that cannot be found is not a pack
+    # error; the caller skips the engine-set half of the check rather
+    # than failing every pack.
+    return None
+
+
+def _region_dirs(pack: Path, w: dict, region_geo: dict) -> dict:
+    """Map each region name to its on-disk directory.
+
+    Mirrors the loader: the flat shape is the pack root (one implicit
+    region); the acts shape is <pack>/acts/<act-dir>/<region>, with
+    the act directory resolved by its declared `id` through
+    cli._act_dir_for, so an act whose id differs from its directory
+    name still resolves. A region whose act directory cannot be
+    resolved maps to None - it is read as having no tiles/, never a
+    crash.
+    """
+    from .cli import _act_dir_for
+
+    names = list(region_geo)
+    if not (pack / 'acts').is_dir():
+        # NOTE: a flat pack keeps its ground at the pack root; that is
+        # the flat-shape equivalent of a region's tiles/ directory.
+        return {r: pack for r in names}
+    acts = w.get('acts')
+    if isinstance(acts, list) and acts and isinstance(acts[0], dict):
+        act_id = acts[0].get('id')
+    else:
+        # The unified load_pack shape carries the act directory name;
+        # _act_dir_for accepts it as its own id.
+        act_id = w.get('_act_id')
+    act_dir = _act_dir_for(pack, act_id)
+    # NOTE: region_geo covers the first act's regions (the only ones
+    # maplab reads), so one act directory is enough.
+    return {r: ((act_dir / r) if act_dir is not None else None) for r in names}
+
+
+def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
+    """Every tile-picture problem for a pack on disk (empty = good).
+
+    A region that brings a `tiles/` directory opts into strict checks:
+    every explicit legend `tile` must resolve to the region's own
+    pictures or the engine set, every numbered variant must sit in an
+    unbroken sequence, and every non-dot file must be .webp or .png.
+    A region with no `tiles/` keeps the silent engine fallback, so
+    existing packs validate green.
+    """
+    from .world import _TILE_SUFFIXES, _TILE_VARIANT_RE, _discover_tiles
+
+    engine_tiles = _engine_tiles_dir()
+    dirs = _region_dirs(pack, w, region_geo)
+    errors: list[str] = []
+    for rname, geo in region_geo.items():
+        if not isinstance(geo, dict):
+            continue
+        region_dir = dirs.get(rname)
+        if region_dir is None:
+            # NOTE: no resolvable act directory means no tiles/ to read;
+            # skip the region rather than infer one.
+            continue
+        tiles_dir = region_dir / 'tiles'
+        if not tiles_dir.is_dir():
+            # Compatibility: a region with no tiles/ is unchanged.
+            continue
+        legend = geo.get('legend')
+        legend = legend if isinstance(legend, dict) else {}
+        known = set(_discover_tiles(tiles_dir))
+        for ch, spec in legend.items():
+            if not isinstance(spec, dict):
+                continue
+            name = spec.get('tile')
+            if not (isinstance(name, str) and name):
+                continue
+            if name in known:
+                continue
+            if engine_tiles is None:
+                # NOTE: no engine set to consult; the unknown-name check
+                # is skipped, never failed (see _engine_tiles_dir).
+                continue
+            if (engine_tiles / f'{name}.webp').is_file():
+                continue
+            errors.append(
+                f"region '{rname}': symbol '{ch}' names tile '{name}', which "
+                f"is in neither the region's tiles/ nor the engine's art")
+        # NOTE: a file the loader cannot read is a pack-authoring error
+        # (the more restrictive reading). Dotfiles stay ignored exactly
+        # as the loader ignores them.
+        variants: dict[str, set[int]] = {}
+        for f in sorted(tiles_dir.rglob('*')):
+            if not f.is_file():
+                continue
+            rel = f.relative_to(tiles_dir)
+            if any(part.startswith('.') for part in rel.parts):
+                continue
+            if f.suffix.lower() not in _TILE_SUFFIXES:
+                errors.append(
+                    f"region '{rname}': tiles/{rel.as_posix()} is not a tile "
+                    f"picture (.webp or .png only)")
+                continue
+            stem = f.name[: -len(f.suffix)]
+            m = _TILE_VARIANT_RE.match(stem)
+            if m:
+                base, num = m.group('base'), int(m.group('num'))
+            else:
+                # NOTE: the unnumbered picture is variant 1; a stray
+                # `name.1` names the same slot, so neither is a gap.
+                base, num = stem, 1
+            variants.setdefault(base, set()).add(num)
+        for base, nums in variants.items():
+            # NOTE: variant 1 is the unnumbered file and is optional, so
+            # the numbered sequence the player walks begins at 2. Only a
+            # hole in 2, 3, ... is a gap; a name that simply starts at 2
+            # is whole, and the absence of 1 is never a gap.
+            missing = sorted(n for n in range(2, max(nums) + 1)
+                             if n not in nums)
+            if missing:
+                # NOTE: one error per tile name, naming the first hole in
+                # the numbered sequence (variant 1 is optional).
+                errors.append(
+                    f"region '{rname}': tile '{base}' has a variant gap - "
+                    f"variant {missing[0]} is missing")
+    return errors
+
+
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every geometry check. Returns a list of problems (empty = good).
 
@@ -514,6 +649,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             'legend': w['town'].get('legend', {}),
             'enemies': w['town'].get('enemies', []),
         }}
+
+    # A pack may bring its own ground pictures under each region's
+    # tiles/. That is on-disk data, so it is only checked when the pack
+    # directory is known. Regions without a tiles/ directory keep the
+    # silent engine fallback (the compatibility rule).
+    if pack_dir is not None:
+        errors.extend(_tile_errors(Path(pack_dir), w, region_geo))
 
     def _door_tile_errors(index, field, rname, at):
         geo = region_geo.get(rname, {})

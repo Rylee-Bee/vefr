@@ -32,6 +32,10 @@ from pathlib import Path
 
 from .maplab import load_pack, validate
 from .paths import world_name
+# The loader's tile convention (ordered variants) is the single source
+# of the try-order the player bakes, so a pack's tiles/ is read the
+# same way whoever resolves it.
+from .world import _discover_tiles
 
 
 # ---------------------------------------------------------------- envelope
@@ -906,16 +910,99 @@ def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
     return art
 
 
-def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path) -> dict[str, str]:
+def _act_dir_for(pack: Path, act_id) -> Path | None:
+    """The on-disk directory of an act, by the loader's convention.
+
+    An act's `id` comes from its world.json and may differ from the
+    directory name (see world._load_act). Prefer <pack>/acts/<id>/,
+    else match the first <pack>/acts/*/world.json whose 'id' equals
+    the act id. None when nothing matches, so no pack tiles are read
+    for that act.
+    """
+    if not isinstance(act_id, str) or not act_id:
+        return None
+    acts_dir = Path(pack) / 'acts'
+    if not acts_dir.is_dir():
+        return None
+    direct = acts_dir / act_id
+    if direct.is_dir():
+        return direct
+    for d in sorted(acts_dir.iterdir()):
+        if not d.is_dir() or d.name.startswith('.'):
+            continue
+        world_json = d / 'world.json'
+        if not world_json.exists():
+            continue
+        try:
+            data = json.loads(world_json.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict) and data.get('id') == act_id:
+            return d
+    return None
+
+
+def _pack_tile_paths(pack: Path | None, region_dir: Path | None,
+                     name: str) -> list[Path]:
+    """The pack's own pictures for one tile name, in try-order.
+
+    Only a file inside the pack is read - the same real-path guard
+    _player_sprites takes - so a name like '../../../etc/passwd' that
+    resolves outside the pack is skipped, never read. The variant
+    order is the loader's (`world._discover_tiles`): the unnumbered
+    picture first, then the numbered ones. Empty when the pack, the
+    region, or the name has no pictures, so the caller falls through
+    to the engine set.
+    """
+    # NOTE: `pack` is the guard the callers thread through (the real
+    # path of the whole pack). When only a region_dir is given, the
+    # region itself is the stricter guard base - a picture can still
+    # never resolve outside the dir it was discovered under.
+    if region_dir is None:
+        return []
+    if not isinstance(name, str) or not name:
+        return []
+    tiles_dir = Path(region_dir) / 'tiles'
+    if not tiles_dir.is_dir():
+        return []
+    base = os.path.realpath(pack) if pack is not None else os.path.realpath(region_dir)
+    tiles_real = os.path.realpath(tiles_dir)
+    out: list[Path] = []
+    for rel in _discover_tiles(tiles_dir).get(name, []):
+        target = os.path.realpath(os.path.join(tiles_real, rel))
+        if not target.startswith(base + os.sep):
+            continue
+        f = Path(target)
+        if f.is_file() and f.suffix.lower() in _ART_TYPES:
+            out.append(f)
+    return out
+
+
+def _tile_data_uri(f: Path) -> str:
+    """A picture as a data URI, keyed by the same art-type map the
+    title art and sprites use."""
+    import base64
+
+    mime = _ART_TYPES[f.suffix.lower()]
+    data = base64.b64encode(f.read_bytes()).decode('ascii')
+    return f'data:{mime};base64,{data}'
+
+
+def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path,
+                      region_dir: Path | None = None,
+                      pack: Path | None = None) -> dict[str, str | list[str]]:
     """Resolve one legend's symbols to inlined tile pictures.
 
     Mirrors the studio Map Room's own `tileFor`: an explicit `"tile"`, else
     solid/sanctuary/deco pick stone-wall/rug/grass, else open ground picks
-    grass or path by order. A symbol with no tile on disk is skipped, and
-    the player falls back to its base colour.
+    grass or path by order. A region may bring its own pictures under
+    `tiles/`; a symbol with more than one picture bakes a list in variant
+    order, one picture bakes the same string shape as the engine set.
+    When the pack has no picture for a name the engine set answers (only
+    `<name>.webp`, exactly as today, so a pack with no tiles/ bakes
+    byte-identically). A symbol with no tile on disk is skipped, and the
+    player falls back to its base colour.
     """
-    import base64
-
     if not isinstance(legend, dict) or not legend:
         return {}
     sanctuaries = set(sanctuaries or [])
@@ -924,7 +1011,7 @@ def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path) -> dict[str, str
         if isinstance(spec, dict) and not spec.get('solid')
         and ch not in sanctuaries and not spec.get('deco')
     ]
-    out: dict[str, str] = {}
+    out: dict[str, str | list[str]] = {}
     for ch, spec in legend.items():
         spec = spec if isinstance(spec, dict) else {}
         own = spec.get('tile')
@@ -938,44 +1025,107 @@ def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path) -> dict[str, str
             name = 'grass'
         else:
             name = 'path' if open_chars.index(ch) > 0 else 'grass'
+        # The pack's own pictures win; a region with none falls through
+        # to the engine set, unchanged.
+        pack_paths = _pack_tile_paths(pack, region_dir, name)
+        if pack_paths:
+            if len(pack_paths) == 1:
+                out[ch] = _tile_data_uri(pack_paths[0])
+            else:
+                out[ch] = [_tile_data_uri(p) for p in pack_paths]
+            continue
         f = web_dir / 'art' / 'tiles' / f'{name}.webp'
         if f.is_file():
-            data = base64.b64encode(f.read_bytes()).decode('ascii')
-            out[ch] = f'data:image/webp;base64,{data}'
+            out[ch] = _tile_data_uri(f)
     return out
 
 
-def _player_tiles(world: dict, web_dir: Path) -> dict[str, str]:
+def _first_region_dir(pack: Path | None, world: dict) -> Path | None:
+    """The on-disk directory of the first act's first region.
+
+    Acts shape: <pack>/acts/<act-dir>/<region>; flat shape: the pack
+    root itself (the one implicit town). None when the pack cannot be
+    resolved, so resolution stays engine-only.
+    """
+    if pack is None:
+        return None
+    pack = Path(pack)
+    if not (pack / 'acts').is_dir():
+        return pack
+    first_act = (world.get('acts') or [{}])[0]
+    if not isinstance(first_act, dict):
+        return None
+    act_dir = _act_dir_for(pack, first_act.get('id'))
+    if act_dir is None:
+        return None
+    region_name = next(iter(first_act.get('regions') or {}), None)
+    return act_dir / region_name if region_name else None
+
+
+def _player_tiles(world: dict, web_dir: Path, pack: Path | None = None,
+                  region_dir: Path | None = None) -> dict[str, str | list[str]]:
     """The first region's ground tiles, keyed by map symbol.
 
     Kept as the single global the player used before regions existed; a
-    pack with several regions also gets `_player_region_tiles`.
+    pack with several regions also gets `_player_region_tiles`. `pack`
+    and `region_dir`, when given, let the first region bring its own
+    tiles/; without them resolution is the engine set, unchanged.
     """
     town = world.get('town') if isinstance(world.get('town'), dict) else {}
+    if region_dir is None:
+        region_dir = _first_region_dir(pack, world)
     return _tiles_for_legend(town.get('legend') or {},
-                             town.get('sanctuary_tiles') or [], web_dir)
+                             town.get('sanctuary_tiles') or [], web_dir,
+                             region_dir, pack)
 
 
-def _player_region_tiles(world: dict, web_dir: Path) -> dict[str, dict[str, str]]:
+def _player_region_tiles(world: dict, web_dir: Path,
+                         pack: Path | None = None
+                         ) -> dict[str, dict[str, str | list[str]]]:
     """Every region's tiles, keyed by region name.
 
     Two regions can share a symbol for different ground - a town's '.' is
     grass, a dungeon's '.' is stone floor - so tiles travel with the
-    region instead of being merged by symbol.
+    region instead of being merged by symbol. `pack`, when given, lets
+    each region bring its own tiles/ from its on-disk directory (the
+    acts shape's <pack>/acts/<act-dir>/<region>, or the pack root for
+    the flat shape); without it resolution is the engine set, unchanged.
     """
-    out: dict[str, dict[str, str]] = {}
+    pack_path = Path(pack) if pack is not None else None
+    flat = pack_path is not None and not (pack_path / 'acts').is_dir()
+    # A flat pack keeps its geometry in world['town'], not in a region
+    # contract. It only reads its own tiles when it actually brings a
+    # tiles/ dir, so one with none bakes exactly what it did before.
+    flat_town = world.get('town') if isinstance(world.get('town'), dict) else {}
+    flat_tiles = bool(pack_path is not None and (pack_path / 'tiles').is_dir())
+    out: dict[str, dict[str, str | list[str]]] = {}
     for act in (world.get('acts') or []):
+        act = act if isinstance(act, dict) else {}
+        act_dir = None
+        if pack_path is not None and not flat:
+            act_dir = _act_dir_for(pack_path, act.get('id'))
         for rname, rdata in (act.get('regions') or {}).items():
             contract = rdata.get('contract') if isinstance(rdata, dict) else None
             contract = contract if isinstance(contract, dict) else {}
-            out[rname] = _tiles_for_legend(
-                contract.get('legend') or {},
-                contract.get('sanctuary_tiles') or [], web_dir)
+            legend = contract.get('legend') or {}
+            sanctuaries = contract.get('sanctuary_tiles') or []
+            if flat:
+                region_dir = pack_path
+                if flat_tiles:
+                    legend = flat_town.get('legend') or {}
+                    sanctuaries = flat_town.get('sanctuary_tiles') or []
+            elif act_dir is not None:
+                region_dir = act_dir / rname
+            else:
+                region_dir = None
+            out[rname] = _tiles_for_legend(legend, sanctuaries, web_dir,
+                                           region_dir, pack_path)
     if not out:
         town = world.get('town') if isinstance(world.get('town'), dict) else {}
         rname = world.get('_region') or 'town'
-        out[rname] = _tiles_for_legend(town.get('legend') or {},
-                                       town.get('sanctuary_tiles') or [], web_dir)
+        out[rname] = _tiles_for_legend(
+            town.get('legend') or {}, town.get('sanctuary_tiles') or [],
+            web_dir, pack_path, pack_path)
     return out
 
 
@@ -1384,10 +1534,12 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{tagline}}', tagline)
     out_html = out_html.replace('{{world_json}}', _json.dumps(world, ensure_ascii=False))
     out_html = out_html.replace('{{tiles_json}}',
-                                _json.dumps(_player_tiles(world, template_path.parent),
+                                _json.dumps(_player_tiles(world, template_path.parent,
+                                                          pack),
                                             ensure_ascii=False))
     out_html = out_html.replace('{{region_tiles_json}}',
-                                _json.dumps(_player_region_tiles(world, template_path.parent),
+                                _json.dumps(_player_region_tiles(world, template_path.parent,
+                                                                 pack),
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
