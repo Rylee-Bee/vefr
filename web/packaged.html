@@ -2156,16 +2156,36 @@ function setupTown() {
     return n > 0 ? h % n : 0;
   };
   // -- pickVariant end --
+  // -- pickCell start --
+  // A GRID tile is one picture drawn as cols x rows cells. The cell is chosen by position, not by
+  // hash: cell (x mod cols, y mod rows), so a floor painted as one scene reads as one scene and
+  // repeats only every cols tiles. The double modulo keeps a negative coordinate in range.
+  window.pickCell = function (x, y, cols, rows) {
+    return [((x % cols) + cols) % cols, ((y % rows) + rows) % rows];
+  };
+  // -- pickCell end --
   var regionTiles = window.VEFR_REGION_TILES || {};
   // A symbol maps to either one data-URI string (one picture) or a list
   // of data-URI strings in variant order. The loader normalizes both to
   // a list of preloaded Images; the draw loop then asks for one image.
   var tileImgs = {};
+  var tileGrids = {};   // symbol -> { img, cols, rows } for a grid picture
   function loadTiles() {
     var set = regionTiles[regionName] || window.VEFR_TILES || {};
     tileImgs = {};
+    tileGrids = {};
     Object.keys(set).forEach(function (ch) {
       var srcs = set[ch];
+      if (srcs && typeof srcs === 'object' && !Array.isArray(srcs)) {
+        // { src, cols, rows }: one picture drawn as a block of cells
+        var cols = srcs.cols | 0, rows = srcs.rows | 0;
+        if (typeof srcs.src !== 'string' || cols < 1 || rows < 1) return;
+        var gim = new Image();
+        gim.onload = function () { draw(); };
+        gim.src = srcs.src;
+        tileGrids[ch] = { img: gim, cols: cols, rows: rows };
+        return;
+      }
       if (typeof srcs === 'string') srcs = [srcs];
       if (!Array.isArray(srcs)) return;
       tileImgs[ch] = srcs.map(function (src) {
@@ -2581,10 +2601,16 @@ function setupTown() {
         var info = legend[ch] || {};
         var color = (info.base && info.base[0]) || '#222';
         var imgs = tileImgs[ch];
+        var grid = tileGrids[ch];
         var tile = imgs && imgs.length
           ? imgs[pickVariant(x, y, imgs.length)] : null;
         var hasTile = tile && tile.complete && tile.naturalWidth > 0;
-        if (hasTile) {
+        var hasGrid = grid && grid.img.complete && grid.img.naturalWidth > 0;
+        if (hasGrid) {
+          var cell = pickCell(x, y, grid.cols, grid.rows);
+          var cw = grid.img.naturalWidth / grid.cols, chh = grid.img.naturalHeight / grid.rows;
+          ctx.drawImage(grid.img, cell[0] * cw, cell[1] * chh, cw, chh, x * T, y * T, T, T);
+        } else if (hasTile) {
           ctx.drawImage(tile, x * T, y * T, T, T);
         } else {
           ctx.fillStyle = color;

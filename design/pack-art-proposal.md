@@ -103,6 +103,20 @@ is byte-identical before and after (the compatibility test).
 
 Demo: the sample world gets two generated flat-colour variants of one floor, from a fixture script.
 
+### Phase C addendum: grid tiles (approved by Rylee on 2026-10-01)
+
+Variants hide repetition by mixing separate pictures. A **grid tile** hides it by painting the surface as ONE
+scene: `tiles/<name>.grid3x3.webp` is a single picture drawn as 3 columns by 3 rows of cells. The weaver inlines the
+picture once with its cell counts (`{src, cols, rows}`), and the player draws cell `(x mod cols, y mod rows)` of it. The
+choice is by position, not by hash, so neighbouring tiles join up and the floor repeats only every `cols` tiles.
+
+- Size: 2 to 8 cells per side, at least 2 cells (`TILE_GRID_MAX = 8`). The grid may be wider than tall (`grid4x2`).
+- A grid wins over numbered variants of the same name; the validator names the clash so a pack author removes one.
+- A bad name (`grid1x1`, `grid9x3`) is reported by file name.
+- No slicing, no new files, no new dependency. A pack with no grid bakes byte-for-byte as before.
+- Tests: `tests/test_grid_tiles.py` (naming, discovery, bake shape, validator, the real `pickCell` in node) and
+  `tests/browser/test_grid_tiles.py` (a nine-colour picture: all nine cells must reach the canvas).
+
 ## Order of work
 
 1. **Phase C first** (pack tiles and variants): without it the new floors cannot appear in a build.

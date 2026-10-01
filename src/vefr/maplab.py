@@ -335,7 +335,8 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
     existing packs validate green.
     """
     from .cli import _inside
-    from .world import _TILE_SUFFIXES, _TILE_VARIANT_RE, _discover_tiles
+    from .world import (_TILE_GRID_RE, _TILE_SUFFIXES, _TILE_VARIANT_RE,
+                        TILE_GRID_MAX, _discover_tiles, tile_grid)
 
     engine_tiles = _engine_tiles_dir()
     engine_real = os.path.realpath(engine_tiles) if engine_tiles is not None else None
@@ -384,6 +385,7 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
         # (the more restrictive reading). Dotfiles stay ignored exactly
         # as the loader ignores them.
         variants: dict[str, set[int]] = {}
+        grids: set[str] = set()
         for f in sorted(tiles_dir.rglob('*')):
             if not f.is_file():
                 continue
@@ -396,6 +398,15 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
                     f"picture (.webp or .png only)")
                 continue
             stem = f.name[: -len(f.suffix)]
+            if _TILE_GRID_RE.match(stem):
+                grid = tile_grid(stem)
+                if grid is None:
+                    errors.append(
+                        f"region '{rname}': tiles/{rel.as_posix()} is not a valid grid picture "
+                        f"(each side 1..{TILE_GRID_MAX}, at least 2 cells; e.g. wood.grid3x3.webp)")
+                else:
+                    grids.add(grid[0])
+                continue
             m = _TILE_VARIANT_RE.match(stem)
             if m:
                 base, num = m.group('base'), int(m.group('num'))
@@ -404,6 +415,10 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
                 # `name.1` names the same slot, so neither is a gap.
                 base, num = stem, 1
             variants.setdefault(base, set()).add(num)
+        for base in sorted(grids & set(variants)):
+            errors.append(
+                f"region '{rname}': tile '{base}' has a grid picture AND other pictures; "
+                f"the grid is the one drawn and the others are ignored - remove one")
         for base, nums in variants.items():
             # NOTE: variant 1 is the unnumbered file and is optional, so
             # the numbered sequence the player walks begins at 2. Only a
