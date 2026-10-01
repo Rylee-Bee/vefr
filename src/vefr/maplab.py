@@ -323,10 +323,14 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
     """
     pack_cfg: dict = {}
     if pack_dir is not None:
-        cfg_path = Path(pack_dir) / 'world.json'
-        if cfg_path.is_file():
+        # The same realpath guard cli._inside uses: `world.json` is a
+        # fixed name, but the root came from the caller, so the join is
+        # resolved and checked before anything is opened.
+        base = os.path.realpath(str(pack_dir))
+        cfg_path = os.path.realpath(os.path.join(base, 'world.json'))
+        if cfg_path.startswith(base + os.sep) and os.path.isfile(cfg_path):
             try:
-                loaded = json.loads(cfg_path.read_text(encoding='utf-8'))
+                loaded = json.loads(Path(cfg_path).read_text(encoding='utf-8'))
             except ValueError:
                 loaded = {}
             if isinstance(loaded, dict):
