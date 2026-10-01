@@ -96,3 +96,14 @@ def test_a_brand_new_pack_still_gets_one_room_and_empty_enemy_lists(tmp_path):
     act = json.loads((pack / "acts" / "act-1" / "world.json").read_text(encoding="utf-8"))
     assert act["regions"] == ["town"]
     assert act["enemies"] == [] and act["bosses"] == []
+
+
+def test_internal_keys_are_never_written_back(tmp_path):
+    """load_pack adds underscore-named helpers (for example `_player`); a write must not put them in world.json."""
+    for src in SHIPPED:
+        pack = tmp_path / src.name
+        shutil.copytree(src, pack)
+        maplab.write_pack(pack, maplab.load_pack(pack))
+        for f in pack.rglob("world.json"):
+            leaked = [k for k in json.loads(f.read_text(encoding="utf-8")) if k.startswith("_")]
+            assert leaked == [], f"{f}: {leaked}"

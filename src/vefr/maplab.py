@@ -149,7 +149,10 @@ def load_pack(pack_dir: Path) -> dict:
             '_region': region_name,
             'transitions': act.get('transitions', []),
             'regions': regions_geo,
+            # the pack's own `player` block, kept for checks (never written back: write_pack names its keys)
+            '_player': config.get('player'),
         }
+    config['_player'] = config.get('player')
     return config
 
 
@@ -435,15 +438,11 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
     return errors
 
 
-def _sprite_scale_errors(pack_dir: Path) -> list[str]:
-    """Plain problems with `player.sprite_scale` in the pack's world.json (empty = good or absent)."""
+def _sprite_scale_errors(w: dict) -> list[str]:
+    """Plain problems with `player.sprite_scale` (empty = good or absent). Reads the block load_pack already holds."""
     import math
 
-    try:
-        data = json.loads((Path(pack_dir) / 'world.json').read_text(encoding='utf-8'))
-    except (OSError, ValueError):
-        return []
-    player = data.get('player') if isinstance(data, dict) else None
+    player = w.get('_player')
     if not isinstance(player, dict) or 'sprite_scale' not in player:
         return []
     scales = player['sprite_scale']
@@ -713,7 +712,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # silent engine fallback (the compatibility rule).
     if pack_dir is not None:
         errors.extend(_tile_errors(Path(pack_dir), w, region_geo))
-        errors.extend(_sprite_scale_errors(Path(pack_dir)))
+        errors.extend(_sprite_scale_errors(w))
 
     def _door_tile_errors(index, field, rname, at):
         geo = region_geo.get(rname, {})
