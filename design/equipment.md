@@ -1,6 +1,6 @@
 # Equipment: slots and icons first
 
-Status: **proposed** (Rylee asked for this on 2026-10-01: "slots and icons first"). No code yet. This is a pack-contract addition, so it waits for approval.
+Status: **proposed** (Rylee asked for this on 2026-10-01: "slots and icons first"). Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). No code yet. This is a pack-contract addition, so the note still waits for approval before a build.
 
 ## What exists today
 
@@ -74,7 +74,8 @@ Five small **empty-slot outlines** (hand, body, head, feet, charm) are the only 
 4. Glossary (verbs **equip**, **take off**; noun **slot**), the rulesets guide, the player guide.
 5. A demo: Cottage's cloak, bow and ring wired to the round 8 icons.
 
-## Open questions for Rylee
+## Decided and still open
 
-- Five slots (`hand`, `body`, `head`, `feet`, `charm`) or fewer to start (for example `hand`, `body`, `charm`)?
-- Should an equipped item that is also a key or story item be allowed? Recommendation: no, keep story items unequippable.
+**Decided (Rylee, 2026-10-01):** five slots from the start: `hand`, `body`, `head`, `feet`, `charm`.
+
+**Still open:** whether an item that is also a key or a story item may be equipped. Recommendation: no, keep story items unequippable.

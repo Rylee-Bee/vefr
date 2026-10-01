@@ -151,8 +151,9 @@ Numbers and arithmetic, loops, randomness, timers, parallel or autorun rules, ru
 **Decided (Rylee, 2026-10-01):** rules and flags live in `world.json`; *reaction* and *rule* are two names for one engine; `says` is not in the first slice
 (the woven player has no typed input; the studio has a builder chat, and a future "play it here" pane could share it); beliefs are in the first slice.
 
-**Still open:** a Norse name for each of reaction, rule and belief (Rylee chooses); whether a character's belief should show anywhere a player can see it
-(a "what they think" line in the resident's page), or stay in the "why?" log only.
+**Decided (Rylee, 2026-10-01):** beliefs are visible **only in the "why?" log at first**, not on a resident's page.
+
+**Still open:** a Norse name for each of reaction, rule and belief (Rylee chooses).
 
 ## Build order (about two to three weeks, foreman-sized)
 
