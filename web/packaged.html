@@ -450,6 +450,8 @@ window.VEFR_TILES = {{tiles_json}};
 // speaker key. The same art the pack's own folder holds, so a character
 // looks like someone, not a dot. Empty when the pack names none.
 window.VEFR_SPRITES = {{sprites_json}};
+// Each character's size relative to the standard (1.0 = 1.5 tiles tall), from the pack's `player.sprite_scale`.
+window.VEFR_SPRITE_SCALE = {{sprite_scale_json}};
 // The pack's item catalog, keyed by id: {"name": "...", "sprite": "..."}.
 // A drop names one of these; the bag shows the name and draws the sprite
 // (a name in window.VEFR_SPRITES). Empty when the pack names none.
@@ -2422,10 +2424,17 @@ function setupTown() {
     var im = spriteImgs[key];
     return im && im.complete && im.naturalWidth > 0;
   }
+  // -- spriteScale start --
+  // A character's size factor: the pack's own number when it is a sane one, else 1 (the standard).
+  window.spriteScale = function (scales, key) {
+    var v = scales && scales[key];
+    return (typeof v === 'number' && isFinite(v) && v >= 0.2 && v <= 2) ? v : 1;
+  };
+  // -- spriteScale end --
   // A character stands taller than its tile, feet on the tile's bottom.
   function drawSprite(key, tx, ty) {
     var im = spriteImgs[key];
-    var h = T * 1.5;
+    var h = T * 1.5 * spriteScale(window.VEFR_SPRITE_SCALE, key);
     var w = h * (im.naturalWidth / im.naturalHeight || 1);
     ctx.drawImage(im, tx * T + (T - w) / 2, ty * T + T - h, w, h);
   }
@@ -2538,7 +2547,7 @@ function setupTown() {
     }
     if (spriteReady('hero')) {
       var im = spriteImgs['hero'];
-      var baseH = T * 1.5;
+      var baseH = T * 1.5 * spriteScale(window.VEFR_SPRITE_SCALE, 'hero');
       var baseW = baseH * (im.naturalWidth / im.naturalHeight || 1);
       // The squash is drawn as a slightly wider, shorter body - no
       // context scale needed - with the feet still on the tile bottom.
