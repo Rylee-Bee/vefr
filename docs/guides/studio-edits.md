@@ -35,7 +35,9 @@ On the **Desk**, press **Play it here**. The studio weaves your game and shows i
 
 `POST /api/builder/edits/undo` with `{"name": "<game>"}` puts the last kept edit back from its backup, removes its line from the log, and answers in plain words what it undid.
 It undoes one step. If there is nothing to undo, it says so (404); if the backup is missing or not made by this studio, it refuses (409).
-**There is no Undo button in the studio yet.** It is the next small task (a button on the Desk beside **Play it here**, with a test).
+**Undo last edit** is a button on the Desk, beside **Play it here**.
+Press it and the studio calls `POST /api/builder/edits/undo` for the game you are playing.
+The route's plain-sentence answer appears right there on the Desk, in the status line beside the button.
 
 ## Where the record lives
 

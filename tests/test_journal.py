@@ -77,6 +77,8 @@ def test_a_corrupt_journal_reads_as_empty(log_file):
 
 
 def test_every_hooked_kind_is_a_known_kind():
+    # `rule_fired` joins the list with the rules wiring (part 3): the
+    # journal's kind set grows by exactly that one name.
     assert set(journal.KINDS) == {
         "rumor",
         "npc_line",
@@ -84,4 +86,5 @@ def test_every_hooked_kind_is_a_known_kind():
         "stefna_letter",
         "move",
         "fork",
+        "rule_fired",
     }

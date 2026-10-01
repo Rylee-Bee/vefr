@@ -62,7 +62,7 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **keep** | Saves one thing to your collection. | "star" marks; "keep" saves | in use |
 | **put in the game** | Turn a kept character into a real person in the game, standing on a tile. | "place", "keep" (keep only saves them to the vault) | in use |
 | **play it here** | Open the game you are making inside the studio, in a pane, with no download. | "weave and open" | in use |
-| **undo** | Put the last kept edit back, in plain words. One step only. | "revert" | in use (the route works; no button yet) |
+| **undo** | Put the last kept edit back, in plain words. One step only. | "revert" | in use |
 | **equip** / **take off** | Wear or remove an item in a slot. | "wield" | proposed (`design/equipment.md`) |
 | **interact** | Looks at what is near you and does the one thing that fits: talk, trade, open, go through, look or fight. | `tryNPC` "talk", `useHere` "use", the separate `E` / `F` keys | in use |
 | **start over** | Clears the saved games for every game on the same site, then returns to the title screen. | `clear saves` | in use |

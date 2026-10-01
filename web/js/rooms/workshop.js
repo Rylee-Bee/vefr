@@ -37,7 +37,9 @@
         + '      <div class="desk-tools__row desk-tools__weave">'
         + '        <button class="cta cta--line" id="ws-weave" type="button" aria-describedby="ws-weave-status">Make shareable file</button>'
         + '        <button class="cta cta--line" id="ws-weave-play" type="button" aria-describedby="ws-weave-status">Play it here</button>'
+        + '        <button class="cta cta--line" id="ws-undo-edit" type="button" aria-describedby="ws-undo-status">Undo last edit</button>'
         + '        <span class="weave-status" id="ws-weave-status" role="status" aria-live="polite"></span>'
+        + '        <span class="weave-status" id="ws-undo-status" role="status" aria-live="polite"></span>'
         + '        <a class="cta cta--line weave-action" id="ws-weave-download" download hidden>Download</a>'
         + '        <button class="cta cta--line weave-action" id="ws-weave-share" type="button" hidden>Share</button>'
         + '      </div>'
@@ -81,6 +83,7 @@
       el_screen.querySelector('#ws-toggle-ctx').addEventListener('click', toggleContext);
       el_screen.querySelector('#ws-weave').addEventListener('click', makeShareable);
       el_screen.querySelector('#ws-weave-play').addEventListener('click', playHere);
+      el_screen.querySelector('#ws-undo-edit').addEventListener('click', undoEdit);
       el_screen.querySelector('#ws-weave-share').addEventListener('click', shareWoven);
       el_screen.querySelector('#ws-evidence').addEventListener('click', function () { navigate('evidence'); });
       main.appendChild(el_screen);
@@ -367,6 +370,39 @@
         })
         .finally(function () {
           share.disabled = false;
+        });
+    }
+
+    /* ── Undo the last edit — the route answers in plain words ── */
+    function setUndoStatus(text) {
+      var s = el_screen.querySelector('#ws-undo-status');
+      if (s) s.textContent = text || '';
+    }
+
+    function undoEdit() {
+      var btn = el_screen.querySelector('#ws-undo-edit');
+      btn.disabled = true;
+      setUndoStatus('Putting the last edit back…');
+      // name: null lets the route fall back to the active world, exactly
+      // what the Folks room sends for a placement.
+      API.editsUndo({ name: null })
+        .then(function (data) {
+          // The route's own sentence, verbatim; then the Desk reloads so
+          // the world on screen is the undone one.
+          setUndoStatus(data && data.message ? data.message : 'Undid the last edit.');
+          load();
+        })
+        .catch(function (err) {
+          if (err && err.status === 404) {
+            // Nothing to undo is not a failure: the route's own words,
+            // said kindly, and the Desk is left exactly as it was.
+            setUndoStatus('There is nothing to undo in this world yet — you are all caught up.');
+          } else {
+            setUndoStatus('That edit could not be put back — nothing changed. Try again.');
+          }
+        })
+        .finally(function () {
+          btn.disabled = false;
         });
     }
 
