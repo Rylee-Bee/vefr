@@ -2427,6 +2427,127 @@ function setupTown() {
     ctx.fill();
   }
 
+  // The hero alone is drawn with a little life: the hero faces the way
+  // it walks, and a step is a short hop with a lean and a landing squash.
+  // The motion is cosmetic - the game state changes at once in move(),
+  // and only the drawing is tweened. Reduced motion turns the hop off.
+  //
+  // The pure maths lives in stepMotion(), which a node test can call
+  // directly (progress in, pixel offset out); it has no game state.
+  // ---- the hero's step motion ----
+  var STEP_MS = 110;       // one step's drawn tween, in milliseconds
+  var STEP_HOP = 0.06;     // the hop's height, as a fraction of a tile
+  var STEP_LEAN = 6;       // the lean into travel, in degrees
+  var STEP_SQUASH = 0.12;  // the landing squash, as a fraction
+  function stepMotion(p, fx, fy, t, dir, reduced) {
+    // `reduced` is the identity: no offset, no lean, no squash.
+    if (reduced) return { dx: 0, dy: 0, lean: 0, squash: 0 };
+    if (p < 0) p = 0; else if (p > 1) p = 1;
+    var ease = 1 - (1 - p) * (1 - p);   // ease-out, travel slows at the end
+    var arc = Math.sin(Math.PI * p);    // 0 at both ends, 1 mid-step
+    var lean = 0;
+    if (dir === 'right') lean = STEP_LEAN * arc;
+    else if (dir === 'left') lean = -STEP_LEAN * arc;
+    var land = p > 0.7 ? (p - 0.7) / 0.3 : 0;   // squash as the hero lands
+    return { dx: fx * t * ease,
+             dy: fy * t * ease - arc * t * STEP_HOP,   // negative y is up
+             lean: lean, squash: land * STEP_SQUASH };
+  }
+  // ---- end the hero's step motion ----
+
+  // The in-flight step, if any. Kept tiny: where it started, the tile
+  // delta to travel, the way the hero faces, when it began, its rAF id.
+  var heroAnim = null;
+  var heroFacing = 'down';
+  function nowMs() {
+    return (window.performance && window.performance.now)
+      ? window.performance.now() : Date.now();
+  }
+  // Read at move time, never cached, so a change of preference is felt.
+  function reducedMotion() {
+    return !!(window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  // Where the hero is DRAWN right now: the settled tile when no step is
+  // running, else the tweened tile plus its offset. Never moves the
+  // game's hero.
+  function heroPose() {
+    var settled = { tile: [hero[0], hero[1]],
+                    off: { dx: 0, dy: 0, lean: 0, squash: 0 } };
+    if (!heroAnim) return settled;
+    var p = (nowMs() - heroAnim.start) / STEP_MS;
+    if (p >= 1) return settled;
+    var off = stepMotion(p, heroAnim.fx, heroAnim.fy, T, heroAnim.dir, false);
+    return { tile: [heroAnim.ox + off.dx / T, heroAnim.oy + off.dy / T], off: off };
+  }
+  // Begin the drawn tween for a step that has already happened in the
+  // game. An interrupted step starts from where the hero is drawn, and
+  // moves are never queued: the new one simply replaces the old.
+  function heroStartStep(tx, ty, dx, dy) {
+    if (reducedMotion()) { heroAnim = null; return; }
+    var raf = heroAnim ? heroAnim.raf : 0;
+    var from = heroAnim ? heroPose().tile : [tx - dx, ty - dy];
+    heroAnim = { ox: from[0], oy: from[1], fx: tx - from[0], fy: ty - from[1],
+                 dir: heroFacing, start: nowMs(), raf: raf };
+    if (!heroAnim.raf) heroAnim.raf = requestAnimationFrame(heroFrame);
+  }
+  // Draw only while a step is running; on the last frame, stop and paint
+  // the settled tile. No idle loop.
+  function heroFrame() {
+    if (!heroAnim) return;
+    if (nowMs() - heroAnim.start >= STEP_MS) {
+      heroAnim = null;
+      draw();
+      return;
+    }
+    draw();
+    if (heroAnim) heroAnim.raf = requestAnimationFrame(heroFrame);
+  }
+  // The hero's own draw path: mirror left, hop with the offset, the dot
+  // fallback unchanged (facing never mirrors it).
+  function drawHero() {
+    var pose = heroPose();
+    var t = pose.tile, off = pose.off;
+    ctx.save();
+    ctx.translate(t[0] * T + T / 2, t[1] * T + T);
+    // The lean is a rotation. A real canvas has rotate(); the minimal
+    // stub context used by the test harness may not, and in that case
+    // the hero still draws, only without the tilt.
+    if (off.lean && typeof ctx.rotate === 'function') {
+      ctx.rotate(off.lean * Math.PI / 180);
+    }
+    if (spriteReady('hero')) {
+      var im = spriteImgs['hero'];
+      var baseH = T * 1.5;
+      var baseW = baseH * (im.naturalWidth / im.naturalHeight || 1);
+      // The squash is drawn as a slightly wider, shorter body - no
+      // context scale needed - with the feet still on the tile bottom.
+      var h = baseH * (1 - off.squash);
+      var w = baseW * (1 + off.squash);
+      // Facing left is the same picture mirrored about the tile centre.
+      if (heroFacing === 'left') ctx.drawImage(im, w / 2, -h, -w, h);
+      else ctx.drawImage(im, -w / 2, -h, w, h);
+    } else {
+      ctx.fillStyle = town.hero_color || '#e8e5df';
+      ctx.beginPath();
+      ctx.arc(0, -T / 2, T / 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // A harness-readable snapshot of the hero's motion, read-only
+  // (precedent: window.VEFR_COMBAT). It never changes the game; it
+  // exists so a test can see the facing and the drawn tile.
+  window.VEFR_MOTION = function () {
+    var pose = heroPose();
+    return { facing: heroFacing, drawn: [pose.tile[0], pose.tile[1]],
+             animating: !!heroAnim };
+  };
+  // The pure step maths, exposed the same read-only way so a node test
+  // can call it directly (reduced motion in -> the identity out).
+  window.VEFR_STEP_MOTION = stepMotion;
+
   function draw() {
     var ph = phase();
     var water = (town.water_by_phase || {})[ph];
@@ -2434,10 +2555,14 @@ function setupTown() {
     var mapW = cols * T, mapH = rows * T;
     // The camera: follow the hero once the map is bigger than the screen,
     // clamp to the edges, and centre it when it fits.
+    // The camera follows where the hero is DRAWN (the tween), not the settled tile, so a big
+    // scrolling map glides during the hop instead of snapping a tile and sliding the hero back.
+    // At rest the drawn tile is the settled one, so nothing changes when no step is running.
+    var camHero = heroPose().tile;
     var camX = mapW <= viewW ? (mapW - viewW) / 2
-      : Math.min(Math.max(hero[0] * T + T / 2 - viewW / 2, 0), mapW - viewW);
+      : Math.min(Math.max(camHero[0] * T + T / 2 - viewW / 2, 0), mapW - viewW);
     var camY = mapH <= viewH ? (mapH - viewH) / 2
-      : Math.min(Math.max(hero[1] * T + T / 2 - viewH / 2, 0), mapH - viewH);
+      : Math.min(Math.max(camHero[1] * T + T / 2 - viewH / 2, 0), mapH - viewH);
 
     ctx.fillStyle = town.bg; ctx.fillRect(0, 0, viewW, viewH);
     ctx.save();
@@ -2565,14 +2690,8 @@ function setupTown() {
     });
 
     // The hero: their own sprite when the pack names one, else the dot.
-    if (spriteReady('hero')) {
-      drawSprite('hero', hero[0], hero[1]);
-    } else {
-      ctx.fillStyle = town.hero_color || '#e8e5df';
-      ctx.beginPath();
-      ctx.arc(hero[0] * T + T / 2, hero[1] * T + T / 2, T / 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // The one character drawn with facing and step motion.
+    drawHero();
     // Fog of war: explored but not currently lit is dimmed; never-seen
     // tiles were skipped above and stay dark.
     if (fogOn) {
@@ -2620,6 +2739,7 @@ function setupTown() {
     pois = town.pois;
     speakers = regionSpeakers(name);
     hero = (at || town.hero_start).slice();
+    heroAnim = null;   // a new region's hero appears settled, not mid-hop
     fogOn = fogEnabled();
     fogRadius = (town.fog && town.fog.radius) || 6;
     resetLight();
@@ -2706,6 +2826,12 @@ function setupTown() {
   }
 
   function move(dx, dy) {
+    // The hero faces the way the move is trying to go, even when it is
+    // refused: a bump, a wall or the map's edge still turns the hero.
+    if (dx > 0) heroFacing = 'right';
+    else if (dx < 0) heroFacing = 'left';
+    else if (dy > 0) heroFacing = 'down';
+    else if (dy < 0) heroFacing = 'up';
     var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
     // Bump to attack: a living enemy on the destination tile is struck
@@ -2719,6 +2845,9 @@ function setupTown() {
     }
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
     hero = [nx, ny];
+    // Draw-only: start the hop now, but the game state above is already
+    // settled and the turn below is never gated on the animation.
+    heroStartStep(nx, ny, dx, dy);
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     libraryOnTile(nx, ny, regionName);
