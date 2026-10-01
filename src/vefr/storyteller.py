@@ -283,6 +283,9 @@ class Storyteller:
     sampling: dict[str, Any] = field(default_factory=lambda: {"temperature": 0.85})
     endpoint: str = ""  # "" = inherit from engine env (LLAMACPP_URL/OLLAMA_URL)
     chat_template_kwargs: dict[str, Any] = field(default_factory=dict)
+    # NOTE: the model's declared capability, read by nothing. The engine
+    # never sizes a server from it; a player starting their own server
+    # picks a size their RAM can hold.
     context_window: int = 0  # 0 = unknown / caller decides
     templates: TemplatePaths = field(default_factory=TemplatePaths)
     pack_dir: Path | None = None  # absolute path to the pack directory (for template loading)
@@ -464,6 +467,10 @@ def _manifest_to_storyteller(pack_id: str, manifest: dict[str, Any], pack_dir: P
         sampling=dict(manifest.get("sampling") or {"temperature": 0.85}),
         endpoint=str(model_block.get("endpoint", manifest.get("endpoint", ""))),
         chat_template_kwargs=dict(manifest.get("chat_template_kwargs") or {}),
+        # NOTE: metadata only - the loader copies the model's declared
+        # capability into the pack and stops there. No server is ever
+        # sized from it; a player running their own server picks a size
+        # their RAM can hold.
         context_window=int(model_block.get("context_window", manifest.get("context_window", 0) or 0)),
         templates=templates,
         pack_dir=pack_dir,

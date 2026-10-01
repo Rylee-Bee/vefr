@@ -25,6 +25,7 @@ services:
       VEFR_JOURNAL: /app/data/journal.json
       # ── Bundled brain (default) ──
       # Models run inside the container on CPU. No setup needed.
+      # The image ships no Storyteller Packs, so VEFR_MODEL is the storyteller model there.
       VEFR_BUNDLED_BRAIN: "1"
       VEFR_LLAMACPP_URL: http://127.0.0.1:8084
       VEFR_MODEL: qwen3-1.7b

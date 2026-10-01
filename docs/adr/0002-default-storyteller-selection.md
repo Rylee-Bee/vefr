@@ -61,9 +61,17 @@ storyteller_packs/ministral3-3b/
   scene.md            ← scene packet template
 ```
 
-Resolution: `VEFR_STORYTELLER=ministral-3-3b` or active pack selection.
+Resolution: `VEFR_STORYTELLER=ministral3-3b` or active pack selection.
 
 The storyteller renders narrative from authoritative world state. It does not have write access to canon, world facts, or game state.
+
+## Amendment (2026-10-01)
+
+The resolution order in the engine is pack-first: `VEFR_STORYTELLER`,
+then the `data/storytellers/active.toml` pin, then the first installed
+pack, then the first bundled pack. The engine's no-pack fallback is
+`gpt-oss-20b`. The "Ministral is the default" claim above describes the
+2026-09-13 selection, not the current default.
 
 ## Phi-4-mini role
 

@@ -25,9 +25,14 @@ common options:
   engine's primary OpenAI-compatible path. Point it at
   `VEFR_LLAMACPP_URL` (default `http://127.0.0.1:8081`).
 - **[Ollama](https://ollama.com)** — simpler to install on many
-  machines. Set `VEFR_MODEL` to your pulled model's name and use
-  Ollama's OpenAI-compatible endpoint:
+  machines. Use Ollama's OpenAI-compatible endpoint:
   `VEFR_LLAMACPP_URL=http://127.0.0.1:11434` (the engine appends `/v1` itself).
+
+> **NOTE:** The storyteller asks for the active pack's model name
+> (`gemma-4-E2B-it` by default). Serve that model on your endpoint, or
+> point `VEFR_STORYTELLER` at a pack id. `VEFR_MODEL` names the model
+> for the studio/craft surfaces, not the storyteller, when a pack is
+> installed.
 
 If both are set, `VEFR_LLAMACPP_URL` wins.
 
@@ -46,13 +51,18 @@ plain process env vars, so any entry point picks them up:
 |---|---|---|
 | `VEFR_LLAMACPP_URL` | `http://127.0.0.1:8081` | OpenAI-compatible endpoint the brain answers on |
 | `OLLAMA_URL` | `http://127.0.0.1:11434` | Only used by a pack declaring `provider = "ollama"` |
-| `VEFR_MODEL` | `gpt-oss-20b` | Model name sent to the server |
+| `VEFR_MODEL` | `gpt-oss-20b` | Model name for the studio/craft surfaces (`chat`, `forge`, `lore`, `stefna`, `teach`); the storyteller model only when no Storyteller Pack is installed |
+| `VEFR_STORYTELLER` | *(unset)* | Pack id (or model name) that picks the active storyteller; unset uses the first installed pack, else the first bundled pack |
+| `VEFR_NARRATE_MODEL` | `smollm3-3b-q4` | Model for the fleet narrate role (`vefr-story`); separate from the storyteller |
+| `VEFR_INTERFACE_MODEL` | `qwen3.5-9b-mtp` | Model for the interface translator (`vefr-interface`); this 9B model is not laptop-sized |
 | `VEFR_KEEP_ALIVE` | `1m` | How long the server keeps the model resident |
 | `VEFR_HOME` | repo checkout (container: `/app`) | Where the engine root lives |
 | `VEFR_VAULT` | `<VEFR_HOME>/data/vault` | Session memory store |
 | `VEFR_JOURNAL` | `<VEFR_HOME>/data/journal` | Journal store |
 | `VEFR_WORLD` | `sample-world` | Which pack under `worlds/` is active |
 | `VEFR_STORYTELLER_FIXTURES` | *(unset)* | PATH-style list of extra scene-fixture dirs for `norns storyteller-test`, searched before the engine's own |
+
+Default storyteller: pack `gemma4-e2b`, model `gemma-4-E2B-it`.
 
 Tip: keep your endpoint config in one place. Copy `example.env`
 to `.env` (gitignored), fill in your host, and source it before

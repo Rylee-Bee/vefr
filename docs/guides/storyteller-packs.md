@@ -304,6 +304,20 @@ notes = "Approx disk estimate for Q4_K_M GGUF."
 text = "Free-form author notes. Lives in a sub-table to avoid TOML ambiguity."
 ```
 
+`context_window` is metadata, and nothing more. It records what the
+model can do; the engine reads the number into the pack and stops
+there. No code path in vefr sizes anything from it. The servers the
+bundled brain starts use small fixed context sizes chosen to fit a
+laptop - 2048, 4096, and 512 in `deploy/start-bundled.sh`, and 8192 in
+the Spark quadlet - and none of them reads a pack.
+
+So a big number in a pack is a claim about the model, not a memory
+bill. If you run your own llama.cpp server, choose the context size
+your RAM can hold. A 128K context on a 2B model is what exhausts a
+laptop, and it is your server's choice, not the pack's. The fields in
+the same `[install]` block that do describe what a machine must afford
+are `recommended_quant` and `approx_disk_mb`.
+
 Unknown top-level fields are ignored. Forward compatibility is
 deliberate: the engine should keep loading packs written by older
 or future versions of itself.

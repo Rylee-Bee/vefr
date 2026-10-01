@@ -214,8 +214,15 @@ def _looks_like_missing_model(exc: Exception) -> bool:
 
     Keeps the matrix run moving past a not-yet-downloaded model
     without pretending a hard error is a skip.
+
+    GeneratorUnavailable/GeneratorFailed now carry a friendly sentence
+    in `str(exc)`; the raw endpoint text (which is where "404" and
+    "model not found" live) is preserved on `.detail`. Read that
+    first, and fall back to `str(exc)` only for exceptions that carry
+    no preserved detail (e.g. a bare RuntimeError from a test double).
     """
-    msg = str(exc).lower()
+    raw = getattr(exc, "detail", None) or str(exc)
+    msg = str(raw).lower()
     needles = (
         "model not found",
         "model '",

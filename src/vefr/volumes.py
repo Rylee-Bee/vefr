@@ -211,6 +211,7 @@ Environment=VEFR_HOME=/app
 Environment=VEFR_WORLD=sample-world
 # Bundled brain — primary storyteller on :8084 (Qwen3-1.7B)
 Environment=VEFR_LLAMACPP_URL=http://127.0.0.1:8084
+# The image ships no Storyteller Packs, so VEFR_MODEL is the storyteller model here.
 Environment=VEFR_MODEL=qwen3-1.7b
 Environment=VEFR_KEEP_ALIVE=1m
 # Bundled brain — fleet roles

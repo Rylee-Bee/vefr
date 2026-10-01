@@ -46,27 +46,34 @@ Three things to do with it: **[open it and play](#open-and-play)**,
 
 ## Open and play
 
+One command with Podman or Docker gets you a walking town.
+No account, no key, no model to install: the image carries a small
+model fleet, so whispers and NPC lines work out of the box.
+
 ```sh
-# 1. Get the engine.
-git clone https://github.com/Rylee-Bee/vefr.git
-cd vefr
-uv sync --group test
-
-# 2. Bring any OpenAI-compatible LLM endpoint.
-#    llama.cpp, Ollama, LM Studio, a phone running a local server,
-#    or any hosted endpoint that speaks /v1/chat/completions.
-export VEFR_LLAMACPP_URL=http://127.0.0.1:8084
-export VEFR_MODEL=qwen3-1.7b
-
-# 3. Run with the bundled sample world (Emberfield).
-uv run uvicorn vefr.main:app --app-dir src --port 8820
-# -> open http://127.0.0.1:8820
+mkdir -p ~/vefr-data
+podman run -d --name vefr -p 8820:8820 \
+  -v ~/vefr-data:/app/data \
+  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
+  -e VEFR_MODEL=qwen3-1.7b \
+  ghcr.io/rylee-bee/vefr:latest
+curl -s http://127.0.0.1:8820/api/health
 ```
+
+`GET /api/health` answers `{"ok": true, ...}` when the engine is up.
+Then open `http://127.0.0.1:8820`.
 
 Walk with the on-screen pad, WASD or the arrow keys. Press `E` or tap
 to talk to whoever is nearby. Without a model the engine still runs:
 you can walk the town and the journal still records, and anything that
 needs the model tells you it isn't loaded.
+
+**If you want fresh lines from your own model,** `ratatoskr spark install`
+is the one command: it acquires the pinned small model, verified by
+size and sha256 ([docs/guides/spark.md](docs/guides/spark.md)). Or point
+`VEFR_LLAMACPP_URL` at any OpenAI-compatible server you already run:
+llama.cpp, Ollama, LM Studio. The full variable table is in
+[`GETTING_STARTED.md`](GETTING_STARTED.md).
 
 ### Package a single HTML file
 
@@ -115,6 +122,27 @@ asset](https://github.com/Rylee-Bee/vefr/releases/download/v2.0.0/burrito-journa
 browser. Point it at an OpenAI-compatible model for live lines, or play
 offline with the lines built into the file. The pack is CC BY 4.0; the
 engine that built it is MPL-2.0.
+
+### For developers
+
+Running from a checkout, for changing the engine, the studio or the
+sample world:
+
+```sh
+git clone https://github.com/Rylee-Bee/vefr.git
+cd vefr
+uv sync --group test
+
+# Point at any OpenAI-compatible model server you run: llama.cpp,
+# Ollama, LM Studio. Without one, the town still walks.
+export VEFR_LLAMACPP_URL=http://127.0.0.1:8084
+# VEFR_MODEL names a model for the studio/craft surfaces,
+# not the storyteller.
+export VEFR_MODEL=qwen3-1.7b
+
+uv run uvicorn vefr.main:app --app-dir src --port 8820
+# -> open http://127.0.0.1:8820
+```
 
 ## Build a world
 
@@ -260,18 +288,11 @@ hides those panels.
 
 ## Run the engine
 
-From the published image (GHCR):
+The one-command published image is in [Open and play](#open-and-play).
+To build the image from this checkout instead:
 
 ```sh
 mkdir -p ~/vefr-data
-podman run -d --name vefr -p 8820:8820 \
-  -v ~/vefr-data:/app/data \
-  -e VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
-  -e VEFR_MODEL=qwen3-1.7b \
-  ghcr.io/rylee-bee/vefr:latest
-curl -s http://127.0.0.1:8820/api/health
-
-# Or build locally:
 podman build -t localhost/vefr:latest .
 podman run -d --name vefr -p 8820:8820 \
   -v ~/vefr-data:/app/data \
@@ -282,8 +303,8 @@ podman run -d --name vefr -p 8820:8820 \
 
 The image is published at `ghcr.io/rylee-bee/vefr`. `:latest` moves with
 every successful publish; `:sha-<full SHA>` never changes, so use it to
-roll back. The image holds the engine, the studio and the sample world.
-For an image with model weights included, see
+roll back. The image holds the engine, the studio, the sample world and
+a small model fleet; the models, their ports and how to swap them are in
 [`bundled-brain.md`](docs/guides/bundled-brain.md).
 
 `GET /api/health` returns `{"ok": true, ...}` when the engine is running.
@@ -314,9 +335,9 @@ podman run -d --name vefr -p 8820:8820 \
 [`docs/guides/install.md`](docs/guides/install.md) (change the
 world, point at an LLM, volumes).
 
-**Built-in models:** a bundled image can include its own small models,
-so `podman run vefr` is playable with no model setup (four models,
-about 4 GB of RAM, CPU only). Models, ports and how to swap them:
+**Built-in models:** the image carries its own small model fleet, so
+`podman run vefr` is playable with no model setup (four models, about
+4 GB of RAM, CPU only). Models, ports and how to swap them:
 [`docs/guides/bundled-brain.md`](docs/guides/bundled-brain.md).
 
 **CLI:** `ratatoskr --help` (running things) and `norns --help` (making
