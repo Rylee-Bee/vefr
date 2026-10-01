@@ -7,6 +7,30 @@
 
 ## Landed
 
+- [x] **The rules catalog validator** (2026-10-01): world packs may now
+      carry four OPTIONAL top-level keys - `flags`, `claims`, `people`
+      and `rules` - and `maplab` checks them at authoring time, purely
+      additive: a pack that declares none validates byte-for-byte as
+      before (`load_pack` passes the four through only when declared;
+      a test asserts they stay ABSENT for `worlds/sample-world`, which
+      still validates green). New `maplab.rules_errors`, wired into
+      `validate()` beside `grammar_errors`/`item_light_errors`, checks
+      block shape, unique non-empty rule ids, the six events (`starts`,
+      `enters`, `comes-near`, `opens`, `picks-up`, `uses-with`; `says`
+      stays out - the woven player has nowhere to type words),
+      conditions, actions, declared-flag reads/writes, unknown ids
+      (flags/claims/people/items/places), the 40-rule limit, same-event
+      conflicting actions (naming BOTH rule ids), and the 280-char say
+      line (`RULE_SAY_LIMIT`) - plain sentences, each naming the rule
+      id. New `maplab.rules_notes` is the two design warnings (a
+      believed claim no rule can ever change; a belief nothing reads)
+      and is deliberately NOT wired into `cmd_validate`. Path safety:
+      rule/flag/person/claim ids never become filesystem paths - the
+      only pack file read is `<pack_dir>/world.json`, guarded by a
+      hostile-ids test. Pinned by `tests/test_rules_validator.py`
+      (a good pack across all six events, fifteen bad packs, the
+      compatibility checks, both notes, and the hostile pack).
+
 - [x] **An Undo button on the Desk** (2026-10-01): the edit loop's way
       back now has a client. The existing `POST /api/builder/edits/undo`
       route (unchanged, plain sentences) is reachable from a real
