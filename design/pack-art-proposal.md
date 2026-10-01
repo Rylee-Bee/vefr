@@ -1,8 +1,11 @@
-# Proposal: characters that move (animated sprites)
+# Proposal: art a pack can bring (moving characters, its own tiles, tile variants)
 
 Status: **proposed, no code written.** Pack-contract changes are ask-first; this is the ask.
-Why now: the hero is one painted picture that slides from tile to tile. It never faces the way
-she walks and does not feel part of the world.
+Why now: Cottage is making all its own art in its own style. Three things stop the engine from
+showing it: the hero is one painted picture that slides from tile to tile and never faces the way
+she walks; **ground tiles are read only from the engine's own `web/art/tiles/`** (`_tiles_for_legend`
+in `src/vefr/cli.py`), so a pack cannot bring a floor of its own; and one tile per surface repeats in
+an obvious grid.
 
 ## What exists today (read in `web/packaged.html` and `src/vefr/world.py`)
 
@@ -57,7 +60,42 @@ sprites/hero.sheet.json     # describes the sheet
   (one step advances the cycle). No sheet: Phase A applies.
 - Same size rule as now: frames are drawn 1.5 tiles tall, feet on the tile's bottom.
 
-## Validation (`norns validate`)
+## Phase C: a pack brings its own tiles, with variants (the other contract change)
+
+**Today** (read in `src/vefr/cli.py` `_tiles_for_legend`): a legend symbol resolves to
+`web/art/tiles/<name>.webp` from the engine, by an explicit `"tile": "<name>"` or by a fallback
+(stone-wall, rug, grass, path). A pack has no way to supply its own picture, and one symbol means one
+picture, so a floor repeats in a visible grid.
+
+**Proposed, both optional so old packs bake exactly as before:**
+
+1. **Pack tiles.** A region may carry `tiles/<name>.webp` (or `.png`) next to `sprites/`, found by the
+   same convention as sprites. A legend `"tile": "<name>"` looks in the region's `tiles/` first, then in
+   the engine's `web/art/tiles/`. A pack tile with the same name overrides the studio's.
+2. **Variants.** `tiles/<name>.2.webp`, `tiles/<name>.3.webp`, ... are variants of `<name>`
+   (the unnumbered file is variant 1). The weaver bakes the list for that symbol.
+3. **Choice is deterministic, not random:** the player picks variant `hash(x, y) mod count`, so the same
+   map always looks the same, saves and screenshots agree, and tests can assert it. A symbol with
+   one picture behaves exactly as today.
+4. **Size:** tiles are baked as webp at 2 times the on-screen size (192 px for a 96 px tile) to keep the
+   single-file build small; a processing script in the pack repo (not the engine) produces them.
+
+Validation: a `"tile"` that names nothing in the region's `tiles/` or the engine's set is a
+validation error naming the symbol (today it silently falls back to a colour).
+
+Tests: loader finds pack tiles and variants and orders them; the weave bakes the list only when
+variants exist; the player's choice is deterministic for a fixed map; an unchanged pack's baked output
+is byte-identical before and after (the compatibility test).
+
+Demo: the sample world gets two generated flat-colour variants of one floor, from a fixture script.
+
+## Order of work
+
+1. **Phase C first** (pack tiles and variants): without it the new floors cannot appear in a build.
+2. **Phase A** (the hero feels alive, no contract change) in parallel, since it is engine-only.
+3. **Phase B** (sprite sheets) once the walk-cycle art exists.
+
+## Validation of sprite sheets (`norns validate`)
 
 The sheet is shape-checked like everything else the validator owns: `image` exists, `frame` divides
 the image size exactly, every listed frame index is in range, direction names are a subset of
@@ -85,7 +123,8 @@ journey guide's lessons log.
    the most art; the sheet format supports either.
 2. **Frames per walk:** 4 (the sheet above) or 6 (smoother, more art).
 3. **Hop feel:** a gentle hop (about 6 percent of a tile) or none (frames only).
+4. **Variants per surface:** 3 (recommended: breaks repetition, small bake) or more.
 
 ## Not in this proposal
 
-Attack, hurt and idle-breathing animations; per-item animation; the art itself (Cottage, in its own repo).
+Attack, hurt and idle-breathing animations; per-item animation; animated tiles; the art itself (Cottage, in its own repo).
