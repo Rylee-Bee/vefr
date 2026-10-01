@@ -1013,6 +1013,40 @@
     "earned": "half"
    },
    "sticker": "a sticker book open to a half-filled page"
+  },
+  {
+   "id": "play-here",
+   "name": "Play It Here",
+   "how": "Play your world in the page, no download.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "disabled": true,
+   "todo_art": "TODO(T5): sticker art to be drawn in a batch and chosen by Rylee; the rule stays disabled until web/art/stickers/play-here.webp exists and \"disabled\" is removed.",
+   "rule": {
+    "count": [
+     "play_here",
+     1
+    ]
+   },
+   "sticker": "a small round window showing a tiny world, with a little play triangle"
+  },
+  {
+   "id": "character-placed",
+   "name": "Put a Person In",
+   "how": "Put a character into the game for real.",
+   "group": "make",
+   "kind": "open",
+   "shine": "paper",
+   "disabled": true,
+   "todo_art": "TODO(T5): sticker art to be drawn in a batch and chosen by Rylee; the rule stays disabled until web/art/stickers/character-placed.webp exists and \"disabled\" is removed.",
+   "rule": {
+    "count": [
+     "character_placed",
+     1
+    ]
+   },
+   "sticker": "a little paper person stepping through a round door onto a map"
   }
  ]
 }

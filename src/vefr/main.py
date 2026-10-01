@@ -1201,13 +1201,14 @@ def builder_weave(req: BuilderWeaveRequest | None = None):
     }
 
 
-@app.get("/api/builder/weave/file/{name}")
-def builder_weave_file(name: str):
-    """Download a woven file as an attachment.
+def _woven_file(name: str) -> Path:
+    """Resolve a request's woven-file name to a server-written file, or 404.
 
-    `name` must match a strict filename pattern and resolve inside the
-    server-owned output dir; anything else is refused before the disk
-    is touched (path traversal never reaches FileResponse).
+    Shared by the download and play routes so both hold the same strict
+    lookup: `name` must match `_WEAVE_NAME_RE` and then be found among
+    the files the server wrote in `_weave_output_dir()`. The request
+    string is never joined onto a path - path traversal never reaches
+    FileResponse.
     """
     if not _WEAVE_NAME_RE.match(name):
         raise HTTPException(status_code=404, detail="no such woven file")
@@ -1218,7 +1219,39 @@ def builder_weave_file(name: str):
     target = woven.get(name)
     if target is None:
         raise HTTPException(status_code=404, detail="no such woven file")
+    return target
+
+
+@app.get("/api/builder/weave/file/{name}")
+def builder_weave_file(name: str):
+    """Download a woven file as an attachment.
+
+    Same strict name lookup as the play route; anything bad is refused
+    before the disk is touched (path traversal never reaches
+    FileResponse).
+    """
+    target = _woven_file(name)
     return FileResponse(target, media_type="text/html", filename=target.name)
+
+
+@app.get("/api/builder/weave/play/{name}")
+def builder_weave_play(name: str):
+    """Serve a woven file inline so the studio can play it in a pane.
+
+    Same strict lookup as the download route, but `Content-Disposition:
+    inline` (never an attachment) so an iframe renders it, plus a
+    sandbox CSP so the woven player can never reach the studio page.
+    """
+    target = _woven_file(name)
+    return FileResponse(
+        target,
+        media_type="text/html",
+        content_disposition_type="inline",
+        filename=target.name,
+        # NOTE: the SAME strict sandbox as the pane's iframe (no allow-same-origin), so opening this URL directly
+        # in a tab cannot give a woven page (which may come from an imported pack) the studio's own origin.
+        headers={"Content-Security-Policy": "sandbox allow-scripts"},
+    )
 
 
 @app.get("/api/starred")
@@ -1484,6 +1517,92 @@ def _backup_map_file(target: Path) -> Path:
     return backup
 
 
+# ------------------------------------------------- place a character
+
+# A kept face becomes a REAL speaker: one entry in the act's
+# `speakers` plus a voice file under the region's voices/. The id and
+# the region both become path parts, so each is held to one lowercase
+# dash-word before any disk probe (CodeQL py/path-injection). The
+# resolved path is then checked with cli._inside() as a hard backstop.
+_SPEAKER_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
+_PLACE_LIMITS = {"voice": 4000, "display_name": 64, "near": 64, "seed": 280}
+
+
+def _speaker_slug(raw, what: str) -> str:
+    """A path-safe id/region, or a 422 naming what was wrong.
+
+    The rule is the request-facing guard for anything that becomes a
+    filename (the character id, the region): one lowercase word of
+    letters, digits and dashes. Anything else - '..', '/', '\\',
+    uppercase, spaces, empty, over 32 chars - is refused here, so no
+    disk probe ever sees it.
+    """
+    if not isinstance(raw, str) or not _SPEAKER_SLUG_RE.match(raw):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"the {what} must be 1-32 characters: lowercase letters, "
+                "digits or dashes, starting with a letter"
+            ),
+        )
+    return raw
+
+
+def _speakers_file_target(pack: Path, w: dict) -> Path:
+    """The file that holds the act's speakers.
+
+    Acts-shape packs keep them in acts/<act>/world.json (the file
+    maplab.write_pack overwrites); flat-shape packs keep them inside
+    the pack-level world.json.
+    """
+    if "acts" in w or (pack / "acts").is_dir():
+        act_id = w.get("_act_id") or "act-1"
+        return pack / "acts" / act_id / "world.json"
+    return pack / "world.json"
+
+
+def _voice_target(pack: Path, w: dict, cid: str, region: str) -> tuple[Path | None, str]:
+    """The voice file for a placed character, and its pack-relative name.
+
+    Acts-shape packs put it in acts/<act>/<region>/voices/<id>.md;
+    flat packs in voices/<id>.md. The returned path is None when the
+    resolved target would leave the pack (the CodeQL guard), so the
+    caller refuses before any is_dir/is_file/mkdir/open/write_text.
+    """
+    from .cli import _inside
+
+    if "acts" in w or (pack / "acts").is_dir():
+        act_id = w.get("_act_id") or "act-1"
+        rel = f"acts/{act_id}/{region}/voices/{cid}.md"
+    else:
+        rel = f"voices/{cid}.md"
+    resolved = _inside(os.path.realpath(pack), *rel.split("/"))
+    return (Path(resolved) if resolved is not None else None), rel
+
+
+def _validate_placement(pack: Path, w: dict, voice_rel: str, voice_text: str) -> list[str]:
+    """Run maplab.validate with the not-yet-written voice file in place.
+
+    The validator checks that a speaker's voice file exists on disk, so
+    a dry run needs the file present. It goes into a throwaway copy of
+    the pack: the real pack is never touched before a committed write,
+    which is what makes `preview` read-only and keeps a refused
+    placement off the disk entirely.
+    """
+    import shutil
+    import tempfile
+
+    from .maplab import validate
+
+    with tempfile.TemporaryDirectory(prefix="vefr-place-") as td:
+        tmp_pack = Path(td) / pack.name
+        shutil.copytree(pack, tmp_pack)
+        target = tmp_pack / voice_rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(voice_text, encoding="utf-8")
+        return validate(w, pack_dir=tmp_pack)
+
+
 @app.post("/api/builder/map/build")
 def builder_map_build(payload: dict):
     """Commit a storyteller's sketch as this world's map - for real.
@@ -1539,11 +1658,362 @@ def builder_map_build(payload: dict):
     write_pack(pack, w)
     # /api/world is cached; a committed map must show on the next read.
     load_world.cache_clear()
+    # The map build is a kept edit from day one: log it and add its EDITS.md
+    # line. The response shape is unchanged - the log lives behind the route.
+    from . import edits
+
+    edits.record(
+        _edit_who(payload),
+        "map_build",
+        pack.name,
+        [str(target.relative_to(pack))],
+        backup_rel,
+        "painted the map",
+        pack,
+    )
     return {
         "written": True,
         "path_rel": str(target.relative_to(pack)),
         "backup_rel": backup_rel,
     }
+
+
+# Who a kept edit is logged as. The studio is the player's tool (the player
+# keeps the edit), so that is the default; an explicit "crew" in the request
+# records a helper/automation instead. Anything else falls back to the player.
+def _edit_who(payload: dict) -> str:
+    who = payload.get("who") if isinstance(payload, dict) else None
+    return who if who in ("player", "crew") else "player"
+
+
+@app.post("/api/builder/character/place")
+def builder_character_place(payload: dict):
+    """Place a kept face in the world - for real.
+
+    A face the storyteller drafted is only a vault card until it is
+    placed. This is the route that makes it a speaker: one entry in
+    the act's `speakers` plus a voice file in the region's voices/.
+    It mirrors POST /api/builder/map/build - the pack name goes through
+    _safe_world_name(), the id and region are path-safe before any disk
+    probe, the placement is engine-chosen (chat._pick_tile) or checked
+    against maplab's own walkability/reachability, maplab.validate()
+    gates the result in plain sentences, an existing id is never
+    clobbered without `force` (409), the speakers file is backed up
+    beside itself, and the write goes through maplab.write_pack so the
+    bytes match what the CLI would write. `preview: true` is a dry run
+    that writes nothing. Deterministic: no model call ever runs here.
+    """
+    from . import chat
+    from .maplab import load_pack, reach, walkable
+    from .maplab import write_pack
+    from .paths import pack_dir
+
+    name = _safe_world_name(payload.get("name"))
+    cid = _speaker_slug(payload.get("id"), "character id")
+    # The region is request data too and becomes a path part: guard it
+    # before the pack is read. When the caller leaves it out it is
+    # resolved from the pack below.
+    region_raw = payload.get("region")
+    region_requested = (
+        _speaker_slug(region_raw, "region name") if region_raw is not None else None
+    )
+    preview = payload.get("preview") is True
+    force = payload.get("force") is True
+
+    pack = pack_dir(name)
+    if not (pack / "world.json").is_file():
+        raise HTTPException(status_code=404, detail=f"pack not found: {pack.name}")
+    try:
+        w = load_pack(pack)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=f"couldn’t open the pack: {e}") from e
+
+    has_acts = "acts" in w or (pack / "acts").is_dir()
+    if has_acts:
+        regions = list((w.get("regions") or {}).keys())
+        if not regions:
+            regions = [w.get("_region") or "town"]
+        region = region_requested or w.get("_region") or regions[0]
+        if region not in regions:
+            raise HTTPException(
+                status_code=422,
+                detail=f"this world has no region named {region!r}",
+            )
+    else:
+        region = region_requested or "town"
+
+    speakers = w.get("speakers")
+    if not isinstance(speakers, dict):
+        speakers = {}
+    w["speakers"] = speakers
+    if cid in speakers and not force:
+        raise HTTPException(
+            status_code=409,
+            detail="a character with that id already exists — send force to replace it",
+        )
+
+    town = w.get("town")
+    if not isinstance(town, dict) or not town.get("map") or not town.get("legend"):
+        raise HTTPException(
+            status_code=422, detail="this world has no map to place anyone on yet"
+        )
+    town.setdefault("hero_start", [1, 1])
+
+    # Where they stand. With no `at`, the interview's own deterministic
+    # rule chooses; with one, the tile must be walkable, reachable and
+    # free - the same checks maplab owns, never re-implemented here.
+    flooded = {tuple(t) for t in town.get("flood_tiles", [])}
+    start = tuple(town["hero_start"])
+    taken = {start} | {
+        tuple(s["at"])
+        for s in speakers.values()
+        if isinstance(s, dict) and s.get("at")
+    }
+    at_raw = payload.get("at")
+    if at_raw is None:
+        tile = chat._pick_tile(w)
+        if tile is None:
+            raise HTTPException(
+                status_code=422, detail="there is nowhere left to stand in this world"
+            )
+    else:
+        if (
+            not isinstance(at_raw, (list, tuple))
+            or len(at_raw) != 2
+            or not all(isinstance(v, int) and not isinstance(v, bool) for v in at_raw)
+        ):
+            raise HTTPException(status_code=422, detail="at must be a tile [x, y]")
+        tile = (int(at_raw[0]), int(at_raw[1]))
+        if not walkable(w, *tile):
+            raise HTTPException(
+                status_code=422, detail=f"the tile {list(tile)} is not walkable"
+            )
+        if tile in flooded:
+            raise HTTPException(
+                status_code=422, detail=f"the tile {list(tile)} is flood ground"
+            )
+        if tile not in reach(w, start, flooded=flooded or None):
+            raise HTTPException(
+                status_code=422,
+                detail=f"the tile {list(tile)} is not reachable from the hero's start",
+            )
+        if tile in taken:
+            raise HTTPException(
+                status_code=422, detail=f"someone already stands at {list(tile)}"
+            )
+
+    # One short line per phase the world defines. A phase with no seed
+    # of its own falls back to the first seed given.
+    phases = list(w.get("phases") or {})
+    if not phases:
+        raise HTTPException(
+            status_code=422, detail="this world defines no phases to seed"
+        )
+    given = payload.get("seeds")
+    if not isinstance(given, dict):
+        given = {}
+    ordered = [
+        v.strip() for v in given.values() if isinstance(v, str) and v.strip()
+    ]
+    if not ordered:
+        raise HTTPException(
+            status_code=422, detail="give at least one seed line for the character"
+        )
+    first_seed = ordered[0]
+    seeds = {}
+    for phase in phases:
+        line = given.get(phase)
+        # No character cap is applied: the woven speech box
+        # (web/packaged.html - `.npc-line` and showSpeech) renders a
+        # line with no truncation or line-clamp, and the seed is fed to
+        # the model as shape, not shown verbatim. There is no cap to
+        # match, so none is invented here.
+        seeds[phase] = (
+            line.strip() if isinstance(line, str) and line.strip() else first_seed
+        )
+
+    voice_text = payload.get("voice")
+    if not isinstance(voice_text, str) or not voice_text.strip():
+        raise HTTPException(status_code=422, detail="a voice file needs some words")
+    # Plain size limits so one request cannot write a huge file into a pack (chosen by the orchestrator,
+    # 2026-10-01; Rylee may change them): voice 4000, name 64, near 64, each seed line 280 characters.
+    if len(voice_text) > _PLACE_LIMITS["voice"]:
+        raise HTTPException(status_code=422, detail=f"the voice is too long (at most {_PLACE_LIMITS['voice']} characters)")
+    for key in ("display_name", "near"):
+        val = payload.get(key)
+        if isinstance(val, str) and len(val.strip()) > _PLACE_LIMITS[key]:
+            raise HTTPException(status_code=422, detail=f"the {key.replace('_', ' ')} is too long (at most {_PLACE_LIMITS[key]} characters)")
+    for phase_key, line in (payload.get("seeds") or {}).items() if isinstance(payload.get("seeds"), dict) else []:
+        if isinstance(line, str) and len(line.strip()) > _PLACE_LIMITS["seed"]:
+            raise HTTPException(status_code=422, detail=f"a seed line is too long (at most {_PLACE_LIMITS['seed']} characters)")
+    # Match the keeper.md shape: the body verbatim, one trailing newline.
+    voice_text = voice_text.rstrip("\n") + "\n"
+
+    display_name = payload.get("display_name")
+    if not isinstance(display_name, str) or not display_name.strip():
+        raise HTTPException(
+            status_code=422, detail="give the character a display_name"
+        )
+    near = payload.get("near")
+    near = near.strip() if isinstance(near, str) and near.strip() else "nearby"
+
+    voice_path, voice_rel = _voice_target(pack, w, cid, region)
+    if voice_path is None:
+        raise HTTPException(
+            status_code=422,
+            detail="the character's voice file would leave the pack",
+        )
+
+    spec = {
+        "name": display_name.strip(),
+        "at": [tile[0], tile[1]],
+        "near": near,
+        "voice_file": f"voices/{cid}.md",
+        "seeds": seeds,
+    }
+    if has_acts:
+        spec["region"] = region
+    speakers[cid] = spec
+
+    # Validate before any committed write, with the voice file staged
+    # in a throwaway copy so the real pack is untouched on refusal.
+    errors = _validate_placement(pack, w, voice_rel, voice_text)
+    if errors:
+        raise HTTPException(status_code=422, detail=" · ".join(errors))
+
+    preview_body = {
+        "id": cid,
+        "region": region,
+        "speaker": spec,
+        "voice_file": voice_rel,
+        "voice_text": voice_text,
+        "at": [tile[0], tile[1]],
+    }
+    speakers_file = _speakers_file_target(pack, w)
+    files = [str(speakers_file.relative_to(pack)), voice_rel]
+    if preview:
+        return {
+            "ok": True,
+            "written": False,
+            "files": files,
+            "backup": None,
+            "preview": preview_body,
+        }
+
+    backup_rel = None
+    if speakers_file.is_file():
+        backup = _backup_map_file(speakers_file)
+        backup_rel = str(backup.relative_to(pack))
+    voice_path.parent.mkdir(parents=True, exist_ok=True)
+    voice_path.write_text(voice_text, encoding="utf-8")
+    write_pack(pack, w)
+    # /api/world is cached; a committed placement must show on the next read.
+    load_world.cache_clear()
+    # A kept placement is a named edit: it goes in the log and the pack's
+    # EDITS.md. The response shape stays exactly what T1 pinned.
+    from . import edits
+
+    edits.record(
+        _edit_who(payload),
+        "place_character",
+        pack.name,
+        files,
+        backup_rel,
+        f"put {spec['name']} at {near}",
+        pack,
+    )
+    return {
+        "ok": True,
+        "written": True,
+        "files": files,
+        "backup": backup_rel,
+        "preview": preview_body,
+    }
+
+
+@app.post("/api/builder/edits/undo")
+def builder_edits_undo(payload: dict):
+    """Put the last kept edit back - ONE level, in plain words.
+
+    Restores the file from the backup the edit recorded, removes any file the
+    edit created, drops its log line from data/edits.jsonl and its line from
+    the pack's EDITS.md. Nothing to undo is a 404 in a plain sentence; a log
+    line whose backup is missing, or points outside the pack, is a 409 - never
+    a silent no-op. Every path that came from the log goes through cli._inside
+    before any disk probe, exactly like a request-supplied path.
+    """
+    from . import edits
+    from .cli import _inside
+    from .paths import pack_dir
+
+    name = _safe_world_name(payload.get("name"))
+    pack = pack_dir(name)
+    if not (pack / "world.json").is_file():
+        raise HTTPException(status_code=404, detail=f"pack not found: {pack.name}")
+    world = pack.name
+
+    entry = edits.last_for(world)
+    if entry is None:
+        raise HTTPException(
+            status_code=404, detail="there is nothing to undo in this world"
+        )
+
+    backup_rel = entry.get("backup")
+    if not isinstance(backup_rel, str) or not backup_rel or os.path.isabs(backup_rel):
+        raise HTTPException(
+            status_code=409, detail="that edit has no backup to put back"
+        )
+    restore_rel = edits.backup_source(backup_rel)
+    if restore_rel is None:
+        raise HTTPException(
+            status_code=409, detail="that backup was not made by this studio"
+        )
+
+    base = os.path.realpath(pack)
+
+    def _in_pack(rel: str) -> str | None:
+        # A log path is pack-relative; an absolute one is refused before the
+        # guard (whose join would otherwise treat "/x" as base/x).
+        if os.path.isabs(rel):
+            return None
+        return _inside(base, *rel.replace("\\", "/").split("/"))
+
+    backup = _in_pack(backup_rel)
+    restore = _in_pack(restore_rel)
+    if backup is None or restore is None:
+        raise HTTPException(
+            status_code=409,
+            detail="that edit's backup is outside the game folder, so I won't touch it",
+        )
+    if not os.path.isfile(backup):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"the backup for that edit is missing ({backup_rel}), "
+                "so there is nothing to put back"
+            ),
+        )
+
+    # Restore first, then clear away what the edit added: every touched file
+    # except the one that had a backup was new, so it goes. (One level only -
+    # a forced replace whose new file had no backup cannot be fully undone and
+    # is documented as such.)
+    Path(restore).write_bytes(Path(backup).read_bytes())
+    touched = entry.get("files")
+    for rel in touched if isinstance(touched, list) else []:
+        if not isinstance(rel, str) or rel == restore_rel:
+            continue
+        created = _in_pack(rel)
+        if created is not None and os.path.isfile(created):
+            os.remove(created)
+    if os.path.isfile(backup):
+        os.remove(backup)
+
+    edits.drop_last(world)
+    edits.drop_summary(pack, entry)
+    load_world.cache_clear()
+    note = entry.get("note") or entry.get("edit") or "edited the game"
+    return {"ok": True, "undone": note, "message": f"Undid the last edit: {note}."}
 
 
 @app.post("/api/builder/face/roll")

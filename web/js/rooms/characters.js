@@ -14,7 +14,7 @@
      ══════════════════════════════════════════════════════ */
 
   screens.characters = (function () {
-    var el_screen;
+    var el_screen, placeNote = null;
     function init() {
       el_screen = h('div', { className: 'screen', id: 'screen-characters' });
       main.appendChild(el_screen);
@@ -40,8 +40,15 @@
         var rl = residentLine('characters');
         if (rl) container.appendChild(rl);
 
+        /* A just-placed face says so once, plainly, after the refresh */
+        if (placeNote) {
+          container.appendChild(h('p', { className: 'folk-invite__cold', role: 'status',
+            'aria-live': 'polite', textContent: placeNote }));
+          placeNote = null;
+        }
+
         /* The bench — a new face can join by hand */
-        container.appendChild(inviteBench());
+        container.appendChild(inviteBench(phases));
 
         /* The pack's voices, as living cards: where they stand,
            what they say, what they've already said */
@@ -135,7 +142,7 @@
       return card;
     }
 
-    function inviteBench() {
+    function inviteBench(phases) {
       var bench = h('section', { className: 'folk-invite' });
       bench.appendChild(spot('keeper-of-faces-show-sketch', 'spot--right'));
       bench.appendChild(h('h3', { className: 'map-draw__title', textContent: 'Invite a new character' }));
@@ -156,7 +163,7 @@
               textContent: (data && data.reason) || 'That suggestion came back empty. Try again, or write the character yourself.' }));
             return;
           }
-          result.appendChild(faceDraft(data.face));
+          result.appendChild(faceDraft(data.face, phases));
         }).catch(function () {
           rollBtn.disabled = false;
           rollBtn.textContent = 'Suggest a character';
@@ -170,16 +177,36 @@
       return bench;
     }
 
-    function faceDraft(f) {
+    /* A path-safe id from a display name: lowercase, digits and dashes,
+       starting with a letter, capped at the route's 32. */
+    function faceSlug(name) {
+      var s = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      s = s.replace(/^-+/, '').replace(/-+$/, '');
+      if (!s) s = 'face';
+      if (!/^[a-z]/.test(s)) s = 'face-' + s;
+      return s.slice(0, 32).replace(/-+$/, '');
+    }
+
+    function firstSeed(seeds, phase) {
+      if (!seeds || typeof seeds !== 'object') return '';
+      if (phase && seeds[phase]) return seeds[phase];
+      var keys = Object.keys(seeds);
+      return keys.length ? seeds[keys[0]] : '';
+    }
+
+    function faceDraft(f, phases) {
       var panel = h('div', { className: 'face-draft', role: 'group', 'aria-label': 'Draft character' });
       var nameF = h('input', { className: 'draft__field', type: 'text', id: 'face-name', value: f.name || '', 'aria-label': 'Name' });
       var roleF = h('input', { className: 'draft__field', type: 'text', id: 'face-role', value: f.role || '', 'aria-label': 'What they do' });
       var seedF = h('input', { className: 'draft__field', type: 'text', id: 'face-seed', value: f.seed || '', 'aria-label': 'What they first say' });
-      var err = h('p', { className: 'draft__error', role: 'status', hidden: true });
-      var at = f.at ? ('at ' + f.at[0] + ', ' + f.at[1]) : 'somewhere reachable';
+      var err = h('p', { className: 'draft__error', role: 'status', 'aria-live': 'polite', hidden: true });
+      var atNote = f.at ? ('at ' + f.at[0] + ', ' + f.at[1]) : 'somewhere reachable';
       var row = h('div', { className: 'forge__row' });
       var keepBtn = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Keep this character' });
+      var vaultBtn = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Keep in the vault' });
+      var previewSlot = h('div', { className: 'folk-invite__result' });
       row.appendChild(keepBtn);
+      row.appendChild(vaultBtn);
 
       function label(forId, text) {
         var l = h('label', { className: 'face-draft__label', textContent: text });
@@ -187,29 +214,159 @@
         return l;
       }
 
+      function values() {
+        return { name: nameF.value.trim(), role: roleF.value.trim(), seed: seedF.value.trim() };
+      }
+
+      function buildRequest(v, preview, force) {
+        var seeds = {};
+        seeds[(phases && phases.length) ? phases[0] : 'dusk'] = v.seed;
+        var req = {
+          name: null,
+          id: faceSlug(v.name),
+          display_name: v.name,
+          role: v.role,
+          seeds: seeds,
+          voice: 'You are ' + v.name + ', ' + v.role + '. You first say: \u201C' + v.seed + '\u201D',
+          region: 'town',
+          preview: preview === true,
+          force: force === true
+        };
+        if (f.at) req.at = f.at;
+        return req;
+      }
+
+      function showError(text) {
+        err.textContent = text;
+        err.hidden = false;
+      }
+
+      function showPreview(v, body, force) {
+        previewSlot.innerHTML = '';
+        err.hidden = true;
+        var sp = (body && body.speaker) || {};
+        var name = sp.name || v.name;
+        var at = (body && body.at) || sp.at || [0, 0];
+        var near = sp.near;
+        var seed = firstSeed(sp.seeds, phases && phases[0]);
+        var card = h('div', { className: 'folk-card folk-card--invited', role: 'group',
+          'aria-label': 'Preview: ' + name });
+        card.appendChild(h('div', { className: 'folk-card__portrait', textContent: name.charAt(0).toUpperCase() }));
+        var who = h('div', { className: 'folk-card__who' });
+        who.appendChild(h('div', { className: 'folk-card__name', textContent: name }));
+        if (v.role) who.appendChild(h('div', { className: 'folk-card__bits', textContent: v.role }));
+        who.appendChild(h('div', { className: 'folk-card__bits', textContent: 'Stands at '
+          + at[0] + ', ' + at[1] + (near && near !== 'nearby' ? ', near ' + near : '') + '.' }));
+        if (seed) who.appendChild(h('div', { className: 'folk-card__seed', textContent: '\u201C' + seed + '\u201D' }));
+        var actions = h('div', { className: 'forge__row' });
+        var put = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Put in the game' });
+        var cancel = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Cancel' });
+        put.addEventListener('click', function () { putInGame(v, force, put); });
+        cancel.addEventListener('click', function () { previewSlot.innerHTML = ''; err.hidden = true; });
+        actions.appendChild(put);
+        actions.appendChild(cancel);
+        who.appendChild(actions);
+        card.appendChild(who);
+        previewSlot.appendChild(card);
+      }
+
+      function whereWords(body) {
+        var sp = (body && body.speaker) || {};
+        var at = (body && body.at) || sp.at;
+        if (sp.near && sp.near !== 'nearby') return 'near ' + sp.near;
+        if (at) return 'at ' + at[0] + ', ' + at[1];
+        return 'somewhere in the world';
+      }
+
+      function putInGame(v, force, put) {
+        put.disabled = true;
+        err.hidden = true;
+        API.placeCharacter(buildRequest(v, false, force)).then(function (data) {
+          if (!data || !data.written) {
+            put.disabled = false;
+            showError('That placement came back empty. Try again.');
+            return;
+          }
+          studioAudio.clank();
+          /* A real write, not the preview: tell the sticker book and tick
+             the first walk. previewPlacement never reaches here. */
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('character_placed');
+          firstWalk.attempt('character_placed');
+          placeNote = v.name + ' is in the game, ' + whereWords(data.preview) + '.';
+          ferryNote('Ratatoskr is walking \u201C' + truncate(v.name, 32) + '\u201D into the world\u2026');
+          enter();
+        }).catch(function (e) {
+          put.disabled = false;
+          if (e && e.status === 409) { showReplace(v); return; }
+          showError((e && e.message) || 'Couldn\u2019t put them in the game. Try again.');
+        });
+      }
+
+      function showReplace(v) {
+        previewSlot.innerHTML = '';
+        err.hidden = true;
+        previewSlot.appendChild(h('p', { className: 'folk-invite__cold', role: 'status',
+          'aria-live': 'polite', textContent: v.name + ' is already in the game. Replace them?' }));
+        var replaceRow = h('div', { className: 'forge__row' });
+        var replace = h('button', { className: 'btn btn--warm', type: 'button', textContent: 'Replace' });
+        var cancel = h('button', { className: 'btn btn--ghost', type: 'button', textContent: 'Cancel' });
+        replace.addEventListener('click', function () { previewPlacement(v, true); });
+        cancel.addEventListener('click', function () { previewSlot.innerHTML = ''; err.hidden = true; });
+        replaceRow.appendChild(replace);
+        replaceRow.appendChild(cancel);
+        previewSlot.appendChild(replaceRow);
+      }
+
+      function previewPlacement(v, force) {
+        previewSlot.innerHTML = '';
+        err.hidden = true;
+        keepBtn.disabled = true;
+        API.placeCharacter(buildRequest(v, true, force)).then(function (data) {
+          keepBtn.disabled = false;
+          if (!data || !data.preview) {
+            showError('That preview came back empty. Try again.');
+            return;
+          }
+          showPreview(v, data.preview, force);
+        }).catch(function (e) {
+          keepBtn.disabled = false;
+          if (e && e.status === 409) { showReplace(v); return; }
+          showError((e && e.message) || 'Couldn\u2019t preview the character. Try again.');
+        });
+      }
+
+      // Keep is a look before the leap: the route writes nothing,
+      // the card shows who they'd be and where they'd stand.
       keepBtn.addEventListener('click', function () {
-        var name = nameF.value.trim();
-        var role = roleF.value.trim();
-        var seed = seedF.value.trim();
-        if (!name || !role || !seed) {
-          err.textContent = 'A character needs a name, a role and a first line.';
-          err.hidden = false;
+        var v = values();
+        if (!v.name || !v.role || !v.seed) {
+          showError('A character needs a name, a role and a first line.');
           return;
         }
-        keepBtn.disabled = true;
+        previewPlacement(v, false);
+      });
+
+      // The vault shelf still works: keep a face as "I like this
+      // person" without putting them in the world.
+      vaultBtn.addEventListener('click', function () {
+        var v = values();
+        if (!v.name || !v.role || !v.seed) {
+          showError('A character needs a name, a role and a first line.');
+          return;
+        }
+        vaultBtn.disabled = true;
         API.vaultKeep({
-          name: name,
+          name: v.name,
           kind: 'face',
           bond: 'invited',
-          lore: 'Role: ' + role + '. First words: \u201C' + seed + '”. They stand ' + at + '.'
+          lore: 'Role: ' + v.role + '. First words: \u201C' + v.seed + '\u201D. They stand ' + atNote + '.'
         }).then(function () {
           studioAudio.clank();
-          ferryNote('Ratatoskr is carrying \u201c' + truncate(name, 32) + '\u201D to the people\u2026');
+          ferryNote('Ratatoskr is carrying \u201C' + truncate(v.name, 32) + '\u201D to the people\u2026');
           enter();
         }).catch(function () {
-          err.textContent = 'Couldn’t save the character. Try again.';
-          err.hidden = false;
-          keepBtn.disabled = false;
+          showError('Couldn\u2019t save the character. Try again.');
+          vaultBtn.disabled = false;
         });
       });
 
@@ -219,8 +376,9 @@
       panel.appendChild(roleF);
       panel.appendChild(label('face-seed', 'What they first say'));
       panel.appendChild(seedF);
-      panel.appendChild(h('p', { className: 'face-draft__at', textContent: 'They stand ' + at + '.' }));
+      panel.appendChild(h('p', { className: 'face-draft__at', textContent: 'They stand ' + atNote + '.' }));
       panel.appendChild(row);
+      panel.appendChild(previewSlot);
       panel.appendChild(err);
       return panel;
     }

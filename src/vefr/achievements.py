@@ -45,11 +45,18 @@ SAFE = re.compile(r"^[A-Za-z0-9 ._'’:-]{0,80}$")
 
 def definitions() -> list[dict]:
     path = app_home() / "web" / "achievements" / "achievements.json"
-    return json.loads(path.read_text(encoding="utf-8"))["achievements"]
+    defs = json.loads(path.read_text(encoding="utf-8"))["achievements"]
+    # A rule can be parked until its sticker art is chosen: `"disabled": true`
+    # keeps it out of the book, the tally, the album and the art tests until
+    # the art exists and the flag is cleared. TODO(T5) rules use this.
+    return [d for d in defs if not d.get("disabled")]
 
 
 def vocabulary(defs: list[dict]) -> set[str]:
-    events = {"visit"}
+    # Events the page may report. Most come from the enabled rules below;
+    # these two come from the first walk's play/place loop, so they are
+    # accepted even while their stickers wait on art (see definitions()).
+    events = {"visit", "play_here", "character_placed"}
     for d in defs:
         r = d["rule"]
         for key in ("count", "distinct", "burst"):

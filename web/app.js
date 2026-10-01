@@ -460,8 +460,10 @@
   var WALK_STEPS = [
     { id: 'bell', screen: 'workshop', room: 'The Desk', do: 'Press Ring for the Storyteller.', for: 'The Storyteller answers.' },
     { id: 'map', screen: 'map', room: 'The Map Room', do: 'Paint one square on the drawing table.', for: 'Your sketch saves as you go.' },
+    { id: 'play_here', screen: 'workshop', room: 'The Desk', do: 'Play your world right here in the page.', for: 'The whole world opens in the pane below.' },
     { id: 'chronicle', screen: 'journal', room: 'The Chronicle', do: 'Press Keep in the Hall on any entry.', for: 'It waits for you in the Hall.' },
     { id: 'folks', screen: 'characters', room: 'The Folks', do: 'Open anyone’s card.', for: 'See who they are and what they want.' },
+    { id: 'character_placed', screen: 'characters', room: 'The Folks', do: 'Put a character into the game.', for: 'They walk into the world for real.' },
     { id: 'hall', screen: 'hall', room: 'The Hall', do: 'Visit the Hall.', for: 'Everything you kept is here.' }
   ];
   var WALK_KEY = 'vefr.walk';
@@ -550,7 +552,7 @@
     walk.rail.innerHTML = '';
     var head = h('div', { className: 'walk-rail__head' });
     head.appendChild(h('h2', { className: 'walk-rail__title', id: 'walk-title', textContent: 'Your first walk' }));
-    head.appendChild(h('p', { className: 'walk-rail__byline', textContent: 'Five things to try, one in each room' }));
+    head.appendChild(h('p', { className: 'walk-rail__byline', textContent: 'A few things to try, room by room' }));
     walk.rail.appendChild(head);
 
     if (walkComplete() && walk.state && walk.state.done) {
@@ -640,7 +642,7 @@
     var paper = h('div', { className: 'sheet__paper' });
     paper.appendChild(h('h2', { id: 'sheet-title', textContent: 'How the studio works' }));
     paper.appendChild(h('p', { className: 'sheet__byline',
-      textContent: 'One thing to try in each room' }));
+      textContent: 'A few things to try, room by room' }));
     var rooms = [
       ['The Desk', 'where the Storyteller works. Ring for the Storyteller and ask what happens next.'],
       ['The Map Room', 'where the Cartographer keeps the map. Sketch new land and save it.'],
