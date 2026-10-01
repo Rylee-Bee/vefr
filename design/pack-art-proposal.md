@@ -1,6 +1,6 @@
 # Proposal: art a pack can bring (moving characters, its own tiles, tile variants)
 
-Status: **proposed, no code written.** Pack-contract changes are ask-first; this is the ask.
+Status: **approved by Rylee on 2026-10-01 with the recommendations below** (4 directions, 4-frame walks, 3 variants per surface, a gentle hop). Pack-contract changes are ask-first; this is the ask and its answer. Build order: C, then A (in parallel where the code allows), then B.
 Why now: Cottage is making all its own art in its own style. Three things stop the engine from
 showing it: the hero is one painted picture that slides from tile to tile and never faces the way
 she walks; **ground tiles are read only from the engine's own `web/art/tiles/`** (`_tiles_for_legend`
@@ -131,7 +131,7 @@ validation error naming the file, never a silent fallback.
 A short section in `docs/guides/` for a stranger ("give a character a walk"), and a line in the
 journey guide's lessons log.
 
-## Open choices for Rylee
+## Choices (decided 2026-10-01: all recommendations accepted)
 
 1. **Directions to draw first:** all four, or left/right (mirrored) plus down? Four is the best result and
    the most art; the sheet format supports either.
