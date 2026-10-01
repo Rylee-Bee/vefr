@@ -1594,10 +1594,17 @@ def _validate_placement(pack: Path, w: dict, voice_rel: str, voice_text: str) ->
 
     from .maplab import validate
 
+    from .cli import _inside
+
     with tempfile.TemporaryDirectory(prefix="vefr-place-") as td:
         tmp_pack = Path(td) / pack.name
         shutil.copytree(pack, tmp_pack)
-        target = tmp_pack / voice_rel
+        # The voice path is built from the validated id and region; the real-path check is the
+        # backstop CodeQL (py/path-injection) wants right before any mkdir or write.
+        resolved = _inside(os.path.realpath(tmp_pack), *voice_rel.split("/"))
+        if resolved is None:
+            return ["the character's voice file would leave the pack"]
+        target = Path(resolved)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(voice_text, encoding="utf-8")
         return validate(w, pack_dir=tmp_pack)
