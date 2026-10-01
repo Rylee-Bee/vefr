@@ -9,6 +9,7 @@ to this repo.
 | Want to... | Open this |
 |---|---|
 | Run the engine / build a world | `GETTING_STARTED.md` |
+| See the whole path of making a game here (stops, lessons, rules for agents) | `docs/guides/journey.md` |
 | Understand the bones/flesh split | `README.md` |
 | Understand the brain/provider seam | `docs/guides/brain-socket.md` |
 | Run the resident Spark service | `docs/guides/spark.md` |
