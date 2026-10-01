@@ -186,8 +186,8 @@ jobs:
         uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # v3.0.0
         with:
           # Advisory: report style, never fail the PR (see .vale.ini).
+          # No `files` input: a multi-path value is rejected by the action
+          # (it falls back to 'all' anyway), and Vale already scopes to
+          # markdown in .vale.ini.
           fail_on_error: false
           version: 3.23.0
-          files: >-
-            docs web/library README.md GETTING_STARTED.md AGENTS.md
-            CONTRIBUTING.md ROADMAP.md AGENT_POLICY.md
