@@ -365,3 +365,73 @@ def test_regression_one_arrow_press_moves_exactly_one_tile(play):
     assert after["enemies"][0] == before["enemies"][0]
     assert after["gold"] == before["gold"]
     assert after["bag"] == before["bag"]
+
+
+# ---- Task 3: combat folds into the one verb ----
+
+
+def test_interact_on_an_enemy_names_it_and_opens_the_verbs(play):
+    """Facing the rat at the wake tile, the words already offer the
+    fight; pressing E names the rat on the shared #verb-row and leaves
+    the fight untouched until a verb is chosen - opening is not a turn."""
+    log = _log(play)
+    assert log["enemy-start-hint"] == "Fight a storeroom rat"
+    assert log["enemy-start-label"] == "Fight a storeroom rat"
+    assert log["enemy-start-row-label"] == "Combat actions"
+    assert log["enemy-open-row-label"] == "What to do about a storeroom rat"
+    assert log["enemy-verbs"] == ["Strike", "Console", "Hurl an insult"]
+    assert log["enemy-open-snap"] == log["enemy-open-snap-before"]
+
+
+def test_strike_from_the_enemy_menu_hurts_it_and_the_enemy_answers(play):
+    """Clicking Strike in the menu is a bump by another road: the rat
+    loses the hero's atk (4 -> 2), the menu clears back to its own
+    label, and the rat still takes its turn (hero 3 -> 2)."""
+    log = _log(play)
+    before = log["enemy-open-snap-before"]
+    after = log["enemy-strike-snap"]
+    assert after["enemies"][0]["hp"] == (
+        before["enemies"][0]["hp"] - before["hero"]["atk"])
+    assert after["enemies"][0]["alive"] is True
+    assert after["hero"]["hp"] == before["hero"]["hp"] - 1
+    assert log["enemy-strike-row-label"] == "Combat actions"
+    assert log["enemy-strike-said"] == "a storeroom rat hits you for 1."
+
+
+def test_console_does_no_damage_but_still_spends_a_turn(play):
+    """Console is a non-attack verb: the rat's hp is unchanged, the
+    verb is the last one journalled, the menu label clears, and the
+    monsters take their turn anyway (hero 2 -> 1). #combat-live ends on
+    the enemy's own hit line, because the turn resolves after the verb
+    says its piece - so the sentence is proven by the journal, not the
+    overwritten live line."""
+    log = _log(play)
+    struck = log["enemy-strike-snap"]
+    after = log["enemy-console-snap"]
+    assert after["enemies"][0]["hp"] == struck["enemies"][0]["hp"]
+    assert after["hero"]["hp"] == struck["hero"]["hp"] - 1
+    assert log["enemy-console-verb"] == "console"
+    assert log["enemy-console-row-label"] == "Combat actions"
+    assert log["enemy-console-said"] == "a storeroom rat hits you for 1."
+
+
+def test_a_one_verb_surface_acts_at_once_with_no_menu(play):
+    """An act whose verbs name exactly one verb: E applies it straight
+    away - the shared row keeps its own label (no menu opened), the
+    verb is journalled, and the turn still runs (the rat hits back)."""
+    log = _log(play)
+    assert log["oneverb-row-label"] == "Combat actions"
+    assert log["oneverb-verb"] == "console"
+    assert log["oneverb-snap"]["enemies"][0]["hp"] == log["oneverb-start-rat"]
+    assert log["oneverb-snap"]["hero"]["hp"] == log["oneverb-start-hp"] - 1
+
+
+def test_bumping_closes_an_open_enemy_menu_and_still_strikes(play):
+    """With the enemy menu open, walking into the rat still bumps and
+    clears the menu label in the same step; the rat loses the hero's
+    atk (4 -> 2) and answers (hero 3 -> 2)."""
+    log = _log(play)
+    assert log["bumpclose-open-row-label"] == "What to do about a storeroom rat"
+    assert log["bumpclose-row-label"] == "Combat actions"
+    assert log["bumpclose-snap"]["enemies"][0]["hp"] == 2
+    assert log["bumpclose-snap"]["hero"]["hp"] == 2

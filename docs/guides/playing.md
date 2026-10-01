@@ -62,5 +62,22 @@ It costs you nothing and does not waste a turn.
 ## Fighting
 
 Walking into a monster still hits it, exactly as before.
-Interact is the other way in: face a monster, or stand next to one, and Interact strikes it.
-The monsters take their turn right after, just as they do after a bump.
+Interact on a monster is the other way in.
+It opens the monster's own actions - "Strike", "Console", or whatever the game names -
+and you choose one.
+A monster with only one action acts at once, with no menu.
+Either way the monsters take their turn once your action resolves.
+
+## Start over
+
+Start over lives in the pause menu: press `Escape`, then choose **Start over**.
+It asks once before it does anything:
+
+> Start over? This clears your bag, gold, health, fog and the monsters you've beaten in this browser.
+
+**Cancel** - or `Escape` - changes nothing.
+Confirm and it clears your bag, your gold, your health,
+the fog you have uncovered and the monsters you have beaten in this browser,
+then returns you to the title screen.
+It clears the saved games for every game on the same site,
+so it cannot miss an old save.

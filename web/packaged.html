@@ -394,6 +394,7 @@
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
       <li><button type="button" data-panel="display">Display</button></li>
+      <li><button type="button" data-panel="startover">Start over</button></li>
     </ul>
     <button type="button" id="menu-close" class="cta cta--gold">Resume</button>
   </div>
@@ -420,7 +421,7 @@
       <h2>How to play</h2>
       <ul>
         <li>Move with the arrow keys, or the pad on a touch screen.</li>
-        <li>Talk to someone nearby with <kbd>E</kbd>, <kbd>Space</kbd> or the Talk button.</li>
+        <li>Use what is near you with <kbd>E</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd>, <kbd>F</kbd> or the Interact button. It always says what it will do.</li>
         <li>Hear a rumor with <kbd>Q</kbd> or the Whisper button.</li>
         <li>Walk the unexplored dark with <kbd>O</kbd> or the Explore button.</li>
         <li>Turn the dark off with <kbd>V</kbd>, or in Display.</li>
@@ -437,6 +438,12 @@
       <p>The dark shows only the ground you have walked and lit. Turn it off to see the whole map.</p>
       <button type="button" id="fog-toggle" class="cta" aria-pressed="true">Darkness: on</button>
       <p class="status" id="fog-live" role="status" aria-live="polite"></p>
+    </div>
+    <div data-panel-body="startover" id="startover-body" hidden>
+      <h2>Start over</h2>
+      <p>Start over? This clears your bag, gold, health, fog and the monsters you've beaten in this browser.</p>
+      <button type="button" id="startover-cancel" class="cta">Cancel</button>
+      <button type="button" id="startover-confirm" class="cta cta--gold">Start over</button>
     </div>
   </div>
 </div>
@@ -1269,7 +1276,37 @@ function bindMenu() {
   opener.addEventListener('click', window.openMenu);
   document.getElementById('menu-close').addEventListener('click', window.closeMenu);
   menu.querySelectorAll('[data-panel]').forEach(function (b) {
-    b.addEventListener('click', function () { showPanel(b.dataset.panel); });
+    b.addEventListener('click', function () {
+      if (b.dataset.panel === 'startover') { showStartover(); return; }
+      showPanel(b.dataset.panel);
+    });
+  });
+  // Start over: one confirmation, safe by default (focus lands on
+  // Cancel, never the destructive button); Escape and Cancel change
+  // nothing; confirming clears every vefr- save on this site, then
+  // reloads to the title screen.
+  var startoverBody = document.getElementById('startover-body');
+  var startoverCancel = document.getElementById('startover-cancel');
+  var startoverConfirm = document.getElementById('startover-confirm');
+  function showStartover() {
+    showPanel('startover');
+    if (startoverCancel) startoverCancel.focus();
+  }
+  window.cancelStartover = function () {
+    showPanel('journal');
+    var back = document.getElementById('menu-close');
+    if (back) back.focus();
+  };
+  if (startoverCancel) startoverCancel.addEventListener('click', window.cancelStartover);
+  if (startoverConfirm) startoverConfirm.addEventListener('click', function () {
+    window.startoverKeys(localStorage);      // every vefr- key on this site
+    window.location.reload();
+  });
+  if (startoverBody) startoverBody.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab' || !startoverCancel || !startoverConfirm) return;
+    e.preventDefault();
+    (document.activeElement === startoverCancel ? startoverConfirm
+                                                : startoverCancel).focus();
   });
   document.getElementById('menu-model').addEventListener('click', function () {
     menu.hidden = true;
@@ -1347,6 +1384,52 @@ function applySurface() {
   renderHp();
   renderEncounter();
 }
+
+// The act's verbs are the pack's own vocabulary; the baked defaults
+// keep the old costume when the act declares none. One home for the
+// list, so the verb row, Interact's enemy path and the tests cannot
+// drift apart.
+function surfaceVerbs() {
+  var act = (window.VEFR_WORLD && window.VEFR_WORLD.acts
+             && window.VEFR_WORLD.acts[0]) || {};
+  if (Array.isArray(act.verbs) && act.verbs.length) {
+    return act.verbs.map(function (v) {
+      return [v, v.charAt(0).toUpperCase() + v.slice(1)];
+    });
+  }
+  return [['attack', 'Strike'], ['console', 'Console'],
+          ['hurl', 'Hurl an insult']];
+}
+
+// The enemy a #verb-row press is aimed at, or null. The row is always
+// on screen, so naming a target is what "opens" the enemy menu;
+// Escape, a resolved verb or a bump clears it again.
+var VERB_TARGET = null;
+
+// -- startover start --
+// Start over: remove every save this site keeps for a vefr game, so an
+// old save left by another game cannot surprise the player. Pure: it
+// takes any object with `length`, `key(i)` and `removeItem(k)` - a
+// real localStorage or a fake - and returns the keys it removed, in
+// the order it found them. Keys not starting with `vefr-` are left
+// alone, and a storage that refuses one remove is skipped, never an
+// error. No DOM, no location, no clock: a node vm whose only global
+// is Math can run it.
+globalThis.startoverKeys = function (storage) {
+  var removed = [];
+  if (!storage || typeof storage.length !== 'number') return removed;
+  var keys = [];
+  for (var i = 0; i < storage.length; i++) {
+    var k = storage.key(i);
+    if (typeof k === 'string' && k.indexOf('vefr-') === 0) keys.push(k);
+  }
+  for (var j = 0; j < keys.length; j++) {
+    try { storage.removeItem(keys[j]); removed.push(keys[j]); }
+    catch (e) { /* a storage that refuses; leave it and keep going */ }
+  }
+  return removed;
+};
+// -- startover end --
 
 // Verbs record to the packaged player's own journal - the same
 // no-failure contract as the server route they mirror
@@ -2997,6 +3080,31 @@ function setupTown() {
              candidates: candidates };
   }
 
+  // Task 3: fight through the one verb. The row is the same #verb-row
+  // the surface always shows; naming a target is what "opens" it, and
+  // nothing here re-implements the damage maths.
+  function openEnemyVerbs(enemy) {
+    VERB_TARGET = enemy;
+    var row = document.getElementById('verb-row');
+    if (row) row.setAttribute('aria-label',
+      'What to do about ' + (enemy.name || 'this monster'));
+  }
+  // Clearing the target returns the row's own label; called on Escape,
+  // on a bump, and after a verb resolves.
+  function closeEnemyVerbs() {
+    VERB_TARGET = null;
+    var row = document.getElementById('verb-row');
+    if (row) row.setAttribute('aria-label', 'Combat actions');
+  }
+  // One verb, one enemy. `attack` is the existing heroAttack (so the
+  // damage is exactly a bump's); any other verb the pack names is
+  // words only - deterministic, no model, no clock, no chance.
+  function applyVerb(verb, label, enemy) {
+    if (!enemy) return;
+    if (verb === 'attack') { heroAttack(enemy); return; }
+    combatSay('You use ' + label + ' on ' + (enemy.name || 'it') + '.');
+  }
+
   // The one verb: act on whatever pickTarget chose, through the code
   // that already does it - nothing here is re-implemented. With
   // nothing in reach (or anything unexpected) write ONE friendly line
@@ -3031,15 +3139,21 @@ function setupTown() {
         showSpeech((pois || {})[t.id] || '', (town.poi_text || {})[t.id] || '',
                    '');
       } else if (t.kind === 'enemy') {
-        // Task 3 replaces this with the verb menu
         var foe = null;
         for (var j = 0; j < enemies.length; j++) {
           if (enemies[j] && enemies[j].id === t.id) { foe = enemies[j]; break; }
         }
-        if (!foe) throw new Error('enemy gone');
-        heroAttack(foe);
-        lightTick();
-        enemyTurn();
+        if (!foe || !foe.alive) throw new Error('enemy gone');
+        var verbs = surfaceVerbs();
+        if (verbs.length === 1) {
+          // One verb: act at once, no menu - but the turn still runs.
+          recordVerb(verbs[0][0]);
+          applyVerb(verbs[0][0], verbs[0][1], foe);
+          lightTick();
+          enemyTurn();
+        } else {
+          openEnemyVerbs(foe);
+        }
       } else {
         throw new Error('unknown target');
       }
@@ -3112,6 +3226,7 @@ function setupTown() {
     var target = enemyAt(nx, ny);
     if (target) {
       heroAttack(target);
+      closeEnemyVerbs();   // a bump closes any open enemy menu
       lightTick();
       enemyTurn();
       return;
@@ -3390,16 +3505,11 @@ function setupTown() {
   // the server route's entries, minus the server.
   try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
   /* The act's verbs are the pack's own vocabulary; baked defaults
-     keep the old costume when the act declares none. */
+     keep the old costume when the act declares none. The list lives
+     in surfaceVerbs() so the row and the enemy menu share one home. */
   (function () {
     var row = document.getElementById('verb-row');
-    var act = (VEFR_WORLD && VEFR_WORLD.acts && VEFR_WORLD.acts[0]) || {};
-    var verbs = Array.isArray(act.verbs) && act.verbs.length
-      ? act.verbs.map(function (v) {
-          return [v, v.charAt(0).toUpperCase() + v.slice(1)];
-        })
-      : [['attack', 'Strike'], ['console', 'Console'],
-         ['hurl', 'Hurl an insult']];
+    var verbs = surfaceVerbs();
     verbs.forEach(function (pair) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -3413,6 +3523,16 @@ function setupTown() {
     if (!b) return;
     b.disabled = true;
     recordVerb(b.dataset.verb);
+    // With an enemy named, the press resolves against it and the
+    // monsters take their turn, exactly as after a bump. With no
+    // target the press is only journalled, as it always was.
+    if (VERB_TARGET) {
+      applyVerb(b.dataset.verb, b.textContent, VERB_TARGET);
+      lightTick();
+      enemyTurn();
+      closeEnemyVerbs();
+      updateUse();
+    }
     window.setTimeout(function () { b.disabled = false; }, 400);
   });
   canvas.addEventListener('click', tryNPC);
@@ -3441,7 +3561,15 @@ function setupTown() {
       return;
     }
     var menuOpen = !document.getElementById('menu').hidden;
-    if (e.key === 'Escape') { if (menuOpen) window.closeMenu(); else window.openMenu(); return; }
+    if (e.key === 'Escape') {
+      closeEnemyVerbs();
+      var soBody = document.getElementById('startover-body');
+      if (menuOpen && soBody && !soBody.hidden) {
+        e.preventDefault(); window.cancelStartover(); return;
+      }
+      if (menuOpen) window.closeMenu(); else window.openMenu();
+      return;
+    }
     if (menuOpen || play.hidden) return;
     var box = document.getElementById('npc-box');
     // A focused button handles its own Enter and Space.

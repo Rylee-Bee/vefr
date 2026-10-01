@@ -129,8 +129,10 @@ async function boot() {
     say(prefix + '-ring-after', snap());
   };
   const close = () => { try { window.close(); } catch (e) { /* already gone */ } };
+  const journal = () => JSON.parse(
+    window.localStorage.getItem('vefr-packaged-combat') || '[]');
   return { window, document, wait, walk, key, txt, snap,
-           closeNpc, closeTrade, words, measureRing, close };
+           closeNpc, closeTrade, words, measureRing, close, journal };
 }
 
 try {
@@ -322,6 +324,80 @@ try {
     g.key('ArrowDown');
     await g.wait(50);
     say('arrow-after', g.snap());
+    g.close();
+  }
+
+  // ---- combat folds into Interact: the enemy menu, a strike, a
+  //      console verb, a one-verb surface, and a bump that closes it ----
+  {
+    const g = await boot();
+    say('enemy-start-hint', g.txt('use-hint'));
+    say('enemy-start-label', g.txt('interact-label'));
+    say('enemy-start-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    say('enemy-verbs',
+        [...g.document.querySelectorAll('#verb-row button')]
+          .map((b) => b.textContent));
+    const before = g.snap();
+    g.key('e');                                   // open the enemy menu
+    await g.wait(50);
+    say('enemy-open-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    say('enemy-open-snap', g.snap());
+    say('enemy-open-snap-before', before);
+    const strike = [...g.document.querySelectorAll('#verb-row button')]
+      .find((b) => b.dataset.verb === 'attack');
+    strike.click();                               // strike resolves, turn runs
+    await g.wait(50);
+    say('enemy-strike-snap', g.snap());
+    say('enemy-strike-said', g.txt('combat-live'));
+    say('enemy-strike-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    // Console: words only, no damage - but still a turn. Wait out the
+    // button's own 400 ms disable window before opening again.
+    await g.wait(450);
+    g.key('e');
+    await g.wait(50);
+    const consoleBtn = [...g.document.querySelectorAll('#verb-row button')]
+      .find((b) => b.dataset.verb === 'console');
+    consoleBtn.click();
+    await g.wait(50);
+    say('enemy-console-snap', g.snap());
+    say('enemy-console-said', g.txt('combat-live'));
+    say('enemy-console-verb', g.journal().slice(-1)[0].verb);
+    say('enemy-console-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    g.close();
+  }
+
+  // ---- a one-verb surface acts at once, with no menu opened ----
+  {
+    const g = await boot();
+    g.window.VEFR_WORLD.acts[0].verbs = ['console'];   // exactly one verb
+    say('oneverb-start-hp', g.snap().hero.hp);
+    say('oneverb-start-rat', g.snap().enemies[0].hp);
+    g.key('e');
+    await g.wait(50);
+    say('oneverb-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    say('oneverb-verb', g.journal().slice(-1)[0].verb);
+    say('oneverb-snap', g.snap());
+    say('oneverb-said', g.txt('combat-live'));
+    g.close();
+  }
+
+  // ---- a bump closes an open enemy menu (and still strikes) ----
+  {
+    const g = await boot();
+    g.key('e');                                   // open the enemy menu
+    await g.wait(50);
+    say('bumpclose-open-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    g.key('ArrowRight');                          // bump the sleeping rat
+    await g.wait(50);
+    say('bumpclose-row-label',
+        g.document.getElementById('verb-row').getAttribute('aria-label'));
+    say('bumpclose-snap', g.snap());
     g.close();
   }
 } catch (e) {
