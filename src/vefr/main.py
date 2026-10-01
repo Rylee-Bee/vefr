@@ -1759,7 +1759,26 @@ def builder_character_place(payload: dict):
             detail="a character with that id already exists — send force to replace it",
         )
 
-    town = w.get("town")
+    # The tile checks below run against the room the person is going INTO: its map, its legend, its
+    # arrival tile and the people who already stand in it. (They used to read the home room for every
+    # region, so a tile was judged against the wrong map; found placing a cat in Cottage's cottage.)
+    wr = w
+    if has_acts:
+        home = w.get("_region") or regions[0]
+        geo = (w.get("regions") or {}).get(region)
+        if region != home:
+            if not (isinstance(geo, dict) and geo.get("map") and geo.get("legend")):
+                raise HTTPException(
+                    status_code=422, detail=f"the {region} room has no map to place anyone on yet"
+                )
+            wr = dict(w)
+            wr["town"] = dict(geo)
+        wr = dict(wr)
+        wr["speakers"] = {
+            k: v for k, v in speakers.items()
+            if isinstance(v, dict) and (v.get("region") or home) == region
+        }
+    town = wr.get("town")
     if not isinstance(town, dict) or not town.get("map") or not town.get("legend"):
         raise HTTPException(
             status_code=422, detail="this world has no map to place anyone on yet"
@@ -1773,12 +1792,12 @@ def builder_character_place(payload: dict):
     start = tuple(town["hero_start"])
     taken = {start} | {
         tuple(s["at"])
-        for s in speakers.values()
+        for s in wr["speakers"].values()
         if isinstance(s, dict) and s.get("at")
     }
     at_raw = payload.get("at")
     if at_raw is None:
-        tile = chat._pick_tile(w)
+        tile = chat._pick_tile(wr)
         if tile is None:
             raise HTTPException(
                 status_code=422, detail="there is nowhere left to stand in this world"
@@ -1791,7 +1810,7 @@ def builder_character_place(payload: dict):
         ):
             raise HTTPException(status_code=422, detail="at must be a tile [x, y]")
         tile = (int(at_raw[0]), int(at_raw[1]))
-        if not walkable(w, *tile):
+        if not walkable(wr, *tile):
             raise HTTPException(
                 status_code=422, detail=f"the tile {list(tile)} is not walkable"
             )
@@ -1799,7 +1818,7 @@ def builder_character_place(payload: dict):
             raise HTTPException(
                 status_code=422, detail=f"the tile {list(tile)} is flood ground"
             )
-        if tile not in reach(w, start, flooded=flooded or None):
+        if tile not in reach(wr, start, flooded=flooded or None):
             raise HTTPException(
                 status_code=422,
                 detail=f"the tile {list(tile)} is not reachable from the hero's start",

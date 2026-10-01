@@ -425,3 +425,76 @@ def test_text_at_exactly_the_limit_is_accepted(acts_home):
                     seeds={"dusk": "s" * 280, "dawn": "s" * 280}),
     )
     assert r.status_code == 200, r.text
+
+
+# ----------------------------- 6. a pack with several rooms (found 2026-10-01 placing a cat in Cottage's cottage)
+
+
+def _add_cellar(home: Path) -> Path:
+    """sample-world plus a 14 x 5 `cellar` room joined to the town by doors both ways.
+
+    The cellar's map is deliberately different from the town's: (3, 2) is solid in the cellar but open in the
+    town, and (12, 1) is open in the cellar but off the town's map entirely.
+    """
+    pack = _pack(home)
+    act = pack / "acts" / "act-1"
+    shutil.copytree(act / "town", act / "cellar")
+    (act / "cellar" / "map.md").write_text(
+        "##############\\n#............#\\n#..##........#\\n#............#\\n##############\\n".replace("\\n", "\n"),
+        encoding="utf-8",
+    )
+    contract = json.loads((act / "cellar" / "contract.json").read_text(encoding="utf-8"))
+    contract["hero_start"] = [1, 1]
+    for key in ("pois", "poi_text", "watch", "flood_tiles", "fog"):
+        contract.pop(key, None)
+    (act / "cellar" / "contract.json").write_text(json.dumps(contract), encoding="utf-8")
+    data = json.loads((act / "world.json").read_text(encoding="utf-8"))
+    data["regions"] = ["town", "cellar"]
+    data["transitions"] = [
+        {"from": "town", "at": [9, 8], "to": "cellar", "to_at": [1, 1]},
+        {"from": "cellar", "at": [12, 3], "to": "town", "to_at": [8, 8]},
+    ]
+    (act / "world.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    world_mod.load_world.cache_clear()
+    return pack
+
+
+def test_the_two_room_fixture_is_itself_a_good_pack(acts_home):
+    pack = _add_cellar(acts_home)
+    from vefr import maplab
+    assert maplab.validate(maplab.load_pack(pack), pack_dir=pack) == []
+
+
+def test_a_tile_is_judged_against_the_room_it_is_in(acts_home):
+    pack = _add_cellar(acts_home)
+    c = TestClient(app)
+    # open in the cellar, but off the town's map: this used to be refused ("not walkable") against the town
+    r = c.post("/api/builder/character/place", json=_place(id="mole", display_name="Mole", region="cellar", at=[12, 1]))
+    assert r.status_code == 200, r.text
+    assert _speakers(pack)["mole"]["region"] == "cellar"
+    assert _speakers(pack)["mole"]["at"] == [12, 1]
+    assert (pack / "acts" / "act-1" / "cellar" / "voices" / "mole.md").is_file()
+    # solid in the cellar, though open in the town: this used to be accepted (and put someone inside a wall)
+    r = c.post("/api/builder/character/place", json=_place(id="ghost", display_name="Ghost", region="cellar", at=[3, 2], preview=True))
+    assert r.status_code == 422
+    assert "not walkable" in r.json()["detail"]
+
+
+def test_two_rooms_can_each_hold_someone_on_the_same_tile(acts_home):
+    pack = _add_cellar(acts_home)
+    c = TestClient(app)
+    assert c.post("/api/builder/character/place", json=_place(id="one", display_name="One", region="cellar", at=[5, 1])).status_code == 200
+    r = c.post("/api/builder/character/place", json=_place(id="two", display_name="Two", region="town", at=[5, 1]))
+    assert r.status_code == 200, r.text                                # a person in another room does not occupy this tile
+    again = c.post("/api/builder/character/place", json=_place(id="three", display_name="Three", region="cellar", at=[5, 1]))
+    assert again.status_code == 422 and "someone already stands" in again.json()["detail"]
+    assert set(_speakers(pack)) >= {"one", "two"}
+
+
+def test_with_no_tile_given_the_engine_picks_one_inside_that_room(acts_home):
+    pack = _add_cellar(acts_home)
+    r = TestClient(app).post("/api/builder/character/place", json=_place(id="auto", display_name="Auto", region="cellar"))
+    assert r.status_code == 200, r.text
+    x, y = _speakers(pack)["auto"]["at"]
+    rows = (pack / "acts" / "act-1" / "cellar" / "map.md").read_text(encoding="utf-8").splitlines()
+    assert rows[y][x] == "."                                           # a floor tile of the CELLAR map
