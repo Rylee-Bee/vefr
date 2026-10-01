@@ -1,6 +1,6 @@
 # Rules: "when this happens, do that"
 
-Status: **proposed**. Source: Rylee's twenty sentences (`design/named-edits-sentences.md`), the second named-edits run (`design/named-edits.md`), and a survey of
+Status: **proposed**. Decisions by Rylee on 2026-10-01: rules and flags live in `world.json`; *reaction* and *rule* are two names for one engine; no `says` event in the first slice; beliefs are in the first slice. Source: Rylee's twenty sentences (`design/named-edits-sentences.md`), the second named-edits run (`design/named-edits.md`), and a survey of
 beginner game tools (below). No code yet. This adds a new pack surface, so it waits for Rylee's approval.
 
 ## Why
@@ -45,10 +45,46 @@ A person can also write it in a plain file. All three produce the same JSON.
 `says` ("when a name is spoken") is **not** in the first set. **The woven player has no place for the player to type words** (its only text boxes are the model settings; Whisper is a button).
 That needs a new input surface first. Until then, the same feelings come from `enters`, `comes-near`, `opens` and `uses-with`.
 
-**Conditions** (only these): `has <item>`, `flag <name> is set / not set`, `is in <place>`, `not`, `all of`.
+**Conditions** (only these): `has <item>`, `flag <name> is set / not set`, `<person> believes / does not believe <claim>`, `is in <place>`, `not`, `all of`.
 
 **Actions** (only these): `say` (a line from a person, or a narrator line), `show` / `hide` a thing, `reveal` a thing (a chest becomes a monster, a panel appears),
-`give <item>`, `set <flag>`, `weather` (fog on or off, using the fog the player already has), `point-to <place>` (a plain hint: "The tavern is east of here").
+`give <item>`, `set <flag>`, `believes` / `stops-believing` / `tells` (beliefs), `weather` (fog on or off, using the fog the player already has), `point-to <place>` (a plain hint: "The tavern is east of here").
+
+## Two names, one engine: reactions first, rules later
+
+- A **reaction** belongs to one thing: "the cat looks up when the hero comes near". One event, one response, attached to the cat. In drag-and-drop you click the cat and pick a reaction.
+  This is what a player meets in the first hour.
+- A **rule** is about the whole game: "when all three map pieces are found, show the full map". It uses flags and conditions across rooms. This comes with the tenth hour.
+- Underneath, a reaction is a small rule that carries an `on` (the thing it belongs to). The same checker, the same log, the same preview card.
+
+```json
+{"id": "cat-notices", "on": "cat", "when": {"comes-near": {"distance": 2}}, "then": [{"say": "Mrrp."}]}
+```
+
+## Beliefs: reactions that follow what a character thinks, not what is true
+
+The world has **flags**: what is true. Each character may also hold **beliefs**: their own flags, which can be wrong or out of date. A reaction can read either.
+This is Rylee's "mistaken assumption": the guard thinks the hero opened the chest, but it was the cat, so he scolds the hero anyway.
+
+- **Claims are declared**, like flags, in `world.json`, with a plain meaning and the truth. A belief is a claim a character holds as `true` or `false`.
+  Beliefs may start wrong in the file (a mistaken assumption written by the author), or change through the same events as everything else.
+- **A belief changes only through a listed action:** `believes` (the character sees or is told it), `stops-believing`, or `tells` (a character passes a belief to another when they meet).
+  There is no randomness and no drifting.
+- **Conditions** gain `<person> believes <claim>` and `<person> does not believe <claim>`.
+- **The "why?" log** says where a belief came from: *"Stern glared because he believes 'hero-took-key'; he heard it from the fisher."* (The source is recorded when a belief is set.)
+- **The validator** checks that every claim and person exists, warns when a claim is believed but can never be true or false in play, and warns about a belief nothing can ever read.
+
+```json
+"claims": {"hero-took-key": {"meaning": "The hero took the cellar key.", "true": false}},
+"people": {"stern": {"believes": ["hero-took-key"]}}
+```
+```json
+{"id": "stern-glares", "on": "stern", "when": {"comes-near": {"distance": 2}},
+ "if": [{"believes": {"who": "stern", "claim": "hero-took-key"}}],
+ "then": [{"say": "I know what you did."}], "once": true}
+```
+
+This also separates two layers the Archives already hint at: **canon** is what is true in the game; **beliefs** are what its people hold, and they can be wrong.
 
 ## Flags are declared and visible
 
@@ -110,20 +146,22 @@ Checked against the real pages:
 
 Numbers and arithmetic, loops, randomness, timers, parallel or autorun rules, rules that trigger rules, free-form scripting, per-page conditions, and a priority system.
 
-## Open questions for Rylee
+## Decided and still open
 
-1. **Where do rules live?** Recommendation: `world.json` gets `flags` and `rules`, so a game's behaviour is in one readable place (a pack-contract addition, additive).
-2. **A text-input surface for the player** (so `says` can exist)? It would also let players name their hero and talk to residents. Recommendation: later, not in the first slice.
-3. **Is "rule" the right plain name?** Alternatives: "when-rule", "reaction", "happening".
+**Decided (Rylee, 2026-10-01):** rules and flags live in `world.json`; *reaction* and *rule* are two names for one engine; `says` is not in the first slice
+(the woven player has no typed input; the studio has a builder chat, and a future "play it here" pane could share it); beliefs are in the first slice.
 
-## Build order (about two weeks, foreman-sized)
+**Still open:** a Norse name for each of reaction, rule and belief (Rylee chooses); whether a character's belief should show anywhere a player can see it
+(a "what they think" line in the resident's page), or stay in the "why?" log only.
+
+## Build order (about two to three weeks, foreman-sized)
 
 | # | Task | Tag |
 | --- | --- | --- |
-| 1 | Approve the shape, file location and the name | **keep** (Rylee) |
-| 2 | Validator for `flags` and `rules` (shape, unknown ids, conflicts, limits) with plain errors | offloadable |
-| 3 | Rule engine as pure functions with a node test harness (events in, actions out, once, no chains) | offloadable |
-| 4 | Wire six events and eight actions into the woven player; the journal line for every fired rule | offloadable, then **keep** (review) |
-| 5 | **Why did that happen?** button and `vefr why` | offloadable |
-| 6 | A demo: Cottage's cat, harbour fog and a map in three pieces | offloadable |
-| 7 | `add_rule` as a named edit with the three-slot drag-and-drop and a chat preview | offloadable after 1 to 4 |
+| 1 | Approve the shape (this note) | **keep** (Rylee) |
+| 2 | Validator for `flags`, `claims`, `people`, `rules` (shape, unknown ids, conflicts, limits, belief checks) with plain errors | offloadable |
+| 3 | Engine as pure functions with a node harness: events in, actions out, once, no chains, beliefs set and read, the source recorded | offloadable |
+| 4 | Wire six events and the actions into the woven player; one journal line per fired rule with its reason | offloadable, then **keep** (review) |
+| 5 | **Why did that happen?** button and `vefr why` (including where a belief came from) | offloadable |
+| 6 | A demo in Cottage: the cat notices you; the harbour fog on entering; map pieces; Stern believing the wrong thing | offloadable |
+| 7 | `add_reaction` and `add_rule` as named edits: chat preview, and three-slot drag-and-drop | offloadable after 1 to 4 |
