@@ -20,7 +20,8 @@ preview card (Keep / Change / No). Nothing is written until the player keeps it.
 4. **Plain errors.** A refused edit says in one plain sentence what to change. No stack traces, no raw URLs.
 5. **JSON in and out**, so a person, a script and an AI assistant can all call it. The same edit is a command (`vefr edit <name> --json`).
 6. **A log line per kept edit** (who, when, which edit, which files). That gives undo, a real dev journal and, only where a tool's terms are
-   cleared, honest training examples. *Where the log lives is a pack-contract question: Rylee decides.*
+   cleared, honest training examples. **Decided (Rylee, 2026-10-01): both.** The full log stays in the studio's data folder (private, no contract change);
+   the game folder carries a short, readable summary of what was changed (a pack-contract addition, additive).
 7. **Ask when vague.** If a sentence has two readings ("make it bigger"), the proposal is one small question, not a guess.
 8. **The crew never decides for the player.** A draft is labelled a draft; the player keeps, edits or bins it.
 
@@ -133,7 +134,7 @@ so the apply-and-show step waits for them.
 
 ## What this does not decide
 
-The edit log's location (pack contract), the exact route names, whether a kept edit may ever be applied without a preview,
+The exact route names and shapes (new public routes are **approved to plan and build** by Rylee on 2026-10-01; each route's shape is still written into its design note first), whether a kept edit may ever be applied without a preview,
 and which model proposes edits for chat. The small-model evidence says chat must stay preview-only for now
 (`bench/interface/results/summary.json`: qwen2.5-1.5b scored 48.3% safe on the interface translator).
 
