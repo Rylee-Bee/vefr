@@ -66,7 +66,9 @@ still proposed.
   anchor.
 - Eight tiny planks per tile. Say how many shapes fit across it.
 - A rug is an object, not a tile: repeated, it looks like a window.
-- One tile per surface repeats in an obvious grid across a room. Plan 2 or 3 variants.
+- One tile per surface repeats in an obvious grid across a room. Plan 2 or 3 variants, or paint the surface as ONE
+  picture and name it `<name>.grid3x3.webp`: the player draws one cell of it per tile, so the floor joins up and
+  repeats only every 3 tiles. Draw the picture as one scene, then check the edges where cells meet.
 - A request for "pixel art" returned a detailed painting with heavy outlines. If you want true pixel art,
   draw small and quantize; do not expect it from a painter.
 - Image tools may draw a person when asked for an animal. Try your monsters early.
