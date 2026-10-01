@@ -10,7 +10,14 @@ bench/runs/design/<run-id>/.
 
 Participants: an olympics key (served on CPU by bench.olympics.runtime), or
 `endpoint:<name>` defined in ENDPOINTS below.
+
+Offline lab path: score an EXISTING HTML file with the same checks and the
+same table — no model server, no network, no environment variables, no keys:
+
+    python3 -m bench.design.run --html path/to/page.html [--brief ID] [--out DIR]
 """
+import argparse
+import importlib.util
 import json
 import os
 import re
@@ -202,8 +209,14 @@ def run(participants):
     return out_root, summary
 
 
-def feedback(res):
-    """Plain, specific fix list from the checks (the wrapper a studio would give a small model)."""
+def sentences(res):
+    """Plain sentences for one score: what failed, what to try, what was not checked.
+
+    This is the one place for learner-facing wording:
+    feedback() (for models) and the offline --html report (for people) both
+    build their fix list from here, so the two can never drift apart.
+    A studio UI can reuse this list as-is.
+    """
     out = []
     if not res.get("renders"):
         out.append("The page failed to render or showed almost no text" + (f": {'; '.join(res.get('_errors') or [])}" if res.get("_errors") else "") + ".")
@@ -212,14 +225,32 @@ def feedback(res):
                    if res.get("_raw_colours") else "Use the wb- classes from the guide; the page has none.")
     for v in res.get("_axe") or []:
         out.append("Accessibility: " + AXE_HINTS.get(v, f"fix the '{v}' problem") + ".")
-    if not res.get("targets_44"):
+    # NOTE: a check that never ran (value absent) is not reported as a
+    # failure — say plainly that it could not run, never invent a result.
+    if res.get("targets_44") is False:
         out.append("These controls are shorter than 44px: " + " | ".join(res.get("_small") or []) +
                    ". Give every button and button-like link the wb-btn class and no custom sizes.")
-    if not res.get("phone_fit"):
+    if res.get("phone_fit") is False:
         out.append(f"On a 390px-wide phone the page is {res.get('_phone_w')}px wide. Let rows wrap, and put every table inside <div class=\"wb-table-wrap\">.")
     if res.get("_missing"):
         out.append("Missing or wrong parts: " + "; ".join(res["_missing"]) + ". Use the exact markup from the guide.")
-    return ("Your page failed these checks:\n- " + "\n- ".join(out) +
+    words = {"accessible": "accessibility", "targets_44": "44px targets", "phone_fit": "phone fit"}
+    not_run = [words[k] for k in words if k not in res]
+    if not_run:
+        out.append("The browser stopped part-way" + (f" ({res['_error']})" if res.get("_error") else "") +
+                   ", so these checks could not run: " + ", ".join(not_run) + ".")
+    if res.get("required_parts") is None:
+        # NOTE: restrictive honest reading — a page scored with no brief has
+        # no require list, so required_parts cannot truthfully "pass".
+        # It is excluded from the score and reported as not checked, so a
+        # reader never sees a red failure they cannot act on.
+        out.append("Not checked: no brief was given, so the required parts could not be checked.")
+    return out
+
+
+def feedback(res):
+    """Plain, specific fix list from the checks (the wrapper a studio would give a small model)."""
+    return ("Your page failed these checks:\n- " + "\n- ".join(sentences(res)) +
             "\n\nReply with the complete corrected HTML document only (start with <!doctype html>). Keep everything that already worked.")
 
 
@@ -256,7 +287,108 @@ def table(summary):
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
-    root, summary = run(sys.argv[1:])
+def score_offline(html_file, brief_id=None, out=None):
+    """Score an existing HTML file with the same checks — no model, no network, no keys.
+
+    Reuses check(), _required(), sentences() and table(): one code path for
+    the checks, so the offline path and the model path can never drift.
+    Returns 0 when every check that ran passed, 1 otherwise.
+    """
+    if importlib.util.find_spec("playwright") is None:
+        print("Playwright is not installed — install it with: uv run playwright install chromium")
+        return 1
+    src = Path(html_file).expanduser()
+    if not src.is_file():
+        print(f"That page was not found: {src}")
+        return 1
+    brief = None
+    if brief_id:
+        by_id = {b["id"]: b for b in BRIEFS + HARD_BRIEFS}
+        brief = by_id.get(brief_id)
+        if brief is None:
+            print(f"No brief with the id {brief_id!r}. Available ids: {', '.join(by_id)}")
+            return 1
+    out_root = (Path(out).expanduser() if out
+                else ROOT / "bench" / "runs" / "design" / time.strftime("%Y%m%dT%H%M%S"))
+    out_root.mkdir(parents=True, exist_ok=True)
+    shot = out_root / f"{src.stem}.png"
+    t0 = time.time()
+    try:
+        res = check(src, shot)
+        if brief is not None:
+            res["_missing"] = _required(src.read_text(errors="replace"), brief["require"], brief.get("forbid_many"))
+            res["required_parts"] = not res["_missing"]
+        else:
+            # NOTE: restrictive honest reading — with no brief there is no
+            # require list, so required_parts cannot truthfully pass.
+            # It is excluded from the score here and reported as not
+            # checked by sentences(), never as a failure.
+            res["required_parts"] = None
+    except Exception as e:
+        msg = str(e)
+        if isinstance(e, ImportError) or "playwright" in msg.lower() or "executable" in msg.lower():
+            print("Playwright could not start — install it with: uv run playwright install chromium")
+        else:
+            print("Could not score this page: " + (msg.splitlines()[0] if msg else type(e).__name__))
+        return 1
+    secs = round(time.time() - t0, 1)
+    # NOTE: a check whose value is None never ran (the browser stopped
+    # part-way): leave it out of the score instead of counting it as a
+    # failure the reader cannot act on.
+    scored = [k for k in KEYS if res.get(k) is not None]
+    score = sum(1 for k in scored if res[k])
+    # NOTE: stricter than the model rule (which tolerates one miss):
+    # offline PASS means every check that ran passed.
+    passed = score == len(scored)
+    # NOTE: no JSON is written — rescore.py reads <run>/*/*.json and expects
+    # the model-run record shape; offline evidence is the screenshot plus
+    # this printed report.
+    rec = {"participant": src.name, "score": score, "pass": passed, "seconds": secs}
+    print(f"Page: {src}")
+    print(f"Brief: {brief['id'] if brief else 'none'}")
+    print()
+    found = sentences(res)
+    if found:
+        print("What the checks found:")
+        for s in found:
+            print(f"- {s}")
+        print()
+    print(f"Score: {score} of {len(scored)} checks passed — {'PASS' if passed else 'fail'}.")
+    print()
+    print(table([rec]))
+    print()
+    print(f"Your screenshot (a picture of the page) is saved in this folder:\n  {out_root}\nThe file is {shot.name}.")
+    return 0 if passed else 1
+
+
+def main(argv=None):
+    """Command line: model participants, or --html to score a page offline."""
+    ap = argparse.ArgumentParser(
+        prog="python3 -m bench.design.run",
+        description="Score Workbench pages: run model participants against the briefs, "
+                    "or score an existing HTML file with --html (no model, no network, no keys).")
+    ap.add_argument("participants", nargs="*", metavar="participant",
+                    help="an olympics key or endpoint:<name> (omit when using --html)")
+    ap.add_argument("--html", metavar="FILE",
+                    help="score this existing HTML file with the same checks; no model server, no network, no keys")
+    ap.add_argument("--brief", metavar="ID",
+                    help="with --html: check the required parts of this brief (ids live in bench/design/briefs.py)")
+    ap.add_argument("--out", metavar="DIR",
+                    help="with --html: folder for the screenshots (default bench/runs/design/<run-id>)")
+    a = ap.parse_args(argv)
+    if a.html:
+        if a.participants:
+            ap.error("give either participants or --html, not both")
+        return score_offline(a.html, a.brief, a.out)
+    if a.brief or a.out:
+        ap.error("--brief and --out are only used with --html")
+    if not a.participants:
+        ap.error("give at least one participant, or score a page with --html FILE")
+    root, summary = run(a.participants)
     print(table(summary))
     print("evidence:", root)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
