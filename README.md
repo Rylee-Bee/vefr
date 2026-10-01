@@ -340,8 +340,13 @@ world, point at an LLM, volumes).
 4 GB of RAM, CPU only). Models, ports and how to swap them:
 [`docs/guides/bundled-brain.md`](docs/guides/bundled-brain.md).
 
-**CLI:** `ratatoskr --help` (running things) and `norns --help` (making
-things) list every command, straight from the code.
+<!-- NOTE: linked on the existing CLI line under "Run the engine" rather
+     than the "More docs" list, so the guide sits next to the commands it
+     documents. Both old spellings stay named: they still work as aliases. -->
+**CLI:** `vefr --help` is the one front door, every verb in journey order
+([the vefr command](docs/guides/vefr-command.md)). The old names still
+work as aliases: `ratatoskr --help` (running things) and `norns --help`
+(making things), each listing every command straight from the code.
 
 ## A Play-Nice project
 
