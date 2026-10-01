@@ -4,7 +4,7 @@ What is a floor? In this project it used to mean three different things. That is
 because a word that means three things means nothing. This page fixes it: one plain name for each thing,
 the studio name beside it, and the old names so you can still read older pages.
 
-**The rule:** nouns name things, verbs name actions, adjectives name states. The plain name comes first.
+**The rule:** nouns name things, verbs name actions, adjectives name states, and adverbs say how an action happens. The plain name comes first.
 The Norse or studio name sits beside it. It never replaces it. If you add a new name, add it here first.
 
 **Status:** *decided* means Rylee chose it. *proposed* means it is the best candidate and still needs her OK.
@@ -66,6 +66,26 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **not checked** | We could not tell. This is not a failure and not a pass. | "unknown" folded into health | proposed |
 | **complete** | A request or task is finished. | "done" | proposed |
 | **skipped** | Chosen not to do it now. | "not now" | proposed |
+
+## How an action happens (adverbs)
+
+Flags that change *how* a command acts are the adverbs of the tool. Say what they mean in plain words, and keep them few.
+A flag that starts with `--no-` always means "without".
+
+| Flag | In plain words | Status |
+|---|---|---|
+| `--dry-run` | **first, without changing anything:** show what would happen | in use |
+| `--json` | **as data:** print a result a program can read | in use |
+| `--force` | **even if it replaces something** | in use |
+| `--push` | **and then send it** | in use |
+| `--inspect` | **only look:** change nothing | in use |
+| `--no-git` | **without saving to version control** | in use |
+| `--no-world` | **without the game itself** | in use |
+| `--blind` | **without names:** hide which model made which answer | in use |
+
+Words we want available for new flags, because a newcomer already knows them: *quietly* (`--quiet`), *again* (`--retry`), *only*
+(`--only X`), *offline* (`--offline`: no model, no network), *safely* (`--safe`: the more careful way).
+Most other flags name a thing (`--pack`, `--url`, `--seed`, `--floors`). Those are nouns and follow the noun rules above.
 
 ## Places in the studio (rooms)
 

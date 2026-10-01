@@ -42,3 +42,12 @@ def test_old_setting_names_are_listed_beside_the_plain_ones():
     section = _text().split("## Settings (environment variables)", 1)[1].split("\n## ", 1)[0]
     for old in ("VEFR_LLAMACPP_URL", "VEFR_VAULT", "VEFR_JOURNAL", "VEFR_STORYTELLER"):
         assert old in section
+
+
+def test_adverbs_are_covered_and_no_flags_mean_without():
+    text = _text()
+    assert "adverbs say how an action happens" in text or "adverbs say how" in text
+    section = text.split("## How an action happens (adverbs)", 1)[1].split("\n## ", 1)[0]
+    for flag in ("--dry-run", "--json", "--force", "--no-git"):
+        assert flag in section
+    assert "`--no-`" in section
