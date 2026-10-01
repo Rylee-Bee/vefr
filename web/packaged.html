@@ -2801,6 +2801,107 @@ function setupTown() {
     if (names.length) combatSay('You take ' + names.join(', ') + ' from the chest.');
   }
 
+  // -- interact start --
+  // One verb, three pure helpers (the logic only; the wiring is a
+  // later pass). The caller builds `state` from the live game; this
+  // block only reads it, so a node vm sandbox whose only global is
+  // Math can run it. Shape of `state`:
+  //
+  //   {
+  //     hero: [x, y],                 // the hero's tile
+  //     facing: 'up'|'down'|'left'|'right',
+  //     candidates: [ { kind, id, name, at: [x, y] } ]
+  //   }
+  //
+  // `kind` is one of exactly: resident, trader, chest, door, stairs,
+  // place, enemy. `id` is the caller's key (speaker key, book id,
+  // transition id, enemy id, poi key); `name` is the display name. A
+  // malformed candidate - missing or unknown kind, missing, short or
+  // non-numeric `at` - is skipped, never an error.
+  //
+  // Reach is Manhattan from `state.hero`: one tile for the things you
+  // touch (chest, door, stairs, place, enemy), two for people (the
+  // talk reach today). `interactTargets` returns every candidate in
+  // reach, in the caller's own order, each a fresh { kind, id, name,
+  // at, dist, label } with `label` set from `labelFor`. `pickTarget`
+  // returns one of them: a candidate on the tile the hero faces,
+  // else one on the hero's own tile, else the nearest in reach.
+  // Ties break by kind - door and stairs share the top rank and
+  // candidate order decides between them, then chest, trader,
+  // resident, place, enemy - and finally by candidate order. Nothing
+  // is mutated: every call returns fresh objects. No DOM, no
+  // storage, no clock, no chance.
+  globalThis.labelFor = function (target) {
+    if (!target) return null;
+    var name = target.name;
+    if (target.kind === 'chest') return 'Open the chest';
+    if (target.kind === 'resident') return 'Talk to ' + name;
+    if (target.kind === 'trader') return 'Trade with ' + name;
+    if (target.kind === 'door') return 'Go through the door';
+    if (target.kind === 'stairs') return 'Go down the stairs';
+    if (target.kind === 'place') return 'Look at ' + name;
+    if (target.kind === 'enemy') return 'Fight ' + name;
+    return null;
+  };
+
+  globalThis.interactTargets = function (state) {
+    var out = [];
+    if (!state || typeof state !== 'object') return out;
+    var hero = state.hero;
+    if (!Array.isArray(hero) || hero.length < 2) return out;
+    if (typeof hero[0] !== 'number' || !isFinite(hero[0])) return out;
+    if (typeof hero[1] !== 'number' || !isFinite(hero[1])) return out;
+    var reach = { resident: 2, trader: 2, chest: 1, door: 1,
+                  stairs: 1, place: 1, enemy: 1 };
+    var list = Array.isArray(state.candidates) ? state.candidates : [];
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (!c || typeof c !== 'object') continue;
+      var max = reach[c.kind];
+      if (typeof max !== 'number') continue;   // missing or unknown kind
+      var at = c.at;
+      if (!Array.isArray(at) || at.length < 2) continue;
+      if (typeof at[0] !== 'number' || !isFinite(at[0])) continue;
+      if (typeof at[1] !== 'number' || !isFinite(at[1])) continue;
+      var dist = Math.abs(at[0] - hero[0]) + Math.abs(at[1] - hero[1]);
+      if (dist > max) continue;                // out of reach
+      var target = { kind: c.kind, id: c.id, name: c.name,
+                     at: [at[0], at[1]], dist: dist };
+      target.label = labelFor(target);
+      out.push(target);
+    }
+    return out;
+  };
+
+  globalThis.pickTarget = function (state) {
+    var all = interactTargets(state);
+    if (!all.length) return null;
+    var hero = state.hero;
+    var step = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    var face = step[state.facing];
+    var fx = null, fy = null;
+    if (face) { fx = hero[0] + face[0]; fy = hero[1] + face[1]; }
+    var rank = { door: 0, stairs: 0, chest: 1, trader: 2,
+                 resident: 3, place: 4, enemy: 5 };
+    var best = null, bestTier = -1, bestDist = -1, bestRank = -1;
+    for (var i = 0; i < all.length; i++) {
+      var t = all[i];
+      // 0 the tile the hero faces, 1 the hero's own tile, 2 the rest
+      var tier = 2;
+      if (fx !== null && t.at[0] === fx && t.at[1] === fy) tier = 0;
+      else if (t.at[0] === hero[0] && t.at[1] === hero[1]) tier = 1;
+      var r = rank[t.kind];
+      if (best === null
+          || tier < bestTier
+          || (tier === bestTier && t.dist < bestDist)
+          || (tier === bestTier && t.dist === bestDist && r < bestRank)) {
+        best = t; bestTier = tier; bestDist = t.dist; bestRank = r;
+      }
+    }
+    return best;
+  };
+  // -- interact end --
+
   // The verb: use what you are standing on. A door is used, not walked
   // through, so passing a doorway never yanks you to another map.
   function useHere() {
