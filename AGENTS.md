@@ -16,15 +16,21 @@ to this repo.
 | See what's landed / what's next | `ROADMAP.md` |
 | Change what a world pack can hold | `src/vefr/world.py` docstring |
 | Validate a pack | `uv run norns validate --pack worlds/<name>` |
+| See every `vefr` verb (the one front door) | `docs/guides/vefr-command.md` |
 | Find current truth / decisions | `.project/CURRENT.md` / `.project/DECISIONS.md` |
 | Agent decision kernel & DoD | `AGENT_POLICY.md` |
 | See Play-Nice behavioral authority | `.project/contracts/adoption.yaml` |
 | Deploy the bundled brain | `docs/guides/bundled-brain.md` |
 
+<!-- NOTE: the vefr row sits after "Validate a pack" because it is the
+     CLI map of the table; the two old-CLI mentions were rewritten in
+     place (repo-is bullet + CLI references block) rather than deleted,
+     since both names still work as aliases. -->
+
 ## What this repo is
 
 - **The engine only** ("the bones"): FastAPI + any OpenAI-compatible LLM backend. MPL-2.0-licensed.
-- Two CLIs: `ratatoskr` (ops: skipa, test, weave, ferry, volumes, spark) and `norns` (craft: chat, validate, migrate, build-map, delve, verify, handbok, doctor, storyteller-test, storyteller-benchmark) — `--help` is canonical.
+- One front door: `vefr` (its verbs in journey order, `--help` is canonical). The two old CLIs, `ratatoskr` (ops: skipa, test, weave, ferry, volumes, spark) and `norns` (craft: chat, validate, migrate, build-map, delve, verify, handbok, doctor, storyteller-test, storyteller-benchmark), keep working as aliases.
 - `worlds/sample-world/` (Emberfield) ships with the engine — the demo pack.
 - `worlds/lore/<flavor>/` packs are data-only mood-boards (CC BY-SA 4.0).
 
@@ -79,8 +85,9 @@ uv tool run deptry .       # dependency hygiene
 uv run --group test norns doctor
 
 # CLI references (--help prints the live, complete command list)
-uv run ratatoskr --help   # the ops CLI
-uv run norns --help       # the craft CLI
+uv run vefr --help        # the front door: every verb, journey order
+uv run ratatoskr --help   # the old ops CLI, still an alias
+uv run norns --help       # the old craft CLI, still an alias
 
 # Validate a world pack
 uv run norns validate --pack worlds/<name>
