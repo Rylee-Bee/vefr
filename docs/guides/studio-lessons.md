@@ -4,6 +4,40 @@ What making a real game by hand taught us, and where each lesson belongs
 in the studio. Every workaround here is a feature the studio still owes
 the next person. Add to it as you go; newest first.
 
+## 2026-10-01: the night the helpers fell over
+
+Two `offload` helper crews were building vefr in parallel, and both crashed:
+their run summaries were 0 bytes and their worker agents were orphaned (parent
+PID 1). A third crew finished on its own. The unlanded work lived only in
+throwaway clones under `~/worktrees/offload/`, which `offload clean` deletes.
+
+What saved it, and what to do again:
+
+- **A throwaway clone is not a home.** Land or copy the commits out before
+  anything cleans up. `offload clean` removes worker clones; a branch in the
+  real repo does not.
+- **Recover by content, not by trust.** Each clone's branch was fetched into the
+  real repo and compared against `main`; only the unlanded work was kept
+  (`recovered/vefr-*`), kept as safety refs, and the stale clones were deleted
+  (41 directories, about 10 GB).
+- **The parallel design worked.** Both crews were told to keep changes in new
+  functions plus a few call sites; `web/packaged.html` auto-merged and only two
+  files needed a hand (`ROADMAP.md`, `src/vefr/maplab.py`).
+- **CI caught what review would have missed.** CodeQL failed the rules PR with
+  two high "uncontrolled data used in path expression" alerts; the fix is the
+  repo's own guard, `os.path.realpath` plus `startswith(base + sep)`.
+- **The honest failure is the useful part.** The interact crew's own report said
+  it changed no test to fit code, and that 3 of 6 workers failed (two
+  provider-rejected, one timeout); its two unfinished tasks were finished by
+  hand rather than pretending they shipped.
+- **A stale line is a bug.** The pause menu's "How to play" still said "Talk
+  with E, Space" after `E` became Interact; it is fixed.
+
+Landed that evening: the rules engine (a world can react when something
+happens) and one-button Interact (one key does what fits, plus Start over).
+The shorter, player-facing version is on the studio's own shelf, as the book
+*The Night the Helpers Fell Over* (`web/library/26-the-night-the-helpers-fell-over.md`).
+
 ## 2026-09-30: the engine grew by being used
 
 A long stretch of building the engine *through* the game. What it taught.
