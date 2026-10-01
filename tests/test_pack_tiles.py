@@ -369,3 +369,34 @@ def test_woven_pack_without_tiles_bakes_the_engine_pictures_unchanged():
     }
     assert tiles == cli._player_tiles(world, WEB)
     assert region_tiles == cli._player_region_tiles(world, WEB)
+
+
+# ------------------------------------------------ names from pack data cannot escape the pack
+
+
+def test_act_id_and_region_names_cannot_leave_the_pack(tmp_path):
+    """CodeQL flagged path probes on names from pack data. An act id or region name like '../x'
+    must resolve to nothing, and a tiles/ directory outside the pack must never be read."""
+    from vefr import cli
+
+    outside = tmp_path / "outside"
+    (outside / "tiles").mkdir(parents=True)
+    (outside / "tiles" / "floor.webp").write_bytes(b"RIFFxxxxWEBP")
+    pack = tmp_path / "pack"
+    (pack / "acts" / "act-1" / "town").mkdir(parents=True)
+
+    assert cli._act_dir_for(pack, "../../outside") is None
+    assert cli._act_dir_for(pack, "../outside") is None
+    assert cli._act_dir_for(pack, "act-1") is not None
+    assert cli._act_dir_for(pack, "") is None and cli._act_dir_for(pack, None) is None
+    assert cli._act_dir_for(pack, "bad\0id") is None
+
+    act_dir = cli._act_dir_for(pack, "act-1")
+    world = {"acts": [{"id": "act-1", "regions": {"../../outside": {"contract": {"legend": {"f": {"tile": "floor"}}}}}}]}
+    baked = cli._player_region_tiles(world, tmp_path / "no-web", pack)
+    assert baked["../../outside"] == {}  # nothing resolved: the outside picture was never read
+    # a tile file that is a symlink pointing outside the pack is skipped by the real-path guard
+    link_dir = pack / "acts" / "act-1" / "town" / "tiles"
+    link_dir.mkdir()
+    (link_dir / "floor.webp").symlink_to(outside / "tiles" / "floor.webp")
+    assert cli._pack_tile_paths(pack, act_dir / "town", "floor") == []

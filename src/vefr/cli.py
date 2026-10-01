@@ -910,6 +910,27 @@ def _player_title_art(pack: Path, world: dict, web_dir: Path) -> str:
     return art
 
 
+def _inside(base: str, *parts: str) -> str | None:
+    """The resolved path of base/parts, or None if it would leave `base`.
+
+    `base` must already be a real path. Every filesystem probe on a name
+    that came from pack data (an act id, a region name, a tile file) goes
+    through here first, so a name like '../x' can never make the weaver look
+    outside the pack. The guard is the same shape `_player_sprites` uses.
+    """
+    target = os.path.realpath(os.path.join(base, *parts))
+    return target if target.startswith(base + os.sep) else None
+
+
+def _has_subdir(pack: Path | None, name: str) -> bool:
+    """True when <pack>/<name> is a directory that stays inside the pack."""
+    if pack is None:
+        return False
+    base = os.path.realpath(pack)
+    target = _inside(base, name)
+    return target is not None and os.path.isdir(target)
+
+
 def _act_dir_for(pack: Path, act_id) -> Path | None:
     """The on-disk directory of an act, by the loader's convention.
 
@@ -917,28 +938,33 @@ def _act_dir_for(pack: Path, act_id) -> Path | None:
     directory name (see world._load_act). Prefer <pack>/acts/<id>/,
     else match the first <pack>/acts/*/world.json whose 'id' equals
     the act id. None when nothing matches, so no pack tiles are read
-    for that act.
+    for that act. Every candidate must resolve inside <pack>/acts.
     """
-    if not isinstance(act_id, str) or not act_id:
+    if not isinstance(act_id, str) or not act_id or '\0' in act_id:
         return None
-    acts_dir = Path(pack) / 'acts'
-    if not acts_dir.is_dir():
+    base = os.path.realpath(pack)
+    acts = _inside(base, 'acts')
+    if acts is None or not os.path.isdir(acts):
         return None
-    direct = acts_dir / act_id
-    if direct.is_dir():
-        return direct
-    for d in sorted(acts_dir.iterdir()):
-        if not d.is_dir() or d.name.startswith('.'):
+    direct = _inside(acts, act_id)
+    if direct is not None and os.path.isdir(direct):
+        return Path(direct)
+    for name in sorted(os.listdir(acts)):
+        if name.startswith('.'):
             continue
-        world_json = d / 'world.json'
-        if not world_json.exists():
+        d = _inside(acts, name)
+        if d is None or not os.path.isdir(d):
+            continue
+        world_json = _inside(d, 'world.json')
+        if world_json is None or not os.path.isfile(world_json):
             continue
         try:
-            data = json.loads(world_json.read_text(encoding='utf-8'))
+            with open(world_json, encoding='utf-8') as fh:
+                data = json.load(fh)
         except (OSError, ValueError):
             continue
         if isinstance(data, dict) and data.get('id') == act_id:
-            return d
+            return Path(d)
     return None
 
 
@@ -956,24 +982,25 @@ def _pack_tile_paths(pack: Path | None, region_dir: Path | None,
     """
     # NOTE: `pack` is the guard the callers thread through (the real
     # path of the whole pack). When only a region_dir is given, the
-    # region itself is the stricter guard base - a picture can still
-    # never resolve outside the dir it was discovered under.
+    # region itself is the stricter guard base.
     if region_dir is None:
         return []
-    if not isinstance(name, str) or not name:
+    if not isinstance(name, str) or not name or '\0' in name:
         return []
-    tiles_dir = Path(region_dir) / 'tiles'
-    if not tiles_dir.is_dir():
+    region_real = os.path.realpath(region_dir)
+    base = os.path.realpath(pack) if pack is not None else region_real
+    if region_real != base and not region_real.startswith(base + os.sep):
         return []
-    base = os.path.realpath(pack) if pack is not None else os.path.realpath(region_dir)
-    tiles_real = os.path.realpath(tiles_dir)
+    tiles_real = _inside(region_real, 'tiles')
+    if tiles_real is None or not os.path.isdir(tiles_real):
+        return []
     out: list[Path] = []
-    for rel in _discover_tiles(tiles_dir).get(name, []):
-        target = os.path.realpath(os.path.join(tiles_real, rel))
-        if not target.startswith(base + os.sep):
+    for rel in _discover_tiles(Path(tiles_real)).get(name, []):
+        target = _inside(tiles_real, rel)
+        if target is None or not target.startswith(base + os.sep):
             continue
         f = Path(target)
-        if f.is_file() and f.suffix.lower() in _ART_TYPES:
+        if os.path.isfile(target) and f.suffix.lower() in _ART_TYPES:
             out.append(f)
     return out
 
@@ -1050,7 +1077,7 @@ def _first_region_dir(pack: Path | None, world: dict) -> Path | None:
     if pack is None:
         return None
     pack = Path(pack)
-    if not (pack / 'acts').is_dir():
+    if not _has_subdir(pack, 'acts'):
         return pack
     first_act = (world.get('acts') or [{}])[0]
     if not isinstance(first_act, dict):
@@ -1059,7 +1086,10 @@ def _first_region_dir(pack: Path | None, world: dict) -> Path | None:
     if act_dir is None:
         return None
     region_name = next(iter(first_act.get('regions') or {}), None)
-    return act_dir / region_name if region_name else None
+    if not isinstance(region_name, str) or not region_name:
+        return None
+    region = _inside(os.path.realpath(act_dir), region_name)
+    return Path(region) if region is not None else None
 
 
 def _player_tiles(world: dict, web_dir: Path, pack: Path | None = None,
@@ -1092,12 +1122,12 @@ def _player_region_tiles(world: dict, web_dir: Path,
     the flat shape); without it resolution is the engine set, unchanged.
     """
     pack_path = Path(pack) if pack is not None else None
-    flat = pack_path is not None and not (pack_path / 'acts').is_dir()
+    flat = pack_path is not None and not _has_subdir(pack_path, 'acts')
     # A flat pack keeps its geometry in world['town'], not in a region
     # contract. It only reads its own tiles when it actually brings a
     # tiles/ dir, so one with none bakes exactly what it did before.
     flat_town = world.get('town') if isinstance(world.get('town'), dict) else {}
-    flat_tiles = bool(pack_path is not None and (pack_path / 'tiles').is_dir())
+    flat_tiles = _has_subdir(pack_path, 'tiles')
     out: dict[str, dict[str, str | list[str]]] = {}
     for act in (world.get('acts') or []):
         act = act if isinstance(act, dict) else {}
@@ -1115,7 +1145,8 @@ def _player_region_tiles(world: dict, web_dir: Path,
                     legend = flat_town.get('legend') or {}
                     sanctuaries = flat_town.get('sanctuary_tiles') or []
             elif act_dir is not None:
-                region_dir = act_dir / rname
+                region = _inside(os.path.realpath(act_dir), rname) if isinstance(rname, str) and rname else None
+                region_dir = Path(region) if region is not None else None
             else:
                 region_dir = None
             out[rname] = _tiles_for_legend(legend, sanctuaries, web_dir,
