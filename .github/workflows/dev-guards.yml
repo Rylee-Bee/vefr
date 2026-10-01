@@ -132,3 +132,62 @@ jobs:
 
       - name: Compare against committed baseline
         run: uv run python scripts/visual_regress.py /tmp/weave/sample.html tests/baselines/packaged-sample.png
+
+  static:
+    name: dead code + dependency hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: vulture (dead code, config in pyproject)
+        run: uv tool run 'vulture==2.16'
+
+      - name: deptry (dependency hygiene, config in pyproject)
+        run: uv tool run 'deptry==0.25.1' .
+
+  links:
+    name: markdown links (offline, no network)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: lychee (local file links; external links are not fetched)
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --no-progress
+            --exclude-path node_modules --exclude-path .venv
+            --exclude-path data --exclude-path dist
+            --exclude-path bench/runs --exclude-path .git
+            --exclude-path .pytest_cache --exclude-path .ruff_cache
+            './**/*.md'
+
+  prose:
+    name: Vale (house voice, advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Vale
+        uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # v3.0.0
+        with:
+          # Advisory: report style, never fail the PR (see .vale.ini).
+          fail_on_error: false
+          version: 3.23.0
+          files: >-
+            docs web/library README.md GETTING_STARTED.md AGENTS.md
+            CONTRIBUTING.md ROADMAP.md AGENT_POLICY.md

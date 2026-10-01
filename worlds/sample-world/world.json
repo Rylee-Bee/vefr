@@ -9,6 +9,24 @@
     "dawn": "The day begins. The tone is tentative and warm."
   },
   "surface": "combat",
+  "grammars": {
+    "whisper": {
+      "origin": ["#who# says #news#.", "#who# swears #news#.", "They say #news#."],
+      "who": ["the innkeeper", "a carter", "the woman by the well", "an old soldier", "a boy with a lantern"],
+      "news": ["the western gate is broken", "the road east is watched", "the mill stopped turning", "a light was seen on the hill", "the river runs low this year", "the bell rang at midnight"]
+    },
+    "weather": {
+      "origin": ["#sky# over #place#.", "#sky#, and #air#."],
+      "sky": ["Rain", "A grey sky", "Cold air", "Low cloud", "A thin fog"],
+      "place": ["Emberfield", "the town", "the western gate", "the hills"],
+      "air": ["the road smells of wet stone", "smoke hangs in the street", "the fields are very quiet"]
+    },
+    "name": {
+      "origin": ["#adj# #noun#"],
+      "adj": ["Grey", "Hollow", "Sunken", "Old", "Quiet", "Long"],
+      "noun": ["Barrow", "Watch", "Crossing", "Vault", "Mile", "Stair"]
+    }
+  },
   "voices": {
     "keeper": {
       "file": "voices/keeper.md",
@@ -30,5 +48,15 @@
     }
   },
   "bond_draw": "Weight the random draw honestly: most are given or cold. Found is rare - maybe one in five. rarity is the point.",
-  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was made for someone else."
+  "forge_texture": "Items carry the world's texture. Curses are quiet, never gory - and a given item's curse is simply that it was made for someone else.",
+  "items": {
+    "torch": {
+      "name": "a pitch torch",
+      "light": { "radius": 2, "turns": 6 }
+    },
+    "chalked-map": {
+      "name": "a chalked map",
+      "light": { "reveal": true }
+    }
+  }
 }

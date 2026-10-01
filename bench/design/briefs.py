@@ -13,7 +13,7 @@ BRIEFS = [
      "require": [".wb-topbar", "h1", (".wb-h2", 3), (".wb-btn", 4), ("table.wb-table tbody tr", 2), ".wb-tag--warning, .wb-tag--danger"]},
     {"id": "art-set", "brief": "An art set page titled 'Sticker icons' showing twelve images in a tile grid (images art/icon-1.webp to art/icon-12.webp, each linking to its full-size file and captioned with a plain name like 'bell'). Include a breadcrumb and a lede saying how many images there are.",
      "require": [".wb-topbar", "h1", (".wb-tiles .wb-tile", 12), ("figcaption", 12)]},
-    {"id": "empty-project", "brief": "A project page for a brand-new project called 'Cottage of the Breeze' that has nothing published yet: breadcrumb, title, and empty states for 'Art', 'Builds' and 'Updates', each saying what's missing and the exact next step.",
+    {"id": "empty-project", "brief": "A project page for a brand-new project called 'Fernwood' that has nothing published yet: breadcrumb, title, and empty states for 'Art', 'Builds' and 'Updates', each saying what's missing and the exact next step.",
      "require": [".wb-topbar", "h1", (".wb-empty", 3)]},
 ]
 

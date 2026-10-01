@@ -175,6 +175,25 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
         for k in ("max_tokens", "temperature"):
             if k in payload:
                 body[k] = payload[k]
+        # Optional GBNF fallback. Some OpenAI-compatible backends ignore
+        # response_format; a caller may ask for a grammar instead
+        # (`grammar: True`), derived from the same schema when convertible.
+        # The default path is unchanged: no grammar, response_format as-is.
+        if payload.get("grammar"):
+            schema = None
+            if (isinstance(response_format, dict)
+                    and response_format.get("type") == "json_schema"):
+                schema = response_format.get("json_schema", {}).get("schema")
+            elif "format" in payload:
+                schema = payload["format"]
+            if schema is not None:
+                from .schema_grammar import SchemaGrammarError, grammar_from_schema
+
+                try:
+                    body["grammar"] = grammar_from_schema(schema)
+                    body.pop("response_format", None)
+                except SchemaGrammarError:
+                    pass  # not convertible: keep response_format, no grammar
         try:
             r = httpx.post(
                 f"{LLAMACPP_URL}/v1/chat/completions", json=body, timeout=180
@@ -210,7 +229,11 @@ def generate_rumor(
 ) -> RumorCard:
     payload = build_payload(phase, theme, sid)
     last_err: Exception | None = None
-    for _ in range(2):
+    for attempt in range(2):
+        # Second attempt: ask for a GBNF grammar derived from the same
+        # schema, for backends that ignored response_format the first time.
+        if attempt == 1:
+            payload = {**payload, "grammar": True}
         raw = _completion(payload)
         try:
             return RumorCard.model_validate_json(raw)

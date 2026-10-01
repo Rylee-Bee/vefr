@@ -333,6 +333,26 @@ on the payload contract, not the HTTP wire shape.
 `src/vefr/trace.py` and `src/vefr/weave.py`
 : Engine-observation memory for debugging and loader truth.
 
+### 5. Structured output, and the grammar fallback
+
+The engine asks for JSON through the provider's own contract: an
+OpenAI-compatible request carries `response_format: {"type": "json_schema",
+"json_schema": {"schema": ..., "strict": true}}`, and the ollama path carries
+`format`. That is the whole ask, and it is enough for llama.cpp, LM Studio and
+ollama.
+
+Backends that ignore `response_format` return prose instead. So a caller may
+also opt into a **GBNF grammar** (`payload["grammar"] = True`):
+`src/vefr/schema_grammar.py` converts the same JSON Schema into a grammar the
+server can enforce by construction, and the request then carries `grammar`
+instead of `response_format` (one constraint, never two that might conflict).
+A schema the converter cannot model raises `SchemaGrammarError` and the request
+falls back to `response_format`, unchanged. `generate_rumor` uses this as its
+second attempt.
+
+The default path is byte-for-byte what it always was; the grammar is a
+fallback, not a new default. No model call enters a deterministic surface.
+
 ## Current limitations to preserve consciously
 
 These are not emergencies, but they are the main places where future

@@ -72,10 +72,19 @@ phone's Share sheet, where the browser supports sharing files).
 The file opens on a title screen with the world's title picture, its
 name and tagline, and a Begin button. The game fills the screen, with
 speech, choices and health drawn over it and a pause menu (`Esc`) for
-the journal. Everything the world needs is inside the file.
+the journal. Everything the world needs is inside the file. In a region
+that declares fog, press `O` or tap **Explore** to walk to the nearest
+unexplored ground; the walk stops on its own when a monster comes into
+the light, the hero is wounded, or there is nothing left to see. A
+carried torch can widen that circle for a few turns, and a chalked map
+can lay the whole place open at once. The dark is yours to set, too:
+press `V`, or use Display in the pause menu, to see the whole map.
 
 Send it to someone and they can play it in any browser, on a phone,
-tablet or computer, with no Python, server, internet or model. Models
+tablet or computer, with no Python, server, internet or model. A pack
+can also ship a few lines of grammars (whispers, names, weather) in
+`world.json`, expanded offline with no model at all
+([docs/guides/grammars.md](docs/guides/grammars.md)). Models
 help while you make the game, in the studio; the finished file is
 complete on its own ([ADR 0003](docs/adr/0003-models-in-the-studio.md)).
 A game can still offer players an optional model of their own for fresh
@@ -341,7 +350,7 @@ standards. See the
 
 ## Attribution
 
-- Dependencies: fastapi, uvicorn, httpx, pydantic (MIT/BSD-3),
+- Dependencies: fastapi, uvicorn, httpx, pydantic, sqlite-vec (MIT/BSD-3/Apache-2.0),
   declared in `pyproject.toml`; their notices ship in the wheels.
 - Model: Qwen (Apache-2.0); outputs are shaped by this repo's
   prompts and reviewed by a human before they become canon.

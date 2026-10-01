@@ -57,16 +57,6 @@ def sanitize_messages(msgs):
     return out, notes
 
 
-def _replies_only(session):
-    out = []
-    for ex in session:
-        if ex.get("give"):
-            out.append(ex["give"])
-        else:
-            out.append("")  # placeholder for generated
-    return out
-
-
 def task_messages(task):
     """The exact user-visible prompt sequence for a task (for reports/pairs)."""
     if task.get("session"):

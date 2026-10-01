@@ -90,14 +90,6 @@ def storyteller_log_path() -> Path:
 
 # --- presentation input envelope (facts, not authority) ------------------
 
-def _clean_list(v: object) -> list[str]:
-    if not v:
-        return []
-    if isinstance(v, list):
-        return [str(x) for x in v if str(x).strip()]
-    return [str(v)]
-
-
 class LoreRef(BaseModel):
     """One retrieved lore fragment. Text/source are evidence handed to
     the Storyteller; score is retrieval ordering only. Lore is flavor and

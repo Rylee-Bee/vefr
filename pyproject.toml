@@ -14,10 +14,15 @@ dependencies = [
     "uvicorn>=0.30",
     "httpx>=0.28",
     "pydantic>=2.10",
+    # The Lorekeeper's vector index (src/vefr/lore_shell.py). Bundled: `ask`
+    # still falls back to a brute-force cosine if the extension fails to
+    # load, so a fact is never lost to it.
+    "sqlite-vec>=0.1.9",
 ]
 
 [dependency-groups]
 test = [
+    "hypothesis>=6.100",
     "jsonschema>=4.26.0",
     "playwright>=1.63.0",
     "pytest>=8.3",
@@ -48,6 +53,29 @@ filterwarnings = [
     # no functional impact.  Silenced to keep the warning budget at zero.
     "ignore:.*httpx.*starlette.*:UserWarning",
 ]
+
+[tool.vulture]
+# Dead-code check (CI: `uv tool run vulture`). Confidence 90 keeps it
+# signal-only; the ignored names are protocol signatures, not dead code:
+# pydantic's `cls`, a context manager's `exc_type`/`tb`, and spark_call's
+# public `model_cls` keyword.
+min_confidence = 90
+paths = ["src/vefr"]
+ignore_names = ["cls", "exc_type", "tb", "model_cls"]
+
+[tool.deptry]
+# Extend (not replace) deptry's defaults, so .venv/node_modules stay out.
+# bench/ and design/ are exploratory tooling with their own ad-hoc,
+# often-optional deps (numpy, torch, whisper, ...) that are deliberately
+# not project dependencies.
+extend_exclude = ["bench", "experiments", "design", "storyteller_packs", "worlds"]
+known_first_party = ["vefr"]
+
+[tool.deptry.per_rule_ignores]
+# uvicorn is run as a CLI (`uv run uvicorn ...`), never imported.
+DEP002 = ["uvicorn"]
+# playwright ships in the `test` group; scripts/ is dev tooling.
+DEP004 = ["playwright"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vefr"]

@@ -7,6 +7,103 @@
 
 ## Landed
 
+- [x] **Monsters that think with a map** (2026-09-30): a monster no longer
+      walks in a straight line and stalls on a corner. Each turn the
+      walkable tiles of the region are flooded once, breadth-first, from the
+      hero, and every monster steps to the neighbour closest to that flood -
+      so it walks round walls, corners and rooms instead of into them. A
+      monster hurt to a third of the `hp` it walked into the region with
+      (`hp0`, recorded in `loadEnemies`) steps the other way, to the
+      furthest tile down the map, instead of closing; a monster that cannot
+      see the hero drifts toward the nearest other living monster, by
+      walking distance, so a pack stays a pack. Adjacent is still a hit,
+      still for `atk`. The floods are built once per turn and shared,
+      lazily, so a turn that never moves a monster never pays for one; a
+      fixed neighbour order (up, down, left, right) breaks every tie, and
+      there is no randomness or clock anywhere in the movement - the same
+      floor always plays out the same way. Still no step onto a solid tile,
+      another living monster, or the hero. The change is inside the
+      movement functions only: combat, drops, the slain book, Cozy death,
+      autoexplore, the fog toggle and the light item are untouched. Gap,
+      on purpose: monsters still do not pick up loot. Guide:
+      `docs/guides/rulesets.md` -> combat. Tests: a fixture floor with a
+      wall in it, played in Chromium through the woven file
+      (`tests/browser/test_monster_walking.py`, `tests/fixtures/make_wall_pack.py`).
+
+- [x] **Pack grammars: the world's own words, expanded offline** (2026-09-30):
+      an author can now ship a small grammar in `world.json` and a woven
+      player keeps its voice with no model and no baked pool - the
+      tracery-style deterministic text of enhancement wave 2 (#142), the
+      first third of it. A grammar is `{rule: [strings]}` with an `origin`
+      rule; `#rule#` inside a string draws one entry of that rule and every
+      other character is kept. Three laws keep it safe: `origin` required,
+      every reference resolves inside the same grammar, and one expansion
+      draws at most 200 entries - a self-feeding grammar stops rather than
+      loops. Two implementations of the same algorithm: `expand()` in the
+      new `src/vefr/grammar.py` (standard library only, seeded through
+      `random.Random`) and `grammarExpand()` in `web/packaged.html`, so the
+      woven file needs no engine at all. The block is additive and every
+      part optional: a pack with no `grammars` plays exactly as before.
+      Wired: the `whisper` grammar speaks when a player has no endpoint,
+      no pool and no fragment bank (speaker from `grammars.name`, else
+      "someone"; truth from the seeded stream); the `weather` grammar says
+      once in the status line on arriving in a region, journaled like any
+      other arrival, never per step; the `name` grammar names a floor that
+      `norns delve` generates, drawn from the delve seed and written into
+      the region's `contract.json` (the `floor-N` directory name and every
+      door are unchanged). `maplab.grammar_errors` checks the block with
+      pack-level messages, so a typo is a line from `norns validate` rather
+      than a silence at play time. Guide: `docs/guides/grammars.md`. Gate:
+      843 passed, 4 skipped (`uv run --group test pytest -q`), 8 browser
+      passed, ruff clean, `norns validate --pack worlds/sample-world` ok,
+      public-surface guard clean. No model call anywhere in the path, and no
+      new runtime dependency.
+
+- [x] **Autoexplore for the woven player, and its UAT contract** (2026-09-30):
+      a dark region can now be uncovered without tapping every step. The
+      packaged player's action row gains an `Explore` control (`O`): it
+      breadth-first searches the walkable tiles for the nearest unexplored
+      ground and steps the hero there through `move()`, paced on a timer, so
+      turns, monsters, fog and pickups stay honest. It stops the moment a
+      living enemy is lit, the hero takes damage, no reachable dark tile
+      remains, or a 400-step safety cap is hit; pressing `O` again, any other
+      key, or a click elsewhere stops it. A `role="status"` line speaks only
+      at start and stop. The sample world's town now declares
+      `"fog": {"radius": 4}` so the demo lives in the dark, and the
+      estate-format UAT contract lives at `docs/uat/autoexplore.md`. The dark
+      is the player's to set: `V`, or the Display switch in the pause menu,
+      turns it off for that world (remembered), which also seeds a future
+      light mechanic (`fogRadius` is the lever).
+
+- [x] **Renovate replaces Dependabot** (2026-09-30): `renovate.json` groups
+      pip runtime, pip dev, npm and Actions updates, keeps a 7-day cooldown,
+      and maintains Action digest pins; `lockFileMaintenance` keeps `uv.lock`
+      fresh. The owner chose Renovate (the Mend app) after first choosing
+      Dependabot; `dependabot.yml` is removed so the two do not open duplicate
+      PRs. The app install is the one remaining step.
+
+- [x] **Vale (prose) in CI, advisory** (2026-09-30): a `prose` job runs Vale
+      3.23.0 over `docs/` and the Library with `fail_on_error: false`, using
+      the built-in style (no network, no `vale sync`). It reports the house
+      voice without blocking a PR; rules promote to errors once the existing
+      docs pass.
+
+- [x] **Static guards and link checks in CI** (2026-09-30): `dev-guards.yml`
+      gains a `static` job (vulture dead code, deptry dependency hygiene, both
+      configured in `pyproject.toml`) and a `links` job (lychee, offline, so no
+      network flakiness). The 2026-09-30 audit found dangling files and stale
+      references by hand; these make that class mechanical. Screen-reader
+      automation (guidepup) is deferred - it needs a macOS/Windows runner
+      (VoiceOver/NVDA only), which is an owner cost decision.
+
+- [x] **The 2026-09-30 audit: runtime state untracked, and an enhancement
+      packet** (2026-09-30): six runtime-state files that `.gitignore` (and
+      the repo's own rule) already disowned were still tracked; they left
+      the index (`#126`), and the last tracked mentions of the first game's
+      name were swept. The open-source survey that will feed the next
+      slices landed as `docs/research/2026-09-30-enhancement-packet.md`
+      (`#127`), with its first wave filed as `#128`-`#133`.
+
 - [x] **Reward, first slice — gold, a shop (sell + buy), and using a thing**
       (2026-09-30): loot left a thing carried but did nothing with it. Three
       optional, additive pack additions land the reward end. An item may now
@@ -1945,6 +2042,41 @@
       review.)
 
 ## Next
+
+### Enhancement wave 1 (2026-09-30 packet)
+
+From `docs/research/2026-09-30-enhancement-packet.md`. Six small,
+low-risk moves that compound; each has its own issue.
+
+- [ ] **Grammar-constrained output** so any local model returns valid JSON
+      (#128): a GBNF grammar for llama.cpp and/or Outlines /
+      lm-format-enforcer for backends that ignore `response_format`.
+- [ ] **An embedded vector index for the Lorekeeper** (#129): SQLite +
+      `sqlite-vec`, with `facts.jsonl` still authoritative and `rebuild`
+      still able to recreate the index from facts alone.
+- [ ] **Gate hardening** (#130): vulture (dead code), deptry (deps),
+      lychee (links), guidepup (screen readers).
+- [ ] **Property tests** (#131) for delve determinism, reachability, and
+      fog - same seed gives the same floor; no orphaned rooms; no seeing
+      through a wall.
+- [ ] **Dependency freshness** (#132): dependabot misses npm; evaluate
+      Renovate and cover the workflow pins.
+- [ ] **Vale** (#133) to enforce the house voice in docs.
+
+### Enhancement wave 2 (2026-09-30 packet; owner-picked)
+
+- [ ] **Autoexplore + Dijkstra-map AI** (#141): one key rolls toward the
+      unexplored; monsters use desire-weighted maps. Movement, accessibility,
+      and AI from one technique.
+- [ ] **Tracery-style deterministic text** (#142): rumours, names, weather -
+      seedable, offline, no model call.
+- [ ] **Optional Ink conversations** (#143): richer per-speaker dialogue, with
+      `inkjs` in the single-file player.
+- [ ] **Audio pairing** (#144): every sound paired with a visual event; silence
+      stays a fully playable mode.
+- [ ] **Richer floors** (#145): wave-function-collapse ideas for deeper floors
+      and outdoor regions.
+
 - [ ] **Name a landmark in the Map Room** (from `studio-lessons.md`,
       2026-09-29): a square can be marked today, but a `pois` entry - a
       *named* place - still needs a route the Map Room does not have. The

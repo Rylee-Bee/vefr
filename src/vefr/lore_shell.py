@@ -196,6 +196,13 @@ def _atomic_write_vectors(entries: list[LoreIndexEntry], dims: int) -> None:
         json.dumps({"model": embed_model(), "dimensions": dims}, ensure_ascii=False),
         encoding="utf-8",
     )
+    # The accelerator is best-effort: a failure here must never lose the
+    # portable index or the facts.
+    try:
+        _vec_write(entries, dims)
+    except Exception as e:
+        print(f"[vefr-lore] warning: vector accelerator not written: {e}",
+              file=sys.stderr)
 
 
 def _cos(a: list[float], b: list[float]) -> float:
@@ -207,6 +214,125 @@ def _cos(a: list[float], b: list[float]) -> float:
     if na == 0.0 or nb == 0.0:
         return 0.0
     return dot / (na * nb)
+
+
+# --- vector search --------------------------------------------------
+#
+# `vectors.jsonl` stays the derived, portable index (facts.jsonl is
+# authoritative above it). We also write `index/lore.db`, a vec0 table,
+# and `ask` uses it for a KNN search instead of scanning every vector in
+# Python. sqlite-vec is a bundled dependency, but if it fails to import or
+# load we fall back to the brute-force cosine over the JSONL index - the
+# answer is the same, only slower, so a fact is never lost to it. The
+# accelerator is derived state: deleting it loses nothing, and `rebuild`
+# recreates it from the facts.
+
+VEC_DB_NAME = "lore.db"
+
+_VEC = None  # cached sqlite_vec module, or False once found missing
+
+
+def _vec_module():
+    """The sqlite_vec module when importable, else None. Cached so the
+    dependency is probed once per process."""
+    global _VEC
+    if _VEC is None:
+        try:
+            import sqlite_vec
+
+            _VEC = sqlite_vec
+        except ImportError:
+            _VEC = False
+    return _VEC or None
+
+
+def vec_db_path() -> Path:
+    """The derived search accelerator. Rebuildable from facts; never
+    authoritative."""
+    return index_dir() / VEC_DB_NAME
+
+
+def _vec_write(entries: list[LoreIndexEntry], dims: int) -> None:
+    """Write the vec0 accelerator beside the JSONL index. No-op when
+    sqlite-vec is unavailable or there is nothing to index."""
+    vec = _vec_module()
+    if vec is None or dims <= 0:
+        return
+    import sqlite3
+
+    path = vec_db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".db.tmp")
+    if tmp.exists():
+        tmp.unlink()
+    conn = sqlite3.connect(str(tmp))
+    try:
+        conn.enable_load_extension(True)
+        vec.load(conn)
+        conn.enable_load_extension(False)
+        conn.execute(
+            "CREATE VIRTUAL TABLE lore_vec USING vec0("
+            f"id TEXT PRIMARY KEY, embedding FLOAT[{dims}] "
+            "distance_metric=cosine)"
+        )
+        conn.executemany(
+            "INSERT INTO lore_vec(id, embedding) VALUES (?, ?)",
+            [(e.id, vec.serialize_float32(e.embedding)) for e in entries],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    tmp.replace(path)
+
+
+def _vec_rank(qvec: list[float], k: int) -> list[tuple[str, float]] | None:
+    """Nearest ids via the vec0 accelerator, or None when it cannot be
+    used (missing extension, missing/odd table). Never raises."""
+    vec = _vec_module()
+    path = vec_db_path()
+    if vec is None or not path.exists():
+        return None
+    import sqlite3
+
+    conn = None
+    try:
+        conn = sqlite3.connect(str(path))
+        conn.enable_load_extension(True)
+        vec.load(conn)
+        conn.enable_load_extension(False)
+        rows = conn.execute(
+            "SELECT id, distance FROM lore_vec "
+            "WHERE embedding MATCH ? AND k = ? ORDER BY distance",
+            (vec.serialize_float32(qvec), k),
+        ).fetchall()
+    except Exception:
+        return None
+    finally:
+        if conn is not None:
+            conn.close()
+    # vec0 cosine distance is 1 - cosine similarity; report the same
+    # similarity the brute-force path reports.
+    return [(str(r[0]), round(1.0 - float(r[1]), 4)) for r in rows]
+
+
+def _rank(
+    qvec: list[float], facts: list[LoreFact], k: int
+) -> list[tuple[LoreFact, float]]:
+    """Rank facts by similarity, fast path first."""
+    fast = _vec_rank(qvec, k)
+    if fast is not None:
+        by_id = {f.id: f for f in facts}
+        ranked = [(by_id[fid], score) for fid, score in fast if fid in by_id]
+        if ranked:
+            return ranked
+    index = _load_index()
+    scored = [(f, _cos(qvec, index[f.id])) for f in facts if f.id in index]
+    scored.sort(key=lambda t: t[1], reverse=True)
+    return scored[:k]
+
+
+def _index_exists() -> bool:
+    return vectors_path().exists() or vec_db_path().exists()
 
 
 # --- operations -----------------------------------------------------
@@ -266,17 +392,10 @@ def ask(query: str, *, k: int = 3) -> dict:
     facts = list(_load_facts().values())
     if not facts:
         return {"query": query, "matches": []}
-    index = _load_index()
-    if not index:
+    if not _index_exists():
         rebuild()
-        index = _load_index()
     qvec = embed_texts([query])[0]
-    scored = [
-        (f, _cos(qvec, index[f.id]))
-        for f in facts
-        if f.id in index
-    ]
-    scored.sort(key=lambda t: t[1], reverse=True)
+    scored = _rank(qvec, facts, k)
     return {
         "query": query,
         "matches": [
@@ -286,7 +405,7 @@ def ask(query: str, *, k: int = 3) -> dict:
                 "score": round(s, 4),
                 "source": f.source,
             }
-            for f, s in scored[:k]
+            for f, s in scored
         ],
     }
 
