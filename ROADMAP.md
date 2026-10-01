@@ -7,6 +7,15 @@
 
 ## Landed
 
+- [x] **Close the loop, first slice** (2026-10-01): `POST /api/builder/character/place` (preview, force, plain 422s, backup, shared writer) and the Folks room's
+      **Put in the game**; `GET /api/builder/weave/play/{name}` and the Desk's **Play it here** pane (strict sandbox, measured 0.115 s click to playing);
+      the edit log (`data/edits.jsonl`) with `EDITS.md` in the game folder and one-level undo (`POST /api/builder/edits/undo`, route only); the events `play_here`
+      and `character_placed` with the first-playable walk (its sticker is parked until Rylee picks a picture). Guide: `docs/guides/studio-edits.md`.
+      Design: `design/close-the-loop.md`. Reviewed and gated by the orchestrator; CodeQL clean after containing the staged voice path.
+- [x] **Grid tiles** (2026-10-01): `tiles/<name>.grid3x3.webp` is one picture drawn as cells, chosen by position; 2 to 8 a side; validator names bad grid names.
+- [x] **The `vefr` front door** (2026-10-01): one command for find, doctor, check, chat, map, delve, weave, spark, test, ferry, handbok, with `vefr norns` and
+      `vefr ratatoskr` as verbatim escape hatches; `vefr find` is a read-only local search that refuses files whose real path leaves the pack.
+
 - [x] **A README that reaches a walking town** (2026-10-01): `README.md`'s
       "Open and play" now leads with the published image's one command
       (unchanged `podman run`, unchanged `ghcr.io/rylee-bee/vefr:latest` and
@@ -2127,6 +2136,13 @@
       review.)
 
 ## Next
+
+- [ ] **Undo button** on the Desk beside Play it here, with a test (the route already works).
+- [ ] **Rules and reactions with beliefs** (`design/rules-when-then.md`): validator, engine, why-log, Cottage demo (the cat, the harbour fog, Stern's mistaken belief).
+- [ ] **Equipment** (`design/equipment.md`): five slots, atk and hp mods, the Bag "You" section.
+- [ ] **One-button Interact** (`design/one-button-interact.md`), bump-attack kept.
+- [ ] **UI skin** (`design/ui-skin.md`): `process_ui`, `check_ui`, the skin loader, contrast and axe tests.
+- [ ] **A text-input surface** for the player (so a "when a word is said" event can exist): later.
 
 ### Enhancement wave 1 (2026-09-30 packet)
 

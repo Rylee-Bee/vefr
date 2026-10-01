@@ -87,6 +87,31 @@ your direnv, or your secret store — never in a commit.
   `/app/worlds-template/`. A new image rebuild republishes them; the
   ro named volume is the live overlay.
 
+## A home setup without a container: a user service from a checkout
+
+Some hosts run the studio straight from a git checkout as a systemd **user** service (no podman image). The steps, in order, with a way back at every step:
+
+1. **Write down the way back first.** On the host, in the checkout: `git rev-parse HEAD > ~/vefr-deploy-rollback-<date>.txt`. To roll back later: `git checkout <that commit>`, `uv sync`, restart.
+2. **Look before you touch.** `git status` must be clean and on `main`. If someone else's changes are there, stop and ask; do not reset or clean their tree.
+3. **Bring the code up to date.** `git fetch && git pull --ff-only`. A merge that is not a fast-forward is a sign the checkout was edited by hand: stop.
+4. **Sync the environment.** `uv sync` (the service needs only the default group; the test group is added back with `uv sync --group test` when you want to run tests there).
+5. **Restart the service.** Over ssh the user bus is not on the path, so use `systemctl --user --machine=<user>@.host restart <unit>`.
+6. **Verify at runtime, not by reading.** All of these must pass before you say it is deployed:
+
+   | Check | Expect |
+   |---|---|
+   | `GET /api/health` on the host and through the proxy | `200` and `{"ok": true, ...}` |
+   | `GET /api/builder/weave/play/not-a-real-file.html` | `404` |
+   | `POST /api/builder/character/place` with an id like `../x` | `422` with a plain sentence |
+   | `POST /api/builder/character/place` for an unknown world | `404` |
+   | `POST /api/builder/weave`, then `GET` its play URL | `200`, `Content-Disposition: inline`, `Content-Security-Policy: sandbox allow-scripts` |
+   | `POST /api/builder/character/place` with `"preview": true` on a real world | `written: false`, and `git status` on the host is still clean |
+
+   Only use `preview: true` and bad inputs for the checks. A deploy check must never write to a real world.
+7. **Record it.** Add a dated line to `.project/CURRENT.md` with the commit and what you checked.
+
+A proxy `502` after a restart usually means the service is stopped or crashed: `systemctl --user --machine=<user>@.host status <unit>` and the unit's error log tell you which.
+
 ## When the pre-flight gate is wrong for you
 
 The gate is opinionated. To bypass it once:

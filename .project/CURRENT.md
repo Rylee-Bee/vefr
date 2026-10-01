@@ -4,7 +4,17 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-09-30.
+> Last refreshed: 2026-10-01.
+
+## 2026-10-01 (one long day)
+
+**Landed and merged:** the studio loop's first slice (put a character in the game, play it in the studio, the edit log with one-level undo, the first-playable walk; `design/close-the-loop.md`,
+`docs/guides/studio-edits.md`); grid tiles (one picture drawn as cells); the `vefr` front door with `vefr find`; Lab 1; first-run fixes; hero motion; the glossary with plain names first.
+**Designed, approved to plan (no code yet):** named edits (`design/named-edits.md`), rules and reactions with beliefs (`design/rules-when-then.md`), equipment with five slots
+(`design/equipment.md`), the interact system (`design/one-button-interact.md`), and a swappable UI skin (`design/ui-skin.md`).
+**Deployed:** the studio at the home host from the merged commit; checked at runtime (health, the new routes, a weave and an inline play, a preview that wrote nothing).
+**Known gaps:** no Undo button yet (the route works); the first-playable sticker is parked until a picture is chosen; the placement preview copies the whole pack to check it.
+**Next, in order:** the Undo button; the rules engine (validator, engine, why-log, demo); equipment; one-button Interact; the UI skin tools and loader.
 
 ## Phase
 
