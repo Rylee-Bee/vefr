@@ -7,6 +7,20 @@ she walks; **ground tiles are read only from the engine's own `web/art/tiles/`**
 in `src/vefr/cli.py`), so a pack cannot bring a floor of its own; and one tile per surface repeats in
 an obvious grid.
 
+## Swappable by design
+
+Every piece is replaceable without touching the others, so the same engine can serve very different
+games (a painted storybook, a 32 px pixel game, a flat-colour puzzle):
+
+- **Sizes are pack data.** A region's contract already carries `tile` (`maplab.py` defaults it to 32);
+  character size follows the sprite. Nothing here hardcodes 96 or 128.
+- **Tile sets, sprite sheets and their variants come from the pack**, never from engine code; the
+  engine's own `web/art/tiles/` stays the fallback so old packs are unchanged.
+- **The art tool is not the engine's business.** A game picks its generator and records it in the
+  credits line; the engine only reads the finished files.
+- **A style belongs to one game.** Another game gets its own kit; the engine never learns a look.
+
+
 ## What exists today (read in `web/packaged.html` and `src/vefr/world.py`)
 
 - Every file under a region's `sprites/` is a named sprite by convention (`_discover_sprites`:
