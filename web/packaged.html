@@ -2144,16 +2144,36 @@ function setupTown() {
   // redrawn once they decode. Tiles travel with the region: two regions
   // can use the same symbol for different ground. A symbol with no tile
   // falls back to its base colour.
+  // -- pickVariant start --
+  // The variant choice is a pure hash of the tile's own map coordinates:
+  // the same cell always draws the same picture, so the woven world is
+  // stable from visit to visit. A symbol with one picture always picks
+  // index 0, exactly as it drew before variants existed. The multiply
+  // and the final cast are unsigned 32-bit so JavaScript and the Python
+  // mirror in tests/ agree on every cell.
+  window.pickVariant = function (x, y, n) {
+    var h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
+    return n > 0 ? h % n : 0;
+  };
+  // -- pickVariant end --
   var regionTiles = window.VEFR_REGION_TILES || {};
+  // A symbol maps to either one data-URI string (one picture) or a list
+  // of data-URI strings in variant order. The loader normalizes both to
+  // a list of preloaded Images; the draw loop then asks for one image.
   var tileImgs = {};
   function loadTiles() {
     var set = regionTiles[regionName] || window.VEFR_TILES || {};
     tileImgs = {};
     Object.keys(set).forEach(function (ch) {
-      var im = new Image();
-      im.onload = function () { draw(); };
-      im.src = set[ch];
-      tileImgs[ch] = im;
+      var srcs = set[ch];
+      if (typeof srcs === 'string') srcs = [srcs];
+      if (!Array.isArray(srcs)) return;
+      tileImgs[ch] = srcs.map(function (src) {
+        var im = new Image();
+        im.onload = function () { draw(); };
+        im.src = src;
+        return im;
+      });
     });
   }
   loadTiles();
@@ -2435,7 +2455,9 @@ function setupTown() {
         var ch = town.map[y][x];
         var info = legend[ch] || {};
         var color = (info.base && info.base[0]) || '#222';
-        var tile = tileImgs[ch];
+        var imgs = tileImgs[ch];
+        var tile = imgs && imgs.length
+          ? imgs[pickVariant(x, y, imgs.length)] : null;
         var hasTile = tile && tile.complete && tile.naturalWidth > 0;
         if (hasTile) {
           ctx.drawImage(tile, x * T, y * T, T, T);

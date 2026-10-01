@@ -28,11 +28,13 @@ surface - lives in a pack directory. Two shapes are supported:
             contract.json     # region metadata (legend, pois, hero_start, ...)
             voices/*.md
             sprites/*
+            tiles/*           # optional: the region's own ground pictures
           dungeon/
             map.md
             contract.json
             voices/*.md
             sprites/*
+            tiles/*
 
   REGIONS + TRANSITIONS (doors between maps): an act's `regions` is a
   list (or dict) of region names, one directory each. A region's map
@@ -184,12 +186,24 @@ under `acts/<id>/<region>/voices/<name>.md`, discovered by convention
 matching the file stem. Flat and acts resolution is unified via
 `resolve_voice_file()`.
 
+TILES CONVENTION: a region may bring its own ground pictures in a
+`tiles/` directory beside `sprites/` (flat packs use pack-level
+`tiles/`). A tile is named by its file stem - `stone-wall.webp` is the
+picture for the legend's `"tile": "stone-wall"`. A tile may have
+numbered variants tried in order: `stone-wall.webp` is variant 1 and
+is optional, then `stone-wall.2.webp`, `stone-wall.3.webp`, and so
+on. A name with only numbered files is legal - there is no required
+unnumbered file. The player picks a variant deterministically, so the
+same pack always looks the same; a pack with no tiles/ resolves tiles
+from the engine set exactly as before.
+
 VISIBLE ENGINE: every load step is recorded to the weave log so the
 author can see exactly what the loader did. See weave.py.
 """
 
 import json
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -324,11 +338,66 @@ def _discover_sprites(sprites_dir: Path) -> dict:
     return out
 
 
+# A numbered tile variant: the stem ends in `.<digits>` (`.2`, `.10`).
+_TILE_VARIANT_RE = re.compile(r"^(?P<base>.+)\.(?P<num>\d+)$")
+# The picture suffixes a tile may use. The engine set also carries
+# jpg/jpeg, but a pack's tiles/ is the webp/png shape the naming
+# convention documents.
+_TILE_SUFFIXES = (".webp", ".png")
+
+
+def _discover_tiles(tiles_dir: Path) -> dict[str, list[str]]:
+    """Convention: every picture under tiles/ names a tile ground.
+
+    A tile may carry several pictures, tried by the player in order:
+    `stone-wall.webp` is variant 1 and is optional, then
+    `stone-wall.2.webp`, `stone-wall.3.webp`, ... in numeric order. A
+    name with only numbered files is legal (the unnumbered file is
+    not required). The loader returns {name: [paths in order]}, paths
+    relative to tiles_dir, mirroring _discover_sprites. Non-image
+    files and dotfiles are ignored; a missing tiles_dir returns {}.
+
+    # NOTE: a variant shipped as both .webp and .png (for example
+    # stone-wall.webp and stone-wall.png) is ambiguous. The winner is
+    # the filename that sorts first - '.png' before '.webp' - so the
+    # same pack always bakes the same picture, deterministically.
+    # Packs should ship one suffix per variant.
+    """
+    if not tiles_dir.is_dir():
+        return {}
+    # Numbered variant -> chosen path, per tile name. The sort-first
+    # suffix wins, so a doubled .webp/.png variant collapses to one.
+    picked: dict[str, dict[int, str]] = {}
+    for f in sorted(tiles_dir.rglob("*")):
+        if not f.is_file():
+            continue
+        rel = f.relative_to(tiles_dir)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if f.suffix.lower() not in _TILE_SUFFIXES:
+            continue
+        stem = f.name[: -len(f.suffix)]
+        m = _TILE_VARIANT_RE.match(stem)
+        if m:
+            base, num = m.group("base"), int(m.group("num"))
+        else:
+            # The unnumbered picture is variant 1; key 0 keeps it
+            # ahead of every numbered file, even a stray `.1`.
+            base, num = stem, 0
+        path = str(rel)
+        by_num = picked.setdefault(base, {})
+        prev = by_num.get(num)
+        if prev is None or path < prev:
+            by_num[num] = path
+    return {base: [by_num[n] for n in sorted(by_num)]
+            for base, by_num in picked.items()}
+
+
 def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
     """Load one region (town or dungeon) from its directory.
 
-    Convention: a region directory has map.md, optionally voices/
-    and sprites/, and optionally a `contract.json` for region
+    Convention: a region directory has map.md, optionally voices/,
+    sprites/ and tiles/, and optionally a `contract.json` for region
     metadata (legend, watch, sanctuary_tiles, etc.) that used
     to live inline in the act's world.json. The loader picks up
     whatever is there - the engine never requires the contract
@@ -338,13 +407,14 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
         weave("region.missing", act=act_id, region=region_name,
               hint=f"no directory at {region_dir}")
         return {"map_text": "", "voices": {}, "fragments": {},
-                "sprites": {}, "contract": {}}
+                "sprites": {}, "contract": {}, "tiles": {}}
 
     map_text = _read_text(region_dir / "map.md",
                           what=f"{act_id}/{region_name}/map.md")
     voices = _discover_voices(region_dir / "voices")
     fragments = _discover_fragments(region_dir / "voices")
     sprites = _discover_sprites(region_dir / "sprites")
+    tiles = _discover_tiles(region_dir / "tiles")
     contract: dict = {}
     contract_path = region_dir / "contract.json"
     if contract_path.exists():
@@ -353,7 +423,7 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
 
     weave("region.loaded", act=act_id, region=region_name,
           map_lines=len(map_text.splitlines()) if map_text else 0,
-          speakers=len(voices), sprites=len(sprites),
+          speakers=len(voices), sprites=len(sprites), tiles=len(tiles),
           has_contract=bool(contract))
     return {
         "map_text": map_text,
@@ -361,6 +431,7 @@ def _load_region(region_dir: Path, *, region_name: str, act_id: str) -> dict:
         "fragments": fragments,
         "sprites": sprites,
         "contract": contract,
+        "tiles": tiles,
     }
 
 
@@ -454,6 +525,7 @@ def _flat_to_act(config: dict, pack: Path) -> dict:
         "voices": _discover_voices(pack / "voices"),
         "fragments": _discover_fragments(pack / "voices"),
         "sprites": _discover_sprites(pack / "sprites"),
+        "tiles": _discover_tiles(pack / "tiles"),
     }
     flat_speakers = config.get("speakers", {})
     # The flat shape has one implicit region; every speaker belongs to it.
