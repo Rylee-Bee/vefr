@@ -1,7 +1,7 @@
 ---
 title: I · Concept
 kind: book
-short: Talk the idea out until it fits on one page: what the player does, and how it should feel.
+short: Talk the idea out until it fits on one page — what the player does, and how it should feel.
 source: docs/guides/studio-modules.md
 shelf: how-games-are-made
 ---
