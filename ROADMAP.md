@@ -7,6 +7,13 @@
 
 ## Landed
 
+- [x] **One-button Interact, first slice** (2026-10-01): the woven player has one verb on `E`, `Space`, `Enter` and
+      `F` plus the always-on Interact button: `interactTargets`, `pickTarget` and `labelFor` as a pure
+      `-- interact start/end --` block with a node harness (facing tile, then the hero's own tile, then the
+      nearest in reach; ties by kind: door or stairs, chest, trader, resident, place, enemy). The button and
+      `#use-hint` say what the press will do ("Open the chest", "Talk to <name>", "Fight <name>"), a thin ring
+      marks the target tile, and nothing in reach gets the gentle nudge with no turn spent. Bump-to-attack
+      unchanged. Guides: `docs/guides/glossary.md` (verb **interact**) and the new `docs/guides/playing.md`.
 - [x] **Close the loop, first slice** (2026-10-01): `POST /api/builder/character/place` (preview, force, plain 422s, backup, shared writer) and the Folks room's
       **Put in the game**; `GET /api/builder/weave/play/{name}` and the Desk's **Play it here** pane (strict sandbox, measured 0.115 s click to playing);
       the edit log (`data/edits.jsonl`) with `EDITS.md` in the game folder and one-level undo (`POST /api/builder/edits/undo`, route only); the events `play_here`
