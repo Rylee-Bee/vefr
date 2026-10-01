@@ -7,6 +7,91 @@
 
 ## Landed
 
+- [x] **A README that reaches a walking town** (2026-10-01): `README.md`'s
+      "Open and play" now leads with the published image's one command
+      (unchanged `podman run`, unchanged `ghcr.io/rylee-bee/vefr:latest` and
+      env vars) and the sentence that there is no account, no key and no
+      model to install - the image carries the small model fleet, so
+      whispers and NPC lines work out of the box. Health, the town's URL and
+      the existing walk paragraph follow; then one short step for fresh
+      lines: `ratatoskr spark install` (pinned model, verified by size and
+      sha256, `docs/guides/spark.md`) or your own OpenAI-compatible server
+      via `VEFR_LLAMACPP_URL`, with `GETTING_STARTED.md` linked for the
+      variable table instead of a pasted server command. The
+      clone-and-build quickstart moved under "For developers" at the end of
+      the section, keeping `uv sync --group test` and describing
+      `VEFR_MODEL` as the studio/craft model rather than the storyteller
+      (the default stays stated only in `GETTING_STARTED.md`). "Run the
+      engine" keeps its local-build block and now points at "Open and play"
+      for the published-image command, so the page carries one copy of it;
+      its stale "an image with model weights" line now says the image ships
+      the fleet, matching `Containerfile` and `publish-image.yml`. No link
+      removed, no command changed.
+
+- [x] **A friendly "no model answered" message** (2026-10-01): when no model
+      answers, the person at the keyboard now reads one plain sentence
+      instead of a raw endpoint URL and an httpx traceback string.
+      `GeneratorUnavailable` and `GeneratorFailed` in `src/vefr/generator.py`
+      build their message from `_no_model_message()` / `_unreadable_message()`:
+      what was tried in words (the active storyteller pack and the model it
+      asked for, from `resolve_active()`), that the game still plays without a
+      model, and the next step (`ratatoskr spark install`, or start your own
+      OpenAI-compatible server and set `VEFR_LLAMACPP_URL`). The two causes
+      keep distinct sentences - an endpoint that never answered versus a model
+      that answered unreadably (endpoint fine; try again or check the model) -
+      and building the text can never raise: a BYOM pin falls back to the
+      model name alone. The raw detail (endpoint URL, exception class and
+      text) moves to a `detail` attribute and an ERROR log record via stdlib
+      `logging`, so `storyteller_test._looks_like_missing_model` now reads the
+      preserved detail and a 404 still classifies as SKIPPED while a refused
+      connection stays an ERROR. `npc.py` / `chat.py` seed-line fallbacks and
+      the provider/retry/chaining flow are untouched. New
+      `tests/test_no_model_message.py` proves the sentence names the pack and
+      model, leaks no URL or status code, keeps the skip heuristic honest, and
+      still builds under a BYOM pin; the three provider tests now assert the
+      new contract on message, `detail`, and the log record.
+
+- [x] **A laptop-safe context default, told honestly** (2026-10-01): a pack's
+      `context_window` is capability metadata and nothing else. It is read
+      into `Storyteller.context_window` and stops there: no code path sizes
+      memory, a KV cache, or a server from it, and `gemma4-e2b`'s 131072 on a
+      ~2B model was a documentation hazard, not a live one. Rather than
+      change what a pack declares or wire the number into a server command,
+      the truth is now stated where people read it: a paragraph in
+      `docs/guides/storyteller-packs.md` next to the manifest reference says
+      the bundled brain's servers use fixed laptop-sized contexts (2048/4096/
+      512 in `deploy/start-bundled.sh`, 8192 in the Spark quadlet), that a
+      big number is a claim about the model rather than a memory bill, and
+      that a player's own server picks the size their RAM can hold. `# NOTE:`
+      lines at the field and the loader read in `src/vefr/storyteller.py` say
+      the same in code. New contract test
+      `tests/test_context_window_contract.py` fails if any engine code starts
+      reading `context_window` off an object (the `min(recommended_ctx,
+      context_window)` or `st.context_window` regression), checks every
+      bundled pack still declares an int `context_window` that round-trips
+      through the loader, and puts the doc's quoted server sizes under test.
+
+- [x] **One documented truth for the default model** (2026-10-01): every
+      doc and env file now says one true thing about how the engine picks
+      the storyteller, and a test proves it. `GETTING_STARTED.md` states
+      it once, in one anchor line: the storyteller uses the active
+      Storyteller Pack's model, and with none set that is the first
+      installed pack, else the first bundled pack (`gemma4-e2b` /
+      `gemma-4-E2B-it`). The env table separates the roles that used to
+      read as competing claims: `VEFR_STORYTELLER` picks the pack,
+      `VEFR_MODEL` names the studio/craft model (and is the storyteller
+      model only in an install with no packs, like the published image),
+      while `VEFR_NARRATE_MODEL` and `VEFR_INTERFACE_MODEL` are separate
+      fleet roles. `example.env`, the ADR (a dated 2026-10-01 amendment,
+      not a rewrite), `README.md`, `docs/guides/install.md`,
+      `docs/guides/bundled-brain.md`, and the image files (`compose.yml`,
+      `Containerfile`, `deploy/vefr.container`, `src/vefr/volumes.py`)
+      were corrected to match; the ADR's pack-id typo `ministral-3-3b` is
+      fixed to `ministral3-3b`. No behaviour change: `resolve_active()`
+      is untouched. New contract test `tests/test_default_model_contract.py`
+      parses the anchor line and proves it against `resolve_active()`, and
+      checks every documented `VEFR_STORYTELLER` value is a real pack id.
+
 - [x] **Monsters that think with a map** (2026-09-30): a monster no longer
       walks in a straight line and stalls on a corner. Each turn the
       walkable tiles of the region are flooded once, breadth-first, from the

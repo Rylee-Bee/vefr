@@ -58,6 +58,8 @@ environment:
   # Ollama, llama.cpp's OpenAI shim, LM Studio, or anything
   # that speaks /v1/chat/completions.
   VEFR_LLAMACPP_URL: http://host.lan:8081
+  # VEFR_MODEL is the studio/craft model; the storyteller comes from
+  # the active Storyteller Pack unless no pack is installed.
   VEFR_MODEL: gpt-oss-20b
 ```
 

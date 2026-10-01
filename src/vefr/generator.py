@@ -1,8 +1,11 @@
 import json
+import logging
 import os
 
 import httpx
 from pydantic import BaseModel, ValidationError
+
+log = logging.getLogger(__name__)
 
 # Back-compat module attributes. Engine callers and tests import these
 # names directly (see chat.py, npc.py, forge.py, stefna.py, lore.py,
@@ -43,12 +46,103 @@ def _active_model() -> str:
 
 class GeneratorUnavailable(RuntimeError):
     """Transport-level failure (endpoint down, timeout, bad wiring).
-    Fail closed: never generate from a guess."""
+    Fail closed: never generate from a guess.
+
+    The message is the plain sentence a person at the keyboard reads
+    (see `_no_model_message`); the raw endpoint URL, exception class
+    and text stay on `.detail` and in the log for whoever debugs.
+    """
+
+    def __init__(self, message: str, detail: str | None = None):
+        super().__init__(message)
+        # Back-compat: callers that construct this with a single
+        # argument (tests, future adapters) keep that text as the raw
+        # detail, so nothing that reads `.detail` sees an empty string.
+        self.detail = message if detail is None else detail
 
 
 class GeneratorFailed(RuntimeError):
     """The endpoint answered but the output broke the contract (empty,
-    unreadable). Fail closed: the rumor is discarded."""
+    unreadable). Fail closed: the rumor is discarded.
+
+    Same split as GeneratorUnavailable: friendly message in `str()`,
+    raw detail on `.detail` and in the log.
+    """
+
+    def __init__(self, message: str, detail: str | None = None):
+        super().__init__(message)
+        self.detail = message if detail is None else detail
+
+
+def _asked_for() -> tuple[str | None, str]:
+    """(pack id, model name) for the active storyteller - never raises.
+
+    Building an error message must not itself fail: a broken or BYOM
+    pin falls back to the model name alone, then to the engine's
+    default model constant.
+    """
+    pack_id: str | None = None
+    model = ""
+    try:
+        from .storyteller import resolve_active
+
+        st = resolve_active()
+        model = str(getattr(st, "model", "") or "")
+        pinned = str(getattr(st, "id", "") or "")
+        # "byom:<name>" is the placeholder resolve_active() builds when
+        # the env var names a model with no pack behind it - there is
+        # no pack to name, so say the model alone.
+        if pinned and not pinned.startswith("byom:"):
+            pack_id = pinned
+    except Exception:  # noqa: BLE001 - error text must never raise
+        pass
+    if not model:
+        model = MODEL
+    return pack_id, model
+
+
+def _tried(*, start_of_sentence: bool = False) -> str:
+    """What was asked, in words, as the subject of an error sentence.
+
+    `start_of_sentence` only uppercases the first letter - never
+    `str.capitalize()`, which would lowercase the rest and mangle a
+    model name like gemma-4-E2B-it.
+    """
+    pack_id, model = _asked_for()
+    tried = (
+        f"the storyteller pack {pack_id}, asking for the model {model}"
+        if pack_id
+        else f"the model {model}"
+    )
+    return tried[0].upper() + tried[1:] if start_of_sentence else tried
+
+
+def _no_model_message() -> str:
+    """The plain sentence for "no model answered" (see Task: friendly).
+
+    Names what was tried in words, says the game still plays, and
+    gives the next step. No URL, no status code, no traceback.
+    """
+    tried = _tried()
+    return (
+        f"No model answered for {tried}. The game still plays without a model; "
+        "run `ratatoskr spark install` to fetch the pinned small model, or start "
+        "your own OpenAI-compatible server and set VEFR_LLAMACPP_URL to it."
+    )
+
+
+def _unreadable_message() -> str:
+    """The sibling sentence for GeneratorFailed: the endpoint is fine.
+
+    Different cause, different next step - the model answered, but the
+    words could not be read.
+    """
+    tried = _tried(start_of_sentence=True)
+    return (
+        f"{tried} answered, but the words could not be read. "
+        "The game still plays without a model; try again, or check the model "
+        "and its settings."
+    )
 
 
 class RumorCard(BaseModel):
@@ -201,26 +295,35 @@ def _completion(payload: dict, max_tokens: int = 1024) -> str:
             r.raise_for_status()
             return json.loads(r.text)["choices"][0]["message"]["content"]
         except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as e:
-            raise GeneratorUnavailable(
-                f"openai-compatible endpoint {LLAMACPP_URL} failed: {e}"
-            ) from e
+            detail = (
+                f"openai-compatible endpoint {LLAMACPP_URL} failed: "
+                f"{type(e).__name__}: {e}"
+            )
+            log.error("generator unavailable: %s", detail)
+            raise GeneratorUnavailable(_no_model_message(), detail) from e
         except (KeyError, ValueError) as e:
-            raise GeneratorFailed(
-                f"openai-compatible endpoint {LLAMACPP_URL} returned unreadable output: {e}"
-            ) from e
+            detail = (
+                f"openai-compatible endpoint {LLAMACPP_URL} returned unreadable "
+                f"output: {type(e).__name__}: {e}"
+            )
+            log.error("generator failed: %s", detail)
+            raise GeneratorFailed(_unreadable_message(), detail) from e
     # Provider.OLLAMA
     try:
         r = httpx.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=180)
         r.raise_for_status()
         return json.loads(r.text)["response"]
     except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as e:
-        raise GeneratorUnavailable(
-            f"ollama endpoint {OLLAMA_URL} failed: {e}"
-        ) from e
+        detail = f"ollama endpoint {OLLAMA_URL} failed: {type(e).__name__}: {e}"
+        log.error("generator unavailable: %s", detail)
+        raise GeneratorUnavailable(_no_model_message(), detail) from e
     except (KeyError, ValueError) as e:
-        raise GeneratorFailed(
-            f"ollama endpoint {OLLAMA_URL} returned unreadable output: {e}"
-        ) from e
+        detail = (
+            f"ollama endpoint {OLLAMA_URL} returned unreadable output: "
+            f"{type(e).__name__}: {e}"
+        )
+        log.error("generator failed: %s", detail)
+        raise GeneratorFailed(_unreadable_message(), detail) from e
 
 
 def generate_rumor(

@@ -45,7 +45,7 @@ Engine env vars map these ports:
 | Env var | Default (no bundle) | Bundled value |
 |---|---|---|
 | `VEFR_LLAMACPP_URL` | `http://127.0.0.1:8081` | `http://127.0.0.1:8084` |
-| `VEFR_MODEL` | `gpt-oss-20b` | `qwen3-1.7b` |
+| `VEFR_MODEL` | `gpt-oss-20b` | `qwen3-1.7b` (the storyteller model: the image ships no Storyteller Packs) |
 | `VEFR_SPARK_URL` | `http://127.0.0.1:8082` | `http://127.0.0.1:8083` |
 | `VEFR_VISION_URL` | _(not yet read by the engine)_ | `http://127.0.0.1:8085` |
 | `VEFR_EMBED_URL` | `http://127.0.0.1:8082` | `http://127.0.0.1:8086` |

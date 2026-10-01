@@ -101,6 +101,7 @@ RUN chmod +x /app/start-bundled.sh
 # Do NOT re-add USER without solving bind-mount ownership first.
 
 # Bundled brain defaults (override with env vars for external brain)
+# The image ships no Storyteller Packs, so VEFR_MODEL is the storyteller model here.
 ENV VEFR_LLAMACPP_URL=http://127.0.0.1:8084 \
     VEFR_MODEL=qwen3-1.7b \
     VEFR_SPARK_URL=http://127.0.0.1:8083 \

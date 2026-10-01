@@ -65,18 +65,26 @@ def test_normal_generation_returns_prose(monkeypatch):
     assert "bell" in result
 
 
-def test_timeout_handled(monkeypatch):
-    """Provider hangs. The error propagates as a GeneratorUnavailable."""
+def test_timeout_handled(monkeypatch, caplog):
+    """Provider hangs. The error propagates as a GeneratorUnavailable.
+
+    The message a person reads is the friendly sentence; the raw
+    timeout detail rides on `.detail` and in the ERROR log record.
+    """
     def fake_post(url, json=None, timeout=None):
         raise httpx.ConnectTimeout("connection timed out")
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises(GeneratorUnavailable, match="failed"):
-        generator._completion({
-            "model": "test-model",
-            "messages": [{"role": "user", "content": "hello"}],
-            "stream": False,
-        })
+    with caplog.at_level("ERROR", logger="vefr.generator"):
+        with pytest.raises(GeneratorUnavailable, match="No model answered") as excinfo:
+            generator._completion({
+                "model": "test-model",
+                "messages": [{"role": "user", "content": "hello"}],
+                "stream": False,
+            })
+    assert "connection timed out" in excinfo.value.detail
+    assert "ConnectTimeout" in excinfo.value.detail
+    assert any("connection timed out" in r.getMessage() for r in caplog.records)
 
 
 def test_malformed_response_raises(monkeypatch):
@@ -85,12 +93,21 @@ def test_malformed_response_raises(monkeypatch):
         return _Resp(GARBAGE_BODY)
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises(GeneratorFailed, match="unreadable"):
+    with pytest.raises(GeneratorFailed, match="words could not be read") as excinfo:
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
             "stream": False,
         })
+    # Sibling sentence, not the "no model answered" one: the endpoint
+    # is fine, so the raw detail says what actually broke.
+    assert "No model answered" not in str(excinfo.value)
+    # The model name survives verbatim (no case-mangling).
+    from vefr import storyteller
+
+    assert storyteller.resolve_active().model in str(excinfo.value)
+    assert "unreadable output" in excinfo.value.detail
+    assert generator.LLAMACPP_URL in excinfo.value.detail
 
 
 def test_primary_failure_fallback_used(monkeypatch):
@@ -141,12 +158,15 @@ def test_both_providers_unavailable_clear_error(monkeypatch):
 
     monkeypatch.setattr(httpx, "post", fake_post)
 
-    with pytest.raises(GeneratorUnavailable, match="connection refused"):
+    with pytest.raises(GeneratorUnavailable, match="No model answered") as excinfo:
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
             "stream": False,
         })
+    # The raw transport detail is still reachable for debugging.
+    assert "connection refused" in excinfo.value.detail
+    assert generator.LLAMACPP_URL in excinfo.value.detail
 
 
 def test_diagnostics_which_model_produced_response(monkeypatch):
@@ -175,9 +195,13 @@ def test_http_error_status_raises(monkeypatch):
         return _Resp('{"error":"internal"}', status=500)
 
     monkeypatch.setattr(httpx, "post", fake_post)
-    with pytest.raises(GeneratorUnavailable, match="HTTP 500"):
+    with pytest.raises(GeneratorUnavailable, match="No model answered") as excinfo:
         generator._completion({
             "model": "test-model",
             "messages": [{"role": "user", "content": "hello"}],
             "stream": False,
         })
+    # The status code lives on `.detail` (and in the logs), not in the
+    # sentence a person reads.
+    assert "HTTP 500" in excinfo.value.detail
+    assert "500" not in str(excinfo.value)
