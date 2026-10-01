@@ -137,6 +137,7 @@
   .phase-rail button[aria-pressed="true"] { border-color: #D8AA4E; color: #E2BC6E; }
   .gbtn { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
   .gbtn--gold, .stage button.primary { background: #D8AA4E; color: #1B1206; border-color: transparent; }
+  .gbtn--dim { opacity: 0.55; }   /* Interact with nothing in reach: dimmed, never hidden or disabled */
   .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; }
   .toasts { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 2; display: grid; gap: 6px; justify-items: center; width: min(92%, 560px); pointer-events: none; }
   .toasts p { margin: 0; padding: 6px 12px; text-align: center; font-size: 0.9rem; }
@@ -288,7 +289,7 @@
         <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
         <p class="glass" id="near" aria-live="polite"></p>
         <p class="glass" id="poi" aria-live="polite"></p>
-        <p class="glass" id="use-hint" aria-live="polite" hidden></p>
+        <p class="glass" id="use-hint" aria-live="polite"></p>
         <p class="glass" id="library-live" role="status" aria-live="polite"></p>
         <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
         <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
@@ -336,7 +337,7 @@
         <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
       </div>
       <div class="acts">
-        <button type="button" id="interact" class="gbtn" hidden>Interact <kbd>F</kbd></button>
+        <button type="button" id="interact" class="gbtn"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
         <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
         <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
         <button type="button" id="bagbtn" class="gbtn">Bag <kbd>B</kbd></button>
@@ -2739,6 +2740,24 @@ function setupTown() {
         }
       }
     }
+    drawTargetRing();
+    ctx.restore();
+  }
+
+  // A thin ring on the tile Interact would act on, so the picture and
+  // the hint words agree. Draw only: it reads the pick, changes no
+  // game state, and never calls draw(). The HUD gold reads on both
+  // light and dark ground; an outline only, never a fill.
+  function drawTargetRing() {
+    var t = pickTarget(interactState());
+    if (!t) return;
+    ctx.save();
+    ctx.strokeStyle = '#D8AA4E';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(t.at[0] * T + T / 2, t.at[1] * T + T / 2, T * 0.42,
+            0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -2902,6 +2921,135 @@ function setupTown() {
   };
   // -- interact end --
 
+  // The caller half of the one verb: build the state the pure block
+  // above wants from the LIVE game - the hero, the way it faces, and
+  // every candidate in this region, gathered in this order:
+  //
+  //   resident - every speaker here with a real `at` (the people
+  //              talkToSpeaker talks to);
+  //   trader   - the region's shopkeeper, found the way
+  //              shopkeeperNear finds it (shopKeyHere) but with NO
+  //              distance cut, so the pure block's own reach rules
+  //              decide; the reach cut lives only in shopkeeperNear;
+  //   chest    - every unfound chest book in this region: the
+  //              chestHere filter minus the standing-on-it test;
+  //   door     - every transition out of this region, except stairs:
+  //              a tile is stairs when the region's `pois` for that
+  //              tile mentions a stair (/stair/i on pois[key]) OR the
+  //              map symbol there is a delve stair symbol (`u` up /
+  //              `d` down - the floor alphabet src/vefr/delve.py
+  //              generates), else it is a door. Simple and
+  //              deterministic; a mislabel still acts as the same
+  //              transition;
+  //   place    - every `poi_text` tile in this region, named by
+  //              pois[key] or the poi_text value itself;
+  //   enemy    - every living enemy, by name.
+  //
+  // Each candidate carries a stable id: speaker key, book id, `x,y`
+  // for a transition or poi, enemy id.
+  function interactState() {
+    var candidates = [];
+    Object.keys(speakers || {}).forEach(function (key) {
+      var s = speakers[key];
+      if (!s || !Array.isArray(s.at)) return;
+      candidates.push({ kind: 'resident', id: key, name: s.name,
+                        at: [s.at[0], s.at[1]] });
+    });
+    var shopKey = shopKeyHere(regionName);
+    var shop = shopKey ? speakers[shopKey] : null;
+    if (shop && Array.isArray(shop.at)) {
+      candidates.push({ kind: 'trader', id: shopKey, name: shop.name,
+                        at: [shop.at[0], shop.at[1]] });
+    }
+    libraryBooks().forEach(function (b) {
+      if (!b || !b.chest || b.found !== 'map' || !Array.isArray(b.at)) return;
+      if ((b.region || 'town') !== regionName) return;
+      if (bookIsFound(b.id)) return;
+      candidates.push({ kind: 'chest', id: b.id, name: b.title || 'the chest',
+                        at: [b.at[0], b.at[1]] });
+    });
+    transitions.forEach(function (tr) {
+      if (!tr || tr.from !== regionName || !Array.isArray(tr.at)) return;
+      if (typeof tr.at[0] !== 'number' || typeof tr.at[1] !== 'number') return;
+      var key = tr.at[0] + ',' + tr.at[1];
+      var sym = (town.map[tr.at[1]] || '')[tr.at[0]] || '';
+      var stair = /stair/i.test((pois || {})[key] || '')
+        || sym === 'u' || sym === 'd';
+      candidates.push({ kind: stair ? 'stairs' : 'door', id: key,
+                        name: (pois || {})[key] || 'the way through',
+                        at: [tr.at[0], tr.at[1]] });
+    });
+    var texts = town.poi_text || {};
+    Object.keys(texts).forEach(function (key) {
+      var xy = key.split(',');
+      var x = Number(xy[0]), y = Number(xy[1]);
+      if (!isFinite(x) || !isFinite(y)) return;
+      candidates.push({ kind: 'place', id: key,
+                        name: (pois || {})[key] || texts[key],
+                        at: [x, y] });
+    });
+    enemies.forEach(function (e) {
+      if (!e || !e.alive || !Array.isArray(e.at)) return;
+      candidates.push({ kind: 'enemy', id: e.id, name: e.name,
+                        at: [e.at[0], e.at[1]] });
+    });
+    return { hero: [hero[0], hero[1]], facing: heroFacing,
+             candidates: candidates };
+  }
+
+  // The one verb: act on whatever pickTarget chose, through the code
+  // that already does it - nothing here is re-implemented. With
+  // nothing in reach (or anything unexpected) write ONE friendly line
+  // into #near, spend NO turn, and never throw: the whole dispatch is
+  // wrapped, so an error lands on the same gentle nudge.
+  function doInteract() {
+    var near = document.getElementById('near');
+    var nudge = 'Nothing to use here. Walk up to something and try again.';
+    function nope() { if (near) near.textContent = nudge; }
+    try {
+      var t = pickTarget(interactState());
+      if (!t) { nope(); return; }
+      if (t.kind === 'door' || t.kind === 'stairs') {
+        var trans = transitionAt(t.at[0], t.at[1]);
+        if (!trans) throw new Error('transition gone');
+        enterRegion(trans.to, trans.to_at);
+      } else if (t.kind === 'chest') {
+        var books = libraryBooks(), book = null;
+        for (var i = 0; i < books.length; i++) {
+          if (books[i] && books[i].id === t.id) { book = books[i]; break; }
+        }
+        if (!book) throw new Error('chest gone');
+        foundBook(book, 'map');
+        giveChestDrops(book);
+        combatSnapshot();
+      } else if (t.kind === 'trader') {
+        openTrade(t.id, t.name, document.getElementById('interact'));
+      } else if (t.kind === 'resident') {
+        var spec = speakers[t.id];
+        if (!spec) throw new Error('speaker gone');
+        talkToSpeaker(t.id, spec, t.dist);
+      } else if (t.kind === 'place') {
+        showSpeech((pois || {})[t.id] || '', (town.poi_text || {})[t.id] || '',
+                   '');
+      } else if (t.kind === 'enemy') {
+        // Task 3 replaces this with the verb menu
+        var foe = null;
+        for (var j = 0; j < enemies.length; j++) {
+          if (enemies[j] && enemies[j].id === t.id) { foe = enemies[j]; break; }
+        }
+        if (!foe) throw new Error('enemy gone');
+        heroAttack(foe);
+        lightTick();
+        enemyTurn();
+      } else {
+        throw new Error('unknown target');
+      }
+      updateUse();   // the words follow whatever just happened
+    } catch (err) {
+      nope();
+    }
+  }
+
   // The verb: use what you are standing on. A door is used, not walked
   // through, so passing a doorway never yanks you to another map.
   function useHere() {
@@ -2924,31 +3072,20 @@ function setupTown() {
     if (text) showSpeech(pois[key] || '', text, '');
   }
 
-  // The Interact control: shown only when there is something to use, so
-  // it lights up on a door or a named place.
+  // The Interact control: ALWAYS on screen - never hidden, never
+  // disabled, so it stays focusable and pressable. Its own words say
+  // what the next press will do; with nothing in reach it dims
+  // (`.gbtn--dim`) and the hint says so plainly. #use-hint keeps its
+  // aria-live="polite" and never gets the hidden attribute back.
   function updateUse() {
-    var key = hero[0] + ',' + hero[1];
-    var door = transitionAt(hero[0], hero[1]);
-    var text = (town.poi_text || {})[key];
     var btn = document.getElementById('interact');
     var hint = document.getElementById('use-hint');
     if (!btn) return;
-    if (door) {
-      btn.hidden = false;
-      if (hint) { hint.hidden = false; hint.textContent = 'A door. Use it to go through.'; }
-    } else if (chestHere()) {
-      btn.hidden = false;
-      if (hint) { hint.hidden = false; hint.textContent = 'A chest. Use it to open.'; }
-    } else if (shopkeeperNear()) {
-      btn.hidden = false;
-      if (hint) { hint.hidden = false; hint.textContent = 'A trader. Use it to trade.'; }
-    } else if (text) {
-      btn.hidden = false;
-      if (hint) { hint.hidden = false; hint.textContent = 'Something to look at.'; }
-    } else {
-      btn.hidden = true;
-      if (hint) { hint.hidden = true; hint.textContent = ''; }
-    }
+    var label = labelFor(pickTarget(interactState()));
+    var labelEl = document.getElementById('interact-label');
+    if (labelEl) labelEl.textContent = label || 'Interact';
+    btn.classList.toggle('gbtn--dim', !label);
+    if (hint) hint.textContent = label || 'Nothing near you to use yet.';
   }
 
   // The named place the hero now stands on, written to the POI line.
@@ -2968,6 +3105,7 @@ function setupTown() {
     else if (dx < 0) heroFacing = 'left';
     else if (dy > 0) heroFacing = 'down';
     else if (dy < 0) heroFacing = 'up';
+    updateUse();   // the words follow the turn, even when the step is refused
     var nx = hero[0] + dx, ny = hero[1] + dy;
     if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
     // Bump to attack: a living enemy on the destination tile is struck
@@ -2994,8 +3132,9 @@ function setupTown() {
     enemyTurn();
   }
 
+  // The nearest-speaker search (the canvas click, the Talk button):
+  // talk to whoever is within two tiles, or say so plainly.
   function tryNPC() {
-    var ph = phase();
     var nearest = null, dmin = 999;
     for (var key in speakers) {
       var s = speakers[key];
@@ -3006,12 +3145,26 @@ function setupTown() {
       document.getElementById('near').textContent = 'No one is close enough to talk to.';
       return;
     }
-    libraryFromSpeaker(nearest.key);
-    var seed = (nearest.spec.seeds || {})[ph] || '';
-    var voice = window.VEFR_VOICES[nearest.key] || '';
+    talkToSpeaker(nearest.key, nearest.spec, nearest.dist);
+  }
+
+  // The Talk button's handler: the same nearest-speaker path, under
+  // its own name so Interact and Talk share one road.
+  function talkNearest() { tryNPC(); }
+
+  // One speaker's line - the talk path itself, shared by the Talk
+  // button, the canvas click, the old E key, and Interact's resident
+  // pick. The line is the pack's own: straight from the model when
+  // one answers, else from the woven pool, else spliced from this
+  // character's fragments.
+  function talkToSpeaker(key, spec, dist) {
+    var ph = phase();
+    libraryFromSpeaker(key);
+    var seed = (spec.seeds || {})[ph] || '';
+    var voice = window.VEFR_VOICES[key] || '';
     var tone = world.phases[ph] || '';
     var system = voice + '\n\nCURRENT PHASE: ' + tone;
-    var userPrompt = nearest.spec.name + ' speaks one line at ' + nearest.spec.near
+    var userPrompt = spec.name + ' speaks one line at ' + spec.near
       + ' in the current phase tone. The seed line for this phase: "' + seed
       + '" Match its plainness and shape, do not copy it word for word. Reply with only the JSON object.';
     var schema = { type: 'object', properties: {
@@ -3026,12 +3179,12 @@ function setupTown() {
     }).then(function (r) { return r.json(); }).then(function (j) {
       var line = JSON.parse(j.choices[0].message.content);
       document.getElementById('near').textContent = '';
-      showSpeech(nearest.spec.name, line.line, '');
+      showSpeech(spec.name, line.line, '');
     }).catch(function () {
-      var key = 'npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?');
-      var pooled = poolDraw(key);
-      var respliced = pooled ? null : composeLine(key);
-      var card = pooled || respliced || composeFromFragments(nearest.key, 'line');
+      var pkey = 'npc:' + (STATE.get().phase || '?') + ':' + (key || '?');
+      var pooled = poolDraw(pkey);
+      var respliced = pooled ? null : composeLine(pkey);
+      var card = pooled || respliced || composeFromFragments(key, 'line');
       if (card) {
         document.getElementById('near').textContent = '';
         showSpeech(card.speaker, card.line, pooled
@@ -3048,8 +3201,8 @@ function setupTown() {
     document.getElementById('npc-box').hidden = true;
     document.getElementById('talk').focus();
   });
-  document.getElementById('talk').addEventListener('click', tryNPC);
-  document.getElementById('interact').addEventListener('click', useHere);
+  document.getElementById('talk').addEventListener('click', talkNearest);
+  document.getElementById('interact').addEventListener('click', doInteract);
   document.getElementById('bagbtn').addEventListener('click', function () {
     if (window.openBag) window.openBag();
   });
@@ -3298,15 +3451,15 @@ function setupTown() {
     else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
-    else if (e.key === 'e' || e.key === 'E') tryNPC();
-    else if (e.key === 'f' || e.key === 'F') useHere();
+    else if (e.key === 'e' || e.key === 'E') doInteract();
+    else if (e.key === 'f' || e.key === 'F') doInteract();
     else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
     else if (e.key === 'b' || e.key === 'B') { if (window.openBag) window.openBag(); }
     else if (e.key === 'o' || e.key === 'O') startExplore();
     else if (e.key === 'v' || e.key === 'V') toggleFog();
     else if (!onButton && (e.key === ' ' || e.key === 'Enter')) {
       e.preventDefault();
-      if (!box.hidden) box.hidden = true; else tryNPC();
+      if (!box.hidden) box.hidden = true; else doInteract();
     }
   });
   loadFog();
