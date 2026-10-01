@@ -1,7 +1,7 @@
 # Rules: "when this happens, do that"
 
-Status: **proposed**. Decisions by Rylee on 2026-10-01: rules and flags live in `world.json`; *reaction* and *rule* are two names for one engine; no `says` event in the first slice; beliefs are in the first slice. Source: Rylee's twenty sentences (`design/named-edits-sentences.md`), the second named-edits run (`design/named-edits.md`), and a survey of
-beginner game tools (below). No code yet. This adds a new pack surface, so it waits for Rylee's approval.
+Status: **partially built** (landed 2026-10-01: the `maplab` validator, the pure engine, the wiring into six woven-player events, and the Desk **Undo last edit** button; Tasks 5-7 are not built). Decisions by Rylee on 2026-10-01: rules and flags live in `world.json`; *reaction* and *rule* are two names for one engine; no `says` event in the first slice; beliefs are in the first slice. Source: Rylee's twenty sentences (`design/named-edits-sentences.md`), the second named-edits run (`design/named-edits.md`), and a survey of
+beginner game tools (below). The first slice shipped; Tasks 5-7 (the **Why did that happen?** button / `vefr why`, the Cottage demo, and `add_rule` edits) remain. This adds a new pack surface, approved by Rylee 2026-10-01.
 
 ## Why
 
