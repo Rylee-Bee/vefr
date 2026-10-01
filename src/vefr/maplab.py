@@ -19,6 +19,7 @@ least restrictive water state (low water everywhere).
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -295,10 +296,10 @@ def _region_dirs(pack: Path, w: dict, region_geo: dict) -> dict:
     resolved maps to None - it is read as having no tiles/, never a
     crash.
     """
-    from .cli import _act_dir_for
+    from .cli import _act_dir_for, _has_subdir, _inside
 
     names = list(region_geo)
-    if not (pack / 'acts').is_dir():
+    if not _has_subdir(pack, 'acts'):
         # NOTE: a flat pack keeps its ground at the pack root; that is
         # the flat-shape equivalent of a region's tiles/ directory.
         return {r: pack for r in names}
@@ -312,7 +313,15 @@ def _region_dirs(pack: Path, w: dict, region_geo: dict) -> dict:
     act_dir = _act_dir_for(pack, act_id)
     # NOTE: region_geo covers the first act's regions (the only ones
     # maplab reads), so one act directory is enough.
-    return {r: ((act_dir / r) if act_dir is not None else None) for r in names}
+    out: dict = {}
+    for r in names:
+        region = None
+        if act_dir is not None and isinstance(r, str) and r and '\0' not in r:
+            # the region name comes from pack data: resolve it inside the act directory or not at all
+            found = _inside(os.path.realpath(act_dir), r)
+            region = Path(found) if found is not None else None
+        out[r] = region
+    return out
 
 
 def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
@@ -325,9 +334,12 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
     A region with no `tiles/` keeps the silent engine fallback, so
     existing packs validate green.
     """
+    from .cli import _inside
     from .world import _TILE_SUFFIXES, _TILE_VARIANT_RE, _discover_tiles
 
     engine_tiles = _engine_tiles_dir()
+    engine_real = os.path.realpath(engine_tiles) if engine_tiles is not None else None
+    pack_real = os.path.realpath(pack)
     dirs = _region_dirs(pack, w, region_geo)
     errors: list[str] = []
     for rname, geo in region_geo.items():
@@ -338,10 +350,14 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
             # NOTE: no resolvable act directory means no tiles/ to read;
             # skip the region rather than infer one.
             continue
-        tiles_dir = region_dir / 'tiles'
-        if not tiles_dir.is_dir():
+        region_real = os.path.realpath(region_dir)
+        if region_real != pack_real and not region_real.startswith(pack_real + os.sep):
+            continue  # a region that resolves outside the pack is never read
+        tiles_real = _inside(region_real, 'tiles')
+        if tiles_real is None or not os.path.isdir(tiles_real):
             # Compatibility: a region with no tiles/ is unchanged.
             continue
+        tiles_dir = Path(tiles_real)
         legend = geo.get('legend')
         legend = legend if isinstance(legend, dict) else {}
         known = set(_discover_tiles(tiles_dir))
@@ -353,11 +369,13 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
                 continue
             if name in known:
                 continue
-            if engine_tiles is None:
+            if engine_real is None:
                 # NOTE: no engine set to consult; the unknown-name check
                 # is skipped, never failed (see _engine_tiles_dir).
                 continue
-            if (engine_tiles / f'{name}.webp').is_file():
+            # the tile name comes from pack data: only a plain name inside the engine set can match
+            engine_pic = None if '\0' in name else _inside(engine_real, f'{name}.webp')
+            if engine_pic is not None and os.path.isfile(engine_pic):
                 continue
             errors.append(
                 f"region '{rname}': symbol '{ch}' names tile '{name}', which "

@@ -243,3 +243,18 @@ def test_norns_validate_reaches_the_tile_check(tmp_path, capsys):
     out = capsys.readouterr().out
     assert rc == 1
     assert "mossy-wall" in out
+
+
+def test_a_tile_name_that_climbs_out_never_resolves_and_is_reported(tmp_path):
+    """A legend tile like '../../../etc/passwd' (or one with a NUL byte) must be reported as an
+    unknown tile, never resolved against the filesystem (CodeQL py/path-injection hardening)."""
+    pack = _copy_sample(tmp_path)
+    region = _region(pack)
+    (region / "tiles").mkdir()
+    (region / "tiles" / "grass.webp").write_bytes(_webp(b"1"))
+    _add_legend_tile(region, "~", "../../../../etc/passwd")
+    _add_legend_tile(region, "^", "bad\x00name")
+
+    errors = _validate(pack)
+    assert any("~" in e and "passwd" in e for e in errors), errors
+    assert any("^" in e for e in errors), errors
