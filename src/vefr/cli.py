@@ -1185,6 +1185,29 @@ def _player_region_tiles(world: dict, web_dir: Path,
     return out
 
 
+SPRITE_SCALE_MIN, SPRITE_SCALE_MAX = 0.2, 2.0
+
+
+def _sprite_scales(world: dict) -> dict[str, float]:
+    """The size of each character relative to the standard (1.0 = 1.5 tiles tall).
+
+    A pack may name `player.sprite_scale`: `{"hearth-cat": 0.5}` draws that character at half height,
+    feet still on the tile. Only finite numbers from SPRITE_SCALE_MIN to SPRITE_SCALE_MAX are baked; a bad
+    entry is dropped here (and reported by `norns validate`), so the player never meets one.
+    """
+    import math
+
+    player = world.get('player') if isinstance(world.get('player'), dict) else {}
+    named = player.get('sprite_scale') if isinstance(player.get('sprite_scale'), dict) else {}
+    out: dict[str, float] = {}
+    for name, v in named.items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+            continue
+        if SPRITE_SCALE_MIN <= v <= SPRITE_SCALE_MAX:
+            out[str(name)] = float(v)
+    return out
+
+
 def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     """Inline the pack's character sprites, keyed by name.
 
@@ -1599,6 +1622,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
+    out_html = out_html.replace('{{sprite_scale_json}}',
+                                _json.dumps(_sprite_scales(world), ensure_ascii=False))
     out_html = out_html.replace('{{items_json}}',
                                 _json.dumps(items, ensure_ascii=False))
     out_html = out_html.replace('{{door_json}}',
