@@ -72,6 +72,20 @@ still proposed.
 - A request for "pixel art" returned a detailed painting with heavy outlines. If you want true pixel art,
   draw small and quantize; do not expect it from a painter.
 - Image tools may draw a person when asked for an animal. Try your monsters early.
+- **Pictures in a batch come back in any order.** The tool saves them in the order the files sort, not the order you asked.
+  Identify each by looking, then rename. Never promise that picture 1 is the first thing you asked for.
+- **"Transparent background" makes the painter draw the grey-and-white checkerboard as real pixels.** Ask for "a plain flat
+  light grey background (not white, not a checkerboard)" and clear it when you cut the picture out. Then check: a figure that is
+  more than about a tenth pale grey or white still has background in it.
+- **Generated sheets are never the size you asked for** (a 4 by 4 sheet came back 1254 pixels wide, which does not divide by 4).
+  Cut on rounded edges, leave a small margin so no figure touches the top or the sides, and stand the feet on the bottom edge.
+- **A figure that looks realistic among painted ones needs style anchors.** Pass two or three accepted pictures from your own game as
+  references and ask for "exactly the same style as the attached". The first cellar rat looked like a photograph; the redo, given the moth
+  as an anchor, matched.
+- **Seam checks are a heuristic.** A check that compares the pixels across the cell edges flags plank art with strong lines even when it
+  looks fine. Look at the picture repeated 2 by 2 before you believe the flag.
+- **Put every picture where the author can see it.** A visual learner cannot see files on a build machine. Publish each batch to the
+  gallery as it lands (one set per group), and name the sets in plain words.
 
 ## For AI assistants
 
@@ -81,6 +95,8 @@ still proposed.
 - **Always save the prompt, references and tool.** No record, no picture.
 - **Show, do not describe.** Send a contact sheet or a mock room. Many authors learn by looking.
 - **Change one thing per round** so the author can see what each change did.
+- **Run the checks on the real pictures, not only on test images.** Two tool bugs (a leftover checkerboard, figures touching the edge) passed their own tests and showed up only on real art.
+- **Keep the art tools beside the art.** A game keeps its brief, batch, cut and check scripts in its own folder (Cottage of the Breeze: `art/tools`), so another game can swap in its own.
 - **Keep the engine neutral.** Art lives in the pack. A game's names, places and looks never go in `src/`.
 
 Next: [the journey](journey.md) puts this inside the whole path from an empty table to a game you can share.
