@@ -59,7 +59,8 @@ game.
 
 | Date | Stop | Lesson |
 |---|---|---|
-| *(first entry lands with the first feature built through this loop)* | | |
+| 2026-10-01 | Walk it | A single tile hides what a whole room shows: lay a mock room at the game's real tile size before you approve any floor. |
+| 2026-10-01 | Library, Vault | Ask a picture tool for several variations in one request; it is cheaper and the set stays consistent. See [making art](making-art.md). |
 
 ## For AI assistants working in this repo
 
@@ -80,4 +81,5 @@ your orientation. The rules that keep it fun and safe:
 Where to go next: [GETTING_STARTED.md](../../GETTING_STARTED.md) to run it,
 [world-creation.md](world-creation.md) for the full walkthrough of making a world,
 [rulesets.md](rulesets.md) for what each act can play, and
+[making-art.md](making-art.md) for how pictures get made, and
 [residents.md](residents.md) for who is in the studio.
