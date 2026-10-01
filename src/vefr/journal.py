@@ -7,7 +7,11 @@ atomic tmp+replace way the vault is written - a crash mid-write can
 lose the newest entry, never the whole playthrough.
 
 The engine owns the shape; the world owns nothing here. An entry is
-always {"at": <UTC ISO>, "kind": <str>, ...fields}.
+always {"at": <UTC ISO>, "kind": <str>, ...fields}. The kind list is
+KINDS below: `rule_fired` is a pack rule that ran (id + the plain why
+sentence the player's rule log keeps) - declared for the server side;
+the woven player is a static file and cannot reach the server, so no
+server route fires it yet (see the commit note for the exact gap).
 """
 
 import json
@@ -27,7 +31,8 @@ JOURNAL = Path(
 # a caller points the base at an explicit file (weave --with-bundle).
 SCOPE_BY_WORLD = True
 
-KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "move", "fork")
+KINDS = ("rumor", "npc_line", "item_forged", "stefna_letter", "move", "fork",
+         "rule_fired")
 
 # Per-session stash of the most recently removed entry, keyed by the
 # cleaned session id. Single-slot per session is the design: undo is

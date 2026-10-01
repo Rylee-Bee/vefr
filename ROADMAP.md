@@ -7,6 +7,37 @@
 
 ## Landed
 
+- [x] **The rules engine wired into the woven player** (2026-10-01): the
+      pure engine block now RUNS. `cli.weave_html` bakes the pack's four
+      catalogs through four new placeholders (`_player_rules`: `{}` and
+      four literal `null`s when the pack declares none of flags/claims/
+      people/rules - byte for byte the file it wove before; entries that
+      cannot run are DROPPED, never half-baked). The player reads them as
+      `window.VEFR_RULES/FLAGS/CLAIMS/PEOPLE` beside the engine, and one
+      top-level `fireRule(eventName, data)` seam performs the returned
+      actions on surfaces that already exist - `say` -> `showSpeech`
+      (speaker key resolved to the pack's own name; unknown speaker
+      skipped silently) or `combatSay` for the narrator, `give` ->
+      `bagAdd`, `weather` -> the player's own darkness preference (the
+      Display switch's path; label + aria-pressed stay honest, a pack's
+      fog declaration never deleted), `point-to` -> one plain `combatSay`
+      hint with the direction the transitions declare, `show/hide/reveal`
+      -> the floor for item ids; `set/unset/believes/stops-believing/
+      tells` stay engine-state only. Six one-line call sites: Begin
+      (`starts`), `enterRegion` (`enters`), `tryNPC` + the POI the hero
+      walks up to (`comes-near`, real Manhattan distances), the chest
+      (`opens`), `takeHere` (`picks-up`, per item bagged), the use verb
+      (`uses-with`). The player's rule log is `window.VEFR_WHY` (last 20
+      `{id, why}`, persisted as `vefr-rules-<world>`, every access
+      wrapped so a sandboxed iframe's throwing localStorage never takes
+      the game down). `journal.KINDS` gains `rule_fired` with NO server
+      call site yet (the woven player is static - gap on the commit).
+      Pinned by `tests/test_rules_bake.py` (the null bake, the exact
+      byte difference of the rules pieces, green validation, dropped
+      entries) and `tests/test_rules_play.py` (the real woven file
+      played in jsdom: Begin fires, one step fires, one plain sentence
+      per rule naming its id).
+
 - [x] **The rules catalog validator** (2026-10-01): world packs may now
       carry four OPTIONAL top-level keys - `flags`, `claims`, `people`
       and `rules` - and `maplab` checks them at authoring time, purely

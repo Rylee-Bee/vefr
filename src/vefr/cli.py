@@ -1296,6 +1296,181 @@ def _drop_ids(value, items: set) -> list[str]:
     return out
 
 
+def _rule_bakes(rule) -> bool:
+    """Can this one rule actually run in the woven player?
+
+    The same shape the engine's planRule() demands, checked at bake
+    time: a rule that could never fire (bad id, unknown or malformed
+    `when`, malformed `if` or `then`) is dropped whole - never baked
+    half-broken. Pure shape logic: no clock, no model, no filesystem,
+    and no id here ever becomes a path.
+    """
+    from .maplab import RULE_EVENTS, RULE_EVENT_KEYS
+
+    if not isinstance(rule, dict):
+        return False
+    rid = rule.get('id')
+    if not isinstance(rid, str) or not rid.strip():
+        return False
+    if 'on' in rule and not isinstance(rule['on'], str):
+        return False
+    if 'once' in rule and not isinstance(rule['once'], bool):
+        return False
+    when = rule.get('when')
+    if not isinstance(when, dict) or len(when) != 1:
+        return False
+    event, payload = next(iter(when.items()))
+    if event not in RULE_EVENTS or not isinstance(payload, dict):
+        return False
+    if set(payload) != set(RULE_EVENT_KEYS[event]):
+        return False
+    for key, value in payload.items():
+        if key == 'distance':
+            # The engine only matches a number 1..9 (a bool is not a
+            # number here either); anything else can never fire.
+            if (isinstance(value, bool) or not isinstance(value, int)
+                    or not 1 <= value <= 9):
+                return False
+        elif not isinstance(value, str) or not value:
+            return False
+    if 'if' in rule and not _conditions_bake(rule['if']):
+        return False
+    then = rule.get('then')
+    if not isinstance(then, list) or not then:
+        return False
+    return all(_action_bakes(a) for a in then)
+
+
+def _conditions_bake(conds) -> bool:
+    """Every condition in a rule's `if` is one the engine can evaluate.
+
+    Mirrors evalCond's null (skip) cases exactly: the flag form is
+    `flag`+`is` and nothing else, `believes`/`is-in` payloads carry
+    exactly their two keys, and `not`/`all-of` recurse.
+    """
+    if not isinstance(conds, list):
+        return False
+    for cond in conds:
+        if not isinstance(cond, dict):
+            return False
+        keys = set(cond)
+        if keys == {'flag', 'is'}:
+            if not isinstance(cond['flag'], str) or not isinstance(cond['is'], bool):
+                return False
+        elif len(keys) != 1:
+            return False
+        elif 'has' in cond:
+            if not isinstance(cond['has'], str) or not cond['has']:
+                return False
+        elif 'believes' in cond or 'not-believes' in cond:
+            payload = cond.get('believes', cond.get('not-believes'))
+            if (not isinstance(payload, dict)
+                    or set(payload) != {'who', 'claim'}
+                    or not isinstance(payload.get('who'), str)
+                    or not isinstance(payload.get('claim'), str)):
+                return False
+        elif 'is-in' in cond:
+            payload = cond['is-in']
+            if (not isinstance(payload, dict)
+                    or set(payload) != {'who', 'place'}
+                    or not isinstance(payload.get('who'), str)
+                    or not isinstance(payload.get('place'), str)):
+                return False
+        elif 'not' in cond:
+            if not _conditions_bake([cond['not']]):
+                return False
+        elif 'all-of' in cond:
+            if not _conditions_bake(cond['all-of']):
+                return False
+        else:
+            return False
+    return True
+
+
+def _action_bakes(action) -> bool:
+    """One `then` action in the shape the engine's validAction() runs.
+
+    Kept in lockstep with the engine: whatever it accepts is baked,
+    whatever it skips is dropped before it reaches the file.
+    """
+    if not isinstance(action, dict) or len(action) != 1:
+        return False
+    key, value = next(iter(action.items()))
+    if key == 'say':
+        if isinstance(value, str):
+            return True
+        if isinstance(value, dict):
+            return (set(value) == {'who', 'line'}
+                    and isinstance(value.get('who'), str)
+                    and isinstance(value.get('line'), str))
+        return False
+    if key in ('show', 'hide', 'reveal', 'give', 'set', 'unset', 'point-to'):
+        return isinstance(value, str) and bool(value)
+    if key == 'weather':
+        return value in ('fog', 'clear')
+    if key in ('believes', 'stops-believing'):
+        return (isinstance(value, dict) and set(value) == {'who', 'claim'}
+                and isinstance(value.get('who'), str)
+                and isinstance(value.get('claim'), str))
+    if key == 'tells':
+        return (isinstance(value, dict) and set(value) == {'who', 'claim', 'to'}
+                and isinstance(value.get('who'), str)
+                and isinstance(value.get('claim'), str)
+                and isinstance(value.get('to'), str))
+    return False
+
+
+def _player_rules(world: dict) -> dict:
+    """The pack's optional rule catalogs, baked for the woven player.
+
+    Returns {} when the pack declares NONE of flags/claims/people/rules:
+    the light bake, all four placeholders becoming the literal `null`,
+    which is exactly the file every existing pack weaves.
+
+    A pack that declares any of them gets the full four-key shape the
+    engine reads - {"rules": [...], "flags": {}, "claims": {}, "people": {}}
+    - with undeclared keys defaulting to empty. Entries that cannot run
+    are DROPPED, never baked half-broken: a rule that could never fire
+    stays out entirely, and a flag, claim or person entry in a shape the
+    engine cannot read is dropped the same way. No id is ever turned
+    into a filesystem path - this reads the already-loaded world dict
+    and nothing else.
+    """
+    if not any(k in world for k in ('flags', 'claims', 'people', 'rules')):
+        return {}
+    out: dict = {'rules': [], 'flags': {}, 'claims': {}, 'people': {}}
+
+    declared_flags = world.get('flags')
+    if isinstance(declared_flags, dict):
+        for name, line in declared_flags.items():
+            if isinstance(name, str) and name and isinstance(line, str):
+                out['flags'][name] = line
+
+    declared_claims = world.get('claims')
+    if isinstance(declared_claims, dict):
+        for cname, spec in declared_claims.items():
+            if (isinstance(cname, str) and cname and isinstance(spec, dict)
+                    and isinstance(spec.get('meaning'), str)
+                    and isinstance(spec.get('true'), bool)):
+                out['claims'][cname] = spec
+
+    declared_people = world.get('people')
+    if isinstance(declared_people, dict):
+        for pid, spec in declared_people.items():
+            if not (isinstance(pid, str) and pid and isinstance(spec, dict)):
+                continue
+            believes = spec.get('believes')
+            if not isinstance(believes, list):
+                continue
+            held = [c for c in believes if isinstance(c, str) and c]
+            out['people'][pid] = {'believes': held}
+
+    declared_rules = world.get('rules')
+    if isinstance(declared_rules, list):
+        out['rules'] = [r for r in declared_rules if _rule_bakes(r)]
+    return out
+
+
 def _player_chest(web_dir: Path) -> str:
     """The chest picture, inlined.
 
@@ -1618,6 +1793,28 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{grammars_json}}',
                                 _json.dumps(world.get('grammars') or {},
                                             ensure_ascii=False))
+    # The four optional rule catalogs, beside the other baked pack data.
+    # A pack that declares none of them bakes the literal `null` four
+    # times (every existing pack's file, unchanged); a pack that
+    # declares any gets the full four-key shape with entries that
+    # cannot run already dropped (_player_rules).
+    rules_pack = _player_rules(world)
+    out_html = out_html.replace(
+        '{{rules_json}}',
+        _json.dumps(rules_pack['rules'] if rules_pack else None,
+                    ensure_ascii=False))
+    out_html = out_html.replace(
+        '{{flags_json}}',
+        _json.dumps(rules_pack['flags'] if rules_pack else None,
+                    ensure_ascii=False))
+    out_html = out_html.replace(
+        '{{claims_json}}',
+        _json.dumps(rules_pack['claims'] if rules_pack else None,
+                    ensure_ascii=False))
+    out_html = out_html.replace(
+        '{{people_json}}',
+        _json.dumps(rules_pack['people'] if rules_pack else None,
+                    ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
