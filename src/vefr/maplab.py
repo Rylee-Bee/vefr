@@ -844,15 +844,25 @@ def write_pack(pack_dir: Path, w: dict) -> None:
         town = w.get('town', {})
         # The act contract: id, title, regions, speakers. Town
         # metadata lives in town/contract.json, not inline.
-        act_contract = _preserve_unknown(act_dir / 'world.json', {
+        # NOTE: this used to write 'regions': ['town'] and empty enemies/bosses every time, so a write on a
+        # pack with several rooms (Cottage has six) silently threw the room list away. Only what this
+        # function actually owns or was given is written; everything else on disk is kept.
+        owned = {
             'id': act_id,
             'title': w.get('title', pack.name),
-            'regions': ['town'],
             'speakers': w.get('speakers', {}),
-            'enemies': w.get('enemies', []),
-            'bosses': w.get('bosses', []),
             'transitions': w.get('transitions', []),
-        })
+        }
+        loaded_regions = w.get('regions')
+        if isinstance(loaded_regions, dict) and loaded_regions:
+            owned['regions'] = list(loaded_regions)          # home room first, in the order loaded
+        for key in ('enemies', 'bosses'):
+            if key in w:                                      # absent means: keep what the file has
+                owned[key] = w[key]
+        act_contract = _preserve_unknown(act_dir / 'world.json', owned)
+        act_contract.setdefault('regions', ['town'])          # a brand-new pack still gets its one room
+        act_contract.setdefault('enemies', [])
+        act_contract.setdefault('bosses', [])
         act_tmp = act_dir / 'world.json.tmp'
         act_tmp.write_text(json.dumps(act_contract, indent=2,
                                       ensure_ascii=False) + '\n', encoding='utf-8')
