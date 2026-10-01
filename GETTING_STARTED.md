@@ -170,6 +170,12 @@ uv run norns --help        # the craft CLI
 Both print a full command list with descriptions - that's the
 canonical reference, always in sync with the code.
 
+<!-- NOTE: one honest line under the existing two-CLI block, not a rewrite
+     of it: the old commands still work, so both stay true. -->
+Everything is also behind one front door now: `uv run vefr --help`,
+every verb in the order you use it
+([the vefr command](docs/guides/vefr-command.md)).
+
 ## 6. Shipping to a deploy host
 
 The deploy wrapper hides rsync + podman build + quadlet restart +

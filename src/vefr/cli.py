@@ -1,6 +1,12 @@
 """The norns, the squirrel, and the tree - the engine's three shapes.
 
-Two CLI entry points:
+Three CLI entry points:
+
+    vefr      - the front door: one verb per job, wired to the same
+                functions ratatoskr and norns call (doctor, check,
+                chat, map, delve, weave, spark, test, ferry, handbok,
+                skipa). `vefr norns ARGS...` and `vefr ratatoskr
+                ARGS...` hand the tail to the old CLIs verbatim.
 
     ratatoskr - the squirrel. Ferries messages between the dev box,
                 the deploy host, Gitea, the NAS, and the World Tree
@@ -311,6 +317,19 @@ def cmd_skipa(args) -> int:
     print()
     print('the town keeps. <3')
     return 0
+
+
+def cmd_vefr_skipa(args) -> int:
+    """`vefr skipa` - the seven questions, with one stderr note.
+
+    The questions are now part of `vefr doctor` (one check list),
+    but skipa stays runnable with exactly its old output. The note
+    goes to stderr only, so a script reading stdout sees the same
+    bytes it always did.
+    """
+    print("skipa's seven questions are now part of `vefr doctor` - "
+          'running skipa anyway', file=sys.stderr)
+    return cmd_skipa(args)
 
 
 # ------------------------------------------------------------------ map
@@ -2223,30 +2242,31 @@ def cmd_volumes_shell(args) -> int:
     return vol_mod.shell(args.pack)
 
 
-def ratatoskr_main() -> int:
-    ap = argparse.ArgumentParser(
-        prog='ratatoskr', description=RATATOSKR_HELP,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+# --------------------------------------------------------- shared wiring
+# The verbs vefr and ratatoskr spell the same way: one wiring, one set
+# of flags, one set_defaults - both front doors parse identically.
+
+def _add_ferry_flags(ap) -> None:
+    """--url/--deploy-host/--deploy-vol/--nas-host: what deploy and carry
+    read. ratatoskr declares them as globals; vefr declares them on the
+    ferry verb. Same flags, same defaults, either way."""
     ap.add_argument('--url', default=DEFAULT_URL)
     ap.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
     ap.add_argument('--deploy-vol', default='~/vefr-data',
                     help='bind-mounted game volume on --deploy-host')
     ap.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
-    sub = ap.add_subparsers(dest='cmd', required=True)
 
-    sk = sub.add_parser('skipa', help='the seven questions')
-    sk.add_argument('--json', action='store_true', help='print the result envelope')
-    sk.set_defaults(fn=cmd_skipa)
 
-    pt = sub.add_parser(
-        'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
+def _add_weave_parser(sub, **kw) -> None:
+    """`weave` - package a world into one self-contained HTML file.
+
+    The file-packaging command - top level in both front doors, away
+    from the ferry sub-tree. Extra kwargs (description, epilog) dress
+    it for `vefr weave --help`; ratatoskr passes none.
+    """
+    pw = sub.add_parser(
+        'weave', help='package a world into one self-contained HTML file', **kw
     )
-    pt.set_defaults(fn=cmd_test)
-
-    # `weave` is the file-packaging command - kept at top level so it's
-    # easy to reach without the ferry sub-tree.
-    pw = sub.add_parser('weave', help='package a world into one self-contained HTML file')
     pw.add_argument('--pack', default=None, help='world to bundle (default: current)')
     pw.add_argument('--out', default=None, help='output HTML path (default: dist/<name>-<date>.html)')
     pw.add_argument('--with-bundle', action='store_true',
@@ -2263,69 +2283,10 @@ def ratatoskr_main() -> int:
                     help='pull vault+journal from a live deployment URL')
     pw.set_defaults(fn=cmd_build_web)
 
-    # Ferry subcommand - carries things between places.
-    ferry = sub.add_parser(
-        'ferry', help='carry messages between dev box, deploy host, Gitea, NAS'
-    )
-    ferry_sub = ferry.add_subparsers(dest='ferry_verb', required=True)
 
-    # Volumes subcommand - manage the ro/rw volume split on the
-    # deploy host. `list` shows what's loaded; `migrate` does the
-    # one-shot split of a legacy bind mount.
-    volumes = sub.add_parser(
-        'volumes',
-        help='manage the ro template + rw canon Docker volumes',
-    )
-    volumes_sub = volumes.add_subparsers(dest='volumes_verb', required=True)
-    volumes_list = volumes_sub.add_parser(
-        'list', help='list every pack the engine can see'
-    )
-    volumes_list.set_defaults(fn=cmd_volumes_list)
-    volumes_migrate = volumes_sub.add_parser(
-        'migrate', help='split a legacy ~/vefr-worlds/ bind into ro+rw volumes'
-    )
-    volumes_migrate.add_argument(
-        '--legacy-root', default=None,
-        help='legacy worlds root (default: ~/vefr-worlds)',
-    )
-    volumes_migrate.add_argument(
-        '--dry-run', action='store_true',
-        help='print what would happen; do nothing',
-    )
-    volumes_migrate.set_defaults(fn=cmd_volumes_migrate)
-
-    volumes_export = volumes_sub.add_parser(
-        'export',
-        help='export a pack to a host-side git repo for editing in vim',
-    )
-    volumes_export.add_argument('--pack', required=True,
-                                 help='the world pack to export')
-    volumes_export.add_argument('--dest', required=True,
-                                 help='destination directory (created if missing)')
-    volumes_export.add_argument('--no-git', action='store_true',
-                                 help='skip the git init / initial commit')
-    volumes_export.set_defaults(fn=cmd_volumes_export)
-
-    volumes_import = volumes_sub.add_parser(
-        'import',
-        help='import a pack from a host-side directory into the rw volume',
-    )
-    volumes_import.add_argument('--pack', required=True,
-                                 help='the world pack name to import as')
-    volumes_import.add_argument('--from', dest='from_path', required=True,
-                                 help='source directory (engine-native layout)')
-    volumes_import.add_argument('--dry-run', action='store_true',
-                                 help='validate only; do not write')
-    volumes_import.set_defaults(fn=cmd_volumes_import)
-
-    volumes_shell = volumes_sub.add_parser(
-        'shell',
-        help='drop into a shell inside the engine container',
-    )
-    volumes_shell.add_argument('--pack', default=None,
-                                help='cd into the pack\'s volume path')
-    volumes_shell.set_defaults(fn=cmd_volumes_shell)
-
+def _add_ferry_verbs(ferry_sub) -> None:
+    """ferry's verbs: deploy, carry, fetch, scaffold - the same flags and
+    set_defaults behind both front doors."""
     fd = ferry_sub.add_parser(
         'deploy',
         help='ship this checkout to --deploy-host (build image + restart + healthcheck)',
@@ -2397,13 +2358,10 @@ def ratatoskr_main() -> int:
                          "checkout's origin credentials")
     fs.set_defaults(fn=cmd_scaffold)
 
-    # Spark - the resident small brain and its service lifecycle.
-    spark = sub.add_parser(
-        'spark',
-        help='VEFR\'s resident Spark: install, status, smoke',
-    )
-    spark_sub = spark.add_subparsers(dest='spark_verb', required=True)
 
+def _add_spark_verbs(spark_sub) -> None:
+    """spark's verbs: install, status, task, smoke - the same flags and
+    set_defaults behind both front doors (see docs/guides/spark.md)."""
     si = spark_sub.add_parser(
         'install',
         help='acquire the pinned model, install + start the quadlet, '
@@ -2454,6 +2412,102 @@ def ratatoskr_main() -> int:
     smo.add_argument('--url', default=None,
                      help='the live engine URL (default: deploy.toml url)')
     smo.set_defaults(fn=cmd_spark_smoke)
+
+
+def ratatoskr_main() -> int:
+    ap = argparse.ArgumentParser(
+        prog='ratatoskr', description=RATATOSKR_HELP,
+        epilog="the same verbs now spell as vefr: vefr test, vefr weave, "
+               "vefr ferry, vefr doctor (vefr --help)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    _add_ferry_flags(ap)
+    sub = ap.add_subparsers(dest='cmd', required=True)
+
+    sk = sub.add_parser('skipa', help='the seven questions')
+    sk.add_argument('--json', action='store_true', help='print the result envelope')
+    sk.set_defaults(fn=cmd_skipa)
+
+    pt = sub.add_parser(
+        'test', help='the pytest suite (extra args pass through, e.g. -k chat)'
+    )
+    pt.set_defaults(fn=cmd_test)
+
+    # `weave` is the file-packaging command - kept at top level so it's
+    # easy to reach without the ferry sub-tree.
+    _add_weave_parser(sub)
+
+    # Ferry subcommand - carries things between places.
+    ferry = sub.add_parser(
+        'ferry', help='carry messages between dev box, deploy host, Gitea, NAS'
+    )
+    ferry_sub = ferry.add_subparsers(dest='ferry_verb', required=True)
+    _add_ferry_verbs(ferry_sub)
+
+    # Volumes subcommand - manage the ro/rw volume split on the
+    # deploy host. `list` shows what's loaded; `migrate` does the
+    # one-shot split of a legacy bind mount.
+    volumes = sub.add_parser(
+        'volumes',
+        help='manage the ro template + rw canon Docker volumes',
+    )
+    volumes_sub = volumes.add_subparsers(dest='volumes_verb', required=True)
+    volumes_list = volumes_sub.add_parser(
+        'list', help='list every pack the engine can see'
+    )
+    volumes_list.set_defaults(fn=cmd_volumes_list)
+    volumes_migrate = volumes_sub.add_parser(
+        'migrate', help='split a legacy ~/vefr-worlds/ bind into ro+rw volumes'
+    )
+    volumes_migrate.add_argument(
+        '--legacy-root', default=None,
+        help='legacy worlds root (default: ~/vefr-worlds)',
+    )
+    volumes_migrate.add_argument(
+        '--dry-run', action='store_true',
+        help='print what would happen; do nothing',
+    )
+    volumes_migrate.set_defaults(fn=cmd_volumes_migrate)
+
+    volumes_export = volumes_sub.add_parser(
+        'export',
+        help='export a pack to a host-side git repo for editing in vim',
+    )
+    volumes_export.add_argument('--pack', required=True,
+                                 help='the world pack to export')
+    volumes_export.add_argument('--dest', required=True,
+                                 help='destination directory (created if missing)')
+    volumes_export.add_argument('--no-git', action='store_true',
+                                 help='skip the git init / initial commit')
+    volumes_export.set_defaults(fn=cmd_volumes_export)
+
+    volumes_import = volumes_sub.add_parser(
+        'import',
+        help='import a pack from a host-side directory into the rw volume',
+    )
+    volumes_import.add_argument('--pack', required=True,
+                                 help='the world pack name to import as')
+    volumes_import.add_argument('--from', dest='from_path', required=True,
+                                 help='source directory (engine-native layout)')
+    volumes_import.add_argument('--dry-run', action='store_true',
+                                 help='validate only; do not write')
+    volumes_import.set_defaults(fn=cmd_volumes_import)
+
+    volumes_shell = volumes_sub.add_parser(
+        'shell',
+        help='drop into a shell inside the engine container',
+    )
+    volumes_shell.add_argument('--pack', default=None,
+                                help='cd into the pack\'s volume path')
+    volumes_shell.set_defaults(fn=cmd_volumes_shell)
+
+    # Spark - the resident small brain and its service lifecycle.
+    spark = sub.add_parser(
+        'spark',
+        help='VEFR\'s resident Spark: install, status, smoke',
+    )
+    spark_sub = spark.add_subparsers(dest='spark_verb', required=True)
+    _add_spark_verbs(spark_sub)
 
     args, extra = ap.parse_known_args()
     if args.cmd == 'test':
@@ -3140,16 +3194,23 @@ def cmd_spark_task(args) -> int:
     return EXIT_OK
 
 
-def cmd_doctor(args) -> int:
-    """Session-start health check - norns doctor.
+def _doctor_pack_row(pack: Path) -> tuple:
+    """The pack row: load + geometry, neutral words, one line."""
+    try:
+        w = load_pack(pack)
+        errors = validate(w, pack_dir=pack)
+        if errors:
+            return ('pack', 'FAIL',
+                    f'{pack.name}: {len(errors)} problem(s) - '
+                    f'norns validate --pack {pack}')
+        return ('pack', 'ok',
+                f'{pack.name}: geometry, reachability, voices pass')
+    except Exception as exc:  # a missing/broken pack is doctor's business
+        return ('pack', 'FAIL', f'{pack.name}: {exc}')
 
-    One command instead of the manual checklist: git sync state,
-    the working tree, the test gate, the current pack's geometry,
-    and (when VEFR_LIVE_URL is set) a running stack's /api/health.
-    Neutral words only. Exit 1 only when something local is broken
-    (tests, pack); a remote that answers slowly is reported, not
-    failed.
-    """
+
+def _doctor_local_rows(pack: Path) -> list[tuple]:
+    """git, tree, tests, pack - the rows norns doctor and vefr doctor share."""
     rows: list[tuple] = [('git',) + q1_sync()]
     tree = q2_dirty()
     if tree[0] != 'unavailable':
@@ -3161,39 +3222,36 @@ def cmd_doctor(args) -> int:
     else:
         rows.append(('tests', 'skip', 'no git checkout (container install)'))
 
-    pack = Path(args.pack)
-    if not pack.is_absolute():
-        pack = pack_root() / 'worlds' / pack
-    try:
-        w = load_pack(pack)
-        errors = validate(w, pack_dir=pack)
-        if errors:
-            rows.append(('pack', 'FAIL',
-                         f'{pack.name}: {len(errors)} problem(s) - '
-                         f'norns validate --pack {pack}'))
-        else:
-            rows.append(('pack', 'ok',
-                         f'{pack.name}: geometry, reachability, voices pass'))
-    except Exception as exc:  # a missing/broken pack is doctor's business
-        rows.append(('pack', 'FAIL', f'{pack.name}: {exc}'))
+    rows.append(_doctor_pack_row(pack))
+    return rows
 
+
+def _doctor_live_row() -> tuple:
+    """The live row: VEFR_LIVE_URL, else the deploy.toml declared url."""
+    repo = repo_root()
     live = os.environ.get('VEFR_LIVE_URL')
     if not live and repo:
         # No env var? deploy.toml's url is the operator's declared
         # live endpoint - one command tells the whole truth.
         live = _deploy_toml(repo).get('url')
     if not live:
-        rows.append(('live', 'skip',
-                     'set VEFR_LIVE_URL (or add url to deploy.toml) '
-                     'to check a running stack'))
-    else:
-        try:
-            payload = fetch(live.rstrip('/') + '/api/health', timeout=5)
-            ok = bool(payload.get('ok'))
-            rows.append(('live', 'ok' if ok else 'DOWN', live))
-        except Exception as exc:
-            rows.append(('live', 'DOWN', f'{live} - {exc.__class__.__name__}'))
+        return ('live', 'skip',
+                'set VEFR_LIVE_URL (or add url to deploy.toml) '
+                'to check a running stack')
+    try:
+        payload = fetch(live.rstrip('/') + '/api/health', timeout=5)
+        ok = bool(payload.get('ok'))
+        return ('live', 'ok' if ok else 'DOWN', live)
+    except Exception as exc:
+        return ('live', 'DOWN', f'{live} - {exc.__class__.__name__}')
 
+
+def _doctor_report(args, rows, header: str) -> int:
+    """One line per check, then the counts - both doctors' shape.
+
+    Exit 1 only when a local check FAILs; a slow or down remote is
+    reported in its row, never counted as a failure.
+    """
     failed = sum(1 for r in rows if r[1] == 'FAIL')
     skipped = sum(1 for r in rows if r[1] == 'skip')
     ok_n = len(rows) - failed - skipped
@@ -3202,11 +3260,72 @@ def cmd_doctor(args) -> int:
             'checks': rows_json(rows, ('name', 'status', 'detail')),
             'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped}}))
         return EXIT_ERROR if failed else EXIT_OK
-    print('norns doctor')
+    print(header)
     for name, status, detail in rows:
         print(f'  {name:<6} {status:<12} {detail}')
     print(f'doctor: {ok_n} ok, {failed} failed, {skipped} skipped')
     return 1 if failed else 0
+
+
+def cmd_doctor(args) -> int:
+    """Session-start health check - norns doctor.
+
+    One command instead of the manual checklist: git sync state,
+    the working tree, the test gate, the current pack's geometry,
+    and (when VEFR_LIVE_URL is set) a running stack's /api/health.
+    Neutral words only. Exit 1 only when something local is broken
+    (tests, pack); a remote that answers slowly is reported, not
+    failed.
+    """
+    pack = Path(args.pack)
+    if not pack.is_absolute():
+        pack = pack_root() / 'worlds' / pack
+    rows = _doctor_local_rows(pack)
+    rows.append(_doctor_live_row())
+    return _doctor_report(args, rows, 'norns doctor')
+
+
+def _resolved_pack() -> Path:
+    """The world the engine is pointed at (VEFR_WORLD, else the default)."""
+    return pack_root() / 'worlds' / world_name()
+
+
+def _doctor_pack_path(pack_arg) -> Path:
+    # NOTE: the plan says "keep --pack" - so vefr doctor resolves it
+    # exactly like norns doctor: a worlds/ name or an absolute path.
+    # The worlds/<name> spelling belongs to `vefr check` (maplab).
+    p = Path(pack_arg)
+    return p if p.is_absolute() else pack_root() / 'worlds' / p
+
+
+def cmd_vefr_doctor(args) -> int:
+    """`vefr doctor` - one check list, the whole estate asked once.
+
+    norns doctor's rows (git, tree, tests, pack, live) plus the three
+    answers skipa carried: the deployment (Q3), backup freshness (Q5)
+    and vault persistence (Q6). Same neutral one-line-per-check style,
+    same exit rule: 1 only when something local is broken; a slow or
+    down remote is reported, not failed.
+    """
+    pack = (_doctor_pack_path(args.pack) if args.pack is not None
+            else _resolved_pack())
+    rows = _doctor_local_rows(pack)
+    rows.append(_doctor_live_row())
+    url = args.url
+    if url == DEFAULT_URL:
+        # The silent default is the dev box, not the deploy host -
+        # deploy.toml's url is the declared live endpoint (skipa's rule).
+        url = _deploy_toml().get('url') or url
+    # NOTE: 'live' (doctor's row) and 'deploy' (skipa's Q3) both probe
+    # /api/health - from different declarations (VEFR_LIVE_URL vs
+    # --url/deploy.toml), and Q3 also runs the shadow check. Both stay,
+    # so this stays ONE list, not two reports.
+    rows.extend([
+        ('deploy',) + q3_deployment(url, args.deploy_host),
+        ('backup',) + q5_backups(args.nas_host),
+        ('vault',) + q6_vault(args.deploy_host),
+    ])
+    return _doctor_report(args, rows, 'vefr doctor')
 
 
 def cmd_storyteller_test(args) -> int:
@@ -3423,6 +3542,8 @@ def cmd_storyteller_benchmark(args) -> int:
 def norns_main() -> int:
     ap = argparse.ArgumentParser(
         prog='norns', description=NORNS_HELP,
+        epilog="the same verbs now spell as vefr: vefr chat, vefr check, "
+               "vefr map, vefr delve (vefr --help)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     craft = ap.add_subparsers(dest='craft_cmd', required=True)
@@ -3553,6 +3674,269 @@ def norns_main() -> int:
     if args.craft_cmd in ('validate', 'build-map', 'verify', 'doctor') \
             and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
+    return args.fn(args)
+
+
+def cmd_find(args) -> int:
+    """`vefr find` - a local, read-only search, delegated.
+
+    The search itself lives in vefr.find (the cmd_chat/cmd_delve
+    pattern): markdown lines and the journal go into an FTS5 index
+    that exists only in memory for this run - nothing in the pack is
+    written, moved, or migrated, and no HTTP route answers for it.
+
+    Two distinct failures, never confused: a pack that is not there
+    is refused (exit 1, named on its own line); a search that found
+    nothing did what it was asked, so UNKNOWN prints and exit is 0.
+    """
+    from . import find as find_mod
+
+    if getattr(args, 'pack', None) is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        p = Path(args.pack)
+        if p.is_absolute():
+            pack = p
+        elif '/' in str(args.pack):
+            # A path spelling (`--pack worlds/<name>`), resolved
+            # against this run's cwd - the way cmd_delve/cmd_build_web
+            # read it.
+            pack = p.resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+    # NOTE: the refusal checks world.json, not merely a directory -
+    # the house pattern (cmd_handbok, cmd_build_web) and the more
+    # restrictive reading: a directory that is not a pack is refused
+    # the same way a missing one is.
+    if not (pack / 'world.json').exists():
+        print(f'pack not found at {pack}; pass --pack NAME or a path')
+        return EXIT_ERROR
+
+    hits = find_mod.search(args.query, pack)
+    if not hits:
+        print('UNKNOWN')
+        return EXIT_OK
+    for h in hits:
+        print(f'{h.path}:{h.line} [{h.source}] {h.excerpt}')
+    return EXIT_OK
+
+
+# --------------------------------------------------------------- vefr
+# The front door: one parser over the same functions the old commands
+# call. No logic lives here - only wiring, flags, and help text.
+
+VEFR_HELP = """vefr - the front door: make a world, check it, carry it, share it.
+
+Every verb answers `vefr <verb> --help` with its own flags.
+Two escape hatches run the old CLIs verbatim:
+`vefr norns ARGS...` and `vefr ratatoskr ARGS...`.
+"""
+
+VEFR_EPILOG = """the journey, in the order an author walks it:
+
+  chat      say what the game is; interview a world into being
+            see: docs/guides/journey.md, docs/guides/world-creation.md
+  map       draw the first place; the validator checks it
+            see: docs/guides/world-creation.md
+  delve     floors below the floors, drawn from a seed
+  spark     the resident small brain, local and answerable
+            see: docs/guides/spark.md, docs/guides/bundled-brain.md
+  test      the gate before anything moves
+  check     validate before you move on (--live checks the running stack)
+            see: docs/guides/journey.md, docs/guides/world-creation.md
+  weave     the shareable file: one self-contained HTML
+            see: docs/guides/journey.md, docs/guides/world-creation.md
+  handbok   the mechanics, counted from real play
+  ferry     carry the world between the boxes
+  doctor    session-start health: the whole estate, asked once
+  skipa     the seven questions, now part of: vefr doctor
+
+beside the journey: vefr-lore (see: docs/guides/lore.md) and the
+volume tools under `vefr ratatoskr volumes` (see: docs/guides/volumes.md).
+"""
+
+
+def vefr_main() -> int:
+    """The `vefr` front door - Task 1's one entry point.
+
+    Every verb set_defaults to the SAME function the old command
+    calls (cmd_map's map_cmd attribute included); the two escape
+    hatches hand argv to norns_main/ratatoskr_main untouched.
+    """
+    ap = argparse.ArgumentParser(
+        prog='vefr', description=VEFR_HELP, epilog=VEFR_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub = ap.add_subparsers(dest='cmd', required=True)
+
+    # `find`: the seam the earlier NOTE named, filled - one parser,
+    # one set_defaults, wired straight to cmd_find (which delegates
+    # the search to vefr.find).
+    fd = sub.add_parser(
+        'find',
+        help='local read-only search of the pack markdown and the journal',
+        description='local, read-only search of the pack markdown and the journal',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    fd.add_argument('query', help='what to look for: plain words, matched as terms')
+    fd.add_argument('--pack', default=None,
+                    help='world pack: a worlds/ name or a path '
+                         '(default: the resolved world)')
+    fd.set_defaults(fn=cmd_find)
+
+    dc = sub.add_parser(
+        'doctor',
+        help='session-start health: the whole estate, asked once',
+        description='session-start health: git, tests, pack, live, backups, vault',
+    )
+    # NOTE: --url/--deploy-host/--nas-host are ratatoskr's globals,
+    # declared here on the verb that reads them (the deployment,
+    # backup and vault checks); the defaults are ratatoskr's own.
+    dc.add_argument('--url', default=DEFAULT_URL)
+    dc.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
+    dc.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
+    dc.add_argument('--pack', default=None,
+                    help='world to check: a worlds/ name or a path '
+                         '(default: the resolved world)')
+    dc.add_argument('--json', action='store_true', help='print the result envelope')
+    dc.set_defaults(fn=cmd_vefr_doctor)
+
+    ck = sub.add_parser(
+        'check',
+        help='validate a pack, or a live deployment with --live URL',
+        description='validate a pack; with --live URL, validate the running stack instead',
+        epilog='see: docs/guides/journey.md, docs/guides/world-creation.md',
+    )
+    ck.add_argument('--pack', default=None,
+                    help='world pack (default: the resolved world)')
+    ck.add_argument('--live', default=None, metavar='URL',
+                    help='validate this running deployment instead')
+    ck.set_defaults(fn=cmd_map, map_cmd='validate', segments=None, force=False)
+
+    ch = sub.add_parser(
+        'chat', help='interview a new world into existence',
+        description='interview a new world into existence',
+        epilog='see: docs/guides/journey.md, docs/guides/world-creation.md',
+    )
+    ch.add_argument('--name', required=True, help='the new pack name (worlds/<name>)')
+    ch.set_defaults(fn=cmd_chat)
+
+    mp = sub.add_parser(
+        'map', help='rebuild the map from run-length rows',
+        description='rebuild the map from run-length rows',
+        epilog='see: docs/guides/world-creation.md',
+    )
+    mp.add_argument('--segments', required=True)
+    mp.add_argument('--pack', default=None)
+    mp.add_argument('--force', action='store_true')
+    mp.set_defaults(fn=cmd_map, map_cmd='build')
+
+    dl = sub.add_parser(
+        'delve',
+        help='generate dungeon floors from a seed',
+        description='generate dungeon floors from a seed and wire their stairs',
+    )
+    dl.add_argument('--pack', required=True,
+                    help='world pack name (worlds/<name>) or a path')
+    dl.add_argument('--seed', required=True,
+                    help='the determinism seed; the same seed redraws the same floors')
+    dl.add_argument('--floors', type=int, default=1,
+                    help='how many floors to generate (default: 1)')
+    dl.add_argument('--from-region', required=True,
+                    help='the region whose stair leads down')
+    dl.add_argument('--from-at', required=True,
+                    help='the walkable stair tile in --from-region, as x,y')
+    dl.add_argument('--width', type=int, default=30)
+    dl.add_argument('--height', type=int, default=20)
+    dl.add_argument('--rooms', type=int, default=8)
+    dl.add_argument('--first-name', default=None,
+                    help='first generated region name (default: floor-2, or '
+                         'the next free floor-N after existing regions)')
+    dl.add_argument('--force', action='store_true',
+                    help='overwrite an existing generated region')
+    dl.set_defaults(fn=cmd_delve)
+
+    _add_weave_parser(
+        sub,
+        description='package a world into one self-contained HTML file',
+        epilog='see: docs/guides/journey.md, docs/guides/world-creation.md',
+    )
+
+    sk = sub.add_parser(
+        'spark', help='the resident small brain: install, status, smoke, task',
+        description='the resident small brain: install, status, smoke, task',
+        epilog='see: docs/guides/spark.md, docs/guides/bundled-brain.md',
+    )
+    spark_sub = sk.add_subparsers(dest='spark_verb', required=True)
+    _add_spark_verbs(spark_sub)
+
+    pt = sub.add_parser(
+        'test', help='the pytest suite (extra args pass through)',
+        description='the pytest suite; extra args pass through: vefr test -k chat',
+    )
+    pt.set_defaults(fn=cmd_test)
+
+    fy = sub.add_parser(
+        'ferry', help='carry things: deploy, carry, fetch, scaffold',
+        description='carry things between boxes: deploy, carry, fetch, scaffold',
+    )
+    _add_ferry_flags(fy)
+    ferry_sub = fy.add_subparsers(dest='ferry_verb', required=True)
+    _add_ferry_verbs(ferry_sub)
+
+    hb = sub.add_parser(
+        'handbok', help='write the mechanics manual from real play',
+        description='write the mechanics manual from real play',
+    )
+    hb.add_argument('--pack', default=None)
+    hb.add_argument('--session', default=None,
+                    help='play session to read (default: the default one)')
+    hb.set_defaults(fn=cmd_handbok)
+
+    skp = sub.add_parser(
+        'skipa', help='the seven questions (legacy - now part of vefr doctor)',
+        description='the seven questions (legacy - the same answers are part of vefr doctor)',
+    )
+    skp.add_argument('--url', default=DEFAULT_URL)
+    skp.add_argument('--deploy-host', default=DEFAULT_DEPLOY_HOST)
+    skp.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
+    skp.add_argument('--json', action='store_true', help='print the result envelope')
+    skp.set_defaults(fn=cmd_vefr_skipa)
+
+    # Escape hatches: the old CLIs, run verbatim. add_help=False keeps
+    # -h for the old CLI to answer; parse_known_args below captures the
+    # tail; sys.argv hands it over so the old parser, its defaults and
+    # its exit codes apply unchanged.
+    sub.add_parser('norns', add_help=False,
+                   help='run norns verbatim: vefr norns ARGS...')
+    sub.add_parser('ratatoskr', add_help=False,
+                   help='run ratatoskr verbatim: vefr ratatoskr ARGS...')
+
+    args, extra = ap.parse_known_args()
+
+    if args.cmd in ('norns', 'ratatoskr'):
+        saved_argv = sys.argv
+        sys.argv = [args.cmd] + extra
+        try:
+            return norns_main() if args.cmd == 'norns' else ratatoskr_main()
+        finally:
+            sys.argv = saved_argv
+
+    if args.cmd == 'test':
+        args.test_args = extra
+    elif extra:
+        ap.error(f'unrecognized arguments: {" ".join(extra)}')
+
+    if args.cmd == 'check' and args.live:
+        # --live turns `check` into `verify` - cmd_map with the same
+        # map_cmd attribute norns verify passes.
+        args.map_cmd = 'verify'
+        args.url = args.live
+    # check / map / doctor default --pack to the resolved world, the
+    # way norns_main does for validate / build-map / verify / doctor.
+    if args.cmd in ('check', 'map', 'doctor') \
+            and getattr(args, 'pack', None) is None:
+        args.pack = _resolved_pack()
     return args.fn(args)
 
 
