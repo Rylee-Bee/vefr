@@ -32,7 +32,7 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **sprite** | The small picture of a character that walks around. | "character picture" | in use |
 | **portrait** | A larger picture of a character, shown when they talk. | (same) | proposed |
 | **model** | The AI program that writes or reads. | "brain" (retired), "provider" | proposed |
-| **role** | A job a model has: narrator, translator or helper. | "storyteller", "narrate", "interface" | proposed |
+| **role** | A job a model has: narrator, translator or helper. | "storyteller", "narrate", "interface" | decided 2026-10-01 (Rylee: "narrator is great"); code names `storyteller` and `VEFR_STORYTELLER` stay as aliases |
 | **bundle** | The one-file game you send to a friend. | "weave" (the old verb), "shareable file" | proposed |
 | **storage** | Disk space that holds games and history for a container. | "volume" | proposed |
 | **style kit** | A game's look: palette, rules, anchor pictures and the shared style words. Never mixed between games. | (same) | decided (making-art guide) |
