@@ -491,6 +491,16 @@ window.VEFR_SPEAKERS = {{speakers_json}};
 // Empty when the pack has none, so a world with no reward end bakes
 // exactly the player it had before.
 window.VEFR_SHOPS = {{shops_json}};
+// The pack's four rule catalogs, baked only when the pack declares
+// one of them: VEFR_RULES is rule DATA (the logic itself is the
+// engine, window.VEFR_RULES_ENGINE), and FLAGS/CLAIMS/PEOPLE are the
+// truth it reads beside them. All four are the literal null for a
+// pack that declares none - no rules, no wiring, no work, and every
+// existing pack's exact file.
+window.VEFR_RULES = {{rules_json}};
+window.VEFR_FLAGS = {{flags_json}};
+window.VEFR_CLAIMS = {{claims_json}};
+window.VEFR_PEOPLE = {{people_json}};
 // Where the game begins: {"region": "...", "at": [x, y]}. Empty when the
 // act does not say, and then the first region's own hero_start is used.
 window.VEFR_START = {{start_json}};
@@ -956,6 +966,10 @@ function bagRemoveOne(id) {
 function useItem(id) {
   var def = itemCatalog()[id];
   if (!def) return false;
+  // The `use` verb fires with the item and the named place the hero is
+  // standing on (the POI line's own text - the thing in reach); with
+  // no named place it is '', which matches no rule and harms nothing.
+  fireRule('uses-with', { item: id, with: (document.getElementById('poi') || {}).textContent || '' });
   if (def.light && typeof def.light === 'object'
       && typeof window.useLightItem === 'function') {
     return window.useLightItem(id, def);
@@ -1830,6 +1844,128 @@ function whisperFromFragments(seedOverride) {
 // ---- town ----
 // Renders the static map grid and moves the hero around it. NPC clicks
 // fire a one-line ask to the same LLM with the active speaker's voice.
+// ---- the pack's rules: one event in, the page's own surfaces out ----
+// fireRule is the ONE seam between the game and window.VEFR_RULES_ENGINE
+// (the pure logic living between the "-- rules start/end --" markers).
+// Every call site is one line at a point that already existed, and no
+// returned action is ever fed back in as an event (a give is not a
+// picks-up). With no engine or no baked rules it returns before ANY
+// side effect at all - no DOM, no localStorage, no snapshot - which is
+// every existing pack's path. Deterministic: no clock, no randomness,
+// no model call lives here.
+function fireRule(eventName, data) {
+  var engine = window.VEFR_RULES_ENGINE;
+  var rules = window.VEFR_RULES;
+  if (!engine || !Array.isArray(rules) || !rules.length) return;
+  var state = rulesStateNow();
+  if (!state) return;
+  var out = engine.run(state, eventName, data || {});
+  rulesWhyRecord(out.fired);
+  for (var i = 0; i < out.actions.length; i++) {
+    performRuleAction(out.actions[i]);
+  }
+}
+
+// The one state the engine keeps: built once from the baked pack the
+// first time a rule actually runs (a pack with no rules never builds
+// one), and left on window for the menu's why panel. Every speaker's
+// home region is filled in here: people do not move in this player,
+// so `is-in` reads the bake as truth.
+var RULES_STATE = null;
+function rulesStateNow() {
+  if (RULES_STATE) return RULES_STATE;
+  var engine = window.VEFR_RULES_ENGINE;
+  if (!engine) return null;
+  RULES_STATE = engine.newState({
+    rules: window.VEFR_RULES, flags: window.VEFR_FLAGS,
+    claims: window.VEFR_CLAIMS, people: window.VEFR_PEOPLE
+  });
+  var groups = window.VEFR_SPEAKERS || {};
+  Object.keys(groups).forEach(function (rg) {
+    Object.keys(groups[rg]).forEach(function (k) {
+      RULES_STATE.where[k] = rg;
+    });
+  });
+  window.VEFR_RULES_STATE = RULES_STATE;
+  return RULES_STATE;
+}
+
+// One returned action onto a surface that ALREADY exists - never a new
+// subsystem. set/unset/believes/stops-believing/tells were applied to
+// the state by run() itself as it went; they have no page surface and
+// need none - the next condition and the why panel read them back.
+function performRuleAction(a) {
+  if (!a || typeof a !== 'object') return;
+  var key = Object.keys(a)[0], v = a[key];
+  if (key === 'say') {
+    // A string is the narrator: one line in the combat log. An object
+    // names a speaker; an unknown speaker is skipped silently.
+    if (typeof v === 'string') { combatSay(v); return; }
+    if (v && typeof v === 'object') {
+      var name = rulesSpeakerName(v.who);
+      if (name) showSpeech(name, v.line || '', '');
+    }
+    return;
+  }
+  if (key === 'give') { bagAdd(v); return; }
+  if (key === 'weather') {
+    if (window.VEFR_RULES_WEATHER) window.VEFR_RULES_WEATHER(v === 'fog');
+    return;
+  }
+  if (key === 'point-to') {
+    if (window.VEFR_RULES_POINT_TO) window.VEFR_RULES_POINT_TO(v);
+    return;
+  }
+  if (key === 'show' || key === 'hide' || key === 'reveal') {
+    if (window.VEFR_RULES_SURFACE) window.VEFR_RULES_SURFACE(key, v);
+  }
+}
+
+// A speaker key to the name the pack gave it, searched across the
+// baked regions; '' when the key names no speaker - the say action
+// then skips rather than inventing a voice.
+function rulesSpeakerName(key) {
+  if (typeof key !== 'string') return '';
+  var groups = window.VEFR_SPEAKERS || {};
+  var regions = Object.keys(groups);
+  for (var i = 0; i < regions.length; i++) {
+    var spec = groups[regions[i]][key];
+    if (spec && spec.name) return spec.name;
+  }
+  return '';
+}
+
+// The player's rule log: the last 20 fired rules as { id, why }, one
+// entry per rule per fire, kept on window (VEFR_WHY) and mirrored to
+// localStorage under the file's own per-world pattern (the same shape
+// as vefr-fog-<world>-...). EVERY storage access is wrapped: a
+// sandboxed iframe's localStorage throws, and a thrown log must never
+// take the game down.
+window.VEFR_WHY = [];
+var rulesWhyLoaded = false;
+function rulesWhyKey() {
+  return 'vefr-rules-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+}
+function rulesWhyLoad() {
+  if (rulesWhyLoaded) return;
+  rulesWhyLoaded = true;
+  try {
+    var a = JSON.parse(localStorage.getItem(rulesWhyKey()) || '[]');
+    window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
+      return e && typeof e.id === 'string' && typeof e.why === 'string';
+    }) : [];
+  } catch (e) { window.VEFR_WHY = []; }
+}
+function rulesWhyRecord(fired) {
+  if (!Array.isArray(fired) || !fired.length) return;
+  rulesWhyLoad();
+  fired.forEach(function (f) {
+    window.VEFR_WHY.push({ id: f.id, why: f.why });
+  });
+  while (window.VEFR_WHY.length > 20) window.VEFR_WHY.shift();
+  try { localStorage.setItem(rulesWhyKey(), JSON.stringify(window.VEFR_WHY)); } catch (e) {}
+}
+
 function setupTown() {
   var world = window.VEFR_WORLD;
   var canvas = document.getElementById('town-canvas');
@@ -2096,7 +2232,14 @@ function setupTown() {
     var here = dropsAt(hero[0], hero[1]);
     if (!here.length) return;
     var names = [];
-    here.forEach(function (d) { if (bagAdd(d.item)) names.push(itemName(d.item)); });
+    // One `picks-up` per item actually bagged - a drop bagAdd refused
+    // (an id the catalog lost) is not picked up and fires nothing.
+    here.forEach(function (d) {
+      if (bagAdd(d.item)) {
+        names.push(itemName(d.item));
+        fireRule('picks-up', { what: d.item });
+      }
+    });
     floor = floor.filter(function (d) {
       return !(d.region === regionName
         && d.at[0] === hero[0] && d.at[1] === hero[1]);
@@ -2250,6 +2393,391 @@ function setupTown() {
     return [((x % cols) + cols) % cols, ((y % rows) + rows) % rows];
   };
   // -- pickCell end --
+  // -- rules start --
+  // The rules engine: one event in, the actions to perform out. Pure
+  // logic only - no DOM, no clock, no randomness, no fetch, no network
+  // - so tests/fixtures/rules_harness.mjs can run this exact text in a
+  // bare node vm context with nothing but the built-ins.
+  //
+  // A rule is { id, on?, when, if?, then, once? }, the same shape
+  // src/vefr/maplab.py's rules_errors checks at authoring time. The six
+  // events are `starts`, `enters`, `comes-near`, `opens`, `picks-up`,
+  // `uses-with`. There is deliberately no `says` event: the woven
+  // player has no place for the player to type words, so an event
+  // waiting on typed speech could never fire.
+  //
+  // The limits kept on purpose: a rule fires at most once per event,
+  // the actions a rule returns are never fed back in as new events
+  // (no chains - a `give` is not a `picks-up`), rules run in the order
+  // the pack wrote them (there are no priorities), and a malformed or
+  // unknown rule key is skipped without throwing.
+  window.VEFR_RULES_ENGINE = (function () {
+    // Each event's payload keys, exactly as the validator declares
+    // them; `target` is the event's main thing - the place entered, or
+    // the thing come near / opened / picked up, or the item used - and
+    // is what a rule's `on` matches.
+    var EVENTS = {
+      'starts': { keys: [], target: null },
+      'enters': { keys: ['place'], target: 'place' },
+      'comes-near': { keys: ['who', 'distance'], target: 'who' },
+      'opens': { keys: ['what'], target: 'what' },
+      'picks-up': { keys: ['what'], target: 'what' },
+      'uses-with': { keys: ['item', 'with'], target: 'item' }
+    };
+
+    function isObj(v) {
+      return typeof v === 'object' && v !== null && !Array.isArray(v);
+    }
+
+    function own(obj, key) {
+      return Object.prototype.hasOwnProperty.call(obj, key);
+    }
+
+    // pack is what cli.weave_html bakes: { rules, flags, claims,
+    // people }. Every declared flag starts off; every claim the pack's
+    // people block lists is believed from the very first moment, with
+    // the author's file as its source - a mistaken assumption the
+    // author wrote down is believed before anything happens.
+    function newState(pack) {
+      if (!isObj(pack)) pack = {};
+      var meanings = isObj(pack.flags) ? pack.flags : {};
+      var flags = {};
+      Object.keys(meanings).forEach(function (name) { flags[name] = false; });
+      var beliefs = {};
+      var people = isObj(pack.people) ? pack.people : {};
+      Object.keys(people).forEach(function (pid) {
+        var spec = people[pid];
+        var list = isObj(spec) && Array.isArray(spec.believes)
+          ? spec.believes : [];
+        var held = {};
+        list.forEach(function (claim) {
+          if (typeof claim === 'string') {
+            held[claim] = { value: true, source: 'written in the game file' };
+          }
+        });
+        beliefs[pid] = held;
+      });
+      return {
+        // What is true in the game: every declared flag, off.
+        flags: flags,
+        // What each person holds: a belief is its own flag and can be
+        // wrong - { value, source } per (person, claim).
+        beliefs: beliefs,
+        // Rule ids that have fired at least once: `once` reads this.
+        fired: {},
+        // What the hero carries and where each person is. The engine
+        // fills `items` from picks-up events and give actions; the
+        // wiring fills `where` as people move - `is-in` reads it.
+        items: {},
+        where: {},
+        // The baked pack, so run() needs no second argument.
+        rules: Array.isArray(pack.rules) ? pack.rules : [],
+        // Flag name -> the one line the pack declared (the why
+        // sentence quotes it; a flag the pack never declared just
+        // uses its name).
+        meanings: meanings
+      };
+    }
+
+    function setBelief(state, who, claim, value, source) {
+      if (!isObj(state.beliefs[who])) state.beliefs[who] = {};
+      state.beliefs[who][claim] = { value: value, source: source };
+    }
+
+    // A belief is held only when its value is true; nothing there
+    // means the person does not believe the claim.
+    function beliefValue(state, who, claim) {
+      var held = isObj(state.beliefs[who]) ? state.beliefs[who] : null;
+      var b = held && isObj(held[claim]) ? held[claim] : null;
+      return b ? b.value === true : false;
+    }
+
+    // One condition: { ok, why } where `why` is the plain phrase that
+    // passed, or null when the condition is malformed (which skips
+    // the whole rule). `inv` flips the reading - a `not` wrapper
+    // toggles it - and the phrase always states the reading that
+    // actually passed.
+    function evalCond(cond, state, inv) {
+      if (!isObj(cond)) return null;
+      var keys = Object.keys(cond);
+      if (keys.indexOf('flag') !== -1 || keys.indexOf('is') !== -1) {
+        // The flag form is the one condition with two top-level keys.
+        if (keys.length !== 2 || typeof cond.flag !== 'string'
+            || typeof cond.is !== 'boolean') return null;
+        var actual = state.flags[cond.flag] === true;
+        var want = inv ? !cond.is : cond.is;
+        var phrase = "'" + cond.flag + "' was " + (want ? 'on' : 'off');
+        var meaning = state.meanings[cond.flag];
+        if (typeof meaning === 'string' && meaning) {
+          phrase = "'" + cond.flag + "' (" + meaning + ") was "
+            + (want ? 'on' : 'off');
+        }
+        return { ok: actual === want, why: phrase };
+      }
+      if (keys.length !== 1) return null;
+      var key = keys[0];
+      if (key === 'has') {
+        if (typeof cond.has !== 'string') return null;
+        var held = state.items[cond.has] === true;
+        var wantHas = inv ? !held : held;
+        return {
+          ok: wantHas,
+          why: 'the hero ' + (wantHas ? 'had ' : 'did not have ')
+            + "'" + cond.has + "'"
+        };
+      }
+      if (key === 'believes' || key === 'not-believes') {
+        var p = cond[key];
+        if (!isObj(p) || Object.keys(p).length !== 2
+            || typeof p.who !== 'string' || typeof p.claim !== 'string') {
+          return null;
+        }
+        var wantBelieves = (key === 'believes') !== inv;
+        var does = beliefValue(state, p.who, p.claim);
+        return {
+          ok: does === wantBelieves,
+          why: p.who + (wantBelieves ? ' believes ' : ' does not believe ')
+            + "'" + p.claim + "'"
+        };
+      }
+      if (key === 'is-in') {
+        var q = cond['is-in'];
+        if (!isObj(q) || Object.keys(q).length !== 2
+            || typeof q.who !== 'string' || typeof q.place !== 'string') {
+          return null;
+        }
+        var isIn = state.where[q.who] === q.place;
+        var wantIn = inv ? !isIn : isIn;
+        return {
+          ok: wantIn,
+          why: q.who + (wantIn ? ' was in ' : ' was not in ') + q.place
+        };
+      }
+      if (key === 'not') {
+        if (!isObj(cond.not)) return null;
+        return evalCond(cond.not, state, !inv);
+      }
+      // 'all-of': every inner condition must pass. Under a `not` the
+      // members are read as they are and the whole conjunction is
+      // flipped, so the phrase stays one honest sentence.
+      if (key === 'all-of') {
+        if (!Array.isArray(cond['all-of'])) return null;
+        var list = cond['all-of'];
+        var parts = [];
+        var allOk = true;
+        for (var i = 0; i < list.length; i++) {
+          var r = evalCond(list[i], state, false);
+          if (!r) return null;
+          parts.push(r.why);
+          if (!r.ok) allOk = false;
+        }
+        var pass = inv ? !allOk : allOk;
+        var joined = parts.join(', and ');
+        if (inv && joined) joined = 'not (' + joined + ')';
+        return { ok: pass, why: joined };
+      }
+      return null;
+    }
+
+    // Does this rule's `when` describe the event? true = it matches,
+    // false = a well-formed `when` for some other event (no mark, no
+    // fire), null = malformed (also no mark, no fire, no throw).
+    function whenMatches(when, event, data) {
+      if (!isObj(when)) return null;
+      var keys = Object.keys(when);
+      if (keys.length !== 1 || !own(EVENTS, keys[0])) return null;
+      if (keys[0] !== event) return false;
+      var payload = when[keys[0]];
+      if (!isObj(payload)) return null;
+      var want = EVENTS[keys[0]].keys;
+      var pkeys = Object.keys(payload);
+      if (pkeys.length !== want.length) return null;
+      for (var i = 0; i < pkeys.length; i++) {
+        if (want.indexOf(pkeys[i]) === -1) return null;
+      }
+      for (var j = 0; j < want.length; j++) {
+        var k = want[j], v = payload[k];
+        if (k === 'distance') {
+          // "within N tiles": the rule's distance is the reach, the
+          // event carries how close the hero actually came.
+          if (typeof v !== 'number' || typeof data.distance !== 'number'
+              || data.distance > v) return false;
+        } else if (data[k] !== v) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // One action of a rule's `then`, against the validator's list.
+    // false means the whole rule is malformed and is skipped.
+    function validAction(a) {
+      if (!isObj(a)) return false;
+      var keys = Object.keys(a);
+      if (keys.length !== 1) return false;
+      var key = keys[0], v = a[key];
+      if (key === 'say') {
+        if (typeof v === 'string') return true;
+        if (isObj(v)) {
+          return Object.keys(v).length === 2 && typeof v.who === 'string'
+            && typeof v.line === 'string';
+        }
+        return false;
+      }
+      if (key === 'show' || key === 'hide' || key === 'reveal'
+          || key === 'give' || key === 'set' || key === 'unset'
+          || key === 'point-to') {
+        return typeof v === 'string';
+      }
+      if (key === 'weather') return v === 'fog' || v === 'clear';
+      if (key === 'believes' || key === 'stops-believing') {
+        return isObj(v) && Object.keys(v).length === 2
+          && typeof v.who === 'string' && typeof v.claim === 'string';
+      }
+      if (key === 'tells') {
+        return isObj(v) && Object.keys(v).length === 3
+          && typeof v.who === 'string' && typeof v.claim === 'string'
+          && typeof v.to === 'string';
+      }
+      return false;
+    }
+
+    // The actions that change what is held are applied to the state
+    // the player holds; everything else (say, show, hide, ...) is only
+    // returned for the wiring to perform. Nothing here starts a new
+    // run - there are no chains.
+    function applyActions(state, actions) {
+      for (var i = 0; i < actions.length; i++) {
+        var a = actions[i];
+        var key = Object.keys(a)[0], v = a[key];
+        if (key === 'set') {
+          state.flags[v] = true;
+        } else if (key === 'unset') {
+          state.flags[v] = false;
+        } else if (key === 'give') {
+          state.items[v] = true;
+        } else if (key === 'believes') {
+          setBelief(state, v.who, v.claim, true, 'saw it themselves');
+        } else if (key === 'stops-believing') {
+          setBelief(state, v.who, v.claim, false, 'stopped believing');
+        } else if (key === 'tells') {
+          // One step only: the receiver holds it, sourced to the
+          // teller, so the why-log can trace it to where it started.
+          setBelief(state, v.to, v.claim, true, 'told by ' + v.who);
+        }
+      }
+    }
+
+    // The one plain sentence a fired rule leaves behind: what
+    // happened, and the conditions that said yes. One sentence, the
+    // rule id first, a flag named by its declared meaning when the
+    // pack wrote one, a belief as "who believes claim".
+    function buildWhy(rule, event, data, phrases) {
+      var phrase;
+      if (event === 'starts') {
+        phrase = 'the game began';
+      } else if (event === 'enters') {
+        phrase = 'the hero entered ' + data.place;
+      } else if (event === 'comes-near') {
+        var near = typeof rule.on === 'string' ? rule.on : null;
+        var wp = isObj(rule.when) && isObj(rule.when['comes-near'])
+          ? rule.when['comes-near'] : null;
+        if (!near && wp && typeof wp.who === 'string') near = wp.who;
+        if (!near) near = data.who;
+        phrase = 'the hero came near ' + near;
+      } else if (event === 'opens') {
+        phrase = 'the hero opened ' + data.what;
+      } else if (event === 'picks-up') {
+        phrase = 'the hero picked up ' + data.what;
+      } else {
+        phrase = 'the hero used ' + data.item + ' with ' + data.with;
+      }
+      var live = [];
+      for (var i = 0; i < phrases.length; i++) {
+        if (phrases[i]) live.push(phrases[i]);
+      }
+      var text = "rule '" + rule.id + "' fired: " + phrase;
+      if (live.length) text += ', and ' + live.join(', and ');
+      return text + '.';
+    }
+
+    // Everything one rule needs to decide. null means skip: wrong
+    // event, a condition said no, or malformed - with no mark left.
+    function planRule(rule, event, data, state) {
+      if (!isObj(rule)) return null;
+      if (typeof rule.id !== 'string' || !rule.id) return null;
+      if ('on' in rule && typeof rule.on !== 'string') return null;
+      if ('once' in rule && typeof rule.once !== 'boolean') return null;
+      if (whenMatches(rule.when, event, data) !== true) return null;
+      var target = EVENTS[event].target;
+      if ('on' in rule && target && data[target] !== rule.on) return null;
+      var phrases = [];
+      if ('if' in rule) {
+        if (!Array.isArray(rule.if)) return null;
+        for (var i = 0; i < rule.if.length; i++) {
+          var r = evalCond(rule.if[i], state, false);
+          if (!r) return null;    // malformed rule: skip, no mark
+          if (!r.ok) return null; // a condition said no: no mark
+          phrases.push(r.why);
+        }
+      }
+      var then = rule.then;
+      if (!Array.isArray(then) || !then.length) return null;
+      for (var j = 0; j < then.length; j++) {
+        if (!validAction(then[j])) return null;
+      }
+      return {
+        id: rule.id,
+        then: then,
+        // `once` defaults to true: a rule runs once unless the pack
+        // asks otherwise.
+        once: 'once' in rule ? rule.once : true,
+        why: buildWhy(rule, event, data, phrases)
+      };
+    }
+
+    // run(state, event, data) -> { actions, fired }.
+    // The actions come back in the order the rules were written, and
+    // `fired` carries one { id, why } per rule that actually ran. The
+    // state is the player's own object and may be updated in place;
+    // nothing else is touched, and no returned action is ever fed
+    // back in as an event.
+    function run(state, event, data) {
+      var out = { actions: [], fired: [] };
+      if (!isObj(state)) return out;
+      if (!isObj(state.flags)) state.flags = {};
+      if (!isObj(state.beliefs)) state.beliefs = {};
+      if (!isObj(state.fired)) state.fired = {};
+      if (!isObj(state.items)) state.items = {};
+      if (!isObj(state.where)) state.where = {};
+      if (!isObj(state.meanings)) state.meanings = {};
+      if (typeof event !== 'string' || !own(EVENTS, event)) return out;
+      if (!isObj(data)) data = {};
+      // A taken item is held from that moment. This is the event's
+      // own record, not an action: it never starts another run.
+      if (event === 'picks-up' && typeof data.what === 'string') {
+        state.items[data.what] = true;
+      }
+      var rules = Array.isArray(state.rules) ? state.rules : [];
+      for (var i = 0; i < rules.length; i++) {
+        var plan = planRule(rules[i], event, data, state);
+        if (!plan) continue;
+        // Once marked, a `once` rule stays quiet for the whole game;
+        // one event gives each rule at most one pass either way.
+        if (plan.once && state.fired[plan.id]) continue;
+        applyActions(state, plan.then);
+        for (var j = 0; j < plan.then.length; j++) {
+          out.actions.push(plan.then[j]);
+        }
+        state.fired[plan.id] = true;
+        out.fired.push({ id: plan.id, why: plan.why });
+      }
+      return out;
+    }
+
+    return { newState: newState, run: run };
+  })();
+  // -- rules end --
   var regionTiles = window.VEFR_REGION_TILES || {};
   // A symbol maps to either one data-URI string (one picture) or a list
   // of data-URI strings in variant order. The loader normalizes both to
@@ -2870,6 +3398,7 @@ function setupTown() {
   // speakers, and hero, then resize, draw, and refresh the POI line.
   function enterRegion(name, at) {
     if (!regions[name]) return;
+    fireRule('enters', { place: name });   // one `enters` per arrival
     regionName = name;
     town = regionTown(name);
     legend = town.legend;
@@ -3172,6 +3701,7 @@ function setupTown() {
     if (chest) {
       foundBook(chest, 'map');
       giveChestDrops(chest);
+      fireRule('opens', { what: chest });   // one `opens` per opening
       combatSnapshot();
       return;
     }
@@ -3238,6 +3768,9 @@ function setupTown() {
     heroStartStep(nx, ny, dx, dy);
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
+    // `comes-near` for a named place the hero walks up to: the tile is
+    // the contact, so the distance is 0.
+    if (here) fireRule('comes-near', { who: here, distance: 0 });
     libraryOnTile(nx, ny, regionName);
     takeHere();
     seeNow();
@@ -3255,6 +3788,10 @@ function setupTown() {
       var d = Math.abs(s.at[0] - hero[0]) + Math.abs(s.at[1] - hero[1]);
       if (d < dmin) { dmin = d; nearest = { key: key, spec: s, dist: d }; }
     }
+    // `comes-near` for the speaker found, with the ACTUAL Manhattan
+    // distance the loop just computed - a rule's declared reach does
+    // the rest of the judging.
+    if (nearest) fireRule('comes-near', { who: nearest.key, distance: nearest.dist });
     if (!nearest || nearest.dist > 2) {
       document.getElementById('near').textContent = 'No one is close enough to talk to.';
       return;
@@ -3500,6 +4037,75 @@ function setupTown() {
   }
   if (fogToggle) fogToggle.addEventListener('click', toggleFog);
   renderFogToggle();
+
+  // ---- the rules engine's three closure-only surfaces ----
+  // fireRule lives at top level (the title card and the bag call it);
+  // these three hand it what only this closure owns. All three are
+  // registered during setup, before any event can fire.
+  // `weather`: the player's own darkness preference, the Display
+  // switch's exact path. A pack's fog declaration is never deleted -
+  // it is the player's choice - and the toggle's label and
+  // aria-pressed are re-read from the honest fogOn every time.
+  window.VEFR_RULES_WEATHER = function (on) {
+    if (on !== fogPrefOn()) setFogPref(on);
+    var want = fogEnabled();
+    if (want !== fogOn) {
+      fogOn = want;
+      if (!fogOn && exploring()) exploreStop('Stopped.');
+      resize();
+      draw();
+    }
+    renderFogToggle();
+    if (fogLive) fogLive.textContent = fogOn ? 'Darkness on.' : 'Darkness off.';
+  };
+  // `point-to`: one plain hint line. The direction is from the hero
+  // toward the way the transitions declare into the target region -
+  // the door out of this region when one starts here, else the
+  // declared entrance the hero would land at. A pack that declares no
+  // way there still gets one honest line, without a direction.
+  window.VEFR_RULES_POINT_TO = function (place) {
+    var fromHere = null, entrance = null;
+    for (var i = 0; i < transitions.length; i++) {
+      var t = transitions[i];
+      if (t.to === place && !entrance && Array.isArray(t.to_at)) entrance = t.to_at;
+      if (t.from === regionName && t.to === place && Array.isArray(t.at)) {
+        fromHere = t.at;
+        break;
+      }
+    }
+    var at = fromHere || entrance;
+    if (!at) {
+      combatSay('No way to ' + place + ' is declared from here.');
+      return;
+    }
+    var dx = at[0] - hero[0], dy = at[1] - hero[1];
+    var vert = dy < 0 ? 'north' : (dy > 0 ? 'south' : '');
+    var horiz = dx < 0 ? 'west' : (dx > 0 ? 'east' : '');
+    var dir = vert && horiz ? vert + '-' + horiz : (vert || horiz);
+    combatSay(dir ? 'To reach ' + place + ', go ' + dir + '.'
+                  : 'The way to ' + place + ' is right here.');
+  };
+  // show/hide/reveal: the floor is the only surface a thing has in
+  // this player - an item can lie where the hero stands (shown) or be
+  // taken back out of sight (hidden). A speaker or a region has no
+  // show/hide surface to walk up, so naming one is skipped silently
+  // (the exact gap is on the commit), and a reveal AS A MONSTER would
+  // need place_enemy, which the rule vocabulary does not have.
+  window.VEFR_RULES_SURFACE = function (verb, id) {
+    if (!itemCatalog()[id]) return;
+    if (verb === 'hide') {
+      var before = floor.length;
+      floor = floor.filter(function (d) { return !d || d.item !== id; });
+      if (floor.length !== before) saveFloor();
+      return;
+    }
+    for (var i = 0; i < floor.length; i++) {
+      var d = floor[i];
+      if (d && d.item === id && d.region === regionName
+          && d.at[0] === hero[0] && d.at[1] === hero[1]) return;
+    }
+    placeDrops(hero, [id]);
+  };
 
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
@@ -4017,6 +4623,10 @@ tsEnter.addEventListener('click', function () {
     // Begin goes straight into the game; a model is only ever an
     // optional extra, offered from the pause menu.
     enterGame();
+    // The one `starts` event: Begin has been pressed, the world is up
+    // (setupTown has run, so the engine exists for any pack that has
+    // rules - and fireRule is a no-op for every pack that does not).
+    fireRule('starts', {});
   }, 0);
 });
 // Focus the enter button after paint

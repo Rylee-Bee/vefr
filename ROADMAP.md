@@ -7,6 +7,82 @@
 
 ## Landed
 
+- [x] **The rules engine wired into the woven player** (2026-10-01): the
+      pure engine block now RUNS. `cli.weave_html` bakes the pack's four
+      catalogs through four new placeholders (`_player_rules`: `{}` and
+      four literal `null`s when the pack declares none of flags/claims/
+      people/rules - byte for byte the file it wove before; entries that
+      cannot run are DROPPED, never half-baked). The player reads them as
+      `window.VEFR_RULES/FLAGS/CLAIMS/PEOPLE` beside the engine, and one
+      top-level `fireRule(eventName, data)` seam performs the returned
+      actions on surfaces that already exist - `say` -> `showSpeech`
+      (speaker key resolved to the pack's own name; unknown speaker
+      skipped silently) or `combatSay` for the narrator, `give` ->
+      `bagAdd`, `weather` -> the player's own darkness preference (the
+      Display switch's path; label + aria-pressed stay honest, a pack's
+      fog declaration never deleted), `point-to` -> one plain `combatSay`
+      hint with the direction the transitions declare, `show/hide/reveal`
+      -> the floor for item ids; `set/unset/believes/stops-believing/
+      tells` stay engine-state only. Six one-line call sites: Begin
+      (`starts`), `enterRegion` (`enters`), `tryNPC` + the POI the hero
+      walks up to (`comes-near`, real Manhattan distances), the chest
+      (`opens`), `takeHere` (`picks-up`, per item bagged), the use verb
+      (`uses-with`). The player's rule log is `window.VEFR_WHY` (last 20
+      `{id, why}`, persisted as `vefr-rules-<world>`, every access
+      wrapped so a sandboxed iframe's throwing localStorage never takes
+      the game down). `journal.KINDS` gains `rule_fired` with NO server
+      call site yet (the woven player is static - gap on the commit).
+      Pinned by `tests/test_rules_bake.py` (the null bake, the exact
+      byte difference of the rules pieces, green validation, dropped
+      entries) and `tests/test_rules_play.py` (the real woven file
+      played in jsdom: Begin fires, one step fires, one plain sentence
+      per rule naming its id).
+
+- [x] **The rules catalog validator** (2026-10-01): world packs may now
+      carry four OPTIONAL top-level keys - `flags`, `claims`, `people`
+      and `rules` - and `maplab` checks them at authoring time, purely
+      additive: a pack that declares none validates byte-for-byte as
+      before (`load_pack` passes the four through only when declared;
+      a test asserts they stay ABSENT for `worlds/sample-world`, which
+      still validates green). New `maplab.rules_errors`, wired into
+      `validate()` beside `grammar_errors`/`item_light_errors`, checks
+      block shape, unique non-empty rule ids, the six events (`starts`,
+      `enters`, `comes-near`, `opens`, `picks-up`, `uses-with`; `says`
+      stays out - the woven player has nowhere to type words),
+      conditions, actions, declared-flag reads/writes, unknown ids
+      (flags/claims/people/items/places), the 40-rule limit, same-event
+      conflicting actions (naming BOTH rule ids), and the 280-char say
+      line (`RULE_SAY_LIMIT`) - plain sentences, each naming the rule
+      id. New `maplab.rules_notes` is the two design warnings (a
+      believed claim no rule can ever change; a belief nothing reads)
+      and is deliberately NOT wired into `cmd_validate`. Path safety:
+      rule/flag/person/claim ids never become filesystem paths - the
+      only pack file read is `<pack_dir>/world.json`, guarded by a
+      hostile-ids test. Pinned by `tests/test_rules_validator.py`
+      (a good pack across all six events, fifteen bad packs, the
+      compatibility checks, both notes, and the hostile pack).
+
+- [x] **An Undo button on the Desk** (2026-10-01): the edit loop's way
+      back now has a client. The existing `POST /api/builder/edits/undo`
+      route (unchanged, plain sentences) is reachable from a real
+      **Undo last edit** `<button type="button">` in the Desk's weave
+      row beside **Play it here** (`web/js/rooms/workshop.js`, plus
+      `API.editsUndo` in `web/js/api.js`). It posts `{"name": null}` so
+      the route falls back to the active world - what the Folks room
+      already sends - and writes the answer into its own polite live
+      region (`#ws-undo-status`, `role="status"`, `aria-live="polite"`,
+      the weave status pattern and CSS class). Success shows the
+      route's sentence verbatim and reloads the Desk; a 404 says the
+      route's own "nothing to undo" words kindly, not as an error, and
+      changes nothing else; any other failure is one plain friendly
+      sentence - never a raw status. Disabled while in flight,
+      re-enabled after every answer, ≥44px via the cta classes.
+      Pinned by a node-vm harness on the REAL workshop.js
+      (`tests/fixtures/undo_harness.mjs` + `tests/test_web_undo_button.py`)
+      and a browser test (`tests/browser/test_undo_button.py`);
+      `docs/guides/studio-edits.md` and the glossary now say the button
+      exists.
+
 - [x] **One-button Interact, first slice** (2026-10-01): the woven player has one verb on `E`, `Space`, `Enter` and
       `F` plus the always-on Interact button: `interactTargets`, `pickTarget` and `labelFor` as a pure
       `-- interact start/end --` block with a node harness (facing tile, then the hero's own tile, then the

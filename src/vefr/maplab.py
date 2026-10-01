@@ -119,7 +119,7 @@ def load_pack(pack_dir: Path) -> dict:
         # Every speaker is carried: a book's giver may live in any region.
         # The geometry check below looks only at the first region's own.
         all_speakers = act.get('speakers', {})
-        return {
+        unified = {
             'name': pack.name,
             'title': config.get('title', act.get('title', pack.name)),
             'description': config.get('description', ''),
@@ -152,6 +152,15 @@ def load_pack(pack_dir: Path) -> dict:
             # the pack's own `player` block, kept for checks (never written back: write_pack names its keys)
             '_player': config.get('player'),
         }
+        # The four optional rule-catalog keys, carried through ONLY
+        # when the pack declares them: a pack that declares none
+        # gets a dict with exactly the keys it had before. Purely
+        # additive; nothing else reads them yet. The validator's
+        # defaults ({} / []) live beside the validator, not here.
+        for key in ('flags', 'claims', 'people', 'rules'):
+            if key in config:
+                unified[key] = config[key]
+        return unified
     config['_player'] = config.get('player')
     return config
 
@@ -269,6 +278,526 @@ def item_light_errors(item_id, spec) -> list[str]:
     if not radius_form and not reveal_form:
         errors.append(f"{where} light needs radius and turns, or reveal: true")
     return errors
+
+
+# The speech-box limit the pack contract already uses: a `say` line
+# longer than this would be cut off by the woven player's box, so it
+# is a pack-authoring error here instead.
+RULE_SAY_LIMIT = 280
+
+# A pack may declare this many rules; past it the mistakes in a rule
+# stack outweigh any single rule's worth.
+RULE_LIMIT = 40
+
+# The six events a rule may fire on. `says` is deliberately absent:
+# the woven player has nowhere to type words, so an event that waited
+# on typed speech could never fire.
+RULE_EVENTS = ('starts', 'enters', 'comes-near', 'opens', 'picks-up', 'uses-with')
+
+# The payload each event carries, keyed by event name.
+RULE_EVENT_KEYS = {
+    'starts': (),
+    'enters': ('place',),
+    'comes-near': ('who', 'distance'),
+    'opens': ('what',),
+    'picks-up': ('what',),
+    'uses-with': ('item', 'with'),
+}
+
+# The keys a condition may name. The `flag` form is the one condition
+# in the contract with two top-level keys: {"flag": ..., "is": ...}.
+RULE_CONDITION_KEYS = ('has', 'flag', 'is', 'believes', 'not-believes',
+                       'is-in', 'not', 'all-of')
+
+# The keys an action may name.
+RULE_ACTION_KEYS = ('say', 'show', 'hide', 'reveal', 'give', 'set', 'unset',
+                    'believes', 'stops-believing', 'tells', 'weather', 'point-to')
+
+
+def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
+    """Every id a rule may name, resolved from the loaded pack.
+
+    Path safety: the only file read here is <pack_dir>/world.json
+    and that path comes from the caller - no id taken from pack data
+    ever becomes a filesystem path.
+    """
+    pack_cfg: dict = {}
+    if pack_dir is not None:
+        cfg_path = Path(pack_dir) / 'world.json'
+        if cfg_path.is_file():
+            try:
+                loaded = json.loads(cfg_path.read_text(encoding='utf-8'))
+            except ValueError:
+                loaded = {}
+            if isinstance(loaded, dict):
+                pack_cfg = loaded
+    items: set = set()
+    # An acts-shape pack keeps its items at the pack level and
+    # load_pack does not surface them; read them straight from the
+    # pack config here rather than changing load_pack's handling.
+    for source in (w.get('items'), pack_cfg.get('items')):
+        if isinstance(source, dict):
+            items |= set(source)
+    people = set(w['speakers']) if isinstance(w.get('speakers'), dict) else set()
+    regions = w.get('regions')
+    if isinstance(regions, dict):
+        places = set(regions)
+    elif isinstance(regions, list):
+        places = {r for r in regions if isinstance(r, str)}
+    else:
+        # The flat shape declares no `regions` key; rather than guess
+        # at a flat pack's place names, none resolve.
+        places = set()
+    flags = w.get('flags') if 'flags' in w else {}
+    claims = w.get('claims') if 'claims' in w else {}
+    return {
+        'items': items,
+        'people': people,
+        'places': places,
+        'things': items | people | places,
+        # None means "declared but malformed": the shape error in
+        # rules_errors already speaks for it, so id checks stay
+        # quiet. An absent key defaults to {} and every reference
+        # is undeclared.
+        'flags': set(flags) if isinstance(flags, dict) else None,
+        'claims': set(claims) if isinstance(claims, dict) else None,
+    }
+
+
+def _rule_value_errors(rid: str, where: str, val, kind: str, known: dict) -> list[str]:
+    """One id or line value inside a rule, checked against the pack."""
+    if kind == 'line':
+        if not isinstance(val, str):
+            return [f"rule '{rid}' {where} must be words"]
+        if len(val) > RULE_SAY_LIMIT:
+            return [f"rule '{rid}' {where} is {len(val)} characters - "
+                    f"the speech box holds {RULE_SAY_LIMIT}"]
+        return []
+    if not isinstance(val, str):
+        noun = {'person': 'person id', 'claim': 'claim name', 'item': 'item id',
+                'place': 'region id', 'thing': 'thing id'}[kind]
+        return [f"rule '{rid}' {where} must be a {noun}"]
+    if kind == 'person':
+        if val not in known['people']:
+            return [f"rule '{rid}' {where} names person '{val}', "
+                    "who is not a speaker in this pack"]
+        return []
+    if kind == 'claim':
+        if known['claims'] is not None and val not in known['claims']:
+            return [f"rule '{rid}' {where} names unknown claim '{val}'"]
+        return []
+    if kind == 'item':
+        if val not in known['items']:
+            return [f"rule '{rid}' {where} names unknown item '{val}'"]
+        return []
+    if kind == 'place':
+        if val not in known['places']:
+            return [f"rule '{rid}' {where} names unknown place '{val}'"]
+        return []
+    if kind == 'thing' and val not in known['things']:
+        return [f"rule '{rid}' {where} names unknown thing '{val}'"]
+    return []
+
+
+def _rule_payload_errors(rid: str, verb: str, val, fields, known: dict) -> list[str]:
+    """The object payload of one condition or action.
+
+    `fields` is a tuple of (key, kind) pairs naming every key the
+    payload may carry and how each value is checked.
+    """
+    want = [k for k, _ in fields]
+    if not isinstance(val, dict):
+        listed = ', '.join(f"'{k}'" for k in want)
+        return [f"rule '{rid}' '{verb}' must be an object with {listed}"]
+    errors: list[str] = []
+    for k in val:
+        if k not in want:
+            errors.append(f"rule '{rid}' '{verb}' has unknown key '{k}'")
+    for k in want:
+        if k not in val:
+            errors.append(f"rule '{rid}' '{verb}' needs '{k}'")
+    for k, kind in fields:
+        if k in val:
+            errors.extend(_rule_value_errors(rid, f"'{verb}' '{k}'", val[k], kind, known))
+    return errors
+
+
+def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
+    """The `when` of one rule: exactly one known event, right payload."""
+    if not isinstance(when, dict):
+        return [f"rule '{rid}' when must be an event object"]
+    if len(when) != 1:
+        return [f"rule '{rid}' when must name exactly one event"]
+    name = next(iter(when))
+    if name not in RULE_EVENTS:
+        return [f"rule '{rid}' when names unknown event '{name}' - the six events are "
+                + ', '.join(RULE_EVENTS)]
+    payload = when[name]
+    if not isinstance(payload, dict):
+        return [f"rule '{rid}' when '{name}' carries an object payload"]
+    want = RULE_EVENT_KEYS[name]
+    errors: list[str] = []
+    for k in payload:
+        if k not in want:
+            errors.append(f"rule '{rid}' when '{name}' has unknown key '{k}'")
+    for k in want:
+        if k not in payload:
+            errors.append(f"rule '{rid}' when '{name}' needs key '{k}'")
+    if errors:
+        return errors
+    if name == 'starts':
+        return []
+    if name == 'enters':
+        return _rule_value_errors(rid, "when 'enters'", payload['place'], 'place', known)
+    if name == 'comes-near':
+        errors = _rule_value_errors(rid, "when 'comes-near' who", payload['who'],
+                                    'thing', known)
+        distance = payload['distance']
+        # A bool is not an int: `true` must not pass as distance 1.
+        if isinstance(distance, bool) or not isinstance(distance, int) \
+                or not 1 <= distance <= 9:
+            errors.append(f"rule '{rid}' when 'comes-near' distance must be an integer 1..9")
+        return errors
+    if name == 'opens':
+        return _rule_value_errors(rid, "when 'opens'", payload['what'], 'thing', known)
+    if name == 'picks-up':
+        return _rule_value_errors(rid, "when 'picks-up'", payload['what'], 'item', known)
+    if name == 'uses-with':
+        errors = _rule_value_errors(rid, "when 'uses-with' item", payload['item'],
+                                    'item', known)
+        errors += _rule_value_errors(rid, "when 'uses-with' with", payload['with'],
+                                     'thing', known)
+        return errors
+    return []
+
+
+def _rule_condition_errors(rid: str, cond, known: dict) -> list[str]:
+    """One condition of one rule's `if`: ALL of them must pass."""
+    if not isinstance(cond, dict):
+        return [f"rule '{rid}' condition must be an object naming one check"]
+    keys = list(cond)
+    if 'flag' in cond or 'is' in cond:
+        # The flag form is the one condition with two top-level keys:
+        # {"flag": "<flag>", "is": true | false}.
+        errors = [f"rule '{rid}' flag condition has unknown key '{k}'"
+                  for k in keys if k not in ('flag', 'is')]
+        if errors:
+            return errors
+        if 'flag' not in cond or 'is' not in cond:
+            return [f"rule '{rid}' flag condition needs both 'flag' and 'is'"]
+        if not isinstance(cond['is'], bool):
+            errors.append(f"rule '{rid}' flag condition 'is' must be true or false")
+        fname = cond['flag']
+        if not isinstance(fname, str):
+            errors.append(f"rule '{rid}' flag condition 'flag' must be a flag name")
+        elif known['flags'] is not None and fname not in known['flags']:
+            errors.append(f"rule '{rid}' reads flag '{fname}', which is not declared in flags")
+        return errors
+    if len(keys) != 1:
+        unknown = [k for k in keys if k not in RULE_CONDITION_KEYS]
+        if unknown:
+            return [f"rule '{rid}' condition has unknown key '{unknown[0]}'"]
+        return [f"rule '{rid}' condition must name exactly one check"]
+    key, val = keys[0], cond[keys[0]]
+    if key not in RULE_CONDITION_KEYS:
+        return [f"rule '{rid}' condition has unknown key '{key}'"]
+    if key == 'has':
+        return _rule_value_errors(rid, "condition 'has'", val, 'item', known)
+    if key in ('believes', 'not-believes'):
+        return _rule_payload_errors(rid, key, val,
+                                    (('who', 'person'), ('claim', 'claim')), known)
+    if key == 'is-in':
+        return _rule_payload_errors(rid, 'is-in', val,
+                                    (('who', 'person'), ('place', 'place')), known)
+    if key == 'not':
+        if not isinstance(val, dict):
+            return [f"rule '{rid}' 'not' must wrap a condition"]
+        return _rule_condition_errors(rid, val, known)
+    # 'all-of': every inner condition must also pass.
+    if not isinstance(val, list):
+        return [f"rule '{rid}' 'all-of' must be a list of conditions"]
+    errors = []
+    for sub in val:
+        errors.extend(_rule_condition_errors(rid, sub, known))
+    return errors
+
+
+def _rule_action_errors(rid: str, action, known: dict) -> list[str]:
+    """One action of one rule's `then`."""
+    if not isinstance(action, dict):
+        return [f"rule '{rid}' action must be an object naming one thing to do"]
+    keys = list(action)
+    unknown = [k for k in keys if k not in RULE_ACTION_KEYS]
+    if unknown:
+        return [f"rule '{rid}' action has unknown key '{unknown[0]}'"]
+    if len(keys) != 1:
+        return [f"rule '{rid}' action must name exactly one thing to do"]
+    key, val = keys[0], action[keys[0]]
+    if key == 'say':
+        if isinstance(val, str):
+            return _rule_value_errors(rid, 'say line', val, 'line', known)
+        return _rule_payload_errors(rid, 'say', val,
+                                    (('who', 'person'), ('line', 'line')), known)
+    if key in ('show', 'hide', 'reveal'):
+        return _rule_value_errors(rid, key, val, 'thing', known)
+    if key == 'give':
+        return _rule_value_errors(rid, 'give', val, 'item', known)
+    if key in ('set', 'unset'):
+        if not isinstance(val, str):
+            return [f"rule '{rid}' {key} must name a flag"]
+        if known['flags'] is not None and val not in known['flags']:
+            return [f"rule '{rid}' {key}s flag '{val}', which is not declared in flags"]
+        return []
+    if key in ('believes', 'stops-believing'):
+        return _rule_payload_errors(rid, key, val,
+                                    (('who', 'person'), ('claim', 'claim')), known)
+    if key == 'tells':
+        return _rule_payload_errors(rid, 'tells', val,
+                                    (('who', 'person'), ('claim', 'claim'),
+                                     ('to', 'person')), known)
+    if key == 'weather':
+        if val not in ('fog', 'clear'):
+            return [f"rule '{rid}' weather must be 'fog' or 'clear'"]
+        return []
+    return _rule_value_errors(rid, 'point-to', val, 'place', known)
+
+
+def _rule_conflict_message(aid: str, bid: str, then_a, then_b) -> str | None:
+    """What two rules' actions disagree about, or None when they agree.
+
+    Only the two conflicts the design names are decided here: two
+    different weather values on one event, and one thing shown by a
+    rule that another hides on the same event. Anything subtler is
+    left alone rather than guessed at.
+    """
+    if not isinstance(then_a, list) or not isinstance(then_b, list):
+        return None
+
+    def _values(actions, key):
+        return [a.get(key) for a in actions
+                if isinstance(a, dict) and key in a]
+
+    for wa in _values(then_a, 'weather'):
+        for wb in _values(then_b, 'weather'):
+            if wa != wb:
+                return (f"rules '{aid}' and '{bid}' fire on the same event with "
+                        f"conflicting actions - one sets weather '{wa}' while "
+                        f"the other sets '{wb}'")
+    for shown in _values(then_a, 'show'):
+        if shown in _values(then_b, 'hide'):
+            return (f"rules '{aid}' and '{bid}' fire on the same event with "
+                    f"conflicting actions - one shows '{shown}' while the other "
+                    "hides it")
+    for shown in _values(then_b, 'show'):
+        if shown in _values(then_a, 'hide'):
+            return (f"rules '{aid}' and '{bid}' fire on the same event with "
+                    f"conflicting actions - one shows '{shown}' while the other "
+                    "hides it")
+    return None
+
+
+def rules_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
+    """Every problem with a pack's optional flags/claims/people/rules.
+
+    The four keys are optional and additive: a pack that declares
+    none of them gets no output at all, exactly as before. A pack
+    that declares any of them gets every rule checked here, at
+    authoring time, rather than by surprise in play. Messages are
+    plain sentences; rule-level ones name the rule id.
+    """
+    if not any(k in w for k in ('flags', 'claims', 'people', 'rules')):
+        return []
+    errors: list[str] = []
+    if 'flags' in w and not isinstance(w['flags'], dict):
+        errors.append('flags must be an object mapping a flag name to one line of text')
+    if 'claims' in w:
+        if not isinstance(w['claims'], dict):
+            errors.append('claims must be an object mapping a claim name to meaning and truth')
+        else:
+            for cname, spec in w['claims'].items():
+                if not isinstance(spec, dict):
+                    errors.append(f"claim '{cname}' must be an object with 'meaning' and 'true'")
+                    continue
+                meaning = spec.get('meaning')
+                if not isinstance(meaning, str) or not meaning.strip():
+                    errors.append(f"claim '{cname}' needs a non-empty string 'meaning'")
+                if not isinstance(spec.get('true'), bool):
+                    errors.append(f"claim '{cname}' needs 'true' set to true or false")
+    speakers = w.get('speakers') if isinstance(w.get('speakers'), dict) else {}
+    if 'people' in w:
+        if not isinstance(w['people'], dict):
+            errors.append('people must be an object mapping a person id to beliefs')
+        else:
+            for pid, spec in w['people'].items():
+                if pid not in speakers:
+                    # A person must be someone the hero can meet.
+                    errors.append(f"person '{pid}' in people is not a speaker in this pack")
+                if not isinstance(spec, dict):
+                    errors.append(f"person '{pid}' in people must be an object with 'believes'")
+                    continue
+                believes = spec.get('believes')
+                if not isinstance(believes, list) or not all(
+                        isinstance(c, str) for c in believes):
+                    errors.append(f"person '{pid}' in people needs a 'believes' "
+                                  'list of claim names')
+    if 'rules' in w and not isinstance(w['rules'], list):
+        errors.append('rules must be a list')
+        return errors
+    rules = w.get('rules') or []
+    if len(rules) > RULE_LIMIT:
+        errors.append(f'this pack declares {len(rules)} rules - the limit is {RULE_LIMIT}')
+    known = _rule_known_ids(w, pack_dir)
+    seen: set = set()
+    fireable: list = []
+    for index, rule in enumerate(rules):
+        if not isinstance(rule, dict):
+            errors.append(f'the rule at position {index} must be an object')
+            continue
+        rid = rule.get('id')
+        if not isinstance(rid, str) or not rid.strip():
+            errors.append(f'the rule at position {index} needs a non-empty string id')
+            continue
+        label = f"rule '{rid}'"
+        if rid in seen:
+            errors.append(f"two rules share the id '{rid}' - rule ids must be unique")
+            continue
+        seen.add(rid)
+        # `once` absent means true: a rule runs once unless the pack
+        # asks otherwise, so only a non-boolean value is an error.
+        if 'once' in rule and not isinstance(rule['once'], bool):
+            errors.append(f"{label} 'once' must be true or false")
+        if 'when' not in rule:
+            errors.append(f"{label} needs a 'when' event")
+        else:
+            errors.extend(_rule_event_errors(rid, rule['when'], known))
+        if 'if' in rule and not isinstance(rule['if'], list):
+            errors.append(f"{label} 'if' must be a list of conditions")
+        elif isinstance(rule.get('if'), list):
+            for cond in rule['if']:
+                errors.extend(_rule_condition_errors(rid, cond, known))
+        then = rule.get('then')
+        if not isinstance(then, list) or not then:
+            errors.append(f"{label} 'then' must be a non-empty list of actions")
+        else:
+            for action in then:
+                errors.extend(_rule_action_errors(rid, action, known))
+        if 'on' in rule:
+            on = rule['on']
+            if not isinstance(on, str):
+                errors.append(f"{label} 'on' must name a thing")
+            elif on not in known['things']:
+                errors.append(f"{label} 'on' names unknown thing '{on}'")
+        fireable.append((rid, rule))
+    # CONFLICT: two rules that fire on the same event and can both
+    # pass it - same `when`, same `on`, same `if` - may disagree in
+    # what they do. Rules with different `if` lists are not compared:
+    # the validator cannot honestly decide whether two different
+    # conditions overlap in play.
+    for i, (aid, arule) in enumerate(fireable):
+        for bid, brule in fireable[i + 1:]:
+            if not isinstance(arule.get('when'), dict):
+                continue
+            if arule.get('when') != brule.get('when'):
+                continue
+            if arule.get('on') != brule.get('on'):
+                continue
+            if (arule.get('if') or []) != (brule.get('if') or []):
+                continue
+            message = _rule_conflict_message(aid, bid, arule.get('then'),
+                                             brule.get('then'))
+            if message:
+                errors.append(message)
+    return errors
+
+
+def _iter_conditions(node):
+    """Yield every condition inside a rule's `if`, through `not` and `all-of`."""
+    if isinstance(node, list):
+        for sub in node:
+            yield from _iter_conditions(sub)
+    elif isinstance(node, dict):
+        yield node
+        if len(node) == 1 and 'not' in node:
+            yield from _iter_conditions(node['not'])
+        if len(node) == 1 and 'all-of' in node:
+            yield from _iter_conditions(node['all-of'])
+
+
+def rules_notes(w: dict, pack_dir: Path | None = None) -> list[str]:
+    """Two warnings a pack can carry WITHOUT failing validation.
+
+    Deliberately NOT called from validate() or cmd_validate: these
+    are notes for a pack author, not errors. A pack with neither
+    passes `norns validate` untouched.
+
+    - a claim someone believes that no rule ever makes true or false
+      in play: the belief starts and can never move;
+    - a belief nothing can ever read: no rule's conditions test it.
+
+    A belief is tracked as the (person, claim) pair. Deciding whether
+    two *different* condition lists might overlap in play is not
+    attempted here - only what the rules literally say.
+    """
+    if not any(k in w for k in ('flags', 'claims', 'people', 'rules')):
+        return []
+    notes: list[str] = []
+    rules = w.get('rules') if isinstance(w.get('rules'), list) else []
+    people = w.get('people') if isinstance(w.get('people'), dict) else {}
+    changed_claims: set = set()   # claims some rule action touches
+    born: set = set()             # (person, claim) pairs some rule creates
+    read: set = set()             # (person, claim) pairs some condition tests
+    for rule in rules:
+        if not isinstance(rule, dict):
+            continue
+        if isinstance(rule.get('if'), list):
+            for cond in _iter_conditions(rule['if']):
+                if not isinstance(cond, dict):
+                    continue
+                for verb in ('believes', 'not-believes'):
+                    payload = cond.get(verb)
+                    if isinstance(payload, dict):
+                        who, claim = payload.get('who'), payload.get('claim')
+                        if isinstance(who, str) and isinstance(claim, str):
+                            read.add((who, claim))
+        then = rule.get('then')
+        if not isinstance(then, list):
+            continue
+        for action in then:
+            if not isinstance(action, dict) or len(action) != 1:
+                continue
+            key = next(iter(action))
+            payload = action[key]
+            if not isinstance(payload, dict):
+                continue
+            claim = payload.get('claim')
+            if not isinstance(claim, str):
+                continue
+            if key in ('believes', 'stops-believing'):
+                changed_claims.add(claim)
+                if key == 'believes' and isinstance(payload.get('who'), str):
+                    born.add((payload['who'], claim))
+            elif key == 'tells':
+                changed_claims.add(claim)
+                if isinstance(payload.get('to'), str):
+                    born.add((payload['to'], claim))
+    declared: set = set()
+    for pid, spec in people.items():
+        if isinstance(spec, dict) and isinstance(spec.get('believes'), list):
+            for claim in spec['believes']:
+                if isinstance(claim, str):
+                    declared.add((pid, claim))
+    for pid, claim in sorted(declared):
+        if claim not in changed_claims:
+            notes.append(f"claim '{claim}', believed by '{pid}', is never made "
+                         'true or false by any rule in play')
+        if (pid, claim) not in read:
+            notes.append(f"'{pid}' believes '{claim}' but no rule's conditions "
+                         'ever read that belief')
+    for pid, claim in sorted(born - declared):
+        if (pid, claim) not in read:
+            notes.append(f"a rule sets '{pid}' to believe '{claim}' but no rule's "
+                         'conditions ever read that belief')
+    return notes
 
 
 def _engine_tiles_dir() -> Path | None:
@@ -489,6 +1018,11 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         for iid, spec in items.items():
             if isinstance(spec, dict):
                 errors.extend(item_light_errors(iid, spec))
+    # The pack's optional rules/flags/claims/people catalog: checked
+    # beside the other optional catalogs so a broken rule is a
+    # pack-authoring error, not a surprise in play. A pack that
+    # declares none of the four keys gets nothing here.
+    errors.extend(rules_errors(w, pack_dir))
     town = w['town']
     m = town['map']
     legend = town['legend']

@@ -118,6 +118,7 @@
     mapBuild:     function (q)    { return post('/api/builder/map/build', q); },
     faceRoll:     function (q)    { return post('/api/builder/face/roll', q); },
     placeCharacter: function (q)  { return post('/api/builder/character/place', q); },
+    editsUndo:     function (q)    { return post('/api/builder/edits/undo', q); },
     validate:     function ()     { return post('/api/builder/validate', {}); },
     verify:       function ()     { return post('/api/builder/verify'); },
     handoff:      function ()     { return post('/api/handoff'); }
