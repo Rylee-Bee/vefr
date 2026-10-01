@@ -18,6 +18,16 @@ use the engine to make their own world.
 There's no cloud account or subscription, and it runs on a CPU. A small
 local model and a folder of markdown are enough to play.
 
+**VEFR is also the game of making a game.** You start with an empty table in a
+studio run by the old Norse, inside the World Tree, and a few words about what
+you want to make. Each room is a department with a resident who helps with that
+one piece: the Desk holds your pitch, the Map Room draws the first place, the
+Folks introduce the people who live there, the Library keeps your books, the
+Vault forges what you carry. They suggest; you decide. At the end you have a game
+you made yourself, one file that opens in any browser with no server and no
+model, and you understand it, because you were there for every piece.
+**[Follow the journey, stop by stop →](docs/guides/journey.md)**
+
 You make games in the **studio**: a game studio run by the old Norse,
 inside the World Tree. Each room is a department, and each has a resident
 who helps with it.

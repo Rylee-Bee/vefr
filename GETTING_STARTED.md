@@ -4,6 +4,9 @@ This gets the engine running on your own computer and walks you
 through building your own world. No story content is required to
 try it - a demonstration world (Emberfield) ships with the engine.
 
+Want the big picture first? [The Journey](docs/guides/journey.md) is the map of the whole
+studio, stop by stop, from an empty table to a game you can send to a friend.
+
 ## What you need
 
 | Tool | Why | Check you have it |
