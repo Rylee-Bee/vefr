@@ -1,6 +1,6 @@
 # One-button Interact
 
-Status: proposed. Decisions below were made by Rylee on 2026-10-01 (E with Space and Enter; facing first, then nearest;
+Status: built. Decisions below were made by Rylee on 2026-10-01 (E with Space and Enter; facing first, then nearest;
 a gentle nudge when nothing is in reach; combat folded into Interact; the label says what it will do).
 
 ## The problem

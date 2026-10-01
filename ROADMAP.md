@@ -2224,9 +2224,8 @@
 ## Next
 
 - [ ] **Undo button** on the Desk beside Play it here, with a test (the route already works).
-- [ ] **Rules and reactions with beliefs** (`design/rules-when-then.md`): validator, engine, why-log, Cottage demo (the cat, the harbour fog, Stern's mistaken belief).
+- [ ] **Rules, remaining** (`design/rules-when-then.md`): the **Why did that happen?** button / `vefr why`, `add_rule` edits, and the Cottage demo (the cat, the harbour fog, Stern's mistaken belief). The validator, pure engine and woven-player wiring landed 2026-10-01.
 - [ ] **Equipment** (`design/equipment.md`): five slots, atk and hp mods, the Bag "You" section.
-- [ ] **One-button Interact** (`design/one-button-interact.md`), bump-attack kept.
 - [ ] **UI skin** (`design/ui-skin.md`): `process_ui`, `check_ui`, the skin loader, contrast and axe tests.
 - [ ] **A text-input surface** for the player (so a "when a word is said" event can exist): later.
 
