@@ -6,6 +6,9 @@ to make. A few stops later you have a game you made yourself: one file that runs
 in any browser, with no server and no model, and you know how every piece got
 there because you were in the room for it.
 
+Along the way you also pick up how small models are taught: through templates, approved examples,
+command-line tools and searchable records. [Making art](making-art.md) shows that part in the open.
+
 This page is the map. It is a suggested path, not a rule: the engine never makes
 you finish one room before you open the next, and a world can start from any of
 them. Every stop ends the same way, with something alive you can look at: a map

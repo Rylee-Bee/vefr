@@ -5,6 +5,20 @@ It is a loop, and every turn of it ends with something you can look at.
 
 **Proof, pick, bulk, process, see it in the game, keep the record.**
 
+## Why we do it this way
+
+The point is not only the pictures. A big model spends tokens once, here, to build the things a small model
+can then use cheaply: a **style kit** (the rules and anchors), a **prompt recipe**, a **command-line tool**
+that runs it the same way every time, a **record** of every prompt and result, and a **way to search** that
+record. Make a game this way and you learn how to make a game, and a little about how a model gets taught:
+with templates, approved examples, plain tools and honest records.
+
+That is why the record matters. A picture with its prompt, references, tool and an approved status is a
+training example you are free to use. The studio's first experiment trained a small style add-on on 142 of
+its own pictures and found it pulled a tiny model clearly toward the house look at half strength (see
+`bench/results/pictures-2026-09-26.md`). The pictures you approve here are the next training set, and the
+credits lines say where each one came from.
+
 ## The loop
 
 1. **Brief one picture.** What it is, how big it is on screen (pick your tile and character sizes: they are
