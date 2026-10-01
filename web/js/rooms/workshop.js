@@ -36,11 +36,23 @@
         + '      </div>'
         + '      <div class="desk-tools__row desk-tools__weave">'
         + '        <button class="cta cta--line" id="ws-weave" type="button" aria-describedby="ws-weave-status">Make shareable file</button>'
+        + '        <button class="cta cta--line" id="ws-weave-play" type="button" aria-describedby="ws-weave-status">Play it here</button>'
         + '        <span class="weave-status" id="ws-weave-status" role="status" aria-live="polite"></span>'
         + '        <a class="cta cta--line weave-action" id="ws-weave-download" download hidden>Download</a>'
         + '        <button class="cta cta--line weave-action" id="ws-weave-share" type="button" hidden>Share</button>'
         + '      </div>'
         + '      <p class="desk-tools__hint">One file, plays offline, no install. Send it to a friend.</p>'
+        + '      <section class="weave-pane" id="ws-play-pane" hidden aria-label="Your game, playing here">'
+        + '        <div class="weave-pane__bar">'
+        + '          <span class="label">Playing in this page</span>'
+        + '          <a class="cta cta--line weave-action" id="ws-play-open" href="#" target="_blank" rel="noopener">Open in a new tab</a>'
+        + '        </div>'
+        // Sandbox: measured in chromium, the woven player starts and walks
+        // with `allow-scripts` alone (sandboxed localStorage calls are
+        // wrapped and no-op), so every world uses the strict sandbox - the
+        // pane can never reach the studio page or its origin.
+        + '        <iframe class="weave-pane__frame" id="ws-play-frame" title="Your game, playing here" sandbox="allow-scripts"></iframe>'
+        + '      </section>'
         + '    </div>'
         + '  </div>'
         + '  <aside class="workshop__context" id="ws-context" role="complementary" aria-label="What the world knows">'
@@ -68,6 +80,7 @@
       el_screen.querySelector('#ws-continue').addEventListener('click', continueStory);
       el_screen.querySelector('#ws-toggle-ctx').addEventListener('click', toggleContext);
       el_screen.querySelector('#ws-weave').addEventListener('click', makeShareable);
+      el_screen.querySelector('#ws-weave-play').addEventListener('click', playHere);
       el_screen.querySelector('#ws-weave-share').addEventListener('click', shareWoven);
       el_screen.querySelector('#ws-evidence').addEventListener('click', function () { navigate('evidence'); });
       main.appendChild(el_screen);
@@ -284,6 +297,40 @@
         .catch(function (err) {
           lastWoven = null;
           setWeaveStatus('Couldn’t build the shareable file. ' + (err && err.message ? err.message : 'Try again.'));
+        })
+        .finally(function () {
+          btn.disabled = false;
+        });
+    }
+
+    /* ── Play it here — the current world in a pane, no download ── */
+    function playHere() {
+      var btn = el_screen.querySelector('#ws-weave-play');
+      var pane = el_screen.querySelector('#ws-play-pane');
+      var frame = el_screen.querySelector('#ws-play-frame');
+      var open = el_screen.querySelector('#ws-play-open');
+      btn.disabled = true;
+      setWeaveStatus('Weaving…');
+      API.weaveBuild()
+        .then(function (info) {
+          lastWoven = info;
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('weave');
+          var playUrl = '/api/builder/weave/play/' + encodeURIComponent(info.name);
+          open.href = playUrl;
+          // The name is stable for a whole day, so a cache-busting query
+          // forces the pane to re-load a fresh weave even at the same URL.
+          frame.onload = function () { frame.focus(); };
+          frame.src = playUrl + '?at=' + Date.now();
+          pane.hidden = false;
+          setWeaveStatus('Playing · ' + sizeWords(info.size_bytes));
+          /* The pane is really up: one event for the sticker book, one
+             tick for the first walk. Both wait for a successful weave. */
+          window.VEFR_ACHIEVE && window.VEFR_ACHIEVE('play_here');
+          firstWalk.attempt('play_here');
+        })
+        .catch(function (err) {
+          lastWoven = null;
+          setWeaveStatus('Couldn’t play it here. ' + (err && err.message ? err.message : 'Try again.'));
         })
         .finally(function () {
           btn.disabled = false;

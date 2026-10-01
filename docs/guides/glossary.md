@@ -37,6 +37,13 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **storage** | Disk space that holds games and history for a container. | "volume" | proposed |
 | **style kit** | A game's look: palette, rules, anchor pictures and the shared style words. Never mixed between games. | (same) | decided (making-art guide) |
 | **credits line** | One line saved beside a picture: who made it, with what tool, the prompt, the date and its status. | (same) | decided |
+| **edit** | One checked change to a game that the player keeps: put a person in, paint the map. Always previewed first, always backed up. | "change", "commit" | in use (people and the map) |
+| **edit log** | The list of kept edits, so the last one can be undone. The studio keeps the full log; the game folder keeps a short `EDITS.md`. | "history" | in use |
+| **skin** | A swappable set of pictures for a game's panels, buttons and bars. | "theme", "UI pack" | proposed (`design/ui-skin.md`) |
+| **reaction** | One thing's own "when this happens, it does that" (the cat looks up when you come near). | "trigger", "event" | proposed (`design/rules-when-then.md`) |
+| **rule** | A game-wide "when this happens, do that", using flags. A reaction is a small rule attached to one thing. | "trigger", "script" | proposed (`design/rules-when-then.md`) |
+| **belief** | What a character thinks is true. It can be wrong. | "knowledge" | proposed (`design/rules-when-then.md`) |
+| **slot** | A place on the hero for one worn item: hand, body, head, feet or charm. | "equipment slot" | proposed (`design/equipment.md`) |
 
 ## Actions (verbs)
 
@@ -53,6 +60,10 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **write the manual** | Writes the mechanics manual from real play. | `handbok` | proposed |
 | **interview** | Asks questions to start a new game. | `chat` | proposed |
 | **keep** | Saves one thing to your collection. | "star" marks; "keep" saves | in use |
+| **put in the game** | Turn a kept character into a real person in the game, standing on a tile. | "place", "keep" (keep only saves them to the vault) | in use |
+| **play it here** | Open the game you are making inside the studio, in a pane, with no download. | "weave and open" | in use |
+| **undo** | Put the last kept edit back, in plain words. One step only. | "revert" | in use (the route works; no button yet) |
+| **equip** / **take off** | Wear or remove an item in a slot. | "wield" | proposed (`design/equipment.md`) |
 
 ## States (adjectives)
 
