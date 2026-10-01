@@ -42,10 +42,11 @@ drawn on the canvas, so the picture and the words agree.
 **5. A gentle nudge, never an error.** With nothing in reach, Interact says one friendly line ("Nothing to use here.
 Walk up to something and try again.") in `#near`, spends no turn, and costs nothing.
 
-**6. Combat folds in.** Walking into an enemy turns the hero to face it and does not attack. Interact on a faced enemy
-opens a small verb menu built from the surface's verbs (today `Strike` and `Console` on the default costume; the list
-already comes from `web/packaged.html` near the `['attack', 'Strike']` pairs). A surface with one verb acts at once.
-Enemies still take their turn after a verb resolves, exactly as after a bump today.
+**6. Combat folds in, bump-attack stays.** Walking into an enemy still strikes, exactly as today (Rylee, 2026-10-01).
+Interact on a faced or nearest enemy is the second way to fight: it opens a small verb menu built from the surface's
+verbs (today `Strike` and `Console` on the default costume; the list already comes from `web/packaged.html` near the
+`['attack', 'Strike']` pairs). A surface with one verb acts at once. Enemies take their turn after a verb resolves, as
+after a bump. This keeps fights familiar and gives non-attack verbs (Console) a home.
 
 ## What does not change
 
@@ -59,9 +60,8 @@ polite, not an alert. The button is never the only way: keys keep working with t
 
 ## Risks and open questions
 
-- Removing bump-attack changes how fights feel for anyone used to it. Mitigation: it is one pack flag away
-  (`bump_attack`, default false) if Rylee wants it back. UNKNOWN whether any shipped pack relies on bump-attack:
-  the foreman must grep `worlds/` and `tests/` and report.
+- Two ways to fight (bump and Interact). If that feels confusing in play, a pack flag `bump_attack: false` is the
+  planned escape hatch (not built now). The foreman must grep `worlds/` and `tests/` for bump-attack reliance and report.
 - Touch targets: one big button is enough on a phone; a long-press for the verb menu is NOT proposed.
 - Talk reach stays 2 tiles; if a resident and a chest tie, the chest wins by the kind order above.
 
@@ -71,7 +71,7 @@ polite, not an alert. The button is never the only way: keys keep working with t
    nearest fallback, tie order, nothing-in-reach nudge, and that no turn passes on a nudge.
 2. Browser tests (`tests/browser/`): press E, Space, Enter and F next to a resident, a door, a chest and a trader;
    the hint text matches the action; the ring appears on the target tile.
-3. Combat: moving into an enemy only turns the hero; Interact opens the verbs; `Strike` hurts the enemy; one-verb
+3. Combat: moving into an enemy still strikes; Interact on an enemy opens the verbs; `Strike` hurts the enemy; one-verb
    surfaces act at once; enemies still take their turn.
 4. A regression test that every previously reachable action is still reachable.
 
