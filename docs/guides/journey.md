@@ -6,6 +6,9 @@ to make. A few stops later you have a game you made yourself: one file that runs
 in any browser, with no server and no model, and you know how every piece got
 there because you were in the room for it.
 
+Along the way you also pick up how small models are taught: through templates, approved examples,
+command-line tools and searchable records. [Making art](making-art.md) shows that part in the open.
+
 This page is the map. It is a suggested path, not a rule: the engine never makes
 you finish one room before you open the next, and a world can start from any of
 them. Every stop ends the same way, with something alive you can look at: a map
@@ -59,7 +62,8 @@ game.
 
 | Date | Stop | Lesson |
 |---|---|---|
-| *(first entry lands with the first feature built through this loop)* | | |
+| 2026-10-01 | Walk it | A single tile hides what a whole room shows: lay a mock room at the game's real tile size before you approve any floor. |
+| 2026-10-01 | Library, Vault | Ask a picture tool for several variations in one request; it is cheaper and the set stays consistent. See [making art](making-art.md). |
 
 ## For AI assistants working in this repo
 
@@ -80,4 +84,5 @@ your orientation. The rules that keep it fun and safe:
 Where to go next: [GETTING_STARTED.md](../../GETTING_STARTED.md) to run it,
 [world-creation.md](world-creation.md) for the full walkthrough of making a world,
 [rulesets.md](rulesets.md) for what each act can play, and
+[making-art.md](making-art.md) for how pictures get made, and
 [residents.md](residents.md) for who is in the studio.
