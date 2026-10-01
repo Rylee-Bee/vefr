@@ -7,6 +7,27 @@
 
 ## Landed
 
+- [x] **An Undo button on the Desk** (2026-10-01): the edit loop's way
+      back now has a client. The existing `POST /api/builder/edits/undo`
+      route (unchanged, plain sentences) is reachable from a real
+      **Undo last edit** `<button type="button">` in the Desk's weave
+      row beside **Play it here** (`web/js/rooms/workshop.js`, plus
+      `API.editsUndo` in `web/js/api.js`). It posts `{"name": null}` so
+      the route falls back to the active world - what the Folks room
+      already sends - and writes the answer into its own polite live
+      region (`#ws-undo-status`, `role="status"`, `aria-live="polite"`,
+      the weave status pattern and CSS class). Success shows the
+      route's sentence verbatim and reloads the Desk; a 404 says the
+      route's own "nothing to undo" words kindly, not as an error, and
+      changes nothing else; any other failure is one plain friendly
+      sentence - never a raw status. Disabled while in flight,
+      re-enabled after every answer, ≥44px via the cta classes.
+      Pinned by a node-vm harness on the REAL workshop.js
+      (`tests/fixtures/undo_harness.mjs` + `tests/test_web_undo_button.py`)
+      and a browser test (`tests/browser/test_undo_button.py`);
+      `docs/guides/studio-edits.md` and the glossary now say the button
+      exists.
+
 - [x] **A README that reaches a walking town** (2026-10-01): `README.md`'s
       "Open and play" now leads with the published image's one command
       (unchanged `podman run`, unchanged `ghcr.io/rylee-bee/vefr:latest` and
