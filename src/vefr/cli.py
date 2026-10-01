@@ -35,7 +35,7 @@ from .paths import world_name
 # The loader's tile convention (ordered variants) is the single source
 # of the try-order the player bakes, so a pack's tiles/ is read the
 # same way whoever resolves it.
-from .world import _discover_tiles
+from .world import _discover_tiles, tile_grid
 
 
 # ---------------------------------------------------------------- envelope
@@ -1017,7 +1017,7 @@ def _tile_data_uri(f: Path) -> str:
 
 def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path,
                       region_dir: Path | None = None,
-                      pack: Path | None = None) -> dict[str, str | list[str]]:
+                      pack: Path | None = None) -> dict[str, str | list[str] | dict]:
     """Resolve one legend's symbols to inlined tile pictures.
 
     Mirrors the studio Map Room's own `tileFor`: an explicit `"tile"`, else
@@ -1028,7 +1028,9 @@ def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path,
     When the pack has no picture for a name the engine set answers (only
     `<name>.webp`, exactly as today, so a pack with no tiles/ bakes
     byte-identically). A symbol with no tile on disk is skipped, and the
-    player falls back to its base colour.
+    player falls back to its base colour. A name whose first picture is a
+    grid (`name.grid3x3.webp`) bakes ONE object `{src, cols, rows}`; the
+    player draws cell (x mod cols, y mod rows) of that picture.
     """
     if not isinstance(legend, dict) or not legend:
         return {}
@@ -1038,7 +1040,7 @@ def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path,
         if isinstance(spec, dict) and not spec.get('solid')
         and ch not in sanctuaries and not spec.get('deco')
     ]
-    out: dict[str, str | list[str]] = {}
+    out: dict[str, str | list[str] | dict] = {}
     for ch, spec in legend.items():
         spec = spec if isinstance(spec, dict) else {}
         own = spec.get('tile')
@@ -1056,7 +1058,11 @@ def _tiles_for_legend(legend: dict, sanctuaries, web_dir: Path,
         # to the engine set, unchanged.
         pack_paths = _pack_tile_paths(pack, region_dir, name)
         if pack_paths:
-            if len(pack_paths) == 1:
+            grid = tile_grid(pack_paths[0].stem)
+            if grid:
+                out[ch] = {'src': _tile_data_uri(pack_paths[0]),
+                           'cols': grid[1], 'rows': grid[2]}
+            elif len(pack_paths) == 1:
                 out[ch] = _tile_data_uri(pack_paths[0])
             else:
                 out[ch] = [_tile_data_uri(p) for p in pack_paths]

@@ -340,6 +340,28 @@ def _discover_sprites(sprites_dir: Path) -> dict:
 
 # A numbered tile variant: the stem ends in `.<digits>` (`.2`, `.10`).
 _TILE_VARIANT_RE = re.compile(r"^(?P<base>.+)\.(?P<num>\d+)$")
+# A grid tile: ONE picture drawn as a COLSxROWS block of cells, `wood-floor.grid3x3.webp`. The player
+# draws cell (x mod COLS, y mod ROWS) of it, so a floor painted as one scene repeats only every
+# COLS tiles instead of every tile. No slicing and no extra files: one picture, one inlined copy.
+_TILE_GRID_RE = re.compile(r"^(?P<base>.+)\.grid(?P<cols>\d+)x(?P<rows>\d+)$")
+TILE_GRID_MAX = 8  # cells per side; 2..8 keeps the picture, and the bake, small
+
+
+def tile_grid(stem_or_name: str) -> tuple[str, int, int] | None:
+    """(base name, cols, rows) when this stem is a VALID grid picture, else None.
+
+    Valid means 1..TILE_GRID_MAX on each side and at least two cells. A stem that looks like a grid
+    but is not valid returns None here; maplab's validator reports it by name.
+    """
+    m = _TILE_GRID_RE.match(stem_or_name)
+    if not m:
+        return None
+    cols, rows = int(m.group("cols")), int(m.group("rows"))
+    if not (1 <= cols <= TILE_GRID_MAX and 1 <= rows <= TILE_GRID_MAX and cols * rows >= 2):
+        return None
+    return m.group("base"), cols, rows
+
+
 # The picture suffixes a tile may use. The engine set also carries
 # jpg/jpeg, but a pack's tiles/ is the webp/png shape the naming
 # convention documents.
@@ -377,8 +399,13 @@ def _discover_tiles(tiles_dir: Path) -> dict[str, list[str]]:
         if f.suffix.lower() not in _TILE_SUFFIXES:
             continue
         stem = f.name[: -len(f.suffix)]
+        grid = tile_grid(stem)
         m = _TILE_VARIANT_RE.match(stem)
-        if m:
+        if grid:
+            # A grid picture sorts ahead of everything for its name (key -1), so a baker that
+            # sees it first knows the name is a grid. It wins over variants of the same name.
+            base, num = grid[0], -1
+        elif m:
             base, num = m.group("base"), int(m.group("num"))
         else:
             # The unnumbered picture is variant 1; key 0 keeps it
