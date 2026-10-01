@@ -3025,9 +3025,8 @@ function setupTown() {
       } else if (t.kind === 'trader') {
         openTrade(t.id, t.name, document.getElementById('interact'));
       } else if (t.kind === 'resident') {
-        var spec = speakers[t.id];
-        if (!spec) throw new Error('speaker gone');
-        talkToSpeaker(t.id, spec, t.dist);
+        if (!speakers[t.id]) throw new Error('speaker gone');
+        talkToSpeaker({ key: t.id, spec: speakers[t.id], dist: t.dist });
       } else if (t.kind === 'place') {
         showSpeech((pois || {})[t.id] || '', (town.poi_text || {})[t.id] || '',
                    '');
@@ -3145,7 +3144,7 @@ function setupTown() {
       document.getElementById('near').textContent = 'No one is close enough to talk to.';
       return;
     }
-    talkToSpeaker(nearest.key, nearest.spec, nearest.dist);
+    talkToSpeaker(nearest);
   }
 
   // The Talk button's handler: the same nearest-speaker path, under
@@ -3157,14 +3156,14 @@ function setupTown() {
   // pick. The line is the pack's own: straight from the model when
   // one answers, else from the woven pool, else spliced from this
   // character's fragments.
-  function talkToSpeaker(key, spec, dist) {
+  function talkToSpeaker(nearest) {
     var ph = phase();
-    libraryFromSpeaker(key);
-    var seed = (spec.seeds || {})[ph] || '';
-    var voice = window.VEFR_VOICES[key] || '';
+    libraryFromSpeaker(nearest.key);
+    var seed = (nearest.spec.seeds || {})[ph] || '';
+    var voice = window.VEFR_VOICES[nearest.key] || '';
     var tone = world.phases[ph] || '';
     var system = voice + '\n\nCURRENT PHASE: ' + tone;
-    var userPrompt = spec.name + ' speaks one line at ' + spec.near
+    var userPrompt = nearest.spec.name + ' speaks one line at ' + nearest.spec.near
       + ' in the current phase tone. The seed line for this phase: "' + seed
       + '" Match its plainness and shape, do not copy it word for word. Reply with only the JSON object.';
     var schema = { type: 'object', properties: {
@@ -3179,12 +3178,12 @@ function setupTown() {
     }).then(function (r) { return r.json(); }).then(function (j) {
       var line = JSON.parse(j.choices[0].message.content);
       document.getElementById('near').textContent = '';
-      showSpeech(spec.name, line.line, '');
+      showSpeech(nearest.spec.name, line.line, '');
     }).catch(function () {
-      var pkey = 'npc:' + (STATE.get().phase || '?') + ':' + (key || '?');
-      var pooled = poolDraw(pkey);
-      var respliced = pooled ? null : composeLine(pkey);
-      var card = pooled || respliced || composeFromFragments(key, 'line');
+      var key = 'npc:' + (STATE.get().phase || '?') + ':' + (nearest.key || '?');
+      var pooled = poolDraw(key);
+      var respliced = pooled ? null : composeLine(key);
+      var card = pooled || respliced || composeFromFragments(nearest.key, 'line');
       if (card) {
         document.getElementById('near').textContent = '';
         showSpeech(card.speaker, card.line, pooled
