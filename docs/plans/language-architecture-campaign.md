@@ -187,6 +187,34 @@ Before adding a new bespoke subsystem for bosses, shops, equipment, keys, themed
 
 Do not force awkward fits. If a concept genuinely needs runtime machinery, say so.
 
+## Kernel and dialects (the longer horizon)
+
+Rylee's eventual aim is for this to be the underlying language for **all** of her projects, not only games. That changes the shape of the hypothesis from two layers to three:
+
+```text
+KERNEL    domain-neutral: entity, relation, rule, event, history, provenance
+DIALECT   a domain's grammar: the game dialect (combat, floors, growth, ...)
+PACK      the words and content of one project
+```
+
+"VEFR owns grammar, packs own vocabulary" becomes "the kernel owns the grammar, dialects own a domain, packs own the words." Whether the kernel keeps the name VEFR is an open owner decision.
+
+**Guardrail:** do not generalize past what has a second customer. This campaign's job is to prove the kernel against Cottage, and to test on paper whether it is truly domain-neutral (see the second-domain probe in Phase A). Do not build a dialect-extension system before the kernel has proved itself in Cottage.
+
+### Candidate concepts to evaluate
+
+These are hypotheses for Phase A to confirm, revise or reject with evidence, not decisions. For each, say adopt, adapt, defer or reject, and why.
+
+1. **Event sourcing.** State is a fold over an append-only event log. One mechanism could give save/reload, replay, deterministic tests and the "why did this happen?" answer.
+2. **Facts, rules and queries (Datalog-style).** Derived facts such as "locked unless the key is held" are queries over base facts, so a tool can ask why something is true, and rules can be shared across projects without sharing code.
+3. **Effects as a capability boundary.** A rule may only request named effects (`reveal`, `grant`, `notify`); the host decides what they mean. This keeps the language deterministic and safe, and is what would let one language drive a game and a non-game service.
+4. **A semantic IR with provenance.** Every fact records its source and the transformation that produced it, so hand edits, generated content and agent edits are inspectable the same way.
+5. **Schemas, versions and migrations as first-class.** Each dialect has a version and an upgrade path for old packs. For a multi-project language this decides whether the idea survives.
+6. **Declared contracts and invariants.** A pack states assertions ("every floor has a reachable stair"; "the seal opens only after the guardian"); validation checks them and generators must satisfy them. Today's reachability and parity guarantees would become declared contracts instead of bespoke tests.
+7. **Property-based testing on determinism.** Same seed, same result, tested generally rather than per feature.
+8. **Meaning separated from presentation.** The model holds no prose, localization or art, only references to them; this also keeps accessibility structural.
+9. **An explainable surface.** Every command answers what, why and what-if: `explain`, a dry-run `what-if` for any transformation, and a `diff` between two semantic states.
+
 ## API hypothesis
 
 Do **not** create one HTTP route per literal game word.
@@ -489,6 +517,18 @@ Research questions must include:
 19. How do we avoid turning every word into executable code?
 20. How do we keep the public engine game-neutral?
 
+### Kernel / dialect tagging
+
+In the semantic census (VEFR and Cottage), tag every concept **kernel** (domain-neutral), **game dialect**, or **runtime machinery**. State the evidence for each tag. A kernel that turns out to contain only game concepts is a finding: say so rather than relabelling them.
+
+### Second-domain probe (paper exercise)
+
+Pick one small non-game system in the estate and express one real rule from it in the proposed kernel, for example "when a check fails twice, record an incident and notify". This is a thought experiment on paper, not an implementation and not a change to that project. Report where the kernel fits cleanly, where it needs game words to work, and where it has to stretch. If no honest example exists, record that as UNKNOWN; do not invent one.
+
+### Candidate-concept review
+
+Review the nine candidate concepts under "Kernel and dialects" against the prior art and the Cottage evidence, and give each a disposition (adopt, adapt, defer, reject) in `05-language-model-options.md`.
+
 ### Failure modes
 
 Explicitly test for:
@@ -529,6 +569,7 @@ Produce a durable packet suitable for Opus, preferably with:
 09-recommended-core-grammar.md
 10-cottage-proof.md
 11-open-decisions.md
+12-kernel-and-second-domain.md
 SOURCES.md
 ```
 
@@ -753,7 +794,8 @@ When old implementation becomes obsolete:
     - Why did this happen?
     and get checkable answers.
 13. Accessibility remains structural.
-14. Delivery includes discoverability: new grammar/features appear in handbook/catalog/introspection.
+14. The kernel stays domain-neutral: no game word enters it without evidence that a second domain would also use it.
+15. Delivery includes discoverability: new grammar/features appear in handbook/catalog/introspection.
 
 ## Definition of done
 
