@@ -1,0 +1,27 @@
+{
+  "blueprint": "1",
+  "families": {
+    "b": {
+      "defaults": {
+        "name": "a beetle",
+        "sprite": "beetle",
+        "hp": 3,
+        "atk": 1
+      }
+    }
+  },
+  "regions": {
+    "act-1/cave-2": {
+      "enemies": [
+        {
+          "id": "x1",
+          "family": "b",
+          "at": [
+            1,
+            1
+          ]
+        }
+      ]
+    }
+  }
+}

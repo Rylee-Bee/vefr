@@ -1,0 +1,30 @@
+{
+  "act-1/cave-2": [
+    {
+      "id": "x1",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        1,
+        1
+      ],
+      "hp": 3,
+      "atk": 1,
+      "drops": []
+    },
+    {
+      "id": "x2",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        2,
+        1
+      ],
+      "hp": 3,
+      "atk": 1,
+      "drops": [
+        "shell"
+      ]
+    }
+  ]
+}
