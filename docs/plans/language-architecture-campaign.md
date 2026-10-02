@@ -4,6 +4,18 @@
 > **Scope:** VEFR + Cottage of the Breeze  
 > **Purpose:** research, plan, then implement a language-first architecture while the engine is still small.
 
+## Technical proof companion
+
+The [concept refinement and Codex proof brief](language-architecture-proof-pass.md)
+adds three bounded probes before the implementation plan: family/guardian
+composition, a real rule lowered into the current engine, and a theme feeding
+the existing floor generator. It clarifies kernel/dialect/pack ownership,
+unsupported theme requests, private-pack evidence and compatibility.
+
+This is a proposed technical validation pass within Phase A. It does not
+run the probes, approve a new public contract or bypass the campaign gate.
+Sonnet incorporates its evidence before handing the packet to Opus.
+
 ## Owner intent
 
 Rylee wants to test, and if it survives contact with reality, implement this hypothesis:

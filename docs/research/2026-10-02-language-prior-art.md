@@ -11,6 +11,26 @@ The plan at `docs/plans/language-architecture-campaign.md:9-21` proposes a small
 
 ---
 
+## Correction addendum — 2026-10-02, Codex
+
+This addendum supersedes the affected conclusions below. The original note
+remains intact to preserve its provenance. This is a spot-check, not a full audit.
+
+| Claim in the original note | Status | Correction or limit |
+|---|---|---|
+| Pure Datalog terminates because there are no rule cycles | Corrected | Recursion is supported. Pure finite-domain, function-free Datalog reaches a finite fixed point; arithmetic extensions can introduce nontermination. [Soufflé's primary tutorial](https://souffle-lang.github.io/tutorial) explains the distinction and demonstrates recursive reachability. |
+| Frozen JSON Schema identifiers guarantee old packs/programs stay valid | Corrected | `$schema` declares the schema dialect; `$id` sets its base URI for identification and reference resolution ([official structuring guide](https://json-schema.org/understanding-json-schema/structuring)). Neither promises application backward compatibility. Pack compatibility needs explicit readers, fixtures and migrations. [Official dialect documentation](https://json-schema.org/understanding-json-schema/reference/schema) describes version-specific semantics and warns that custom vocabularies require implementation support. |
+| Event sourcing buys save/reload, replay, tests and provenance in one mechanism | Corrected | These are possible benefits, conditional on complete events and compatible replay logic. Schema evolution and migration add costs. [Microsoft's architecture guidance](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing) explicitly advises weighing complexity and notes that conventional state management is sufficient for most systems. Compare current state plus structured evidence first. |
+| TADS/Penrose cadence proves maintainer or migration failures killed them | Unverified | Activity, present status and causes are different claims. Forum anecdotes and a past web page do not establish causality. Do not use these conclusions to choose VEFR architecture until checked against current releases and maintainer evidence. |
+| StoryNexus is the closest project; particular architectural choices caused projects to succeed | Unverified as factual claims | These are analytical judgments. State comparison criteria and supporting evidence; present them as analysis rather than verified project history. |
+
+The first three corrections were checked against the linked primary pages
+on 2026-10-02. The other rows are evidence downgrades; no new project-status
+audit is claimed. The Datalog/Prolog compatibility statement also needs
+implementation/version-specific evidence rather than a subset argument.
+
+---
+
 ## (1) Prior-art table
 
 | Name | What it is | URL | What to borrow | What to avoid | Status |

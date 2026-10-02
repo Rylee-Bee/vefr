@@ -2297,6 +2297,12 @@
 
 ## Next
 
+- [ ] **Language architecture proof pass** (PR #219, proposed): run the
+      [bounded Codex probes](docs/plans/language-architecture-proof-pass.md),
+      then return evidence to Sonnet for the research packet and Opus plan.
+      Floors phase 2, album and equipment are informed by that disposition;
+      no new runtime or pack contract is approved by the docs-only proposal.
+
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
       depth tables, the Journal line and the New descent button.
 - [ ] **Gates and guardians** (`design/gates-and-guardians.md`): a `requires` lock on a
