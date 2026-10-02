@@ -623,3 +623,12 @@ def test_check_rejects_json_flag(monkeypatch, capsys):
         cli.vefr_main()
     assert exc.value.code == cli.EXIT_USAGE == 2
     assert "--json" in capsys.readouterr().err
+
+
+# Blueprint A10 (docs/adr/0008-blueprint-format.md): the `normalize` verb joins the pinned
+# front-door tables. Frozen; the CLI PR adds the three entries above and removes the mark.
+@pytest.mark.xfail(strict=True, reason="Blueprint CLI not built yet")
+def test_normalize_verb_is_pinned_in_all_three_tables():
+    assert "normalize" in VEFR_VERBS
+    assert "normalize" in DISPATCH_ARGV
+    assert "normalize" in EXPECTED_BOUND

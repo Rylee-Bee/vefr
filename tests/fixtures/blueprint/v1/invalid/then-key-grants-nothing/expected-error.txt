@@ -1,0 +1,2 @@
+unknown key
+/regions/act-1~1cave-2/enemies/0/then

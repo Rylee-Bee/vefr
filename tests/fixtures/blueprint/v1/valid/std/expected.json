@@ -1,0 +1,82 @@
+{
+  "act-1/cave-2": [
+    {
+      "id": "b1",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        3,
+        4
+      ],
+      "hp": 3,
+      "atk": 1,
+      "xp": 2
+    },
+    {
+      "id": "b2",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        6,
+        4
+      ],
+      "hp": 3,
+      "atk": 1,
+      "xp": 2,
+      "drops": [
+        "shell"
+      ]
+    },
+    {
+      "id": "m1",
+      "name": "a moth",
+      "sprite": "moth",
+      "at": [
+        4,
+        2
+      ],
+      "hp": 2,
+      "atk": 1,
+      "xp": 1,
+      "sight": 3
+    },
+    {
+      "id": "odd1",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        5,
+        5
+      ],
+      "hp": 9,
+      "atk": 1,
+      "xp": 2
+    }
+  ],
+  "act-1/cave-3": [
+    {
+      "id": "d1",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        3,
+        4
+      ],
+      "hp": 4,
+      "atk": 1,
+      "xp": 2
+    },
+    {
+      "id": "d2",
+      "name": "a beetle",
+      "sprite": "beetle",
+      "at": [
+        6,
+        4
+      ],
+      "hp": 4,
+      "atk": 1,
+      "xp": 2
+    }
+  ]
+}
