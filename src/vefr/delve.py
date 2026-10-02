@@ -51,6 +51,54 @@ SPEAKER_HEAD = "#d8d5df"
 _STAIR_ATTEMPTS = 500
 
 
+def _to_int32(value: int) -> int:
+    """The low 32 bits of `value`, read as JavaScript's signed 32-bit int."""
+    value &= 0xFFFFFFFF
+    if value >= 0x80000000:
+        value -= 0x100000000
+    return value
+
+
+def _imul(a: int, b: int) -> int:
+    """JavaScript's `Math.imul`: a 32-bit signed multiply (low 32 bits)."""
+    return _to_int32((a & 0xFFFFFFFF) * (b & 0xFFFFFFFF))
+
+
+def _ushr(value: int, bits: int) -> int:
+    """JavaScript's unsigned right shift `>>>`, on a 32-bit word."""
+    return (value & 0xFFFFFFFF) >> bits
+
+
+def prng(seed: str):
+    """A JavaScript-compatible random stream: floats in [0, 1).
+
+    The string is hashed by its UTF-16 code units (exactly what
+    JavaScript's `charCodeAt` reads, so an astral character is two
+    units) with xmur3, and the resulting 32-bit state feeds mulberry32.
+    Only 32-bit integer maths is used, so a JavaScript twin that runs
+    the same code returns the identical stream. The returned closure is
+    stateful: every call yields the next float and advances the state.
+    """
+    units = seed.encode("utf-16-le")
+    codes = [units[i] | (units[i + 1] << 8) for i in range(0, len(units), 2)]
+    h = _to_int32(1779033703 ^ len(codes))
+    for code in codes:
+        h = _imul(h ^ code, 3432918353)
+        h = _to_int32((h << 13) | _ushr(h, 19))
+    h = _imul(h ^ _ushr(h, 16), 2246822507)
+    h = _imul(h ^ _ushr(h, 13), 3266489909)
+    state = _to_int32(h ^ _ushr(h, 16))
+
+    def next_float() -> float:
+        nonlocal state
+        state = _to_int32(state + 0x6D2B79F5)
+        t = _imul(state ^ _ushr(state, 15), 1 | state)
+        t = _to_int32((t + _imul(t ^ _ushr(t, 7), 61 | t)) ^ t)
+        return _ushr(t ^ _ushr(t, 14), 0) / 4294967296
+
+    return next_float
+
+
 def _center(room: tuple[int, int, int, int]) -> tuple[int, int]:
     x, y, w, h = room
     return x + w // 2, y + h // 2
@@ -155,6 +203,76 @@ def _pick_stairs(rng: random.Random,
     return best
 
 
+def _rand_range(rng, lo: int, hi: int) -> int:
+    """A whole number in [lo, hi] (both inclusive) from one `prng` draw.
+
+    Written as `lo + floor(rng() * (hi - lo + 1))` so a JavaScript twin
+    using `Math.floor` gets the identical number.
+    """
+    return lo + int(rng() * (hi - lo + 1))
+
+
+def _place_rooms_v2(rng, grid: list[list[str]], width: int, height: int,
+                    count: int) -> list[tuple[int, int, int, int]]:
+    """The `prng` twin of `_place_rooms`; see the v2 draw order below."""
+    placed: list[tuple[int, int, int, int]] = []
+    max_w = max(3, min(9, width - 2))
+    max_h = max(3, min(7, height - 2))
+    for _ in range(count * 30):
+        if len(placed) >= count:
+            break
+        w = _rand_range(rng, 3, max_w)
+        h = _rand_range(rng, 3, max_h)
+        x = _rand_range(rng, 1, width - 1 - w)
+        y = _rand_range(rng, 1, height - 1 - h)
+        room = (x, y, w, h)
+        if any(_overlaps(room, other, 1) for other in placed):
+            continue
+        _carve_room(grid, room)
+        placed.append(room)
+    if not placed:
+        _carve_room(grid, (1, 1, 3, 3))
+        placed.append((1, 1, 3, 3))
+    return placed
+
+
+def _carve_corridor_v2(rng, grid: list[list[str]],
+                       a: tuple[int, int], b: tuple[int, int]) -> None:
+    """The `prng` twin of `_carve_corridor` (one draw picks the bend)."""
+    ax, ay = a
+    bx, by = b
+    if rng() < 0.5:
+        _carve_h(grid, ax, bx, ay)
+        _carve_v(grid, bx, ay, by)
+    else:
+        _carve_v(grid, ax, ay, by)
+        _carve_h(grid, ax, bx, by)
+
+
+def _pick_stairs_v2(rng,
+                    floors: list[tuple[int, int]]) -> tuple[tuple[int, int],
+                                                           tuple[int, int]]:
+    """The `prng` twin of `_pick_stairs` (two draws pick two tiles)."""
+    if len(floors) < 2:
+        raise ValueError("a floor needs at least two walkable tiles for stairs")
+    n = len(floors)
+    best: tuple[tuple[int, int], tuple[int, int]] | None = None
+    best_dist = -1
+    for _ in range(_STAIR_ATTEMPTS):
+        i = int(rng() * n)
+        j = int(rng() * (n - 1))
+        if j >= i:
+            j += 1
+        a, b = floors[i], floors[j]
+        dist = abs(a[0] - b[0]) + abs(a[1] - b[1])
+        if dist > best_dist:
+            best, best_dist = (a, b), dist
+        if dist >= MIN_STAIR_DISTANCE:
+            return a, b
+    assert best is not None
+    return best
+
+
 def generate_floor(seed: str, width: int = 30, height: int = 20,
                    rooms: int = 8) -> list[str]:
     """Draw one dungeon floor from `seed` as `height` rows of `width`.
@@ -186,6 +304,80 @@ def generate_floor(seed: str, width: int = 30, height: int = 20,
     floors = [(x, y) for y in range(height) for x in range(width)
               if grid[y][x] == "."]
     up, down = _pick_stairs(rng, floors)
+    grid[up[1]][up[0]] = "u"
+    grid[down[1]][down[0]] = "d"
+    return ["".join(row) for row in grid]
+
+
+# generate_floor_v2 - the exact order of draws. A JavaScript twin must
+# follow this line for line; `rng()` is one call of `prng(seed)`, and a
+# whole number `rand(lo, hi)` is `lo + floor(rng() * (hi - lo + 1))`.
+#
+#  1. Validate: width and height must each be >= 5, and rooms >= 1;
+#     otherwise raise ValueError (same messages as generate_floor).
+#  2. rng = prng(seed). Build a `height` x `width` grid of "#".
+#  3. max_w = max(3, min(9, width - 2));
+#     max_h = max(3, min(7, height - 2)).
+#  4. Rooms: repeat at most `rooms * 30` times, breaking early once
+#     `rooms` rooms are placed. Each attempt draws, in this order:
+#       w = rand(3, max_w);
+#       h = rand(3, max_h);
+#       x = rand(1, width - 1 - w);
+#       y = rand(1, height - 1 - h).
+#     The rectangle (x, y, w, h) is discarded if it overlaps any
+#     already-placed room with pad 1 (no further draws that attempt);
+#     otherwise carve it to "." and append it. If no room was placed,
+#     carve (1, 1, 3, 3) and use that as the only room.
+#  5. Corridors: for each consecutive pair of placed rooms (0->1, 1->2,
+#     ..., n-2->n-1), take their centres cx = x + w // 2, cy = y + h // 2
+#     (integer floor) and draw once:
+#       if rng() < 0.5: carve horizontal from a.cx to b.cx at a.cy, then
+#                       vertical from a.cy to b.cy at b.cx;
+#       else:           carve vertical from a.cy to b.cy at a.cx, then
+#                       horizontal from a.cx to b.cx at b.cy.
+#     Every carve is inclusive of both endpoints and writes ".".
+#  6. floors = every "." tile in row-major order: for y = 0..height-1,
+#     then for x = 0..width-1.
+#  7. Stairs: if len(floors) < 2 raise ValueError("a floor needs at
+#     least two walkable tiles for stairs"). Otherwise repeat at most
+#     _STAIR_ATTEMPTS (500) times:
+#       n = len(floors);
+#       i = floor(rng() * n);
+#       j = floor(rng() * (n - 1));
+#       if j >= i then j = j + 1            (so i != j);
+#       a = floors[i]; b = floors[j];
+#       dist = |a.x - b.x| + |a.y - b.y|.
+#     Keep the pair with the largest dist seen so far (a strictly
+#     greater dist replaces it; a tie keeps the earlier pair). Return
+#     the first pair with dist >= MIN_STAIR_DISTANCE (10). If none
+#     reaches it in 500 attempts, return the widest pair found.
+#  8. Write "u" at the first stair and "d" at the second; return the
+#     rows as strings.
+def generate_floor_v2(seed: str, width: int = 30, height: int = 20,
+                      rooms: int = 8) -> list[str]:
+    """Draw one floor from `seed` using only the shared `prng`.
+
+    Same shape as `generate_floor` (rooms joined by L-corridors, a solid
+    wall border, one `u` and one `d` far apart when the layout allows,
+    every walkable tile connected) but built entirely from `prng(seed)`,
+    so a JavaScript twin draws identical rows. Raises `ValueError` for
+    the same bad sizes as `generate_floor`. The draw order is the
+    numbered comment above this function.
+    """
+    if width < 5 or height < 5:
+        raise ValueError("width and height must each be at least 5")
+    if rooms < 1:
+        raise ValueError("rooms must be at least 1")
+
+    rng = prng(seed)
+    grid = [["#"] * width for _ in range(height)]
+    placed = _place_rooms_v2(rng, grid, width, height, rooms)
+    for a, b in zip(placed, placed[1:]):
+        _carve_corridor_v2(rng, grid, _center(a), _center(b))
+
+    floors = [(x, y) for y in range(height) for x in range(width)
+              if grid[y][x] == "."]
+    up, down = _pick_stairs_v2(rng, floors)
     grid[up[1]][up[0]] = "u"
     grid[down[1]][down[0]] = "d"
     return ["".join(row) for row in grid]
