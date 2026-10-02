@@ -48,7 +48,7 @@ name a new or empty directory outside the pack; the pack is copied
 there, refreshed and validated there, and the original is never
 touched.
 
-`normalize` exits `0` when the output is fresh or was written, and `1`
+`normalize` exits `0` when the output is fresh or was written (or the pack has no Blueprint, which it says), and `1`
 when there are errors or the committed output is stale.
 
 Then check the whole pack:
