@@ -1,7 +1,7 @@
 # UI skin: a swappable picture pack for the game's interface
 
-Status: **proposed**. Rylee asked for "a UI pack" on 2026-10-01 and chose: parchment and carved wood; panels, buttons and tabs, bars and meters, dividers, banners and a cursor;
-used as swappable CSS skin files. No code yet.
+Status: **loader built (2026-10-02)**. Rylee asked for "a UI pack" on 2026-10-01 and chose: parchment and carved wood; panels, buttons and tabs, bars and meters, dividers, banners and a cursor;
+used as swappable CSS skin files. Build steps 4 and 5 are done; step 6, a second tiny skin, is not.
 
 ## What exists today
 

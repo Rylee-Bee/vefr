@@ -55,7 +55,9 @@ def load_pack(pack_dir: Path) -> dict:
 
     The optional `growth` block (design/growth.md) is carried through
     only when the pack declares it, so a pack without one loads
-    exactly as before.
+    exactly as before. The optional `skin` field (design/ui-skin.md)
+    is carried the same way: only when the pack declares it, so a pack
+    without one loads exactly as before.
     """
     pack = Path(pack_dir)
     config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
@@ -168,6 +170,11 @@ def load_pack(pack_dir: Path) -> dict:
         # pack declares it (design/growth.md).
         if 'growth' in config:
             unified['growth'] = config['growth']
+        # The optional skin folder, carried through ONLY when the pack
+        # declares it (design/ui-skin.md): a pack with none loads as
+        # before, and `world.json` has no `skin` key to bake.
+        if 'skin' in config:
+            unified['skin'] = config['skin']
         return unified
     config['_player'] = config.get('player')
     return config
@@ -809,6 +816,177 @@ def growth_errors(w: dict) -> list[str]:
     return errors
 
 
+# The parts a skin may name (design/ui-skin.md). Anything else is a
+# typo the author should read about, not a part the player silently
+# ignores.
+SKIN_PARTS = ('panel', 'button', 'tab', 'toggle', 'bar', 'slot', 'speech',
+              'tooltip', 'gold-plate', 'divider', 'banner', 'corner', 'cursor')
+
+# Every key of a part whose value is a picture file name. `slice` and
+# `hotspot` are the only other keys the contract knows.
+SKIN_PICTURE_KEYS = ('file', 'hover', 'pressed', 'disabled', 'selected',
+                     'on', 'off', 'frame', 'fill', 'hand')
+
+# The picture suffix a skin may use, and the per-picture size cap.
+SKIN_SUFFIXES = ('.png', '.webp')
+SKIN_PICTURE_BYTES = 300_000
+
+# The one colour shape `ink` accepts.
+_SKIN_INK_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+
+def _picture_size(path: str) -> tuple[int, int] | None:
+    """(width, height) read from a png or webp header, or None.
+
+    PNG dimensions come from the IHDR chunk. WebP is read on a
+    best-effort basis (VP8X canvas, VP8 frame header); a picture whose
+    header cannot be read returns None, so the caller skips the
+    half-slice check rather than guess.
+    """
+    try:
+        with open(path, 'rb') as f:
+            head = f.read(32)
+    except OSError:
+        return None
+    # PNG: signature (8) + length (4) + 'IHDR' (4) + width/height (8).
+    if len(head) >= 24 and head[:8] == b'\x89PNG\r\n\x1a\n' and head[12:16] == b'IHDR':
+        return int.from_bytes(head[16:20], 'big'), int.from_bytes(head[20:24], 'big')
+    # WebP: RIFF....WEBP then a VP8X/VP8 chunk.
+    if len(head) >= 30 and head[:4] == b'RIFF' and head[8:12] == b'WEBP':
+        chunk = head[12:16]
+        if chunk == b'VP8X':
+            w = int.from_bytes(head[24:27], 'little') + 1
+            h = int.from_bytes(head[27:30], 'little') + 1
+            return w, h
+        if chunk == b'VP8 ' and head[23:26] == b'\x9d\x01\x2a':
+            w = int.from_bytes(head[26:28], 'little') & 0x3fff
+            h = int.from_bytes(head[28:30], 'little') & 0x3fff
+            return w, h
+    return None
+
+
+def skin_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
+    """Every problem with a pack's optional `skin` (empty = good).
+
+    A `"skin": "skins/<name>"` field names a folder inside the pack
+    with a `skin.json` and its pictures (design/ui-skin.md, rules 1, 5,
+    6). The field is optional and additive: a pack with none gets no
+    output. The path must stay inside the pack; `skin.json` must be a
+    JSON object with a non-empty `name` and `credit`; every part key
+    must be a known part; every named picture must exist, end in .png
+    or .webp, and stay under the size cap; `slice` must fit inside its
+    picture; `ink` colours must be `#RRGGBB`. Every message is one
+    plain sentence naming the thing to fix.
+    """
+    if 'skin' not in w:
+        return []
+    skin_rel = w.get('skin')
+    if not isinstance(skin_rel, str) or not skin_rel.strip():
+        return ["skin must name a folder inside the pack"]
+    # The path stays inside the pack: no absolute path, no '..'.
+    if os.path.isabs(skin_rel) or '..' in Path(skin_rel).parts:
+        return [f"skin '{skin_rel}' must stay inside the pack"]
+    # Everything past here needs the pack on disk (in-memory drafts have
+    # no folder to read).
+    if pack_dir is None:
+        return []
+    from .cli import _inside
+
+    base = os.path.realpath(str(pack_dir))
+    skin_dir = _inside(base, skin_rel)
+    if skin_dir is None or not os.path.isdir(skin_dir):
+        return [f"skin folder '{skin_rel}' does not exist inside the pack"]
+
+    skin_json = os.path.join(skin_dir, 'skin.json')
+    if not os.path.isfile(skin_json):
+        return [f"skin folder '{skin_rel}' has no skin.json"]
+    try:
+        data = json.loads(Path(skin_json).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return [f"skin.json in '{skin_rel}' is not valid JSON"]
+    if not isinstance(data, dict):
+        return [f"skin.json in '{skin_rel}' must be a JSON object"]
+
+    errors: list[str] = []
+    for field in ('name', 'credit'):
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"skin.json needs a non-empty string '{field}'")
+
+    parts = data.get('parts')
+    if not isinstance(parts, dict):
+        errors.append("skin.json 'parts' must be an object of named parts")
+        parts = {}
+    for pname, spec in parts.items():
+        if pname not in SKIN_PARTS:
+            errors.append(f"skin.json part '{pname}' is not a known part")
+            continue
+        if not isinstance(spec, dict):
+            errors.append(f"skin part '{pname}' must be an object")
+            continue
+        # Every picture a part names: real, webp/png, small enough.
+        found: dict[str, str] = {}
+        for key in SKIN_PICTURE_KEYS:
+            fname = spec.get(key)
+            if fname is None:
+                continue
+            if not isinstance(fname, str) or not fname:
+                errors.append(
+                    f"skin part '{pname}' {key} must name a picture file")
+                continue
+            target = _inside(skin_dir, fname)
+            if target is None or not os.path.isfile(target):
+                errors.append(
+                    f"skin part '{pname}' {key} names '{fname}', which "
+                    'does not exist in the skin folder')
+                continue
+            found[key] = target
+            if os.path.splitext(fname)[1].lower() not in SKIN_SUFFIXES:
+                errors.append(
+                    f"skin part '{pname}' {key} names '{fname}', which is "
+                    'not a webp or png picture')
+                continue
+            size = os.path.getsize(target)
+            if size > SKIN_PICTURE_BYTES:
+                errors.append(
+                    f"skin part '{pname}' {key} picture '{fname}' is too "
+                    f'big ({size} bytes; the cap is {SKIN_PICTURE_BYTES})')
+        # `slice` fits inside the part's main picture: a whole number of
+        # at least 1, at most half the smaller side.
+        if 'slice' in spec:
+            sl = spec['slice']
+            # The main picture for the fit check: `file`, else `frame`,
+            # else the first picture the part names.
+            main = None
+            for key in ('file', 'frame', *SKIN_PICTURE_KEYS):
+                if key in found:
+                    main = found[key]
+                    break
+            if not _is_whole(sl) or sl < 1:
+                errors.append(
+                    f"skin part '{pname}' slice must be a whole number "
+                    'of at least 1')
+            elif main is not None:
+                size = _picture_size(main)
+                if size is not None and sl * 2 > min(size):
+                    errors.append(
+                        f"skin part '{pname}' slice {sl} is more than half "
+                        f'the smaller side of its picture ({min(size)} px)')
+        # `hotspot` is carried through untouched; only its presence has
+        # a home in the player.
+
+    ink = data.get('ink')
+    if ink is not None:
+        if not isinstance(ink, dict):
+            errors.append("skin.json 'ink' must be an object of #RRGGBB colours")
+        else:
+            for name, colour in ink.items():
+                if not isinstance(colour, str) or not _SKIN_INK_RE.match(colour):
+                    errors.append(
+                        f"skin.json ink '{name}' must be a #RRGGBB colour")
+    return errors
+
+
 def rules_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every problem with a pack's optional flags/claims/people/rules.
 
@@ -1236,6 +1414,9 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # pack-authoring error, not a surprise in play. A pack that
     # declares none of the four keys gets nothing here.
     errors.extend(rules_errors(w, pack_dir))
+    # The pack's optional skin (design/ui-skin.md), checked beside the
+    # other optional catalogs. A pack that declares none gets nothing.
+    errors.extend(skin_errors(w, pack_dir))
     # The pack's optional growth block (design/growth.md), checked
     # beside the other optional catalogs. A pack that declares none
     # gets nothing here.
