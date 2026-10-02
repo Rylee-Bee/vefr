@@ -836,6 +836,38 @@ def library_shelves(world: str | None = None):
     }
 
 
+# The features catalog is read-only. `pack`, when given, is a request
+# value that becomes a path segment: it is held to a bare lowercase
+# world name before worlds_dir() joins it, so "../elsewhere" and an
+# absolute path are refused at the edge and never joined.
+_FEATURES_PACK_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+@app.get("/api/features")
+def features_report(pack: str | None = None):
+    """What VEFR can do, and (with `pack`) what one world uses.
+
+    No `pack`: the catalog alone, `features.report(None)`. A named
+    pack must be a bare world name (letters, digits and dashes) that
+    resolves under worlds/; a path-shaped name is a 400, an unknown
+    world a 404. Deterministic: no model call ever runs here.
+    """
+    from . import features
+    from .paths import worlds_dir
+
+    if pack is None:
+        return features.report(None)
+    if not _FEATURES_PACK_RE.match(pack):
+        raise HTTPException(
+            status_code=400,
+            detail="pack must be a bare world name (letters, digits and dashes)",
+        )
+    world = worlds_dir() / pack
+    if not (world / "world.json").is_file():
+        raise HTTPException(status_code=404, detail=f"no world named {pack!r}")
+    return features.report(world)
+
+
 @app.get("/api/runes")
 def runes_registry():
     """The full 24-rune Elder Futhark registry for the gallery view.
