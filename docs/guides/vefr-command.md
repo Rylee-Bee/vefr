@@ -60,10 +60,10 @@ uv run vefr look --pack worlds/sample-world
 and flags back. Each event is written `event:key=value`.
 
 ```sh
-uv run vefr probe --pack worlds/sample-world --fire "enter:room=hall"
+uv run vefr probe --pack worlds/sample-world --fire "enters:place=town"
 ```
 
-Exit codes follow the table below. All three return `0` when they do the
+All three return `0` when they do the
 work, and `2` when the arguments are wrong or a tool they need
 (Chromium, the gallery CLI) is missing. A missing tool is a report, not
 a failed check, and never changes `vefr doctor`'s exit code.
