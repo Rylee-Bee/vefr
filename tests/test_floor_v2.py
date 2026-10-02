@@ -25,7 +25,8 @@ def _bfs(rows):
         x, y = q.popleft()
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if 0 <= nx < w and 0 <= ny < h and rows[ny][nx] != "#" and (nx, ny) not in seen:
-                seen.add((nx, ny)); q.append((nx, ny))
+                seen.add((nx, ny))
+                q.append((nx, ny))
     return seen
 
 
