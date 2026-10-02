@@ -56,6 +56,10 @@ The requested workflow is:
 
 Do not begin implementation during the first Sonnet research pass.
 
+**Phase A budget:** state the number of agents and their model before launching; default to Sonnet, no Opus fan-out. The packet may be smaller than the file list below if the evidence is already clear.
+
+**Early probe (do this first, before the full census):** write one Cottage monster family plus one guardian in the proposed grammar and show it normalizing to today's `world.json` shape. If that fit is awkward, say so at once; it is the cheapest test of the core claim.
+
 ## Current repository truth when this handoff was written
 
 Reverify before doing any work.
@@ -93,13 +97,15 @@ Recent skin verification on Cottage's real artwork measured no checked desktop o
 
 Random-floor phase 2, gates/guardians, album, equipment, and fuller act progression remain the important nearby seams.
 
+Open backlog this campaign may reshape: VEFR #215 (random floors phase 2), #216 (album), #217 (equipment and real act 2). Treat them as **informed by Phase A**: do not build them in the old style while the campaign is pending, and do not freeze the phase 2 floor contract before the disposition.
+
 ### Cottage of the Breeze
 
 Repository: `Rylee-Bee/cottage-of-the-breeze`
 
 Current `main` when this handoff was written:
 
-`c0a2616a890dd7ca0dbd9667b075c7d078c96325`
+`c86c18a` (reverified 2026-10-02; the CI-pin commit `c0a2616` is two docs PRs behind it)
 
 No open PRs were present.
 
@@ -671,6 +677,8 @@ Before launching Foremen:
 - state Foreman/worker/model count before launch;
 - respect machine capacity.
 
+Before launch, state the number of Foremen, workers and the model for each, within machine capacity.
+
 Foremen must:
 
 1. receive an exact brief;
@@ -697,7 +705,9 @@ Land through PRs and run full gates after integration.
 
 ## Owner authorization for this campaign
 
-Within this campaign, Rylee authorizes:
+**Gate:** everything below applies only after Phase A returns **GO** or **GO WITH CONSTRAINTS** and Rylee has read the disposition. On **PARK**, nothing below is authorized and the campaign stops. Scope is whatever the disposition allows; a smaller GO is a success.
+
+Within this campaign, once that gate is passed, Rylee authorizes:
 
 - research and architecture work;
 - additive VEFR pack-contract changes needed for the language layer;
@@ -747,7 +757,7 @@ When old implementation becomes obsolete:
 
 ## Definition of done
 
-This campaign is not done when documents exist.
+This campaign is not done when documents exist. The checklist below is the ceiling; the Phase A disposition may cut it (for example, Studio, the HTTP API, or a controlled-natural-language front-end may be deferred), and a smaller GO that ships alive is a success.
 
 ### VEFR
 
