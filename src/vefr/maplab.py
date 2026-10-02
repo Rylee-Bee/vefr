@@ -1415,6 +1415,57 @@ def _sprite_scale_errors(w: dict) -> list[str]:
     return errors
 
 
+def _transition_lock_errors(index: int, t: dict, known: dict) -> list[str]:
+    """One plain sentence per problem with a transition's optional
+    `requires` / `locked_text` (design/gates-and-guardians.md, step 1).
+
+    `requires` names exactly one key, `item` or `flag`, and must point
+    at something the pack declares; any other shape is one sentence
+    naming `requires`. `locked_text` is one plain sentence of 1 to
+    200 characters. A transition with neither key gets nothing.
+    """
+    errors: list[str] = []
+    if 'requires' in t:
+        req = t['requires']
+        if not isinstance(req, dict):
+            errors.append(
+                f'transition {index} requires must be an object such as '
+                '{"item": "brass-ring"}')
+        else:
+            held = [k for k in ('item', 'flag') if k in req]
+            unknown = [k for k in req if k not in ('item', 'flag')]
+            if len(held) != 1:
+                errors.append(
+                    f'transition {index} requires must hold exactly one '
+                    'of item or flag')
+            elif unknown:
+                errors.append(
+                    f"transition {index} requires has an unknown key "
+                    f"'{unknown[0]}'; use item or flag")
+            else:
+                key = held[0]
+                val = req[key]
+                if not isinstance(val, str) or not val:
+                    noun = 'an item id' if key == 'item' else 'a flag name'
+                    errors.append(
+                        f'transition {index} requires.{key} must be {noun}')
+                elif key == 'item' and val not in known['items']:
+                    errors.append(
+                        f"transition {index} requires names unknown "
+                        f"item '{val}'")
+                elif key == 'flag' and val not in (known['flags'] or set()):
+                    errors.append(
+                        f"transition {index} requires names unknown "
+                        f"flag '{val}'")
+    if 'locked_text' in t:
+        text = t['locked_text']
+        if not isinstance(text, str) or not 1 <= len(text) <= 200:
+            errors.append(
+                f'transition {index} locked_text must be one plain '
+                'sentence of 1 to 200 characters')
+    return errors
+
+
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every geometry check. Returns a list of problems (empty = good).
 
@@ -1716,6 +1767,11 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                 f"transition {index} {field} ({x},{y}) is on a solid "
                 f"tile in region '{rname}'")
 
+    # The ids a transition's optional `requires` may name: the same
+    # declared item catalog and flags the rules use.
+    known = (_rule_known_ids(w, pack_dir)
+             if any(isinstance(t, dict) and 'requires' in t for t in transitions)
+             else {})
     for i, t in enumerate(transitions):
         if not isinstance(t, dict):
             errors.append(
@@ -1738,6 +1794,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                 f"not a declared region")
         else:
             _door_tile_errors(i, 'to_at', to_name, t['to_at'])
+        # The optional lock (design/gates-and-guardians.md, step 1):
+        # checked after the base shape so a broken door still reports
+        # its own missing/invalid fields first.
+        errors.extend(_transition_lock_errors(i, t, known))
 
     # The region contracts' enemies: each is a named hazard with a
     # walkable tile and real numbers. Every declared region is checked

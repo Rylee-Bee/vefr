@@ -4512,6 +4512,23 @@ function setupTown() {
     combatSay(said);
   }
 
+  // A locked door or stair (design/gates-and-guardians.md, step 1).
+  // A transition without `requires` is always open. With one, it opens
+  // when the named item is in the bag, or the named flag reads true in
+  // the rules state (a missing state leaves a flag lock shut). The key
+  // is never consumed.
+  function lockOpen(trans) {
+    var req = trans && trans.requires;
+    if (!req || typeof req !== 'object') return true;
+    if (typeof req.item === 'string' && req.item
+        && bagItems().indexOf(req.item) !== -1) return true;
+    if (typeof req.flag === 'string' && req.flag) {
+      var state = rulesStateNow();
+      if (state && state.flags && state.flags[req.flag] === true) return true;
+    }
+    return false;
+  }
+
   // The one verb: act on whatever pickTarget chose, through the code
   // that already does it - nothing here is re-implemented. With
   // nothing in reach (or anything unexpected) write ONE friendly line
@@ -4527,6 +4544,12 @@ function setupTown() {
       if (t.kind === 'door' || t.kind === 'stairs') {
         var trans = transitionAt(t.at[0], t.at[1]);
         if (!trans) throw new Error('transition gone');
+        // A lock says its one line and stays put: no `opens`, no
+        // arrival, the hero unmoved.
+        if (!lockOpen(trans)) {
+          combatSay(trans.locked_text || 'It will not open yet.');
+          return;
+        }
         // A door used is a door opened: `opens` carries the place it
         // opens into (a declared region), then the arrival fires
         // `enters` as it always has.

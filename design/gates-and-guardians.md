@@ -1,6 +1,6 @@
 # Gates and guardians: a key worth fighting for
 
-Status: **proposed; build step 1 (locked transitions) has its tests and contract** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). No code yet. The lock is a pack-contract addition, so this waits for approval before a build.
+Status: **build step 1 (locked transitions) is built** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). The validator, the player and the docs landed; `tests/test_locked_stairs.py` passes. Steps 2-4 (guardians, depth tables, the Cottage stair) stay proposed and wait for a build.
 
 ## The word for it
 

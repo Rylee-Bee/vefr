@@ -47,6 +47,7 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **rule** | A game-wide "when this happens, do that", using flags. A reaction is a small rule attached to one thing. | "trigger", "script" | in use (`docs/guides/rules.md`) |
 | **belief** | What a character thinks is true. It can be wrong. | "knowledge" | in use (`docs/guides/rules.md`) |
 | **kept thing** | An item that can be used again and again - a quest tool, a lantern. Using a kept thing never spends it. | "key item", "quest item" | in use (`docs/guides/rules.md`) |
+| **locked door** | A door or stair a game gates on a key item or a flag. Used without it, it says one line and the hero stays put; with it, it opens. The key is never spent. | `requires` / `locked_text` (the pack fields) | in use (`design/gates-and-guardians.md`) |
 | **Rule saves** | A game's choice of how much of a run the rules remember: `reset` (the default, fresh each load) or `persist`, which keeps flags, fired markers, beliefs and items across a reload. | the `saves` block in `world.json` | in use (`docs/guides/rules.md`) |
 | **Why did that happen?** | The menu panel that shows what the world did and what made it happen - only real records, never guesses. | "debug log" | in use (the woven player) |
 | **Where next?** | The menu panel that keeps what the world has pointed the player toward, so the way can be found again. | "quest log" | in use (the woven player) |
