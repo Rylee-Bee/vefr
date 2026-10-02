@@ -1,6 +1,6 @@
 # Growth: levels, or learning by doing
 
-Status: **proposed** (Rylee asked for this on 2026-10-02: "wire in classic xp and growth and learn-by-doing into the engine, but I think that cottage should be standard. just don't lose the learn by doing.. that's important for another game I'm working on"). No code yet. This is a pack-contract addition, so it waits for approval before a build.
+Status: **built** (Rylee asked for this on 2026-10-02: "wire in classic xp and growth and learn-by-doing into the engine, but I think that cottage should be standard. just don't lose the learn by doing.. that's important for another game I'm working on"). Both modes are in the engine and off by default; Cottage turns on classic levels later.
 
 ## What exists today
 
@@ -77,7 +77,7 @@ No classes, no skill trees, no spells-per-level (the DESIGN checklist's "learn o
 1. **Validator** (`maplab.validate`): the `growth` shape above, enemy `xp` only in levels mode, plain-sentence errors. A pack with no `growth` is unchanged.
 2. **Logic harness** (node, like `tests/fixtures/combat_harness.mjs`): pure functions for XP to level, the stat sums, practice thresholds and caps, the heal on growth, persistence, a missing id or changed table recovered.
 3. **Played in the real woven file** (like `tests/test_events_play.py`): defeat enemies, see the lines and the numbers change; a practice pack grows after N strikes.
-4. **Compatibility:** `worlds/sample-world` bakes byte for byte as before; the `axe-core` gate passes with the new status text.
+4. **Compatibility:** a pack without `growth` behaves as before and bakes `window.VEFR_GROWTH = null;`; it is no longer byte for byte. The `axe-core` gate passes with the new status text.
 
 ## Build order
 
@@ -85,7 +85,7 @@ No classes, no skill trees, no spells-per-level (the DESIGN checklist's "learn o
 2. The pure growth maths with the node harness (both modes).
 3. Wire into the woven player: award on defeat, the lines, the status text, persistence, Start over.
 4. Docs: glossary (**experience**, **level**, **practice**), `rulesets.md`, the player guide.
-5. A demo pack for `practice` (a tiny test world, not Cottage) so the mode stays alive and tested.
+5. A demo pack for `practice` (a tiny test world, not Cottage) so the mode stays alive and tested. Satisfied by the test fixture `tests/fixtures/make_growth_pack.py`.
 6. Cottage turns on `levels` and sets enemy `xp` by playing.
 
 ## Decided and still open
