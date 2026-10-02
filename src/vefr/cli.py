@@ -1703,6 +1703,11 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                 }
                 if 'sight' in e:
                     entry['sight'] = e.get('sight')
+                # `xp` (design/growth.md) rides along only when the
+                # contract names it, so a pack without one bakes the
+                # exact bytes it always did.
+                if 'xp' in e:
+                    entry['xp'] = e.get('xp')
                 out.append(entry)
             enemies_by_region[rname] = out
 
@@ -1858,6 +1863,10 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{enemies_json}}',
                                 _json.dumps(enemies_by_region, ensure_ascii=False))
     out_html = out_html.replace('{{hero_json}}', _json.dumps(hero, ensure_ascii=False))
+    # The optional growth block (design/growth.md) beside the hero. A
+    # pack that declares none bakes the literal `null`.
+    out_html = out_html.replace('{{growth_json}}',
+                                _json.dumps(world.get('growth'), ensure_ascii=False))
     out_html = out_html.replace('{{start_json}}', _json.dumps(start, ensure_ascii=False))
     # The woven pool: real generations baked into the file, so a
     # player with no LLM endpoint still hears the world. Empty unless

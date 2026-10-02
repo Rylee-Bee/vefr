@@ -16,8 +16,11 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 |---|---|---|---|
 | **game** | One game's folder: its story, settings and art. Lives in `worlds/<name>/`. | "pack", "world pack", "world" | decided; docs first, code says `pack` for now |
 | **act** | A chapter of a game. | (same) | in use |
-| **level** | One dungeon map that `delve` makes. Stairs join levels. | "floor", "region" | decided |
-| **chamber** | A carved space inside a dungeon level. | "room" (dungeon sense) | decided |
+| **level** | How far the hero has grown in `levels` mode. The hero starts at level 1; enough experience reaches the next level. | "hero level" | in use (`design/growth.md`) |
+| **experience** | The points a defeated enemy is worth in `levels` mode. Enough experience is a new level. | "XP" | in use (`design/growth.md`) |
+| **practice** | The other growth mode: doing a thing a lot makes the hero better at it, with no levels and no experience. | "learn by doing" | in use (`design/growth.md`) |
+| **dungeon floor** | One dungeon map that `delve` makes. Stairs join floors. | "floor", "region", older "level" | decided |
+| **chamber** | A carved space inside a dungeon floor. | "room" (dungeon sense) | decided |
 | **stakes** | How much the numbers matter in an act: `costume`, `story` or `stakes`. | the `floor` setting | decided; the file key stays `floor` for now |
 | **room** | One screen of the studio, such as the Desk or the Library. | "department", "module", "screen" | decided |
 | **map** | The grid drawing of one place (`map.md`). | the Map Room screen draws it | in use |
@@ -144,7 +147,8 @@ Residents are characters, so they keep their names. Their jobs are described in 
 
 These are listed so you are not confused by them in the meantime. Each is a plain-name change with the old name kept as an alias.
 
-- `floor` is the code key for **stakes** and also the word for a dungeon level.
+- `floor` is the code key for **stakes** and also the old word for a **dungeon floor**.
+- `level` used to mean a dungeon map. It now means the hero's growth (see **level**); the map is a **dungeon floor**.
 - `VEFR_STORYTELLER` and `VEFR_NARRATE_URL` both name the narrator role.
 - `done`, `healthy`, `ok` and `passing` all mean "fine" in different places.
 - `unknown` is stored as if it were a health value; it means "not checked".

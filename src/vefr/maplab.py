@@ -52,6 +52,10 @@ def load_pack(pack_dir: Path) -> dict:
     the validator never has to know which on-disk shape it came
     from. Acts-shape packs are validated against the current act's
     first region (the town in the canary shape).
+
+    The optional `growth` block (design/growth.md) is carried through
+    only when the pack declares it, so a pack without one loads
+    exactly as before.
     """
     pack = Path(pack_dir)
     config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
@@ -160,6 +164,10 @@ def load_pack(pack_dir: Path) -> dict:
         for key in ('flags', 'claims', 'people', 'rules'):
             if key in config:
                 unified[key] = config[key]
+        # The optional growth block, carried through ONLY when the
+        # pack declares it (design/growth.md).
+        if 'growth' in config:
+            unified['growth'] = config['growth']
         return unified
     config['_player'] = config.get('player')
     return config
@@ -698,6 +706,109 @@ def _rule_conflict_message(aid: str, bid: str, then_a, then_b) -> str | None:
     return None
 
 
+GROWTH_MODES = ('levels', 'practice')
+GROWTH_STATS = ('hp', 'atk')
+GROWTH_BY = ('strikes', 'hits-taken', 'consoles', 'hurls')
+
+
+def _is_whole(v) -> bool:
+    """True for a whole number (not a bool, which `int` also admits)."""
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _levels_growth_errors(levels: dict) -> list[str]:
+    """Every problem with a `levels` growth block (empty = good)."""
+    errors: list[str] = []
+    xp = levels.get('xp')
+    if not isinstance(xp, list) or not xp:
+        errors.append("levels 'xp' must be a list of rising whole numbers "
+                      'starting at 0')
+    else:
+        if len(xp) > 20:
+            errors.append("levels 'xp' has more than 20 entries")
+        if not all(_is_whole(v) for v in xp):
+            errors.append("levels 'xp' must be whole numbers")
+        elif xp[0] != 0:
+            errors.append("levels 'xp' must start at 0")
+        elif any(b <= a for a, b in zip(xp, xp[1:])):
+            errors.append("levels 'xp' must strictly rise")
+    gain = levels.get('gain')
+    if gain is not None:
+        if not isinstance(gain, dict):
+            errors.append("levels 'gain' must be an object of 'hp' and 'atk'")
+        else:
+            for stat, v in gain.items():
+                if stat not in GROWTH_STATS:
+                    errors.append(
+                        f"levels 'gain' names unknown stat '{stat}'")
+                elif not _is_whole(v) or not 0 <= v <= 9:
+                    errors.append(
+                        f"levels 'gain.{stat}' must be a whole number 0 to 9")
+    return errors
+
+
+def _practice_growth_errors(practice: dict) -> list[str]:
+    """Every problem with a `practice` growth block (empty = good)."""
+    errors: list[str] = []
+    for stat, spec in practice.items():
+        if stat not in GROWTH_STATS:
+            errors.append(f"practice names unknown stat '{stat}'")
+            continue
+        if not isinstance(spec, dict):
+            errors.append(f"practice '{stat}' must be an object")
+            continue
+        by = spec.get('by')
+        if by not in GROWTH_BY:
+            errors.append(f"practice '{stat}' 'by' must be one of "
+                          'strikes, hits-taken, consoles, hurls')
+        every = spec.get('every')
+        if not _is_whole(every) or not 1 <= every <= 99:
+            errors.append(
+                f"practice '{stat}' 'every' must be a whole number 1 to 99")
+        gain = spec.get('gain')
+        if not _is_whole(gain) or not 0 <= gain <= 9:
+            errors.append(
+                f"practice '{stat}' 'gain' must be a whole number 0 to 9")
+        cap = spec.get('cap')
+        if not _is_whole(cap) or cap < 1:
+            errors.append(
+                f"practice '{stat}' 'cap' must be a whole number of at least 1")
+    return errors
+
+
+def growth_errors(w: dict) -> list[str]:
+    """Every problem with a pack's optional `growth` block (empty = good).
+
+    Growth is optional and additive: a pack that declares none gets
+    no output at all, exactly as before. A pack that declares one
+    picks `levels` or `practice` and carries only that block; every
+    other shape is a plain-sentence error naming the field.
+    """
+    if 'growth' not in w:
+        return []
+    growth = w.get('growth')
+    if not isinstance(growth, dict):
+        return ["growth must be an object with a 'mode'"]
+    errors: list[str] = []
+    mode = growth.get('mode')
+    if mode not in GROWTH_MODES:
+        errors.append("growth 'mode' must be 'levels' or 'practice'")
+        return errors
+    block = growth.get(mode)
+    if not isinstance(block, dict):
+        errors.append(f"growth mode '{mode}' needs a '{mode}' block")
+        return errors
+    other = 'practice' if mode == 'levels' else 'levels'
+    if other in growth:
+        errors.append("growth cannot carry both 'levels' and 'practice' "
+                      '- choose one mode')
+    if mode == 'levels':
+        errors.extend(_levels_growth_errors(block))
+    else:
+        errors.extend(_practice_growth_errors(block))
+    return errors
+
+
 def rules_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every problem with a pack's optional flags/claims/people/rules.
 
@@ -1125,6 +1236,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # pack-authoring error, not a surprise in play. A pack that
     # declares none of the four keys gets nothing here.
     errors.extend(rules_errors(w, pack_dir))
+    # The pack's optional growth block (design/growth.md), checked
+    # beside the other optional catalogs. A pack that declares none
+    # gets nothing here.
+    errors.extend(growth_errors(w))
     town = w['town']
     m = town['map']
     legend = town['legend']
@@ -1396,7 +1511,11 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
 
     # The region contracts' enemies: each is a named hazard with a
     # walkable tile and real numbers. Every declared region is checked
-    # (not just the first); a broken one is named in plain words.
+    # (not just the first); a broken one is named in plain words. An
+    # optional `xp` (design/growth.md) is a whole number of at least 0
+    # and belongs to `levels` mode only.
+    _growth = w.get('growth')
+    levels_mode = isinstance(_growth, dict) and _growth.get('mode') == 'levels'
     for rname, geo in region_geo.items():
         if not isinstance(geo, dict):
             continue
@@ -1447,6 +1566,18 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                     errors.append(
                         f"enemy '{who}' in region '{rname}' needs a "
                         f"positive {stat}")
+            # `xp` names the enemy id (not the display name), so the
+            # author can find the exact contract entry to fix.
+            xp = e.get('xp')
+            if xp is not None:
+                if not levels_mode:
+                    errors.append(
+                        f"enemy '{eid}' in region '{rname}' may only carry "
+                        "'xp' in levels mode")
+                elif not _is_whole(xp) or xp < 0:
+                    errors.append(
+                        f"enemy '{eid}' in region '{rname}' needs a whole "
+                        "'xp' of 0 or more")
 
     # The Library: authored books this pack keeps (library/*.md). Needs the
     # pack on disk; in-memory validation (chat drafts) has no books yet.

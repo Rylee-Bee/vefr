@@ -490,6 +490,61 @@ Known gaps (this slice): one burning light at a time (a second torch
 replaces the first), no light on the floor (drops are not lamps), and no
 colour or animation - the lit circle simply grows.
 
+## growth (levels or learning by doing)
+
+Growth is optional and additive. **Both ways are off by default:** a pack
+with no `growth` key plays as before. A pack that declares one picks a
+single `mode` and carries only that mode's block.
+
+In `levels` mode a defeated enemy gives experience, and enough experience
+is a new level. `levels.xp` is a strictly rising list of whole numbers
+that starts at 0, with at most 20 entries; entry N is the experience that
+reaches level N+1, and the hero starts at level 1. `levels.gain` gives the
+health and attack added by each level (whole numbers 0 to 9):
+
+```json
+"growth": {
+  "mode": "levels",
+  "levels": {"xp": [0, 10, 25, 50], "gain": {"hp": 2, "atk": 1}}
+}
+```
+
+An enemy carries its own `xp` (a whole number of at least 0; absent means
+0), and only in `levels` mode:
+
+```json
+{"id": "rat", "hp": 4, "atk": 1, "sprite": "rat", "xp": 3}
+```
+
+In `practice` mode there are no levels and no experience. Each stat grows
+as the hero keeps doing a thing. `practice` names only `hp` and `atk`;
+each carries `by` (one of `strikes`, `hits-taken`, `consoles`, `hurls`),
+`every` (a whole number 1 to 99), `gain` (a whole number 0 to 9) and `cap`
+(the most that stat can grow in total, at least 1):
+
+```json
+"growth": {
+  "mode": "practice",
+  "practice": {
+    "atk": {"by": "strikes", "every": 12, "gain": 1, "cap": 4},
+    "hp":  {"by": "hits-taken", "every": 8, "gain": 1, "cap": 6}
+  }
+}
+```
+
+A level-up (or a practice growth) of health also heals the hero by the
+same amount, never above the new max. The extra health and attack are
+derived from the saved state every time, never stored, so a re-woven game
+cannot leave a stale level. `maplab.validate` checks the shape above and
+names a bad field in plain words. The status line ("Level 2 · 14 of 25
+experience") shows in `levels` mode only. All of it is deterministic: no
+randomness, no model call, no clock.
+
+Code: `src/vefr/maplab.py` (validation) + `src/vefr/cli.py` (bake) +
+`web/packaged.html` (the engine and its seams); tests:
+`tests/test_growth_validator.py` + `tests/test_growth_engine.py` +
+`tests/test_growth_play.py` + `tests/fixtures/make_growth_pack.py`.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).
