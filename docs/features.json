@@ -150,22 +150,34 @@
     {
       "id": "skin",
       "name": "A game's interface as pictures",
-      "what": "A folder of pictures that paints the buttons, panels and bars in a game's own look.",
-      "status": "proposed",
+      "what": "A folder of pictures inside a pack paints the buttons, panels, bars and cursor in the game's own look; high-contrast and forced-colour modes keep the plain style.",
+      "status": "built",
       "detect": "skin",
-      "docs": [],
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
       "design": "design/ui-skin.md",
-      "tests": []
+      "tests": [
+        "tests/test_skin_validator.py",
+        "tests/test_skin_apply.py",
+        "tests/test_skin_docs.py"
+      ]
     },
     {
       "id": "random-floors",
       "name": "A new descent every run",
-      "what": "Floors drawn fresh each run from a seed, by the same generator in Python and the browser.",
-      "status": "proposed",
+      "what": "The shared generator is built (the same floors in Python and in the browser); drawing a fresh descent each run in the game is still to come.",
+      "status": "partial",
       "detect": "none",
-      "docs": [],
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
       "design": "design/random-floors.md",
-      "tests": []
+      "tests": [
+        "tests/test_delve_prng.py",
+        "tests/test_floor_v2.py",
+        "tests/test_floor_v2_parity.py"
+      ]
     },
     {
       "id": "gates",
@@ -206,6 +218,20 @@
       "docs": [],
       "design": "docs/adr/0006-acts-and-surfaces.md",
       "tests": []
+    },
+    {
+      "id": "theme-kits",
+      "name": "Starter art: themes, items and icons",
+      "what": "13 themed kits (tiles, items, characters), the delve icons (gear, spell schools, shop signs, item badges), the surface tiles and the full sticker set, at game size and credited.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "web/art/README.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_art_manifest.py"
+      ]
     }
   ]
 }
