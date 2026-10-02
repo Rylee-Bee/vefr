@@ -8,7 +8,7 @@ You cannot get anything wrong here; the game tells you what it is doing as you g
 
 | Key | What it does |
 |---|---|
-| Arrow keys | Move one tile. On a touch screen, use the round pad on the left. |
+| Arrow keys, or `W` `A` `S` `D` | Move one tile. On a touch screen, use the round pad on the left. In a note, `A` and `D` turn the page like the arrows. |
 | `E`, `Space`, `Enter`, `F` | Interact. All four keys do the same one thing. |
 | `Q` | Hear a whisper: what people are saying right now. |
 | `B` | Open the bag. |
@@ -18,7 +18,12 @@ You cannot get anything wrong here; the game tells you what it is doing as you g
 
 The action buttons on the screen show their keys beside them.
 `Space` and `Enter` press the button that already has the focus.
-While someone's line is on screen, `Space` or `Enter` closes it.
+While a note or someone's line is on screen, `E`, `F`, `Space` and `Enter` turn the page and then close it.
+In the shop, `E` or `F` closes it too (`Escape` and the Close button still work).
+
+The screen stays quiet. The how-to-move line goes after your first step. A place's name shows for a few
+seconds when you arrive. The fight buttons appear only with a monster near. Everything else sits in a small
+**Messages** panel in the top left that you can fold away; a screen reader still hears every line.
 
 ## What Interact does
 

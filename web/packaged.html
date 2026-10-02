@@ -145,9 +145,14 @@
   .gbtn--gold, .stage button.primary { background: #D8AA4E; color: #1B1206; border-color: transparent; }
   .gbtn--dim { opacity: 0.55; }   /* Interact with nothing in reach: dimmed, never hidden or disabled */
   .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; }
-  .toasts { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 2; display: grid; gap: 6px; justify-items: center; width: min(92%, 560px); pointer-events: none; }
-  .toasts p { margin: 0; padding: 6px 12px; text-align: center; font-size: 0.9rem; }
+  /* Visually hidden, still read aloud: the quiet way to keep a line for a screen reader. */
+  .sr-only, .quiet, .toasts.is-collapsed p { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  /* The messages live in a small corner panel (top left, under the health bar), never over the map. */
+  .toasts { position: absolute; left: 12px; top: 64px; z-index: 2; display: grid; gap: 6px; justify-items: start; width: min(210px, 36%); pointer-events: none; }
+  .toasts p { margin: 0; padding: 5px 10px; text-align: left; font-size: 0.82rem; }
   .toasts p:empty { display: none; }
+  .toasts-toggle { pointer-events: auto; font: 700 0.7rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; min-height: 0; background: var(--glass); color: var(--glass-ink); border: 1px solid var(--glass-edge); border-radius: 4px; cursor: pointer; }
+  .toasts:not(:has(p:not(:empty))) .toasts-toggle { display: none; }
   .encounter-prompt { font-style: italic; }
   body[data-surface="plain"] .encounter-prompt,
   body[data-surface="investigation"] .encounter-prompt { display: none; }
@@ -184,6 +189,7 @@
   .trade-row button { min-height: 44px; }
   /* choices */
   .verb-row { position: absolute; left: 16px; bottom: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
+  .verb-row[hidden] { display: none; }
   .verb-row button { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.4); text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
   .verb-row button::before { content: '\25B6'; color: #D8AA4E; font-size: 0.7rem; }
   body[data-surface="plain"] .verb-row,
@@ -201,7 +207,7 @@
     .acts .gbtn { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 0.66rem; }
     .acts kbd { display: none; }
     .npc-box { left: 10px; right: 10px; bottom: 12px; }
-    .toasts { top: 68px; bottom: auto; }
+    .toasts { top: 68px; bottom: auto; width: min(210px, 60%); }
     .hud-hp-bar { width: 56px; }
     .hud-hp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .hud--tr { max-width: 70%; }
@@ -291,12 +297,13 @@
         <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
         <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
       </div>
-      <div class="toasts">
+      <div class="toasts" id="toasts">
+        <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
         <p class="glass" id="status" role="status" aria-live="polite"></p>
         <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
         <p class="glass" id="near" aria-live="polite"></p>
         <p class="glass" id="poi" aria-live="polite"></p>
-        <p class="glass" id="use-hint" aria-live="polite"></p>
+        <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
         <p class="glass" id="library-live" role="status" aria-live="polite"></p>
         <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
         <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
@@ -676,9 +683,29 @@ function bootstrap() {
   renderBagStrip();
   renderGold();
   var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  document.getElementById('status').textContent = touch
-    ? 'Use the pad to move. Tap Talk when someone is near.'
-    : 'Use the arrow keys to move. Press E to talk.';
+  var statusEl0 = document.getElementById('status');
+  if (!tutorialDone()) {
+    statusEl0.textContent = touch
+      ? 'Use the pad to move. Tap Talk when someone is near.'
+      : 'Move with the arrow keys or WASD. Press E to talk.';
+    statusEl0.setAttribute('data-tutorial', '1');
+  }
+}
+
+// The how-to-move line is a one-time lesson: it goes at the first step and stays
+// gone (Rylee: the bottom text "basically never goes away").
+function tutorialKey() {
+  return 'vefr-tutorial-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+}
+function tutorialDone() {
+  try { return localStorage.getItem(tutorialKey()) === '1'; } catch (e) { return false; }
+}
+function quietTutorial() {
+  var el = document.getElementById('status');
+  if (!el || el.getAttribute('data-tutorial') !== '1') return;
+  el.textContent = '';
+  el.removeAttribute('data-tutorial');
+  try { localStorage.setItem(tutorialKey(), '1'); } catch (e) {}
 }
 
 // ---- speech box: whoever is talking, in a box over the game ----
@@ -880,9 +907,26 @@ function renderBooksPanel() {
   }
 }
 
+// The message stack is a small corner panel that can be folded away; the lines
+// stay in the page (a screen reader still hears them) and the choice is remembered.
+function bindMessagePanel() {
+  var panel = document.getElementById('toasts');
+  var toggle = document.getElementById('toasts-toggle');
+  if (!panel || !toggle) return;
+  var key = 'vefr-ui-messages-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+  function setCollapsed(c) {
+    panel.classList.toggle('is-collapsed', c);
+    toggle.setAttribute('aria-expanded', c ? 'false' : 'true');
+    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+  }
+  toggle.addEventListener('click', function () { setCollapsed(!panel.classList.contains('is-collapsed')); });
+  try { if (localStorage.getItem(key) === '1') setCollapsed(true); } catch (e) {}
+}
+
 function bindLibrary() {
   libraryFirstVisit();
   renderBooksPanel();
+  bindMessagePanel();
   document.getElementById('reader-close').addEventListener('click', closeReader);
   document.getElementById('reader-back').addEventListener('click', function () { readerTurn(-1); });
   document.getElementById('reader-next').addEventListener('click', function () { readerTurn(1); });
@@ -3552,9 +3596,9 @@ function setupTown() {
   // directly (progress in, pixel offset out); it has no game state.
   // ---- the hero's step motion ----
   var STEP_MS = 110;       // one step's drawn tween, in milliseconds
-  var STEP_HOP = 0.06;     // the hop's height, as a fraction of a tile
-  var STEP_LEAN = 6;       // the lean into travel, in degrees
-  var STEP_SQUASH = 0.12;  // the landing squash, as a fraction
+  var STEP_HOP = 0.02;     // the hop's height, as a fraction of a tile
+  var STEP_LEAN = 2;       // the lean into travel, in degrees
+  var STEP_SQUASH = 0.04;  // the landing squash, as a fraction
   function stepMotion(p, fx, fy, t, dir, reduced) {
     // `reduced` is the identity: no offset, no lean, no squash.
     if (reduced) return { dx: 0, dy: 0, lean: 0, squash: 0 };
@@ -4211,15 +4255,38 @@ function setupTown() {
     if (labelEl) labelEl.textContent = label || 'Interact';
     btn.classList.toggle('gbtn--dim', !label);
     if (hint) hint.textContent = label || 'Nothing near you to use yet.';
+    updateVerbRow();
+  }
+
+  // The fight buttons are for fights: shown with a living monster within a few
+  // tiles (or while its menu is open), hidden otherwise. Interact still opens
+  // the same menu on a faced monster.
+  function updateVerbRow() {
+    var vrow = document.getElementById('verb-row');
+    if (!vrow) return;
+    var near = !!VERB_TARGET;
+    for (var i = 0; !near && i < enemies.length; i++) {
+      var en = enemies[i];
+      if (en.alive && Math.abs(en.at[0] - hero[0]) + Math.abs(en.at[1] - hero[1]) <= 4) near = true;
+    }
+    vrow.hidden = !near;
   }
 
   // The named place the hero now stands on, written to the POI line.
+  var POI_QUIET_MS = 4000;
+  var poiTimer = null;
   function refreshPoi() {
     var here = '';
     for (var k in pois) {
       if (k === hero[0] + ',' + hero[1]) { here = pois[k]; break; }
     }
-    document.getElementById('poi').textContent = here || '';
+    var poiEl = document.getElementById('poi');
+    poiEl.textContent = here || '';
+    poiEl.classList.remove('quiet');
+    if (poiTimer) { clearTimeout(poiTimer); poiTimer = null; }
+    // A named place is a short arrival line, not a permanent label; hide it
+    // visually after a moment but keep the text (a `uses-with` rule reads it).
+    if (here) poiTimer = setTimeout(function () { poiEl.classList.add('quiet'); }, POI_QUIET_MS);
     return here;
   }
 
@@ -4245,6 +4312,7 @@ function setupTown() {
     }
     if ((town.legend[town.map[ny][nx]] || {}).solid) return;
     hero = [nx, ny];
+    quietTutorial();
     // Draw-only: start the hop now, but the game state above is already
     // settled and the turn below is never gated on the animation.
     heroStartStep(nx, ny, dx, dy);
@@ -4259,6 +4327,7 @@ function setupTown() {
     updateUse();
     lightTick();
     enemyTurn();
+    updateVerbRow();   // the monsters moved: the fight buttons follow
   }
 
   // The nearest-speaker search (the canvas click, the Talk button):
@@ -4659,14 +4728,17 @@ function setupTown() {
           document.getElementById(nextBtn.disabled ? 'reader-close' : 'reader-next').click();
         }
       }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); readerTurn(-1); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); readerTurn(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); readerTurn(-1); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); readerTurn(1); }
       return;
     }
     // While the Trade panel is open, Escape closes it and movement stops.
     var tradeOpen = !document.getElementById('trade').hidden;
     if (tradeOpen) {
       if (e.key === 'Escape') { e.preventDefault(); closeTrade(); }
+      else if ((e.key === 'e' || e.key === 'E' || e.key === 'f' || e.key === 'F') && !e.repeat) {
+        e.preventDefault(); closeTrade();
+      }
       return;
     }
     var menuOpen = !document.getElementById('menu').hidden;
@@ -4695,6 +4767,10 @@ function setupTown() {
     else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
+    else if (e.key === 'w' || e.key === 'W') { e.preventDefault(); move(0, -1); }
+    else if (e.key === 's' || e.key === 'S') { e.preventDefault(); move(0, 1); }
+    else if (e.key === 'a' || e.key === 'A') { e.preventDefault(); move(-1, 0); }
+    else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); move(1, 0); }
     else if (e.key === 'e' || e.key === 'E') doInteract();
     else if (e.key === 'f' || e.key === 'F') doInteract();
     else if (e.key === 'q' || e.key === 'Q') document.getElementById('whisper').click();
