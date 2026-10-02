@@ -42,10 +42,6 @@ references them.
 - `worlds/sample-world/` (Emberfield) — the *world text* (map, voices,
   lore, contracts) is dedicated to the public domain under CC0 1.0; see
   `worlds/sample-world/LICENSE`.
-- `worlds/sample-world/assets/kenney/` — bundled room/prop tiles from
-  Kenney (kenney.nl), licensed CC0 1.0 (public domain, no attribution
-  required); see that folder's `LICENSE-*.txt`. Optional — the demo's
-  town map renders in code and does not require them.
 - `worlds/lore/<flavor>/` — Creative Commons Attribution-ShareAlike
   4.0 International (CC BY-SA 4.0); see each pack's `LICENSE.md`.
 - `web/art/` — the workshop's own studio art (resident portraits, room
