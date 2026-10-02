@@ -5,4 +5,4 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 ln -sfn "$HOME/code/Rylee-Bee/vefr/node_modules" node_modules
-exec env -u VIRTUAL_ENV uv run --offline python -m pytest -q "$@"
+exec env -u VIRTUAL_ENV uv run --offline --group test python -m pytest -q "$@"

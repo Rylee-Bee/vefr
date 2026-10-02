@@ -69,7 +69,12 @@ const walkTo = async (tx, ty) => {
 
 const steps = [];
 const note = (ok, what) => steps.push({ ok: !!ok, what });
-const text = () => document.body.textContent;
+// what a person can read: the page text without the inline script and style source
+const text = () => {
+  const c = document.body.cloneNode(true);
+  c.querySelectorAll('script,style').forEach((n) => n.remove());
+  return c.textContent;
+};
 const foe = () => window.refreshCombatSnapshot().enemies.filter((e) => e.alive)[0];
 // bump the first living enemy once; resolves when its hp changes or it falls
 const strikeOnce = async () => {
