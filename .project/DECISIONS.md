@@ -1,5 +1,29 @@
 # DECISIONS — vefr
 
+## 2026-10-02 — the Cottage day: decisions that outlive it
+
+- **We ship only art we made, and attribute all of it** (Rylee). Kenney is for prototyping
+  only and is removed from the sample world; LimeZu was bought to support the artist and is
+  used only in a project she names. Art enters `web/art/` through `tools/art/import_art.py`,
+  which writes `web/art/MANIFEST.json`; a picture with no credit fails `tests/test_art_manifest.py`.
+- **Accessibility is measured on the rendered game, not read off declared colours.** The skin
+  looked fine on paper and failed at 1.2:1 in the player. Any change to panels, buttons or
+  text colour is checked by rendering a real pack at desktop and phone size and measuring text
+  against the pixels behind it (and with axe).
+- **`docs/features.json` is the one source of truth for what VEFR can do.** A built feature
+  needs a guide and a test or the suite fails. `GET /api/features` (approved by Rylee) is read-only,
+  takes only a bare world name, and no model runs behind it. The Containerfile ships the file.
+- **Growth has two modes in the engine, a game picks one** (Rylee): classic levels or learning by
+  doing. Growth only adds; nothing is ever taken away.
+- **Foremen work from acceptance tests written first, and a foreman that stops on a test is
+  right until proven otherwise.** Three escalations today were bugs in the tests. Fix the test,
+  never the foreman; review every diff by hand; state the foreman count and model before launching.
+- **The gallery tool adopts every live project before it renders and refuses to publish if it
+  cannot see them.** A machine that knew only one project once replaced the front page (nothing
+  was lost on the server; only the index was overwritten).
+- **Designed, not built:** a lock on a transition and a ladder of guardians ending at the act's
+  boss, whose seal opens a treasure room with a lore note and a way back to town (Rylee); the album.
+
 ## 2026-09-30 — the day's design calls, recorded
 
 **Decision.** So the next agent does not re-litigate them:

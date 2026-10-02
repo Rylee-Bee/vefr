@@ -24,6 +24,10 @@ never have to stop and reach for the mouse in the middle of a story.
 You walk with the arrow keys or with W, A, S and D, whichever your
 hand likes.
 
+Next to the big button sit four small ones: talk, whisper, bag and
+explore. Each has a tiny picture and a key letter, and a screen reader
+still hears its name. Dusk and Dawn live in the Menu, under Display.
+
 The screen stays quiet too. The how-to-move line is a lesson, so it
 goes away after your first step. A place's name shows when you arrive
 and then fades. The fight buttons only appear when a monster is near.
