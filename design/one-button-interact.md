@@ -50,8 +50,10 @@ after a bump. This keeps fights familiar and gives non-attack verbs (Console) a 
 
 **7. Interact continues whatever has the screen (Rylee, 2026-10-02).** While a note is open, E, F, Space and Enter turn the page,
 and on the last page close it; while a speech box is up they close it instead of starting a second talk. A focused button keeps its
-own Enter and Space, and a held key never carries on into the next thing. Trade, the menu and the Bag are choices, not reading, so
-they keep their own controls. Pinned by `tests/test_overlay_interact.py`.
+own Enter and Space, and a held key never carries on into the next thing. The menu and the Bag are choices, not reading, so
+they keep their own controls. **Trade also closes with `E` or `F`** (Rylee, 2026-10-02: "in the buy ui ... I still have to close with esc/mouse"); `Space` and `Enter` still press the focused button there.
+
+**8. A quiet screen, WASD, a calmer step (Rylee, 2026-10-02).** `W` `A` `S` `D` walk like the arrows (and `A`/`D` turn note pages). The how-to-move line is gone after the first step and never returns. The place name shows for 4 seconds, then goes visually quiet (its text stays; a `uses-with` rule reads it). `#use-hint` is screen-reader-only (the Interact button already says it). The fight buttons show only with a living monster within 4 tiles or an open menu. The message lines live in a collapsible corner panel (top left). The hero's step hop is about a third of what it was. Pinned by `tests/test_quiet_ui.py`. Pinned by `tests/test_overlay_interact.py`.
 
 ## What does not change
 
