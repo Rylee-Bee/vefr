@@ -26,4 +26,4 @@ See `11-open-decisions.md`. Nothing is authorized until she has read this dispos
 
 ## Packet map
 
-Public (this folder): 00, 01, 03, 04, 05, 06, 07, 08, 09, 11, 12, SOURCES. Private (Cottage repo, `docs/language-architecture/`): 02, 10.
+Public (this folder): 00, 01, 03, 04, 05, 06, 07, 08, 09, 11, 12, 13 (the Opus brief), SOURCES. Private (Cottage repo, `docs/language-architecture/`): 02, 10.
