@@ -2,7 +2,6 @@
 additive; a pack without it loads and validates exactly as before."""
 
 import copy
-import json
 import sys
 from pathlib import Path
 
