@@ -20,7 +20,7 @@ Every claim in this packet traces to one of these. Re-run to reproduce.
 - `git worktree add --detach .../lang-proof-verify 649034f`
 - `uv run --group test pytest -q experiments/language-proof/test_prototype.py` -> 9 passed
 - `uv run --group test python experiments/language-proof/run.py --pack <cottage pack> --region floor-2 --sprite shade --rule the-keeper-knows --out <scratch>` -> three PASS lines
-- `vefr --help`, grep of route and version keys
+- `vefr --help`, `vefr check --help`, `vefr probe --help`, grep of route and version keys
 
 | Codex private packet (`vefr-language-proof-sonnet.zip`, received 2026-10-02) | paper non-game probe, effect table, gate results; kept outside every repo |
 

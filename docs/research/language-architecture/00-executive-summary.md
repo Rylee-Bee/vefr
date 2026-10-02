@@ -15,7 +15,7 @@ A new runtime, event sourcing, a logic engine, natural-language authoring, a plu
 ## Key facts
 
 - Rules lowered with identical behavior; the semantic wrapper was more verbose, so the existing rule shape stays.
-- Real creatures expanded exactly from one family; guardians are unwired, so their semantics are `UNKNOWN`.
+- Real creatures expanded to structurally equal records from one family (parsed-JSON equality, not byte equality); guardians are unwired, so their semantics are `UNKNOWN`.
 - Theme owns vocabulary, generator owns arrangement, only for controls the generator has.
 - Pre-existing issue: rule flags and `once` markers reset on reload.
 - Prior art is a thin base: its Datalog, JSON Schema and event-sourcing claims were corrected, and its project-history claims are unverified.

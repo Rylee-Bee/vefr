@@ -7,7 +7,7 @@ AUTHORING DEFINITIONS   families / instances / vocabulary
 EXISTING VEFR RULES     when / if / then / once   (unchanged)
 GENERATION RECIPES      parameters / vocabulary / guarantees
         |
-   NORMALIZATION  (validate -> expand -> provenance)
+   NORMALIZATION  (validate source -> expand -> provenance -> validate the whole normalized pack)
         |
 EXISTING VEFR STRUCTURES  ->  EXISTING DETERMINISTIC RUNTIME
 ```
@@ -17,7 +17,8 @@ EXISTING VEFR STRUCTURES  ->  EXISTING DETERMINISTIC RUNTIME
 - A **family** has scalar `defaults` and at most one explicit `extends`. No implicit traits, no mixins, no behavior.
 - An **instance** names a family and gives `properties` that override defaults.
 - Expansion order: parent defaults, then family, then instance. Cycles, unknown parents and unknown fields **fail**.
-- Output is exactly today's enemy record shape. Proven for real creatures (Codex probe A).
+- Output is structurally equal to today's enemy records (see `07`). Proven for real creatures (Codex probe A).
+- The normalized records are validated **inside the full pack** by today's validator, not on their own.
 
 ## Effects
 
