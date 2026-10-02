@@ -15,6 +15,31 @@
       below it. `tests/test_declutter.py`; no overlaps at 390/360/320 px and 1280/900;
       axe clean on the plain sample and the skinned Cottage.
 
+- [x] **The quiet screen, WASD, Trade on E/F and a calmer step** (2026-10-02): the
+      how-to-move line goes after the first step, the place name fades (its text stays for
+      rules), fight buttons show only near a monster, messages sit in a collapsible corner
+      panel, W/A/S/D walk (A/D turn note pages), E or F close Trade, and the hop is a third
+      of what it was. `tests/test_quiet_ui.py`; the Messages toggle meets the 44 px floor.
+- [x] **Three Library chapters** (2026-10-02): rules, getting stronger, one button and a
+      quiet screen (`web/library/27-29`); the Whole Shelf sticker now wants all 20 books.
+- [x] **Art in the repo, credited** (2026-10-02): `tools/art/import_art.py` and
+      `web/art/MANIFEST.json`: 18 stickers, the delve set (gear, spell schools, shop signs,
+      item badges, dungeon tiles), surface tiles and 13 theme kits at game size; every file
+      has a credit and `tests/test_art_manifest.py` fails without one. Kenney sheets removed.
+- [x] **The features catalog** (2026-10-02): `docs/features.json` (one source of truth for
+      what VEFR can do) with a drift check in the test suite, `vefr features [--pack] [--json]
+      [--check]`, one read-only `GET /api/features`, and two studio shelves ("What this game
+      uses", "What VEFR can do"). The Containerfile ships the catalog (UNVERIFIED: no image
+      built).
+- [x] **Random floors, phase 1** (2026-10-02): `delve.prng` (xmur3 + mulberry32) and
+      `generate_floor_v2` in Python, and the exact JavaScript twin `window.VEFR_DELVE`;
+      `tests/test_floor_v2_parity.py` replays 10 streams and 50 floors through the real
+      player and demands identical rows. `generate_floor` is untouched (pinned by hash).
+- [x] **The skin loader** (2026-10-02): a pack's `skin` folder is validated, baked as data
+      URIs and painted by the player (`design/ui-skin.md` steps 4-5). Measured on Cottage's
+      real skin, which found and fixed four defects (#211): the ink never reached text inside
+      panels, a tiled 32 px patch showed as stripes, the menu's left column was missed, and
+      a gold button background sat under the wood. 0 text elements under 4.5:1, axe clean.
 - [x] **Growth, dev verbs and the Interact fix** (2026-10-02): `design/growth.md`
       built (levels or practice, enemy `xp`, `VEFR_GROWTH_ENGINE`); Interact keys
       continue notes and speech boxes; `vefr publish|look|probe` and doctor tooling
@@ -2272,10 +2297,17 @@
 
 ## Next
 
-- [ ] **Undo button** on the Desk beside Play it here, with a test (the route already works).
-- [ ] **Rules, remaining** (`design/rules-when-then.md`): the **Why did that happen?** button / `vefr why`, `add_rule` edits, and the Cottage demo (the cat, the harbour fog, Stern's mistaken belief). The validator, pure engine and woven-player wiring landed 2026-10-01.
+- [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
+      depth tables, the Journal line and the New descent button.
+- [ ] **Gates and guardians** (`design/gates-and-guardians.md`): a `requires` lock on a
+      transition, a ladder of key-carrying guardians ending in the act's boss, and the boss's
+      seal opening a treasure room.
+- [ ] **The album** (`design/album.md`): one record of what you have met, a sticker album
+      first, bestiary, items and map as views later.
 - [ ] **Equipment** (`design/equipment.md`): five slots, atk and hp mods, the Bag "You" section.
-- [ ] **UI skin** (`design/ui-skin.md`): `process_ui`, `check_ui`, the skin loader, contrast and axe tests.
+- [ ] **A real act 2** (ADR 0006): only the first act plays today.
+- [ ] **Rules, remaining** (`design/rules-when-then.md`): `add_rule` edits and a `grows` event.
+- [ ] **A second tiny skin** (`design/ui-skin.md` step 6), to prove skins swap.
 - [ ] **A text-input surface** for the player (so a "when a word is said" event can exist): later.
 
 ### Enhancement wave 1 (2026-09-30 packet)

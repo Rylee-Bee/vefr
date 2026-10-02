@@ -38,7 +38,7 @@ at most **40 rules** (see `docs/adr/0004-scoped-rules.md` for why).
 | `{"buys": {"what": "X"}}` | the player buys an item | the shop's Buy |
 | `{"sells": {"what": "X"}}` | the player sells an item | the shop's Sell |
 | `{"reads": {"what": "X"}}` | a book is closed having been read | the reader's Close |
-| `{"phase-changes": {"to": "X"}}` | the watch turns to a phase | the phase rail |
+| `{"phase-changes": {"to": "X"}}` | the watch turns to a phase | the Dusk/Dawn buttons (Menu > Display) |
 
 ## One identity model
 

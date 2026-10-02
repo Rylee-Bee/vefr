@@ -84,3 +84,11 @@ def test_on_a_phone_the_messages_panel_starts_below_the_wrapped_hud():
 
 def test_on_the_narrowest_phones_the_messages_panel_makes_room_for_three_hud_rows():
     assert re.search(r"@media \(max-width: 400px\) \{ \.toasts \{ top: 150px; \} \}", HTML)
+
+
+def test_the_in_app_help_matches_the_controls():
+    """The How to play panel is what a player reads; it was stale after WASD and the declutter."""
+    block = HTML[HTML.index('data-panel-body="help"'):]
+    block = block[:block.index("</ul>")]
+    for needle in ("<kbd>W</kbd>", "<kbd>D</kbd>", "Bag button", "Time of day", "close a shop", "big Interact button"):
+        assert needle in block, needle
