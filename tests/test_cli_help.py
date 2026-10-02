@@ -55,7 +55,7 @@ REQUIRED_VERBS = {
     "doctor", "check", "chat", "map", "delve", "weave", "spark",
     "test", "ferry", "handbok", "skipa", "norns", "ratatoskr",
 }
-VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe"}
+VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features"}
 
 
 # ------------------------------------------------------------- harness
@@ -260,7 +260,7 @@ SANCTIONED_FNS = {
         "cmd_spark_smoke",
         "cmd_deploy", "cmd_backup", "cmd_import", "cmd_scaffold",
         "cmd_vefr_skipa", "cmd_vefr_doctor", "cmd_find",
-        "cmd_publish", "cmd_look", "cmd_probe",
+        "cmd_publish", "cmd_look", "cmd_probe", "cmd_features",
     )
 }
 
@@ -274,6 +274,7 @@ EXPECTED_BOUND = {
     "publish": ("cmd_publish",),
     "look": ("cmd_look",),
     "probe": ("cmd_probe",),
+    "features": ("cmd_features",),
     "doctor": ("cmd_vefr_doctor",),
     "check": ("cmd_map",),
     "chat": ("cmd_chat",),
@@ -343,6 +344,7 @@ DISPATCH_ARGV = {
     "publish": ["publish", "--dry-run"],
     "look": ["look", "--html", "x.html"],
     "probe": ["probe", "--html", "x.html", "--fire", "reads:what=x"],
+    "features": ["features"],
     "doctor": ["doctor"],
     "check": ["check"],
     "chat": ["chat", "--name", "x"],
