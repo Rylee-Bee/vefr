@@ -50,8 +50,10 @@ surface - lives in a pack directory. Two shapes are supported:
       {"from": "town", "at": [4, 5],
        "to": "cottage", "to_at": [4, 3]}
 
-  `at` is the tile you step on in `from`; `to_at` is where the hero
-  lands in `to`. A speaker may carry `"region": "<region name>"`; a
+  `at` is the tile the door stands on in `from`; `to_at` is where the
+  hero lands in `to`. A door is used with Interact, never stepped
+  through by accident. A speaker may carry `"region": "<region name>"`;
+  a
   speaker with no `region` belongs to the act's first region. Each
   loaded region carries its own `speakers` dict (the act's speakers
   filtered to that region), while the act's `speakers` keeps all of

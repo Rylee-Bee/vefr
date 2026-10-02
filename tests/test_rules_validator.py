@@ -187,7 +187,16 @@ def test_a_malformed_when_names_the_rule(tmp_path):
                                                       "distance": 12}},
             "then": [{"set": "lit"}]}
     errors = _one(tmp_path, rule)
-    assert any("near-far" in e and "1..9" in e for e in errors)
+    assert any("near-far" in e and "0..9" in e for e in errors)
+
+
+def test_contact_distance_zero_is_the_players_own_shape(tmp_path):
+    # The player fires tile contact at distance 0; the vocabulary says
+    # so ("within N tiles", 0 = standing on it).
+    rule = {"id": "on-the-stone", "when": {"comes-near": {"who": "keeper",
+                                                          "distance": 0}},
+            "then": [{"say": "The stone hums."}]}
+    assert _one(tmp_path, rule) == []
 
 
 def test_a_say_line_over_the_speech_box_limit_names_the_rule(tmp_path):
@@ -302,8 +311,87 @@ def test_hostile_ids_never_touch_the_filesystem(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Path, "open", _guarded)
     errors = maplab.rules_errors(loaded, pack_dir=pack)
-    # Every answer is a plain sentence, and the only file touched is
-    # the pack's own world.json - whose path came from the caller.
+    # Every answer is a plain sentence, and the only files touched are
+    # the pack's own declared data (world.json, region contract.json) -
+    # every path came from directory listings, never from pack data.
     assert errors and all(isinstance(e, str) for e in errors)
     assert any("../../rule/boom" in e for e in errors)
-    assert set(opened) <= {pack / "world.json"}
+    for f in opened:
+        assert f.is_relative_to(pack), f
+        assert f.name in ("world.json", "contract.json"), f
+
+
+# ---- the one identity model: everything a rule names is declared ----
+
+def test_a_poi_label_is_a_thing_a_rule_may_name(tmp_path):
+    # The player fires `comes-near`/`uses-with` with the POI's own
+    # label; the label is declared in the region contract, so it IS
+    # the id. No pack should have to invent a fake item for a place.
+    rules = [
+        {"id": "the-stone-hums",
+         "when": {"comes-near": {"who": "the stone", "distance": 0}},
+         "then": [{"say": "The stone hums."}]},
+        {"id": "oil-on-the-stone",
+         "when": {"uses-with": {"item": "chalked-map", "with": "the stone"}},
+         "then": [{"set": "lit"}]},
+    ]
+    assert _one(tmp_path, rules[0], rules=rules) == []
+
+
+def test_a_chest_book_is_a_thing_an_opens_rule_may_name(tmp_path):
+    # A chest IS a library book; its id is what the interaction path
+    # sends in `opens`.
+    rule = {"id": "the-chest-was-a-trap",
+            "when": {"opens": {"what": "the-keepers-ledger"}},
+            "then": [{"say": "Something was waiting in the ledger."}]}
+    assert _one(tmp_path, rule) == []
+
+
+def test_the_new_events_name_their_own_ids(tmp_path):
+    rules = [
+        {"id": "felled", "when": {"defeats": {"what": "cellar-rat"}},
+         "then": [{"set": "lit"}]},
+        {"id": "closed", "when": {"reads": {"what": "no-such-book"}},
+         "then": [{"set": "lit"}]},
+        {"id": "watch-turns", "when": {"phase-changes": {"to": "midnight"}},
+         "then": [{"set": "lit"}]},
+    ]
+    errors = _one(tmp_path, rules[0], rules=rules)
+    for rule, needle in ((rules[0], "cellar-rat"), (rules[1], "no-such-book"),
+                         (rules[2], "midnight")):
+        assert any(rule["id"] in e and needle in e for e in errors), errors
+
+
+def test_the_new_events_accept_declared_ids(tmp_path):
+    pack = _pack(tmp_path, {
+        "flags": dict(FLAGS), "claims": dict(CLAIMS), "people": dict(PEOPLE),
+        "rules": [
+            {"id": "felled", "when": {"defeats": {"what": "rat-1"}},
+             "then": [{"set": "lit"}]},
+            {"id": "bought", "when": {"buys": {"what": "chalked-map"}},
+             "then": [{"set": "met-keeper"}]},
+            {"id": "sold", "when": {"sells": {"what": "chalked-map"}},
+             "then": [{"set": "met-keeper"}]},
+            {"id": "closed", "when": {"reads": {"what": "the-keepers-ledger"}},
+             "then": [{"set": "lit"}]},
+            {"id": "watch-turns", "when": {"phase-changes": {"to": "dusk"}},
+             "then": [{"say": "The watch turns."}]},
+            {"id": "turn-in", "when": {"comes-near": {"who": "keeper", "distance": 1}},
+             "then": [{"takes": "chalked-map"}, {"set": "met-keeper"}]},
+        ],
+    })
+    # one declared enemy, in the first region's contract
+    contract_path = (pack / "acts" / "act-1" / "town" / "contract.json")
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    contract["enemies"] = [{"id": "rat-1", "name": "the rat",
+                            "at": [2, 2], "hp": 3, "atk": 1}]
+    contract_path.write_text(json.dumps(contract), encoding="utf-8")
+    assert _errors(pack) == []
+
+
+def test_takes_and_give_take_the_same_item_ids(tmp_path):
+    rule = {"id": "hand-it-over",
+            "when": {"comes-near": {"who": "keeper", "distance": 1}},
+            "then": [{"takes": "no-such-thing"}]}
+    errors = _one(tmp_path, rule)
+    assert any("hand-it-over" in e and "takes" in e for e in errors), errors

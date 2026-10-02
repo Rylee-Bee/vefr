@@ -40,6 +40,8 @@ no account, no network, no model.
 | 18 | One shop per region; no stock (L8) | reward ruleset v1, documented | GAME | leave | no action |
 | 19 | Creator reinvented: content/generate split, acceptance checks, art contact sheets | pack tooling (`tools/build_pack.py`, `check_*.py`, `art/tools/`) | GAP | evaluate small studio tooling: pack scaffold, `validate --play`, art contact sheets (trust boundary required) | proposal (ADR) |
 | 20 | jsdom harness needs real origin + a tick + canvas stub (L19) | reproduced while building `tools/rules_test.mjs` | DOC | note in the testing docs; covered by the new fixtures' shared helpers where cheap | noted |
+| 21 | *(found while implementing 5/6/9)* the same contract is mirrored in **four** places - `maplab` (validator), `_rule_bakes` + `_action_bakes` (the bake), `validAction` (the woven engine) - and the bake/engine mirrors had silently drifted: `takes` rules were dropped and distance-0 rules refused, with no error anywhere | reproduced: a fixture rule with `takes` baked away (`_rule_bakes`) and, when forced through, the engine skipped it whole (`validAction`); both mirrors pinned by new tests | BUG | bring every mirror in lockstep and pin the agreement in tests at both ends | **implemented** |
+| 22 | *(found while implementing 7)* `refresh_living_tree` promised "failures must never break the mutation" but caught only `OSError` - a missing pack (a fresh world's first journal write) raised `PackError` through `journal.log` | reproduced: `journal.log` for a world with no pack throws | BUG | honor the documented contract (catch and return None) | **implemented** |
 
 ## What the matrix says in one line
 

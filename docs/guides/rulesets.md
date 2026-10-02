@@ -188,9 +188,12 @@ room** inside a building, or a floor below:
 ]
 ```
 
-`at` is the tile you step on in `from`; `to_at` is where the hero
-lands in `to`. A door is stepped on, not stood on: the step enters the
-other region instead of placing the hero on the door tile. A speaker
+`at` is the tile the door stands on in `from`; `to_at` is where the hero
+lands in `to`. A door is **used, not walked through**: the hero stands
+on or faces the door tile and presses Interact (the button says "Go
+through the door"), and passing a doorway never yanks the hero to
+another map. Interact is the one canonical interaction path - the
+same verb that opens a chest or a trade. A speaker
 may carry `"region": "<region name>"`; a speaker with no `region`
 belongs to the act's first region. Each loaded region carries its own
 `speakers` dict (the act's speakers filtered to that region); the

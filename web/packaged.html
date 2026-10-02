@@ -204,7 +204,7 @@
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
   #menu .pm { list-style: none; margin: 10px 0 14px; padding: 0; display: grid; gap: 2px; }
-  #menu .pm button { width: 100%; justify-content: flex-start; border: 0; background: transparent; color: var(--ink); text-transform: none; letter-spacing: 0.04em; font: 700 0.95rem var(--display); }
+  #menu .pm button { width: 100%; min-height: 44px; justify-content: flex-start; border: 0; background: transparent; color: var(--ink); text-transform: none; letter-spacing: 0.04em; font: 700 0.95rem var(--display); }
   #menu .pm button[aria-current="true"] { background: rgba(216, 170, 78, 0.16); color: var(--accent); }
   #menu-panel h2 { margin: 4px 0 8px; font: 700 1.2rem var(--display); letter-spacing: 0.04em; }
   #menu-panel ul { margin: 0; padding-left: 1.1rem; }
@@ -390,6 +390,8 @@
     <ul class="pm">
       <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
       <li><button type="button" data-panel="books">Books</button></li>
+      <li><button type="button" data-panel="next">Where next?</button></li>
+      <li><button type="button" data-panel="why">Why did that happen?</button></li>
       <li><button type="button" data-panel="bag">Bag</button></li>
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
@@ -409,6 +411,18 @@
       <h2>Books</h2>
       <div id="book-list"></div>
       <p class="status" id="book-count"></p>
+    </div>
+    <div data-panel-body="next" hidden>
+      <h2>Where next?</h2>
+      <p class="status">What the world has pointed you toward, kept until you get there.</p>
+      <div id="next-list"></div>
+      <p class="status" id="next-count"></p>
+    </div>
+    <div data-panel-body="why" hidden>
+      <h2>Why did that happen?</h2>
+      <p class="status">The last things the world did, and what made them happen.</p>
+      <div id="why-list"></div>
+      <p class="status" id="why-count"></p>
     </div>
     <div data-panel-body="bag" hidden>
       <h2>Bag</h2>
@@ -794,6 +808,9 @@ function closeReader() {
   reader.hidden = true;
   readerBook = null;
   readerOpener = null;
+  // Closing a book after reading it is a fact the world may notice:
+  // one `reads` per book closed.
+  if (read && typeof read.id === 'string') fireRule('reads', { what: read.id });
   // Put focus back where it came from; a body opener (arrow-key play)
   // has nowhere to land, so fall back to the visible Menu button.
   if (opener && opener !== document.body && opener !== document.documentElement
@@ -970,19 +987,26 @@ function useItem(id) {
   // standing on (the POI line's own text - the thing in reach); with
   // no named place it is '', which matches no rule and harms nothing.
   fireRule('uses-with', { item: id, with: (document.getElementById('poi') || {}).textContent || '' });
+  // Usable is not the same as consumable: a `keep` thing is used and
+  // stays; a bare `use` (no heal, no light) has nothing to spend and
+  // is the natural shape of a quest tool.
+  var keep = def.keep === true;
   if (def.light && typeof def.light === 'object'
       && typeof window.useLightItem === 'function') {
     return window.useLightItem(id, def);
   }
-  if (!(typeof def.heal === 'number' && def.heal > 0)) return false;
   var verb = def.use || 'use';
+  if (!(typeof def.heal === 'number' && def.heal > 0)) {
+    bagSay('You ' + verb + ' ' + itemName(id) + '.');
+    return true;
+  }
   // Whole already: say so and keep the thing. A potion is not spent on
   // nothing, so the player never loses a heal by mis-tapping.
   if (HERO_HP >= heroMax()) {
     bagSay('You ' + verb + ' ' + itemName(id) + '. You are already whole.');
     return true;
   }
-  if (!bagRemoveOne(id)) return false;
+  if (!keep && !bagRemoveOne(id)) return false;
   var before = HERO_HP;
   HERO_HP = Math.min(heroMax(), HERO_HP + def.heal);
   saveHeroHp();
@@ -1083,11 +1107,13 @@ function renderBagPanel() {
     label.className = 'bag-row-name';
     label.textContent = itemName(id);
     row.appendChild(label);
-    // Anything the pack gave a `heal` or a `light` can be used from
-    // here. The words are the pack's own verb, so a potion is drunk,
-    // bread is eaten, and a torch is lit.
+    // Anything the pack gave a `use`, a `heal` or a `light` can be
+    // used from here. The words are the pack's own verb, so a potion
+    // is drunk, bread is eaten, and a torch is lit. Usable is not
+    // the same as consumable: a `keep` thing is used and stays.
     var def = itemCatalog()[id];
-    if (def && ((typeof def.heal === 'number' && def.heal > 0)
+    if (def && (def.use
+        || (typeof def.heal === 'number' && def.heal > 0)
         || (def.light && typeof def.light === 'object'))) {
       var use = document.createElement('button');
       use.type = 'button';
@@ -1176,6 +1202,7 @@ function sellItem(id) {
   if (!price) return false;
   if (!bagRemoveOne(id)) return false;
   addGold(price);
+  fireRule('sells', { what: id });
   tradeSay('You sell ' + itemName(id) + ' for ' + price + ' gold.');
   renderTrade();
   settleTradeFocus('sell', id);
@@ -1186,6 +1213,10 @@ function buyItem(id) {
   if (!price || heroGold() < price) return false;
   if (!bagAdd(id)) return false;
   addGold(-price);
+  // Buying is acquiring: the same `picks-up` a floor drop fires,
+  // plus the fact that it was bought.
+  fireRule('picks-up', { what: id });
+  fireRule('buys', { what: id });
   tradeSay('You buy ' + itemName(id) + ' for ' + price + ' gold.');
   renderTrade();
   settleTradeFocus('buy', id);
@@ -1293,6 +1324,10 @@ function bindMenu() {
     b.addEventListener('click', function () {
       if (b.dataset.panel === 'startover') { showStartover(); return; }
       showPanel(b.dataset.panel);
+      // The two evidence panels render on open: fresh, and only ever
+      // from real records (the point-to hints; the fired rules).
+      if (b.dataset.panel === 'next') renderNextPanel();
+      if (b.dataset.panel === 'why') renderWhyPanel();
     });
   });
   // Start over: one confirmation, safe by default (focus lands on
@@ -1504,6 +1539,7 @@ function buildPhaseRail() {
       // the hero's own and does not follow the phase.
       renderHp();
       renderEncounter();
+      fireRule('phase-changes', { to: k });
     });
     rail.appendChild(b);
   });
@@ -1908,6 +1944,7 @@ function performRuleAction(a) {
     return;
   }
   if (key === 'give') { bagAdd(v); return; }
+  if (key === 'takes') { bagRemoveOne(v); return; }
   if (key === 'weather') {
     if (window.VEFR_RULES_WEATHER) window.VEFR_RULES_WEATHER(v === 'fog');
     return;
@@ -1964,6 +2001,91 @@ function rulesWhyRecord(fired) {
   });
   while (window.VEFR_WHY.length > 20) window.VEFR_WHY.shift();
   try { localStorage.setItem(rulesWhyKey(), JSON.stringify(window.VEFR_WHY)); } catch (e) {}
+}
+
+// ---- where next: the point-to hints, kept as player-facing
+// intentions ("Go toward Saltreach.") instead of thrown-away
+// narration. Authored by rules; nothing is inferred. Same wrapped
+// storage discipline as the why-log.
+window.VEFR_NEXT = [];
+var rulesNextLoaded = false;
+function rulesNextKey() {
+  return 'vefr-next-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+}
+function rulesNextLoad() {
+  if (rulesNextLoaded) return;
+  rulesNextLoaded = true;
+  try {
+    var a = JSON.parse(localStorage.getItem(rulesNextKey()) || '[]');
+    window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
+      return e && typeof e.place === 'string' && typeof e.line === 'string';
+    }) : [];
+  } catch (e) { window.VEFR_NEXT = []; }
+}
+function rulesNextRecord(place, line) {
+  if (typeof place !== 'string' || !place) return;
+  rulesNextLoad();
+  // one row per place: the newest word wins
+  window.VEFR_NEXT = window.VEFR_NEXT.filter(function (e) { return e.place !== place; });
+  window.VEFR_NEXT.push({ place: place, line: line || ('To reach ' + place + '.') });
+  try { localStorage.setItem(rulesNextKey(), JSON.stringify(window.VEFR_NEXT)); } catch (e) {}
+}
+
+// The two evidence panels the menu shows: where the world pointed,
+// and why it did what it did. Both render only real records - the
+// point-to hints and the fired rules - and invent nothing.
+function renderNextPanel() {
+  var list = document.getElementById('next-list');
+  var count = document.getElementById('next-count');
+  if (!list) return;
+  rulesNextLoad();
+  list.textContent = '';
+  var rows = window.VEFR_NEXT.slice().reverse();   // newest word first
+  rows.forEach(function (e) {
+    var p = document.createElement('p');
+    p.className = 'status';
+    var b = document.createElement('b');
+    b.textContent = e.place + ' - ';
+    p.appendChild(b);
+    p.appendChild(document.createTextNode(e.line));
+    list.appendChild(p);
+  });
+  if (!rows.length) {
+    var empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = 'Nothing has pointed the way yet.';
+    list.appendChild(empty);
+  }
+  if (count) count.textContent = rows.length
+    ? rows.length + (rows.length === 1 ? ' place to aim at.' : ' places to aim at.')
+    : '';
+}
+function renderWhyPanel() {
+  var list = document.getElementById('why-list');
+  var count = document.getElementById('why-count');
+  if (!list) return;
+  rulesWhyLoad();
+  list.textContent = '';
+  var rows = window.VEFR_WHY.slice().reverse();   // newest first
+  rows.forEach(function (e) {
+    var p = document.createElement('p');
+    p.className = 'status';
+    var b = document.createElement('b');
+    // the rule's own id, as words: "light-the-causeway-lamp"
+    b.textContent = (e.id || '').replace(/-/g, ' ') + ' - ';
+    p.appendChild(b);
+    p.appendChild(document.createTextNode(e.why || ''));
+    list.appendChild(p);
+  });
+  if (!rows.length) {
+    var empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = 'Nothing has happened yet that needs explaining.';
+    list.appendChild(empty);
+  }
+  if (count) count.textContent = rows.length
+    ? 'The last ' + rows.length + ' things the world did.'
+    : '';
 }
 
 function setupTown() {
@@ -2256,6 +2378,7 @@ function setupTown() {
       e.alive = false;
       saveSlain();
       placeDrops(e.at, e.drops);
+      fireRule('defeats', { what: e.id });
       combatSay('You hit ' + e.name + ' for ' + dmg + '. ' + e.name + ' falls.');
     } else {
       combatSay('You hit ' + e.name + ' for ' + dmg + '.');
@@ -2422,7 +2545,12 @@ function setupTown() {
       'comes-near': { keys: ['who', 'distance'], target: 'who' },
       'opens': { keys: ['what'], target: 'what' },
       'picks-up': { keys: ['what'], target: 'what' },
-      'uses-with': { keys: ['item', 'with'], target: 'item' }
+      'uses-with': { keys: ['item', 'with'], target: 'item' },
+      'defeats': { keys: ['what'], target: 'what' },
+      'buys': { keys: ['what'], target: 'what' },
+      'sells': { keys: ['what'], target: 'what' },
+      'reads': { keys: ['what'], target: 'what' },
+      'phase-changes': { keys: ['to'], target: 'to' }
     };
 
     function isObj(v) {
@@ -2625,8 +2753,8 @@ function setupTown() {
         return false;
       }
       if (key === 'show' || key === 'hide' || key === 'reveal'
-          || key === 'give' || key === 'set' || key === 'unset'
-          || key === 'point-to') {
+          || key === 'give' || key === 'takes' || key === 'set'
+          || key === 'unset' || key === 'point-to') {
         return typeof v === 'string';
       }
       if (key === 'weather') return v === 'fog' || v === 'clear';
@@ -2656,6 +2784,10 @@ function setupTown() {
           state.flags[v] = false;
         } else if (key === 'give') {
           state.items[v] = true;
+        } else if (key === 'takes') {
+          // `give`'s pair: the hero stops carrying it. The engine's
+          // model is presence, not counts - a delivery turns it in.
+          delete state.items[v];
         } else if (key === 'believes') {
           setBelief(state, v.who, v.claim, true, 'saw it themselves');
         } else if (key === 'stops-believing') {
@@ -2689,6 +2821,16 @@ function setupTown() {
         phrase = 'the hero opened ' + data.what;
       } else if (event === 'picks-up') {
         phrase = 'the hero picked up ' + data.what;
+      } else if (event === 'defeats') {
+        phrase = 'the hero defeated ' + data.what;
+      } else if (event === 'buys') {
+        phrase = 'the hero bought ' + data.what;
+      } else if (event === 'sells') {
+        phrase = 'the hero sold ' + data.what;
+      } else if (event === 'reads') {
+        phrase = 'the hero closed ' + data.what + ' having read it';
+      } else if (event === 'phase-changes') {
+        phrase = 'the watch turned to ' + data.to;
       } else {
         phrase = 'the hero used ' + data.item + ' with ' + data.with;
       }
@@ -2986,9 +3128,9 @@ function setupTown() {
     var reveal = light.reveal === true;
     var radius = light.radius, turns = light.turns;
     if (!reveal && (!(radius > 0) || !(turns > 0))) return false;
-    // Spend only now that the item can actually be used (the row was
-    // drawn from this bag, so this cannot normally fail).
-    if (!bagRemoveOne(id)) return false;
+    // Spend only now that the item can actually be used - and never
+    // spend a kept thing (a lantern is lit again, not used up).
+    if (def.keep !== true && !bagRemoveOne(id)) return false;
     if (reveal) {
       for (var y = 0; y < town.map.length; y++) {
         for (var x = 0; x < town.map[0].length; x++) explored[x + ',' + y] = 1;
@@ -3020,17 +3162,9 @@ function setupTown() {
     return d <= 1 ? { key: key, spec: spec } : null;
   }
 
-  // The chest the hero is standing on, if any (a book with `chest: yes`).
-  function chestHere() {
-    var list = libraryBooks();
-    for (var i = 0; i < list.length; i++) {
-      var b = list[i];
-      if (!b || !b.chest || b.found !== 'map' || !Array.isArray(b.at)) continue;
-      if ((b.region || 'town') !== regionName) continue;
-      if (b.at[0] === hero[0] && b.at[1] === hero[1] && !bookIsFound(b.id)) return b;
-    }
-    return null;
-  }
+  // (The old `chestHere` - "the chest the hero is standing on" - is
+  // gone with `useHere`; the Interact target list below enumerates
+  // every chest in reach itself.)
 
   function spriteReady(key) {
     var im = spriteImgs[key];
@@ -3428,7 +3562,16 @@ function setupTown() {
   function giveChestDrops(book) {
     var ids = (book && Array.isArray(book.drops)) ? book.drops : [];
     var names = [];
-    ids.forEach(function (id) { if (bagAdd(id)) names.push(itemName(id)); });
+    ids.forEach(function (id) {
+      // Taking it out of the chest is the player acquiring it, so it
+      // fires the same `picks-up` a floor drop fires. (A rule's own
+      // `give` stays silent: a give is not a picks-up - the
+      // no-chains law.)
+      if (bagAdd(id)) {
+        names.push(itemName(id));
+        fireRule('picks-up', { what: id });
+      }
+    });
     if (names.length) combatSay('You take ' + names.join(', ') + ' from the chest.');
   }
 
@@ -3543,8 +3686,9 @@ function setupTown() {
   //              shopkeeperNear finds it (shopKeyHere) but with NO
   //              distance cut, so the pure block's own reach rules
   //              decide; the reach cut lives only in shopkeeperNear;
-  //   chest    - every unfound chest book in this region: the
-  //              chestHere filter minus the standing-on-it test;
+  //   chest    - every unfound chest book in this region: a chest
+  //              book (`chest: yes`, `found: map`) whose region is
+  //              this one and which is not already found;
   //   door     - every transition out of this region, except stairs:
   //              a tile is stairs when the region's `pois` for that
   //              tile mentions a stair (/stair/i on pois[key]) OR the
@@ -3649,6 +3793,10 @@ function setupTown() {
       if (t.kind === 'door' || t.kind === 'stairs') {
         var trans = transitionAt(t.at[0], t.at[1]);
         if (!trans) throw new Error('transition gone');
+        // A door used is a door opened: `opens` carries the place it
+        // opens into (a declared region), then the arrival fires
+        // `enters` as it always has.
+        fireRule('opens', { what: trans.to });
         enterRegion(trans.to, trans.to_at);
       } else if (t.kind === 'chest') {
         var books = libraryBooks(), book = null;
@@ -3656,6 +3804,10 @@ function setupTown() {
           if (books[i] && books[i].id === t.id) { book = books[i]; break; }
         }
         if (!book) throw new Error('chest gone');
+        // One `opens` per opening, through the one interaction path
+        // the player has. The chest's own identity is its book id;
+        // its contents follow with their own `picks-up`.
+        fireRule('opens', { what: book.id });
         foundBook(book, 'map');
         giveChestDrops(book);
         combatSnapshot();
@@ -3692,28 +3844,10 @@ function setupTown() {
     }
   }
 
-  // The verb: use what you are standing on. A door is used, not walked
-  // through, so passing a doorway never yanks you to another map.
-  function useHere() {
-    var door = transitionAt(hero[0], hero[1]);
-    if (door) { enterRegion(door.to, door.to_at); return; }
-    var chest = chestHere();
-    if (chest) {
-      foundBook(chest, 'map');
-      giveChestDrops(chest);
-      fireRule('opens', { what: chest });   // one `opens` per opening
-      combatSnapshot();
-      return;
-    }
-    var shop = shopkeeperNear();
-    if (shop) {
-      openTrade(shop.key, shop.spec.name, document.getElementById('interact'));
-      return;
-    }
-    var key = hero[0] + ',' + hero[1];
-    var text = (town.poi_text || {})[key];
-    if (text) showSpeech(pois[key] || '', text, '');
-  }
+  // (The old `useHere` - "use what you are standing on" - lived here
+  // and was the only caller of fireRule('opens'). It lost its callers
+  // when one-button Interact landed and is gone: the Interact path
+  // above is the one canonical interaction, and it fires `opens`.)
 
   // The Interact control: ALWAYS on screen - never hidden, never
   // disabled, so it stays focusable and pressable. Its own words say
@@ -4075,15 +4209,21 @@ function setupTown() {
     }
     var at = fromHere || entrance;
     if (!at) {
-      combatSay('No way to ' + place + ' is declared from here.');
+      var lost = 'No way to ' + place + ' is declared from here.';
+      combatSay(lost);
+      rulesNextRecord(place, lost);
       return;
     }
     var dx = at[0] - hero[0], dy = at[1] - hero[1];
     var vert = dy < 0 ? 'north' : (dy > 0 ? 'south' : '');
     var horiz = dx < 0 ? 'west' : (dx > 0 ? 'east' : '');
     var dir = vert && horiz ? vert + '-' + horiz : (vert || horiz);
-    combatSay(dir ? 'To reach ' + place + ', go ' + dir + '.'
-                  : 'The way to ' + place + ' is right here.');
+    var line = dir ? 'To reach ' + place + ', go ' + dir + '.'
+                   : 'The way to ' + place + ' is right here.';
+    combatSay(line);
+    // The hint is an intention, not a flash: it stays in the menu's
+    // Where next? panel until the world points somewhere new.
+    rulesNextRecord(place, line);
   };
   // show/hide/reveal: the floor is the only surface a thing has in
   // this player - an item can lie where the hero stands (shown) or be

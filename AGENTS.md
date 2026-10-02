@@ -134,6 +134,7 @@ uv run ratatoskr weave --pool 5
 | `AGENT_POLICY.md` | Agent decision kernel: preflight, DoD, evidence requirements |
 | `docs/guides/world-creation.md` | World authoring: norns chat -> validate -> build-map -> weave |
 | `docs/guides/grammars.md` | Author grammars: offline whispers, weather, names |
+| `docs/guides/rules.md` | Author rules: the eleven events, ids, actions, kept items |
 | `docs/guides/lore.md` | The Lorekeeper: facts, the derived index, `vefr-lore` |
 | `docs/uat/` | UAT contracts: a journey + machine-checkable acceptance triples |
 | `README.md` | Design philosophy + screenshots + quickstart |

@@ -468,5 +468,9 @@ def refresh_living_tree(world: str | None = None, sid: str | None = None) -> Pat
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(export_story(world, sid=sid), encoding="utf-8")
         return path
-    except OSError:
+    except Exception:
+        # The contract above is unqualified: this best-effort mirror
+        # never breaks the mutation it reflects - not an OSError, not
+        # a PackError from a world with no pack yet (which is exactly
+        # the case tests and fresh worlds hit).
         return None

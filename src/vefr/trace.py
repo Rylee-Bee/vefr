@@ -54,11 +54,17 @@ def _persist(ev: dict) -> None:
 
 
 def record(route: str, ms: float, ok: bool = True, **detail) -> dict:
+    # Every event names the world it happened to - a command scoped
+    # to one pack can then filter out every other world's calls
+    # instead of assuming the active world's trace is its own.
+    from .paths import world_name
+
     ev = {
         "at": _now(),
         "route": route,
         "ms": round(ms, 1),
         "ok": ok,
+        "world": world_name(),
     }
     ev.update(detail)
     _events.append(ev)

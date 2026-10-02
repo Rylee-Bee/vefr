@@ -214,5 +214,6 @@ Every route, every request/response shape, try-it-out included.
 | What's landed, what's next? | `ROADMAP.md` |
 | How do I build a world end to end? | `docs/guides/world-creation.md` |
 | Which game does an act play? | `docs/guides/rulesets.md` |
+| How does a world react to the player? | `docs/guides/rules.md` |
 | Who can use what, under what license? | `LICENSE` (engine) and `worlds/<name>/LICENSE` (a specific world, if it has one) |
 | How do I run this always-on? | `README.md` "Run the engine" section |

@@ -40,9 +40,12 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **edit** | One checked change to a game that the player keeps: put a person in, paint the map. Always previewed first, always backed up. | "change", "commit" | in use (people and the map) |
 | **edit log** | The list of kept edits, so the last one can be undone. The studio keeps the full log; the game folder keeps a short `EDITS.md`. | "history" | in use |
 | **skin** | A swappable set of pictures for a game's panels, buttons and bars. | "theme", "UI pack" | proposed (`design/ui-skin.md`) |
-| **reaction** | One thing's own "when this happens, it does that" (the cat looks up when you come near). | "trigger", "event" | proposed (`design/rules-when-then.md`) |
-| **rule** | A game-wide "when this happens, do that", using flags. A reaction is a small rule attached to one thing. | "trigger", "script" | proposed (`design/rules-when-then.md`) |
-| **belief** | What a character thinks is true. It can be wrong. | "knowledge" | proposed (`design/rules-when-then.md`) |
+| **reaction** | One thing's own "when this happens, it does that" (the cat looks up when you come near). | "trigger", "event" | in use (`docs/guides/rules.md`) |
+| **rule** | A game-wide "when this happens, do that", using flags. A reaction is a small rule attached to one thing. | "trigger", "script" | in use (`docs/guides/rules.md`) |
+| **belief** | What a character thinks is true. It can be wrong. | "knowledge" | in use (`docs/guides/rules.md`) |
+| **kept thing** | An item that can be used again and again - a quest tool, a lantern. Using a kept thing never spends it. | "key item", "quest item" | in use (`docs/guides/rules.md`) |
+| **Why did that happen?** | The menu panel that shows what the world did and what made it happen - only real records, never guesses. | "debug log" | in use (the woven player) |
+| **Where next?** | The menu panel that keeps what the world has pointed the player toward, so the way can be found again. | "quest log" | in use (the woven player) |
 | **slot** | A place on the hero for one worn item: hand, body, head, feet or charm. | "equipment slot" | proposed (`design/equipment.md`) |
 
 ## Actions (verbs)
