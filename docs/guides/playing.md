@@ -16,7 +16,9 @@ You cannot get anything wrong here; the game tells you what it is doing as you g
 | `V` | Turn the dark off and on. |
 | `Escape` | Open the pause menu. Press it again to close it. |
 
-The action buttons on the screen show their keys beside them.
+One big button, **Interact**, sits at the bottom right and says what it will do. Beside it are four small
+icon buttons: Talk (`E`), Whisper (`Q`), Bag (`B`) and Explore (`O`). Each keeps its word for a screen reader and
+a tooltip, and a tiny key letter. The Dusk and Dawn buttons live in the Menu, under Display, as "Time of day".
 `Space` and `Enter` press the button that already has the focus.
 While a note or someone's line is on screen, `E`, `F`, `Space` and `Enter` turn the page and then close it.
 In the shop, `E` or `F` closes it too (`Escape` and the Close button still work).

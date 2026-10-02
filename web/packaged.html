@@ -103,7 +103,8 @@
   .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
   #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .hud--tl { left: 12px; }
+  /* leave room for the Menu button (about 88 px) so the health/level/gold row wraps instead of running under it */
+  .hud--tl { left: 12px; max-width: calc(100% - 124px); }
   .hud--tr { right: 12px; justify-content: flex-end; max-width: 60%; }
   .glass { background: var(--glass); border: 1px solid var(--glass-edge); border-radius: 4px; color: var(--glass-ink); }
   .hud-hp { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
@@ -144,9 +145,18 @@
   .gbtn { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
   .gbtn--gold, .stage button.primary { background: #D8AA4E; color: #1B1206; border-color: transparent; }
   .gbtn--dim { opacity: 0.55; }   /* Interact with nothing in reach: dimmed, never hidden or disabled */
-  .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; }
+  .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; align-items: flex-end; }
+  /* Interact is the one big button; Talk, Whisper, Bag and Explore are small icon buttons that keep
+     their words (for a screen reader and the tooltip) and their key letter. */
+  .gbtn--tool { position: relative; width: 46px; height: 46px; min-height: 44px; padding: 0; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .gbtn--tool svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .gbtn--tool kbd { position: absolute; right: 3px; bottom: 1px; font-size: 0.55rem; line-height: 1; opacity: 0.85; border: 0; background: none; padding: 0; }
+  .gbtn--tool[aria-pressed="true"] { border-color: #D8AA4E; box-shadow: inset 0 0 0 2px #D8AA4E; }
+  #menu .menu-sub { margin-top: 18px; }
   /* Visually hidden, still read aloud: the quiet way to keep a line for a screen reader. */
-  .sr-only, .quiet, .toasts.is-collapsed p { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .sr-only, .quiet, .toasts.is-collapsed p { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0 !important; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0 !important; }
   /* The messages live in a small corner panel (top left, under the health bar), never over the map. */
   .toasts { position: absolute; left: 12px; top: 64px; z-index: 2; display: grid; gap: 6px; justify-items: start; width: min(210px, 36%); pointer-events: none; }
   .toasts p { margin: 0; padding: 5px 10px; text-align: left; font-size: 0.82rem; }
@@ -203,15 +213,18 @@
   @media (pointer: coarse), (max-width: 700px) {
     .dpad { display: grid; }
     .verb-row { left: auto; right: 12px; bottom: 196px; flex-direction: column; align-items: flex-end; max-width: 60%; }
-    .acts { flex-direction: column; right: 12px; bottom: 16px; }
-    .acts .gbtn { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 0.66rem; }
+    .acts { flex-direction: column; align-items: center; right: 12px; bottom: 16px; }
+    .acts .gbtn--main { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 0.66rem; }
+    .acts .gbtn--tool { width: 48px; height: 48px; border-radius: 50%; }
     .acts kbd { display: none; }
     .npc-box { left: 10px; right: 10px; bottom: 12px; }
-    .toasts { top: 68px; bottom: auto; width: min(210px, 60%); }
+    .toasts { top: 108px; bottom: auto; width: min(210px, 60%); }   /* below the health/level/gold row, which can wrap to two lines */
     .hud-hp-bar { width: 56px; }
     .hud-hp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .hud--tr { max-width: 70%; }
   }
+  /* very narrow phones: the health, level and gold row can wrap to three lines */
+  @media (max-width: 400px) { .toasts { top: 150px; } }
   /* pause menu */
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
@@ -294,7 +307,6 @@
         <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
       </div>
       <div class="hud hud--tr">
-        <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
         <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
       </div>
       <div class="toasts" id="toasts">
@@ -351,11 +363,11 @@
         <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
       </div>
       <div class="acts">
-        <button type="button" id="interact" class="gbtn"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
-        <button type="button" id="talk" class="gbtn">Talk <kbd>E</kbd></button>
-        <button type="button" id="whisper" class="gbtn gbtn--gold">Whisper <kbd>Q</kbd></button>
-        <button type="button" id="bagbtn" class="gbtn">Bag <kbd>B</kbd></button>
-        <button type="button" id="explore" class="gbtn" aria-pressed="false">Explore <kbd>O</kbd></button>
+        <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
+        <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+        <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+        <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+        <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
       </div>
     </div>
     <section id="kitchen" hidden>
@@ -466,6 +478,9 @@
       <p>The dark shows only the ground you have walked and lit. Turn it off to see the whole map.</p>
       <button type="button" id="fog-toggle" class="cta" aria-pressed="true">Darkness: on</button>
       <p class="status" id="fog-live" role="status" aria-live="polite"></p>
+      <h2 class="menu-sub">Time of day</h2>
+      <p>The world's mood. What people say changes with it.</p>
+      <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
     </div>
     <div data-panel-body="startover" id="startover-body" hidden>
       <h2>Start over</h2>

@@ -33,8 +33,8 @@
     },
     {
       "id": "quiet-ui",
-      "name": "A quiet screen, WASD and a calm step",
-      "what": "The how-to-move line goes after your first step, fight buttons show only near a monster, messages sit in a small corner panel, WASD walks, Trade closes with E or F.",
+      "name": "A quiet, uncluttered screen, WASD and a calm step",
+      "what": "The how-to-move line goes after your first step, fight buttons show only near a monster, messages sit in a small corner panel, Interact is the one big button with four small icon buttons beside it, Dusk and Dawn live in the Menu, WASD walks, and Trade closes with E or F.",
       "status": "built",
       "detect": "always",
       "docs": [
