@@ -4108,6 +4108,61 @@ def cmd_probe(args) -> int:
                           json_out=args.json)
 
 
+def cmd_features(args) -> int:
+    """`vefr features` - what VEFR can do, and what a pack uses.
+
+    The catalog logic lives in vefr.features (the cmd_find/vefr.find
+    split): this door only resolves --pack the way cmd_build_web does,
+    then reports. Read-only: no model call, and scanning a pack reads
+    its files without writing them.
+
+    Three readings of the same catalog: --check is the drift gate,
+    --json the whole report as one object, and the default a short
+    table of every feature and (with --pack) which it uses.
+    """
+    from . import features
+
+    if getattr(args, 'check', False):
+        errors = features.catalog_errors()
+        if errors:
+            for line in errors:
+                print(line)
+            return EXIT_ERROR
+        print('catalog ok')
+        return EXIT_OK
+
+    pack = None
+    if getattr(args, 'pack', None) is not None:
+        # Bare name -> worlds/<name>; any path -> made absolute, the
+        # same resolution cmd_build_web gives --pack.
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = (p if p.is_dir() else p.parent).resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+
+    rep = features.report(pack)
+    if getattr(args, 'json', False):
+        print(json.dumps(rep))
+        return EXIT_OK
+
+    if rep['pack'] is not None:
+        print(f"pack: {rep['pack']['name']}")
+    uses = {u['id']: u for u in (rep['pack']['uses'] if rep['pack'] else [])}
+    for feat in rep['catalog']:
+        use = uses.get(feat.get('id'))
+        if use is None:
+            state, detail = 'unknown', feat.get('name', '')
+        else:
+            used = use.get('used')
+            state = ('used' if used is True
+                     else 'not used' if used is False else 'unknown')
+            detail = use.get('detail') or feat.get('name', '')
+        print(f"{feat.get('id', '')}  {feat.get('status', '')}  {state}  {detail}")
+    print()
+    return EXIT_OK
+
+
 # --------------------------------------------------------------- vefr
 # The front door: one parser over the same functions the old commands
 # call. No logic lives here - only wiring, flags, and help text.
@@ -4222,6 +4277,22 @@ def vefr_main() -> int:
                     help='fire this rule event (repeatable)')
     pr.add_argument('--json', action='store_true', help='print the report as JSON')
     pr.set_defaults(fn=cmd_probe)
+
+    ft = sub.add_parser(
+        'features',
+        help='the feature catalog: what VEFR can do, and what a pack uses',
+        description='the feature catalog: every VEFR feature, its status, '
+                    'and (with --pack) whether the pack uses it',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    ft.add_argument('--pack', default=None,
+                    help='scan this pack: a worlds/ name or a path '
+                         '(default: catalog only)')
+    ft.add_argument('--json', action='store_true',
+                    help='print the report as one JSON object')
+    ft.add_argument('--check', action='store_true',
+                    help='print catalog drift errors and exit 1 if any')
+    ft.set_defaults(fn=cmd_features)
 
     dc = sub.add_parser(
         'doctor',

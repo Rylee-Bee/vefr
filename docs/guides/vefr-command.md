@@ -29,6 +29,7 @@ order `vefr --help` prints them in, too.
 | `vefr ferry` | deploy, carry, fetch, scaffold | `ratatoskr ferry` |
 | `vefr skipa` | kept for now; prints one line saying it is part of `vefr doctor` | `ratatoskr skipa` |
 | `vefr find` | local read-only search of the pack's markdown and the journal | new |
+| `vefr features` | the feature catalog: what VEFR can do, and what a pack uses | new |
 
 Two habits carry over unchanged: validate after every pack write
 (`uv run vefr check --pack worlds/<name>`), and read `--help` for the
@@ -67,6 +68,21 @@ All three return `0` when they do the
 work, and `2` when the arguments are wrong or a tool they need
 (Chromium, the gallery CLI) is missing. A missing tool is a report, not
 a failed check, and never changes `vefr doctor`'s exit code.
+
+## `vefr features`
+
+`vefr features` prints the engine's feature catalog from
+`docs/features.json`: every feature's id and status (`built`, `partial`
+or `proposed`), and, when you pass `--pack`, whether that pack uses it.
+
+```sh
+uv run vefr features --pack worlds/sample-world
+```
+
+`--json` prints the whole report as one JSON object. `--check` is the
+drift gate: it prints every catalog error and exits `1` if the catalog
+has drifted from the repo, otherwise it prints `catalog ok` and exits
+`0`.
 
 ## Escape hatches
 
