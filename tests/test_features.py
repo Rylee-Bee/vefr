@@ -6,7 +6,6 @@ return the same report; the studio draws it as two shelves.
 """
 
 import json
-import shutil
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -62,8 +61,10 @@ def _f(**kw):
 ])
 def test_drift_is_named(tmp_path, mutate, needle):
     d = _write(tmp_path, [])
-    (d / "a.md").write_text("x"); (d / "t.py").write_text("x")
-    f = _f(); mutate(f)
+    (d / "a.md").write_text("x")
+    (d / "t.py").write_text("x")
+    f = _f()
+    mutate(f)
     d = _write(tmp_path, [f])
     errors = features.catalog_errors(d)
     assert any(needle in e for e in errors), errors
