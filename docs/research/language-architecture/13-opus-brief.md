@@ -20,7 +20,7 @@ Must include:
 - The source version field, introduced with the first format, with a named reader and fixtures.
 - Stale-output rule: generated files carry source hash and normalizer version; a stale one is rejected.
 - Cottage step: creature families only, behind fixtures, one PR in the Cottage repo.
-- Decisions it depends on: `11` items 1, 2, 3, 8, 9. If one is unanswered, the plan says what it assumes and how to undo it.
+- Decided inputs (`11`): the Blueprint is a JSON file inside the pack and is the edited truth; generated JSON is read-only and stale output is rejected; Cottage's CI pin is bumped with the first normalizer. Use the name "Blueprint" in code and docs.
 - Exit ramp: if the slice does not shrink Cottage's creature data or catch a real error, stop and revert.
 
 Out of scope: rules lowering, floors/themes, guardians, events, kernel extraction, event sourcing, logic engines, natural language.
@@ -32,8 +32,8 @@ Goal: decide and, if chosen, build persistence of rule flags and `once` markers 
 Must include:
 
 - First, the decision (`11` item 4): persist, or declare reset-on-reload intended and document it. Plan both; recommend one.
-- If persisting: where state is stored (a versioned per-world key beside the WHY log at `vefr-rules-<world>`), what is saved (flags, fired markers), and recovery when a pack changes (drop unknown ids rather than crash, as growth does), plus Start over clearing it.
-- Acceptance tests first: reload keeps a fired `once` rule fired and a set flag set; a changed pack recovers; storage unavailable degrades quietly.
+- Persist mode: where state is stored (a versioned per-world key beside the WHY log at `vefr-rules-<world>`), what is saved (flags, fired markers), and recovery when a pack changes (drop unknown ids rather than crash, as growth does), plus Start over clearing it.
+- Acceptance tests first: persist mode: reload keeps a fired `once` rule fired and a set flag set; reset mode and no setting: behavior identical to today; a changed pack recovers; storage unavailable degrades quietly.
 - It must not depend on Plan 1 and must keep today's behavior for packs and saves already in the wild, or state the migration.
 - Any docs that now say rule state resets (`rulesets.md`) change in the same PR.
 
