@@ -467,6 +467,8 @@ Surface ugly fits rather than hiding them.
 
 ### External research
 
+Start from `docs/research/2026-10-02-language-prior-art.md` (a first pass with cited sources, partly unverified). Extend and verify it; do not redo it from scratch.
+
 Do current web research across:
 
 - Inform 7;
