@@ -7,18 +7,24 @@ The contract tests for `vefr` (`vefr_main` in src/vefr/cli.py):
 * the SET of verbs in `vefr --help` is the contract (the prose is not);
 * each verb dispatches to the SAME function object as its old
   spelling, asserted by running both parsers and comparing the
-  resolved `fn` and flag defaults - not by grepping help text;
-* no verb hides a reimplementation: every verb's `fn` is a module-level
-  `cmd_*` of vefr.cli, and the vefr-only wrappers are proven thin;
+  resolved `fn`, the fn each parser's set_defaults BOUND, and the
+  flag defaults - not by grepping help text;
+* no verb hides a reimplementation: the fn each sub-parser's
+  set_defaults bound is, BY IDENTITY, one of the module-level `cmd_*`
+  that existed before the front door (read off the parser objects -
+  a recorder log records the innermost cmd_* a wrapper CALLS, which
+  cannot see a wrapper defined inside vefr_main), and the vefr-only
+  wrappers are proven thin;
 * `vefr norns ARGS` / `vefr ratatoskr ARGS` reach the old CLIs' own
   behaviour verbatim;
 * a usage error exits 2;
 * `doctor --json` prints the six-key envelope - and `check --json` is
   a usage error (the NOTE on that test records the plan conflict).
 
-Hermetic by construction: argv arrives through monkeypatched `sys.argv`,
-every `cmd_*` is swapped for a recorder before a parser can dispatch
-(no live model, no socket, no writes), and doctor's ambient rows are
+Hermetic by construction: argv arrives through monkeypatched `sys.argv`;
+every dispatch runs with every `cmd_*` swapped for a recorder (no live
+model, no socket, no writes) - except the binding read, which stops at
+`--help` before anything can dispatch - and doctor's ambient rows are
 pinned the way tests/test_doctor.py pins them.
 """
 
@@ -213,14 +219,20 @@ ALIAS_CASES = [
 )
 def test_alias_dispatch(monkeypatch, pinned_world, vefr_argv, old_argv,
                         old_main, shared, same_fn):
-    """Both spellings dispatch through the same function object and
-    resolve the same flag defaults (the namespace each fn receives)."""
+    """Both spellings dispatch through the same function object - the
+    one each parser's set_defaults BOUND, not just the innermost one
+    both sides reach (a wrapper around cmd_map makes the log record
+    cmd_map on both sides) - and resolve the same flag defaults."""
     log = _recorded(monkeypatch)
     new = _dispatch(monkeypatch, log, cli.vefr_main, ["vefr"] + vefr_argv)
     old = _dispatch(monkeypatch, log, old_main, old_argv)
 
     if same_fn:
         assert new.fn is old.fn, (new.cmd, old.cmd)
+        # and the fn the PARSER bound: only that object can see a
+        # vefr-side wrapper - the log above records the inner cmd_*
+        # a wrapper calls, which is identical either way
+        assert new.args.fn is old.args.fn, (new.cmd, old.cmd)
 
     # every flag BOTH parsers declare must resolve to the same value...
     common = (set(vars(new.args)) & set(vars(old.args))) - {
@@ -233,6 +245,92 @@ def test_alias_dispatch(monkeypatch, pinned_world, vefr_argv, old_argv,
 
 
 # --------------------------------------------------- 4. no reimplementation
+
+# The complete allowlist of what the front door may bind, captured at
+# import time - BEFORE any test swaps a cmd_* for a recorder. Every
+# entry is a module-level function that existed before vefr_main
+# wired anything: the old functions, plus the three wrappers the plan
+# sanctions as vefr-only.
+SANCTIONED_FNS = {
+    name: getattr(cli, name)
+    for name in (
+        "cmd_map", "cmd_chat", "cmd_delve", "cmd_build_web",
+        "cmd_test", "cmd_handbok",
+        "cmd_spark_install", "cmd_spark_status", "cmd_spark_task",
+        "cmd_spark_smoke",
+        "cmd_deploy", "cmd_backup", "cmd_import", "cmd_scaffold",
+        "cmd_vefr_skipa", "cmd_vefr_doctor", "cmd_find",
+    )
+}
+
+# verb -> the sanctioned cmd_* its set_defaults must bind, BY IDENTITY.
+# check/map bind cmd_map directly (the old validate/build-map/verify
+# function); spark and ferry are PARENT verbs - their binding lives
+# on each leaf sub-parser; the three vefr-only wrappers bind
+# themselves (their thinness is proven in their own tests below).
+EXPECTED_BOUND = {
+    "find": ("cmd_find",),
+    "doctor": ("cmd_vefr_doctor",),
+    "check": ("cmd_map",),
+    "chat": ("cmd_chat",),
+    "map": ("cmd_map",),
+    "delve": ("cmd_delve",),
+    "weave": ("cmd_build_web",),
+    "spark": ("cmd_spark_install", "cmd_spark_status",
+              "cmd_spark_task", "cmd_spark_smoke"),
+    "test": ("cmd_test",),
+    "ferry": ("cmd_deploy", "cmd_backup", "cmd_import", "cmd_scaffold"),
+    "handbok": ("cmd_handbok",),
+    "skipa": ("cmd_vefr_skipa",),
+}
+
+
+def _subparsers_action(parser):
+    """The sub-parsers action of a parser, or None if it has none."""
+    return next((a for a in parser._actions
+                 if isinstance(a, argparse._SubParsersAction)), None)
+
+
+def _bound_fns(parser, path=()):
+    """{verb path: fn} for every leaf sub-parser under `parser`.
+
+    argparse keeps set_defaults' value at `_defaults['fn']` on the
+    sub-parser object itself - that is the fn the parser dispatches
+    with, read BEFORE any wrapper runs. The recorder log cannot see
+    it: it records the innermost cmd_* a wrapper CALLS, which is the
+    same module-level function whether the binding was direct or
+    wrapped. Reading the bound object is the whole fix.
+    """
+    action = _subparsers_action(parser)
+    if action is None:
+        return {" ".join(path): parser._defaults.get("fn")} if path else {}
+    out = {}
+    for name, child in action.choices.items():
+        out.update(_bound_fns(child, path + (name,)))
+    return out
+
+
+def _bound_subtree(monkeypatch, verb):
+    """Build `vefr`'s parser exactly as vefr_main does - through the
+    recording shim, stopping at `--help` so nothing can dispatch -
+    and return the fn objects set_defaults bound under `verb`: the
+    leaf parsers for parents like spark/ferry, the single
+    sub-parser otherwise.
+
+    Must run BEFORE _recorded() swaps a cmd_* for a recorder: a
+    recorder is not module-level, so a swapped-in default would fail
+    the identity assertions for the wrong reason.
+    """
+    _RecordingParser.built = []
+    monkeypatch.setattr(cli, "argparse", _ArgparseShim())
+    monkeypatch.setattr(sys, "argv", ["vefr", "--help"])
+    with pytest.raises(SystemExit) as exc:
+        cli.vefr_main()
+    assert exc.value.code == 0
+    top = next(p for p in _RecordingParser.built if p.prog == "vefr")
+    return [fn for path, fn in _bound_fns(top).items()
+            if path == verb or path.startswith(verb + " ")]
+
 
 # argv that reaches each verb's dispatch. The escape hatches are not
 # dispatches: they hand argv to norns_main/ratatoskr_main verbatim.
@@ -255,11 +353,39 @@ DISPATCH_ARGV = {
 
 @pytest.mark.parametrize("verb", sorted(VEFR_VERBS - {"norns", "ratatoskr"}))
 def test_no_verb_reimplements_a_command(monkeypatch, pinned_world, verb):
-    """Every verb dispatches to a pre-existing module-level `cmd_*` of
-    vefr.cli - not to logic written inside vefr_main's wiring. The
-    identity-with-the-old-spelling half lives in test_alias_dispatch;
-    the vefr-only wrappers are proven thin in their own tests below."""
+    """No verb hides a reimplementation, asserted on what set_defaults
+    actually BOUND: the fn object on the sub-parser (or on each leaf
+    for spark/ferry) is, by identity, one of the module-level `cmd_*`
+    that existed before the front door - not merely something that
+    eventually CALLS one. A wrapper defined inside vefr_main is not a
+    module-level global, never gets swapped for a recorder, and the
+    dispatch half below would happily record the inner cmd_map it
+    reaches; the bound object cannot lie about where it was defined.
+
+    The identity-with-the-old-spelling half lives in
+    test_alias_dispatch; the vefr-only wrappers are proven thin in
+    their own tests below."""
     assert verb in DISPATCH_ARGV, f"add argv for the new {verb} verb"
+    assert verb in EXPECTED_BOUND, f"add a bound-fn expectation for {verb}"
+
+    # (1) the bound half - read off the parser, BEFORE any swap
+    subtree = _bound_subtree(monkeypatch, verb)
+    expected = [SANCTIONED_FNS[name] for name in EXPECTED_BOUND[verb]]
+    assert len(subtree) == len(expected), (verb, len(subtree))
+    for fn in subtree:
+        # member of the import-time allowlist, by identity (`is`)...
+        assert any(fn is allowed for allowed in SANCTIONED_FNS.values()), \
+            (verb, fn)
+        # ...and module-level: a closure inside vefr_main fails both
+        assert fn.__qualname__ == fn.__name__, (verb, fn.__qualname__)
+        assert fn.__module__ == "vefr.cli", (verb, fn.__module__)
+    for want in expected:
+        # the SANCTIONED function itself, by identity - `cmd_map`, not
+        # "something that calls cmd_map"
+        assert any(fn is want for fn in subtree), (verb, want.__name__)
+
+    # (2) the dispatch half, unchanged: the verb's argv reaches exactly
+    # one module-level cmd_* of vefr.cli
     log = _recorded(monkeypatch)
     entry = _dispatch(monkeypatch, log, cli.vefr_main,
                       ["vefr"] + DISPATCH_ARGV[verb])
