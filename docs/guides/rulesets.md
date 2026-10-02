@@ -545,6 +545,67 @@ Code: `src/vefr/maplab.py` (validation) + `src/vefr/cli.py` (bake) +
 `tests/test_growth_validator.py` + `tests/test_growth_engine.py` +
 `tests/test_growth_play.py` + `tests/fixtures/make_growth_pack.py`.
 
+## Skins (a picture pack for the interface)
+
+A skin is a folder of pictures that repaints the player's interface. It is
+optional and additive: a pack that names none bakes exactly as before.
+
+A pack's `world.json` may carry a `skin` field naming a folder inside the
+pack:
+
+```json
+"skin": "skins/parchment-and-wood"
+```
+
+The folder holds one `skin.json` and its pictures. `skin.json` has a
+`name`, a `credit`, a `parts` object and an optional `ink` object:
+
+```json
+{
+  "name": "parchment-and-wood",
+  "credit": "Rylee and Claude",
+  "parts": {
+    "panel":  {"file": "panel.webp", "slice": 32},
+    "button": {"file": "button.webp", "slice": 20, "hover": "button-hover.webp",
+               "pressed": "button-pressed.webp", "disabled": "button-disabled.webp"},
+    "bar":    {"frame": "bar-frame.webp", "fill": "bar-fill.webp"},
+    "cursor": {"file": "cursor.webp", "hand": "cursor-hand.webp", "hotspot": [4, 4]}
+  },
+  "ink": {"on_panel": "#2B2118", "on_panel_dim": "#5A4A38"}
+}
+```
+
+The known parts are `panel`, `button`, `tab`, `toggle`, `bar`, `slot`,
+`speech`, `tooltip`, `gold-plate`, `divider`, `banner`, `corner` and
+`cursor`; each names its pictures under the keys that part uses.
+
+**The validator's rules.** `maplab.validate` (and so `norns validate`)
+reads the folder and refuses a bad skin with one plain sentence. The
+folder must stay inside the pack. `skin.json` must be a JSON object with
+a non-empty `name` and `credit`, and only known parts; an unknown part is
+a typo to fix, not something the player quietly ignores. Every named
+picture must exist, be a `.png` or `.webp`, and be under 300 KB. A
+`slice` must be a whole number of at least 1 and at most half the smaller
+side of its picture. `ink` colours must be `#RRGGBB`.
+
+**How it is drawn.** The loader inlines every picture as a data URI, so
+the woven file stays one offline file. Panels and buttons use CSS
+`border-image` with the slice width (a nine-slice), so one small picture
+stretches to any size. Bars are a frame picture with a clipped fill
+picture. The cursor is a CSS `cursor: url(...)` with a hotspot, and a
+hand for things you can use.
+
+**Safety.** Text is never inside a picture: every word is real HTML, and
+pictures are only backgrounds, borders and icons. Focus is never removed.
+Targets stay at least 44 px. `prefers-contrast: more` and forced colours
+fall back to the plain flat look, so a skin never wins over a person's
+contrast setting. **No skin means no change**: a pack with no `skin`
+field bakes byte-for-byte as before, and the baked value is `null`.
+
+Code: `src/vefr/maplab.py` (`skin_errors`) + `src/vefr/cli.py`
+(`_baked_skin`) + `web/packaged.html` (`applySkin`); tests:
+`tests/test_skin_validator.py` + `tests/test_skin_apply.py`.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).
