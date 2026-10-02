@@ -6,7 +6,7 @@ Goal: make tests/test_features.py and tests/test_features_shelf.py pass, and kee
 | ID | What | Brief | Acceptance (repo root, after the patch is applied and committed) | Tier |
 |---|---|---|---|---|
 | F1 | `src/vefr/features.py`: load, drift check, pack scan, report | `docs/plans/features/briefs/F1.md` | `bash tests/run.sh tests/test_features.py -k "catalog or drift or scan or report"` | `-m code` |
-| F2 | the `vefr features` verb (thin `cmd_features`) | `docs/plans/features/briefs/F2.md` | `bash tests/run.sh tests/test_features.py -k cli tests/test_cli_help.py` | `-m code` |
+| F2 | the `vefr features` verb (thin `cmd_features`) | `docs/plans/features/briefs/F2.md` | `bash tests/run.sh tests/test_features.py -k cli && bash tests/run.sh tests/test_cli_help.py` | `-m code` |
 | F3 | `GET /api/features` | `docs/plans/features/briefs/F3.md` | `bash tests/run.sh tests/test_features.py -k api` | `-m code` |
 | F4 | the studio shelves: `web/js/features.js`, `api.js`, the mount | `docs/plans/features/briefs/F4.md` | `bash tests/run.sh tests/test_features_shelf.py` | `-m code` |
 
