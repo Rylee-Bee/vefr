@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **Locked doors and stairs** (2026-10-02): a transition may carry
+      `requires` (`{"item": ...}` or `{"flag": ...}`, exactly one) and a
+      one-sentence `locked_text` (`design/gates-and-guardians.md`, build
+      step 1). Interact on a locked door without the key says the line and
+      the hero stays put; with the item in the bag or the flag set it opens
+      as before, and the key is never consumed. The validator names a bad
+      shape, an unknown key, an unknown item or flag, or a bad line.
+      `tests/test_locked_stairs.py`.
 - [x] **The declutter** (2026-10-02): Interact is the one big button, with Talk, Whisper,
       Bag and Explore as small icon buttons (inline SVG, words kept for screen readers);
       the Dusk/Dawn rail moved into Menu > Display; the top bar is just Menu. Fixes the

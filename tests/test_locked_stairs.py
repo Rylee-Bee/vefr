@@ -5,8 +5,7 @@ A transition may carry `requires` and `locked_text`:
   "locked_text": "<one plain sentence, 1-200 chars>"   (optional; default "It will not open yet.")
 Interact on a locked door or stair without the item (in the bag) or the flag (set) says the line and
 stays put; with it the door opens as it always did. The item is never consumed in this slice.
-A transition without `requires` behaves exactly as before. Tests that fail only because the lock does not
-exist yet are strict xfails until the build lands; the rest pin today's behavior.
+A transition without `requires` behaves exactly as before. The lock is built; these tests pass.
 """
 
 import json
@@ -25,7 +24,6 @@ import make_lock_pack as mk  # noqa: E402
 HARNESS = ROOT / "tests" / "fixtures" / "lock_play_harness.mjs"
 DEFAULT_LINE = "It will not open yet."
 BAG = f"vefr-bag-{mk.NAME}"
-needs_lock = pytest.mark.xfail(strict=True, reason="locked transitions not built yet (design step 1)")
 
 
 def _all_errors(tmp_path, requires, locked_text=None):
@@ -65,7 +63,6 @@ def test_a_valid_lock_passes(tmp_path, requires):
     assert errors_for(tmp_path, requires, "The door is shut.") == []
 
 
-@needs_lock
 @pytest.mark.parametrize("requires,needle", [
     ("brass-ring", "requires"), ([], "requires"), ({}, "requires"),
     ({"item": "brass-ring", "flag": "gate-open"}, "requires"),
@@ -78,7 +75,6 @@ def test_a_bad_lock_is_one_plain_sentence(tmp_path, requires, needle):
     assert len(errors) == 1 and needle in errors[0]
 
 
-@needs_lock
 @pytest.mark.parametrize("text", ["", 5, ["x"], "x" * 201])
 def test_a_bad_locked_text_is_one_plain_sentence(tmp_path, text):
     errors = errors_for(tmp_path, mk.RING, text)
@@ -87,7 +83,6 @@ def test_a_bad_locked_text_is_one_plain_sentence(tmp_path, text):
 
 # --- played in the real woven file -------------------------------------------------------------
 
-@needs_lock
 def test_a_locked_door_stays_shut_and_says_the_line(tmp_path):
     out = play(tmp_path, mk.RING, "The door is shut. Something below keeps the key.")
     assert out["errors"] == []
@@ -96,7 +91,6 @@ def test_a_locked_door_stays_shut_and_says_the_line(tmp_path):
     assert out["narrator"] == "The door is shut. Something below keeps the key."
 
 
-@needs_lock
 def test_the_default_line_when_locked_text_is_absent(tmp_path):
     out = play(tmp_path, mk.RING)
     assert out["regionAfter"] == "town" and out["narrator"] == DEFAULT_LINE
@@ -110,7 +104,6 @@ def test_the_item_in_the_bag_opens_the_door_and_stays_in_the_bag(tmp_path):
     assert out["narrator"] != "Shut."
 
 
-@needs_lock
 def test_a_flag_lock_stays_shut_until_the_flag_is_set(tmp_path):
     shut = play(tmp_path / "a", mk.GATE_FLAG, "Shut.", unlock_rule=False)
     assert shut["regionAfter"] == "town" and shut["narrator"] == "Shut."

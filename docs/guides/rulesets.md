@@ -209,6 +209,35 @@ region and behaves exactly as before. `maplab.validate` checks every
 door: `from`/`to` name declared regions, and `at`/`to_at` are inside
 their maps and walkable in their legends.
 
+### Locked doors
+
+A door or stair may be locked behind a key. A transition may carry an
+optional `requires` (a key item, or a flag) and an optional one-sentence
+`locked_text`:
+
+```json
+"transitions": [
+  {"from": "town", "at": [4, 5], "to": "cottage", "to_at": [4, 3],
+   "requires": {"item": "brass-ring"},
+   "locked_text": "The door is shut. The ring turns it."}
+]
+```
+
+`requires` holds **exactly one** of `item` (an id in the pack's `items`
+catalog) or `flag` (a declared flag name). Interact on the locked door
+without it says `locked_text`, or "It will not open yet." when absent, and
+the hero stays put - no `opens`, no arrival. With the item in the bag, or
+the flag set, the door opens as it always did. **A key is never consumed:**
+it stays in the bag whether or not the item is a kept thing.
+
+A flag lock only survives a reload when the pack uses `saves.rules:
+persist` (ADR 0009); otherwise the rule that sets the flag runs again on
+the next load, as before. A transition with no `requires` behaves exactly
+as today. `maplab.validate` names a `requires` that is not an object with
+exactly one `item`/`flag`, points at an unknown item or flag, or carries
+an unknown key, and a `locked_text` that is not one plain sentence of 1
+to 200 characters (design/gates-and-guardians.md).
+
 Known gap (this slice): only the **first** region's full geometry is
 validated today (rectangular map, reachable tiles, pois, sanctuary,
 water). Other regions' maps are read only for the door checks; their
