@@ -2297,12 +2297,19 @@
 
 ## Next
 
-- [ ] **Language architecture proof pass** (PR #219, proposed): run the
-      [bounded Codex probes](docs/plans/language-architecture-proof-pass.md),
-      then return evidence to Sonnet for the research packet and Opus plan.
-      Floors phase 2, album and equipment are informed by that disposition;
-      no new runtime or pack contract is approved by the docs-only proposal.
-
+- [ ] **Blueprint (optional family source for packs)** (PRs #219 and #220 merged;
+      in progress): the proof pass passed with constraints, so the plan
+      [`blueprint-family-normalization-plan.md`](docs/plans/blueprint-family-normalization-plan.md)
+      builds an optional build-time source that expands into today's enemy
+      records ([ADR 0008](docs/adr/0008-blueprint-format.md)). Done: the
+      frozen tests and the library half (`src/vefr/blueprint.py`). Next: the
+      `normalize` verb, stale checks and docs, then a creature-families trial
+      on one real pack with a 25% / one-real-error exit threshold. Floors
+      phase 2, album and equipment stay informed by that result; no runtime
+      or rule-language change is approved.
+- [ ] **Durable rule saves** (planned, [plan](docs/plans/durable-rule-saves-plan.md)):
+      a per-pack `saves` block so a game can keep rule flags and fired
+      markers across reloads. Today they reset on reload.
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
       depth tables, the Journal line and the New descent button.
 - [ ] **Gates and guardians** (`design/gates-and-guardians.md`): a `requires` lock on a

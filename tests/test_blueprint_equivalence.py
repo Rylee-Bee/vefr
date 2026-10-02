@@ -8,7 +8,6 @@ import pytest
 
 from blueprint_helpers import contract, mk, normalized_pack, tree_hash, vefr  # noqa: F401
 
-@pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
 def test_legacy_equivalence(tmp_path):
     """A1: structural equality (parsed JSON ==; key order ignored, list order significant)."""
     from vefr import blueprint
