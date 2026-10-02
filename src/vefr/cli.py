@@ -3977,6 +3977,30 @@ def cmd_find(args) -> int:
     return EXIT_OK
 
 
+def cmd_publish(args) -> int:
+    """`vefr publish` - weave the pack and hand it to the gallery.
+
+    The weave and the gallery call live in vefr.devtools (the
+    cmd_find/vefr.find split): this door only resolves --pack the way
+    cmd_build_web does, then returns devtools.publish's code.
+    """
+    from . import devtools
+
+    if args.pack is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        # Bare name -> worlds/<name>; any path -> made absolute, the
+        # same resolution cmd_build_web gives --pack.
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = (p if p.is_dir() else p.parent).resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+    return devtools.publish(
+        pack, project=args.project, sha=args.sha, live=args.live,
+        dry_run=args.dry_run)
+
+
 # --------------------------------------------------------------- vefr
 # The front door: one parser over the same functions the old commands
 # call. No logic lives here - only wiring, flags, and help text.
@@ -4039,6 +4063,25 @@ def vefr_main() -> int:
                     help='world pack: a worlds/ name or a path '
                          '(default: the resolved world)')
     fd.set_defaults(fn=cmd_find)
+
+    pb = sub.add_parser(
+        'publish',
+        help='weave the pack and publish it to the gallery',
+        description='weave the pack and publish it to the gallery',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    pb.add_argument('--pack', default=None,
+                    help='world pack: a worlds/ name or a path '
+                         '(default: the resolved world)')
+    pb.add_argument('--project', default=None,
+                    help='gallery project name (default: the pack directory name)')
+    pb.add_argument('--sha', default=None,
+                    help='revision to record (default: HEAD of the pack)')
+    pb.add_argument('--live', action='store_true',
+                    help='mark the build live in the gallery')
+    pb.add_argument('--dry-run', action='store_true',
+                    help='print the gallery command without running it')
+    pb.set_defaults(fn=cmd_publish)
 
     dc = sub.add_parser(
         'doctor',
