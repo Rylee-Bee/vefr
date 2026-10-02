@@ -1278,6 +1278,11 @@ def _player_items(world: dict) -> dict[str, dict]:
         use = spec.get('use')
         if isinstance(use, str) and use.strip():
             entry['use'] = use.strip()
+        # `keep`: usable and not consumable - a kept thing is used and
+        # stays in the bag. Only `true` rides along, so a pack that
+        # never asked bakes exactly what it always baked.
+        if spec.get('keep') is True:
+            entry['keep'] = True
         # `light`: a torch's radius/turns or a one-shot reveal. Only a
         # valid, usable form is baked, so a broken one is a silent no-op
         # rather than a thing the player cannot use. maplab names it.
@@ -1349,10 +1354,11 @@ def _rule_bakes(rule) -> bool:
         return False
     for key, value in payload.items():
         if key == 'distance':
-            # The engine only matches a number 1..9 (a bool is not a
-            # number here either); anything else can never fire.
+            # The engine matches "within N tiles", 0 = standing on it
+            # (a bool is not a number here either); anything outside
+            # 0..9 can never fire.
             if (isinstance(value, bool) or not isinstance(value, int)
-                    or not 1 <= value <= 9):
+                    or not 0 <= value <= 9):
                 return False
         elif not isinstance(value, str) or not value:
             return False
@@ -1427,7 +1433,8 @@ def _action_bakes(action) -> bool:
                     and isinstance(value.get('who'), str)
                     and isinstance(value.get('line'), str))
         return False
-    if key in ('show', 'hide', 'reveal', 'give', 'set', 'unset', 'point-to'):
+    if key in ('show', 'hide', 'reveal', 'give', 'takes', 'set', 'unset',
+               'point-to'):
         return isinstance(value, str) and bool(value)
     if key == 'weather':
         return value in ('fog', 'clear')
@@ -2743,14 +2750,19 @@ def cmd_handbok(args) -> int:
     Deterministic templating over real events, the same honesty rule
     as the export: the trace (data/trace.jsonl) says how each
     mechanic actually behaved - calls, latency, failures - and the
-    session journal supplies real examples. No model pass. A
-    world with no trace produces a shorter handbok, not an error.
+    session journal supplies real examples. No model pass.
+
+    Everything is read for THIS pack and no other: the trace entries
+    name their world, the journal is world-scoped, and the title
+    comes from the pack's own file. A world with no applicable
+    history fails closed - no manual is written - because a manual
+    with another world's numbers in it is worse than none (the
+    cross-pack case is pinned in tests/test_handbok.py).
     """
     import json as _json
 
     from . import trace as trace_mod
     from .journal import list_entries
-    from .world import load_world
 
     if getattr(args, 'pack', None) is None:
         pack = pack_root() / 'worlds' / world_name()
@@ -2760,8 +2772,17 @@ def cmd_handbok(args) -> int:
     if not (pack / 'world.json').exists():
         print(f'pack not found at {pack}; pass --pack NAME or set VEFR_WORLD')
         return 1
+    world_id = pack.name
 
-    # ---- the trace, read tolerantly ----
+    # The title from this pack's own contract - never the world that
+    # happens to be active.
+    try:
+        config = _json.loads((pack / 'world.json').read_text(encoding='utf-8'))
+    except (OSError, _json.JSONDecodeError):
+        config = {}
+    title = config.get('title') or world_id
+
+    # ---- the trace, read tolerantly, scoped to this pack ----
     events: list[dict] = []
     tpath = trace_mod.file_path()
     if tpath.exists():
@@ -2773,21 +2794,24 @@ def cmd_handbok(args) -> int:
                 ev = _json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if isinstance(ev, dict):
+            if isinstance(ev, dict) and ev.get('world') == world_id:
                 events.append(ev)
 
     by_route: dict[str, list[dict]] = {}
     for ev in events:
         by_route.setdefault(ev.get('route', '?'), []).append(ev)
 
-    entries = list_entries(sid=getattr(args, 'session', None))
+    entries = list_entries(sid=getattr(args, 'session', None), world=world_id)
     by_kind: dict[str, list[dict]] = {}
     for e in entries:
         by_kind.setdefault(e.get('kind', '?'), []).append(e)
 
-    world = load_world()
+    if not events and not entries:
+        print(f'no play history for {world_id} - not writing a handbok')
+        return 1
+
     out: list[str] = [
-        f"# {world['title']} - handbok",
+        f"# {title} - handbok",
         '',
         'A mechanics manual, generated from real play: what the engine '
         'actually did, how long each thread of the loom took, and real '
@@ -2810,7 +2834,8 @@ def cmd_handbok(args) -> int:
                 f'| {max(ms):.0f}ms | {failed} |'
             )
     else:
-        out.append('_No trace yet - play with the server running, then rerun._')
+        out.append('_No trace for this pack yet - play it with the '
+                   'server running, then rerun._')
     out.append('')
 
     out.append('## The phases, as they were walked')

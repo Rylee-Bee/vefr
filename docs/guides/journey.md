@@ -64,6 +64,7 @@ game.
 |---|---|---|
 | 2026-10-01 | Walk it | A single tile hides what a whole room shows: lay a mock room at the game's real tile size before you approve any floor. |
 | 2026-10-01 | Library, Vault | Ask a picture tool for several variations in one request; it is cheaper and the set stays consistent. See [making art](making-art.md). |
+| 2026-10-02 | Walk it, Weave | An independent pack finds contract bugs that feature design cannot, because it meets the seams between the validator, the runtime and the docs - three honest things written at three different moments. Make the three agree, delete the path nobody calls, and pin the agreement with a test that plays the real woven file. Second, smaller: the player's question is rarely "how do I do more?" but "where was I going?" - and the cheapest answer reused machinery the engine already had. |
 
 ## For AI assistants working in this repo
 

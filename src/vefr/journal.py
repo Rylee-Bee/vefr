@@ -49,9 +49,14 @@ def _sync_undo_stash() -> None:
     _UNDO._stash_at = _LAST_REMOVED_AT
 
 
-def journal_path(sid: str | None = None) -> Path:
-    """The journal file for a session; the base file when default."""
-    base = world_scoped(JOURNAL) if SCOPE_BY_WORLD else JOURNAL
+def journal_path(sid: str | None = None, world: str | None = None) -> Path:
+    """The journal file for a session; the base file when default.
+
+    `world` scopes the read to one pack's history; the default is the
+    world being served. A command that names a pack must name the
+    pack here too, so it can never read another world's story.
+    """
+    base = world_scoped(JOURNAL, world) if SCOPE_BY_WORLD else JOURNAL
     return derive(base, sid)
 
 
@@ -61,8 +66,8 @@ def entries(sid: str | None = None) -> list[dict]:
     return _load(sid)
 
 
-def _load(sid: str | None = None) -> list[dict]:
-    path = journal_path(sid)
+def _load(sid: str | None = None, world: str | None = None) -> list[dict]:
+    path = journal_path(sid, world=world)
     if not path.exists():
         return []
     try:
@@ -103,9 +108,14 @@ def log(kind: str, sid: str | None = None, **fields) -> dict:
     return entry
 
 
-def list_entries(sid: str | None = None) -> list[dict]:
-    """Every entry, oldest first. An absent journal is an empty one."""
-    return _load(sid)
+def list_entries(sid: str | None = None, world: str | None = None) -> list[dict]:
+    """Every entry, oldest first. An absent journal is an empty one.
+
+    `world` scopes the read to one pack's history - pass it whenever
+    the caller names a pack (handbok --pack), so no command scoped to
+    one world can ever quote another's journal.
+    """
+    return _load(sid, world=world)
 
 
 def remove(index: int, sid: str | None = None) -> dict | None:

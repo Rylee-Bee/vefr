@@ -289,10 +289,15 @@ RULE_SAY_LIMIT = 280
 # stack outweigh any single rule's worth.
 RULE_LIMIT = 40
 
-# The six events a rule may fire on. `says` is deliberately absent:
-# the woven player has nowhere to type words, so an event that waited
-# on typed speech could never fire.
-RULE_EVENTS = ('starts', 'enters', 'comes-near', 'opens', 'picks-up', 'uses-with')
+# The six events a rule may fire on became eleven: the first six are
+# the original vocabulary; the last five are facts the player already
+# performs (a fight won, a thing bought or sold, a book closed, the
+# watch turned) so the world can notice them. `says` is deliberately
+# absent: the woven player has nowhere to type words, so an event that
+# waited on typed speech could never fire.
+RULE_EVENTS = ('starts', 'enters', 'comes-near', 'opens', 'picks-up',
+               'uses-with', 'defeats', 'buys', 'sells', 'reads',
+               'phase-changes')
 
 # The payload each event carries, keyed by event name.
 RULE_EVENT_KEYS = {
@@ -302,6 +307,11 @@ RULE_EVENT_KEYS = {
     'opens': ('what',),
     'picks-up': ('what',),
     'uses-with': ('item', 'with'),
+    'defeats': ('what',),
+    'buys': ('what',),
+    'sells': ('what',),
+    'reads': ('what',),
+    'phase-changes': ('to',),
 }
 
 # The keys a condition may name. The `flag` form is the one condition
@@ -309,32 +319,76 @@ RULE_EVENT_KEYS = {
 RULE_CONDITION_KEYS = ('has', 'flag', 'is', 'believes', 'not-believes',
                        'is-in', 'not', 'all-of')
 
-# The keys an action may name.
-RULE_ACTION_KEYS = ('say', 'show', 'hide', 'reveal', 'give', 'set', 'unset',
-                    'believes', 'stops-believing', 'tells', 'weather', 'point-to')
+# The keys an action may name. `takes` is `give`'s pair: remove one
+# copy of an item from what the hero carries (a delivery, a turn-in).
+RULE_ACTION_KEYS = ('say', 'show', 'hide', 'reveal', 'give', 'takes',
+                    'set', 'unset', 'believes', 'stops-believing', 'tells',
+                    'weather', 'point-to')
 
 
 def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
     """Every id a rule may name, resolved from the loaded pack.
 
-    Path safety: the only file read here is <pack_dir>/world.json
-    and that path comes from the caller - no id taken from pack data
-    ever becomes a filesystem path.
+    One identity model: a rule may name only what the pack declares -
+    items (world.json), speakers, regions, POI labels (region
+    contracts), library book ids (file stems), and region enemy ids.
+
+    Path safety: only files under pack_dir are read, each resolved and
+    checked the same way as the pack's own world.json - no id taken
+    from pack data ever becomes a filesystem path.
     """
     pack_cfg: dict = {}
+    region_contracts: list[dict] = []
+    book_ids: set = set()
     if pack_dir is not None:
-        # The same realpath guard cli._inside uses: `world.json` is a
-        # fixed name, but the root came from the caller, so the join is
-        # resolved and checked before anything is opened.
+        from .cli import _inside
+
         base = os.path.realpath(str(pack_dir))
-        cfg_path = os.path.realpath(os.path.join(base, 'world.json'))
-        if cfg_path.startswith(base + os.sep) and os.path.isfile(cfg_path):
+
+        def _read_in(root: str | None, *parts: str) -> dict:
+            # Every probe goes through the house guard first (the same
+            # shape region_geo uses): a name that would leave its root
+            # resolves to nothing at all.
+            found = _inside(root, *parts) if root else None
+            if found is None or not os.path.isfile(found):
+                return {}
             try:
-                loaded = json.loads(Path(cfg_path).read_text(encoding='utf-8'))
+                loaded = json.loads(Path(found).read_text(encoding='utf-8'))
             except ValueError:
-                loaded = {}
-            if isinstance(loaded, dict):
-                pack_cfg = loaded
+                return {}
+            return loaded if isinstance(loaded, dict) else {}
+
+        pack_cfg = _read_in(base, 'world.json')
+        # acts-shape regions carry their pois/enemies in contract.json;
+        # the flat shape keeps them in world.json's `town` block.
+        acts_dir = _inside(base, 'acts')
+        if acts_dir and os.path.isdir(acts_dir):
+            for act in sorted(os.listdir(acts_dir)):
+                if act.startswith('.'):
+                    continue
+                act_real = _inside(acts_dir, act)
+                if act_real is None or not os.path.isdir(act_real):
+                    continue
+                for region in sorted(os.listdir(act_real)):
+                    if region.startswith('.'):
+                        continue
+                    region_real = _inside(act_real, region)
+                    if region_real is None or not os.path.isdir(region_real):
+                        continue
+                    region_contracts.append(_read_in(region_real,
+                                                     'contract.json'))
+        else:
+            town = pack_cfg.get('town')
+            if isinstance(town, dict):
+                region_contracts.append(town)
+        lib_dir = _inside(base, 'library')
+        if lib_dir and os.path.isdir(lib_dir):
+            for name in sorted(os.listdir(lib_dir)):
+                if name.endswith('.md') and not name.startswith('.'):
+                    stem = name[:-len('.md')]
+                    if stem:
+                        book_ids.add(stem)
+
     items: set = set()
     # An acts-shape pack keeps its items at the pack level and
     # load_pack does not surface them; read them straight from the
@@ -352,13 +406,30 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
         # The flat shape declares no `regions` key; rather than guess
         # at a flat pack's place names, none resolve.
         places = set()
+    # POI labels are their own ids (the label is what the runtime
+    # sends in `comes-near`/`uses-with` payloads); enemy ids come from
+    # the same region contracts as pois.
+    pois: set = set()
+    enemies: set = set()
+    for contract in region_contracts:
+        p = contract.get('pois')
+        if isinstance(p, dict):
+            pois |= {str(v) for v in p.values() if str(v)}
+        for e in contract.get('enemies') or []:
+            if isinstance(e, dict) and isinstance(e.get('id'), str):
+                enemies.add(e['id'])
     flags = w.get('flags') if 'flags' in w else {}
     claims = w.get('claims') if 'claims' in w else {}
+    phases = w.get('phases')
     return {
         'items': items,
         'people': people,
         'places': places,
-        'things': items | people | places,
+        'pois': pois,
+        'books': book_ids,
+        'enemies': enemies,
+        'phases': set(phases) if isinstance(phases, dict) else set(),
+        'things': items | people | places | pois | book_ids | enemies,
         # None means "declared but malformed": the shape error in
         # rules_errors already speaks for it, so id checks stay
         # quiet. An absent key defaults to {} and every reference
@@ -379,7 +450,8 @@ def _rule_value_errors(rid: str, where: str, val, kind: str, known: dict) -> lis
         return []
     if not isinstance(val, str):
         noun = {'person': 'person id', 'claim': 'claim name', 'item': 'item id',
-                'place': 'region id', 'thing': 'thing id'}[kind]
+                'place': 'region id', 'thing': 'thing id', 'book': 'book id',
+                'enemy': 'enemy id', 'phase': 'phase name'}[kind]
         return [f"rule '{rid}' {where} must be a {noun}"]
     if kind == 'person':
         if val not in known['people']:
@@ -397,6 +469,18 @@ def _rule_value_errors(rid: str, where: str, val, kind: str, known: dict) -> lis
     if kind == 'place':
         if val not in known['places']:
             return [f"rule '{rid}' {where} names unknown place '{val}'"]
+        return []
+    if kind == 'book':
+        if val not in known['books']:
+            return [f"rule '{rid}' {where} names unknown book '{val}'"]
+        return []
+    if kind == 'enemy':
+        if val not in known['enemies']:
+            return [f"rule '{rid}' {where} names unknown enemy '{val}'"]
+        return []
+    if kind == 'phase':
+        if val not in known['phases']:
+            return [f"rule '{rid}' {where} names unknown phase '{val}'"]
         return []
     if kind == 'thing' and val not in known['things']:
         return [f"rule '{rid}' {where} names unknown thing '{val}'"]
@@ -458,9 +542,12 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
                                     'thing', known)
         distance = payload['distance']
         # A bool is not an int: `true` must not pass as distance 1.
+        # 0 is standing on the thing: the player fires tile contact at
+        # distance 0, so the vocabulary accepts it.
         if isinstance(distance, bool) or not isinstance(distance, int) \
-                or not 1 <= distance <= 9:
-            errors.append(f"rule '{rid}' when 'comes-near' distance must be an integer 1..9")
+                or not 0 <= distance <= 9:
+            errors.append(f"rule '{rid}' when 'comes-near' distance "
+                          "must be an integer 0..9 (0 is standing on it)")
         return errors
     if name == 'opens':
         return _rule_value_errors(rid, "when 'opens'", payload['what'], 'thing', known)
@@ -472,7 +559,16 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
         errors += _rule_value_errors(rid, "when 'uses-with' with", payload['with'],
                                      'thing', known)
         return errors
-    return []
+    if name == 'defeats':
+        return _rule_value_errors(rid, "when 'defeats'", payload['what'], 'enemy', known)
+    if name == 'buys':
+        return _rule_value_errors(rid, "when 'buys'", payload['what'], 'item', known)
+    if name == 'sells':
+        return _rule_value_errors(rid, "when 'sells'", payload['what'], 'item', known)
+    if name == 'reads':
+        return _rule_value_errors(rid, "when 'reads'", payload['what'], 'book', known)
+    return _rule_value_errors(rid, "when 'phase-changes'", payload['to'],
+                              'phase', known)
 
 
 def _rule_condition_errors(rid: str, cond, known: dict) -> list[str]:
@@ -546,6 +642,8 @@ def _rule_action_errors(rid: str, action, known: dict) -> list[str]:
         return _rule_value_errors(rid, key, val, 'thing', known)
     if key == 'give':
         return _rule_value_errors(rid, 'give', val, 'item', known)
+    if key == 'takes':
+        return _rule_value_errors(rid, 'takes', val, 'item', known)
     if key in ('set', 'unset'):
         if not isinstance(val, str):
             return [f"rule '{rid}' {key} must name a flag"]

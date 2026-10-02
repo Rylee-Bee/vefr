@@ -7,6 +7,38 @@
 
 ## Landed
 
+- [x] **The first independent pack's contract repairs** (2026-10-02):
+      a substantial outside pack was built without engine changes and
+      its recordings were verified against main (`docs/research/
+      2026-10-02-first-independent-pack.md` holds the matrix). Fixed:
+      **`opens` now fires** through the one Interact path (its only
+      call site lived in the orphaned `useHere`, deleted with it -
+      chests and doors emit `opens`, chests then emit `picks-up` per
+      item); **`picks-up` on every player acquisition** (floor,
+      chest, trade - a rule's `give` stays silent, the no-chains law);
+      **one identity model** - POI labels, library book ids and enemy
+      ids are declared things a rule may name, `comes-near` distance
+      is 0..9 (0 = standing on it), so packs stop inventing fake items
+      for landmarks; **five new events** - `defeats`, `buys`, `sells`,
+      `reads`, `phase-changes` - all facts the player already performs;
+      **`takes`** (the `give` pair) and item `keep: true` plus a bare
+      `use`, so usable and consumable stop meaning the same thing;
+      **two evidence panels** in the player's menu - *Why did that
+      happen?* (the real `VEFR_WHY` records) and *Where next?*
+      (`point-to` hints kept as intentions); **`handbok --pack` is
+      pack-scoped** and fails closed on no history (it used to print
+      another world's title and numbers), trace events now name their
+      world; `refresh_living_tree` honors its own never-break contract
+      (it let a PackError escape); and the door contract in the docs
+      now matches the player (Interact, not stepping). The bake's
+      `_rule_bakes`/`validAction` mirrors were pinned in lockstep with
+      the validator - the drift they had is exactly the class of bug
+      this pass exists to kill. Tests: `tests/test_rules_validator.py`
+      (+6), `tests/test_events_play.py` + `tests/fixtures/
+      events_play_harness.mjs` (the real woven file, every event
+      through the player's own paths), `tests/test_handbok.py`
+      (cross-pack isolation regression). 1180 passed, 1 skipped.
+
 - [x] **The rules engine wired into the woven player** (2026-10-01): the
       pure engine block now RUNS. `cli.weave_html` bakes the pack's four
       catalogs through four new placeholders (`_player_rules`: `{}` and
