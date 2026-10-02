@@ -36,7 +36,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .maplab import load_pack, validate
+from .maplab import SKIN_PICTURE_KEYS, load_pack, validate
 from .paths import world_name
 # The loader's tile convention (ordered variants) is the single source
 # of the try-order the player bakes, so a pack's tiles/ is read the
@@ -1547,6 +1547,62 @@ def _player_book_icons(web_dir: Path) -> dict[str, str]:
     return out
 
 
+def _baked_skin(pack: Path, world: dict) -> dict | None:
+    """The pack's skin as one object with every picture inlined.
+
+    `world["skin"]` names a folder inside the pack (design/ui-skin.md).
+    Each picture a part names (`file`, `hover`, `pressed`, ...) becomes
+    a data URI, so the woven file stays one offline file; `slice` and
+    `hotspot` are kept as written. A pack that names no skin - or whose
+    skin cannot be read - bakes the literal `null` (rule 6: no skin, no
+    change).
+    """
+    import base64
+
+    skin_rel = world.get('skin')
+    if not isinstance(skin_rel, str) or not skin_rel.strip():
+        return None
+    base = os.path.realpath(str(pack))
+    skin_dir = _inside(base, skin_rel)
+    if skin_dir is None or not os.path.isdir(skin_dir):
+        return None
+    skin_json = os.path.join(skin_dir, 'skin.json')
+    if not os.path.isfile(skin_json):
+        return None
+    try:
+        data = json.loads(Path(skin_json).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    out: dict = {k: data[k] for k in ('name', 'credit', 'ink') if k in data}
+    parts_in = data.get('parts')
+    parts_out: dict = {}
+    if isinstance(parts_in, dict):
+        for pname, spec in parts_in.items():
+            if not isinstance(spec, dict):
+                parts_out[pname] = spec
+                continue
+            baked: dict = {}
+            for key, value in spec.items():
+                target = (_inside(skin_dir, value)
+                          if key in SKIN_PICTURE_KEYS
+                          and isinstance(value, str) and value
+                          else None)
+                suffix = (os.path.splitext(value)[1].lower()
+                          if isinstance(value, str) else '')
+                if target is not None and os.path.isfile(target) \
+                        and suffix in _ART_TYPES:
+                    blob = base64.b64encode(
+                        Path(target).read_bytes()).decode('ascii')
+                    baked[key] = f'data:{_ART_TYPES[suffix]};base64,{blob}'
+                else:
+                    baked[key] = value
+            parts_out[pname] = baked
+    out['parts'] = parts_out
+    return out
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -1863,6 +1919,12 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{enemies_json}}',
                                 _json.dumps(enemies_by_region, ensure_ascii=False))
     out_html = out_html.replace('{{hero_json}}', _json.dumps(hero, ensure_ascii=False))
+    # The pack's optional skin (design/ui-skin.md): every picture inlined
+    # as a data URI so the woven file stays one offline file. A pack
+    # that names none bakes the literal `null`.
+    out_html = out_html.replace('{{skin_json}}',
+                                _json.dumps(_baked_skin(pack, world),
+                                            ensure_ascii=False))
     # The optional growth block (design/growth.md) beside the hero. A
     # pack that declares none bakes the literal `null`.
     out_html = out_html.replace('{{growth_json}}',
