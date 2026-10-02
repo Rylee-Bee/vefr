@@ -69,6 +69,7 @@ uv sync --group test
 npm ci                    # jsdom for the node-vm harnesses; without it pytest errors
 uv run --group test ruff check src tests scripts
 uv run --group test pytest -q
+bash tests/run.sh tests/test_x.py   # same, built for a throwaway clone (offload worker/foreman): links node_modules, offline, no foreign venv
 uv run --group test norns validate --pack worlds/sample-world
 python3 scripts/check_public_surface.py   # public-surface guard: catches private data in tracked files
 
