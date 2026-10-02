@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **The declutter** (2026-10-02): Interact is the one big button, with Talk, Whisper,
+      Bag and Explore as small icon buttons (inline SVG, words kept for screen readers);
+      the Dusk/Dawn rail moved into Menu > Display; the top bar is just Menu. Fixes the
+      phone HUD overlap the skin check found (the rail covered the level text), wraps the
+      health/level/gold row before the Menu button, and starts the phone Messages panel
+      below it. `tests/test_declutter.py`; no overlaps at 390/360/320 px and 1280/900;
+      axe clean on the plain sample and the skinned Cottage.
+
 - [x] **Growth, dev verbs and the Interact fix** (2026-10-02): `design/growth.md`
       built (levels or practice, enemy `xp`, `VEFR_GROWTH_ENGINE`); Interact keys
       continue notes and speech boxes; `vefr publish|look|probe` and doctor tooling
