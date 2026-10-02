@@ -34,6 +34,40 @@ Two habits carry over unchanged: validate after every pack write
 (`uv run vefr check --pack worlds/<name>`), and read `--help` for the
 live list straight from the code.
 
+## Developer verbs
+
+Three verbs help when you work on the game itself. They live in
+`src/vefr/devtools.py`, and `vefr doctor` now lists the tooling they
+need under a short `tooling:` block.
+
+`vefr publish` weaves the pack and hands the single HTML file to the
+gallery CLI, which carries it to the site. It prints the command
+instead of running it with `--dry-run`.
+
+```sh
+uv run vefr publish --pack worlds/sample-world
+```
+
+`vefr look` opens the woven player in headless Chromium, screenshots it,
+and lists the text standing over the map. It catches text that has
+drifted onto the map.
+
+```sh
+uv run vefr look --pack worlds/sample-world
+```
+
+`vefr probe` fires rule events at the woven player and reads the why-log
+and flags back. Each event is written `event:key=value`.
+
+```sh
+uv run vefr probe --pack worlds/sample-world --fire "enter:room=hall"
+```
+
+Exit codes follow the table below. All three return `0` when they do the
+work, and `2` when the arguments are wrong or a tool they need
+(Chromium, the gallery CLI) is missing. A missing tool is a report, not
+a failed check, and never changes `vefr doctor`'s exit code.
+
 ## Escape hatches
 
 Old muscle memory still runs. Both of these run the old CLIs exactly

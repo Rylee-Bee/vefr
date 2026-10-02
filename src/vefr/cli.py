@@ -3511,15 +3511,24 @@ def _doctor_report(args, rows, header: str) -> int:
     failed = sum(1 for r in rows if r[1] == 'FAIL')
     skipped = sum(1 for r in rows if r[1] == 'skip')
     ok_n = len(rows) - failed - skipped
+    from . import devtools
+
+    # The optional dev tools: informational only. A missing tool never
+    # changes the exit code and is never counted in the summary.
+    tooling = devtools.tooling_checks(repo_root() or Path('.'))
     if getattr(args, 'json', False):
         emit_json(envelope(not failed, 'healthy' if not failed else 'unhealthy', {
             'checks': rows_json(rows, ('name', 'status', 'detail')),
-            'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped}}))
+            'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped},
+            'tooling': rows_json(tooling, ('name', 'status', 'detail'))}))
         return EXIT_ERROR if failed else EXIT_OK
     print(header)
     for name, status, detail in rows:
         print(f'  {name:<6} {status:<12} {detail}')
     print(f'doctor: {ok_n} ok, {failed} failed, {skipped} skipped')
+    print('tooling:')
+    for name, status, detail in tooling:
+        print(f'  {name}  {status}  {detail}')
     return 1 if failed else 0
 
 
