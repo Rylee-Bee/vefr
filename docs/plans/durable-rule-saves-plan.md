@@ -6,6 +6,17 @@
 
 **Gate.** Nothing here starts until Rylee has read the disposition (`11` item 6) and says go.
 
+## Decided by Rylee (2026-10-02) — these override anything below
+
+| Item | Decision |
+|---|---|
+| D4 field | A nested **`saves` block**, not a flat `rule_saves`. Shape: `"saves": {"rules": "persist" \| "reset", "legacy": "fresh" \| "from-log"}`. Absent block, or absent `rules`, means reset. Read every `rule_saves` below as `saves.rules`; rename the validator function and tests to match. Future save settings go in the same block. |
+| D5 what persists | **All rule state**: flags, `once` markers, beliefs and the engine's items. |
+| D6 `starts` | In persist mode it fires **once per save**, not once per load. Start over fires it again. |
+| D7 old saves | **Per-pack choice** via `saves.legacy`. `fresh` (the default): no migration, a `once` rule may repeat one time. `from-log`: rules the WHY log proves fired are marked fired; the log is capped at 20 entries, so older firings may still repeat once. It never marks a rule fired that did not fire. |
+
+Added acceptance tests (write first, with S1–S13): **S14** `saves.legacy` accepts `fresh` and `from-log` and rejects anything else with one plain sentence naming `saves.legacy`; **S15** `from-log` marks exactly the rule ids present in the WHY log and nothing else; **S16** `fresh` marks nothing; **S17** `starts` fires once per save in persist mode and again after Start over. `legacy` has no effect in reset mode (validator may warn).
+
 ## 1 · What the player holds today (reverified 2026-10-02)
 
 | Fact | Evidence |
@@ -176,11 +187,7 @@ If Plan 1 lands first, Cottage PR 3 moves the pin past both; if not, it does not
 
 ## 10 · Decisions for Rylee
 
-- **D4 Field name and shape:** `"rule_saves": "persist" | "reset"`, absent = reset. Recommended for the reasons in section 2; veto if you want another word.
-- **D5 What persists:** flags, `once` markers, beliefs and the engine's items (recommended), versus flags and markers only.
-- **D6 `starts` in persist mode** fires once per save, not once per load. Recommend yes.
-- **D7 No migration** for saves made before a pack opts in (one possible repeat of a `once` rule). Recommend yes.
-- Follow-up, not in this plan: whether the engine's `items` should follow the bag.
+D4–D7 are decided; see the table near the top. Nothing is open for this plan.
 
 ## 11 · Out of scope
 

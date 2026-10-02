@@ -7,6 +7,15 @@
 **Gate.** Nothing here starts until Rylee has read the GO WITH CONSTRAINTS disposition (`11` item 6) and says go.
 PR #219 (the research packet) should merge first, so the plan's links resolve on `main`.
 
+## Decided by Rylee (2026-10-02) — these override anything below
+
+| Item | Decision |
+|---|---|
+| D1 exit threshold | **At least 25% fewer authored values, or one real error caught.** Below that, stop and revert. |
+| D2 generated records | **Committed in the pack and read-only.** |
+| D3 hand-written records | **End of life to be set later.** Hand-written records stay fully supported for now; Rylee will set a date, if any, after the trial. Do not record "no end of life". |
+| Names and shape | Blueprint, a JSON file inside the pack; stale output rejected; Cottage's CI pin bumped with the first normalizer. |
+
 ## 1 · Goal, in one paragraph
 
 A pack may carry one optional file, `blueprint.json`, that declares creature **families** (defaults, at most one `extends`) and, per region, an ordered list of **instances**.
@@ -232,7 +241,7 @@ Cottage PR order inside one PR: commit 1 bumps the pin only (prove C1 locally), 
 | 5 Owner and cadence | Rylee owns the format; changes go through an ADR amendment PR that Sonnet reviews and Rylee merges (T1) |
 | 6 Teachability | `docs/guides/blueprint.md`; "what words does this game know" = `vefr normalize --pack P` lists families; "what can this thing do" and "why does it have this value" = the provenance lines (families chain, overridden keys) |
 | 7 Dogfooding | Cottage CI runs `norns validate` at the pin, which now includes the stale check, on every Cottage PR |
-| 8 Graceful degradation | hand-written records stay first class; no adapter is needed because nothing old changes. Asks Rylee to record "no end of life" (section 11) |
+| 8 Graceful degradation | hand-written records stay first class; no adapter is needed because nothing old changes. End of life is to be set later by Rylee (decided; see the top table) |
 | 9 Honest exit ramps | every PR leaves `main` releasable; section 9 |
 
 ## 9 · Exit ramp and rollback
@@ -261,10 +270,7 @@ Measure in PR 5: authored enemy values (every scalar or list in `blueprint.json`
 
 ## 11 · Decisions for Rylee
 
-- **D1 Exit threshold.** Recommend: continue if authored enemy values drop by at least 25%, or one real error is caught. (Rough estimate today: about 31% with 4 families, **UNVERIFIED**.)
-- **D2 Generated records are committed** in the pack (recommended; it is how I read decision 1). Say so if you meant build-time only output; that would need a loader change and drop old-runtime compatibility.
-- **D3 No end of life** for hand-written enemy records. Recommend recording it, which satisfies the campaign's "approved end-of-life date" item honestly.
-- Engineering choices made here, which you may veto but need not decide: the file names `blueprint.json` / `blueprint.lock.json`, the version key `"blueprint": 1`, `drops` checking only for owned records.
+D1–D3 are decided; see the table near the top. The engineering choices (file names `blueprint.json` / `blueprint.lock.json`, version key `"blueprint": 1`, `drops` checked only for owned records) stand unless vetoed.
 
 ## 12 · Out of scope
 
