@@ -179,7 +179,6 @@ worlds/your-world/
 ├── ledger.md          # generation log
 ├── world-tree.md      # act/POI overview
 ├── voices/            # speaker voice files (+ fragments)
-├── assets/kenney/     # tileset art + licenses
 └── acts/act-1/        # act shape: world.json, town/ (contract,
                        # map.md, sprites/, voices/)
 ```

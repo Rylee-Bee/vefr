@@ -1716,8 +1716,9 @@
       CC0/MIT tool survey (engines, renderers, map authoring,
       narrative tools, art editors, audio, dev workflow) kept as a
       local research note - gitignored, since the repo may publish
-      one day. Durable decisions: Kenney CC0 art ships as pack
-      data once the renderer grows sprite support; Tiled (then
+      one day. Durable decisions: (Kenney CC0 art shipping as pack
+      data was reversed 2026-10-02: Rylee removed the Kenney sheets; we
+      ship only art we made, attributed) ; Tiled (then
       LDtk) importers parked after the surface-UI work; rot.js
       algorithms get borrowed for mapgen when `norns chat` v2
       opens; frameworks skip (the custom renderer stays
