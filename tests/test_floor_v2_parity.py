@@ -46,6 +46,7 @@ def test_the_twin_exists(replay):
 
 def test_the_streams_match(replay):
     _, prng, out = replay
+    assert len(out["prng"]) == len(prng) == len(SEEDS)     # a missing twin must not pass by checking nothing
     for case, got in zip(prng, out["prng"]):
         rng = delve.prng(case["seed"])
         assert got == [rng() for _ in range(case["count"])], case["seed"]
