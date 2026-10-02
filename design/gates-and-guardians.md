@@ -19,13 +19,17 @@ Making a player earn power before going deeper is **progression gating**. A *sof
 
 **1. A lock on a transition (neutral engine feature).** A transition may carry `requires`: `{"item": "<id>"}` or `{"flag": "<name>"}`, plus `locked_text`, one plain sentence shown when the hero tries it without ("The stair is shut. Something below keeps the key."). Interact on the stair with the item (or the flag set) opens it; with `keep: true` the key stays in the bag. Absent means today's behaviour, so every pack loads unchanged. The validator names a `requires` that points at an unknown item or flag.
 
-**2. The guardian is placed by the generator, not by hand.** Generation fills floors from depth tables (the `descent.tables` of `random-floors.md`). On top of that, the zone declares one guardian:
+**2. A ladder of guardians, one per floor, and a king at the bottom (Rylee, 2026-10-02: "act 1 is the cellar, the main boss of the cellar is the cellar king, and we can have 5-6 levels that are randomly generated, each with a ... [duke] to progress").** Act 1 is the cellar: five or six generated floors. Every floor has one guardian, a tougher mob that carries the key to the stair down. The last floor's guardian is the Cellar King, the act's boss; beating him ends act 1. The pack declares them as a ladder:
 
 ```json
-"guardians": [{"floor": "last", "enemy": "hollow-shade", "carries": "deep-key", "opens": {"from": "floor-6", "at": "stair"}}]
+"guardians": [
+  {"floor": 1, "enemy": "first-guardian", "carries": "key-1"},
+  {"floor": 2, "enemy": "second-guardian", "carries": "key-2"},
+  {"floor": "last", "enemy": "cellar-king", "boss": true, "carries": "the-cellar-seal"}
+]
 ```
 
-The generator puts it on the zone's last floor, in the room farthest from the arrival stair, with the key in its `drops`. Like the ending room, it is placed by the generator and never left to chance, so every seed can be finished.
+Each guardian is stronger than the last, tuned to the power curve of the levels. The generator places each one in the room farthest from that floor's arrival stair with its key in `drops`. Like the ending room, it is placed by the generator and never left to chance, so every seed can be finished. The `requires` lock from section 1 is on each floor's stair down. The names and looks of the guardians are Rylee's to choose; a rank scheme from a king's court (seneschal, chamberlain, marshal, warden, bailiff) is one option.
 
 **3. Mobs come from tables, scaled by depth.** Each table row gets `depth` bands and a weight; `hp`/`atk` scale by floor; `xp` follows `design/growth.md`. The guardian is a row with `guardian: true`, never rolled as filler.
 
@@ -33,7 +37,7 @@ The generator puts it on the zone's last floor, in the room farthest from the ar
 
 ## What this does not do
 
-No timed locks, no lockpicking, no key ring UI, no more than one lock per descent in the first slice, no level-based lock (a `requires` on level can follow once growth lands).
+No timed locks, no lockpicking, no key ring UI, one lock per floor in the first slice (the ladder), no second kind of key, no level-based lock (a `requires` on level can follow once growth lands).
 
 ## Checks the build must carry
 
@@ -50,5 +54,7 @@ No timed locks, no lockpicking, no key ring UI, no more than one lock per descen
 
 ## Open for Rylee
 
+- The guardians' names and creatures (the monsters we already have, or new ones from the art set).
+- Where the story's last room (the realization) sits now that act 1 ends with the Cellar King: before him, after him, or as the room his seal opens. Nothing is canon until she says.
 - Which stair is the first lock: the one into the deeper zone (floor 3 to 4), or the way out at the bottom?
 - Does the guardian's key look like a key, or something of the story's (a lit lantern, a warm stone)? Her call; nothing becomes canon until she says.
