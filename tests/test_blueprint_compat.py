@@ -1,10 +1,7 @@
 """Blueprint A3, A4: packs without a Blueprint are unchanged; the lock stays out of the woven file."""
 
-import pytest
 
 from blueprint_helpers import ROOT, normalized_pack, vefr
-
-pytestmark = pytest.mark.xfail(strict=True, reason="Blueprint hooks not built yet (plan PR 3)")
 
 
 def test_no_blueprint_unchanged(monkeypatch):

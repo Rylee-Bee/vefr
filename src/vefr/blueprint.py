@@ -17,6 +17,7 @@ import copy
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 
 from .maplab import load_pack
@@ -30,6 +31,12 @@ REGION_KEYS = frozenset({"enemies"})
 INSTANCE_KEYS = frozenset({"id", "family", "at", "properties"})
 
 FIELD_ORDER = ("id", "name", "sprite", "at", "hp", "atk", "xp", "sight", "drops")
+
+
+class BlueprintRefusal(ValueError):
+    """A pack that must not be woven or published: its Blueprint output is
+    stale or invalid. The message is the same sentence `vefr check` prints;
+    the front doors print it without a traceback."""
 
 
 class BlueprintError(Exception):
@@ -279,3 +286,355 @@ def canonical_hash(source: dict) -> str:
         source, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
     return hashlib.sha256(payload.encode()).hexdigest()
+
+
+# ------------------------------------------------------------------ the lock
+#
+# `vefr normalize` owns two things beyond the Blueprint: the generated
+# `enemies` list of every region the Blueprint names, and a sidecar,
+# `blueprint.lock.json`, that records what wrote them (source hash,
+# normalizer and format versions, per-record provenance). Both are
+# written with the same canonical serializer, so a second run over an
+# unchanged Blueprint leaves identical bytes.
+
+BLUEPRINT_FILE = "blueprint.json"
+LOCK_FILE = "blueprint.lock.json"
+
+
+def _write_json(path: Path, data) -> None:
+    """Write JSON the way the pack writer does: 2-space, UTF-8, newline."""
+    path.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _family_chain(family, families: dict) -> list[str]:
+    """The parent chain of `family`, root first.
+
+    `expand` has already rejected unknown families and cycles, so this
+    is a plain walk; an unknown name simply ends the chain.
+    """
+    chain: list[str] = []
+    current = family
+    while isinstance(current, str) and current in families and current not in chain:
+        chain.append(current)
+        parent = families[current].get("extends")
+        current = parent if isinstance(parent, str) else None
+    chain.reverse()
+    return chain
+
+
+def _lock_data(source: dict, expanded: dict) -> dict:
+    """The lock body for one successful expansion of `source`."""
+    families = source.get("families") or {}
+    regions = source.get("regions") or {}
+    outputs = []
+    for region_key, _records in expanded.items():
+        instance_list = (regions.get(region_key) or {}).get("enemies") or []
+        entries = []
+        for i, instance in enumerate(instance_list):
+            properties = instance.get("properties")
+            entries.append({
+                "source": f"/regions/{_esc(region_key)}/enemies/{i}",
+                "families": _family_chain(instance.get("family"), families),
+                "overrides": sorted(properties) if isinstance(properties, dict) else [],
+            })
+        act, _, region = region_key.partition("/")
+        outputs.append({
+            "file": f"acts/{act}/{region}/contract.json",
+            "pointer": "/enemies",
+            "records": entries,
+        })
+    return {
+        "blueprint": 1,
+        "normalizer": NORMALIZER_VERSION,
+        "source_sha256": canonical_hash(source),
+        "outputs": outputs,
+    }
+
+
+def _contract_path(pack: Path, region_key: str) -> Path:
+    """The guarded `contract.json` of one Blueprint-owned region.
+
+    The region directory is resolved through `_region_dir`, which is the
+    only place a Blueprint string becomes a path (`cli._inside`).
+    """
+    directory = _region_dir(pack, region_key, f"/regions/{_esc(region_key)}")
+    return Path(directory) / "contract.json"
+
+
+def check_errors(pack_dir) -> list[str]:
+    """Every Blueprint problem in `pack_dir` as plain sentences.
+
+    Empty when the pack carries neither a Blueprint nor a lock - and in
+    that case nothing else is read. A present Blueprint is checked for
+    the acts shape, its lock, the reader/normalizer versions, and
+    freshness (the lock's source hash and every owned `enemies` list
+    against what this VEFR expands now). Stale messages name the file
+    and the record pointer so the author knows what to run.
+    """
+    pack = Path(pack_dir)
+    source_path = pack / BLUEPRINT_FILE
+    lock_path = pack / LOCK_FILE
+    has_source = source_path.is_file()
+    has_lock = lock_path.is_file()
+    if not has_source and not has_lock:
+        return []
+    # Format 1 is acts-shape only: a flat pack with a Blueprint is
+    # refused before the lock is even considered.
+    if has_source and not (pack / "acts").is_dir():
+        return [f"a Blueprint needs an acts/ directory, but {pack} has none"]
+    if has_source and not has_lock:
+        return [f"blueprint.json has no blueprint.lock.json beside it - "
+                f"run 'vefr normalize --pack {pack} --out {pack}'"]
+    if has_lock and not has_source:
+        return ["blueprint.lock.json has no blueprint.json beside it - "
+                "delete the lock or restore the Blueprint"]
+
+    try:
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return [f"{lock_path.name} is not valid JSON"]
+    if not isinstance(lock, dict):
+        return [f"{lock_path.name} must be a JSON object"]
+
+    # A format or normalizer this VEFR does not know can produce output
+    # this VEFR cannot compare honestly, so it fails before expanding.
+    known_formats = sorted(READERS)
+    newer: list[str] = []
+    normalizer = lock.get("normalizer")
+    if type(normalizer) is int and normalizer > NORMALIZER_VERSION:
+        newer.append(
+            f"blueprint.lock.json was written by a newer normalizer "
+            f"({normalizer}); this VEFR knows {NORMALIZER_VERSION}")
+    version = lock.get("blueprint")
+    if type(version) is int and version > max(known_formats):
+        newer.append(
+            f"blueprint.lock.json names a newer format ({version}); "
+            f"this VEFR reads {known_formats}")
+    if newer:
+        return newer
+
+    try:
+        source = read(source_path)
+        expanded = expand(source, pack_dir=pack)
+    except BlueprintError as exc:
+        return [f"blueprint: {exc} ({exc.pointer})"]
+
+    errors: list[str] = []
+    if lock.get("source_sha256") != canonical_hash(source):
+        errors.append(
+            "blueprint output is stale: the Blueprint changed since "
+            "blueprint.lock.json was written - run 'vefr normalize "
+            f"--pack {pack} --out {pack}'")
+    for region_key, records in expanded.items():
+        rel = f"acts/{region_key}/contract.json"
+        pointer = "/enemies"
+        try:
+            contract = json.loads(
+                _contract_path(pack, region_key).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            errors.append(f"{rel}: {pointer} is stale (the contract could not "
+                          f"be read) - run 'vefr normalize --pack {pack} "
+                          f"--out {pack}'")
+            continue
+        on_disk = contract.get("enemies") if isinstance(contract, dict) else None
+        if on_disk == records:
+            continue
+        # Name the first differing record when the lists line up; a
+        # differing length or shape can only name the list itself.
+        if isinstance(on_disk, list) and len(on_disk) == len(records):
+            for i, (committed, wanted) in enumerate(zip(on_disk, records)):
+                if committed != wanted:
+                    pointer = f"/enemies/{i}"
+                    break
+        errors.append(f"{rel}: {pointer} is stale (the committed value "
+                      f"differs from what this VEFR expands) - run "
+                      f"'vefr normalize --pack {pack} --out {pack}'")
+    return errors
+
+
+def notes(pack_dir) -> list[str]:
+    """A note when an older normalizer wrote a still-equal lock.
+
+    Not an error (the output matches): the author is told to re-run
+    `vefr normalize` to refresh the recorded version. Empty for a pack
+    with no Blueprint and no lock, or a current one.
+    """
+    pack = Path(pack_dir)
+    source_path = pack / BLUEPRINT_FILE
+    lock_path = pack / LOCK_FILE
+    if not source_path.is_file() or not lock_path.is_file():
+        return []
+    try:
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(lock, dict):
+        return []
+    normalizer = lock.get("normalizer")
+    if type(normalizer) is int and normalizer < NORMALIZER_VERSION:
+        return [f"blueprint.lock.json was written by normalizer {normalizer}; "
+                f"re-run 'vefr normalize --pack {pack} --out {pack}'"]
+    return []
+
+
+class NormalizeResult:
+    """What `normalize` wrote, or (read-only) what it found.
+
+    `fresh` is True only when the committed output already matches;
+    `errors` are plain sentences (whole-pack validation errors on a
+    refresh); `regions` maps each owned region key to its record count.
+    """
+
+    def __init__(self, fresh: bool, errors: list[str],
+                 regions: dict[str, int]) -> None:
+        self.fresh = fresh
+        self.errors = errors
+        self.regions = regions
+
+
+def normalize(pack_dir, out=None) -> NormalizeResult:
+    """Validate and expand a Blueprint, optionally writing the output.
+
+    `out` None is read-only. `out` equal to the pack refreshes it in
+    place, restoring the previous bytes if the whole-pack validation
+    fails. Any other `out` must not exist or be an empty directory: the
+    pack is copied there, refreshed and validated there, and the
+    original is never touched.
+    """
+    pack = Path(pack_dir)
+    if out is None:
+        return _normalize_read_only(pack)
+    out_path = Path(out)
+    if os.path.realpath(out_path) == os.path.realpath(pack):
+        return _refresh_in_place(pack)
+    return _normalize_copy(pack, out_path)
+
+
+def _region_counts(expanded: dict) -> dict[str, int]:
+    return {key: len(records) for key, records in expanded.items()}
+
+
+def _normalize_read_only(pack: Path) -> NormalizeResult:
+    errors = check_errors(pack)
+    regions: dict[str, int] = {}
+    source_path = pack / BLUEPRINT_FILE
+    if source_path.is_file():
+        try:
+            expanded = expand(read(source_path), pack_dir=pack)
+        except BlueprintError:
+            pass
+        else:
+            regions = _region_counts(expanded)
+    return NormalizeResult(not errors, errors, regions)
+
+
+def _normalize_copy(pack: Path, out: Path) -> NormalizeResult:
+    real_pack, real_out = os.path.realpath(pack), os.path.realpath(out)
+    if real_out == real_pack or real_out.startswith(real_pack + os.sep):
+        return NormalizeResult(
+            False, [f"output directory {out} is inside the pack - choose "
+                    "a directory outside it"], {})
+    created = not out.exists()
+    if not created:
+        if not out.is_dir():
+            return NormalizeResult(
+                False, [f"output path {out} is not a directory"], {})
+        if any(out.iterdir()):
+            return NormalizeResult(
+                False,
+                [f"output directory {out} is not empty - refusing to write "
+                 "into it"],
+                {})
+    try:
+        # symlinks=True keeps a link as a link: a pack must never pull a
+        # file from outside itself into the copy.
+        shutil.copytree(pack, out, symlinks=True, dirs_exist_ok=True)
+    except OSError as exc:
+        _discard(out, created)
+        return NormalizeResult(False, [f"could not copy {pack} to {out}: {exc}"], {})
+    result = _refresh_in_place(out)
+    if result.errors:
+        _discard(out, created)  # a failed refresh leaves nothing behind
+    return result
+
+
+def _discard(out: Path, created: bool) -> None:
+    """Remove what `_normalize_copy` wrote: the directory it made, or the
+    contents of the empty directory it was given."""
+    if created:
+        shutil.rmtree(out, ignore_errors=True)
+        return
+    for child in out.iterdir():
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child, ignore_errors=True)
+        else:
+            child.unlink(missing_ok=True)
+
+
+def _restore(backups: dict) -> None:
+    """Put every touched file back, deleting one that did not exist before."""
+    for path, data in backups.items():
+        if data is None:
+            if path.exists():
+                path.unlink()
+        else:
+            path.write_bytes(data)
+
+
+def _refresh_in_place(pack: Path) -> NormalizeResult:
+    source_path = pack / BLUEPRINT_FILE
+    lock_path = pack / LOCK_FILE
+    if not source_path.is_file():
+        return NormalizeResult(
+            False, [f"{source_path} does not exist - nothing to normalize"], {})
+    try:
+        source = read(source_path)
+        expanded = expand(source, pack_dir=pack)
+    except BlueprintError as exc:
+        return NormalizeResult(False, [f"blueprint: {exc} ({exc.pointer})"], {})
+    regions = _region_counts(expanded)
+
+    owned: list[tuple[Path, list]] = []
+    try:
+        for region_key, records in expanded.items():
+            owned.append((_contract_path(pack, region_key), records))
+    except BlueprintError as exc:
+        return NormalizeResult(False, [f"blueprint: {exc} ({exc.pointer})"], regions)
+
+    # Snapshot every file this refresh will touch before touching any of
+    # them, so a failing whole-pack validation can put the pack back.
+    backups: dict[Path, bytes | None] = {}
+    for contract, _records in owned:
+        backups[contract] = contract.read_bytes() if contract.is_file() else None
+    backups[lock_path] = lock_path.read_bytes() if lock_path.is_file() else None
+
+    for contract, records in owned:
+        contract_data: dict = {}
+        if contract.is_file():
+            try:
+                loaded = json.loads(contract.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                loaded = {}
+            if isinstance(loaded, dict):
+                contract_data = loaded
+        contract_data["enemies"] = records
+        _write_json(contract, contract_data)
+    _write_json(lock_path, _lock_data(source, expanded))
+
+    # The whole normalized pack, through today's validator (which now
+    # also runs this module's freshness check): only this second pass
+    # can see cross-references.
+    from .maplab import validate as _validate
+
+    try:
+        errors = _validate(load_pack(pack), pack_dir=pack)
+    except Exception:
+        _restore(backups)
+        raise
+    if errors:
+        _restore(backups)
+        return NormalizeResult(False, errors, regions)
+    return NormalizeResult(True, [], regions)

@@ -1390,6 +1390,14 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         load_pack() sets w['town'] and w['speakers'] explicitly.
     """
     errors: list[str] = []
+    # The optional Blueprint (`docs/adr/0008-blueprint-format.md`): when
+    # the pack is on disk, its source/stale check runs beside the rest.
+    # Lazy so a pack with neither `blueprint.json` nor its lock reads
+    # nothing new (the module's two existence checks), and so importing
+    # maplab never reaches back into blueprint at import time.
+    if pack_dir is not None:
+        from . import blueprint
+        errors.extend(blueprint.check_errors(pack_dir))
     if 'town' not in w and 'acts' in w and w['acts']:
         # Acts shape: synthesize the flat keys the rest of the
         # validator reads, so the same code path works for both.
