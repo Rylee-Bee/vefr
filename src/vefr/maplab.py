@@ -341,39 +341,48 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
     region_contracts: list[dict] = []
     book_ids: set = set()
     if pack_dir is not None:
+        from .cli import _inside
+
         base = os.path.realpath(str(pack_dir))
 
-        def _read_json(rel: str) -> dict:
-            path = os.path.realpath(os.path.join(base, rel))
-            if path.startswith(base + os.sep) and os.path.isfile(path):
-                try:
-                    loaded = json.loads(Path(path).read_text(encoding='utf-8'))
-                except ValueError:
-                    return {}
-                return loaded if isinstance(loaded, dict) else {}
-            return {}
+        def _read_in(root: str | None, *parts: str) -> dict:
+            # Every probe goes through the house guard first (the same
+            # shape region_geo uses): a name that would leave its root
+            # resolves to nothing at all.
+            found = _inside(root, *parts) if root else None
+            if found is None or not os.path.isfile(found):
+                return {}
+            try:
+                loaded = json.loads(Path(found).read_text(encoding='utf-8'))
+            except ValueError:
+                return {}
+            return loaded if isinstance(loaded, dict) else {}
 
-        pack_cfg = _read_json('world.json')
+        pack_cfg = _read_in(base, 'world.json')
         # acts-shape regions carry their pois/enemies in contract.json;
         # the flat shape keeps them in world.json's `town` block.
-        acts_dir = os.path.join(base, 'acts')
-        if os.path.isdir(acts_dir):
+        acts_dir = _inside(base, 'acts')
+        if acts_dir and os.path.isdir(acts_dir):
             for act in sorted(os.listdir(acts_dir)):
-                adir = os.path.join(acts_dir, act)
-                if not os.path.isdir(adir) or act.startswith('.'):
+                if act.startswith('.'):
                     continue
-                for region in sorted(os.listdir(adir)):
-                    rdir = os.path.join(adir, region)
-                    if not os.path.isdir(rdir) or region.startswith('.'):
+                act_real = _inside(acts_dir, act)
+                if act_real is None or not os.path.isdir(act_real):
+                    continue
+                for region in sorted(os.listdir(act_real)):
+                    if region.startswith('.'):
                         continue
-                    region_contracts.append(_read_json(
-                        os.path.join('acts', act, region, 'contract.json')))
+                    region_real = _inside(act_real, region)
+                    if region_real is None or not os.path.isdir(region_real):
+                        continue
+                    region_contracts.append(_read_in(region_real,
+                                                     'contract.json'))
         else:
             town = pack_cfg.get('town')
             if isinstance(town, dict):
                 region_contracts.append(town)
-        lib_dir = os.path.join(base, 'library')
-        if os.path.isdir(lib_dir):
+        lib_dir = _inside(base, 'library')
+        if lib_dir and os.path.isdir(lib_dir):
             for name in sorted(os.listdir(lib_dir)):
                 if name.endswith('.md') and not name.startswith('.'):
                     stem = name[:-len('.md')]
