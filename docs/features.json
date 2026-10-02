@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "rules",
+      "name": "Reactions: when this happens, do that",
+      "what": "The world notices what the player does (a kill, a read note, an arrival) and answers in small, readable ways.",
+      "status": "built",
+      "detect": "rules",
+      "docs": [
+        "docs/guides/rules.md"
+      ],
+      "design": "design/rules-when-then.md",
+      "tests": [
+        "tests/test_rules_validator.py",
+        "tests/test_events_play.py"
+      ]
+    },
+    {
+      "id": "interact",
+      "name": "One button for everything",
+      "what": "E, F, Space, Enter or one button talks, opens, trades, goes through doors and starts a fight; it also turns note pages and closes speech.",
+      "status": "built",
+      "detect": "always",
+      "docs": [
+        "docs/guides/playing.md"
+      ],
+      "design": "design/one-button-interact.md",
+      "tests": [
+        "tests/test_interact_play.py",
+        "tests/test_overlay_interact.py"
+      ]
+    },
+    {
+      "id": "quiet-ui",
+      "name": "A quiet screen, WASD and a calm step",
+      "what": "The how-to-move line goes after your first step, fight buttons show only near a monster, messages sit in a small corner panel, WASD walks, Trade closes with E or F.",
+      "status": "built",
+      "detect": "always",
+      "docs": [
+        "docs/guides/playing.md"
+      ],
+      "design": "design/one-button-interact.md",
+      "tests": [
+        "tests/test_quiet_ui.py"
+      ]
+    },
+    {
+      "id": "growth",
+      "name": "Levels, or learning by doing",
+      "what": "The hero grows: experience and levels (classic), or skills that improve with use.",
+      "status": "built",
+      "detect": "growth",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": "design/growth.md",
+      "tests": [
+        "tests/test_growth_play.py",
+        "tests/test_growth_engine.py",
+        "tests/test_growth_validator.py"
+      ]
+    },
+    {
+      "id": "combat",
+      "name": "Monsters and cozy fights",
+      "what": "Monsters with health and bite, bump to strike, and a way to lose that never ends the game.",
+      "status": "built",
+      "detect": "enemies",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_combat.py",
+        "tests/test_combat_loop.py"
+      ]
+    },
+    {
+      "id": "library",
+      "name": "Books and notes you find",
+      "what": "Notes, letters and books lying in the world, in chests, or given by people; kept and re-readable.",
+      "status": "built",
+      "detect": "library",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_library.py"
+      ]
+    },
+    {
+      "id": "items",
+      "name": "Items, a bag and a shop",
+      "what": "Things to find, carry, use, buy and sell, including keep-forever tools.",
+      "status": "built",
+      "detect": "items",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_combat_loop.py"
+      ]
+    },
+    {
+      "id": "fog",
+      "name": "Fog of war",
+      "what": "Floors are dark until you walk them, and the map remembers what you saw.",
+      "status": "built",
+      "detect": "fog",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_combat_loop.py"
+      ]
+    },
+    {
+      "id": "delve",
+      "name": "Generated floors (drawn at build time)",
+      "what": "`vefr delve` draws connected dungeon floors from a seed and wires their stairs.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_delve.py",
+        "tests/test_delve_properties.py"
+      ]
+    },
+    {
+      "id": "dev-verbs",
+      "name": "publish, look and probe",
+      "what": "Developer verbs: post a build to the gallery, screenshot the game and list text over the map, fire story events and read why they happened.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "docs/guides/vefr-command.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_devtools.py"
+      ]
+    },
+    {
+      "id": "skin",
+      "name": "A game's interface as pictures",
+      "what": "A folder of pictures that paints the buttons, panels and bars in a game's own look.",
+      "status": "proposed",
+      "detect": "skin",
+      "docs": [],
+      "design": "design/ui-skin.md",
+      "tests": []
+    },
+    {
+      "id": "random-floors",
+      "name": "A new descent every run",
+      "what": "Floors drawn fresh each run from a seed, by the same generator in Python and the browser.",
+      "status": "proposed",
+      "detect": "none",
+      "docs": [],
+      "design": "design/random-floors.md",
+      "tests": []
+    },
+    {
+      "id": "gates",
+      "name": "Locks, keys and guardians",
+      "what": "A locked stair opened by a key a tougher monster carries; a ladder of guardians ending at the act's boss.",
+      "status": "proposed",
+      "detect": "none",
+      "docs": [],
+      "design": "design/gates-and-guardians.md",
+      "tests": []
+    },
+    {
+      "id": "album",
+      "name": "The album",
+      "what": "One record of what you have met and found, and a sticker album that fills in as you play.",
+      "status": "proposed",
+      "detect": "none",
+      "docs": [],
+      "design": "design/album.md",
+      "tests": []
+    },
+    {
+      "id": "equipment",
+      "name": "Gear in five slots",
+      "what": "Wear and hold things that change your health and attack.",
+      "status": "proposed",
+      "detect": "none",
+      "docs": [],
+      "design": "design/equipment.md",
+      "tests": []
+    },
+    {
+      "id": "acts",
+      "name": "A story in acts",
+      "what": "One act ends and the next begins, with its own map and mood.",
+      "status": "proposed",
+      "detect": "none",
+      "docs": [],
+      "design": "docs/adr/0006-acts-and-surfaces.md",
+      "tests": []
+    }
+  ]
+}

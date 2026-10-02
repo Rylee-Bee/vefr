@@ -39,6 +39,9 @@ COPY src ./src
 COPY web ./web
 RUN pip install --no-cache-dir .
 COPY worlds ./worlds-template
+# The features catalog the studio's shelves read (GET /api/features). Just this one file:
+# the rest of docs/ stays out of the image.
+COPY docs/features.json ./docs/features.json
 
 RUN mkdir -p /app/worlds /app/data
 VOLUME ["/app/worlds-template", "/app/worlds", "/app/data"]
