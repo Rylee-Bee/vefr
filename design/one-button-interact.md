@@ -48,6 +48,11 @@ verbs (today `Strike` and `Console` on the default costume; the list already com
 `['attack', 'Strike']` pairs). A surface with one verb acts at once. Enemies take their turn after a verb resolves, as
 after a bump. This keeps fights familiar and gives non-attack verbs (Console) a home.
 
+**7. Interact continues whatever has the screen (Rylee, 2026-10-02).** While a note is open, E, F, Space and Enter turn the page,
+and on the last page close it; while a speech box is up they close it instead of starting a second talk. A focused button keeps its
+own Enter and Space, and a held key never carries on into the next thing. Trade, the menu and the Bag are choices, not reading, so
+they keep their own controls. Pinned by `tests/test_overlay_interact.py`.
+
 ## What does not change
 
 Movement (one tile per call), the camera, hero motion, doors needing a deliberate use (passing a doorway never yanks you
