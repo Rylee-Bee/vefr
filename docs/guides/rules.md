@@ -73,10 +73,35 @@ Actions: `say` (a narrator string, or `{"who", "line"}`),
 (beliefs), `weather` (`"fog"` / `"clear"`), `point-to` (a direction
 that is kept in the **Where next?** panel).
 
-One rule fires at most once (`"once": true`, the default) and no
-rule ever triggers another: a `give` is not a `picks-up`. That is the
-whole discipline - the world notices, remembers, and changes in small
-understandable ways.
+One rule fires at most once (`"once": true`, the default). In the
+default `reset` mode that holds only until a reload: the fired markers
+are forgotten, so a `once` rule may fire again. With `saves.rules` set
+to `persist` the marker survives a reload and the rule fires at most
+once per save. No rule ever triggers another: a `give` is not a
+`picks-up`. That is the whole discipline - the world notices, remembers,
+and changes in small understandable ways.
+
+## Saves
+
+A pack chooses how much of a run its rules remember, with an optional
+top-level `saves` block in `world.json`:
+
+```json
+{ "saves": { "rules": "persist", "legacy": "from-log" } }
+```
+
+- `saves.rules` is `persist` or `reset`. The default is `reset`, today's
+  behavior: each load starts the rules fresh, and no save key is read or
+  written. `persist` keeps flags, fired markers, beliefs and the engine's
+  items across a reload, and Start over clears them.
+- `saves.legacy` chooses what a persist pack does with saves made before
+  it opted in. `fresh` (the default) starts the rule state empty, so a
+  `once` rule may repeat one time. `from-log` marks as fired the rules
+  the **Why did that happen?** log proves fired; the log keeps only the
+  last 20 entries, so older firings may still repeat once. It never marks
+  a rule fired that did not fire.
+- `starts` fires once per save in persist mode, and again after Start
+  over. In reset mode it fires on every load, as today.
 
 ## Items: usable is not consumable
 

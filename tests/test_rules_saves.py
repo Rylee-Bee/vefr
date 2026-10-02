@@ -3,8 +3,8 @@
 FROZEN CONTRACT. A pack's `saves` block picks what a reload keeps:
   "saves": {"rules": "persist" | "reset", "legacy": "fresh" | "from-log"}
 Absent block or absent `rules` means reset = today's behavior (those tests pass now and pin it).
-Persist behavior is a strict xfail until the player work lands (plan PR 2); the implementer
-removes the mark, never edits the test. Plays the REAL woven file in jsdom, one session at a
+Persist behavior landed with the player work (plan PR 2); the one strict xfail left is the
+pre-existing localStorage-throws gap (issue #224). Plays the REAL woven file in jsdom, one session at a
 time; a reload is the previous session's printed `store` fed into the next session.
 """
 
@@ -24,7 +24,6 @@ import make_rules_pack as mk  # noqa: E402
 
 HARNESS = ROOT / "tests" / "fixtures" / "rules_save_harness.mjs"
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
-needs_persist = pytest.mark.xfail(strict=True, reason="rule-save persistence not built yet (plan PR 2)")
 
 PERSIST = {"rules": "persist"}
 WORLD = "rules-saves-a"
@@ -73,7 +72,6 @@ def test_s9_start_over_removes_the_rule_state_key():
 
 # --- persist -------------------------------------------------------------------------------
 
-@needs_persist
 def test_s1_a_fired_once_rule_does_not_fire_again_and_the_why_log_is_not_doubled(tmp_path):
     html = weave(tmp_path, PERSIST)
     first = session(html)
@@ -83,12 +81,11 @@ def test_s1_a_fired_once_rule_does_not_fire_again_and_the_why_log_is_not_doubled
     assert RULESTATE in second["store"]
 
 
-@needs_persist
 def test_s2_a_set_flag_survives_a_reload_with_no_event_fired(tmp_path):
     html = weave(tmp_path, PERSIST)
     first = session(html)
     assert first["state"]["flags"].get("lit") is True
-    loaded = session(html, store=first["store"], begin=False, walk=(), peek=True)
+    loaded = session(html, store=first["store"], walk=(), peek=True)
     assert loaded["state"]["flags"].get("lit") is True              # read from the save, not re-set by a rule
     assert ids(loaded) == ids(first)                                # and nothing fired to put it there
 
@@ -101,11 +98,10 @@ def test_s3_a_repeating_rule_still_fires_after_reload(tmp_path):
     assert ids(second).count("keeper-again") == 2
 
 
-@needs_persist
 def test_s4_all_four_parts_survive_and_deep_equal(tmp_path):
     html = weave(tmp_path, PERSIST)
     first = session(html)
-    second = session(html, store=first["store"], begin=False, walk=(), peek=True)
+    second = session(html, store=first["store"], walk=(), peek=True)
     a, b = first["state"], second["state"]
     assert a["items"].get("torch") and a["items"].get("chalked-map")
     assert a["beliefs"]["fisher"]["keeper-guards-gate"]["source"]
@@ -114,13 +110,12 @@ def test_s4_all_four_parts_survive_and_deep_equal(tmp_path):
         assert b[part] == a[part], part
 
 
-@needs_persist
 def test_s6_a_changed_pack_recovers_and_keeps_what_it_still_knows(tmp_path):
     a_html = weave(tmp_path, PERSIST, variant="a", sub="a")
     first = session(a_html)
     assert "saw" in first["state"]["flags"] and "gift2" in first["state"]["fired"]
     b_html = weave(tmp_path, PERSIST, variant="b", sub="b")
-    second = session(b_html, store=first["store"], begin=False, walk=(), peek=True)
+    second = session(b_html, store=first["store"], walk=(), peek=True)
     state = second["state"]
     assert second["errors"] == []
     assert "saw" not in state["flags"]                              # flag removed from the pack
@@ -133,7 +128,6 @@ def test_s6_a_changed_pack_recovers_and_keeps_what_it_still_knows(tmp_path):
     assert "newcomer" in ids(walked)                                 # the new rule can fire
 
 
-@needs_persist
 @pytest.mark.parametrize("bad", ["not json at all", "[]", "{\"v\": 0}", "{\"v\": 1, \"flags\": \"x\", \"fired\": 5}"])
 def test_s7_unreadable_data_gives_a_fresh_state_and_no_error(tmp_path, bad):
     html = weave(tmp_path, PERSIST)
@@ -167,7 +161,6 @@ def test_s8_unavailable_storage_never_stops_the_game(tmp_path, storage):
     assert result["state"]["flags"].get("lit") is True
 
 
-@needs_persist
 def test_s10_two_worlds_keep_separate_state(tmp_path):
     a = weave(tmp_path, PERSIST, name="rules-saves-a", sub="a")
     b = weave(tmp_path, PERSIST, name="rules-saves-b", sub="b")
@@ -178,7 +171,6 @@ def test_s10_two_worlds_keep_separate_state(tmp_path):
     assert "vefr-rulestate-rules-saves-b" in second["store"]
 
 
-@needs_persist
 def test_s17_starts_fires_once_per_save_and_again_after_start_over(tmp_path):
     html = weave(tmp_path, PERSIST)
     first = session(html)
@@ -204,7 +196,6 @@ LOG_ONLY = {WHYKEY: json.dumps([
     {"id": "ghost-rule", "why": "rule 'ghost-rule' fired: no such rule any more."}])}
 
 
-@needs_persist
 def test_s15_from_log_marks_exactly_the_rules_the_log_proves_fired(tmp_path):
     html = weave(tmp_path, {"rules": "persist", "legacy": "from-log"})
     result = session(html, store=LOG_ONLY, walk=())

@@ -2307,9 +2307,11 @@
       on one real pack with a 25% / one-real-error exit threshold. Floors
       phase 2, album and equipment stay informed by that result; no runtime
       or rule-language change is approved.
-- [ ] **Durable rule saves** (planned, [plan](docs/plans/durable-rule-saves-plan.md)):
-      a per-pack `saves` block so a game can keep rule flags and fired
-      markers across reloads. Today they reset on reload.
+- [ ] **Durable rule saves** (in progress, [plan](docs/plans/durable-rule-saves-plan.md),
+      [ADR 0009](docs/adr/0009-rule-saves.md)): the validator and docs for the per-pack
+      `saves` block landed (`saves_errors` beside `growth_errors`, `rules.md`, the glossary
+      and the pack contract). Next: the player load/save around the pure engine, which
+      flips S1-S10 and S12.
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
       depth tables, the Journal line and the New descent button.
 - [ ] **Gates and guardians** (`design/gates-and-guardians.md`): a `requires` lock on a

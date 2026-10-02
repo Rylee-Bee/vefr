@@ -57,7 +57,8 @@ def load_pack(pack_dir: Path) -> dict:
     only when the pack declares it, so a pack without one loads
     exactly as before. The optional `skin` field (design/ui-skin.md)
     is carried the same way: only when the pack declares it, so a pack
-    without one loads exactly as before.
+    without one loads exactly as before. The optional `saves` block
+    (docs/adr/0009-rule-saves.md) rides through the same way.
     """
     pack = Path(pack_dir)
     config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
@@ -170,6 +171,11 @@ def load_pack(pack_dir: Path) -> dict:
         # pack declares it (design/growth.md).
         if 'growth' in config:
             unified['growth'] = config['growth']
+        # The optional saves block, carried through ONLY when the pack
+        # declares it (docs/adr/0009-rule-saves.md): a pack with none
+        # loads exactly as before.
+        if 'saves' in config:
+            unified['saves'] = config['saves']
         # The optional skin folder, carried through ONLY when the pack
         # declares it (design/ui-skin.md): a pack with none loads as
         # before, and `world.json` has no `skin` key to bake.
@@ -816,6 +822,37 @@ def growth_errors(w: dict) -> list[str]:
     return errors
 
 
+SAVES_RULE_MODES = ('persist', 'reset')
+SAVES_LEGACY_MODES = ('fresh', 'from-log')
+
+
+def saves_errors(w: dict) -> list[str]:
+    """Every problem with a pack's optional `saves` block (empty = good).
+
+    Rule saves are optional and additive: a pack that declares none
+    gets no output at all, exactly as before. A pack that declares one
+    chooses `rules` (`persist` or `reset`) and, in persist mode, a
+    `legacy` handling (`fresh` or `from-log`); every other shape is a
+    plain-sentence error naming the field. See
+    `docs/adr/0009-rule-saves.md`.
+    """
+    if 'saves' not in w:
+        return []
+    saves = w.get('saves')
+    if not isinstance(saves, dict):
+        return ['saves must be an object such as {"rules": "persist"}']
+    errors: list[str] = []
+    for key in saves:
+        if key not in ('rules', 'legacy'):
+            errors.append(f"saves has an unknown key '{key}'; "
+                          'it may only hold rules and legacy')
+    if 'rules' in saves and saves['rules'] not in SAVES_RULE_MODES:
+        errors.append('saves.rules must be "persist" or "reset"')
+    if 'legacy' in saves and saves['legacy'] not in SAVES_LEGACY_MODES:
+        errors.append('saves.legacy must be "fresh" or "from-log"')
+    return errors
+
+
 # The parts a skin may name (design/ui-skin.md). Anything else is a
 # typo the author should read about, not a part the player silently
 # ignores.
@@ -1429,6 +1466,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # beside the other optional catalogs. A pack that declares none
     # gets nothing here.
     errors.extend(growth_errors(w))
+    # The pack's optional saves block (docs/adr/0009-rule-saves.md),
+    # checked beside the other optional catalogs. A pack that declares
+    # none gets nothing here.
+    errors.extend(saves_errors(w))
     town = w['town']
     m = town['map']
     legend = town['legend']
