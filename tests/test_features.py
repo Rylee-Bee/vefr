@@ -40,7 +40,7 @@ def test_the_real_catalog_has_no_drift():
 
 def _write(tmp_path, feats):
     d = tmp_path / "repo"
-    (d / "docs").mkdir(parents=True)
+    (d / "docs").mkdir(parents=True, exist_ok=True)
     (d / "docs" / "features.json").write_text(json.dumps({"version": 1, "features": feats}))
     return d
 
@@ -79,7 +79,7 @@ def test_a_proposed_feature_needs_its_design_and_ids_are_unique(tmp_path):
 # ---------------------------------------------------------------- scanning a pack
 
 def _uses(report):
-    return {u["id"]: u for u in report["uses"]}
+    return {u["id"]: u for u in report["pack"]["uses"]}
 
 
 def test_scan_a_growth_pack(tmp_path):
