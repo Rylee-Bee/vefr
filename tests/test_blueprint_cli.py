@@ -8,9 +8,11 @@ import pytest
 
 from blueprint_helpers import ROOT, contract, mk, normalized_pack, tree_hash, vefr
 
-pytestmark = pytest.mark.xfail(strict=True, reason="Blueprint CLI not built yet")
+CLI = pytest.mark.xfail(strict=True, reason="needs the normalize verb (plan PR 3)")
+CORE = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
 
 
+@CLI
 def test_read_only_normalize_writes_nothing_and_exit_codes(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     before = tree_hash(pack)
@@ -22,6 +24,7 @@ def test_read_only_normalize_writes_nothing_and_exit_codes(tmp_path):
     assert rc == 0 and "fresh" in out.lower()
 
 
+@CLI
 def test_out_dir_copies_and_leaves_the_pack_untouched(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     before = tree_hash(pack)
@@ -33,6 +36,7 @@ def test_out_dir_copies_and_leaves_the_pack_untouched(tmp_path):
     assert contract(out_dir, "cave-2")["enemies"] == mk.STD_LEGACY["act-1/cave-2"]
 
 
+@CLI
 def test_out_dir_refuses_a_non_empty_directory(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     busy = tmp_path / "busy"
@@ -43,6 +47,7 @@ def test_out_dir_refuses_a_non_empty_directory(tmp_path):
     assert not (busy / "blueprint.lock.json").exists()
 
 
+@CORE
 def test_deterministic_in_one_process_and_across_processes(tmp_path):
     """A12: same Blueprint, same lock and records."""
     from vefr import blueprint

@@ -190,7 +190,7 @@ Cottage acceptance (private, in the Cottage PR body):
 |---|---|---|---|
 | T1 | ADR `docs/adr/0008-blueprint-format.md`: format 1, closed sets, version and deprecation policy (below), kernel budget, owner and change process | keep | none, Sonnet integrator |
 | T2 | Write A1–A12 fixtures and tests, xfail strict; synthetic fixtures only | keep (frozen contract) | none, Sonnet integrator |
-| T3 | `src/vefr/blueprint.py`: reader registry, `read_v1`, source errors with pointers, expansion, provenance, canonical hash, lock read/write, stale check, path guard via `cli._inside` | offloadable (A1, A2, A5, A6, A12 prove it); the path guard is reviewed as **keep** | 1 offload foreman + `code` workers |
+| T3 | `src/vefr/blueprint.py` (library half): `BlueprintError`, the closed-set constants, reader registry and `read_v1`, `read`, `expand` with source errors and pointers, canonical hash, path guard via `cli._inside`. Lock read/write, `check_errors` and the stale check move to PR 3 (T4/T5), where tests can reach them | offloadable (A1, A5, A12 prove it); the path guard is reviewed as **keep** | 1 offload foreman + `code` workers |
 | T4 | Hook: `maplab.validate` calls `blueprint.check_errors(pack_dir)` when `pack_dir` is given; `weave_html` calls it first and raises | offloadable (A3, A6, A7, A8) | same Foreman as T5 |
 | T5 | `vefr normalize` verb in `cli.py` (one module-level `cmd_normalize`), in-place restore on failure, `--out DIR` copy | offloadable (A8, A9, A10) | 1 offload foreman + `code` workers |
 | T6 | Docs and discoverability: `docs/guides/blueprint.md` (one page, the three beginner questions), `docs/guides/vefr-command.md`, `docs/guides/glossary.md`, `src/vefr/world.py` docstring (pack contract), `docs/features.json` entry plus `"blueprint"` in `VALID_DETECTS` and its detector, `ROADMAP.md`, `.project/DECISIONS.md`, AGENTS.md deterministic-surface line | offloadable (A11, `vefr features --check`, `test_features.py`) | 1 offload foreman + `code` workers |
@@ -213,8 +213,8 @@ Versioning and deprecation policy (content of T1):
 | PR | Repo / branch | Contents | Files (verified to exist unless marked new) | Depends on |
 |---|---|---|---|---|
 | 1 | VEFR `feat/blueprint-contract` | T1, T2 | new `docs/adr/0008-blueprint-format.md`, new `tests/test_blueprint_*.py`, new `tests/fixtures/blueprint/`, `tests/test_cli_help.py` (A10 as xfail) | gate, #219 |
-| 2 | VEFR `feat/blueprint-core` | T3; flips A1, A2, A5, A6 (library half), A12 | new `src/vefr/blueprint.py`, the tests' xfail marks, `ROADMAP.md` | 1 |
-| 3 | VEFR `feat/blueprint-cli` | T4, T5, T9; flips A3, A4, A6–A10 | `src/vefr/maplab.py`, `src/vefr/cli.py`, `tests/test_cli_help.py`, `ROADMAP.md` | 2 |
+| 2 | VEFR `feat/blueprint-core` | T3; flips A1, A5, A12 (the library tests; the rest need the verb) | new `src/vefr/blueprint.py`, the tests' xfail marks, `ROADMAP.md` | 1 |
+| 3 | VEFR `feat/blueprint-cli` | T4, T5, T9; flips A2, A3, A4, A6–A10 | `src/vefr/maplab.py`, `src/vefr/cli.py`, `tests/test_cli_help.py`, `ROADMAP.md` | 2 |
 | 4 | VEFR `docs/blueprint-guide` | T6; flips A11 | new `docs/guides/blueprint.md`, `docs/guides/vefr-command.md`, `docs/guides/glossary.md`, `src/vefr/world.py`, `docs/features.json`, `src/vefr/features.py`, `ROADMAP.md`, `.project/DECISIONS.md`, `AGENTS.md` | 3 |
 | 5 | Cottage `feat/blueprint-creatures` | T7 | `.github/workflows/validate-pack.yml` (pin), new `worlds/cottage-of-the-breeze/blueprint.json`, new `.../blueprint.lock.json`, the 6 region contracts that hold enemies | 4 merged to VEFR `main` |
 | 6 | VEFR `docs/blueprint-verdict` (or a revert) | T8 | `.project/DECISIONS.md` | 5 |

@@ -8,9 +8,7 @@ import pytest
 
 from blueprint_helpers import contract, mk, normalized_pack, tree_hash, vefr  # noqa: F401
 
-pytestmark = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet")
-
-
+@pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
 def test_legacy_equivalence(tmp_path):
     """A1: structural equality (parsed JSON ==; key order ignored, list order significant)."""
     from vefr import blueprint
@@ -22,6 +20,7 @@ def test_legacy_equivalence(tmp_path):
         assert contract(pack, region.split("/")[1])["enemies"] == records
 
 
+@pytest.mark.xfail(strict=True, reason="needs the normalize verb (plan PR 3)")
 def test_canonical_bytes(tmp_path):
     """A2: normalize twice leaves identical bytes; untouched files and keys stay byte-identical."""
     pack = mk.build(tmp_path, legacy=False, blueprint=mk.STD_BLUEPRINT)

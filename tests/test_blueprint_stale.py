@@ -6,7 +6,7 @@ import pytest
 
 from blueprint_helpers import mk, normalized_pack, tree_hash, vefr
 
-pytestmark = pytest.mark.xfail(strict=True, reason="Blueprint core and hooks not built yet")
+pytestmark = pytest.mark.xfail(strict=True, reason="needs the normalize verb and hooks (plan PR 3)")
 
 
 def _bp(tmp_path):

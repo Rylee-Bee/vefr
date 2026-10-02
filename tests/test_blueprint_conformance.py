@@ -14,7 +14,7 @@ from blueprint_helpers import mk
 V1 = Path(__file__).parent / "fixtures" / "blueprint" / "v1"
 VALID = sorted(p for p in (V1 / "valid").iterdir() if p.is_dir())
 INVALID = sorted(p for p in (V1 / "invalid").iterdir() if p.is_dir())
-xfail = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet")
+xfail = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
 
 
 @xfail
