@@ -3511,15 +3511,24 @@ def _doctor_report(args, rows, header: str) -> int:
     failed = sum(1 for r in rows if r[1] == 'FAIL')
     skipped = sum(1 for r in rows if r[1] == 'skip')
     ok_n = len(rows) - failed - skipped
+    from . import devtools
+
+    # The optional dev tools: informational only. A missing tool never
+    # changes the exit code and is never counted in the summary.
+    tooling = devtools.tooling_checks(repo_root() or Path('.'))
     if getattr(args, 'json', False):
         emit_json(envelope(not failed, 'healthy' if not failed else 'unhealthy', {
             'checks': rows_json(rows, ('name', 'status', 'detail')),
-            'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped}}))
+            'counts': {'ok': ok_n, 'failed': failed, 'skipped': skipped},
+            'tooling': rows_json(tooling, ('name', 'status', 'detail'))}))
         return EXIT_ERROR if failed else EXIT_OK
     print(header)
     for name, status, detail in rows:
         print(f'  {name:<6} {status:<12} {detail}')
     print(f'doctor: {ok_n} ok, {failed} failed, {skipped} skipped')
+    print('tooling:')
+    for name, status, detail in tooling:
+        print(f'  {name}  {status}  {detail}')
     return 1 if failed else 0
 
 
@@ -3977,6 +3986,66 @@ def cmd_find(args) -> int:
     return EXIT_OK
 
 
+def cmd_publish(args) -> int:
+    """`vefr publish` - weave the pack and hand it to the gallery.
+
+    The weave and the gallery call live in vefr.devtools (the
+    cmd_find/vefr.find split): this door only resolves --pack the way
+    cmd_build_web does, then returns devtools.publish's code.
+    """
+    from . import devtools
+
+    if args.pack is None:
+        pack = pack_root() / 'worlds' / world_name()
+    else:
+        # Bare name -> worlds/<name>; any path -> made absolute, the
+        # same resolution cmd_build_web gives --pack.
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = (p if p.is_dir() else p.parent).resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+    return devtools.publish(
+        pack, project=args.project, sha=args.sha, live=args.live,
+        dry_run=args.dry_run)
+
+
+def _devtools_pack(pack_arg):
+    """Resolve --pack for the devtools verbs the way cmd_build_web does."""
+    if pack_arg is None:
+        return _resolved_pack()
+    p = Path(pack_arg)
+    if p.is_absolute() or '/' in str(pack_arg):
+        return (p if p.is_dir() else p.parent).resolve()
+    return pack_root() / 'worlds' / p
+
+
+def cmd_look(args) -> int:
+    """`vefr look` - screenshot the woven player and list overlay text.
+
+    The browser work lives in vefr.devtools (the cmd_find/vefr.find
+    split): this door only resolves --pack when --html is not given.
+    """
+    from . import devtools
+
+    pack = None if args.html else _devtools_pack(args.pack)
+    return devtools.look(html=args.html, pack=pack, out=args.out,
+                         steps=args.steps, json_out=args.json)
+
+
+def cmd_probe(args) -> int:
+    """`vefr probe` - fire rules at the woven player and read the why log.
+
+    Like cmd_look, the browser work is devtools'; this door resolves
+    --pack when --html is not given.
+    """
+    from . import devtools
+
+    pack = None if args.html else _devtools_pack(args.pack)
+    return devtools.probe(html=args.html, pack=pack, fire=args.fire or (),
+                          json_out=args.json)
+
+
 # --------------------------------------------------------------- vefr
 # The front door: one parser over the same functions the old commands
 # call. No logic lives here - only wiring, flags, and help text.
@@ -4039,6 +4108,58 @@ def vefr_main() -> int:
                     help='world pack: a worlds/ name or a path '
                          '(default: the resolved world)')
     fd.set_defaults(fn=cmd_find)
+
+    pb = sub.add_parser(
+        'publish',
+        help='weave the pack and publish it to the gallery',
+        description='weave the pack and publish it to the gallery',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    pb.add_argument('--pack', default=None,
+                    help='world pack: a worlds/ name or a path '
+                         '(default: the resolved world)')
+    pb.add_argument('--project', default=None,
+                    help='gallery project name (default: the pack directory name)')
+    pb.add_argument('--sha', default=None,
+                    help='revision to record (default: HEAD of the pack)')
+    pb.add_argument('--live', action='store_true',
+                    help='mark the build live in the gallery')
+    pb.add_argument('--dry-run', action='store_true',
+                    help='print the gallery command without running it')
+    pb.set_defaults(fn=cmd_publish)
+
+    lk = sub.add_parser(
+        'look',
+        help='screenshot the woven player and list text over the map',
+        description='screenshot the woven player and list text over the map',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    lk.add_argument('--html', default=None,
+                    help='a woven player HTML file to open')
+    lk.add_argument('--pack', default=None,
+                    help='weave this pack instead: a worlds/ name or a path')
+    lk.add_argument('--out', default=None,
+                    help='screenshot path (default: look.png)')
+    lk.add_argument('--steps', default='',
+                    help='comma-separated keys to press after Begin')
+    lk.add_argument('--json', action='store_true', help='print the report as JSON')
+    lk.set_defaults(fn=cmd_look)
+
+    pr = sub.add_parser(
+        'probe',
+        help='fire rules at the woven player and read its why log',
+        description='fire rules at the woven player and read its why log',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    pr.add_argument('--html', default=None,
+                    help='a woven player HTML file to open')
+    pr.add_argument('--pack', default=None,
+                    help='weave this pack instead: a worlds/ name or a path')
+    pr.add_argument('--fire', action='append', default=None,
+                    metavar='EVENT:KEY=VALUE',
+                    help='fire this rule event (repeatable)')
+    pr.add_argument('--json', action='store_true', help='print the report as JSON')
+    pr.set_defaults(fn=cmd_probe)
 
     dc = sub.add_parser(
         'doctor',
