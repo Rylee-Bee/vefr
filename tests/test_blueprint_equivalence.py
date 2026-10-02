@@ -4,7 +4,6 @@ FROZEN CONTRACT (docs/adr/0008-blueprint-format.md). Strict xfail until the
 core lands (plan PR 2); the implementer removes the mark, never edits the test.
 """
 
-import pytest
 
 from blueprint_helpers import contract, mk, normalized_pack, tree_hash, vefr  # noqa: F401
 
@@ -19,7 +18,6 @@ def test_legacy_equivalence(tmp_path):
         assert contract(pack, region.split("/")[1])["enemies"] == records
 
 
-@pytest.mark.xfail(strict=True, reason="needs the normalize verb (plan PR 3)")
 def test_canonical_bytes(tmp_path):
     """A2: normalize twice leaves identical bytes; untouched files and keys stay byte-identical."""
     pack = mk.build(tmp_path, legacy=False, blueprint=mk.STD_BLUEPRINT)

@@ -14,7 +14,6 @@ from blueprint_helpers import mk
 V1 = Path(__file__).parent / "fixtures" / "blueprint" / "v1"
 VALID = sorted(p for p in (V1 / "valid").iterdir() if p.is_dir())
 INVALID = sorted(p for p in (V1 / "invalid").iterdir() if p.is_dir())
-xfail = pytest.mark.xfail(strict=True, reason="needs check_errors (plan PR 3)")
 
 
 @pytest.mark.parametrize("case", VALID, ids=lambda p: p.name)
@@ -41,7 +40,6 @@ def test_invalid_case_fails_with_a_plain_sentence(case, tmp_path):
         assert err.value.pointer == pointer
 
 
-@xfail
 def test_flat_shape_pack_is_refused(tmp_path):
     """A flat-shape pack (no acts/) cannot carry a Blueprint: format 1 is acts-shape only."""
     import json

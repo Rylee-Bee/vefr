@@ -4,14 +4,11 @@ import json
 import subprocess
 import sys
 
-import pytest
 
 from blueprint_helpers import ROOT, contract, mk, normalized_pack, tree_hash, vefr
 
-CLI = pytest.mark.xfail(strict=True, reason="needs the normalize verb (plan PR 3)")
 
 
-@CLI
 def test_read_only_normalize_writes_nothing_and_exit_codes(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     before = tree_hash(pack)
@@ -23,7 +20,6 @@ def test_read_only_normalize_writes_nothing_and_exit_codes(tmp_path):
     assert rc == 0 and "fresh" in out.lower()
 
 
-@CLI
 def test_out_dir_copies_and_leaves_the_pack_untouched(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     before = tree_hash(pack)
@@ -35,7 +31,6 @@ def test_out_dir_copies_and_leaves_the_pack_untouched(tmp_path):
     assert contract(out_dir, "cave-2")["enemies"] == mk.STD_LEGACY["act-1/cave-2"]
 
 
-@CLI
 def test_out_dir_refuses_a_non_empty_directory(tmp_path):
     pack = mk.build(tmp_path, blueprint=mk.STD_BLUEPRINT)
     busy = tmp_path / "busy"
