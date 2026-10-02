@@ -106,6 +106,13 @@ The studio shows a **flags list** with which rules read and which write each one
 **Limits (v1):** a rule fires at most once per event; a rule cannot cause another rule's event (no chains); `once: true` is the default; at most 40 rules per game;
 no numbers or maths, no randomness, no timers, no loops, no free-form scripting. These can be relaxed later without breaking the shape.
 
+**Saves.** An optional `saves` block in `world.json` chooses how much of a run the rules remember:
+`{"saves": {"rules": "persist" | "reset", "legacy": "fresh" | "from-log"}}`. `reset` (the default) is
+today's behavior, a fresh rule state on every load. `persist` keeps flags, fired markers, beliefs and
+items across a reload, clears them on Start over, and makes `starts` fire once per save. `saves.legacy`
+(`fresh` by default, or `from-log`) says what to do with saves made before a pack opted in. See
+`docs/adr/0009-rule-saves.md` and `docs/guides/rules.md`.
+
 ## What it checks (the validator, in plain sentences)
 
 Unknown flag, item, person, place or event; a rule whose `then` names a thing that does not exist; two rules that conflict; a rule that can never fire

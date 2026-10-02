@@ -37,6 +37,9 @@
   takes only a bare world name, and no model runs behind it. The Containerfile ships the file.
 - **Growth has two modes in the engine, a game picks one** (Rylee): classic levels or learning by
   doing. Growth only adds; nothing is ever taken away.
+- **Rule saves are a per-pack `saves` block, default reset** (Rylee, 2026-10-02): `saves.rules` is
+  `persist` or `reset`; `saves.legacy` is `fresh` or `from-log`. The validator and docs landed
+  first; the player work follows. See [`docs/adr/0009-rule-saves.md`](docs/adr/0009-rule-saves.md).
 - **Foremen work from acceptance tests written first, and a foreman that stops on a test is
   right until proven otherwise.** Three escalations today were bugs in the tests. Fix the test,
   never the foreman; review every diff by hand; state the foreman count and model before launching.
