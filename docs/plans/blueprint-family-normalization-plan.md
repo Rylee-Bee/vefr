@@ -16,6 +16,10 @@ PR #219 (the research packet) should merge first, so the plan's links resolve on
 | D3 hand-written records | **End of life to be set later.** Hand-written records stay fully supported for now; Rylee will set a date, if any, after the trial. Do not record "no end of life". |
 | Names and shape | Blueprint, a JSON file inside the pack; stale output rejected; Cottage's CI pin bumped with the first normalizer. |
 
+## Execution method (Rylee, 2026-10-02) — overrides any "Sonnet Foreman" wording below
+
+Offloadable tasks run as an **offload foreman controlling offload workers**: `offload foreman -m foreman` (MiniMax M3.1 on the claude engine) launches `offload agent` workers on the `code` tier (`deepseek-flash`), under `--budget` and `--minutes`, on Bazzite. The foreman has no Edit or Write tools, so code comes only from workers. Sonnet is the integrator: it writes the keep tasks (ADR, frozen tests, security review, Cottage work), commits everything the workers need *before* launch (they see tracked files at HEAD), supplies each task's exact `--accept` command, then reviews and applies the foreman's result per `skills/offload/FOREMAN.md`. Nothing a foreman produces is merged without that review. Never use `alibaba:qwen3.8-max` as foreman. No Opus fan-out.
+
 ## 1 · Goal, in one paragraph
 
 A pack may carry one optional file, `blueprint.json`, that declares creature **families** (defaults, at most one `extends`) and, per region, an ordered list of **instances**.
@@ -186,15 +190,15 @@ Cottage acceptance (private, in the Cottage PR body):
 |---|---|---|---|
 | T1 | ADR `docs/adr/0008-blueprint-format.md`: format 1, closed sets, version and deprecation policy (below), kernel budget, owner and change process | keep | none, Sonnet integrator |
 | T2 | Write A1–A12 fixtures and tests, xfail strict; synthetic fixtures only | keep (frozen contract) | none, Sonnet integrator |
-| T3 | `src/vefr/blueprint.py`: reader registry, `read_v1`, source errors with pointers, expansion, provenance, canonical hash, lock read/write, stale check, path guard via `cli._inside` | offloadable (A1, A2, A5, A6, A12 prove it); the path guard is reviewed as **keep** | 1 Foreman, Sonnet 5.5 |
+| T3 | `src/vefr/blueprint.py`: reader registry, `read_v1`, source errors with pointers, expansion, provenance, canonical hash, lock read/write, stale check, path guard via `cli._inside` | offloadable (A1, A2, A5, A6, A12 prove it); the path guard is reviewed as **keep** | 1 offload foreman + `code` workers |
 | T4 | Hook: `maplab.validate` calls `blueprint.check_errors(pack_dir)` when `pack_dir` is given; `weave_html` calls it first and raises | offloadable (A3, A6, A7, A8) | same Foreman as T5 |
-| T5 | `vefr normalize` verb in `cli.py` (one module-level `cmd_normalize`), in-place restore on failure, `--out DIR` copy | offloadable (A8, A9, A10) | 1 Foreman, Sonnet 5.5 |
-| T6 | Docs and discoverability: `docs/guides/blueprint.md` (one page, the three beginner questions), `docs/guides/vefr-command.md`, `docs/guides/glossary.md`, `src/vefr/world.py` docstring (pack contract), `docs/features.json` entry plus `"blueprint"` in `VALID_DETECTS` and its detector, `ROADMAP.md`, `.project/DECISIONS.md`, AGENTS.md deterministic-surface line | offloadable (A11, `vefr features --check`, `test_features.py`) | 1 Foreman, Sonnet 5.5 |
+| T5 | `vefr normalize` verb in `cli.py` (one module-level `cmd_normalize`), in-place restore on failure, `--out DIR` copy | offloadable (A8, A9, A10) | 1 offload foreman + `code` workers |
+| T6 | Docs and discoverability: `docs/guides/blueprint.md` (one page, the three beginner questions), `docs/guides/vefr-command.md`, `docs/guides/glossary.md`, `src/vefr/world.py` docstring (pack contract), `docs/features.json` entry plus `"blueprint"` in `VALID_DETECTS` and its detector, `ROADMAP.md`, `.project/DECISIONS.md`, AGENTS.md deterministic-surface line | offloadable (A11, `vefr features --check`, `test_features.py`) | 1 offload foreman + `code` workers |
 | T7 | Cottage: bump `VEFR_REF`, write `blueprint.json` for creature families only, run `normalize --out PACK`, prove C1–C5 | keep (private pack, canon-adjacent, owner merges) | none, Sonnet integrator; Rylee reviews |
 | T8 | Exit-ramp verdict and evidence note in `.project/DECISIONS.md`; revert PR if it fails | keep | none, Sonnet integrator; Rylee decides |
 | T9 | Security review of T3–T5: no Blueprint string reaches the filesystem except through `_inside`; `--out` refuses a non-empty DIR and never writes outside it | keep | none, Sonnet integrator |
 
-**Launch budget:** at most 1 Foreman at a time for this plan (2 total if Plan 2 runs in parallel), Sonnet 5.5, each via the existing `offload foreman` workflow with an exact file scope and the acceptance command. No Opus fan-out. Before launch the integrator runs `~/.agents/bin/route-plan` on this file and states the count again.
+**Launch budget:** at most 1 offload foreman at a time for this plan (2 total if Plan 2 runs in parallel), each via `offload foreman` with an exact file scope and the acceptance command. No Opus fan-out. Before launch the integrator runs `~/.agents/bin/route-plan` on this file and states the count again.
 
 Versioning and deprecation policy (content of T1):
 

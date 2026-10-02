@@ -17,6 +17,10 @@
 
 Added acceptance tests (write first, with S1–S13): **S14** `saves.legacy` accepts `fresh` and `from-log` and rejects anything else with one plain sentence naming `saves.legacy`; **S15** `from-log` marks exactly the rule ids present in the WHY log and nothing else; **S16** `fresh` marks nothing; **S17** `starts` fires once per save in persist mode and again after Start over. `legacy` has no effect in reset mode (validator may warn).
 
+## Execution method (Rylee, 2026-10-02) — overrides any "Sonnet Foreman" wording below
+
+Offloadable tasks run as an **offload foreman controlling offload workers**: `offload foreman -m foreman` (MiniMax M3.1 on the claude engine) launches `offload agent` workers on the `code` tier (`deepseek-flash`), under `--budget` and `--minutes`, on Bazzite. The foreman has no Edit or Write tools, so code comes only from workers. Sonnet is the integrator: it writes the keep tasks (ADR, frozen tests, security review, Cottage work), commits everything the workers need *before* launch (they see tracked files at HEAD), supplies each task's exact `--accept` command, then reviews and applies the foreman's result per `skills/offload/FOREMAN.md`. Nothing a foreman produces is merged without that review. Never use `alibaba:qwen3.8-max` as foreman. No Opus fan-out.
+
 ## 1 · What the player holds today (reverified 2026-10-02)
 
 | Fact | Evidence |
@@ -125,13 +129,13 @@ Gate: `uv run --group test ruff check src tests scripts`, `uv run --group test p
 |---|---|---|---|
 | R1 | ADR `docs/adr/0009-rule-saves.md`: the decision, field, key, value, recovery and version rules above | keep | none, Sonnet integrator |
 | R2 | Write S1–S13, harness and fixture option, xfail strict | keep (frozen contract) | none, Sonnet integrator |
-| R3 | Validator: `rule_saves_errors(w)` beside `growth_errors`, called from `validate`; carry `rule_saves` through acts-shape `load_pack` only when declared | offloadable (S11) | 1 Foreman, Sonnet 5.5 |
+| R3 | Validator: `rule_saves_errors(w)` beside `growth_errors`, called from `validate`; carry `rule_saves` through acts-shape `load_pack` only when declared | offloadable (S11) | 1 offload foreman + `code` workers |
 | R4 | Player: load and save in `packaged.html` around `rulesStateNow` and `fireRule`, outside the `-- rules start/end --` engine block, so the pure engine is unchanged | offloadable (S1–S10, S12) | same Foreman |
 | R5 | Docs: `docs/guides/rules.md` (a "Saves" section; fix line 76's claim for reset mode), `design/rules-when-then.md`, `src/vefr/world.py` docstring (pack contract), `docs/guides/glossary.md`, `ROADMAP.md`, `.project/DECISIONS.md` | offloadable (S13) | same Foreman |
 | R6 | Review: no new storage access outside `try`; reset path provably untouched (diff review plus S5) | keep | none, Sonnet integrator |
 | R7 | Cottage: add `"rule_saves": "persist"` to `world.json`; bump `VEFR_REF` to a `main` that contains R3–R5; validate; play-check a reload in the woven build | keep (private pack, owner merges) | none, Sonnet integrator; Rylee reviews |
 
-**Launch budget:** 1 Foreman, Sonnet 5.5, via `offload foreman`, for R3–R5 as one bounded brief. If Plan 1 runs at the same time, 2 Foremen total. No Opus fan-out.
+**Launch budget:** 1 offload foreman + `code` workers, via `offload foreman`, for R3–R5 as one bounded brief. If Plan 1 runs at the same time, 2 Foremen total. No Opus fan-out.
 
 ## 5 · PR sequence
 
