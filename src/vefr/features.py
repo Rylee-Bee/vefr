@@ -22,7 +22,7 @@ from .paths import app_home
 
 VALID_STATUSES = ("built", "partial", "proposed")
 VALID_DETECTS = ("rules", "growth", "library", "items", "enemies", "fog",
-                 "skin", "always", "none")
+                 "skin", "blueprint", "always", "none")
 
 
 def _root(root=None) -> Path:
@@ -225,6 +225,14 @@ def _one_use(feat: dict, pack: Path, w: dict, config: dict,
     elif detect == "fog":
         count = sum(1 for contract in contracts if contract.get("fog"))
         used, detail = count > 0, f"{count} regions"
+    elif detect == "blueprint":
+        source = pack / "blueprint.json"
+        if source.is_file():
+            regions = _read_json(source).get("regions")
+            count = len(regions) if isinstance(regions, dict) else 0
+            used, detail = True, f"{count} regions"
+        else:
+            used, detail = False, "no blueprint"
     elif detect == "skin":
         skin = config.get("skin")
         if skin is None:

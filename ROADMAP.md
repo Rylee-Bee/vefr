@@ -2301,10 +2301,12 @@
       in progress): the proof pass passed with constraints, so the plan
       [`blueprint-family-normalization-plan.md`](docs/plans/blueprint-family-normalization-plan.md)
       builds an optional build-time source that expands into today's enemy
-      records ([ADR 0008](docs/adr/0008-blueprint-format.md)). Done: the
-      frozen tests and the library half (`src/vefr/blueprint.py`). Next: the
-      `normalize` verb, stale checks and docs, then a creature-families trial
-      on one real pack with a 25% / one-real-error exit threshold. Floors
+      records ([ADR 0008](docs/adr/0008-blueprint-format.md)). Built: the
+      frozen tests, the library half (`src/vefr/blueprint.py`), the
+      `normalize` verb, the stale checks and the lock
+      (`blueprint.lock.json`), and the guide
+      ([Blueprints](docs/guides/blueprint.md)). Next: the Cottage trial on
+      one real pack with a 25% / one-real-error exit threshold. Floors
       phase 2, album and equipment stay informed by that result; no runtime
       or rule-language change is approved.
 - [ ] **Durable rule saves** (planned, [plan](docs/plans/durable-rule-saves-plan.md)):

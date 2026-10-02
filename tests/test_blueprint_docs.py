@@ -3,11 +3,8 @@
 import re
 from pathlib import Path
 
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-pytestmark = pytest.mark.xfail(strict=True, reason="Blueprint docs not written yet (plan PR 4)")
-
 
 def test_guide_field_tables_list_exactly_the_closed_sets():
     from vefr import blueprint

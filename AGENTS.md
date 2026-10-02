@@ -107,7 +107,7 @@ uv run ratatoskr weave --pool 5
 | **Always** | The gate above green before claiming done (matches CI). Paste the exact command + output. |
 | **Always** | Every UI change answers the accessibility matrix: ≥44px targets, luminance over hue, motion off, keyboard + SR accessible. |
 | **Always** | `norns validate` after any world-pack write. Never trust a hand edit. |
-| **Always** | No model calls in deterministic surfaces: `export.py`, `weave.py`, `maplab.py`, `journal.py`. |
+| **Always** | No model calls in deterministic surfaces: `export.py`, `weave.py`, `maplab.py`, `journal.py`, `blueprint.py`. |
 | **Always** | One ROADMAP.md entry per landed change. Keep README/GETTING_STARTED in sync. |
 | **Ask first** | Changing the pack contract, adding a tracked world pack, or a new public API route. |
 | **Ask first** | Deploys (`ratatoskr ferry`, `deploy/`, `docs/guides/deploy.md`) and anything under CODEOWNERS (`scripts/`, `.github/workflows/`, licensing, `.gitleaks.toml`). |

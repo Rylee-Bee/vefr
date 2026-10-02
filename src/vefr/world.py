@@ -201,6 +201,14 @@ from the engine set exactly as before.
 
 VISIBLE ENGINE: every load step is recorded to the weave log so the
 author can see exactly what the loader did. See weave.py.
+
+BLUEPRINTS (acts shape only): a pack may carry an optional
+`blueprint.json` at its root and the `blueprint.lock.json` written
+beside it by `vefr normalize`. The Blueprint is the edited truth for
+the regions it owns; normalize expands it into those regions'
+committed `enemies` lists. A pack without one is unchanged, and a flat
+pack may not carry one. See docs/guides/blueprint.md and
+docs/adr/0008-blueprint-format.md.
 """
 
 import json
