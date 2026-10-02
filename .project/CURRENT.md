@@ -4,9 +4,31 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-01.
+> Last refreshed: 2026-10-02 (evening).
 
-## 2026-10-01 (one long day)
+## 2026-10-02 (the Cottage day)
+
+**Landed and merged (main `2f0f40d`, gate green: ruff, public-surface, sample-world validates, 1272 passed 3 skipped):**
+- **Growth** (`design/growth.md`, built): optional pack `growth` block, `levels` (classic XP and levels) or `practice` (learn by doing), enemy `xp`, the pure `VEFR_GROWTH_ENGINE`, wired into the woven player. Built by an offload foreman from acceptance tests written first (`docs/plans/growth/`).
+- **Interact continues whatever has the screen:** E/F/Space/Enter turn note pages then close, and close a speech box (`tests/test_overlay_interact.py`; checklist line in `docs/guides/rulesets.md`).
+- **Dev verbs:** `vefr publish`, `vefr look` (screenshot + text standing over the map), `vefr probe` (fire rule events, read the why-log), and `vefr doctor` lists tooling rows (`src/vefr/devtools.py`, `docs/plans/devtools/`).
+- **First independent pack's repairs** (PR #192/#193, 2026-10-02 morning): `opens`/`reads`/`defeats`/`buys`/`sells`/`phase-changes`, `takes`, `keep`, the Why and Where-next panels.
+- **Tooling:** `tests/run.sh` (throwaway clones: links node_modules, offline, pulls the `test` group); `.gitignore` matches a node_modules symlink.
+- **Kenney sheets removed** from `worlds/sample-world/` (Rylee: ship only art we made, attributed; Kenney is prototyping only; LimeZu only in a project she names).
+
+**Designed, waiting for Rylee (proposed, no code):** gates and guardians (`design/gates-and-guardians.md`: a `requires` lock on a transition, a ladder of key-carrying guardians ending in the Cellar King); the album (`design/album.md`: one record of what you have met, a sticker album first, bestiary/items/map views later); equipment (`design/equipment.md`); random floors per run (`design/random-floors.md`); act advance (ADR 0006).
+
+**Known gaps / next, in order (all in `web/packaged.html` unless noted):**
+1. Quiet-UI pass (Rylee chose "2 + 1"): the how-to-move line vanishes after the first step, the place name shows briefly, drop the use-hint that repeats the Interact button, show the fight buttons only when something is near, and tuck the rest into a small collapsible corner panel (screen readers still hear everything). Use `vefr look` to see it.
+2. The hero's step hop much smaller (constants `STEP_HOP` 0.06, `STEP_LEAN` 6, `STEP_SQUASH` 0.12 near line 3214; she wants about a third).
+3. Trade closes with E/F (Space/Enter keep activating the focused button); full WASD (W/A/S/D move, A/D turn note pages).
+4. The locked stair and guardian ladder, then the album, then per-run floors.
+
+**How to work here:** read `AGENTS.md`; run the gate in the "Commands" block; small VM (2.6 GB): never run the test suite while a Codex or heavy job runs (an exit-137 kill happened). Foremen: write the acceptance tests first, commit, `git worktree add ~/worktrees/<name>` on Bazzite, `bash tests/run.sh ...` as the `--accept`, `nice -n 10 offload foreman -m foreman ...` (the dev VM has no MiniMax key). Review every foreman diff by hand; two real workarounds and a stray `PLAN.md` showed up this way.
+
+## Earlier
+
+### 2026-10-01 (one long day, superseded where it conflicts with the above)
 
 **Landed and merged:** the studio loop's first slice (put a character in the game, play it in the studio, the edit log with one-level undo, the first-playable walk; `design/close-the-loop.md`,
 `docs/guides/studio-edits.md`); grid tiles (one picture drawn as cells); the `vefr` front door with `vefr find`; Lab 1; first-run fixes; hero motion; the glossary with plain names first.

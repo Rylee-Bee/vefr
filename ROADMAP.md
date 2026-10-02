@@ -7,6 +7,14 @@
 
 ## Landed
 
+- [x] **Growth, dev verbs and the Interact fix** (2026-10-02): `design/growth.md`
+      built (levels or practice, enemy `xp`, `VEFR_GROWTH_ENGINE`); Interact keys
+      continue notes and speech boxes; `vefr publish|look|probe` and doctor tooling
+      rows; `tests/run.sh` for throwaway clones; Kenney sheets removed from
+      `worlds/sample-world`. Designs proposed: gates and guardians, the album.
+      Built by two offload foremen to acceptance tests written first, reviewed by
+      hand. 1272 passed, 3 skipped.
+
 - [x] **The first independent pack's contract repairs** (2026-10-02):
       a substantial outside pack was built without engine changes and
       its recordings were verified against main (`docs/research/
