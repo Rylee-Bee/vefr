@@ -1,6 +1,6 @@
 # Gates and guardians: a key worth fighting for
 
-Status: **proposed** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). No code yet. The lock is a pack-contract addition, so this waits for approval before a build.
+Status: **proposed; build step 1 (locked transitions) has its tests and contract** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). No code yet. The lock is a pack-contract addition, so this waits for approval before a build.
 
 ## The word for it
 
@@ -34,6 +34,17 @@ Each guardian is stronger than the last, tuned to the power curve of the levels.
 **3. Mobs come from tables, scaled by depth.** Each table row gets `depth` bands and a weight; `hp`/`atk` scale by floor; `xp` follows `design/growth.md`. The guardian is a row with `guardian: true`, never rolled as filler.
 
 **4. Cozy-safe.** On the `costume` surface the guardian simply takes a while; on `story`/`stakes` it can send the hero back to the temple. Either way the key is only taken by winning.
+
+## Slice 1 contract: locked transitions (set 2026-10-02, tests in `tests/test_locked_stairs.py`)
+
+This is build step 1 only; guardians, depth tables and the Cottage placement stay open below. Decisions made while writing the tests (Rylee: veto any of them):
+
+- `requires` is an object with **exactly one** key: `{"item": "<item id>"}` or `{"flag": "<declared flag>"}`. An unknown item id or undeclared flag is a validator error naming it; any other shape is one plain sentence naming `requires`. No level-based lock yet.
+- `locked_text` is **optional**, one plain sentence of 1 to 200 characters. When absent the line is "It will not open yet."
+- A locked door or stair, used with Interact, says the line in the narrator line (the combat log) and the hero stays put. With the item in the bag (or the flag set) it opens exactly as before.
+- **Keys are never consumed in this slice**, whether or not the item has `keep: true`. A consumed key would need a remembered "opened" state, which the design does not yet specify.
+- A flag lock only survives a reload when the pack uses `saves.rules: persist` (ADR 0009); otherwise the rule that sets the flag runs again on the next load, as before.
+- A transition without `requires` behaves exactly as before.
 
 ## What this does not do
 
