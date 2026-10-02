@@ -516,6 +516,13 @@ Research questions must include:
 18. How do generated and authored content coexist?
 19. How do we avoid turning every word into executable code?
 20. How do we keep the public engine game-neutral?
+21. Event sourcing: can one append-only log serve save/reload, replay, tests and "why did this happen?" without breaking existing saves?
+22. Facts and queries: which current conditions are really derived facts, and does a query model make them more explainable or only more abstract?
+23. Effects: what is the smallest closed set of named effects, and who may add one?
+24. Contracts: which of today's guarantees (reachability, parity, ending-room) can become declared, checkable contracts?
+25. What is the cost, in new concepts a beginner must learn, of each candidate concept? Reject any whose cost exceeds its explanatory value.
+26. What would a dialect for a non-game domain need that the kernel lacks, and what does the kernel carry that no non-game domain would use?
+27. Durability: what keeps a language like this alive for years (ownership, conformance suite, deprecation policy, docs), and what killed comparable ones?
 
 ### Kernel / dialect tagging
 
@@ -775,6 +782,22 @@ When old implementation becomes obsolete:
 
 > prove replacement → preserve evidence/history → retire it in a bounded cleanup PR.
 
+## Durability: built to last, with honest exit ramps
+
+Rylee wants this to be a robust, permanent addition, not an experiment that is dropped. That is a requirement on the plan, not a hope. Phase A must report on each item below, and Opus must schedule it as work, not leave it as an intention.
+
+1. **Conformance suite.** A language-level test set (valid and invalid sentences, normalization snapshots, same-seed determinism) that any implementation must pass. It outlives any one runtime and is what makes refactors safe.
+2. **Versioning and deprecation policy.** Written before the first release: how a grammar version is named, how long a version is supported, how packs are migrated, and a rule that nothing is removed without a migration tool and a release note.
+3. **Single source of truth.** The grammar, core vocabulary and schema live in one place; the docs, catalog (`docs/features.json`), CLI help and validator are generated from it or checked against it by CI, so they cannot drift.
+4. **Small enough to hold in one head.** A budget on the kernel (a fixed, reviewed list of primitives and effects) and a rule that adding to it needs a written reason. A grammar that outgrows the engine is a named failure mode.
+5. **Maintenance owner and cadence.** Name who owns the grammar and how changes are reviewed, including when a Foreman or agent proposes one.
+6. **Teachability.** A getting-started path and the three beginner questions (what words does this game know, what can this thing do, why did this happen) answered by shipped commands, with tests.
+7. **Dogfooding.** Cottage runs on the language in CI at every change. A second project adopts it only after the kernel has shipped and survived a release.
+8. **Graceful degradation.** Old packs keep working through a compatibility adapter, and the adapter has its own tests and an end-of-life date that Rylee approves.
+9. **Honest exit ramps.** Each slice must leave the repo in a working, releasable state with the old path intact. If a slice fails its acceptance contract, stopping there must leave nothing half-migrated. This is what lets the work be robust without being all-or-nothing.
+
+Phase A reports prior art on what made comparable languages last or die (item 27 above). Opus's plan must include a task for each item.
+
 ## Non-negotiable properties
 
 1. Game meaning stays game-owned.
@@ -829,6 +852,15 @@ This campaign is not done when documents exist. The checklist below is the ceili
 - [ ] woven offline file works;
 - [ ] skin/accessibility stay green;
 - [ ] no Cottage canon leaks into VEFR.
+
+### Durability
+
+- [ ] conformance suite exists and runs in CI;
+- [ ] versioning and deprecation policy written and linked from the docs;
+- [ ] grammar, docs, catalog and CLI help are generated from, or checked against, one source;
+- [ ] kernel primitive and effect lists are fixed and reviewed;
+- [ ] a named owner and change process are recorded;
+- [ ] the compatibility adapter has tests and an approved end-of-life date.
 
 ### Proof
 
