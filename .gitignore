@@ -88,7 +88,7 @@ web/static
 # absolute home paths, so it must never reach a public repo.
 data/content.db
 **/data/content.db
-node_modules/
+node_modules
 
 # teach while building: what this person has learned (src/vefr/teach.py)
 /data/learning.json
