@@ -24,6 +24,8 @@ if (out.hasApi) {
   for (const c of cases.prng) { const r = D.prng(c.seed); out.prng.push(Array.from({ length: c.count }, () => r())); }
   for (const c of cases.floors) out.floors.push(D.generateFloorV2(c.seed, c.width, c.height, c.rooms));
 }
-console.log(JSON.stringify(out));
+// Write the whole result before exiting: process.exit() right after console.log() can cut a
+// large piped stdout short (64 KiB), which is exactly how this harness once broke.
+fs.writeSync(1, JSON.stringify(out) + '\n');
 w.close();
 process.exit(0);

@@ -1,7 +1,7 @@
 """Random floors, R2: the JavaScript twin draws exactly the rows Python draws.
 
 The player is one static HTML file, so a run's floors are drawn in the browser. Python is the
-reference; this replays 60 floors and a set of random streams through the REAL woven player
+reference; this replays 50 floors and a set of random streams through the REAL woven player
 in jsdom (`window.VEFR_DELVE.prng` and `.generateFloorV2`) and demands identical results.
 """
 
@@ -30,7 +30,7 @@ def replay(tmp_path_factory):
     html = home / "p.html"
     html.write_text(cli.weave_html(ROOT / "worlds" / "sample-world"), encoding="utf-8")
     floors = [{"seed": s, "width": w, "height": h, "rooms": r}
-              for s in SEEDS for (w, h, r) in SIZES][:60]
+              for s in SEEDS for (w, h, r) in SIZES]
     prng = [{"seed": s, "count": 40} for s in SEEDS]
     cases = home / "cases.json"
     cases.write_text(json.dumps({"prng": prng, "floors": floors}), encoding="utf-8")
@@ -54,7 +54,7 @@ def test_the_streams_match(replay):
 
 def test_the_floors_match_row_for_row(replay):
     floors, _, out = replay
-    assert len(out["floors"]) == len(floors) == 60
+    assert len(out["floors"]) == len(floors) == len(SEEDS) * len(SIZES) == 50
     for case, rows in zip(floors, out["floors"]):
         want = delve.generate_floor_v2(case["seed"], case["width"], case["height"], case["rooms"])
         assert rows == want, case
