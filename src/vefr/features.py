@@ -14,6 +14,7 @@ on this surface.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from .library import load_library
@@ -22,7 +23,7 @@ from .paths import app_home
 
 VALID_STATUSES = ("built", "partial", "proposed")
 VALID_DETECTS = ("rules", "growth", "library", "items", "enemies", "fog",
-                 "skin", "always", "none")
+                 "skin", "blueprint", "always", "none")
 
 
 def _root(root=None) -> Path:
@@ -127,6 +128,17 @@ def catalog_errors(root=None) -> list[str]:
     return errors
 
 
+def _inside_pack(pack: Path, name: str) -> str | None:
+    """The resolved path of `pack/name`, or None if it would leave the pack.
+
+    Same shape as `cli._inside`: the pack directory is resolved first, and
+    a file that is a link out of the pack is not followed.
+    """
+    base = os.path.realpath(pack)
+    target = os.path.realpath(os.path.join(base, name))
+    return target if target.startswith(base + os.sep) else None
+
+
 def _read_json(path: Path) -> dict:
     """One JSON object from disk, or {} - the loader's contract read,
     without the loader's tracing side effects."""
@@ -225,6 +237,14 @@ def _one_use(feat: dict, pack: Path, w: dict, config: dict,
     elif detect == "fog":
         count = sum(1 for contract in contracts if contract.get("fog"))
         used, detail = count > 0, f"{count} regions"
+    elif detect == "blueprint":
+        source = _inside_pack(pack, "blueprint.json")
+        if source is not None and os.path.isfile(source):
+            regions = _read_json(Path(source)).get("regions")
+            count = len(regions) if isinstance(regions, dict) else 0
+            used, detail = True, f"{count} regions"
+        else:
+            used, detail = False, "no blueprint"
     elif detect == "skin":
         skin = config.get("skin")
         if skin is None:

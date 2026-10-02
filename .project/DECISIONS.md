@@ -1,5 +1,27 @@
 # DECISIONS — vefr
 
+## 2026-10-02 — Blueprint format 1
+
+**Decision.** Recorded in full in
+[`docs/adr/0008-blueprint-format.md`](../docs/adr/0008-blueprint-format.md):
+
+1. **The Blueprint is the edited truth.** A pack may carry
+   `blueprint.json` at its root; it owns the regions it names.
+   `vefr normalize` expands it into those regions' `enemies` lists. A
+   pack without one is unchanged.
+2. **Generated JSON is committed and read-only.** The expanded records
+   and `blueprint.lock.json` are written by `vefr normalize`, committed
+   beside the Blueprint, and never hand-edited. The lock records the
+   source hash, the normalizer and format versions, and provenance.
+3. **The exit threshold is 25% / one real error.** Continue only if
+   authored enemy values drop by at least 25% on the first real pack,
+   or one real error is caught; otherwise delete `blueprint.json` and
+   `blueprint.lock.json`.
+4. **Hand-written records stay supported.** Their end of life, if any,
+   is set later by Rylee after the trial.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
 ## 2026-10-02 — the Cottage day: decisions that outlive it
 
 - **We ship only art we made, and attribute all of it** (Rylee). Kenney is for prototyping

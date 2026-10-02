@@ -30,6 +30,7 @@ order `vefr --help` prints them in, too.
 | `vefr skipa` | kept for now; prints one line saying it is part of `vefr doctor` | `ratatoskr skipa` |
 | `vefr find` | local read-only search of the pack's markdown and the journal | new |
 | `vefr features` | the feature catalog: what VEFR can do, and what a pack uses | new |
+| `vefr normalize` | expand a Blueprint into its owned regions and refresh the lock | new |
 
 Two habits carry over unchanged: validate after every pack write
 (`uv run vefr check --pack worlds/<name>`), and read `--help` for the
@@ -84,6 +85,28 @@ drift gate: it prints every catalog error and exits `1` if the catalog
 has drifted from the repo, otherwise it prints `catalog ok` and exits
 `0`.
 
+## `vefr normalize`
+
+`vefr normalize --pack PACK [--out DIR]` expands a pack's Blueprint
+into the `enemies` lists of the regions it owns.
+
+Without `--out` it is read-only: it prints one line per owned region
+and whether the committed output is fresh. With `--out` equal to the
+pack it refreshes the pack in place; any other `--out` must be a new or
+empty directory outside the pack, and the pack is copied there,
+refreshed and validated there. A failure leaves the previous bytes in
+place.
+
+```sh
+uv run vefr normalize --pack worlds/sample-world
+uv run vefr normalize --pack worlds/sample-world --out worlds/sample-world
+```
+
+Exit codes for this verb: `0` when the output is fresh or was written;
+`1` on errors or when the committed output is stale. `vefr check` runs
+the same stale check and refuses stale output too. The guide is
+[Blueprints](blueprint.md).
+
 ## Escape hatches
 
 Old muscle memory still runs. Both of these run the old CLIs exactly
@@ -132,6 +155,7 @@ uv run vefr check --pack worlds/sample-world --json
 ## Where to go next
 
 - [The Journey](journey.md) - the whole path, stop by stop.
+- [Blueprints](blueprint.md) - a small source for repeated monsters.
 - [World creation](world-creation.md) - the interview, the map, the file.
 - [Spark](spark.md) - the resident small brain.
 - [The Lorekeeper](lore.md) - facts and the derived index.

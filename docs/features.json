@@ -232,6 +232,20 @@
       "tests": [
         "tests/test_art_manifest.py"
       ]
+    },
+    {
+      "id": "blueprint",
+      "name": "A Blueprint for repeated monster families",
+      "what": "An optional file at a pack root that expands a small family source into the region enemy records at build time. A pack without one is unchanged.",
+      "status": "built",
+      "detect": "blueprint",
+      "docs": [
+        "docs/guides/blueprint.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_blueprint_conformance.py"
+      ]
     }
   ]
 }
