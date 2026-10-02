@@ -1734,6 +1734,11 @@
         <button type="submit" id="builder-chat-send" class="btn-primary">send</button>
       </form>
     </div>
+
+    <section id="features-shelf" class="builder-section" aria-labelledby="features-shelf-title" aria-live="polite">
+      <h2 class="builder-h" id="features-shelf-title">What VEFR can do</h2>
+      <p class="note">The feature list is not available right now.</p>
+    </section>
   </section>
 
   <section id="view-board" class="view" role="tabpanel" aria-labelledby="tab-board" hidden>
@@ -1859,6 +1864,31 @@
 <script src="/static/town.js"></script>
 <script src="/static/vendor/Sortable.min.js"></script>
 <script src="/static/board.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="js/features.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* The features shelf: what this world uses and what VEFR can do.
+     The section ships with one calm line; a good answer replaces it. */
+  var el = document.getElementById('features-shelf');
+  if (!el) return;
+  var calm = 'The feature list is not available right now.';
+  var api = window.VEFR_API, F = window.VEFR_FEATURES;
+  if (!api || typeof api.features !== 'function' || !F || typeof F.shelfHtml !== 'function') return;
+  var pack = '';
+  try {
+    var world = window.VEFR_STATE && window.VEFR_STATE.get().world;
+    var named = world && (world.name || world.world);
+    if (typeof named === 'string') pack = named;
+  } catch (err) { /* the page does not know a name yet - ask for the engine shelf only */ }
+  api.features(pack || undefined).then(function (report) {
+    el.innerHTML = F.shelfHtml(report);
+  }).catch(function () {
+    el.innerHTML = '<p class="note">' + calm + '</p>';
+  });
+})();
+</script>
 <script>
 (function () {
   'use strict';

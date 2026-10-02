@@ -86,6 +86,7 @@
     // Runes
     runes:        function ()     { return get('/api/runes'); },
     library:      function ()     { return get('/api/library'); },
+    features:     function (pack) { return get('/api/features' + (pack ? '?pack=' + encodeURIComponent(pack) : '')); },
     castRune:     function ()     { return get('/api/runes/cast'); },
 
     // AI / Evidence
