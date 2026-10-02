@@ -9,7 +9,6 @@
 | 3 | **Name: "Blueprint".** Checked: no existing use of the word in `src`, `web` or `docs`. |
 | 4 | **Rule saves are a per-pack setting.** The pack declares persist or reset; the default is reset, so old packs are unchanged. Cottage is expected to declare persist. Her reason: she wants many games on this engine. The field name and shape are for Plan 2. |
 | 8 | **Bump Cottage's pin with the first normalizer.** Older runtimes are not promised. |
-
 | 4a | Rule saves go in a nested `saves` block: `saves.rules` = persist or reset, `saves.legacy` = fresh or from-log (old saves); persist covers flags, `once` markers, beliefs and items; `starts` fires once per save. |
 | 5a | Plan 1 exit threshold: at least 25% fewer authored values, or one real error caught. Generated records are committed and read-only. End of life for hand-written records is set later. |
 
