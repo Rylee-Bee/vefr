@@ -7,4 +7,5 @@
 5. **Guardians and the ending:** how they are authored. The probe could not decide this; no real ending room exists.
 6. **Disposition read:** this packet says GO WITH CONSTRAINTS. Nothing is authorized until Rylee has read it (the plan's Gate).
 7. **Opus brief:** who sends the packet and plan to Opus, and the Foreman count and model, stated before launch.
-8. **Codex's private packet:** the exact inputs and traces are not on the dev VM. Locate or regenerate for Opus (the runner reproduces its summary).
+8. **Supported-version policy:** Cottage CI pins an older VEFR than `main`; decide the supported matrix before any normalizer ships.
+9. **Stale-output policy:** generated output carries the source hash and normalizer version, and a stale artifact is rejected (Codex recommendation; not implemented).

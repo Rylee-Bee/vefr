@@ -13,8 +13,18 @@ Codex returned a provisional **HYBRID**: three layers (kernel, dialect, pack) as
 
 ## Second-domain paper probe
 
-Not performed in this packet. A paper probe could show plausibility only. Until a second real domain exists (for example a non-game project), do not extract a shared library. Revisit when one exists.
+Codex wrote one on paper (from its private packet): a monitoring rule, "a check fails twice in a row opens one incident and notifies the owner". Event `check.completed(check_id, run_id, status)`, deduplicated by `run_id`; condition: failure count goes 1 to 2 with no open incident; effects: record incident, enqueue one notification. Result: **PLAUSIBLE, not implemented**. It needs host contracts the games do not (persistent counters, deduplication, idempotent delivery), and notification authority must come from explicit configuration, never from a pack word. Plausibility only: do not extract a shared library until a second real domain exists.
 
 ## Guardrail
 
 The semantic layer must stay domain-neutral in *shape* (ids, relations, rules, provenance) and put game words in the dialect. Check this in review; do not build machinery for it yet.
+
+## Effect classification (Codex, checked against `RULE_ACTION_KEYS`)
+
+| Effects | Class |
+|---|---|
+| `set`, `unset` | kernel-level candidates |
+| `believes`, `stops-believing`, `tells`, `give`, `takes`, `point-to`, `weather` | game dialect |
+| `say`, `show`, `hide`, `reveal` | presentation only |
+
+The runtime skips an invalid rule silently, so the closed catalog must be enforced at build time.

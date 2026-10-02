@@ -22,4 +22,6 @@ Every claim in this packet traces to one of these. Re-run to reproduce.
 - `uv run --group test python experiments/language-proof/run.py --pack <cottage pack> --region floor-2 --sprite shade --rule the-keeper-knows --out <scratch>` -> three PASS lines
 - `vefr --help`, grep of route and version keys
 
-`UNVERIFIED`: Codex's private packet (not on this machine); the second Cottage rule through the engine; the 7 prior-art URLs that blocked bots.
+| Codex private packet (`vefr-language-proof-sonnet.zip`, received 2026-10-02) | paper non-game probe, effect table, gate results; kept outside every repo |
+
+`UNVERIFIED`: Codex's full-gate numbers (1335 passed) were read from its receipt, not rerun; the second Cottage rule through the engine; the 7 prior-art URLs that blocked bots.
