@@ -1,0 +1,2466 @@
+{
+ "version": 1,
+ "files": {
+  "banners/archives.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/boiler-room.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/casting-table.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/chronicle.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/desk.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/folks.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/hall.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/library.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/map-room.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/studio-hero-day.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/studio-hero.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "banners/vault.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "delve/items/amulet.webp": {
+   "source": "designs/vefr/art/delve/items/amulet.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/armor.webp": {
+   "source": "designs/vefr/art/delve/items/armor.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/badge-cursed.webp": {
+   "source": "designs/vefr/art/delve/items/badge-cursed.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/badge-enchanted.webp": {
+   "source": "designs/vefr/art/delve/items/badge-enchanted.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/badge-identified.webp": {
+   "source": "designs/vefr/art/delve/items/badge-identified.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/badge-unknown.webp": {
+   "source": "designs/vefr/art/delve/items/badge-unknown.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/belt.webp": {
+   "source": "designs/vefr/art/delve/items/belt.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/boots.webp": {
+   "source": "designs/vefr/art/delve/items/boots.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/cloak.webp": {
+   "source": "designs/vefr/art/delve/items/cloak.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/gloves.webp": {
+   "source": "designs/vefr/art/delve/items/gloves.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/helm.webp": {
+   "source": "designs/vefr/art/delve/items/helm.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/pack.webp": {
+   "source": "designs/vefr/art/delve/items/pack.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/potion.webp": {
+   "source": "designs/vefr/art/delve/items/potion.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/ring.webp": {
+   "source": "designs/vefr/art/delve/items/ring.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/scroll.webp": {
+   "source": "designs/vefr/art/delve/items/scroll.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/items/shield.webp": {
+   "source": "designs/vefr/art/delve/items/shield.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/sword.webp": {
+   "source": "designs/vefr/art/delve/items/sword.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "delve/items/wand.webp": {
+   "source": "designs/vefr/art/delve/items/wand.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-attack.webp": {
+   "source": "designs/vefr/art/delve/spells/school-attack.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-defense.webp": {
+   "source": "designs/vefr/art/delve/spells/school-defense.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-divination.webp": {
+   "source": "designs/vefr/art/delve/spells/school-divination.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-healing.webp": {
+   "source": "designs/vefr/art/delve/spells/school-healing.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-misc.webp": {
+   "source": "designs/vefr/art/delve/spells/school-misc.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/spells/school-movement.webp": {
+   "source": "designs/vefr/art/delve/spells/school-movement.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/tiles/door-closed.webp": {
+   "source": "designs/vefr/art/delve/tiles/door-closed.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/door-open.webp": {
+   "source": "designs/vefr/art/delve/tiles/door-open.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/floor.webp": {
+   "source": "designs/vefr/art/delve/tiles/floor.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "delve/tiles/rubble.webp": {
+   "source": "designs/vefr/art/delve/tiles/rubble.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/stairs-down.webp": {
+   "source": "designs/vefr/art/delve/tiles/stairs-down.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/stairs-up.webp": {
+   "source": "designs/vefr/art/delve/tiles/stairs-up.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/trapdoor.webp": {
+   "source": "designs/vefr/art/delve/tiles/trapdoor.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/tiles/wall.webp": {
+   "source": "designs/vefr/art/delve/tiles/wall.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "96x96"
+  },
+  "delve/town/sign-armorer.webp": {
+   "source": "designs/vefr/art/delve/town/sign-armorer.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-bank.webp": {
+   "source": "designs/vefr/art/delve/town/sign-bank.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-general.webp": {
+   "source": "designs/vefr/art/delve/town/sign-general.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-magic.webp": {
+   "source": "designs/vefr/art/delve/town/sign-magic.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-outfitter.webp": {
+   "source": "designs/vefr/art/delve/town/sign-outfitter.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-sage.webp": {
+   "source": "designs/vefr/art/delve/town/sign-sage.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-temple.webp": {
+   "source": "designs/vefr/art/delve/town/sign-temple.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "delve/town/sign-weaponsmith.webp": {
+   "source": "designs/vefr/art/delve/town/sign-weaponsmith.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "128x128"
+  },
+  "emblems/archives.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/boiler-room.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/casting-table.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/chronicle.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/desk.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/folks.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/hall.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/library.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/map-room.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "emblems/vault.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/cartographer-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/cartographer-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/cartographer-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/hoard-keeper-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/hoard-keeper-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/hoard-keeper-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/keeper-of-faces-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/keeper-of-faces-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/keeper-of-faces-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/rune-carver-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/rune-carver-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/rune-carver-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/skuld-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/skuld-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/skuld-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/storyteller-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/storyteller-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/storyteller-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/urdr-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/urdr-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/urdr-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/volundr-happy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/volundr-sleepy.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "expressions/volundr-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icon-192.png": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icon-512.png": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icon.svg": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/found-earned.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/found-given.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/found-map.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/found-shelf.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/kind-book.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/kind-note.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/library/kind-terminal.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/bell.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/book.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/chat.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/check.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/chronicle.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/export.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/floor.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/heart.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/help.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/home.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/info.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/library.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/lock.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/map-pin.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/new.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/open.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/play.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/quill.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/rune.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/save.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/scroll.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/search.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/settings.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/share.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/sparkle.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/star.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/trash.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/undo.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "icons/ui/warning.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "illustrations/floor-cutaway.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "illustrations/lost-in-the-tree.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "illustrations/player-title.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "illustrations/team-photo.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/archives-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/boiler-room-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/bolt-awake-wave.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/bolt-boiler-nap.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/bolt-carrying-book.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/bolt-thinking.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/bolt-unplugged.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/cartographer-long-map.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/casting-table-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/chronicle-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/desk-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/folks-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/frodi-library-ladder.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/hall-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/hoard-keeper-inspect-gem.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/keeper-of-faces-show-sketch.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/library-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/map-room-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/ratatoskr-asleep-letter-pile.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/ratatoskr-goodbye.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/ratatoskr-large-envelope.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/ratatoskr-searching-lantern.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/ratatoskr-sticker-book.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/rune-carver-offer-stone.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/skuld-point-stairs.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/storyteller-quill-notebook.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/urdr-library-ladder.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/vault-empty.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "poses/volundr-pipe-with-bolt.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/bolt.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/cartographer.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/frodi.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/hoard-keeper.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/keeper-of-faces.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/ratatoskr.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/rune-carver.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/skuld.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/storyteller.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/urdr.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "residents/volundr.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "runes/pebble-1.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "runes/pebble-2.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "runes/pebble-3.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "runes/pebble-4.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/acorn-accountant.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/ask-the-keeper.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/behind-the-curtain.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/big-print.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/bookworm.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/broke-it-fixed-it.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/chatterbox.webp": {
+   "source": "designs/vefr/art/stickers/chatterbox.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/clean-slate.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/day-and-night.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/deja-vu.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/ding.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/disco-hall.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/do-not-lick.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/early-bird.webp": {
+   "source": "designs/vefr/art/stickers/early-bird.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/easy-on-the-eyes.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/every-colour.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/first-book.webp": {
+   "source": "designs/vefr/art/stickers/first-book.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "192x192"
+  },
+  "stickers/first-bug-squashed.webp": {
+   "source": "designs/vefr/art/stickers/first-bug-squashed.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "192x192"
+  },
+  "stickers/first-playtest.webp": {
+   "source": "designs/vefr/art/stickers/first-playtest.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "192x192"
+  },
+  "stickers/first-question.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/first-share.webp": {
+   "source": "designs/vefr/art/stickers/first-share.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "192x192"
+  },
+  "stickers/first-square.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/first-world.webp": {
+   "source": "designs/vefr/art/stickers/first-world.png",
+   "credit": "Rylee and Claude; Wan 2.7 Image Pro",
+   "size": "192x192"
+  },
+  "stickers/five-small-steps.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/font-collector.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/for-real.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/frodis-friend.webp": {
+   "source": "designs/vefr/art/stickers/frodis-friend.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/got-it.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/grand-tour.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/halfway.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/hello-squirrel.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/hello-studio.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/i-know-my-way.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/idea-collector.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/island-maker.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/it-checks-out.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/just-right.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/keeper.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/keyboard-reader.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/knob-twiddler.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/land-ho.webp": {
+   "source": "designs/vefr/art/stickers/land-ho.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/leave-me-be.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/lexicon.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/magpie.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/map-questions.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/night-owl.webp": {
+   "source": "designs/vefr/art/stickers/night-owl.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/noon-bell.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/off-the-map.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/old-magic.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/once-more.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/paddle-wave.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/part-of-the-furniture.webp": {
+   "source": "designs/vefr/art/stickers/part-of-the-furniture.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/pleased-to-meet-you.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/poke-the-tree.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/proud-collector.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/ratatoskr-sticker-book.webp": {
+   "source": "designs/vefr/art/stickers/ratatoskr-sticker-book.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/read-your-way.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/regular-ringer.webp": {
+   "source": "designs/vefr/art/stickers/regular-ringer.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/regular-visitor.webp": {
+   "source": "designs/vefr/art/stickers/regular-visitor.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/same-stones.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/seven-stages.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/shipped-it.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/speedrunner.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/sticker-book-complete.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/stillness.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/stone-reader.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/sunrise.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/take-backsies.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/talk-their-ears-off.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/theres-a-name.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/third-step.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/three-in-a-row.webp": {
+   "source": "designs/vefr/art/stickers/three-in-a-row.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/town-crier.webp": {
+   "source": "designs/vefr/art/stickers/town-crier.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/urdrs-ledger.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/weekend-crafter.webp": {
+   "source": "designs/vefr/art/stickers/weekend-crafter.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/whole-household.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/whole-shelf.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/witching-hour.webp": {
+   "source": "designs/vefr/art/stickers/witching-hour.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "192x192"
+  },
+  "stickers/word-nerd.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "stickers/worlds-own-book.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "surfaces/bar-counter.webp": {
+   "source": "designs/vefr/art/surface-tiles/bar-counter.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/barrel.webp": {
+   "source": "designs/vefr/art/surface-tiles/barrel.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/bench.webp": {
+   "source": "designs/vefr/art/surface-tiles/bench.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/door.webp": {
+   "source": "designs/vefr/art/surface-tiles/door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/fireplace.webp": {
+   "source": "designs/vefr/art/surface-tiles/fireplace.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/grass.webp": {
+   "source": "designs/vefr/art/surface-tiles/grass.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/path.webp": {
+   "source": "designs/vefr/art/surface-tiles/path.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/rug.webp": {
+   "source": "designs/vefr/art/surface-tiles/rug.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/stone-wall.webp": {
+   "source": "designs/vefr/art/surface-tiles/stone-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/table.webp": {
+   "source": "designs/vefr/art/surface-tiles/table.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/window.webp": {
+   "source": "designs/vefr/art/surface-tiles/window.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "surfaces/wood-floor.webp": {
+   "source": "designs/vefr/art/surface-tiles/wood-floor.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "textures/aged-iron.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "textures/carved-wood.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "textures/parchment.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "themes/cozy-spooky/char-1.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/char-2.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/char-3.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-1.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-2.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-3.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-4.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-5.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/item-6.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cozy-spooky/tile-door.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cozy-spooky/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/cozy-spooky/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/char-1.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/char-2.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/char-3.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-1.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-2.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-3.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-4.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-5.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/item-6.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/cyberpunk/tile-door.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/cyberpunk/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/cyberpunk/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/char-1.webp": {
+   "source": "designs/vefr/art/themes/desert/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/char-2.webp": {
+   "source": "designs/vefr/art/themes/desert/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/char-3.webp": {
+   "source": "designs/vefr/art/themes/desert/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-1.webp": {
+   "source": "designs/vefr/art/themes/desert/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-2.webp": {
+   "source": "designs/vefr/art/themes/desert/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-3.webp": {
+   "source": "designs/vefr/art/themes/desert/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-4.webp": {
+   "source": "designs/vefr/art/themes/desert/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-5.webp": {
+   "source": "designs/vefr/art/themes/desert/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/item-6.webp": {
+   "source": "designs/vefr/art/themes/desert/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/desert/tile-door.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/desert/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/desert/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/char-1.webp": {
+   "source": "designs/vefr/art/themes/forest/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/char-2.webp": {
+   "source": "designs/vefr/art/themes/forest/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/char-3.webp": {
+   "source": "designs/vefr/art/themes/forest/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-1.webp": {
+   "source": "designs/vefr/art/themes/forest/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-2.webp": {
+   "source": "designs/vefr/art/themes/forest/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-3.webp": {
+   "source": "designs/vefr/art/themes/forest/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-4.webp": {
+   "source": "designs/vefr/art/themes/forest/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-5.webp": {
+   "source": "designs/vefr/art/themes/forest/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/item-6.webp": {
+   "source": "designs/vefr/art/themes/forest/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/forest/tile-door.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/forest/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/forest/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/char-1.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/char-2.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/char-3.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-1.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-2.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-3.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-4.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-5.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/item-6.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/jungle-ruins/tile-door.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/jungle-ruins/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/jungle-ruins/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/char-1.webp": {
+   "source": "designs/vefr/art/themes/ocean/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/char-2.webp": {
+   "source": "designs/vefr/art/themes/ocean/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/char-3.webp": {
+   "source": "designs/vefr/art/themes/ocean/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-1.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-2.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-3.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-4.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-5.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/item-6.webp": {
+   "source": "designs/vefr/art/themes/ocean/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/ocean/tile-door.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/ocean/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/ocean/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/char-1.webp": {
+   "source": "designs/vefr/art/themes/pirate/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/char-2.webp": {
+   "source": "designs/vefr/art/themes/pirate/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/char-3.webp": {
+   "source": "designs/vefr/art/themes/pirate/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-1.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-2.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-3.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-4.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-5.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/item-6.webp": {
+   "source": "designs/vefr/art/themes/pirate/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/pirate/tile-door.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/pirate/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/pirate/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/char-1.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/char-2.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/char-3.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-1.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-2.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-3.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-4.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-5.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/item-6.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/post-apocalyptic/tile-door.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/post-apocalyptic/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/post-apocalyptic/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/char-1.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/char-2.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/char-3.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-1.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-2.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-3.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-4.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-5.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/item-6.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/sci-fi/tile-door.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/sci-fi/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/sci-fi/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/char-1.webp": {
+   "source": "designs/vefr/art/themes/steampunk/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/char-2.webp": {
+   "source": "designs/vefr/art/themes/steampunk/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/char-3.webp": {
+   "source": "designs/vefr/art/themes/steampunk/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-1.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-2.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-3.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-4.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-5.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/item-6.webp": {
+   "source": "designs/vefr/art/themes/steampunk/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/steampunk/tile-door.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/steampunk/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/steampunk/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/char-1.webp": {
+   "source": "designs/vefr/art/themes/urban/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/char-2.webp": {
+   "source": "designs/vefr/art/themes/urban/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/char-3.webp": {
+   "source": "designs/vefr/art/themes/urban/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-1.webp": {
+   "source": "designs/vefr/art/themes/urban/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-2.webp": {
+   "source": "designs/vefr/art/themes/urban/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-3.webp": {
+   "source": "designs/vefr/art/themes/urban/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-4.webp": {
+   "source": "designs/vefr/art/themes/urban/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-5.webp": {
+   "source": "designs/vefr/art/themes/urban/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/item-6.webp": {
+   "source": "designs/vefr/art/themes/urban/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/urban/tile-door.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/urban/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/urban/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/char-1.webp": {
+   "source": "designs/vefr/art/themes/wild-west/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/char-2.webp": {
+   "source": "designs/vefr/art/themes/wild-west/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/char-3.webp": {
+   "source": "designs/vefr/art/themes/wild-west/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-1.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-2.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-3.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-4.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-5.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/item-6.webp": {
+   "source": "designs/vefr/art/themes/wild-west/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/wild-west/tile-door.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/wild-west/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/wild-west/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/char-1.webp": {
+   "source": "designs/vefr/art/themes/winter/char-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/char-2.webp": {
+   "source": "designs/vefr/art/themes/winter/char-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/char-3.webp": {
+   "source": "designs/vefr/art/themes/winter/char-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-1.webp": {
+   "source": "designs/vefr/art/themes/winter/item-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-2.webp": {
+   "source": "designs/vefr/art/themes/winter/item-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-3.webp": {
+   "source": "designs/vefr/art/themes/winter/item-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-4.webp": {
+   "source": "designs/vefr/art/themes/winter/item-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-5.webp": {
+   "source": "designs/vefr/art/themes/winter/item-5.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/item-6.webp": {
+   "source": "designs/vefr/art/themes/winter/item-6.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "128x128"
+  },
+  "themes/winter/tile-door.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-door.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-ground-2.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-ground-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-ground.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-ground.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-hazard.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-hazard.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-prop-1.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-prop-1.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-prop-2.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-prop-2.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-prop-3.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-prop-3.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-prop-4.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-prop-4.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-wall.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-wall.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "themes/winter/tile-way-down.webp": {
+   "source": "designs/vefr/art/themes/winter/tile-way-down.png",
+   "credit": "Rylee and Claude; tool not recorded in the source folder",
+   "size": "96x96"
+  },
+  "tiles/bar-counter.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/barrel.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/bench.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/door.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-door-closed.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-door-open.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-floor.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-rubble.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-stairs-down.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-stairs-up.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-trapdoor.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/dungeon-wall.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/fireplace.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/grass.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/path.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/rug.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/stone-wall.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/table.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/window.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "tiles/wood-floor.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  },
+  "wax-seal.webp": {
+   "source": null,
+   "credit": "Owner's studio art; provenance is in web/art/README.md"
+  }
+ }
+}

@@ -69,7 +69,8 @@ ignore_names = ["cls", "exc_type", "tb", "model_cls"]
 # bench/ and design/ are exploratory tooling with their own ad-hoc,
 # often-optional deps (numpy, torch, whisper, ...) that are deliberately
 # not project dependencies.
-extend_exclude = ["bench", "experiments", "design", "storyteller_packs", "worlds"]
+# tools/ holds dev tools run with `uv run --with <dep>` (the art importer needs Pillow).
+extend_exclude = ["bench", "experiments", "design", "storyteller_packs", "worlds", "tools"]
 known_first_party = ["vefr"]
 
 [tool.deptry.per_rule_ignores]

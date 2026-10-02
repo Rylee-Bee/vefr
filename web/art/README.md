@@ -43,3 +43,23 @@ the Floor's cutaway illustration, textures, the app icon and the wax seal.
     tiles (wood-floor, stone-wall, door, window, table, bench, fireplace,
     bar-counter, barrel, rug, grass, path) and eight `dungeon-*` tiles. A
     pack legend picks one with `"tile": "<name>"`.
+
+## Credits and the manifest (2026-10-02)
+
+Every picture here is listed in `MANIFEST.json`: where it came from (a path in the shared media
+library, `media_files/designs/vefr/art/`, which keeps the originals) and who made it. Art we made is
+distributed with attribution ("Rylee and Claude", plus the tool when a Wan record names the file).
+`tests/test_art_manifest.py` fails if a picture has no entry or grows past its size cap.
+
+Add art with `uv run --with pillow python tools/art/import_art.py` (game-size WebP: tiles 96 px,
+items, spells, signs and characters 128 px, stickers 192 px). It brought in:
+
+- `stickers/`: the 18 stickers the sticker book had no picture for.
+- `delve/`: equipment and item icons, the item badges (unknown, identified, enchanted, cursed), the six
+  spell schools, shop signs and dungeon tiles. They serve the equipment, shop and spell designs.
+- `surfaces/`: the tavern and outdoor ground tiles.
+- `themes/<name>/`: 13 theme kits (Cozy Spooky, Cyberpunk, Desert, Forest, Jungle Ruins, Ocean, Pirate,
+  Post Apocalyptic, Sci Fi, Steampunk, Urban, Wild West, Winter), each with 3 characters, 6 items and 10
+  tiles (`tile-wall`, `tile-ground`, `tile-door`, `tile-way-down`, ...) as starter kits.
+
+Kenney and LimeZu art is not used here (prototyping only; see the Cottage `AGENTS.md` art rule).
