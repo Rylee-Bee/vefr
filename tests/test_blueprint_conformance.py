@@ -14,10 +14,9 @@ from blueprint_helpers import mk
 V1 = Path(__file__).parent / "fixtures" / "blueprint" / "v1"
 VALID = sorted(p for p in (V1 / "valid").iterdir() if p.is_dir())
 INVALID = sorted(p for p in (V1 / "invalid").iterdir() if p.is_dir())
-xfail = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
+xfail = pytest.mark.xfail(strict=True, reason="needs check_errors (plan PR 3)")
 
 
-@xfail
 @pytest.mark.parametrize("case", VALID, ids=lambda p: p.name)
 def test_valid_case_expands_to_expected(case, tmp_path):
     import json
@@ -28,7 +27,6 @@ def test_valid_case_expands_to_expected(case, tmp_path):
     assert got == json.loads((case / "expected.json").read_text())
 
 
-@xfail
 @pytest.mark.parametrize("case", INVALID, ids=lambda p: p.name)
 def test_invalid_case_fails_with_a_plain_sentence(case, tmp_path):
     from vefr import blueprint
@@ -57,7 +55,6 @@ def test_flat_shape_pack_is_refused(tmp_path):
     assert errors and any("acts" in e.lower() for e in errors)
 
 
-@xfail
 def test_reader_registry_and_closed_sets():
     from vefr import blueprint
 
