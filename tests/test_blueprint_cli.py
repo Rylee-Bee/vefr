@@ -9,7 +9,6 @@ import pytest
 from blueprint_helpers import ROOT, contract, mk, normalized_pack, tree_hash, vefr
 
 CLI = pytest.mark.xfail(strict=True, reason="needs the normalize verb (plan PR 3)")
-CORE = pytest.mark.xfail(strict=True, reason="Blueprint core not built yet (plan PR 2)")
 
 
 @CLI
@@ -47,7 +46,6 @@ def test_out_dir_refuses_a_non_empty_directory(tmp_path):
     assert not (busy / "blueprint.lock.json").exists()
 
 
-@CORE
 def test_deterministic_in_one_process_and_across_processes(tmp_path):
     """A12: same Blueprint, same lock and records."""
     from vefr import blueprint
