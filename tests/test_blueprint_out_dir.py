@@ -59,3 +59,10 @@ def test_weaving_a_stale_pack_from_the_cli_is_a_plain_refusal_not_a_traceback(tm
     rc, out = vefr("weave", "--pack", pack, "--out", tmp_path / "out")
     assert rc == 1 and "refused:" in out and "Traceback" not in out
     assert "vefr normalize" in out
+
+
+def test_normalize_on_a_pack_without_a_blueprint_says_so_instead_of_fresh():
+    from blueprint_helpers import ROOT
+
+    rc, out = vefr("normalize", "--pack", ROOT / "worlds" / "sample-world")
+    assert rc == 0 and "no blueprint" in out.lower() and "fresh" not in out.lower()

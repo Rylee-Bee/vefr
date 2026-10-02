@@ -4212,6 +4212,12 @@ def cmd_normalize(args) -> int:
             pack = pack_root() / 'worlds' / p
     out = Path(args.out).resolve() if getattr(args, 'out', None) else None
 
+    if out is None and not (pack / 'blueprint.json').exists() \
+            and not (pack / 'blueprint.lock.json').exists():
+        # Nothing to be fresh about: say so, and succeed (a plain pack is fine).
+        print(f'no blueprint.json in {pack}; nothing to normalize')
+        return EXIT_OK
+
     result = blueprint.normalize(pack, out)
     if out is None:
         for region, count in result.regions.items():
