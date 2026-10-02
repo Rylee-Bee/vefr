@@ -68,3 +68,30 @@ def test_no_skin_means_no_change(ran):
     p = ran["plain"]
     assert p["hasStyle"] is False and p["css"] == ""
     assert "has-skin" not in (p["bodyClass"] + " " + p["htmlClass"])
+
+
+def test_the_ink_reaches_text_inside_panels_and_buttons_stay_readable(ran):
+    """Measured on Cottage's real skin before this fix: the reader's body text was cream on
+    parchment (1.4:1) and the health label gold on parchment (1.2:1), because only the panel
+    itself took the ink. Text inside a skinned panel now takes the ink; buttons get light text."""
+    css = ran["skinned"]["css"]
+    assert "#2B2118 !important" in css                   # the test skin's on_panel ink
+    assert ":not(button, button *, .cta, .cta *, .gbtn, .gbtn *, kbd)" in css
+    assert "color: #F6F0E2 !important" in css            # light text on the wooden button face
+
+
+def test_a_panel_middle_is_flat_not_a_tiled_patch(ran):
+    """A 32 px patch tiled across a wide panel showed as stripes behind the text (seen on the
+    real Cottage skin). Panels keep only the carved border from the picture."""
+    css = ran["skinned"]["css"]
+    panel_rule = css[css.index(".glass, #npc-box"):]
+    panel_rule = panel_rule[:panel_rule.index("}")]
+    assert "var(--vefr-skin-ground," in panel_rule
+    assert " fill " not in panel_rule                    # no tiled middle
+    assert "#menu .carved" in css and "#menu .pm button" in css
+
+
+def test_skinned_buttons_have_a_dark_base_under_the_picture(ran):
+    """axe saw the gold Whisper button's own gold background under the wood (3.2:1 with the
+    light text). A dark base keeps the text readable even with the picture missing."""
+    assert "background-color: #5F5043 !important" in ran["skinned"]["css"]

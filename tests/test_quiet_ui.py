@@ -54,3 +54,9 @@ def test_the_hop_is_much_smaller():
     # was 0.06 / 6 / 0.12; Rylee: "much smaller" (about a third)
     assert hop <= 0.025 and lean <= 2.5 and squash <= 0.05
     assert hop > 0 and lean > 0 and squash > 0      # still alive, just calm
+
+
+def test_the_messages_toggle_meets_the_44px_target_floor():
+    html = (ROOT / "web" / "packaged.html").read_text(encoding="utf-8")
+    rule = re.search(r"\.toasts-toggle \{([^}]*)\}", html).group(1)
+    assert "min-height: 44px" in rule
