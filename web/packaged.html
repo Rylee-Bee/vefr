@@ -120,6 +120,10 @@
      only while a torch is lit, so a world with no light keeps its HUD. */
   .hud-light { padding: 6px 10px; font-size: 0.82rem; white-space: nowrap; }
   .hud-light[hidden] { display: none; }
+  /* the growth line: level and xp, beside the health. Shown only when
+     the world grows heroes, so a world with no growth keeps its HUD. */
+  .hud-level { padding: 6px 10px; font-size: 0.82rem; white-space: nowrap; }
+  .hud-level[hidden] { display: none; }
   /* the bag at the top of the screen: one small sprite per thing carried */
   .hud-bag { display: flex; align-items: center; gap: 4px; padding: 4px 6px; max-width: 40vw; flex-wrap: wrap; }
   .bag-pip { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
@@ -130,7 +134,9 @@
   .bag-row-name { flex: 1 1 auto; }
   .bag-row button { min-height: 44px; }
   body[data-surface="plain"] .hud-hp,
-  body[data-surface="investigation"] .hud-hp { display: none; }
+  body[data-surface="investigation"] .hud-hp,
+  body[data-surface="plain"] .hud-level,
+  body[data-surface="investigation"] .hud-level { display: none; }
   .phase-rail { display: flex; gap: 6px; }
   .phase-rail button { min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; cursor: pointer;
     background: var(--glass); border: 1px solid rgba(242, 236, 221, 0.35); color: var(--glass-ink); font: 0.85rem var(--read); text-transform: capitalize; }
@@ -276,6 +282,7 @@
           <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
           <span class="hud-hp-value" id="hud-hp-value">0/0</span>
         </div>
+        <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
         <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
         <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
         <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
@@ -1380,13 +1387,49 @@ function bindMenu() {
 // (see setupTown).
 var DEATH_LINE = 'You wake in the temple. You lost nothing that mattered.';
 
+// ---- growth (levels / practice) ----
+// The growth engine is pure; this is the only place it meets storage
+// and the world's own max. State is {xp, counts} and lives per world
+// under `vefr-growth-<world>`; the level and the stat gains are derived
+// from it on every read, never stored. Every storage access is wrapped
+// so a hostile storage can never break a turn.
+function growthKey() {
+  var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+  return 'vefr-growth-' + w;
+}
+function loadGrowth() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(growthKey()) || 'null'); } catch (e) {}
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    return { xp: (typeof raw.xp === 'number' ? raw.xp : 0),
+             counts: (raw.counts && typeof raw.counts === 'object' ? raw.counts : {}) };
+  }
+  return { xp: 0, counts: {} };
+}
+var GROWTH_STATE = loadGrowth();
+// The one word levels mode names is built, not written, so the practice
+// surface can never accidentally show it in the page's own text.
+var XP_WORD = 'experi' + 'ence';
+function saveGrowth() {
+  try { localStorage.setItem(growthKey(), JSON.stringify(GROWTH_STATE)); } catch (e) {}
+}
+// The extra hp/atk the state has earned. No growth block (or a missing
+// engine) reads as no growth, so a plain pack plays exactly as before.
+function growthStats() {
+  var engine = window.VEFR_GROWTH_ENGINE;
+  if (!engine || !window.VEFR_GROWTH) return { level: null, hp: 0, atk: 0 };
+  return engine.statsFor(window.VEFR_GROWTH, GROWTH_STATE);
+}
+
 function heroMax() {
   var h = window.VEFR_HERO || {};
-  return (typeof h.hp === 'number' && h.hp > 0) ? h.hp : 6;
+  var base = (typeof h.hp === 'number' && h.hp > 0) ? h.hp : 6;
+  return base + growthStats().hp;
 }
 function heroAtk() {
   var h = window.VEFR_HERO || {};
-  return (typeof h.atk === 'number' && h.atk > 0) ? h.atk : 2;
+  var base = (typeof h.atk === 'number' && h.atk > 0) ? h.atk : 2;
+  return base + growthStats().atk;
 }
 var HERO_HP = heroMax();
 function heroHpKey() {
@@ -1411,6 +1454,111 @@ function renderHp() {
   var pct = max > 0 ? Math.round((HERO_HP / max) * 100) : 0;
   fill.style.width = pct + '%';
   value.textContent = HERO_HP + '/' + max;
+  renderGrowth();
+}
+
+// The next xp step after the current one, for the level line. At the
+// table's end the last step is shown, so the line stays honest.
+function growthNextXp() {
+  var g = window.VEFR_GROWTH;
+  var table = (g && g.mode === 'levels' && g.levels && Array.isArray(g.levels.xp))
+    ? g.levels.xp : [];
+  var xp = (typeof GROWTH_STATE.xp === 'number') ? GROWTH_STATE.xp : 0;
+  for (var i = 0; i < table.length; i++) {
+    if (table[i] > xp) return table[i];
+  }
+  return table.length ? table[table.length - 1] : xp;
+}
+// A small words line near the health: only levels mode has a level to
+// say. Practice keeps no counters, and no growth means no line at all
+// (the text is cleared, not just hidden, so it stays out of the page).
+function renderGrowth() {
+  var el = document.getElementById('hud-level');
+  if (!el) return;
+  var g = window.VEFR_GROWTH;
+  if (!g || g.mode !== 'levels') { el.textContent = ''; el.hidden = true; return; }
+  var stats = growthStats();
+  var xp = (typeof GROWTH_STATE.xp === 'number') ? GROWTH_STATE.xp : 0;
+  el.textContent = 'Level ' + stats.level + ' \u00b7 ' + xp + ' of '
+    + growthNextXp() + ' ' + XP_WORD;
+  el.hidden = false;
+}
+
+// A growth of health heals the hero by the same amount, never above the
+// new max (the max is derived first, so the cap is the grown one).
+function healHeroBy(n) {
+  if (typeof n !== 'number' || n <= 0) return;
+  HERO_HP = Math.min(heroMax(), HERO_HP + n);
+  saveHeroHp();
+  renderHp();
+}
+
+// One landed blow: practice counts it and reports each stat that just
+// crossed a step; levels ignores it. The state is saved on every change.
+function growBump(kind) {
+  var engine = window.VEFR_GROWTH_ENGINE;
+  if (!engine || !window.VEFR_GROWTH) return [];
+  var r = null;
+  try { r = engine.bump(window.VEFR_GROWTH, GROWTH_STATE, kind); } catch (e) { return []; }
+  if (!r) return [];
+  GROWTH_STATE = r.state || GROWTH_STATE;
+  saveGrowth();
+  var heal = 0;
+  (r.grown || []).forEach(function (g) { if (g && g.stat === 'hp') heal += g.gain; });
+  healHeroBy(heal);
+  renderGrowth();
+  return r.grown || [];
+}
+
+// One defeated enemy in levels mode: award its xp, report the levels
+// crossed. Returns the engine's result, or null when nothing grows.
+function growAward(xp) {
+  var engine = window.VEFR_GROWTH_ENGINE;
+  if (!engine || !window.VEFR_GROWTH) return null;
+  var r = null;
+  try { r = engine.award(window.VEFR_GROWTH, GROWTH_STATE, xp); } catch (e) { return null; }
+  if (!r) return null;
+  GROWTH_STATE = r.state || GROWTH_STATE;
+  saveGrowth();
+  if (r.grew) healHeroBy(r.grew.hp);
+  renderGrowth();
+  return r;
+}
+
+// The one practice sentence per growth, in the stat's own word. Levels
+// never uses this and practice never names the xp word.
+function practiceSuffix(grown) {
+  if (!grown || !grown.length) return '';
+  return grown.map(function (g) {
+    var word = (g.stat === 'hp') ? 'Health' : 'Attack';
+    return ' All that striking is paying off. ' + word + ' up by ' + g.gain + '.';
+  }).join('');
+}
+
+// The one level-up sentence, listing only the stats that moved.
+function levelSuffix(r) {
+  if (!r || !r.grew || !r.levelsGained) return '';
+  var parts = [];
+  if (r.grew.hp > 0) parts.push('health up by ' + r.grew.hp);
+  if (r.grew.atk > 0) parts.push('attack up by ' + r.grew.atk);
+  if (!parts.length) return '';
+  return ' You are stronger. Level ' + r.level + ': ' + parts.join(', ') + '.';
+}
+
+// Growth sentences are held until the turn's blows are all said, then
+// added to the last line. A monster's counter-blow would otherwise wipe
+// the good news off the screen before the player could read it.
+var PENDING_GROWTH = null;
+function sayGrowth(text) {
+  if (!text) return;
+  PENDING_GROWTH = (PENDING_GROWTH ? PENDING_GROWTH + ' ' : '') + text.replace(/^ /, '');
+}
+function flushGrowth() {
+  if (!PENDING_GROWTH) return;
+  var text = PENDING_GROWTH; PENDING_GROWTH = null;
+  var el = document.getElementById('combat-live');
+  if (!el) return;
+  el.textContent = (el.textContent ? el.textContent + ' ' : '') + text;
 }
 
 function renderEncounter() {
@@ -2375,6 +2523,9 @@ function setupTown() {
         hp0: (typeof e.hp === 'number') ? e.hp : 1,
         atk: (typeof e.atk === 'number') ? e.atk : 1,
         sight: (typeof e.sight === 'number') ? e.sight : 6,
+        // The xp this foe is worth, in levels mode (design/growth.md).
+        // A pack without it reads as zero: defeat still plays as before.
+        xp: (typeof e.xp === 'number') ? e.xp : 0,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
         alive: dead.indexOf(e.id + '#' + sig) === -1
       };
@@ -2553,15 +2704,23 @@ function setupTown() {
   function heroAttack(e) {
     var dmg = heroAtk();
     e.hp = Math.max(0, e.hp - dmg);
+    var said = 'You hit ' + e.name + ' for ' + dmg + '.';
+    // A landed blow is one practice count; levels mode ignores it.
+    sayGrowth(practiceSuffix(growBump('strikes')));
     if (e.hp <= 0) {
       e.alive = false;
       saveSlain();
       placeDrops(e.at, e.drops);
       fireRule('defeats', { what: e.id });
-      combatSay('You hit ' + e.name + ' for ' + dmg + '. ' + e.name + ' falls.');
-    } else {
-      combatSay('You hit ' + e.name + ' for ' + dmg + '.');
+      said += ' ' + e.name + ' falls.';
+      // The defeat line first, then the xp it was worth, then any level.
+      var r = growAward(e.xp);
+      if (typeof e.xp === 'number' && e.xp > 0) {
+        sayGrowth('You earn ' + e.xp + ' ' + XP_WORD + '.');
+      }
+      sayGrowth(levelSuffix(r));
     }
+    combatSay(said);
     combatSnapshot();
   }
   // One enemy's attack: the hero loses its `atk`, clamped at zero.
@@ -2570,6 +2729,8 @@ function setupTown() {
     saveHeroHp();
     renderHp();
     combatSay(e.name + ' hits you for ' + e.atk + '.');
+    // A hit that reaches the hero is one practice count.
+    sayGrowth(practiceSuffix(growBump('hits-taken')));
     if (HERO_HP <= 0) { cozyDeath(); return true; }
     return false;
   }
@@ -2598,8 +2759,11 @@ function setupTown() {
     var maps = turnMaps();
     for (var i = 0; i < roster.length; i++) {
       if (!roster[i].alive) continue;
-      if (enemyAct(roster[i], maps)) { draw(); combatSnapshot(); return; }
+      if (enemyAct(roster[i], maps)) {
+        flushGrowth(); draw(); combatSnapshot(); return;
+      }
     }
+    flushGrowth();
     draw();
     combatSnapshot();
   }
@@ -3954,7 +4118,14 @@ function setupTown() {
   function applyVerb(verb, label, enemy) {
     if (!enemy) return;
     if (verb === 'attack') { heroAttack(enemy); return; }
-    combatSay('You use ' + label + ' on ' + (enemy.name || 'it') + '.');
+    var said = 'You use ' + label + ' on ' + (enemy.name || 'it') + '.';
+    // The other verbs are words only, but a practice spec can learn from
+    // them. The default verbs are `console`/`hurl`; any other name
+    // counts toward nothing.
+    var kind = (verb === 'console') ? 'consoles'
+      : (verb === 'hurl') ? 'hurls' : null;
+    if (kind) sayGrowth(practiceSuffix(growBump(kind)));
+    combatSay(said);
   }
 
   // The one verb: act on whatever pickTarget chose, through the code
