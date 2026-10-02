@@ -4001,6 +4001,42 @@ def cmd_publish(args) -> int:
         dry_run=args.dry_run)
 
 
+def _devtools_pack(pack_arg):
+    """Resolve --pack for the devtools verbs the way cmd_build_web does."""
+    if pack_arg is None:
+        return _resolved_pack()
+    p = Path(pack_arg)
+    if p.is_absolute() or '/' in str(pack_arg):
+        return (p if p.is_dir() else p.parent).resolve()
+    return pack_root() / 'worlds' / p
+
+
+def cmd_look(args) -> int:
+    """`vefr look` - screenshot the woven player and list overlay text.
+
+    The browser work lives in vefr.devtools (the cmd_find/vefr.find
+    split): this door only resolves --pack when --html is not given.
+    """
+    from . import devtools
+
+    pack = None if args.html else _devtools_pack(args.pack)
+    return devtools.look(html=args.html, pack=pack, out=args.out,
+                         steps=args.steps, json_out=args.json)
+
+
+def cmd_probe(args) -> int:
+    """`vefr probe` - fire rules at the woven player and read the why log.
+
+    Like cmd_look, the browser work is devtools'; this door resolves
+    --pack when --html is not given.
+    """
+    from . import devtools
+
+    pack = None if args.html else _devtools_pack(args.pack)
+    return devtools.probe(html=args.html, pack=pack, fire=args.fire or (),
+                          json_out=args.json)
+
+
 # --------------------------------------------------------------- vefr
 # The front door: one parser over the same functions the old commands
 # call. No logic lives here - only wiring, flags, and help text.
@@ -4082,6 +4118,39 @@ def vefr_main() -> int:
     pb.add_argument('--dry-run', action='store_true',
                     help='print the gallery command without running it')
     pb.set_defaults(fn=cmd_publish)
+
+    lk = sub.add_parser(
+        'look',
+        help='screenshot the woven player and list text over the map',
+        description='screenshot the woven player and list text over the map',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    lk.add_argument('--html', default=None,
+                    help='a woven player HTML file to open')
+    lk.add_argument('--pack', default=None,
+                    help='weave this pack instead: a worlds/ name or a path')
+    lk.add_argument('--out', default=None,
+                    help='screenshot path (default: look.png)')
+    lk.add_argument('--steps', default='',
+                    help='comma-separated keys to press after Begin')
+    lk.add_argument('--json', action='store_true', help='print the report as JSON')
+    lk.set_defaults(fn=cmd_look)
+
+    pr = sub.add_parser(
+        'probe',
+        help='fire rules at the woven player and read its why log',
+        description='fire rules at the woven player and read its why log',
+        epilog='see: docs/guides/vefr-command.md',
+    )
+    pr.add_argument('--html', default=None,
+                    help='a woven player HTML file to open')
+    pr.add_argument('--pack', default=None,
+                    help='weave this pack instead: a worlds/ name or a path')
+    pr.add_argument('--fire', action='append', default=None,
+                    metavar='EVENT:KEY=VALUE',
+                    help='fire this rule event (repeatable)')
+    pr.add_argument('--json', action='store_true', help='print the report as JSON')
+    pr.set_defaults(fn=cmd_probe)
 
     dc = sub.add_parser(
         'doctor',
