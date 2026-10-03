@@ -7,6 +7,23 @@
 
 ## Landed
 
+- [x] **Blueprint, the optional family source for packs** (2026-10-02, PRs #219 to #227):
+      a pack may carry `blueprint.json`, which `vefr normalize` expands into the
+      region `enemies` lists (generated, committed, read-only), with a lock
+      (`blueprint.lock.json`) and stale-output rejection in `check` and the weave
+      ([ADR 0008](docs/adr/0008-blueprint-format.md),
+      [guide](docs/guides/blueprint.md)). A pack without one is unchanged. The
+      Cottage trial passed the exit threshold: 508 authored creature values became
+      277 (45.5% fewer), all 69 records equal to the hand-written ones, and the
+      woven player is identical. Plan:
+      [`blueprint-family-normalization-plan.md`](docs/plans/blueprint-family-normalization-plan.md).
+- [x] **Durable rule saves** (2026-10-02, PRs #222 and #225): an optional `saves` block
+      (`"rules": "persist" | "reset"`, `"legacy": "fresh" | "from-log"`); persist keeps a
+      reload from forgetting fired rules, flags, beliefs and items, and fires `starts`
+      once per save ([ADR 0009](docs/adr/0009-rule-saves.md),
+      [plan](docs/plans/durable-rule-saves-plan.md)). Default is reset, today's behavior.
+      Cottage opts in. One known gap, [#224](https://github.com/Rylee-Bee/vefr/issues/224):
+      the player dies on Begin when `localStorage` itself throws.
 - [x] **Locked doors and stairs** (2026-10-02): a transition may carry
       `requires` (`{"item": ...}` or `{"flag": ...}`, exactly one) and a
       one-sentence `locked_text` (`design/gates-and-guardians.md`, build
@@ -2305,28 +2322,14 @@
 
 ## Next
 
-- [ ] **Blueprint (optional family source for packs)** (PRs #219 and #220 merged;
-      in progress): the proof pass passed with constraints, so the plan
-      [`blueprint-family-normalization-plan.md`](docs/plans/blueprint-family-normalization-plan.md)
-      builds an optional build-time source that expands into today's enemy
-      records ([ADR 0008](docs/adr/0008-blueprint-format.md)). Built: the
-      frozen tests, the library half (`src/vefr/blueprint.py`), the
-      `normalize` verb, the stale checks and the lock
-      (`blueprint.lock.json`), and the guide
-      ([Blueprints](docs/guides/blueprint.md)). Next: the Cottage trial on
-      one real pack with a 25% / one-real-error exit threshold. Floors
-      phase 2, album and equipment stay informed by that result; no runtime
-      or rule-language change is approved.
-- [ ] **Durable rule saves** (in progress, [plan](docs/plans/durable-rule-saves-plan.md),
-      [ADR 0009](docs/adr/0009-rule-saves.md)): the validator and docs for the per-pack
-      `saves` block landed (`saves_errors` beside `growth_errors`, `rules.md`, the glossary
-      and the pack contract). Next: the player load/save around the pure engine, which
-      flips S1-S10 and S12.
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
       depth tables, the Journal line and the New descent button.
-- [ ] **Gates and guardians** (`design/gates-and-guardians.md`): a `requires` lock on a
-      transition, a ladder of key-carrying guardians ending in the act's boss, and the boss's
-      seal opening a treasure room.
+- [ ] **Gates and guardians, the rest** (`design/gates-and-guardians.md`): the `requires`
+      lock landed (see Landed). Still to build: the key-carrying guardians and the generated
+      ladder ending in the act's boss, and the boss's seal opening a treasure room. Decided
+      by Rylee (2026-10-02): the first lock is the stair from floor 3 to floor 4, the key is
+      an actual key, and the guardians are stat variants of existing monsters, named from
+      their art and abilities.
 - [ ] **The album** (`design/album.md`): one record of what you have met, a sticker album
       first, bestiary, items and map as views later.
 - [ ] **Equipment** (`design/equipment.md`): five slots, atk and hp mods, the Bag "You" section.
