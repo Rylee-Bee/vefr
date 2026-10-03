@@ -1,6 +1,6 @@
 # Equipment: slots and icons first
 
-Status: **step 1 built** (the pack fields `slot` and `mods`, the validator, the bake). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Steps 2-5 (the equip state, the Bag "You" section, the glossary, the demo) are not built.
+Status: **steps 1 and 2 built** (the pack fields `slot` and `mods`, the validator, the bake, and the pure `VEFR_EQUIP_ENGINE`). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Steps 3-5 (the Bag "You" section, the buttons, the glossary, the demo) are not built.
 
 ## What exists today
 
@@ -56,8 +56,8 @@ Five small **empty-slot outlines** (hand, body, head, feet, charm) are the only 
 
 ## Checks and tests the build must carry
 
-1. **Validator** (`maplab.validate`): item `slot` in the allowed set; `mods` keys only `atk`/`hp`, whole numbers 0..9; a clear plain-sentence error per problem. A pack with no `slot` anywhere is unchanged.
-2. **Logic harness** (node, like `tests/fixtures/combat_harness.mjs`): equip, unequip, swap, stat sums, health clamp, persistence, a missing id is dropped, a duplicate is impossible.
+1. **Validator** (`maplab.validate`): item `slot` in the allowed set; `mods` keys only `atk`/`hp`, whole numbers 0..9; a clear plain-sentence error per problem. A pack with no `slot` anywhere is unchanged. **Done** (`tests/test_equipment_validator.py`).
+2. **Logic harness** (node, like `tests/fixtures/combat_harness.mjs`): equip, unequip, swap, stat sums, health clamp, persistence, a missing id is dropped, a duplicate is impossible. **Done for the pure engine** (`window.VEFR_EQUIP_ENGINE`, `tests/test_equipment_engine.py` + `tests/fixtures/equip_engine_harness.mjs`): the sums, the refusals, the swap, the clamp and `clean` for a saved state the catalog no longer matches. *Persistence and storage are not part of it yet* - the engine is pure and the `localStorage` read/write belongs to the slice that draws the panel.
 3. **Browser tests:** equip a cloak, see the slot icon and the sentence, take it off; the `axe-core` gate on woven players passes with the new panel.
 4. **Compatibility:** the sample world bakes byte-for-byte as before (the existing compatibility test).
 5. **Interact tie-in:** once one-button Interact lands, "Equip" is reachable from the Bag by the same keys; the Bag stays a pause-menu panel.
@@ -68,8 +68,8 @@ Five small **empty-slot outlines** (hand, body, head, feet, charm) are the only 
 
 ## Build order
 
-1. Validator and the pack fields (small, safe, testable alone).
-2. Equip state and the stat maths as pure functions with the node harness.
+1. Validator and the pack fields (small, safe, testable alone). **Done** (#244).
+2. Equip state and the stat maths as pure functions with the node harness. **Done** (the pure engine; storage comes with step 3).
 3. The Bag "You" section, buttons, live line, keyboard.
 4. Glossary (verbs **equip**, **take off**; noun **slot**), the rulesets guide, the player guide.
 5. A demo: Cottage's cloak, bow and ring wired to the round 8 icons.

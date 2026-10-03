@@ -17,13 +17,14 @@ import json
 import os
 from pathlib import Path
 
+from . import maplab
 from .library import load_library
 from .maplab import load_pack
 from .paths import app_home
 
 VALID_STATUSES = ("built", "partial", "proposed")
 VALID_DETECTS = ("rules", "growth", "library", "items", "enemies", "fog",
-                 "skin", "blueprint", "always", "none")
+                 "skin", "blueprint", "slots", "always", "none")
 
 
 def _root(root=None) -> Path:
@@ -245,6 +246,17 @@ def _one_use(feat: dict, pack: Path, w: dict, config: dict,
             used, detail = True, f"{count} regions"
         else:
             used, detail = False, "no blueprint"
+    elif detect == "slots":
+        # Equipment: an item that names one of the five slots. Counted
+        # from the same shape the bake reads, so a pack that declares
+        # slots and a pack the player can wear in are the same report.
+        items = config.get("items")
+        worn = 0
+        if isinstance(items, dict):
+            worn = sum(1 for spec in items.values()
+                       if isinstance(spec, dict)
+                       and spec.get("slot") in maplab.SLOTS)
+        used, detail = worn > 0, f"{worn} wearable"
     elif detect == "skin":
         skin = config.get("skin")
         if skin is None:

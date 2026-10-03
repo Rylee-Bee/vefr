@@ -30,8 +30,18 @@
       is a no-op rather than something unwearable. An item with no `slot`
       is unchanged, so every existing pack still loads
       ([design](design/equipment.md), [guide](docs/guides/rulesets.md)).
-      Step 1 of 5: the equip state, the stat sums, the Bag "You" section
-      and the buttons are their own slices.
+- [x] **Equipment, the pure engine** (2026-10-03, #217 track A slice A2):
+      `window.VEFR_EQUIP_ENGINE` in the woven player - pure, no DOM, no
+      clock, no randomness, no storage - answering `statsFor`, `equip`,
+      `unequip`, `clean` and `clampHealth`. Attack is base plus worn
+      `mods.atk`, max health base plus worn `mods.hp`, taking off clamps
+      health down to the new max but never below 1, and equipping into a
+      full slot hands the old wearer back for the bag. Four named
+      refusals (no-slot, wrong-slot, not-an-item, bad-slot) make a
+      duplicate impossible. Nothing is written into the caller's state,
+      because that object is what gets saved. Pinned by a jsdom harness
+      against the real woven file (`tests/test_equipment_engine.py`).
+      Nothing wears anything yet: the Bag panel is the next slice.
 - [x] **Durable rule saves** (2026-10-02, PRs #222 and #225): an optional `saves` block
       (`"rules": "persist" | "reset"`, `"legacy": "fresh" | "from-log"`); persist keeps a
       reload from forgetting fired rules, flags, beliefs and items, and fires `starts`
@@ -2359,9 +2369,10 @@
 - [ ] **The album** (`design/album.md`): one record of what you have met, a sticker album
       first, bestiary, items and map as views later.
 - [ ] **Equipment, the rest** (`design/equipment.md`): the pack fields
-      landed (Landed above). Still to build: the equip state and the stat
-      sums as pure functions, the Bag "You" section, the Equip/Take off
-      buttons and the live line, the glossary, and the Cottage demo.
+      and the pure engine landed (Landed above). Still to build: the Bag
+      "You" section, the Equip/Take off buttons and the live line, the
+      `localStorage` persistence (`vefr-equipped-<world>`), the hero
+      wiring, the glossary, and the Cottage demo.
 - [ ] **A real act 2** (ADR 0006): only the first act plays today.
 - [ ] **Rules, remaining** (`design/rules-when-then.md`): `add_rule` edits and a `grows` event.
 - [ ] **A second tiny skin** (`design/ui-skin.md` step 6), to prove skins swap.
