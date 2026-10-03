@@ -15,13 +15,6 @@ V1 = Path(__file__).parent / "fixtures" / "blueprint" / "v1"
 VALID = sorted(p for p in (V1 / "valid").iterdir() if p.is_dir())
 INVALID = sorted(p for p in (V1 / "invalid").iterdir() if p.is_dir())
 
-# Cases added with the source-tracking and unused-family changes: strict xfail until that PR lands.
-PR_B = {"inherited-drops-item", "ancestor-drops-item", "unused-unknown-parent", "unused-cycle"}
-INVALID_PARAMS = [
-    pytest.param(c, id=c.name, marks=pytest.mark.xfail(strict=True, reason="source tracking (PR B)"))
-    if c.name in PR_B else pytest.param(c, id=c.name)
-    for c in INVALID
-]
 
 
 @pytest.mark.parametrize("case", VALID, ids=lambda p: p.name)
@@ -34,7 +27,7 @@ def test_valid_case_expands_to_expected(case, tmp_path):
     assert got == json.loads((case / "expected.json").read_text())
 
 
-@pytest.mark.parametrize("case", INVALID_PARAMS)
+@pytest.mark.parametrize("case", INVALID, ids=lambda p: p.name)
 def test_invalid_case_fails_with_a_plain_sentence(case, tmp_path):
     from vefr import blueprint
 
