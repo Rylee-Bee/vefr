@@ -574,6 +574,50 @@ Code: `src/vefr/maplab.py` (validation) + `src/vefr/cli.py` (bake) +
 `tests/test_growth_validator.py` + `tests/test_growth_engine.py` +
 `tests/test_growth_play.py` + `tests/fixtures/make_growth_pack.py`.
 
+## equipment (the pack fields; the wearing is a later slice)
+
+Equipment is optional and additive: a pack whose items carry no `slot`
+plays exactly as it did, and a pack with no `items` is untouched.
+
+An item may carry `slot`, exactly one of `hand`, `body`, `head`, `feet` or
+`charm`, and `mods`, which is only allowed beside a slot:
+
+```json
+"items": {
+  "green-cloak": {"name": "a green hooded cloak", "sprite": "cloak",
+                  "slot": "body", "mods": {"hp": 2}},
+  "short-bow":   {"name": "a short bow", "sprite": "bow",
+                  "slot": "hand", "mods": {"atk": 1}},
+  "brass-ring":  {"name": "a plain brass ring", "sprite": "ring",
+                  "slot": "charm"},
+  "cloudy-potion": {"name": "a cloudy potion", "heal": 3, "use": "drink"}
+}
+```
+
+- `mods` holds only `atk` and `hp` (max health), each a whole number from
+  0 to 9; a bool is refused. No `mods` means a keepsake that only looks
+  nice.
+- A slotted item may still carry `value` and `keep`, but not `heal`,
+  `light` or `use`: a worn thing is not drunk or lit.
+- An item named by a door's `requires.item` may not have a slot. A key
+  stays in the bag so it can open its door more than once.
+- An item with no `slot` cannot be worn (a potion, a key) and behaves
+  exactly as before.
+
+`maplab.validate` checks the shape above and names a bad field in plain
+words, once per item. The bake carries `slot`, and `mods` beside it, only
+when the shape is valid, so a broken one is a silent no-op rather than
+something the player cannot wear. This slice is the **pack fields and the
+bake** only (`design/equipment.md`, build step 1 of 5): the equip state,
+the stat sums, the Bag's "You" section and the buttons come with their
+own slices. Deterministic throughout: no randomness, no model call, no
+clock.
+
+Code: `src/vefr/maplab.py` (`SLOTS`, `MOD_STATS`,
+`item_slot_and_mods`, `item_slot_errors`, `_door_key_items`) +
+`src/vefr/cli.py` (the `_player_items` bake); tests:
+`tests/test_equipment_validator.py` + `tests/fixtures/make_equip_pack.py`.
+
 ## Skins (a picture pack for the interface)
 
 A skin is a folder of pictures that repaints the player's interface. It is

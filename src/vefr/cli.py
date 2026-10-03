@@ -36,7 +36,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .maplab import SKIN_PICTURE_KEYS, load_pack, validate
+from .maplab import (SKIN_PICTURE_KEYS, item_slot_and_mods, load_pack,
+                     validate)
 from .paths import world_name
 # The loader's tile convention (ordered variants) is the single source
 # of the try-order the player bakes, so a pack's tiles/ is read the
@@ -1264,6 +1265,8 @@ def _player_items(world: dict) -> dict[str, dict]:
     use that is not a positive int / non-empty string is ignored.
     `light` (a torch's `radius`/`turns`, or `reveal: true`) rides along
     only when it forms a usable shape; maplab reports a broken one.
+    `slot` and `mods` (the five slots and atk/hp) ride along under the
+    same rule, read from the same helper the validator uses.
     """
     listed = world.get('items')
     if not isinstance(listed, dict):
@@ -1307,6 +1310,16 @@ def _player_items(world: dict) -> dict[str, dict]:
                 lum['reveal'] = True
             if lum:
                 entry['light'] = lum
+        # `slot` and `mods` (design/equipment.md, step 1): a wearable
+        # thing and the stats it changes. Only a valid, usable shape
+        # rides along - and `mods` only beside a `slot`, so a keepsake
+        # stays a keepsake - which makes a broken one a silent no-op
+        # rather than a thing the player cannot wear. maplab names it.
+        slot, mods = item_slot_and_mods(spec)
+        if slot is not None:
+            entry['slot'] = slot
+            if mods:
+                entry['mods'] = mods
         out[key] = entry
     return out
 
