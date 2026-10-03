@@ -1,5 +1,21 @@
 # DECISIONS — vefr
 
+## 2026-10-03 — equipment's pack fields, and one function for two readers
+
+**Decision.** Equipment step 1 (`design/equipment.md`, #217 track A slice A1, [PR #244](https://github.com/Rylee-Bee/vefr/issues/244)) is the pack fields and the bake, nothing else. The rules below are the frozen contract from #239, which Rylee merged as written; they are recorded here because they are pack contract, not implementation detail.
+
+**The contract.**
+1. Five slots: `hand`, `body`, `head`, `feet`, `charm`. `mods` holds only `atk` and `hp`, each a whole number 0 to 9, bools refused.
+2. A slotted item may still carry `value` and `keep` (worth gold, or usable and not consumable) but **not** `heal`, `light` or `use`. A worn thing is not drunk, lit or spent.
+3. An item named by a door's `requires.item` **may not have a slot**. The rationale is in the rule itself: a key stays in the bag so it can open its door more than once, so a worn key would be a key that can no longer be a key. (This also answers the design's still-open question — story items stay unequippable, because the frozen contract says so.)
+4. An item with no `slot` is unchanged. The whole slice is additive; the sample world still validates and bakes as it did.
+
+**The engineering rule, and this is the part worth keeping.** The five slots and the two mods are written **once**, in `maplab.item_slot_and_mods`, and read by both consumers: `item_slot_errors` (the validator, one plain sentence per problem) and `cli._player_items` (the bake, which carries only what comes back). Neither reader re-implements the rule, so they cannot drift. This is the 2026-10-02 second-consumer rule — *extract shared machinery only when two actual consumers independently need the same operation* — applied at the smallest scope that has two. It was not extended further: the bake and the validator were not merged, and the loading path was not touched.
+
+**A small hardening beyond the tests.** Door keys are collected from **every act**, not just the first, because the locked-door code only ever read act 1. A key declared in act 2 would otherwise have been wearable and therefore unusable as a key. This is the same finding the post-Act-2 hardening handoff records as item 3 (validation parity across acts), met in the one place this slice needed it.
+
+**Status.** ACCEPTED (2026-10-03). Owner: Rylee (the contract); integrator (the shared-function shape).
+
 ## 2026-10-02 (night) — lessons: workflow quirks and dead ends
 
 Recorded so the next session does not repeat them (also in the homelab-memory debug journal and `~/.agents/skills/offload/FOREMAN.md`).

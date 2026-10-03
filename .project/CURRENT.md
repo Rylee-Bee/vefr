@@ -4,9 +4,24 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-02 (late night).
+> Last refreshed: 2026-10-03 (evening).
 
-## 2026-10-02, last (the language campaign)
+## 2026-10-03 (the packet lands; equipment step 1)
+
+**Landed (main `2e8cc27`, every check green and merged):**
+- **The language-architecture research packet** ([PR #242](https://github.com/Rylee-Bee/vefr/issues/242), `docs/research/language-architecture/`, 13 documents): the Phase A disposition is **GO WITH CONSTRAINTS**. The evidence earns an *optional, build-time* source layer — and the Blueprint, which is that first slice, is already built and trialled on Cottage. The evidence explicitly does **not** earn a new runtime, event sourcing, a logic engine, natural-language authoring, a plugin system, an estate-wide kernel or broad pack migration. Prior-art claims about Datalog/JSON Schema/event sourcing were corrected; some project-history claims stay `UNVERIFIED`. The Opus brief and the open decisions are `13-opus-brief.md` and `11-open-decisions.md`.
+- **Equipment, the pack fields** ([PR #244](https://github.com/Rylee-Bee/vefr/issues/244), #217 track A slice A1): an item may carry `slot` (one of `hand`, `body`, `head`, `feet`, `charm`) and, only beside it, `mods` (`atk` and `hp`, whole numbers 0 to 9, bools refused). A slotted item may still carry `value` and `keep` but not `heal`, `light` or `use`; an item a locked door names as its key may not be worn. The 19 strict xfails from #239 now pass. Additive: a pack with no `slot` anywhere is unchanged, and nothing at runtime reads the fields yet.
+- Smaller, same day: the localStorage fix (#224) in the player, the jsdom harness fix that took the suite from 274 s to 154 s (#241, now ~144 s), and the validator covering every act of a multi-act pack (#236).
+
+**Decisions recorded in `.project/DECISIONS.md` (2026-10-03):** the equipment contract rules above, and that the validator and the bake read **one** function (`item_slot_and_mods`) instead of each re-implementing the five slots — the second-consumer rule from 2026-10-02 applied at the smallest scope that needs it.
+
+**The one gate waiting on Rylee:** the language packet authorizes nothing until she has read the disposition and says go (`11-open-decisions.md` item 6). Until then the next implementation work is the ordinary backlog, not the kernel.
+
+**Known gaps:** the stale `blueprint.cpython-312.pyc` that the 2026-10-02 plan recorded as a live hazard (same mtime to the second, same size, wrong `FIELD_ORDER`) is **gone** from this checkout — resolved, no longer a risk. The hazard's habit is still real: use `PYTHONPYCACHEPREFIX` for checks after any temporary edit.
+
+**Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve, #215), then the album (#216), then equipment's remaining slices — the equip state and stat sums as pure functions, then the Bag "You" section — and a real act 2 (#217).
+
+## 2026-10-02 (the language campaign)
 
 **Landed (main `8ce399f`, every PR green and merged):** the language-architecture campaign, built by offload foremen to tests written first, then reviewed by the integrator.
 - **Blueprint** (`docs/adr/0008-blueprint-format.md`, `docs/guides/blueprint.md`): an optional `blueprint.json` expands into region `enemies` lists with `vefr normalize`; generated lists and `blueprint.lock.json` are committed and read-only; stale output is refused by `check` and the weave. **Cottage trial passed:** 508 authored creature values became 277 (45.5% fewer), 69 records equal to the hand-written ones, woven player identical. Exit ramp: delete the two files.
@@ -112,7 +127,15 @@ Treat `docs/vefr/` as the canonical copy.
 
 ## Open owner decisions
 
-None. "Should rumors read pack canon?" (raised 2026-09-25) was already
+1. **The language packet's disposition read** (raised 2026-10-03, the
+   gate on everything in `docs/research/language-architecture/`). The
+   packet says GO WITH CONSTRAINTS and authorizes nothing until Rylee
+   has read it (`11-open-decisions.md` item 6). The Blueprint — the
+   slice the evidence actually earns — is already built, so the ordinary
+   backlog is not blocked; the kernel and dialect layer stay deferred
+   until she says go.
+
+"Should rumors read pack canon?" (raised 2026-09-25) was already
 true: `saga.system_prompt` has carried the pack's `logbok.md` since
 2026-08-31. The orchestration plan's "pack-blind" note was wrong; a
 test now pins it (`test_rumor_prompt_carries_pack_canon`).
@@ -142,7 +165,7 @@ acts-shape pack's live voice file is the region one.
 | Branch | Status |
 |---|---|
 | `main` | trunk; land by PR (convention — protection does not require reviews) |
-| `oa/old-main-20260920` | local-only snapshot of main (last commit 2026-09-19); do not push |
+| `oa/old-main-20260920` | **gone** (2026-10-03): the local-only snapshot of main from 2026-09-19 no longer exists on this machine or on the remote, and no reflog entry survives. Cause UNKNOWN — not deleted by the 2026-10-03 session. Rylee should confirm nobody needs it; if they do, the 2026-09-19 main is still reachable in the commit graph. |
 
 ## Known protected work
 

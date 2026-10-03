@@ -221,12 +221,16 @@
     {
       "id": "equipment",
       "name": "Gear in five slots",
-      "what": "Wear and hold things that change your health and attack.",
-      "status": "proposed",
+      "what": "An item may name a slot and the atk and hp it changes (built); the equip state, the stat sums, the Bag 'You' section and the buttons (proposed).",
+      "status": "partial",
       "detect": "none",
-      "docs": [],
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
       "design": "design/equipment.md",
-      "tests": []
+      "tests": [
+        "tests/test_equipment_validator.py"
+      ]
     },
     {
       "id": "acts",
