@@ -185,6 +185,7 @@ New file `tests/test_blueprint_sources.py`. It is not part of the frozen A1-A12 
 | T11 | `test_an_unused_family_with_an_unknown_parent_is_rejected` | A family used by no instance with `extends: "nowhere"` makes `expand` raise `BlueprintError` ("unknown parent") at `/families/<name>/extends` | Fails: unused families are never checked (P2) |
 | T12 | `test_an_unused_family_cycle_is_rejected` | Two unused families that extend each other make `expand` raise `BlueprintError` ("cycle") at `/families` | Fails |
 | T13 | `test_cottage_shaped_blueprints_still_pass` | `STD_BLUEPRINT` and every `valid/` conformance case still expand (every family there is used or valid) | Passes (guards the tightening) |
+
 Conformance cases, justified because the pointer is part of each case's recorded contract (`expected-error.txt` line 2) and the corpus is format 1's versioned behavior record:
 
 - `tests/fixtures/blueprint/v1/invalid/inherited-drops-item/`: copy `unknown-drops-item/blueprint.json`, move `"drops": ["no-such-item"]` into family `b`'s `defaults`, and remove the instance's `properties`. `expected-error.txt`: `unknown item` / `/families/b/defaults/drops`. Fails today.
