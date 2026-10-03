@@ -1,8 +1,7 @@
 """Blueprint: errors name the declaration that supplied the value, and every family is checked.
 
 Not part of the frozen A1-A12 contract (like test_blueprint_hardening.py). Plan:
-docs/plans/language-architecture-sonnet-implementation-update.md, section 5. Tests that fail today
-are strict xfails ("PR B") that the implementation PR flips.
+docs/plans/language-architecture-sonnet-implementation-update.md, section 5. These all pass now.
 """
 
 import copy
@@ -13,7 +12,6 @@ import pytest
 from blueprint_helpers import mk, normalized_pack
 from vefr import blueprint
 
-PR_B = pytest.mark.xfail(strict=True, reason="source tracking and unused-family checks (PR B)")
 # Written out on purpose (not imported): the documented record key order of format 1.
 FIELD_ORDER = ["id", "name", "sprite", "at", "hp", "atk", "xp", "sight", "drops"]
 
@@ -38,7 +36,6 @@ def error_of(tmp_path, source):
     return err.value
 
 
-@PR_B
 def test_invalid_family_default_drop_points_at_the_family(tmp_path):
     s = src()
     s["families"]["beetle"]["defaults"]["drops"] = ["nope"]
@@ -46,14 +43,12 @@ def test_invalid_family_default_drop_points_at_the_family(tmp_path):
     assert "unknown item" in str(err) and err.pointer == "/families/beetle/defaults/drops"
 
 
-@PR_B
 def test_invalid_ancestor_drop_points_at_the_ancestor(tmp_path):
     s = empty_cave2(src())                                  # only deep-beetle instances remain
     s["families"]["beetle"]["defaults"]["drops"] = ["nope"]
     assert error_of(tmp_path, s).pointer == "/families/beetle/defaults/drops"
 
 
-@PR_B
 def test_descendant_drop_points_at_the_descendant(tmp_path):
     s = empty_cave2(src())
     s["families"]["beetle"]["defaults"]["drops"] = ["shell"]
@@ -71,7 +66,6 @@ def test_valid_override_hides_an_invalid_inherited_drop(tmp_path):
     assert expand(tmp_path, s)                               # pins today's semantics
 
 
-@PR_B
 def test_family_names_are_escaped_in_the_pointer(tmp_path):
     s = src()
     s["families"]["a/b~c"] = {"defaults": {"name": "x", "sprite": "beetle", "hp": 1, "atk": 1,
@@ -80,7 +74,6 @@ def test_family_names_are_escaped_in_the_pointer(tmp_path):
     assert error_of(tmp_path, s).pointer == "/families/a~1b~0c/defaults/drops"
 
 
-@PR_B
 def test_a_non_string_drop_is_a_plain_error(tmp_path):
     s = src()
     s["families"]["beetle"]["defaults"]["drops"] = [{"a": 1}]
@@ -88,7 +81,6 @@ def test_a_non_string_drop_is_a_plain_error(tmp_path):
     assert err.pointer == "/families/beetle/defaults/drops"
 
 
-@PR_B
 def test_check_names_the_family_declaration(tmp_path):
     pack = normalized_pack(tmp_path)
     bad = src()
@@ -126,7 +118,6 @@ def test_resolution_does_not_leak_between_instances_or_runs(tmp_path):
     assert cave2["odd1"]["hp"] == 9 and cave2["b1"]["hp"] == 3
 
 
-@PR_B
 def test_an_unused_family_with_an_unknown_parent_is_rejected(tmp_path):
     s = src()
     s["families"]["orphan"] = {"extends": "nowhere", "defaults": {}}
@@ -134,7 +125,6 @@ def test_an_unused_family_with_an_unknown_parent_is_rejected(tmp_path):
     assert "unknown parent" in str(err) and err.pointer == "/families/orphan/extends"
 
 
-@PR_B
 def test_an_unused_family_cycle_is_rejected(tmp_path):
     s = src()
     s["families"]["x"] = {"extends": "y", "defaults": {}}

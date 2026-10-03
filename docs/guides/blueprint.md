@@ -152,7 +152,7 @@ sentence and a JSON pointer.
 Unknown keys, unknown families, unknown parents, cycles, duplicate
 ids, a missing `at`, an absent region, a region path outside the pack,
 and an unknown `drops` item all fail. Generated records are written in
-this key order: `id, name, sprite, at, hp, atk, xp, sight, drops`.
+this key order: `id, name, sprite, at, hp, atk, xp, sight, drops`. A family nothing uses is checked too: a broken parent or a cycle there is rejected, so a typo cannot hide until the family is first used. An error about a `drops` list points at the declaration that supplied it (the family's `defaults`, an ancestor's, or the instance's `properties`).
 
 ## The stale rule
 
