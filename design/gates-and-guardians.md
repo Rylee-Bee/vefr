@@ -65,7 +65,7 @@ No timed locks, no lockpicking, no key ring UI, one lock per floor in the first 
 
 ## Open for Rylee
 
-- The guardians' names and creatures (the monsters we already have, or new ones from the art set).
+- ~~The guardians' creatures~~ **Decided (Rylee, 2026-10-02):** variants of the monsters we already have, with names based on their art and abilities. Still hers: approving the names.
 - ~~Where the last room sits.~~ **Decided (Rylee, 2026-10-02):** "his seal opens like a treasure room with a lore note and a 'back to town' before you start the next set of dungeons". So the Cellar King's drop is a seal; using it on the last floor's sealed door opens a room with a treasure, a lore note, and a way back to town; act 2 starts after that. In the design: a guardian row may name `"opens": {"room": "king-room"}`, and the generator joins that authored room to the last floor on every seed (the "ending reachable on every seed" rule of `design/random-floors.md`). Still hers: what the treasure is and the lore note's words; nothing is canon until she writes or picks them.
-- Which stair is the first lock: the one into the deeper zone (floor 3 to 4), or the way out at the bottom?
-- Does the guardian's key look like a key, or something of the story's (a lit lantern, a warm stone)? Her call; nothing becomes canon until she says.
+- ~~Which stair is the first lock?~~ **Decided (Rylee, 2026-10-02):** the stair from floor 3 to floor 4.
+- ~~Does the guardian's key look like a key?~~ **Decided (Rylee, 2026-10-02):** an actual key.

@@ -4,7 +4,23 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-02 (night).
+> Last refreshed: 2026-10-02 (late night).
+
+## 2026-10-02, last (the language campaign)
+
+**Landed (main `8ce399f`, every PR green and merged):** the language-architecture campaign, built by offload foremen to tests written first, then reviewed by the integrator.
+- **Blueprint** (`docs/adr/0008-blueprint-format.md`, `docs/guides/blueprint.md`): an optional `blueprint.json` expands into region `enemies` lists with `vefr normalize`; generated lists and `blueprint.lock.json` are committed and read-only; stale output is refused by `check` and the weave. **Cottage trial passed:** 508 authored creature values became 277 (45.5% fewer), 69 records equal to the hand-written ones, woven player identical. Exit ramp: delete the two files.
+- **Rule saves** (`docs/adr/0009-rule-saves.md`): a pack's `saves` block (`rules` persist or reset, `legacy` fresh or from-log). Default is reset, today's behavior. Persist keeps fired rules, flags, beliefs and items under `vefr-rulestate-<world>`; `starts` fires once per save.
+- **Locked doors and stairs** (`design/gates-and-guardians.md`, build step 1): `requires` (one item or one flag) and `locked_text` on a transition. Keys are never consumed.
+- Research and plans: `docs/research/language-architecture/` (the Phase A packet, GO WITH CONSTRAINTS) and `docs/plans/` (the two Opus plans).
+
+**Decisions (Rylee, in chat):** the source layer is called Blueprint; the source is the edited truth; rule saves are a per-pack setting; the first lock is Cottage's floor 3 to floor 4 stair; the key is an actual key; guardians are variants of existing monsters named from their art and abilities. Recorded in `.project/DECISIONS.md`.
+
+**Known gaps:** [#224](https://github.com/Rylee-Bee/vefr/issues/224) (the player dies on Begin when `localStorage` itself throws; its test is the one strict xfail). The Cottage diff for the Blueprint was large in bytes only because the legacy records used several key orders.
+
+**Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve), then the album (#216), then equipment and a real act 2 (#217).
+
+**How the foremen work (tool lessons, also in `~/.agents/skills/offload/FOREMAN.md`):** commit tests first and merge them; write one brief per slice with its single acceptance command (`--runxfail`); the foreman must wait on workers in the foreground; clones need `~/worktrees/node_modules` linked for the jsdom tests; a foreman commits its `PLAN.md` by habit, so bring over only the files you mean; review every diff (each success so far needed a fix: a circular import, loose types, an unsafe copy, test-only code in the player).
 
 ## 2026-10-02, later (the foremen round)
 
@@ -29,7 +45,7 @@
 1. Quiet-UI pass (Rylee chose "2 + 1"): the how-to-move line vanishes after the first step, the place name shows briefly, drop the use-hint that repeats the Interact button, show the fight buttons only when something is near, and tuck the rest into a small collapsible corner panel (screen readers still hear everything). Use `vefr look` to see it.
 2. The hero's step hop much smaller (constants `STEP_HOP` 0.06, `STEP_LEAN` 6, `STEP_SQUASH` 0.12 near line 3214; she wants about a third).
 3. Trade closes with E/F (Space/Enter keep activating the focused button); full WASD (W/A/S/D move, A/D turn note pages).
-4. The locked stair and guardian ladder, then the album, then per-run floors.
+4. ~~The locked stair~~ **done**; the guardian ladder, then the album, then per-run floors.
 
 **How to work here:** read `AGENTS.md`; run the gate in the "Commands" block; small VM (2.6 GB): never run the test suite while a Codex or heavy job runs (an exit-137 kill happened). Foremen: write the acceptance tests first, commit, `git worktree add ~/worktrees/<name>` on Bazzite, `bash tests/run.sh ...` as the `--accept`, `nice -n 10 offload foreman -m foreman ...` (the dev VM has no MiniMax key). Review every foreman diff by hand; two real workarounds and a stray `PLAN.md` showed up this way.
 

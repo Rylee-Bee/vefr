@@ -1,5 +1,21 @@
 # DECISIONS — vefr
 
+## 2026-10-02 — locked doors, and the first lock
+
+**Decision (Rylee, in chat, 2026-10-02).**
+
+1. **The first lock is the stair from floor 3 to floor 4** (Cottage), not the way out at the bottom.
+2. **The key is an actual key**, not something of the story's.
+3. **The guardians are stat variants of existing monsters**, named from their art and abilities (names are
+   proposed by an agent and approved by her; nothing is canon until she says).
+4. **Locked doors are built** (`requires` on a transition, exactly one of `item` or `flag`; `locked_text`
+   optional, default "It will not open yet."; keys are never consumed in this slice). A flag lock needs
+   `saves.rules: persist` to survive a reload. See `design/gates-and-guardians.md`, "Slice 1 contract".
+5. **Cottage opted in to `saves.rules: persist`** (`legacy: from-log`) and to a Blueprint for its creatures.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee. The guardian ladder, depth tables and the Cottage lock
+placement are the next build.
+
 ## 2026-10-02 — Blueprint format 1
 
 **Decision.** Recorded in full in
