@@ -78,6 +78,7 @@ try {
     stored: window.localStorage.getItem(
       'vefr-rules-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world')),
   }));
+  window.close();  // let node exit now: a live jsdom window's timers kept the process around for ~4 s
 } catch (err) {
   console.error(String((err && err.stack) || err));
   process.exit(1);

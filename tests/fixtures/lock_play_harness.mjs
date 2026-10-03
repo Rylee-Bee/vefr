@@ -63,6 +63,7 @@ try {
     heroBefore: before.hero.at, heroAfter: after.hero.at,
     hint, label, narrator: txt('combat-live'), near: txt('near'), bag, errors,
   }));
+  window.close();  // let node exit now: a live jsdom window's timers kept the process around for ~4 s
 } catch (err) {
   console.error(String((err && err.stack) || err));
   process.exit(1);
