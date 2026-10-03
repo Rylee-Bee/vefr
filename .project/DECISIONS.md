@@ -1,5 +1,18 @@
 # DECISIONS — vefr
 
+## 2026-10-02 — Blueprint stays local; the second-consumer rule
+
+**Decision.** From the refined PR #231 plan (`docs/plans/language-architecture-sonnet-implementation-update.md`).
+
+1. **Implemented:** family resolution is one private operation in `src/vefr/blueprint.py` (`_resolve_family`), and a validation error names the declaration that supplied the value (a family's or an ancestor's `defaults`, or the instance's `properties`). Every family is checked for an unknown parent or a cycle, used or not (Rylee: reject broken unused families). Format 1, the key sets, the lock shape and valid output are unchanged.
+2. **Rule:** extract shared machinery only when two actual consumers independently need the same operation and invariants. Two helpers inside one module justify local consolidation only. A local bug fix needs no second consumer.
+3. **Subtraction test for a new abstraction:** name the duplicated fact or missing invariant; show what it deletes or makes enforceable; count the concepts, configuration and migration it adds; prefer the smallest change that pays. A change that only shortens syntax, or only serves hypothetical consumers, is deferred.
+4. **Working boundaries, checked against VEFR's seams:** *Definition* is the Blueprint's families and defaults plus the pack's `world.json` items (exists). *Generator* is `src/vefr/delve.py` (`generate_floor`; note `src/vefr/generator.py` is the storyteller model client, not this) (exists). *Runtime* is the engine and player under host authority (exists). *Recipe* has no artifact or seam today: it is a hypothesis. "Theme owns vocabulary; generator owns arrangement" stands.
+5. **Deferred:** the kernel / dialect / pack horizon. Blueprint gives no evidence for it; it waits for a second real consumer.
+6. **Cottage:** the flat-families layout (277 to 257 authored values, no abstract parent families) is a separate private PR for Rylee's review. A parent family earns its place only when it expresses a real shared fact.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
 ## 2026-10-02 — locked doors, and the first lock
 
 **Decision (Rylee, in chat, 2026-10-02).**
