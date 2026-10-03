@@ -187,6 +187,22 @@ Your hierarchy is built from light and dark, not color. Hue adds
 personality — it never carries meaning. A player with any form of color
 vision reads the same hierarchy you designed.
 
+**A hue used for text carries a contrast floor; the same hue used for a
+fill does not.** These are two different jobs and they need two tokens.
+The engine's own builder UI is the worked example (#218): `--teal` is
+the brand and AI-presence colour, tuned for dots, borders and fills,
+where WCAG asks nothing of it. Small *labels* need 4.5:1, and the brand
+step only reached 4.36 on a card. So text reads `--teal-text` (and
+`--teal-text-hi` on hover), one step up the same ramp, which clears it
+at 6.25. Repointing `--teal` itself would have fixed today's labels and
+left the trap in place for the next person; the two jobs only stay
+separate if they have two names.
+
+`tests/test_teal_contrast.py` is the guard: it computes the ratio for
+every theme, including the worst case (a 10px badge on a translucent
+teal wash), and it fails if any stylesheet takes a text colour from a
+fill token.
+
 ### 3. Motion OFF by Default
 
 `prefs.motion` defaults to `'off'`. Nothing moves until the player says so.
