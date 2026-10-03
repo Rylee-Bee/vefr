@@ -17,6 +17,9 @@
       277 (45.5% fewer), all 69 records equal to the hand-written ones, and the
       woven player is identical. Plan:
       [`blueprint-family-normalization-plan.md`](docs/plans/blueprint-family-normalization-plan.md).
+- [x] **Blueprint, one family resolution** (2026-10-02, PRs #232 and #233): `_resolve_family` replaces two
+      traversals; a bad `drops` list points at the declaration that supplied it; broken unused families are
+      rejected. Format 1 and output unchanged. Refined plan: PR #231.
 - [x] **Durable rule saves** (2026-10-02, PRs #222 and #225): an optional `saves` block
       (`"rules": "persist" | "reset"`, `"legacy": "fresh" | "from-log"`); persist keeps a
       reload from forgetting fired rules, flags, beliefs and items, and fires `starts`

@@ -201,6 +201,8 @@ Do not force awkward fits. If a concept genuinely needs runtime machinery, say s
 
 ## Kernel and dialects (the longer horizon)
 
+> **Status (2026-10-02):** not proven and not built. Blueprint stays local; extraction waits for a second real consumer. See `.project/DECISIONS.md`, "Blueprint stays local; the second-consumer rule".
+
 Rylee's eventual aim is for this to be the underlying language for **all** of her projects, not only games. That changes the shape of the hypothesis from two layers to three:
 
 ```text
