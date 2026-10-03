@@ -339,6 +339,107 @@ def item_light_errors(item_id, spec) -> list[str]:
     return errors
 
 
+# Equipment (design/equipment.md, build step 1; #217 track A). The five
+# slots and the two stats a worn thing may change are the pack contract,
+# so they are written once here and read by both the validator (which
+# names a broken shape) and the bake (which carries only a usable one).
+SLOTS = ('hand', 'body', 'head', 'feet', 'charm')
+MOD_STATS = ('atk', 'hp')
+# A worn thing is held on the hero, not in the hand that pours a potion
+# or carries a torch: these three may not sit beside a `slot`.
+WORN_FORBIDDEN = ('heal', 'light', 'use')
+
+
+def _mod_value_ok(v) -> bool:
+    """True for a usable mods value: a whole number 0 to 9, not a bool."""
+    return _is_whole(v) and 0 <= v <= 9
+
+
+def item_slot_and_mods(spec) -> tuple:
+    """The item's usable `(slot, mods)`, read once for the validator and the bake.
+
+    `slot` is None when the item is not wearable (it declared no slot, or
+    one the contract does not allow). `mods` is empty unless a valid slot
+    carries a fully valid `mods`, so a keepsake stays a keepsake and a
+    broken pair is a silent no-op in play - `item_slot_errors` is what
+    names it for the author.
+    """
+    if not isinstance(spec, dict):
+        return None, {}
+    slot = spec.get('slot')
+    if slot not in SLOTS:
+        return None, {}
+    mods = spec.get('mods')
+    if not isinstance(mods, dict) or isinstance(mods, bool):
+        return slot, {}
+    clean = {k: v for k, v in mods.items()
+             if k in MOD_STATS and _mod_value_ok(v)}
+    return slot, (clean if len(clean) == len(mods) else {})
+
+
+def item_slot_errors(item_id, spec, keys: frozenset = frozenset()) -> list[str]:
+    """Every problem with an item's optional `slot` and `mods` (empty = good).
+
+    `slot` is one of SLOTS, and `mods` (only with a slot) is an object of
+    whole numbers 0 to 9 for atk and hp. Both are additive: an item with
+    neither plays exactly as it did. A worn thing may still be worth gold
+    or kept, but it is not drunk, lit or spent, so `heal`, `light` and
+    `use` may not sit beside a slot; and a thing a locked door names as
+    its key is a key, not a keepsake. `keys` is the set of ids a door's
+    `requires` names, collected by the caller (`_door_key_items`).
+    """
+    label = str(spec.get('name') or item_id)
+    # Name the words and the id when they differ: an author looking at a
+    # catalog needs the id to find the entry they have to fix.
+    where = (f"item '{label}'" if label == item_id
+             else f"item '{label}' ({item_id})")
+    slot, _ = item_slot_and_mods(spec)
+    if 'slot' in spec and slot is None:
+        return [f"{where} slot must be one of {', '.join(SLOTS)}"]
+    if 'mods' in spec:
+        mods = spec.get('mods')
+        if not isinstance(mods, dict) or isinstance(mods, bool):
+            return [f"{where} mods must be an object holding only "
+                    f"{' and '.join(MOD_STATS)}"]
+        bad = [str(k) if k not in MOD_STATS else f"{k} {v}"
+               for k, v in mods.items()
+               if k not in MOD_STATS or not _mod_value_ok(v)]
+        if bad:
+            return [f"{where} mods may only hold {' and '.join(MOD_STATS)}, "
+                    f"each a whole number 0 to 9; not allowed: "
+                    f"{', '.join(bad)}"]
+        if slot is None:
+            return [f"{where} mods need a slot: only a worn thing has mods"]
+    if slot is not None:
+        for field in WORN_FORBIDDEN:
+            if field in spec:
+                return [f"{where} slot cannot go with {field}: a worn thing "
+                        f"is not drunk, lit or spent"]
+        if item_id in keys:
+            return [f"{where} is a locked door's key, so it cannot wear a slot"]
+    return []
+
+
+def _door_key_items(w: dict) -> frozenset:
+    """The item ids a locked door names as its key, from every act.
+
+    A key stays in the bag so it can open its door more than once, so the
+    check that a key is not worn has to see locks declared in later acts
+    too, not just the first.
+    """
+    keys: set = set()
+    listed = [w.get('transitions')]
+    for act in (w.get('acts') or []):
+        if isinstance(act, dict):
+            listed.append(act.get('transitions'))
+    for transitions in listed:
+        for t in (transitions or []):
+            req = t.get('requires') if isinstance(t, dict) else None
+            if isinstance(req, dict) and isinstance(req.get('item'), str):
+                keys.add(req['item'])
+    return frozenset(keys)
+
+
 # The speech-box limit the pack contract already uses: a `say` line
 # longer than this would be cut off by the woven player's box, so it
 # is a pack-authoring error here instead.
@@ -1635,13 +1736,16 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # The pack's grammars (optional): checked first so a broken
     # grammar is reported even when the map is wrong too.
     errors.extend(grammar_errors(w.get('grammars', {})))
-    # The item catalog's optional `light` field: checked here so a bad
-    # torch is a pack-authoring error, not a silent no-op in play.
+    # The item catalog's optional `light` and `slot`/`mods` fields
+    # (design/equipment.md, step 1): checked here so a broken torch or a
+    # bad slot is a pack-authoring error, not a silent no-op in play.
     items = w.get('items')
     if isinstance(items, dict):
+        key_ids = _door_key_items(w)
         for iid, spec in items.items():
             if isinstance(spec, dict):
                 errors.extend(item_light_errors(iid, spec))
+                errors.extend(item_slot_errors(iid, spec, key_ids))
     # The pack's optional rules/flags/claims/people catalog: checked
     # beside the other optional catalogs so a broken rule is a
     # pack-authoring error, not a surprise in play. A pack that

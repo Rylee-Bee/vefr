@@ -20,6 +20,18 @@
 - [x] **Blueprint, one family resolution** (2026-10-02, PRs #232 and #233): `_resolve_family` replaces two
       traversals; a bad `drops` list points at the declaration that supplied it; broken unused families are
       rejected. Format 1 and output unchanged. Refined plan: PR #231.
+- [x] **Equipment, the pack fields** (2026-10-03, #217 track A slice A1): an
+      item may carry `slot` (`hand`, `body`, `head`, `feet`, `charm`) and,
+      only beside it, `mods` (`atk` and `hp`, whole numbers 0 to 9, bools
+      refused). A slotted item may still carry `value` and `keep` but not
+      `heal`, `light` or `use`; an item a locked door names as its key may
+      not be worn. The validator names each problem in one plain sentence,
+      and the bake carries `slot`/`mods` only when valid, so a broken shape
+      is a no-op rather than something unwearable. An item with no `slot`
+      is unchanged, so every existing pack still loads
+      ([design](design/equipment.md), [guide](docs/guides/rulesets.md)).
+      Step 1 of 5: the equip state, the stat sums, the Bag "You" section
+      and the buttons are their own slices.
 - [x] **Durable rule saves** (2026-10-02, PRs #222 and #225): an optional `saves` block
       (`"rules": "persist" | "reset"`, `"legacy": "fresh" | "from-log"`); persist keeps a
       reload from forgetting fired rules, flags, beliefs and items, and fires `starts`
@@ -2341,7 +2353,10 @@
       their art and abilities.
 - [ ] **The album** (`design/album.md`): one record of what you have met, a sticker album
       first, bestiary, items and map as views later.
-- [ ] **Equipment** (`design/equipment.md`): five slots, atk and hp mods, the Bag "You" section.
+- [ ] **Equipment, the rest** (`design/equipment.md`): the pack fields
+      landed (Landed above). Still to build: the equip state and the stat
+      sums as pure functions, the Bag "You" section, the Equip/Take off
+      buttons and the live line, the glossary, and the Cottage demo.
 - [ ] **A real act 2** (ADR 0006): only the first act plays today.
 - [ ] **Rules, remaining** (`design/rules-when-then.md`): `add_rule` edits and a `grows` event.
 - [ ] **A second tiny skin** (`design/ui-skin.md` step 6), to prove skins swap.

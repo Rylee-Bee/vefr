@@ -1,6 +1,6 @@
 # Equipment: slots and icons first
 
-Status: **proposed** (Rylee asked for this on 2026-10-01: "slots and icons first"). Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). No code yet. This is a pack-contract addition, so the note still waits for approval before a build.
+Status: **step 1 built** (the pack fields `slot` and `mods`, the validator, the bake). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Steps 2-5 (the equip state, the Bag "You" section, the glossary, the demo) are not built.
 
 ## What exists today
 
