@@ -85,6 +85,7 @@ try {
     errors,
     narrator: (document.getElementById('combat-live') || {}).textContent || '',
   }));
+  window.close();  // let node exit now: a live jsdom window's timers kept the process around for ~4 s
 } catch (err) {
   console.error(String((err && err.stack) || err));
   process.exit(1);

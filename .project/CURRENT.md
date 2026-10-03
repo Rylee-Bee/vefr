@@ -16,9 +16,11 @@
 
 **Decisions (Rylee, in chat):** the source layer is called Blueprint; the source is the edited truth; rule saves are a per-pack setting; the first lock is Cottage's floor 3 to floor 4 stair; the key is an actual key; guardians are variants of existing monsters named from their art and abilities. Recorded in `.project/DECISIONS.md`.
 
-**Known gaps:** [#224](https://github.com/Rylee-Bee/vefr/issues/224) (the player dies on Begin when `localStorage` itself throws; its test is the one strict xfail). The Cottage diff for the Blueprint was large in bytes only because the legacy records used several key orders.
+**Known gaps:** none open from this campaign ([#224](https://github.com/Rylee-Bee/vefr/issues/224), the player dying on Begin when `localStorage` throws, is fixed and its test passes). The Cottage diff for the Blueprint was large in bytes only because the legacy records used several key orders.
 
 **Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve), then the album (#216), then equipment and a real act 2 (#217).
+
+**Late additions (2026-10-02, night):** the validator now checks every act of a multi-act pack (PR #236); equipment and a real act 2 are planned and approved (the plan is Opus's, in the session scratch; the decisions are in `.project/DECISIONS.md`): equipment as written, `complete-act` as a rule action; the next slice is the equipment tests. Image generation is `offload image` and the MiniMax MCP; Rylee prefers cute storybook mobs and Codex for characters, MiniMax for items (recipe in Cottage `art/STYLE.md`). Workflow quirks and dead ends are in `.project/DECISIONS.md`, "lessons: workflow quirks and dead ends".
 
 **How the foremen work (tool lessons, also in `~/.agents/skills/offload/FOREMAN.md`):** commit tests first and merge them; write one brief per slice with its single acceptance command (`--runxfail`); the foreman must wait on workers in the foreground; clones need `~/worktrees/node_modules` linked for the jsdom tests; a foreman commits its `PLAN.md` by habit, so bring over only the files you mean; review every diff (each success so far needed a fix: a circular import, loose types, an unsafe copy, test-only code in the player).
 

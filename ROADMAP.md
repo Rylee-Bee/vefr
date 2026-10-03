@@ -25,8 +25,8 @@
       reload from forgetting fired rules, flags, beliefs and items, and fires `starts`
       once per save ([ADR 0009](docs/adr/0009-rule-saves.md),
       [plan](docs/plans/durable-rule-saves-plan.md)). Default is reset, today's behavior.
-      Cottage opts in. One known gap, [#224](https://github.com/Rylee-Bee/vefr/issues/224):
-      the player dies on Begin when `localStorage` itself throws.
+      Cottage opts in. The player also survives a `localStorage` that throws (a sandboxed
+      iframe): [#224](https://github.com/Rylee-Bee/vefr/issues/224), fixed.
 - [x] **Locked doors and stairs** (2026-10-02): a transition may carry
       `requires` (`{"item": ...}` or `{"flag": ...}`, exactly one) and a
       one-sentence `locked_text` (`design/gates-and-guardians.md`, build

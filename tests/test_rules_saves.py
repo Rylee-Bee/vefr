@@ -3,8 +3,8 @@
 FROZEN CONTRACT. A pack's `saves` block picks what a reload keeps:
   "saves": {"rules": "persist" | "reset", "legacy": "fresh" | "from-log"}
 Absent block or absent `rules` means reset = today's behavior (those tests pass now and pin it).
-Persist behavior landed with the player work (plan PR 2); the one strict xfail left is the
-pre-existing localStorage-throws gap (issue #224). Plays the REAL woven file in jsdom, one session at a
+Persist behavior landed with the player work (plan PR 2); every test passes (the localStorage-throws gap, issue
+#224, is fixed). Plays the REAL woven file in jsdom, one session at a
 time; a reload is the previous session's printed `store` fed into the next session.
 """
 
@@ -147,12 +147,7 @@ def test_s7_a_newer_save_is_left_untouched(tmp_path):
     assert result["store"][RULESTATE] == newer
 
 
-@pytest.mark.parametrize("storage", [
-    pytest.param("get-throws", marks=pytest.mark.xfail(
-        strict=True, reason="PRE-EXISTING: the player reads window.localStorage unguarded somewhere "
-                            "(a sandboxed iframe throws); today Begin dies and `starts` never fires. "
-                            "Own fix, outside rule saves.")),
-    "set-throws"])
+@pytest.mark.parametrize("storage", ["get-throws", "set-throws"])
 def test_s8_unavailable_storage_never_stops_the_game(tmp_path, storage):
     html = weave(tmp_path, PERSIST)
     result = session(html, storage=storage)
