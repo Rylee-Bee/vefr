@@ -57,7 +57,8 @@ def load_pack(pack_dir: Path) -> dict:
     only when the pack declares it, so a pack without one loads
     exactly as before. The optional `skin` field (design/ui-skin.md)
     is carried the same way: only when the pack declares it, so a pack
-    without one loads exactly as before.
+    without one loads exactly as before. The optional `saves` block
+    (docs/adr/0009-rule-saves.md) rides through the same way.
     """
     pack = Path(pack_dir)
     config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
@@ -78,9 +79,9 @@ def load_pack(pack_dir: Path) -> dict:
         regions_list = list(act.get('regions', {}) or {})
         region_name = regions_list[0] if regions_list else None
 
-        def _region_geo(rname):
+        def _region_geo(act_dir, rname):
             """One region's map rows + contract, read from disk."""
-            rdir = first_act_dir / rname
+            rdir = act_dir / rname
             rcontract: dict = {}
             cp = rdir / 'contract.json'
             if cp.exists():
@@ -99,12 +100,12 @@ def load_pack(pack_dir: Path) -> dict:
         contract: dict = {}
         map_lines: list[str] = []
         if region_name:
-            contract, map_lines = _region_geo(region_name)
+            contract, map_lines = _region_geo(first_act_dir, region_name)
         # Every region's geometry, for the door checks. `map` is the
         # rows; `legend` is what makes a tile walkable.
         regions_geo: dict[str, dict] = {}
         for rname in regions_list:
-            rcontract, rrows = _region_geo(rname)
+            rcontract, rrows = _region_geo(first_act_dir, rname)
             regions_geo[rname] = {
                 'map': rrows,
                 'legend': rcontract.get('legend', {}),
@@ -170,11 +171,54 @@ def load_pack(pack_dir: Path) -> dict:
         # pack declares it (design/growth.md).
         if 'growth' in config:
             unified['growth'] = config['growth']
+        # The optional saves block, carried through ONLY when the pack
+        # declares it (docs/adr/0009-rule-saves.md): a pack with none
+        # loads exactly as before.
+        if 'saves' in config:
+            unified['saves'] = config['saves']
         # The optional skin folder, carried through ONLY when the pack
         # declares it (design/ui-skin.md): a pack with none loads as
         # before, and `world.json` has no `skin` key to bake.
         if 'skin' in config:
             unified['skin'] = config['skin']
+        # The pack-level item catalog, carried through ONLY when the
+        # pack declares one: an acts-shape pack keeps `items` at the
+        # pack level, so the validator's item/light checks can see it.
+        # A pack with no `items` loads exactly as before.
+        if 'items' in config:
+            unified['items'] = config['items']
+        # Every act, in sorted order, each with its own world.json
+        # fields plus `region_geo` (that act's own maps + contracts).
+        # The validator checks act 2 and later against their own
+        # regions; the first act's flat keys above stay exactly as
+        # they were. Purely additive.
+        acts_out: list[dict] = []
+        for act_dir in (d for d in sorted(acts_dir.iterdir())
+                        if d.is_dir() and not d.name.startswith('.')):
+            act_cfg = json.loads(
+                (act_dir / 'world.json').read_text(encoding='utf-8'))
+            entry = dict(act_cfg)
+            act_regions = list(act_cfg.get('regions', {}) or {})
+            # The regions ride in the loader's canonical shape (a dict
+            # of name -> {map_text, contract}), which the woven player
+            # already reads; `region_geo` below is the validator's
+            # flat view of the same ground.
+            entry['regions'] = {}
+            act_geo: dict[str, dict] = {}
+            for rname in act_regions:
+                rcontract, rrows = _region_geo(act_dir, rname)
+                entry['regions'][rname] = {
+                    'map_text': '\n'.join(rrows),
+                    'contract': rcontract,
+                }
+                act_geo[rname] = {
+                    'map': rrows,
+                    'legend': rcontract.get('legend', {}),
+                    'enemies': rcontract.get('enemies', []),
+                }
+            entry['region_geo'] = act_geo
+            acts_out.append(entry)
+        unified['acts'] = acts_out
         return unified
     config['_player'] = config.get('player')
     return config
@@ -816,6 +860,37 @@ def growth_errors(w: dict) -> list[str]:
     return errors
 
 
+SAVES_RULE_MODES = ('persist', 'reset')
+SAVES_LEGACY_MODES = ('fresh', 'from-log')
+
+
+def saves_errors(w: dict) -> list[str]:
+    """Every problem with a pack's optional `saves` block (empty = good).
+
+    Rule saves are optional and additive: a pack that declares none
+    gets no output at all, exactly as before. A pack that declares one
+    chooses `rules` (`persist` or `reset`) and, in persist mode, a
+    `legacy` handling (`fresh` or `from-log`); every other shape is a
+    plain-sentence error naming the field. See
+    `docs/adr/0009-rule-saves.md`.
+    """
+    if 'saves' not in w:
+        return []
+    saves = w.get('saves')
+    if not isinstance(saves, dict):
+        return ['saves must be an object such as {"rules": "persist"}']
+    errors: list[str] = []
+    for key in saves:
+        if key not in ('rules', 'legacy'):
+            errors.append(f"saves has an unknown key '{key}'; "
+                          'it may only hold rules and legacy')
+    if 'rules' in saves and saves['rules'] not in SAVES_RULE_MODES:
+        errors.append('saves.rules must be "persist" or "reset"')
+    if 'legacy' in saves and saves['legacy'] not in SAVES_LEGACY_MODES:
+        errors.append('saves.legacy must be "fresh" or "from-log"')
+    return errors
+
+
 # The parts a skin may name (design/ui-skin.md). Anything else is a
 # typo the author should read about, not a part the player silently
 # ignores.
@@ -1378,6 +1453,156 @@ def _sprite_scale_errors(w: dict) -> list[str]:
     return errors
 
 
+def _transition_lock_errors(index: int, t: dict, known: dict) -> list[str]:
+    """One plain sentence per problem with a transition's optional
+    `requires` / `locked_text` (design/gates-and-guardians.md, step 1).
+
+    `requires` names exactly one key, `item` or `flag`, and must point
+    at something the pack declares; any other shape is one sentence
+    naming `requires`. `locked_text` is one plain sentence of 1 to
+    200 characters. A transition with neither key gets nothing.
+    """
+    errors: list[str] = []
+    if 'requires' in t:
+        req = t['requires']
+        if not isinstance(req, dict):
+            errors.append(
+                f'transition {index} requires must be an object such as '
+                '{"item": "brass-ring"}')
+        else:
+            held = [k for k in ('item', 'flag') if k in req]
+            unknown = [k for k in req if k not in ('item', 'flag')]
+            if len(held) != 1:
+                errors.append(
+                    f'transition {index} requires must hold exactly one '
+                    'of item or flag')
+            elif unknown:
+                errors.append(
+                    f"transition {index} requires has an unknown key "
+                    f"'{unknown[0]}'; use item or flag")
+            else:
+                key = held[0]
+                val = req[key]
+                if not isinstance(val, str) or not val:
+                    noun = 'an item id' if key == 'item' else 'a flag name'
+                    errors.append(
+                        f'transition {index} requires.{key} must be {noun}')
+                elif key == 'item' and val not in known['items']:
+                    errors.append(
+                        f"transition {index} requires names unknown "
+                        f"item '{val}'")
+                elif key == 'flag' and val not in (known['flags'] or set()):
+                    errors.append(
+                        f"transition {index} requires names unknown "
+                        f"flag '{val}'")
+    if 'locked_text' in t:
+        text = t['locked_text']
+        if not isinstance(text, str) or not 1 <= len(text) <= 200:
+            errors.append(
+                f'transition {index} locked_text must be one plain '
+                'sentence of 1 to 200 characters')
+    return errors
+
+
+def _door_tile_problem(field: str, rname: str, at,
+                       rows: list, legend: dict) -> str | None:
+    """One plain sentence for a door tile that is not a walkable tile,
+    or None when the tile is a fine [x, y].
+
+    Shared by the first act's transition check (which prefixes
+    `transition N`) and the per-act checks (which prefix the act's id),
+    so both act 1 and act 2 read the same way.
+    """
+    if (not isinstance(at, (list, tuple)) or len(at) != 2
+            or not all(isinstance(v, (int, float)) for v in at)):
+        return f"{field} in region '{rname}' must be a tile [x, y]"
+    x, y = int(at[0]), int(at[1])
+    ok = _map_tile_walkable(rows, legend, x, y)
+    if ok is None:
+        return f"{field} ({x},{y}) is off the map of region '{rname}'"
+    if not ok:
+        return f"{field} ({x},{y}) is on a solid tile in region '{rname}'"
+    return None
+
+
+def _region_enemy_errors(rname: str, geo: dict, levels_mode: bool,
+                         act_id: str | None = None) -> list[str]:
+    """Every problem with one region's `enemies` (empty = good).
+
+    Shared by the first act's region check and the per-act checks. With
+    `act_id` None the sentences are exactly the first act's (each names
+    the enemy's display name); with an act id every sentence carries
+    `act '<id>'` and names the enemy by its id, so a hazard in act 2 is
+    findable. The checks are the same either way: a walkable tile, real
+    numbers, ids unique within the region, and `xp` only in levels mode.
+    """
+    errors: list[str] = []
+    rows = geo.get('map') or []
+    legend = geo.get('legend') or {}
+    listed = geo.get('enemies')
+    if listed is None:
+        return errors
+    prefix = f"act '{act_id}' " if act_id is not None else ''
+    if not isinstance(listed, list):
+        errors.append(f"{prefix}region '{rname}' enemies must be a list")
+        return errors
+    seen_ids: set = set()
+    for i, e in enumerate(listed):
+        if not isinstance(e, dict):
+            errors.append(f"{prefix}region '{rname}' enemy {i} must be an object")
+            continue
+        eid = e.get('id')
+        if act_id is not None:
+            who = str(eid or e.get('name') or f'#{i}')
+        else:
+            who = str(e.get('name') or eid or f'#{i}')
+        if not str(eid or '').strip():
+            errors.append(f"{prefix}enemy '{who}' in region '{rname}' needs an id")
+        elif eid in seen_ids:
+            errors.append(
+                f"{prefix}enemy '{who}' in region '{rname}' repeats the id '{eid}'")
+        else:
+            seen_ids.add(eid)
+        if not str(e.get('name', '')).strip():
+            errors.append(f"{prefix}enemy '{who}' in region '{rname}' needs a name")
+        at = e.get('at')
+        if (not isinstance(at, (list, tuple)) or len(at) != 2
+                or not all(isinstance(v, (int, float))
+                           and not isinstance(v, bool) for v in at)):
+            errors.append(
+                f"{prefix}enemy '{who}' in region '{rname}' needs a tile [x, y]")
+        else:
+            x, y = int(at[0]), int(at[1])
+            ok = _map_tile_walkable(rows, legend, x, y)
+            if ok is None:
+                errors.append(
+                    f"{prefix}enemy '{who}' in region '{rname}' at ({x},{y}) "
+                    f"is off the map")
+            elif not ok:
+                errors.append(
+                    f"{prefix}enemy '{who}' in region '{rname}' at ({x},{y}) "
+                    f"stands on a solid tile")
+        for stat in ('hp', 'atk'):
+            v = e.get(stat)
+            if not isinstance(v, int) or isinstance(v, bool) or v <= 0:
+                errors.append(
+                    f"{prefix}enemy '{who}' in region '{rname}' needs a "
+                    f"positive {stat}")
+        # `xp` names the enemy id (not the display name), so the
+        # author can find the exact contract entry to fix.
+        xp = e.get('xp')
+        if xp is not None:
+            if not levels_mode:
+                errors.append(
+                    f"{prefix}enemy '{eid}' in region '{rname}' may only carry "
+                    "'xp' in levels mode")
+            elif not _is_whole(xp) or xp < 0:
+                errors.append(
+                    f"{prefix}enemy '{eid}' in region '{rname}' needs a whole "
+                    "'xp' of 0 or more")
+    return errors
+
+
 def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every geometry check. Returns a list of problems (empty = good).
 
@@ -1390,6 +1615,14 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         load_pack() sets w['town'] and w['speakers'] explicitly.
     """
     errors: list[str] = []
+    # The optional Blueprint (`docs/adr/0008-blueprint-format.md`): when
+    # the pack is on disk, its source/stale check runs beside the rest.
+    # Lazy so a pack with neither `blueprint.json` nor its lock reads
+    # nothing new (the module's two existence checks), and so importing
+    # maplab never reaches back into blueprint at import time.
+    if pack_dir is not None:
+        from . import blueprint
+        errors.extend(blueprint.check_errors(pack_dir))
     if 'town' not in w and 'acts' in w and w['acts']:
         # Acts shape: synthesize the flat keys the rest of the
         # validator reads, so the same code path works for both.
@@ -1421,6 +1654,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # beside the other optional catalogs. A pack that declares none
     # gets nothing here.
     errors.extend(growth_errors(w))
+    # The pack's optional saves block (docs/adr/0009-rule-saves.md),
+    # checked beside the other optional catalogs. A pack that declares
+    # none gets nothing here.
+    errors.extend(saves_errors(w))
     town = w['town']
     m = town['map']
     legend = town['legend']
@@ -1648,25 +1885,17 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
 
     def _door_tile_errors(index, field, rname, at):
         geo = region_geo.get(rname, {})
-        rows = geo.get('map') or []
-        legend = geo.get('legend') or {}
-        if (not isinstance(at, (list, tuple)) or len(at) != 2
-                or not all(isinstance(v, (int, float)) for v in at)):
-            errors.append(
-                f"transition {index} {field} in region '{rname}' "
-                f"must be a tile [x, y]")
-            return
-        x, y = int(at[0]), int(at[1])
-        ok = _map_tile_walkable(rows, legend, x, y)
-        if ok is None:
-            errors.append(
-                f"transition {index} {field} ({x},{y}) is off the map "
-                f"of region '{rname}'")
-        elif not ok:
-            errors.append(
-                f"transition {index} {field} ({x},{y}) is on a solid "
-                f"tile in region '{rname}'")
+        problem = _door_tile_problem(field, rname, at,
+                                     geo.get('map') or [],
+                                     geo.get('legend') or {})
+        if problem:
+            errors.append(f'transition {index} {problem}')
 
+    # The ids a transition's optional `requires` may name: the same
+    # declared item catalog and flags the rules use.
+    known = (_rule_known_ids(w, pack_dir)
+             if any(isinstance(t, dict) and 'requires' in t for t in transitions)
+             else {})
     for i, t in enumerate(transitions):
         if not isinstance(t, dict):
             errors.append(
@@ -1689,6 +1918,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
                 f"not a declared region")
         else:
             _door_tile_errors(i, 'to_at', to_name, t['to_at'])
+        # The optional lock (design/gates-and-guardians.md, step 1):
+        # checked after the base shape so a broken door still reports
+        # its own missing/invalid fields first.
+        errors.extend(_transition_lock_errors(i, t, known))
 
     # The region contracts' enemies: each is a named hazard with a
     # walkable tile and real numbers. Every declared region is checked
@@ -1698,67 +1931,69 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     _growth = w.get('growth')
     levels_mode = isinstance(_growth, dict) and _growth.get('mode') == 'levels'
     for rname, geo in region_geo.items():
-        if not isinstance(geo, dict):
-            continue
-        rows = geo.get('map') or []
-        legend = geo.get('legend') or {}
-        listed = geo.get('enemies')
-        if listed is None:
-            continue
-        if not isinstance(listed, list):
-            errors.append(f"region '{rname}' enemies must be a list")
-            continue
-        seen_ids: set = set()
-        for i, e in enumerate(listed):
-            if not isinstance(e, dict):
-                errors.append(f"region '{rname}' enemy {i} must be an object")
+        if isinstance(geo, dict):
+            errors.extend(_region_enemy_errors(rname, geo, levels_mode))
+
+    # Every act after the first is checked against its OWN regions: its
+    # doors must stay inside the act, land on walkable tiles, name
+    # declared locks, and its enemies must be real hazards. The first
+    # act is already covered by the flat checks above (its regions,
+    # doors and enemies are w['regions'] / w['transitions']); running
+    # the per-act checks on it too would report every first-act error
+    # twice.
+    acts_list = w.get('acts')
+    if isinstance(acts_list, list) and len(acts_list) > 1:
+        act_known = _rule_known_ids(w, pack_dir)
+        # Region name -> the act that declares it, so a door that
+        # crosses into another act reads as one that leaves its act.
+        region_owner: dict[str, str] = {}
+        for act in acts_list:
+            if not isinstance(act, dict):
                 continue
-            who = str(e.get('name') or e.get('id') or f'#{i}')
-            eid = e.get('id')
-            if not str(eid or '').strip():
-                errors.append(f"enemy '{who}' in region '{rname}' needs an id")
-            elif eid in seen_ids:
-                errors.append(
-                    f"enemy '{who}' in region '{rname}' repeats the id '{eid}'")
-            else:
-                seen_ids.add(eid)
-            if not str(e.get('name', '')).strip():
-                errors.append(f"enemy '{who}' in region '{rname}' needs a name")
-            at = e.get('at')
-            if (not isinstance(at, (list, tuple)) or len(at) != 2
-                    or not all(isinstance(v, (int, float))
-                               and not isinstance(v, bool) for v in at)):
-                errors.append(
-                    f"enemy '{who}' in region '{rname}' needs a tile [x, y]")
-            else:
-                x, y = int(at[0]), int(at[1])
-                ok = _map_tile_walkable(rows, legend, x, y)
-                if ok is None:
-                    errors.append(
-                        f"enemy '{who}' in region '{rname}' at ({x},{y}) "
-                        f"is off the map")
-                elif not ok:
-                    errors.append(
-                        f"enemy '{who}' in region '{rname}' at ({x},{y}) "
-                        f"stands on a solid tile")
-            for stat in ('hp', 'atk'):
-                v = e.get(stat)
-                if not isinstance(v, int) or isinstance(v, bool) or v <= 0:
-                    errors.append(
-                        f"enemy '{who}' in region '{rname}' needs a "
-                        f"positive {stat}")
-            # `xp` names the enemy id (not the display name), so the
-            # author can find the exact contract entry to fix.
-            xp = e.get('xp')
-            if xp is not None:
-                if not levels_mode:
-                    errors.append(
-                        f"enemy '{eid}' in region '{rname}' may only carry "
-                        "'xp' in levels mode")
-                elif not _is_whole(xp) or xp < 0:
-                    errors.append(
-                        f"enemy '{eid}' in region '{rname}' needs a whole "
-                        "'xp' of 0 or more")
+            for rname in (act.get('region_geo') or {}):
+                region_owner.setdefault(rname, str(act.get('id', '?')))
+        for act in acts_list[1:]:
+            if not isinstance(act, dict):
+                continue
+            geo = act.get('region_geo')
+            if not isinstance(geo, dict):
+                continue
+            aid = str(act.get('id', '?'))
+            own = set(geo)
+            for ti, t in enumerate(act.get('transitions', []) or []):
+                if not isinstance(t, dict):
+                    continue
+                for field in ('from', 'to'):
+                    if field not in t:
+                        continue
+                    rname = t[field]
+                    if rname in own:
+                        continue
+                    if rname in region_owner:
+                        errors.append(
+                            f"act '{aid}' door {ti} {field} region '{rname}' "
+                            f"is inside act '{region_owner[rname]}'")
+                    else:
+                        errors.append(
+                            f"act '{aid}' door {ti} {field} region '{rname}' "
+                            f"is not declared")
+                for field, rkey in (('at', 'from'), ('to_at', 'to')):
+                    rname = t.get(rkey)
+                    if rname not in own:
+                        continue
+                    problem = _door_tile_problem(
+                        field, rname, t.get(field),
+                        geo[rname].get('map') or [],
+                        geo[rname].get('legend') or {})
+                    if problem:
+                        errors.append(f"act '{aid}' transition {ti} {problem}")
+                errors.extend(f"act '{aid}' {e}"
+                              for e in _transition_lock_errors(ti, t, act_known))
+            for rname, rdata in geo.items():
+                if isinstance(rdata, dict):
+                    errors.extend(
+                        _region_enemy_errors(rname, rdata, levels_mode,
+                                             act_id=aid))
 
     # The Library: authored books this pack keeps (library/*.md). Needs the
     # pack on disk; in-memory validation (chat drafts) has no books yet.

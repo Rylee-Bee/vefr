@@ -55,7 +55,7 @@ REQUIRED_VERBS = {
     "doctor", "check", "chat", "map", "delve", "weave", "spark",
     "test", "ferry", "handbok", "skipa", "norns", "ratatoskr",
 }
-VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features"}
+VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features", "normalize"}
 
 
 # ------------------------------------------------------------- harness
@@ -260,7 +260,7 @@ SANCTIONED_FNS = {
         "cmd_spark_smoke",
         "cmd_deploy", "cmd_backup", "cmd_import", "cmd_scaffold",
         "cmd_vefr_skipa", "cmd_vefr_doctor", "cmd_find",
-        "cmd_publish", "cmd_look", "cmd_probe", "cmd_features",
+        "cmd_publish", "cmd_look", "cmd_probe", "cmd_features", "cmd_normalize",
     )
 }
 
@@ -275,6 +275,7 @@ EXPECTED_BOUND = {
     "look": ("cmd_look",),
     "probe": ("cmd_probe",),
     "features": ("cmd_features",),
+    "normalize": ("cmd_normalize",),
     "doctor": ("cmd_vefr_doctor",),
     "check": ("cmd_map",),
     "chat": ("cmd_chat",),
@@ -345,6 +346,7 @@ DISPATCH_ARGV = {
     "look": ["look", "--html", "x.html"],
     "probe": ["probe", "--html", "x.html", "--fire", "reads:what=x"],
     "features": ["features"],
+    "normalize": ["normalize", "--pack", "p"],
     "doctor": ["doctor"],
     "check": ["check"],
     "chat": ["chat", "--name", "x"],
@@ -623,3 +625,10 @@ def test_check_rejects_json_flag(monkeypatch, capsys):
         cli.vefr_main()
     assert exc.value.code == cli.EXIT_USAGE == 2
     assert "--json" in capsys.readouterr().err
+
+
+# Blueprint A10 (docs/adr/0008-blueprint-format.md): the `normalize` verb is pinned in the front-door tables.
+def test_normalize_verb_is_pinned_in_all_three_tables():
+    assert "normalize" in VEFR_VERBS
+    assert "normalize" in DISPATCH_ARGV
+    assert "normalize" in EXPECTED_BOUND

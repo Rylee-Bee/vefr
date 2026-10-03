@@ -1,6 +1,6 @@
 # Gates and guardians: a key worth fighting for
 
-Status: **proposed** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). No code yet. The lock is a pack-contract addition, so this waits for approval before a build.
+Status: **build step 1 (locked transitions) is built** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). The validator, the player and the docs landed; `tests/test_locked_stairs.py` passes. Steps 2-4 (guardians, depth tables, the Cottage stair) stay proposed and wait for a build.
 
 ## The word for it
 
@@ -35,6 +35,17 @@ Each guardian is stronger than the last, tuned to the power curve of the levels.
 
 **4. Cozy-safe.** On the `costume` surface the guardian simply takes a while; on `story`/`stakes` it can send the hero back to the temple. Either way the key is only taken by winning.
 
+## Slice 1 contract: locked transitions (set 2026-10-02, tests in `tests/test_locked_stairs.py`)
+
+This is build step 1 only; guardians, depth tables and the Cottage placement stay open below. Decisions made while writing the tests (Rylee: veto any of them):
+
+- `requires` is an object with **exactly one** key: `{"item": "<item id>"}` or `{"flag": "<declared flag>"}`. An unknown item id or undeclared flag is a validator error naming it; any other shape is one plain sentence naming `requires`. No level-based lock yet.
+- `locked_text` is **optional**, one plain sentence of 1 to 200 characters. When absent the line is "It will not open yet."
+- A locked door or stair, used with Interact, says the line in the narrator line (the combat log) and the hero stays put. With the item in the bag (or the flag set) it opens exactly as before.
+- **Keys are never consumed in this slice**, whether or not the item has `keep: true`. A consumed key would need a remembered "opened" state, which the design does not yet specify.
+- A flag lock only survives a reload when the pack uses `saves.rules: persist` (ADR 0009); otherwise the rule that sets the flag runs again on the next load, as before.
+- A transition without `requires` behaves exactly as before.
+
 ## What this does not do
 
 No timed locks, no lockpicking, no key ring UI, one lock per floor in the first slice (the ladder), no second kind of key, no level-based lock (a `requires` on level can follow once growth lands).
@@ -54,7 +65,7 @@ No timed locks, no lockpicking, no key ring UI, one lock per floor in the first 
 
 ## Open for Rylee
 
-- The guardians' names and creatures (the monsters we already have, or new ones from the art set).
+- ~~The guardians' creatures~~ **Decided (Rylee, 2026-10-02):** variants of the monsters we already have, with names based on their art and abilities. Still hers: approving the names.
 - ~~Where the last room sits.~~ **Decided (Rylee, 2026-10-02):** "his seal opens like a treasure room with a lore note and a 'back to town' before you start the next set of dungeons". So the Cellar King's drop is a seal; using it on the last floor's sealed door opens a room with a treasure, a lore note, and a way back to town; act 2 starts after that. In the design: a guardian row may name `"opens": {"room": "king-room"}`, and the generator joins that authored room to the last floor on every seed (the "ending reachable on every seed" rule of `design/random-floors.md`). Still hers: what the treasure is and the lore note's words; nothing is canon until she writes or picks them.
-- Which stair is the first lock: the one into the deeper zone (floor 3 to 4), or the way out at the bottom?
-- Does the guardian's key look like a key, or something of the story's (a lit lantern, a warm stone)? Her call; nothing becomes canon until she says.
+- ~~Which stair is the first lock?~~ **Decided (Rylee, 2026-10-02):** the stair from floor 3 to floor 4.
+- ~~Does the guardian's key look like a key?~~ **Decided (Rylee, 2026-10-02):** an actual key.

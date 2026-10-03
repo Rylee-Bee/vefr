@@ -199,8 +199,31 @@ unnumbered file. The player picks a variant deterministically, so the
 same pack always looks the same; a pack with no tiles/ resolves tiles
 from the engine set exactly as before.
 
+SAVES (rule saves): world.json may carry an optional top-level `saves`
+  block choosing how much of a run the rules remember:
+
+      {"saves": {"rules": "persist" | "reset", "legacy": "fresh" | "from-log"}}
+
+  `rules` is `reset` (the default, and when the block or key is absent:
+  today's behavior, with no new storage key read or written) or
+  `persist` (flags, fired markers, beliefs and the engine's items
+  survive a reload and are cleared by Start over). `legacy` (persist
+  mode) is `fresh` (the default) or `from-log`, which marks as fired
+  the rules the WHY log proves fired. `starts` fires once per save in
+  persist mode. maplab validates the block; a pack with none loads and
+  bakes exactly as before. See docs/adr/0009-rule-saves.md and
+  docs/guides/rules.md.
+
 VISIBLE ENGINE: every load step is recorded to the weave log so the
 author can see exactly what the loader did. See weave.py.
+
+BLUEPRINTS (acts shape only): a pack may carry an optional
+`blueprint.json` at its root and the `blueprint.lock.json` written
+beside it by `vefr normalize`. The Blueprint is the edited truth for
+the regions it owns; normalize expands it into those regions'
+committed `enemies` lists. A pack without one is unchanged, and a flat
+pack may not carry one. See docs/guides/blueprint.md and
+docs/adr/0008-blueprint-format.md.
 """
 
 import json

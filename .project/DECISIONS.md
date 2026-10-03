@@ -1,5 +1,78 @@
 # DECISIONS — vefr
 
+## 2026-10-02 (night) — lessons: workflow quirks and dead ends
+
+Recorded so the next session does not repeat them (also in the homelab-memory debug journal and `~/.agents/skills/offload/FOREMAN.md`).
+
+**Process that worked**
+1. **Tests first, merged first, strict xfail, one mark set per PR.** Each slice starts as a PR that only adds tests (`xfail(strict=True)`), so a test that passes by accident turns the build red. A test that needs a later PR's code gets that PR's mark, so each implementation PR flips exactly its own tests. Run them once with `--runxfail` and confirm each fails for the reason meant.
+2. **A cheap builder, a careful reviewer.** One `offload agent -m code` worker per slice, no foreman, for a slice with clear tests; a foreman only for 3+ independent tasks. Every success needed a review fix (a circular import, loose type checks, a symlink-following copy, a traceback, test-only code in the player, an unguarded path CodeQL flagged). The builder never edits tests.
+3. **Re-check the shipped packs read-only after any validator or loader change:** `vefr check` on the sample world and on the private Cottage pack, and a re-`normalize` of a copy that must leave every file byte-identical.
+4. **Strictness changes need a decision.** Rejecting broken unused Blueprint families was a tightening, so Rylee decided it. Say when a change can make a pack that loads today fail.
+5. **Describe, don't forbid, in image prompts.** See `.project/CURRENT.md` and Cottage `art/STYLE.md`.
+
+**Quirks and dead ends**
+- **Stale bytecode:** restoring an edited file within the same second (same mtime to the second, same size) left the old `.pyc` running. Use `PYTHONPYCACHEPREFIX=$(mktemp -d)` for checks after any temporary edit, or delete the cache.
+- **Deleting a stacked PR's base branch closes the PR** and it cannot be reopened or retargeted. Merge the lower PR without `--delete-branch`, retarget the upper PR to `main`, then delete. Otherwise open a replacement PR.
+- **`gh pr update-branch` does not exist in this `gh`:** `gh api -X PUT repos/OWNER/REPO/pulls/N/update-branch`. Branch protection needs every PR up to date, so every merge makes the others behind.
+- **Unquoted heredocs run backticks** (`<<EOF` is command substitution). Quote the delimiter (`<<'EOF'`) whenever the body has backticks or `$`, and read the file back.
+- **`git add -A` sweeps other sessions' files** in a shared checkout. Stage named paths and run `git status` first.
+- **A foreman must not wait on a background monitor:** its run ends when it stops calling tools. Clones need `~/worktrees/node_modules` for jsdom tests.
+- **Private journals are walled off:** the Worlds Journal refuses every agent principal by design; VEFR's `journal.py` is player gameplay data. Lessons go in docs, the debug journal and Hive Library candidates, never in a journal.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
+## 2026-10-02 — Blueprint stays local; the second-consumer rule
+
+**Decision.** From the refined PR #231 plan (`docs/plans/language-architecture-sonnet-implementation-update.md`).
+
+1. **Implemented:** family resolution is one private operation in `src/vefr/blueprint.py` (`_resolve_family`), and a validation error names the declaration that supplied the value (a family's or an ancestor's `defaults`, or the instance's `properties`). Every family is checked for an unknown parent or a cycle, used or not (Rylee: reject broken unused families). Format 1, the key sets, the lock shape and valid output are unchanged.
+2. **Rule:** extract shared machinery only when two actual consumers independently need the same operation and invariants. Two helpers inside one module justify local consolidation only. A local bug fix needs no second consumer.
+3. **Subtraction test for a new abstraction:** name the duplicated fact or missing invariant; show what it deletes or makes enforceable; count the concepts, configuration and migration it adds; prefer the smallest change that pays. A change that only shortens syntax, or only serves hypothetical consumers, is deferred.
+4. **Working boundaries, checked against VEFR's seams:** *Definition* is the Blueprint's families and defaults plus the pack's `world.json` items (exists). *Generator* is `src/vefr/delve.py` (`generate_floor`; note `src/vefr/generator.py` is the storyteller model client, not this) (exists). *Runtime* is the engine and player under host authority (exists). *Recipe* has no artifact or seam today: it is a hypothesis. "Theme owns vocabulary; generator owns arrangement" stands.
+5. **Deferred:** the kernel / dialect / pack horizon. Blueprint gives no evidence for it; it waits for a second real consumer.
+6. **Cottage:** the flat-families layout (277 to 257 authored values, no abstract parent families) is a separate private PR for Rylee's review. A parent family earns its place only when it expresses a real shared fact.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
+## 2026-10-02 — locked doors, and the first lock
+
+**Decision (Rylee, in chat, 2026-10-02).**
+
+1. **The first lock is the stair from floor 3 to floor 4** (Cottage), not the way out at the bottom.
+2. **The key is an actual key**, not something of the story's.
+3. **The guardians are stat variants of existing monsters**, named from their art and abilities (names are
+   proposed by an agent and approved by her; nothing is canon until she says).
+4. **Locked doors are built** (`requires` on a transition, exactly one of `item` or `flag`; `locked_text`
+   optional, default "It will not open yet."; keys are never consumed in this slice). A flag lock needs
+   `saves.rules: persist` to survive a reload. See `design/gates-and-guardians.md`, "Slice 1 contract".
+5. **Cottage opted in to `saves.rules: persist`** (`legacy: from-log`) and to a Blueprint for its creatures.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee. The guardian ladder, depth tables and the Cottage lock
+placement are the next build.
+
+## 2026-10-02 — Blueprint format 1
+
+**Decision.** Recorded in full in
+[`docs/adr/0008-blueprint-format.md`](../docs/adr/0008-blueprint-format.md):
+
+1. **The Blueprint is the edited truth.** A pack may carry
+   `blueprint.json` at its root; it owns the regions it names.
+   `vefr normalize` expands it into those regions' `enemies` lists. A
+   pack without one is unchanged.
+2. **Generated JSON is committed and read-only.** The expanded records
+   and `blueprint.lock.json` are written by `vefr normalize`, committed
+   beside the Blueprint, and never hand-edited. The lock records the
+   source hash, the normalizer and format versions, and provenance.
+3. **The exit threshold is 25% / one real error.** Continue only if
+   authored enemy values drop by at least 25% on the first real pack,
+   or one real error is caught; otherwise delete `blueprint.json` and
+   `blueprint.lock.json`.
+4. **Hand-written records stay supported.** Their end of life, if any,
+   is set later by Rylee after the trial.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
 ## 2026-10-02 — the Cottage day: decisions that outlive it
 
 - **We ship only art we made, and attribute all of it** (Rylee). Kenney is for prototyping
@@ -15,6 +88,9 @@
   takes only a bare world name, and no model runs behind it. The Containerfile ships the file.
 - **Growth has two modes in the engine, a game picks one** (Rylee): classic levels or learning by
   doing. Growth only adds; nothing is ever taken away.
+- **Rule saves are a per-pack `saves` block, default reset** (Rylee, 2026-10-02): `saves.rules` is
+  `persist` or `reset`; `saves.legacy` is `fresh` or `from-log`. The validator and docs landed
+  first; the player work follows. See [`docs/adr/0009-rule-saves.md`](docs/adr/0009-rule-saves.md).
 - **Foremen work from acceptance tests written first, and a foreman that stops on a test is
   right until proven otherwise.** Three escalations today were bugs in the tests. Fix the test,
   never the foreman; review every diff by hand; state the foreman count and model before launching.

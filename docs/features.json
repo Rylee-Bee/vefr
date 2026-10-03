@@ -180,14 +180,33 @@
       ]
     },
     {
+      "id": "rule-saves",
+      "name": "Rule saves",
+      "what": "An optional per-pack setting so a reload keeps what the rules have done: fired rules, flags, beliefs and items.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "docs/guides/rules.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_rules_saves.py",
+        "tests/test_rules_saves_pack.py"
+      ]
+    },
+    {
       "id": "gates",
       "name": "Locks, keys and guardians",
-      "what": "A locked stair opened by a key a tougher monster carries; a ladder of guardians ending at the act's boss.",
-      "status": "proposed",
+      "what": "A door or stair locked behind a key item or a flag (built); a ladder of key-carrying guardians ending at the act's boss (proposed).",
+      "status": "partial",
       "detect": "none",
-      "docs": [],
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
       "design": "design/gates-and-guardians.md",
-      "tests": []
+      "tests": [
+        "tests/test_locked_stairs.py"
+      ]
     },
     {
       "id": "album",
@@ -231,6 +250,20 @@
       "design": null,
       "tests": [
         "tests/test_art_manifest.py"
+      ]
+    },
+    {
+      "id": "blueprint",
+      "name": "A Blueprint for repeated monster families",
+      "what": "An optional file at a pack root that expands a small family source into the region enemy records at build time. A pack without one is unchanged.",
+      "status": "built",
+      "detect": "blueprint",
+      "docs": [
+        "docs/guides/blueprint.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_blueprint_conformance.py"
       ]
     }
   ]

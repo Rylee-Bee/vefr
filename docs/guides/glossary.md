@@ -47,9 +47,12 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **rule** | A game-wide "when this happens, do that", using flags. A reaction is a small rule attached to one thing. | "trigger", "script" | in use (`docs/guides/rules.md`) |
 | **belief** | What a character thinks is true. It can be wrong. | "knowledge" | in use (`docs/guides/rules.md`) |
 | **kept thing** | An item that can be used again and again - a quest tool, a lantern. Using a kept thing never spends it. | "key item", "quest item" | in use (`docs/guides/rules.md`) |
+| **locked door** | A door or stair a game gates on a key item or a flag. Used without it, it says one line and the hero stays put; with it, it opens. The key is never spent. | `requires` / `locked_text` (the pack fields) | in use (`design/gates-and-guardians.md`) |
+| **Rule saves** | A game's choice of how much of a run the rules remember: `reset` (the default, fresh each load) or `persist`, which keeps flags, fired markers, beliefs and items across a reload. | the `saves` block in `world.json` | in use (`docs/guides/rules.md`) |
 | **Why did that happen?** | The menu panel that shows what the world did and what made it happen - only real records, never guesses. | "debug log" | in use (the woven player) |
 | **Where next?** | The menu panel that keeps what the world has pointed the player toward, so the way can be found again. | "quest log" | in use (the woven player) |
 | **slot** | A place on the hero for one worn item: hand, body, head, feet or charm. | "equipment slot" | proposed (`design/equipment.md`) |
+| **blueprint** | A Blueprint is an optional file at a pack root that expands a small family source into the owned regions' `enemies` records. It is the edited truth for the regions it owns. Acts shape only. | (same) | in use (`docs/guides/blueprint.md`) |
 
 ## Actions (verbs)
 
@@ -72,6 +75,7 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | **equip** / **take off** | Wear or remove an item in a slot. | "wield" | proposed (`design/equipment.md`) |
 | **interact** | Looks at what is near you and does the one thing that fits: talk, trade, open, go through, look or fight. | `tryNPC` "talk", `useHere` "use", the separate `E` / `F` keys | in use |
 | **start over** | Clears the saved games for every game on the same site, then returns to the title screen. | `clear saves` | in use |
+| **normalize** | Expands a Blueprint into the owned regions' `enemies` lists and refreshes `blueprint.lock.json`. Read-only without `--out`. | (new) | in use (`docs/guides/blueprint.md`) |
 
 ## States (adjectives)
 

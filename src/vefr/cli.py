@@ -592,7 +592,15 @@ def cmd_map(args) -> int:
         argv = ['verify', '--url', args.url]
     else:
         raise SystemExit(f'unknown map command: {args.map_cmd}')
-    return maplab_main(argv)
+    rc = maplab_main(argv)
+    # `vefr check` (and `norns validate`) prints the Blueprint note when
+    # validation passed: a lock written by an older normalizer whose
+    # output still matches is not an error, only worth re-running.
+    if rc == 0 and args.map_cmd == 'validate' and getattr(args, 'pack', None):
+        from . import blueprint
+        for note in blueprint.notes(Path(str(args.pack))):
+            print(note)
+    return rc
 
 
 def _floor_names(first: str, count: int) -> list[str]:
@@ -1613,6 +1621,15 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     document as a string. No writes and no model calls - `pool`, when
     present, is caller-supplied already-generated content.
     """
+    # A pack that carries a Blueprint refuses to weave when its
+    # generated output is stale or invalid, with the same sentence
+    # `vefr check` prints. A pack with neither file is unchanged (the
+    # check is two existence probes and nothing else).
+    from . import blueprint
+    blueprint_errors = blueprint.check_errors(pack)
+    if blueprint_errors:
+        raise blueprint.BlueprintRefusal(' '.join(blueprint_errors))
+
     import json as _json
 
     # The player template reads town geometry, speakers, and creed off
@@ -2812,7 +2829,12 @@ def ratatoskr_main() -> int:
     args, extra = ap.parse_known_args()
     if args.cmd == 'test':
         args.test_args = extra
-    return args.fn(args)
+    from .blueprint import BlueprintRefusal
+    try:
+        return args.fn(args)
+    except BlueprintRefusal as exc:
+        print(f'refused: {exc}', file=sys.stderr)
+        return EXIT_ERROR
 
 
 def cmd_handbok(args) -> int:
@@ -4001,7 +4023,12 @@ def norns_main() -> int:
     if args.craft_cmd in ('validate', 'build-map', 'verify', 'doctor') \
             and getattr(args, 'pack', None) is None:
         args.pack = pack_root() / 'worlds' / world_name()
-    return args.fn(args)
+    from .blueprint import BlueprintRefusal
+    try:
+        return args.fn(args)
+    except BlueprintRefusal as exc:
+        print(f'refused: {exc}', file=sys.stderr)
+        return EXIT_ERROR
 
 
 def cmd_find(args) -> int:
@@ -4163,6 +4190,51 @@ def cmd_features(args) -> int:
     return EXIT_OK
 
 
+def cmd_normalize(args) -> int:
+    """`vefr normalize` - expand a Blueprint and report or refresh its pack.
+
+    Read-only without `--out`: one line per owned region and whether the
+    committed output is fresh, exit 0 only when it is. With `--out` the
+    pack is refreshed in place (or copied to a new/empty directory and
+    refreshed there), then validated as a whole; a failure exits 1 with
+    the validator's own sentences and leaves the previous bytes in place.
+    The Blueprint library does the work; this door only resolves `--pack`.
+    """
+    from . import blueprint
+
+    if getattr(args, 'pack', None) is None:
+        pack = _resolved_pack()
+    else:
+        p = Path(args.pack)
+        if p.is_absolute() or '/' in str(args.pack):
+            pack = (p if p.is_dir() else p.parent).resolve()
+        else:
+            pack = pack_root() / 'worlds' / p
+    out = Path(args.out).resolve() if getattr(args, 'out', None) else None
+
+    if out is None and not (pack / 'blueprint.json').exists() \
+            and not (pack / 'blueprint.lock.json').exists():
+        # Nothing to be fresh about: say so, and succeed (a plain pack is fine).
+        print(f'no blueprint.json in {pack}; nothing to normalize')
+        return EXIT_OK
+
+    result = blueprint.normalize(pack, out)
+    if out is None:
+        for region, count in result.regions.items():
+            print(f'{region}: {count} enemies')
+        if result.fresh:
+            print('fresh')
+            return EXIT_OK
+        for line in result.errors:
+            print(line)
+        return EXIT_ERROR
+    if result.errors:
+        for line in result.errors:
+            print(line)
+        return EXIT_ERROR
+    return EXIT_OK
+
+
 # --------------------------------------------------------------- vefr
 # The front door: one parser over the same functions the old commands
 # call. No logic lives here - only wiring, flags, and help text.
@@ -4293,6 +4365,21 @@ def vefr_main() -> int:
     ft.add_argument('--check', action='store_true',
                     help='print catalog drift errors and exit 1 if any')
     ft.set_defaults(fn=cmd_features)
+
+    nz = sub.add_parser(
+        'normalize',
+        help='expand a Blueprint into generated enemies and write its lock',
+        description='expand a Blueprint into the regions it owns, refresh '
+                    'them and blueprint.lock.json, or report if they are fresh',
+        epilog='see: docs/adr/0008-blueprint-format.md',
+    )
+    nz.add_argument('--pack', default=None,
+                    help='world pack: a worlds/ name or a path '
+                         '(default: the resolved world)')
+    nz.add_argument('--out', default=None,
+                    help='refresh this pack, or copy into a new/empty DIR; '
+                         'omit for a read-only freshness report')
+    nz.set_defaults(fn=cmd_normalize)
 
     dc = sub.add_parser(
         'doctor',
@@ -4447,7 +4534,12 @@ def vefr_main() -> int:
     if args.cmd in ('check', 'map', 'doctor') \
             and getattr(args, 'pack', None) is None:
         args.pack = _resolved_pack()
-    return args.fn(args)
+    from .blueprint import BlueprintRefusal
+    try:
+        return args.fn(args)
+    except BlueprintRefusal as exc:
+        print(f'refused: {exc}', file=sys.stderr)
+        return EXIT_ERROR
 
 
 if __name__ == '__main__':
