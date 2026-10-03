@@ -20,6 +20,8 @@
 
 **Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve), then the album (#216), then equipment and a real act 2 (#217).
 
+**Late additions (2026-10-02, night):** the validator now checks every act of a multi-act pack (PR #236); equipment and a real act 2 are planned and approved (the plan is Opus's, in the session scratch; the decisions are in `.project/DECISIONS.md`): equipment as written, `complete-act` as a rule action; the next slice is the equipment tests. Image generation is `offload image` and the MiniMax MCP; Rylee prefers cute storybook mobs and Codex for characters, MiniMax for items (recipe in Cottage `art/STYLE.md`). Workflow quirks and dead ends are in `.project/DECISIONS.md`, "lessons: workflow quirks and dead ends".
+
 **How the foremen work (tool lessons, also in `~/.agents/skills/offload/FOREMAN.md`):** commit tests first and merge them; write one brief per slice with its single acceptance command (`--runxfail`); the foreman must wait on workers in the foreground; clones need `~/worktrees/node_modules` linked for the jsdom tests; a foreman commits its `PLAN.md` by habit, so bring over only the files you mean; review every diff (each success so far needed a fix: a circular import, loose types, an unsafe copy, test-only code in the player).
 
 ## 2026-10-02, later (the foremen round)

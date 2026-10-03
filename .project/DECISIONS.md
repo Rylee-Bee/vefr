@@ -1,5 +1,27 @@
 # DECISIONS — vefr
 
+## 2026-10-02 (night) — lessons: workflow quirks and dead ends
+
+Recorded so the next session does not repeat them (also in the homelab-memory debug journal and `~/.agents/skills/offload/FOREMAN.md`).
+
+**Process that worked**
+1. **Tests first, merged first, strict xfail, one mark set per PR.** Each slice starts as a PR that only adds tests (`xfail(strict=True)`), so a test that passes by accident turns the build red. A test that needs a later PR's code gets that PR's mark, so each implementation PR flips exactly its own tests. Run them once with `--runxfail` and confirm each fails for the reason meant.
+2. **A cheap builder, a careful reviewer.** One `offload agent -m code` worker per slice, no foreman, for a slice with clear tests; a foreman only for 3+ independent tasks. Every success needed a review fix (a circular import, loose type checks, a symlink-following copy, a traceback, test-only code in the player, an unguarded path CodeQL flagged). The builder never edits tests.
+3. **Re-check the shipped packs read-only after any validator or loader change:** `vefr check` on the sample world and on the private Cottage pack, and a re-`normalize` of a copy that must leave every file byte-identical.
+4. **Strictness changes need a decision.** Rejecting broken unused Blueprint families was a tightening, so Rylee decided it. Say when a change can make a pack that loads today fail.
+5. **Describe, don't forbid, in image prompts.** See `.project/CURRENT.md` and Cottage `art/STYLE.md`.
+
+**Quirks and dead ends**
+- **Stale bytecode:** restoring an edited file within the same second (same mtime to the second, same size) left the old `.pyc` running. Use `PYTHONPYCACHEPREFIX=$(mktemp -d)` for checks after any temporary edit, or delete the cache.
+- **Deleting a stacked PR's base branch closes the PR** and it cannot be reopened or retargeted. Merge the lower PR without `--delete-branch`, retarget the upper PR to `main`, then delete. Otherwise open a replacement PR.
+- **`gh pr update-branch` does not exist in this `gh`:** `gh api -X PUT repos/OWNER/REPO/pulls/N/update-branch`. Branch protection needs every PR up to date, so every merge makes the others behind.
+- **Unquoted heredocs run backticks** (`<<EOF` is command substitution). Quote the delimiter (`<<'EOF'`) whenever the body has backticks or `$`, and read the file back.
+- **`git add -A` sweeps other sessions' files** in a shared checkout. Stage named paths and run `git status` first.
+- **A foreman must not wait on a background monitor:** its run ends when it stops calling tools. Clones need `~/worktrees/node_modules` for jsdom tests.
+- **Private journals are walled off:** the Worlds Journal refuses every agent principal by design; VEFR's `journal.py` is player gameplay data. Lessons go in docs, the debug journal and Hive Library candidates, never in a journal.
+
+**Status.** ACCEPTED (2026-10-02). Owner: Rylee.
+
 ## 2026-10-02 — Blueprint stays local; the second-consumer rule
 
 **Decision.** From the refined PR #231 plan (`docs/plans/language-architecture-sonnet-implementation-update.md`).
