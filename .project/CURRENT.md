@@ -16,7 +16,7 @@
 
 **Decisions (Rylee, in chat):** the source layer is called Blueprint; the source is the edited truth; rule saves are a per-pack setting; the first lock is Cottage's floor 3 to floor 4 stair; the key is an actual key; guardians are variants of existing monsters named from their art and abilities. Recorded in `.project/DECISIONS.md`.
 
-**Known gaps:** [#224](https://github.com/Rylee-Bee/vefr/issues/224) (the player dies on Begin when `localStorage` itself throws; its test is the one strict xfail). The Cottage diff for the Blueprint was large in bytes only because the legacy records used several key orders.
+**Known gaps:** none open from this campaign ([#224](https://github.com/Rylee-Bee/vefr/issues/224), the player dying on Begin when `localStorage` throws, is fixed and its test passes). The Cottage diff for the Blueprint was large in bytes only because the legacy records used several key orders.
 
 **Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve), then the album (#216), then equipment and a real act 2 (#217).
 

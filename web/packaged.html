@@ -602,7 +602,7 @@ function loadConfig() {
   catch (_) { return {}; }
 }
 function saveConfig(c) {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch (_) { /* blocked storage: keep going in memory */ }
 }
 // ---- endpoint join + post ----
 // The config URL is player-entered: it may or may not end in /v1 (the
@@ -804,7 +804,8 @@ function libraryFromSpeaker(key) {
 // events the woven player has no way to observe, so they stay unfound
 // here rather than invent one.
 function libraryFirstVisit() {
-  if (localStorage.getItem(LIBRARY_KEY) !== null) return;
+  // A storage that throws (a sandboxed iframe) cannot remember a first visit, so treat it as seen.
+  try { if (localStorage.getItem(LIBRARY_KEY) !== null) return; } catch (e) { return; }
   libraryBooks().forEach(function (b) {
     if (b && b.found === 'earned' && b.when === 'first-visit' && !bookIsFound(b.id)) {
       foundBook(b, 'first-visit');
@@ -1417,7 +1418,7 @@ function bindMenu() {
   };
   if (startoverCancel) startoverCancel.addEventListener('click', window.cancelStartover);
   if (startoverConfirm) startoverConfirm.addEventListener('click', function () {
-    window.startoverKeys(localStorage);      // every vefr- key on this site
+    try { window.startoverKeys(localStorage); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
     window.location.reload();
   });
   if (startoverBody) startoverBody.addEventListener('keydown', function (e) {
