@@ -2337,11 +2337,16 @@
 
 ## Next
 
-- [ ] **Language architecture proof pass** (PR #219, proposed): run the
-      [bounded Codex probes](docs/plans/language-architecture-proof-pass.md),
-      then return evidence to Sonnet for the research packet and Opus plan.
-      Floors phase 2, album and equipment are informed by that disposition;
-      no new runtime or pack contract is approved by the docs-only proposal.
+- [ ] **Language architecture: the disposition read** (gate, owner). The proof
+      pass ran and the research packet landed on 2026-10-03
+      ([PR #242](https://github.com/Rylee-Bee/vefr/issues/242),
+      `docs/research/language-architecture/`): **GO WITH CONSTRAINTS**. The
+      packet authorizes nothing until Rylee has read it
+      (`11-open-decisions.md` item 6) and says go. The Blueprint is the
+      earned first slice and it is already built; the kernel, the dialect
+      layer and pack migration are explicitly not earned and wait for a
+      second real consumer. Floors phase 2, the album and equipment are
+      informed by that disposition, not blocked by it.
 
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
       depth tables, the Journal line and the New descent button.
