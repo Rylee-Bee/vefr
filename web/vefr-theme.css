@@ -119,6 +119,13 @@ html[data-theme="warm"] {
   --color-success:     var(--color-green-500);
   --color-ai-state:    var(--color-teal-500);
   --color-focus-ring:  var(--color-parchment-100);
+  /* Teal as *text*, which is a different job from teal as a fill (#218).
+     The brand step above is tuned for dots and fills; a 10-13px label on a
+     card needs 4.5:1, and teal-500 only reaches 4.36 there. One step up
+     clears it at 6.25. Anything that sets `color:` from the teal ramp
+     should use these two, not --color-teal. */
+  --color-teal-text:    var(--color-teal-400);
+  --color-teal-text-hi: var(--color-teal-300);
 }
 
 /* Theme: Bright & Clear - bumped contrast for bright rooms (WCAG AA+). */
@@ -133,6 +140,10 @@ html[data-theme="bright"] {
   --color-focus-ring: var(--color-parchment-200);
   --fill-primary:     var(--color-teal-400);
   --fill-gold:        var(--color-gold-400);
+  /* Teal as text (#218): this theme's own step already clears 4.5 on a
+     card (6.25), so text rides the same colour; hover goes one up. */
+  --color-teal-text:    var(--color-teal-400);
+  --color-teal-text-hi: var(--color-teal-300);
 }
 
 /* Theme: Nothing Hides - maximum contrast, WCAG AAA target.
@@ -151,6 +162,11 @@ html[data-theme="max-contrast"] {
   --color-focus-ring: var(--color-parchment-300);
   --fill-primary:     var(--color-teal-300);
   --fill-gold:        var(--color-gold-300);
+  /* Teal as text (#218): this theme is already at 9.39 on the page, so
+     text rides its own brightest step and the hover stays there - there
+     is nowhere above it to go. */
+  --color-teal-text:    var(--color-teal-300);
+  --color-teal-text-hi: var(--color-teal-300);
 }
 
 /* ------------------------------------------------------------
@@ -169,6 +185,11 @@ html[data-theme="max-contrast"] {
   --church:    var(--color-church);
   --danger:    var(--color-danger);
   --teal:      var(--color-teal);
+  /* Teal for small text and its hover. Kept apart from --teal on
+     purpose: --teal is a fill/presence colour and has no contrast
+     floor, --teal-text does (4.5:1 on a card). See #218. */
+  --teal-text:     var(--color-teal-text);
+  --teal-text-hi:  var(--color-teal-text-hi);
   --success:   var(--color-success);
 
   /* The shadcn vocabulary, still derived (see the note it replaced:

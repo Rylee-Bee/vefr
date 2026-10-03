@@ -137,7 +137,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--teal);
+  color: var(--teal-text);
   margin: 0 0 14px;
 }
 
@@ -204,12 +204,12 @@
 
 .context__evidence-link {
   font-size: 13px;
-  color: var(--teal);
+  color: var(--teal-text);
   padding: 8px 0;
 }
 
 .context__evidence-link:hover {
-  color: var(--teal-light);
+  color: var(--teal-text-hi);
 }
 
 /* ── Acknowledgments ─────────────────────────────────────── */
