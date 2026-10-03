@@ -28,7 +28,7 @@ Closed sets, defined once as constants in `src/vefr/blueprint.py`:
 | region entry | `enemies` |
 | instance | `id`, `family`, `at`, `properties` |
 
-Rules: `"blueprint": 1` is required (the version field, naming reader `read_v1`); expansion order is parent defaults (root first), family, instance `properties`, then `id` and `at`; a later value replaces an earlier one whole and lists are never merged; one explicit parent; unknown key, family, parent, cycle, duplicate id, missing `at`, absent region, region path outside the pack, and unknown `drops` item all fail with a plain sentence and a JSON pointer; emitted key order is `id, name, sprite, at, hp, atk, xp, sight, drops`. Format 1 is acts-shape only. There is no event or effect vocabulary: a pack word grants no authority.
+Rules: `"blueprint": 1` is required (the version field, naming reader `read_v1`); expansion order is parent defaults (root first), family, instance `properties`, then `id` and `at`; a later value replaces an earlier one whole and lists are never merged; one explicit parent; unknown key, family, parent, cycle, duplicate id, missing `at`, absent region, region path outside the pack, and unknown `drops` item all fail with a plain sentence and a JSON pointer; emitted key order is `id, name, sprite, at, hp, atk, xp, sight, drops`. Every family is checked for an unknown parent or a cycle, used or not (decided 2026-10-02), and an invalid `drops` error points at the declaration that supplied the value (a family's `defaults` or the instance's `properties`). Format 1 is acts-shape only. There is no event or effect vocabulary: a pack word grants no authority.
 
 ### Stale rule
 

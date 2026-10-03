@@ -185,12 +185,15 @@ def _region_dir(pack_dir: Path, region_key: str, pointer: str) -> str:
     return target
 
 
-def _family_record(family: str, families: dict) -> dict:
-    """The merged defaults of `family` and its parent chain, root first.
+def _resolve_family(family: str, families: dict) -> tuple[list[str], dict]:
+    """Resolve `family` to its root-first chain and its merged fields.
 
-    A later value replaces an earlier one whole. Every value is fresh, so
-    records never share objects. Unknown parents and cycles fail with a
-    pointer: a self-cycle names the family, a longer cycle names `/families`.
+    `chain` is the family and its parent chain, root first. `fields` maps
+    each surviving field to `(value, pointer)`: `value` is the source
+    object itself (callers deep-copy it) and `pointer` names the
+    declaration that won. A later value replaces an earlier one whole.
+    Unknown parents and cycles fail with a pointer: a self-cycle names
+    the family, a longer cycle names `/families`.
     """
     chain: list[str] = []
     seen: set[str] = set()
@@ -215,11 +218,13 @@ def _family_record(family: str, families: dict) -> dict:
             )
         current = parent
 
-    record: dict = {}
-    for name in reversed(chain):
+    ordered = list(reversed(chain))
+    fields: dict = {}
+    for name in ordered:
         defaults = families[name].get("defaults") or {}
-        record.update(copy.deepcopy(defaults))
-    return record
+        for key, value in defaults.items():
+            fields[key] = (value, f"/families/{_esc(name)}/defaults/{key}")
+    return ordered, fields
 
 
 def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
@@ -233,6 +238,11 @@ def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
     families = source.get("families") or {}
     regions = source.get("regions") or {}
     items = _declared_items(pack)
+
+    # Every family is resolved, used or not: an unused family with an
+    # unknown parent or a cycle is still a broken Blueprint.
+    for name in families:
+        _resolve_family(name, families)
 
     out: dict[str, list[dict]] = {}
     for region_key, region in regions.items():
@@ -248,8 +258,13 @@ def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
                 raise BlueprintError(
                     f"unknown family {family!r}", f"{ibase}/family"
                 )
-            record = _family_record(family, families)
-            record.update(copy.deepcopy(instance.get("properties") or {}))
+            _chain, fields = _resolve_family(family, families)
+            for key, value in (instance.get("properties") or {}).items():
+                fields[key] = (value, f"{ibase}/properties/{key}")
+            record = {
+                key: copy.deepcopy(value)
+                for key, (value, _pointer) in fields.items()
+            }
 
             if "id" in instance:
                 record["id"] = copy.deepcopy(instance["id"])
@@ -266,13 +281,12 @@ def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
                 )
             seen_ids.add(iid)
 
-            drops = record.get("drops")
+            drops, where = fields.get("drops", (None, ""))
             if isinstance(drops, list):
                 for drop in drops:
-                    if drop not in items:
+                    if not isinstance(drop, str) or drop not in items:
                         raise BlueprintError(
-                            f"unknown item {drop!r} in drops",
-                            f"{ibase}/properties/drops",
+                            f"unknown item {drop!r} in drops", where
                         )
 
             records.append({key: record[key] for key in FIELD_ORDER if key in record})
@@ -309,22 +323,6 @@ def _write_json(path: Path, data) -> None:
     )
 
 
-def _family_chain(family, families: dict) -> list[str]:
-    """The parent chain of `family`, root first.
-
-    `expand` has already rejected unknown families and cycles, so this
-    is a plain walk; an unknown name simply ends the chain.
-    """
-    chain: list[str] = []
-    current = family
-    while isinstance(current, str) and current in families and current not in chain:
-        chain.append(current)
-        parent = families[current].get("extends")
-        current = parent if isinstance(parent, str) else None
-    chain.reverse()
-    return chain
-
-
 def _lock_data(source: dict, expanded: dict) -> dict:
     """The lock body for one successful expansion of `source`."""
     families = source.get("families") or {}
@@ -337,7 +335,7 @@ def _lock_data(source: dict, expanded: dict) -> dict:
             properties = instance.get("properties")
             entries.append({
                 "source": f"/regions/{_esc(region_key)}/enemies/{i}",
-                "families": _family_chain(instance.get("family"), families),
+                "families": _resolve_family(instance.get("family"), families)[0],
                 "overrides": sorted(properties) if isinstance(properties, dict) else [],
             })
         act, _, region = region_key.partition("/")
