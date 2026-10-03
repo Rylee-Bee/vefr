@@ -20,11 +20,13 @@ await new Promise((r) => w.setTimeout(r, 300));
 const E = w.VEFR_EQUIP_ENGINE;
 const J = (x) => JSON.parse(JSON.stringify(x));
 
-// The catalog the equip fixture bakes: cloak-1 body +2hp, bow-1 hand +1atk,
-// ring-1 charm no mods, potion-1 no slot, plus the sample's unslotted torch
-// and chalked map. Literal here so the harness does not depend on a weave.
+// The catalog the equip fixture bakes: cloak-1 body +2hp, coat-1 body +1hp
+// (a second body thing, so a swap into an occupied slot is testable), bow-1
+// hand +1atk, ring-1 charm no mods, potion-1 no slot, plus the sample's
+// unslotted torch and chalked map. Literal here, no dependency on a weave.
 const ITEMS = {
   'cloak-1': { name: 'a hooded cloak', sprite: 'cloak', slot: 'body', mods: { hp: 2 } },
+  'coat-1': { name: 'a patched coat', sprite: 'cloak', slot: 'body', mods: { hp: 1 } },
   'bow-1': { name: 'a short bow', sprite: 'bow', slot: 'hand', mods: { atk: 1 } },
   'ring-1': { name: 'a plain ring', sprite: 'ring', slot: 'charm', value: 3 },
   'potion-1': { name: 'a cloudy potion', sprite: 'potion', heal: 3, use: 'drink' },
@@ -52,8 +54,12 @@ if (E) {
 
   // --- equip -----------------------------------------------------------------
   out.equipEmpty = J(E.equip(NOTHING, ITEMS, 'body', 'cloak-1'));
-  // Into a full slot: the old wearer comes back for the bag.
-  out.equipSwap = J(E.equip({ body: 'cloak-1' }, ITEMS, 'body', 'ring-1'));
+  // Into a full slot, with an item that genuinely fits it: the old
+  // wearer comes back for the bag.
+  out.equipSwap = J(E.equip({ body: 'cloak-1' }, ITEMS, 'body', 'coat-1'));
+  // A full slot is still refused when the item does not fit it: a charm
+  // thing never becomes body gear just because body is taken.
+  out.equipSwapMismatch = J(E.equip({ body: 'cloak-1' }, ITEMS, 'body', 'ring-1'));
   // The slot must be the item's own slot.
   out.equipWrongSlot = J(E.equip(NOTHING, ITEMS, 'hand', 'cloak-1'));
   out.equipBadSlot = J(E.equip(NOTHING, ITEMS, 'belt', 'cloak-1'));

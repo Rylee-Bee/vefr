@@ -574,10 +574,12 @@ Code: `src/vefr/maplab.py` (validation) + `src/vefr/cli.py` (bake) +
 `tests/test_growth_validator.py` + `tests/test_growth_engine.py` +
 `tests/test_growth_play.py` + `tests/fixtures/make_growth_pack.py`.
 
-## equipment (the pack fields; the wearing is a later slice)
+## equipment (the pack fields and the engine; the wearing is a later slice)
 
 Equipment is optional and additive: a pack whose items carry no `slot`
-plays exactly as it did, and a pack with no `items` is untouched.
+plays exactly as it did, and a pack with no `items` is untouched. **This
+slice is the pack fields and the pure engine.** Nothing wears anything
+yet: the Bag panel, the buttons and the live line are the next slice.
 
 An item may carry `slot`, exactly one of `hand`, `body`, `head`, `feet` or
 `charm`, and `mods`, which is only allowed beside a slot:
@@ -613,10 +615,24 @@ the stat sums, the Bag's "You" section and the buttons come with their
 own slices. Deterministic throughout: no randomness, no model call, no
 clock.
 
+The engine (`window.VEFR_EQUIP_ENGINE`, pure, in the woven player) answers
+the numbers and moves the worn state: `statsFor(base, items, equipped)`,
+`equip`, `unequip`, `clean`, `clampHealth`. Attack is base `atk` plus the
+worn `mods.atk`; max health is base `hp` plus worn `mods.hp`; taking off
+something that lowered the max clamps current health down to it, never
+below 1. `equip` refuses an item with no slot, a slot it does not fit, an
+id the catalog lacks, and an id already worn, so a duplicate is
+impossible, and equipping into a full slot returns the old wearer so the
+bag can take it back. Nothing is written into the caller's state, because
+that object is what gets saved. Deterministic like the rest: no
+randomness, no model call, no clock.
+
 Code: `src/vefr/maplab.py` (`SLOTS`, `MOD_STATS`,
 `item_slot_and_mods`, `item_slot_errors`, `_door_key_items`) +
-`src/vefr/cli.py` (the `_player_items` bake); tests:
-`tests/test_equipment_validator.py` + `tests/fixtures/make_equip_pack.py`.
+`src/vefr/cli.py` (the `_player_items` bake) + `web/packaged.html`
+(`VEFR_EQUIP_ENGINE`); tests: `tests/test_equipment_validator.py` +
+`tests/test_equipment_engine.py` + `tests/fixtures/make_equip_pack.py` +
+`tests/fixtures/equip_engine_harness.mjs`.
 
 ## Skins (a picture pack for the interface)
 

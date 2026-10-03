@@ -221,15 +221,16 @@
     {
       "id": "equipment",
       "name": "Gear in five slots",
-      "what": "An item may name a slot and the atk and hp it changes (built); the equip state, the stat sums, the Bag 'You' section and the buttons (proposed).",
+      "what": "An item may name a slot and the atk and hp it changes, and a pure engine sums the worn stats and moves the worn state (built); the Bag 'You' section, the buttons and the live line (proposed).",
       "status": "partial",
-      "detect": "none",
+      "detect": "slots",
       "docs": [
         "docs/guides/rulesets.md"
       ],
       "design": "design/equipment.md",
       "tests": [
-        "tests/test_equipment_validator.py"
+        "tests/test_equipment_validator.py",
+        "tests/test_equipment_engine.py"
       ]
     },
     {

@@ -17,8 +17,8 @@ that is already worn somewhere (a duplicate is impossible). A refused equip retu
 given. Equipping into a full slot returns the previous wearer in `swapped` so the bag can take it
 back. Nothing is ever written into the caller's state object.
 
-This is the tests-first half: strict xfail until the engine lands (A2). The Bag panel, the buttons and
-the live line (A3) come with their own slice.
+The engine is built and these tests pass. The Bag panel, the buttons and the live line (A3) come with
+their own slice.
 """
 
 import json
@@ -37,7 +37,6 @@ import make_equip_pack as mk  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 HARNESS = ROOT / "tests" / "fixtures" / "equip_engine_harness.mjs"
 
-needs_a2 = pytest.mark.xfail(strict=True, reason="equipment engine (A2) not built yet")
 
 OK = "ok"
 # The plain reasons a refusal names, kept short: the live line is built from them in A3.
@@ -63,53 +62,52 @@ def r(tmp_path_factory):
 
 # --- the engine exists ------------------------------------------------------------------------------
 
-@needs_a2
 def test_the_pure_engine_is_in_the_woven_file(r):
     assert r["hasEngine"] is True
 
 
 # --- the stat sums -----------------------------------------------------------------------------------
 
-@needs_a2
 def test_nothing_worn_changes_nothing(r):
     assert r["statsNone"] == {"hp": 6, "atk": 2}
 
 
-@needs_a2
 def test_each_worn_mod_adds_to_the_base(r):
     assert r["statsCloak"] == {"hp": 8, "atk": 2}      # +2 hp
     assert r["statsRingOnly"] == {"hp": 6, "atk": 2}    # a keepsake with no mods
     assert r["statsAll"] == {"hp": 8, "atk": 3}         # cloak +2 hp, bow +1 atk, ring nothing
 
 
-@needs_a2
 def test_a_worn_id_the_catalog_lost_contributes_nothing(r):
     assert r["statsGhost"] == {"hp": 6, "atk": 2}
 
 
-@needs_a2
 def test_malformed_arguments_read_as_no_gear_and_never_crash(r):
     assert r["statsNoBase"] == {"hp": 0, "atk": 0}
     assert r["statsNoItems"] == {"hp": 6, "atk": 2}
     assert r["statsBadState"] == {"hp": 6, "atk": 2}
-    assert r["statsNoHp"] == {"hp": 6, "atk": 2}        # no base hp, the cloak's +2 lands on 0
+    assert r["statsNoHp"] == {"hp": 2, "atk": 2}         # no base hp: the cloak's +2 lands on 0
 
 
 # --- equip -------------------------------------------------------------------------------------------
 
-@needs_a2
 def test_equipping_into_a_free_slot_wears_it(r):
     assert r["equipEmpty"] == {
         "state": {"body": "cloak-1"}, "swapped": None, "reason": OK}
 
 
-@needs_a2
 def test_equipping_into_a_full_slot_hands_the_old_wearer_back(r):
+    # coat-1 is the other body thing, so this is a real swap.
     assert r["equipSwap"] == {
-        "state": {"body": "ring-1"}, "swapped": "cloak-1", "reason": OK}
+        "state": {"body": "coat-1"}, "swapped": "cloak-1", "reason": OK}
 
 
-@needs_a2
+def test_a_full_slot_does_not_take_a_thing_that_does_not_fit_it(r):
+    # A charm thing is not body gear, even when body is already worn.
+    assert r["equipSwapMismatch"] == {
+        "state": {"body": "cloak-1"}, "swapped": None, "reason": WRONG_SLOT}
+
+
 def test_the_slot_must_be_the_items_own_slot(r):
     assert r["equipWrongSlot"] == {
         "state": {}, "swapped": None, "reason": WRONG_SLOT}
@@ -117,13 +115,11 @@ def test_the_slot_must_be_the_items_own_slot(r):
         "state": {}, "swapped": None, "reason": BAD_SLOT}
 
 
-@needs_a2
 def test_an_item_with_no_slot_cannot_be_worn(r):
     assert r["equipPotion"] == {
         "state": {}, "swapped": None, "reason": NO_SLOT}
 
 
-@needs_a2
 def test_an_id_the_catalog_lacks_cannot_be_worn(r):
     assert r["equipGhost"] == {
         "state": {}, "swapped": None, "reason": NOT_AN_ITEM}
@@ -133,7 +129,6 @@ def test_an_id_the_catalog_lacks_cannot_be_worn(r):
         "state": {}, "swapped": None, "reason": NOT_AN_ITEM}
 
 
-@needs_a2
 def test_a_duplicate_is_impossible(r):
     # Already in its own slot: nothing changes.
     assert r["equipTwice"] == {
@@ -143,7 +138,6 @@ def test_a_duplicate_is_impossible(r):
         "state": {"body": "cloak-1"}, "swapped": None, "reason": WRONG_SLOT}
 
 
-@needs_a2
 def test_equipping_never_writes_into_the_callers_state(r):
     assert r["equipPureInput"] == {"body": "cloak-1"}
     assert r["equipPure"]["state"] == {"body": "cloak-1", "charm": "ring-1"}
@@ -151,12 +145,10 @@ def test_equipping_never_writes_into_the_callers_state(r):
 
 # --- unequip -----------------------------------------------------------------------------------------
 
-@needs_a2
 def test_taking_off_returns_the_thing_that_was_worn(r):
     assert r["unequipWorn"] == {"state": {"charm": "ring-1"}, "removed": "cloak-1"}
 
 
-@needs_a2
 def test_taking_off_nothing_is_not_an_error(r):
     assert r["unequipEmpty"] == {"state": {"body": "cloak-1"}, "removed": None}
     assert r["unequipBadSlot"] == {"state": {"body": "cloak-1"}, "removed": None}
@@ -165,7 +157,6 @@ def test_taking_off_nothing_is_not_an_error(r):
 
 # --- a saved state the catalog no longer matches -----------------------------------------------------
 
-@needs_a2
 def test_clean_drops_only_what_no_longer_fits(r):
     assert r["cleanOk"] == {"body": "cloak-1", "charm": "ring-1"}
     assert r["cleanGhost"] == {"charm": "ring-1"}       # the id is gone
@@ -177,13 +168,11 @@ def test_clean_drops_only_what_no_longer_fits(r):
 
 # --- the health clamp --------------------------------------------------------------------------------
 
-@needs_a2
 def test_taking_off_a_thing_that_lowered_max_health_clamps(r):
     assert r["clampLower"] == 5      # 10 health, a new max of 5
     assert r["clampSame"] == 5
 
 
-@needs_a2
 def test_a_bigger_max_never_heals_and_the_floor_is_one(r):
     assert r["clampHigher"] == 5     # a smaller max does not top the hero up
     assert r["clampFloor"] == 1      # a max of 0 still leaves 1

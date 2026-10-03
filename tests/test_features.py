@@ -106,6 +106,19 @@ def test_scan_the_plain_sample_world_uses_no_growth_or_rules():
     assert u["interact"]["used"] is True
 
 
+def test_scan_sees_wearable_items(tmp_path):
+    import make_equip_pack
+    u = _uses(features.report(make_equip_pack.build(tmp_path, items={})))
+    # The base catalog: a cloak, a bow, a ring, and a potion with no slot.
+    assert u["equipment"]["used"] is True and u["equipment"]["detail"] == "3 wearable"
+
+
+def test_a_pack_with_no_slots_reports_equipment_unknown():
+    u = _uses(features.report(SAMPLE))
+    # Not detectable as "no": the sample carries no items at all yet.
+    assert u["equipment"]["used"] is False
+
+
 def test_the_report_is_plain_json():
     rep = features.report(SAMPLE)
     assert json.loads(json.dumps(rep)) == rep
