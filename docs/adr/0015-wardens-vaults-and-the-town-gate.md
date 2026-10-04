@@ -1,0 +1,116 @@
+# 0015 - Wardens, vaults and the town gate
+
+Date: 2026-10-04
+
+## Status
+
+Proposed. Becomes Accepted when slice E8 merges. Plan: `docs/plans/endless-dungeon/PLAN.md` sections 1, 2, 4 and 5.
+
+This ADR amends **ADR 0006**: "act advance" becomes **town states**. The edit to 0006 and the roadmap's NEXT entry land in E8's PR.
+
+Rylee's calls:
+- a key warden ends each Section;
+- the vault note advances the act;
+- acts change only the town;
+- the next Section waits for a visit to town, and a paid shortcut can skip that visit;
+- the King ends Act 3, and endless mode comes after him.
+
+## Context
+
+E0b found that `lockOpen` opens a transition when `requires.item` is in the bag *or* `requires.flag` is `true`, never consuming the key, and that generated regions can be inserted before `enterRegion`. ADR 0006 moved the hero to a new act region; here only the town changes. Returning to town clears a Section's kills and chests, which would revive wardens and vault chests unless they are story state.
+
+## Decision
+
+### Warden
+
+```json
+{"id":"ashwing","family":"moth","hp":3.0,"atk":1.6,"scale":1.4,"carries":"ashwing-key",
+ "hall":"warden-hall-moth","placement":"farthest-off-path","endless":{"affixes":1}}
+```
+
+- Closed keys; `placement` has one value; `hp`, `atk` in [1.0, 4.0], whole hundredths, combined as in ADR 0014.
+- It stands on its hall stamp's `warden` anchor. The hall has exactly one used socket, so it is a leaf off the up→down path (asserted).
+- Spawn `{"id":"w","family":…,"warden":"ashwing","at":…}`, outside the monster budget.
+- On death the key goes **straight into the bag** with a line, so it cannot be lost, and `warden:<id>:c<c>` is set.
+- In cycles `c >= 1` it draws `endless.affixes` affixes on the `loot|w` stream; "Proud" adds one.
+
+### Vault
+
+```json
+{"id":"vault-cellar","stamp":"vault-small","needs":"ashwing-key","note":"library/truth-one.md",
+ "chest":["…"],"sets":"vault-1-read","home":"town"}
+```
+
+- **Where it is.** The vault stamp sits on the warden floor. Its single `+` is the **vault door**.
+- **The door.** A transition with `requires: {"flag": "warden:<id>:c<c>"}`; its `locked_text` names the key. A flag, not the item, because keys are never consumed and a cycle-0 key would open every later vault. `needs` stays so `vefr check` can trace the key.
+- **UNKNOWN: how the door opens.** Its `to` is the same region and `to_at` the tile just inside. Whether `enterRegion` into the current region keeps floor state is UNKNOWN; E8's first test checks it. If not, E8 adds a B2 `door` place that opens in place; nothing else changes.
+- **The note.** The `note` anchor is a library book. Opening it fires the shipped `opens {what: <book id>}`, and a rule `opens → set <sets>` records that it was read.
+- **The chest and the way home.** The `chest` anchor holds the loot. The `home` anchor is a stair to `home`.
+
+### The town gate and the paid shortcut
+
+- The warden floor's down stair and the town stair's entry for the next Section carry `requires: {"flag": "town-seen:<section>:c<c>"}`.
+- A rule on `enters town`, guarded by the vault's `sets` flag, sets `town-seen`. The Section expansion emits it; packs never hand-write it.
+- **Shortcut:** offered only when `c >= 1`, so a first pass never skips the story (plan challenge 7). Paying debits gold once and sets `town-seen:<s>:c<c>` and `shortcut-paid:<s>:c<c>`; a second press finds the flag set and charges nothing. The price is the Section's `shortcut` integer; its value is UNKNOWN (owner).
+
+### Town states (ADR 0006 rescoped)
+
+```json
+"town_states": {"region":"town","states":[
+  {"id":"act-2","when":"vault-1-read","use":"town-act-2"},
+  {"id":"act-3","when":"vault-2-read","use":"town-act-3"},
+  {"id":"after-king","when":"king-slain","use":"town-after-king"}]}
+```
+
+- Each `use` is an ordinary authored region, baked as usual: no patches, no new runtime language.
+- Entering `region` loads the **last** state whose `when` is true, else `region`. Derived on each entry, never stored.
+- The act is 1 plus the number of true story vault flags; `king-slain` opens the endless board. ADR 0006's `act-completes` event and per-act surfaces are withdrawn.
+- All states share `region`'s save identity. A dropped item now on a wall moves to the nearest floor tile, scanning row-major.
+
+### Save state
+
+- **Permanent story flags.** These are never evicted or reset:
+  - `warden:<id>:c<c>` and `vault-chest:<id>:c<c>`;
+  - each vault's `sets` flag;
+  - `town-seen:*` and `shortcut-paid:*`;
+  - landings;
+  - `king-slain`.
+- A warden whose flag is set is not spawned; a vault chest whose flag is set opens empty. A town return cannot revive either.
+- Floor deltas are the plan's: identity triple, killed ids (including `w`), taken chests, dropped items, found secrets, explored bitset.
+- **The bitset encoding** belongs to slice F1; beyond "1 bit per tile, base64" it is UNKNOWN. At 128x96 the raw bitset is 1,536 bytes, about 2 KB in base64, over the 1.5 KB per-floor budget: F1 must run-length encode it, or the owner raises the budget.
+- An identity mismatch drops deltas and keeps every flag. The 40-floor cap evicts only deltas.
+
+### What `vefr check` must prove
+
+These hold for every Section, for seeds `check-0..199`, in cycles 0 and 1:
+
+1. The hall and the vault are placed (ADR 0013). The `warden` anchor and the vault door can be reached from `up` without using secret doors.
+2. `note`, `chest` and `home` can be reached from the vault door.
+3. `carries` names a declared item that is `keep` and has no value. That item is in no shop, in no chest table, and in no secret room.
+4. Every `sets`, `when` and gate flag has a setter.
+5. **Progress walk.** A flag-only simulation starts with no flags and repeats three steps over the Sections: kill the warden, read the note, enter town. It must open every Section and reach `king-slain`. In cycle 1 it must also succeed when it uses the shortcut, and the shortcut must never be offered in cycle 0.
+6. Every `use` region exists and validates.
+
+## Consequences
+
+- One gate mechanism: `requires` flags through `lockOpen`; the Keybearer chain becomes flag locks.
+- Each town state is one more baked region (ADR 0006's bake cost; town maps are small).
+- About five flags per Section per cycle: negligible.
+
+## Acceptance
+
+- `tests/test_wardens_vaults.py`: the shapes, golden rejection sentences, and checks 1–4.
+- `tests/test_progress_walk.py`: check 5, plus a fixture with a missing setter that fails with a sentence.
+- `tests/test_town_states.py`: the last true state wins, no true flags gives the base region, and an item moves off a new wall.
+- `tests/browser/test_vault_to_town.py`: the warden dies and the key is in the bag; the door opens; the note is read; the home stair leads to a changed town; the next stair is open.
+- `tests/browser/test_shortcut.py`: there is no shortcut in cycle 0; in cycle 1 it charges once, and pressing again is free.
+- `tests/test_story_flags_survive.py`: after a town return, an identity mismatch and an eviction, the warden stays dead and the chest stays empty.
+
+## Open questions for Rylee
+
+1. What is the shortcut's price, and is "offered only from the second cycle on" right?
+2. In endless mode, does a town visit still gate each Section when the town no longer changes?
+3. Does "New descent" (a new seed) replay the story, or count as a later cycle?
+4. Do vault notes read again in endless mode, or do those vaults hold only loot?
+5. Is the throne room the Act 3 vault, or its own region behind the final boss's door?
+6. What are the town lines, residents and shop stock for each state?
