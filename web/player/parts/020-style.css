@@ -263,6 +263,37 @@
     .acts { right: 4px; gap: 0; }
     .acts .gbtn--main { width: 44px; height: 44px; }
   }
+  /* The phone dock (I2, docs/plans/interface/PLAN.md). On a narrow portrait
+     window the stage grows to the whole window (publishStage sets
+     `.stage--dock` on #stage and the --map-* properties), the drawn map is
+     letterboxed with spare room above and below, and the HUD takes the room
+     above while the d-pad and the action row share the room below, side by
+     side. These rules carry #stage, so they beat the @container and @media
+     blocks above: in dock mode the frame is the window, so those measure the
+     window and no longer describe the map. Targets keep the 44px floor and no
+     piece crosses the map. The ground stays the existing dark #stage. */
+  #stage.stage--dock .hud--tl {
+    top: 8px; left: 8px; max-width: calc(58% - 8px);
+    flex-direction: column; align-items: flex-start;
+  }
+  #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  #stage.stage--dock .toasts {
+    left: auto; right: 8px; top: 60px; bottom: auto;
+    width: calc(42% - 8px);
+  }
+  #stage.stage--dock .acts {
+    left: auto; right: 8px; top: auto; bottom: 8px;
+    flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end;
+    gap: 2px; max-width: calc(100% - 164px);
+  }
+  #stage.stage--dock .dpad {
+    display: grid; left: 8px; right: auto; top: auto; bottom: 8px;
+    grid-template-columns: repeat(3, 44px); gap: 2px;
+  }
+  #stage.stage--dock .dpad button { width: 44px; height: 44px; }
+  #stage.stage--dock .gbtn--main { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+  #stage.stage--dock .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+  #stage.stage--dock .acts kbd { display: none; }
   /* pause menu */
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }

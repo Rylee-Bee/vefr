@@ -18,24 +18,40 @@
   // `.hud-frame`, a child of #stage, so they carry #stage's own offset
   // subtracted out. Published after every resize, which is where a window
   // resize, a door's region swap and the fog toggle's zoom change all meet.
+  //
+  // On a narrow portrait window (`stage--dock`) the map is letterboxed
+  // with spare room above and below, so the stage grows to the whole
+  // window and `VEFR_STAGE.map` keeps the drawn map inside it; the dock
+  // CSS places the HUD, d-pad and action row in that spare room. Every
+  // other window publishes the map rectangle as both the stage and its
+  // `map`. The `--map-*` properties are the map inside #stage, using the
+  // same #stage-relative convention as the `--stage-*` ones.
   function publishStage() {
     var mapW = cols * T, mapH = rows * T;
     var rect = canvas.getBoundingClientRect();
-    var x, y, w, h;
+    var mx, my, mw, mh;
     if (mapW <= viewW && mapH <= viewH) {
       // The whole map reads: it is centred on the canvas.
-      x = rect.left + (viewW - mapW) / 2;
-      y = rect.top + (viewH - mapH) / 2;
-      w = mapW;
-      h = mapH;
+      mx = rect.left + (viewW - mapW) / 2;
+      my = rect.top + (viewH - mapH) / 2;
+      mw = mapW;
+      mh = mapH;
     } else {
       // It scrolls past the window edges: the canvas, clipped to the window.
-      x = Math.max(0, rect.left);
-      y = Math.max(0, rect.top);
-      w = Math.min(rect.right, window.innerWidth) - x;
-      h = Math.min(rect.bottom, window.innerHeight) - y;
+      mx = Math.max(0, rect.left);
+      my = Math.max(0, rect.top);
+      mw = Math.min(rect.right, window.innerWidth) - mx;
+      mh = Math.min(rect.bottom, window.innerHeight) - my;
     }
-    window.VEFR_STAGE = { x: x, y: y, w: w, h: h };
+    // A phone held upright: width <= 600 and taller than it is wide. The
+    // stage is the window; the map stays the drawn rectangle inside it.
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    var x = dock ? 0 : mx, y = dock ? 0 : my;
+    var w = dock ? window.innerWidth : mw, h = dock ? window.innerHeight : mh;
+    window.VEFR_STAGE = {
+      x: x, y: y, w: w, h: h,
+      map: { x: mx, y: my, w: mw, h: mh }
+    };
     var stage = document.getElementById('stage');
     if (stage) {
       var box = stage.getBoundingClientRect();
@@ -43,6 +59,12 @@
       stage.style.setProperty('--stage-y', (y - box.top) + 'px');
       stage.style.setProperty('--stage-w', w + 'px');
       stage.style.setProperty('--stage-h', h + 'px');
+      stage.style.setProperty('--map-x', (mx - box.left) + 'px');
+      stage.style.setProperty('--map-y', (my - box.top) + 'px');
+      stage.style.setProperty('--map-w', mw + 'px');
+      stage.style.setProperty('--map-h', mh + 'px');
+      if (dock) stage.classList.add('stage--dock');
+      else stage.classList.remove('stage--dock');
     }
   }
   function resize() {
