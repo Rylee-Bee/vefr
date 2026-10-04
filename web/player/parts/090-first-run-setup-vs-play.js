@@ -79,13 +79,13 @@ function tutorialKey() {
   return 'vefr-tutorial-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 }
 function tutorialDone() {
-  try { return localStorage.getItem(tutorialKey()) === '1'; } catch (e) { return false; }
+  return store.get(tutorialKey()) === '1';
 }
 function quietTutorial() {
   var el = document.getElementById('status');
   if (!el || el.getAttribute('data-tutorial') !== '1') return;
   el.textContent = '';
   el.removeAttribute('data-tutorial');
-  try { localStorage.setItem(tutorialKey(), '1'); } catch (e) {}
+  store.set(tutorialKey(), '1');
 }
 

@@ -3,15 +3,14 @@
 // the engine refuses any slot not in this list.
 var EQUIP_SLOTS = ['hand', 'body', 'head', 'feet', 'charm'];
 // Per-world saved state: `{slot: itemId}`. Lives alongside the bag and
-// the purse, and is read and written through `try {} catch {}` like
-// them, because a sandboxed iframe can make `localStorage` throw.
+// the purse, and is read and written through the store helper like
+// them, because a sandboxed iframe can make browser storage throw.
 var EQUIP_KEY = 'vefr-equipped-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 // Filled in by `loadEquipped` at boot; a worn id the catalog no longer
 // has is dropped on load, never a crash.
 var EQUIP_STATE = {};
 function loadEquipped() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(EQUIP_KEY) || 'null'); } catch (e) {}
+  var raw = store.getJSON(EQUIP_KEY, null);
   var engine = window.VEFR_EQUIP_ENGINE;
   if (!engine) { EQUIP_STATE = {}; return; }
   // A stored value that is not a usable object reads as nothing worn.
@@ -26,11 +25,11 @@ function loadEquipped() {
   });
   if (Object.keys(worn).length) {
     var bag = bagItems().filter(function (id) { return !worn[id]; });
-    try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
+    store.setJSON(BAG_KEY, bag);
   }
 }
 function saveEquipped(st) {
-  try { localStorage.setItem(EQUIP_KEY, JSON.stringify(st || {})); } catch (e) {}
+  store.setJSON(EQUIP_KEY, st || {});
 }
 // True when an id is currently worn in any slot. Used to keep a worn
 // thing out of the bag list, the strip, and the Use button.

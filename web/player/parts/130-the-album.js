@@ -14,17 +14,15 @@ var ALBUM_MEMORY = null;
 function albumFoundIds() {
   if (ALBUM_MEMORY !== null) return ALBUM_MEMORY.slice();
   var ids = [];
-  try {
-    var raw = JSON.parse(localStorage.getItem(ALBUM_KEY) || '[]');
-    if (Array.isArray(raw)) {
-      ids = raw.filter(function (id) { return typeof id === 'string'; });
-    }
-  } catch (e) { ids = []; }
+  var raw = store.getJSON(ALBUM_KEY, []);
+  if (Array.isArray(raw)) {
+    ids = raw.filter(function (id) { return typeof id === 'string'; });
+  }
   return ids;
 }
 function albumRemember(ids) {
   ALBUM_MEMORY = ids.slice();
-  try { localStorage.setItem(ALBUM_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(ALBUM_KEY, ids);
 }
 // window.VEFR_ALBUM is the harness snapshot, and exists ONLY when the
 // pack has an album: a pack without one leaves it undefined.

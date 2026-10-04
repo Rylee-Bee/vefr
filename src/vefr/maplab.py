@@ -1890,8 +1890,11 @@ def _tile_errors(pack: Path, w: dict, region_geo: dict) -> list[str]:
     return errors
 
 
-def _sprite_scale_errors(w: dict) -> list[str]:
-    """Plain problems with `player.sprite_scale` (empty = good or absent). Reads the block load_pack already holds."""
+def _sprite_scale_errors(w: dict, pack_dir) -> list[str]:
+    """Plain problems with `player.sprite_scale` (empty = good or absent). Reads the block load_pack already holds; a key is a
+    picture when `player.sprites` lists it or the same resolution finds
+    its file by name (ADR 0010 B0), so a key naming nothing at all is
+    refused as one plain sentence."""
     import math
 
     player = w.get('_player')
@@ -1900,10 +1903,12 @@ def _sprite_scale_errors(w: dict) -> list[str]:
     scales = player['sprite_scale']
     if not isinstance(scales, dict):
         return ["player.sprite_scale must be an object like {\"hearth-cat\": 0.5}"]
-    named = player.get('sprites') if isinstance(player.get('sprites'), dict) else {}
+    from .cli import resolve_sprites
+
+    known = resolve_sprites(Path(pack_dir), w)
     errors: list[str] = []
     for name, v in scales.items():
-        if name not in named:
+        if name not in known:
             errors.append(f"player.sprite_scale names '{name}', which has no picture in player.sprites")
         if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or not 0.2 <= v <= 2.0:
             errors.append(f"player.sprite_scale for '{name}' must be a number from 0.2 to 2 (1 is the standard size)")
@@ -2353,7 +2358,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # silent engine fallback (the compatibility rule).
     if pack_dir is not None:
         errors.extend(_tile_errors(Path(pack_dir), w, region_geo))
-        errors.extend(_sprite_scale_errors(w))
+        errors.extend(_sprite_scale_errors(w, Path(pack_dir)))
 
     def _door_tile_errors(index, field, rname, at):
         geo = region_geo.get(rname, {})
