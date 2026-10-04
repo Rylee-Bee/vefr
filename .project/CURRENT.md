@@ -6,6 +6,14 @@
 >
 > Last refreshed: 2026-10-03 (evening).
 
+## 2026-10-04 (Cottage release 1: what Cottage taught VEFR)
+
+**Landed on main (all CI green):** `complete-act` rule action (#252, the end card; no act advance yet), `vefr check` follows the locks (#253: a key that cannot be found, sits behind its own lock, or could be sold), the sticker album slice 1 (#254: `album` pack block, Menu > Album, rewards only add), and the up-stairs label fix (#255). Cottage's act 1 is now a complete game that a keyboard-only bot plays from the cottage to the ending and home (`cottage-of-the-breeze/tests/playthrough/`). Handoff: `cottage-of-the-breeze/docs/plans/release-1/HANDOFF.md`.
+
+**Known gaps found by the night's QA, not fixed:** `point-to` accepts only region ids, so hints read "To reach floor-1" (no region display names); `world.json` `player.wake` does not move the start, so `vefr look` cannot start in a given region; no audio at all (#144); status effects (design approved, ADR amendment owed) and act advance (ADR 0006) block acts 2 and 3; per-run guardians are still the approved campaign.
+
+**Next, in order:** act advance, then status effects slice 1 (one resolver on both sides), then the album logs, then per-run floors. Plans: `cottage-of-the-breeze/docs/plans/acts-2-3/PLAN.md`.
+
 ## 2026-10-03 (the packet lands; equipment step 1)
 
 **Also landed the same day:** the **pure equipment engine** (`window.VEFR_EQUIP_ENGINE`, [PR #247](https://github.com/Rylee-Bee/vefr/issues/247)): the sums, the four named refusals, the swap, the health clamp and `clean`, all pure and pinned by a jsdom harness against the real woven file. **#218 is closed** ([PR #248](https://github.com/Rylee-Bee/vefr/issues/248)): teal text got its own token with a 4.5 floor, and the dead `--teal-light` hover is gone. **The #218 caveat is resolved:** the private pack's skin sets only `on_panel` and `on_panel_dim` and never overrides teal — the "dusk teal" in that pack is paint in the floor tiles, not a UI token — so no companion change is needed there.
