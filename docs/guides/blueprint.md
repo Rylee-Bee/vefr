@@ -62,14 +62,16 @@ Blueprint output.
 
 ## The file format
 
-The version field `blueprint` is required. It must be the integer `1`
-or the integer `3`.
+The version field `blueprint` is required. It must be the integer `1`,
+the integer `2` or the integer `3`.
 
 - `1` is enemies: `regions` carry `enemies` and nothing else.
+- `2` is things: the same `regions` as `1`, and a `things` list at the
+  top level. `places` is format 3's key and is refused on `2`.
 - `3` is places: `regions` may also carry `places`.
-- `2` is reserved for things. It does not exist yet and nothing reads
-  it, so a `"blueprint": 3` file is complete on its own and never
-  waits for format 2.
+
+A `"blueprint": 3` file is complete on its own and never waits for
+format 2, and a `"blueprint": 2` file never waits for format 3.
 
 A pack on `1` expands exactly as it did before, byte for byte.
 
@@ -120,11 +122,12 @@ sentence and a JSON pointer.
 
 | Top level | |
 |---|---|
-| `blueprint` | the format version, `1` or `3` |
+| `blueprint` | the format version, `1`, `2` or `3` |
 | `families` | the named families |
 | `regions` | the regions this Blueprint owns |
+| `things` | the things the pack carries, a list at the top level (format 2) |
 
-<!-- TOP_KEYS: blueprint, families, regions -->
+<!-- TOP_KEYS: blueprint, families, regions, things -->
 
 | A family | |
 |---|---|
@@ -237,8 +240,7 @@ id, a poi name, or `start`. One real sentence:
 Read it: the farthest tile from the arrival stair, on no route from
 that stair to the stair down.
 
-`room:N` is not in this version. It is reserved, the same way format 2
-is reserved.
+`room:N` is not in this version. It is held back for a later one.
 
 ### What one place writes
 
@@ -261,6 +263,84 @@ studio read, not an overlay drawn at weave time. Delete the
 Blueprint, delete the lock, and the doors, stairs and signs are still
 there, still walkable, in the ordinary hand-written shape.
 
+## Things (format 2)
+
+A **thing** is one item the player can pick up: gear, a potion, a
+keepsake. A pack that spells out seven items in `world.json` writes
+them once here instead, and `vefr normalize` writes the entries and
+puts them in the carriers' drops.
+
+This is a full example on format 2 (a synthetic pack, not real
+content):
+
+```json
+{
+  "blueprint": 2,
+  "families": {
+    "beetle": {"defaults": {"name": "a beetle", "sprite": "beetle",
+                            "hp": 3, "atk": 1, "xp": 2}}
+  },
+  "regions": {
+    "act-1/cave-2": {"enemies": [
+      {"id": "b1", "family": "beetle", "at": [3, 4]},
+      {"id": "b2", "family": "beetle", "at": [6, 4]}
+    ]}
+  },
+  "things": [
+    {"id": "shell", "from": "b2", "name": "a cracked shell", "value": 4},
+    {"id": "glow-cap", "from": "b1", "name": "a glow cap",
+     "sprite": "cap", "light": {"radius": 2, "turns": 6}, "keep": true},
+    {"id": "old-ring", "name": "an old ring", "slot": "charm",
+     "mods": {"hp": 1}, "value": 20}
+  ]
+}
+```
+
+`things` is a list at the top level of the file, not a region key. It
+sits beside `regions`, and a region on format 2 carries `enemies` only.
+
+| A thing | |
+|---|---|
+| `id` | a unique id across the `things` (required) |
+| `name` | the name the bag shows (required) |
+| `from` | the enemy instance that drops it |
+| `sprite` | the picture key; defaults to the `id` |
+| `value` | what a shop pays and asks, a whole number |
+| `heal` | health restored on use, a whole number |
+| `use` | the verb that uses it, like `drink` |
+| `keep` | `true` when a used thing stays in the bag |
+| `slot` | where a worn thing sits: `hand`, `body`, `head`, `feet` or `charm` |
+| `mods` | the stats a worn thing changes: `atk` and `hp` |
+| `light` | a torch's `radius` and `turns`, or `{"reveal": true}` |
+
+<!-- THING_KEYS: id, from, name, sprite, value, heal, use, keep, slot, mods, light -->
+
+`id` and `name` are always required. A thing with no name is refused
+rather than written, because an item entry with no name never reaches
+the player. `from` is optional: name it and the thing is a drop, leave
+it out and the thing is written to `world.json` and nothing carries it.
+The rest ride along only when the record gives them, so a thing written
+with two keys bakes as exactly that.
+
+A thing's own id counts as an item the Blueprint declares, so a carrier
+may drop a thing the same file declares. It may not take over an entry
+`world.json` already has by hand: a hand-written `items` entry with the
+same id fails, one sentence, with a pointer.
+
+### What one thing writes
+
+- the pack root `world.json` gets one entry at `/items/<id>`, holding
+  `name`, `sprite` (always written, defaulting to the `id`) and then
+  only the reward keys the record gave: `value`, `heal`, `use`, `keep`,
+  `light`, `slot`, `mods`;
+- the carrier instance's `drops` gets the id appended at the **end** of
+  the list, which is created when the instance has none. This is the
+  one place a list is added to rather than replaced.
+
+That second one is why deleting the `things` list still leaves a
+working pack. The item entry and the appended drop are already the
+ordinary hand-written shape, so nothing else changes.
+
 ## The stale rule
 
 The output is **stale** when any of these is true:
@@ -269,7 +349,10 @@ The output is **stale** when any of these is true:
   hash, or
 - any owned `enemies` list on disk is not structurally equal to what
   this VEFR expands now, or
-- an owned `map.md` cell does not hold the character its place names.
+- an owned `map.md` cell does not hold the character its place names, or
+- an owned `items` entry in `world.json` is not structurally equal to
+  what this VEFR expands now, so a hand edit to a written item is
+  stale.
 
 Structural equality compares the parsed JSON: key order is ignored,
 list order matters. It is not byte equality. The third clause is the
@@ -309,7 +392,9 @@ name are untouched.
 
 The same holds for everything a place writes: the legend entry, the
 poi and its text, the transition and the `map.md` cell. Do not hand
-edit those either.
+edit those either. And the same holds for everything a thing writes:
+the `items` entry and the appended drop. Change the thing, then run
+`normalize` again.
 
 ## Leaving a Blueprint behind
 
@@ -318,7 +403,9 @@ If the Blueprint does not earn its keep, use the exit ramp: delete
 already in the old `enemies` shape, so nothing else changes. The pack
 is a normal hand-written pack again. A place is already written in the
 hand-written shape too, glyph and all, so a pack with places leaves
-the same way.
+the same way. A thing is already written in the hand-written shape too,
+so a pack with things leaves the same way, and deleting only the
+`things` list leaves every item and every drop in place.
 
 ## What it will not do
 

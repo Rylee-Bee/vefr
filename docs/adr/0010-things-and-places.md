@@ -4,7 +4,7 @@ Date: 2026-10-04
 
 ## Status
 
-Proposed, approved to start by Rylee on 2026-10-04 (she picked "Things and places in Blueprint" among the tightening work). **Decided by Rylee on 2026-10-04 (after Opus's plan, `docs/plans/tighten-shapes/PLAN.md`):** doors, stairs and chests write their map glyphs **into `map.md`** (no weave-time overlay); **places come before things**; **placement sentences are built in this mission**, with the language kept as small as it can be (below). Slice B0 has frozen tests; the rest are built one at a time, each with its own tests first. The evidence is `docs/research/size-and-language-pass.md` (pass 3).
+Proposed, approved to start by Rylee on 2026-10-04 (she picked "Things and places in Blueprint" among the tightening work). **Decided by Rylee on 2026-10-04 (after Opus's plan, `docs/plans/tighten-shapes/PLAN.md`):** doors, stairs and chests write their map glyphs **into `map.md`** (no weave-time overlay); **places come before things**; **placement sentences are built in this mission**, with the language kept as small as it can be (below). Slice B0 has frozen tests; the rest are built one at a time, each with its own tests first. **B1 landed on 2026-10-04:** things are Blueprint format 2, `TOP_KEYS` gained `things`, and expansion writes the `items` entry and appends the id to the carrier's `drops`. The evidence is `docs/research/size-and-language-pass.md` (pass 3).
 
 ## Context
 
@@ -15,7 +15,7 @@ Adding one monster, one piece of gear, one door or one region touches 8, 6, 6 an
 Extend that one pattern, in small slices, never adding a parallel system:
 
 - **B0, sprites by name.** A picture file `sprites/<key>.*` is the sprite named `<key>`; a key is baked when `player.sprites` lists it or when something references it (an item, an enemy, a speaker, `hero`). Unused files are not baked. No Blueprint needed; `tests/test_sprites_by_name.py`.
-- **B2, places (first, format 3).** See below. Format `1` is enemies, format `3` is places, and format `2` is reserved for things (B1) and does not exist yet. A `"blueprint": 3` file is complete on its own and never waits for format 2. A format-1 pack stays unchanged byte for byte.
+- **B2, places (first, format 3).** See below. Format `1` is enemies, format `3` is places, and format `2` is things (B1). A `"blueprint": 3` file is complete on its own and never waits for format 2. A format-1 pack stays unchanged byte for byte.
 - **B1, things (after places).** `blueprint.json` gains `things`: gear and items as one record each (name, slot, mods, value, `from` = the carrier instance). Expansion writes the `items` entry and the carrier's `drops`; the sprite is found by name. Owned keys follow ADR 0008's stale rule.
 - **B2, places.** Per region, `places`: doors, stairs, chests, signs as `{kind, at, to, needs, text}`. Expansion writes the legend entry, the transition, the poi and its text **and the glyph into `map.md`** (`map.md` is a generated surface at those tiles; the lock records their hashes).
 - **B3, placement sentences.** `at` may be a short sentence instead of coordinates, resolved once by `vefr normalize` and then locked, so a regenerated floor keeps its guardian and its door. The whole language is six words, ANDed, each reading as English left to right:

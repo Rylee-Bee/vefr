@@ -1,0 +1,13 @@
+{
+  "blueprint": 2,
+  "things": [
+    {
+      "id": "pebble",
+      "name": "a smooth pebble"
+    },
+    {
+      "id": "pebble",
+      "name": "a river pebble"
+    }
+  ]
+}

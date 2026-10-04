@@ -336,19 +336,27 @@ def test_the_registry_reads_format_three():
     assert blueprint.READERS[3](minimal) == minimal
 
 
-def test_format_two_is_not_a_reader_yet(tmp_path):
-    """Format 2 is reserved for `things` (slice B1). A file that asks for
-    it must be refused, not read as a format it is not."""
+def test_places_are_not_a_format_two_key(tmp_path):
+    """`places` is format 3's own key, so a file that asks for format 2
+    and brings a region of places is refused, one plain sentence and a
+    pointer. Format 2 itself is `things`; see `test_blueprint_things.py`.
+
+    The corpus case at that path now declares a version nothing reads
+    (2 is a format now), so this test puts the version back to 2 to make
+    the claim the case is named for.
+    """
     from vefr import blueprint
 
-    assert 2 not in blueprint.READERS
-    pack = _pack(tmp_path, blueprint=json.loads(
+    source = json.loads(
         (V3 / "invalid" / "version-two" / "blueprint.json").read_text(
-            encoding="utf-8")))
+            encoding="utf-8"))
+    source["blueprint"] = 2
+    pack = _pack(tmp_path, blueprint=source)
     with pytest.raises(blueprint.BlueprintError) as err:
         blueprint.expand(blueprint.read(pack / "blueprint.json"),
                          pack_dir=pack)
-    assert err.value.pointer == "/blueprint"
+    assert "unknown key" in str(err.value)
+    assert err.value.pointer == "/regions/act-1~1hall/places"
 
 
 def test_the_closed_key_sets_gain_places():
@@ -675,9 +683,12 @@ FORMAT_ONE_FILES = {
         "ff5c7c844562c1f356752d777bd70d9602f1bfb6bca1de0758b2ae400f305b19",
 }
 # The format-1 conformance corpus, byte for byte: this slice may not
-# quietly reword a baseline.
-FORMAT_ONE_FIXTURES = ("29c6b6a6155bfb19015d7522bcdadfed3712bb23f14b1b6d5e"
-                       "47f1c824a75b0d")
+# quietly reword a baseline. Re-recorded on 2026-10-04 by slice B1, and
+# only because the `version-unknown` case now declares a version nothing
+# reads (`2` became `things`); the old recording was
+# `29c6b6a6155bfb19015d7522bcdadfed3712bb23f14b1b6d5e47f1c824a75b0d`.
+FORMAT_ONE_FIXTURES = ("ebbd7c6eb8b14dc4512a29f8c4795f6c42156c222ef8d8d"
+                       "82706f44c06783615")
 
 
 # The two per-pack artifacts the engine derives and the repo refuses to
