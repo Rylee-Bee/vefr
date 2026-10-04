@@ -61,7 +61,7 @@ gameplay features over new core machinery.
 5. [authoring] Region display names for hints (#259).
 
 ### NEXT (what Act 2 and the next games need)
-- [engine] **Town states** (ADR 0006 rescoped: acts now change the town, not the dungeon) and **status effects** (fire first; `design/elemental-and-status-effects.md`, a campaign with an ADR amendment).
+- [engine] **Town states** (ADR 0006 rescoped by [ADR 0015](docs/adr/0015-wardens-vaults-and-the-town-gate.md): acts change the town, not the dungeon; built in slice E8) and **status effects** (fire first; `design/elemental-and-status-effects.md`, a campaign with an ADR amendment).
 - [engine] ~~Random floors phase 2 (#215)~~ now slice E1 of the endless dungeon; **guardians** as pack data (placement sentences from ADR 0010 are the first step).
 - [authoring] Honest feature detection and engine requirements per pack (finding 5); a route through a pack and one stable play-state API (finding 7); the overlay lane for hand edits on generated floors is superseded by Blueprint `places` (ADR 0010).
 - [QA] A route through a pack plus one stable play-state API (7, new); a balance report from pack data (8, new).
