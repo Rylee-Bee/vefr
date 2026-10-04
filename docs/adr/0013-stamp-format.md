@@ -110,6 +110,6 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 ## Open questions for Rylee
 
 1. **Decided: go bigger, 21x21** for the throne-room redraw. The stamp size cap and the placement cost budget must allow 21x21; confirm in the E5 tests.
-2. **Decided: the throne room plus 5 hand-drawn rooms (six stamps to start).** **Only decorative stamps may rotate or mirror; story rooms never do.** Still open: which five rooms.
+2. **Decided: the throne room plus 5 hand-drawn rooms (six stamps to start).** **Only decorative stamps may rotate or mirror; story rooms never do.** **The five (owner, 2026-10-04): a random elite monster room; a room of 3 to 6 random chests where one is quite likely a monster in disguise; a shrine or small chapel; a treasure nook; and a sleeping den for a linked monster group.** The first two are generated variants that use the stamp mechanism with random contents.
 3. May a landmark stamp leave out its point of interest and take a name from the Section list instead?
 4. **Decided: required stamps always place; optional stamps may be rare on purpose.** The 95% bar applies to required stamps only.
