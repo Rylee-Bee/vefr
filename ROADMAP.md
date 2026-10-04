@@ -5,7 +5,41 @@
 > ladder from a tool built for one story, playable - to a tool
 > anyone can point at their own.
 
+## Where VEFR stands (2026-10-04)
+
+Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through VEFR over one night) turned this roadmap from "make a game possible" into "make the next game easier". Acts 2 and 3 are part of the larger three-act direction and were left for later by Rylee's decision; that is a scoping choice, not an engine limit. This board is built from what the run proved and from the ranked discovery record, [`docs/research/cottage-release-1-learnings.md`](docs/research/cottage-release-1-learnings.md) (ten findings, each with evidence). The long list below stays as the history. Tags: **[engine]** capability, **[authoring]** developer experience, **[QA]** validation and checks, **[player]** what the player sees, **[Cottage]** content that lives in the game's repo.
+
+### SHIPPED (proven by Cottage Release 1)
+- [engine] `complete-act`: a story beat can end with one accessible card, once per save (#252). It does not advance acts yet.
+- [engine] Locks on doors and stairs, used for three stairs and a sealed door (#229); equipment in five slots (#244 to #251); Blueprint families (22 families, 73 creatures); durable rule saves; the skin loader.
+- [QA] `vefr check` follows every lock and names a key that cannot be found, sits behind its own door, or could be sold (#253).
+- [player] The sticker album, slice 1 (#254); a small set of soft synthesized sounds with a switch (#257); walk sheets, a character that walks in four directions (#258); stairs say "up" when they go up (#255).
+- [authoring] `vefr look`, `vefr probe`, `vefr publish`, `vefr features`; the Library chapters on locks and endings and on gear, albums, sound and walking (31 chapters on the shelf).
+- [Cottage] Six floors, three Keybearers and the Cellar King, the King's room and an ending, eight unique monsters, eight wearable items, 25 stickers, a keyboard-only playthrough bot (desktop and phone) and an accessibility pass. All story text is agent draft until Rylee approves it.
+
+### NOW (small, high leverage, straight from real use)
+1. [authoring + QA] **Story status**: a pack can say which words are draft and which Rylee approved; `vefr check --release` lists drafts. (finding 1, new)
+2. [authoring + QA] **Scenarios**: open the game, `vefr look` and the bot in any named state; generalises #260. (finding 2, new)
+3. [QA] **Stage containment and panel accessibility**: check that every control lives inside the play stage at many sizes, and walk every menu panel with axe. (finding 3, new; it is the acceptance test for the in-world interface)
+4. [QA] **Obtainability**: widen the lock check to gear, books, stickers and creatures. (finding 4, deepened)
+5. [authoring] Region display names for hints (#259).
+
+### NEXT (what Act 2 and the next games need)
+- [engine] **Act advance** (ADR 0006, #217) and **status effects** (fire first; `design/elemental-and-status-effects.md`, a campaign with an ADR amendment).
+- [engine + player] **The in-world interface** (Cottage `docs/plans/native-ui/PLAN.md`): skin parts the player does not yet draw, portraits in speech, hit and heal flashes, a fixed stage with everything inside it. Rylee's rule: no literal device frame; native to the world.
+- [engine] **Split `web/packaged.html` into blocks** before more features land in it (`docs/plans/player-split/PLAN.md`; Rylee chose it first).
+- [engine] **Random floors phase 2** (#215) and **guardians** as pack data.
+- [authoring] Honest feature detection and engine requirements per pack (finding 5, deepened); a pack art-import verb with clean credits (6, new); an overlay lane for hand edits to generated floors (9, deepened).
+- [QA] A route through a pack plus one stable play-state API (7, new); a balance report from pack data (8, new).
+- [player] Album logs (bestiary, items, map).
+
+### LATER (worthwhile, no immediate evidence or dependency)
+- [authoring] `vefr where|explain|map` development questions (finding 10, new).
+- [player] Music; a second skin; per-run guardians and weighted tables; `stakes` as a real mechanic; optional Ink conversations (#143); richer floors (#145); save compatibility across content changes.
+
 ## Landed
+
+- [x] **Cottage Release 1 and the VEFR it taught** (2026-10-04, PRs #252 to #258, #261): `complete-act` (the end card), lock reachability in `vefr check`, the sticker album (slice 1), the up-stairs label fix, sound (nine synthesized cues, one switch, opt-in per pack), walk sheets (phase B of the pack art proposal), and the plan to split the player file. Guides: `docs/guides/rules.md`, `docs/guides/rulesets.md` (Album, Sound, Walk sheets). Library: chapters 30 and 31. The discovery record: [`docs/research/cottage-release-1-learnings.md`](docs/research/cottage-release-1-learnings.md).
 
 - [x] **Blueprint, the optional family source for packs** (2026-10-02, PRs #219 to #227):
       a pack may carry `blueprint.json`, which `vefr normalize` expands into the
@@ -2375,6 +2409,8 @@
       review.)
 
 ## Next
+
+*(Older detail. The board at the top of this file, "Where VEFR stands", is the current order.)*
 
 - [ ] **Language architecture: the disposition read** (gate, owner). The proof
       pass ran and the research packet landed on 2026-10-03

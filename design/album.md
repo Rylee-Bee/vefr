@@ -1,6 +1,6 @@
 # The album: a shelf of everything you have met and found
 
-Status: **slice 1 built** (Rylee, 2026-10-02: "how do you reward progression and completeness while still being cozy ... I want everything"; for the shelf she chose the sticker album first, then a bestiary, item list and map as separate logs later, and said VEFR itself needs all of them). The album pack shape, validator, bake, panel and live line have landed (plan A1); the bestiary, item list, map log and Cottage's own stickers are later slices.
+Status: **slice 1 built** (Rylee, 2026-10-02: "how do you reward progression and completeness while still being cozy ... I want everything"; for the shelf she chose the sticker album first, then a bestiary, item list and map as separate logs later, and said VEFR itself needs all of them). The album pack shape, validator, bake, panel and live line have landed (plan A1); the bestiary, item list and map log are later slices. Cottage declares 25 stickers (floors, the cast, the Keybearers and the King, three riddles, three secrets) as of 2026-10-04.
 
 ## The one rule
 

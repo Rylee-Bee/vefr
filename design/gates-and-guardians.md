@@ -1,6 +1,6 @@
 # Gates and guardians: a key worth fighting for
 
-Status: **build step 1 (locked transitions) is built** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). The validator, the player and the docs landed; `tests/test_locked_stairs.py` passes. Steps 2-4 (guardians, depth tables, the Cottage stair) stay proposed and wait for a build.
+Status: **build step 1 (locked transitions) is built** (Rylee, 2026-10-02: "is it more rewarding to have one tougher mob with the key that you have to find? I do want the levels and mobs to be generated"). The validator, the player and the docs landed; `tests/test_locked_stairs.py` passes. **Update 2026-10-04:** Cottage Release 1 uses the lock for its stairs 3 to 4, 4 to 5, 5 to 6 and a sealed door, with an *authored* ladder of Keybearers (the role word since 2026-10-03) and the Cellar King, written as ordinary pack data and Blueprint families; `vefr check` now proves the keys are reachable (#253). The `guardians` pack block, depth tables and generator placement (steps 2-4) are still proposed and belong with random floors phase 2.
 
 ## The word for it
 

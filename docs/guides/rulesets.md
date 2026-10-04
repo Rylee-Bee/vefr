@@ -399,7 +399,7 @@ bake drops an unknown id instead. The bag has no size limit.
 The loot slice left a thing carried but did nothing with it. This slice
 adds the reward end: a purse of gold, a shopkeeper who buys and sells,
 and using a carried thing. It is still deliberately small - no haggling,
-no stock limits, no equipping, no weight - and still deterministic:
+no stock limits, no equipping (equipment came later: see Equipment), no weight - and still deterministic:
 prices and heals are fixed pack numbers, no randomness, no model call,
 no clock.
 
@@ -471,7 +471,7 @@ Code: `src/vefr/cli.py` (`_player_items`, the hero block, the shops map)
 `tests/fixtures/combat_harness.mjs` + `tests/fixtures/make_combat_pack.py`.
 
 Known gaps (this slice): no haggling or variable prices, no stock or
-shop inventories beyond the catalog, no equipping or effects other than
+shop inventories beyond the catalog, no equipping (added later: see Equipment) or effects other than
 healing, no dropping or giving, no currency other than gold, and selling
 always pays exactly `value`. `maplab.validate` does not yet pin the
 reward fields; the bake ignores a `value`/`heal` that is not a positive
