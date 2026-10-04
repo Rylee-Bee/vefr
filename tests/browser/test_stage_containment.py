@@ -11,6 +11,10 @@ The contract:
     panels, the Interact button and the small action buttons, and the touch d-pad when it is shown) lies inside that
     rectangle, within 1 pixel, at every size below, desktop and phone.
   - Nothing sideways-scrolls the page.
+  - Narrow portrait windows (width <= 600 and taller than wide): the map is letterboxed with spare room above and
+    below it, so the stage grows to the whole window and `VEFR_STAGE.map` = {x, y, w, h} is the drawn map inside it. The
+    controls (the d-pad and the action row) sit in the spare room, NOT on the map; no piece covers the map. On every other
+    window `VEFR_STAGE` is the map rectangle as above and `VEFR_STAGE.map` equals it.
 Uses the interact fixture (an 11x7 map: small on purpose, so it is letterboxed on any window).
 """
 
@@ -89,6 +93,33 @@ def test_no_two_pieces_cover_each_other(browser, woven, w, h, touch):
         info = page.evaluate(COLLECT)
         bad = _overlaps(info["els"])
         assert not bad, f"pieces cover each other at {w}x{h}: {bad[:5]}"
+    finally:
+        ctx.close()
+
+
+PHONES = [(390, 844, True), (360, 640, True)]
+
+
+@pytest.mark.parametrize("w,h,touch", PHONES)
+def test_on_a_phone_the_controls_sit_beside_the_map_not_on_it(browser, woven, w, h, touch):
+    ctx = browser.new_context(viewport={"width": w, "height": h}, has_touch=touch, is_mobile=touch)
+    page = ctx.new_page()
+    try:
+        page.goto(woven.as_uri())
+        page.click("#ts-enter")
+        page.wait_for_function("window.VEFR_COMBAT", timeout=15000)
+        page.wait_for_timeout(500)
+        info = page.evaluate(COLLECT)
+        st = info["stage"]
+        assert st and st.get("map"), "VEFR_STAGE.map is not published"
+        assert st["h"] >= 0.9 * h and st["w"] >= 0.95 * w, f"the stage should grow to the window on a phone: {st}"
+        m = st["map"]
+        for e in info["els"]:
+            if e["id"] in ("dpad", "acts", "interact", "talk", "whisper", "bagbtn", "explore") or "gbtn" in str(e["id"]):
+                inter_x = min(e["r"], m["x"] + m["w"]) - max(e["l"], m["x"])
+                inter_y = min(e["b"], m["y"] + m["h"]) - max(e["t"], m["y"])
+                assert not (inter_x > 4 and inter_y > 4 and e["id"] not in ("menu-open",)), \
+                    f"{e['id']} covers the map at {w}x{h}: {e} vs {m}"
     finally:
         ctx.close()
 
