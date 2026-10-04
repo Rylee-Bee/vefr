@@ -216,6 +216,8 @@ pin('labelResident', labelFor({ kind: 'resident', name: 'Ada' }), 'Talk to Ada')
 pin('labelTrader', labelFor({ kind: 'trader', name: 'Bram' }), 'Trade with Bram');
 pin('labelDoor', labelFor({ kind: 'door', name: 'x' }), 'Go through the door');
 pin('labelStairs', labelFor({ kind: 'stairs', name: 'x' }), 'Go down the stairs');
+pin('labelStairsUp', labelFor({ kind: 'stairs', name: 'the stair up' }), 'Go up the stairs');
+pin('labelStairsDown', labelFor({ kind: 'stairs', name: 'the stair down' }), 'Go down the stairs');
 pin('labelPlace', labelFor({ kind: 'place', name: 'the old well' }),
   'Look at the old well');
 pin('labelEnemy', labelFor({ kind: 'enemy', name: 'the cellar rat' }),

@@ -4977,7 +4977,11 @@ function setupTown() {
     if (target.kind === 'resident') return 'Talk to ' + name;
     if (target.kind === 'trader') return 'Trade with ' + name;
     if (target.kind === 'door') return 'Go through the door';
-    if (target.kind === 'stairs') return 'Go down the stairs';
+    // A stair the pack names as going up ("the stair up") climbs; any other
+    // stair keeps the original words.
+    if (target.kind === 'stairs') {
+      return /\bup\b/i.test(String(name || '')) ? 'Go up the stairs' : 'Go down the stairs';
+    }
     if (target.kind === 'place') return 'Look at ' + name;
     if (target.kind === 'enemy') return 'Fight ' + name;
     return null;
