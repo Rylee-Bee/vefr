@@ -435,6 +435,7 @@ AI_HARNESS = """
   var XP_WORD = 'renown';
   var town = null;
   function draw() {}
+  var store = { get: function () { return null; }, set: function () {}, getJSON: function (k, d) { return d; }, setJSON: function () {} };
   function flushGrowth() {}
   function sayGrowth() {}
   function combatSay() {}
