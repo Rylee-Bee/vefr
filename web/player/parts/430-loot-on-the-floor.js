@@ -65,6 +65,11 @@
   function heroAttack(e) {
     var dmg = heroAtk();
     e.hp = Math.max(0, e.hp - dmg);
+    // A blow is the loudest thing on the floor, and it is also the one
+    // wake no sight can miss: the monster that was hit is awake from
+    // here, and so is every sleeper within earshot of the fight.
+    wakeOne(e);
+    makeNoise('fight');
     soundCue('hit');
     var said = 'You hit ' + e.name + ' for ' + dmg + '.';
     // A landed blow is one practice count; levels mode ignores it.
@@ -99,26 +104,127 @@
     if (HERO_HP <= 0) { cozyDeath(); return true; }
     return false;
   }
+  // The turn's flood is cut off here however far the pack's sights
+  // reach (ADR 0014's turn cost). E0d's wake radius plus four is the
+  // nearer of the two bounds and still wins below it.
+  var FLOOD_CUTOFF = 24;
   // How near the hero a monster wakes: its own sight when that runs
   // past ten, ten otherwise. Asleep costs a turn nothing at all -
   // no flood, no step, no attack.
   function wakeRadius(e) { return Math.max(10, e.sight || 0); }
+  // A sleeper does nothing, and there are three ways to stop being one:
+  // the hero ends a turn inside its wake radius (Manhattan, E0d) or
+  // inside its own sight (Chebyshev, the ADR's rule, added beside E0d's
+  // rather than in place of it), a noise it can hear, or a hit. The
+  // warden is never asleep at all.
+  //
+  // The room-reveal fog is not one of those ways and is not one of
+  // those places: seeing a sleeper on the map tells you where it is and
+  // leaves it where it is.
   function asleep(e) {
-    return manhattan(e.at[0], e.at[1], hero[0], hero[1]) > wakeRadius(e);
+    if (isWarden(e)) return false;
+    if (manhattan(e.at[0], e.at[1], hero[0], hero[1]) <= wakeRadius(e)) return false;
+    return chebyshev(e.at[0], e.at[1], hero[0], hero[1]) > (e.sight || 0);
   }
-  // A monster's group wakes with it. Nothing carries a group id
-  // yet, so this spreads the wake to nobody; it is the seam for
-  // when one does.
-  function wakeGroup(e, awake) { return awake; }
+  // Wake one monster, on its own account: it was hit, or it heard
+  // something. No free turn - the hero's turn is not a monster phase -
+  // and the group is left to the monster turn, which is the one place a
+  // group is consulted.
+  function wakeOne(e) {
+    prepareMinds();
+    if (!e || !e.alive || e.awake) return;
+    e.awake = true;
+    e.grace = false;
+    e.wakeSpread = false;   // the turn has a group to catch up on
+  }
+  // ---- noise: the loud things, and how far they carry ----
+  // Every number the floor is ever woken by is in this one block, in
+  // tiles, measured Chebyshev from the hero - the source of all five.
+  // The hero is the noise maker for every one of them.
+  var NOISE_FIGHT = 12;     // fighting
+  var NOISE_DOOR = 6;       // opening a door
+  var NOISE_CHEST = 6;      // opening a chest
+  var NOISE_STAIR = 8;      // using stairs
+  var NOISE_BREAK = 8;      // breaking things
+  // The radius for one loud event. The table is closed: a kind nobody
+  // declared carries nothing, so a call site that gets its own spelling
+  // wrong wakes nobody rather than waking the floor.
+  function noiseRadius(kind) {
+    if (kind === 'fight') return NOISE_FIGHT;
+    if (kind === 'door') return NOISE_DOOR;
+    if (kind === 'chest') return NOISE_CHEST;
+    if (kind === 'stair') return NOISE_STAIR;
+    if (kind === 'break') return NOISE_BREAK;
+    return 0;
+  }
+  function inEarshot(x, y, kind) {
+    var r = noiseRadius(kind);
+    if (!r) return false;
+    return chebyshev(x, y, hero[0], hero[1]) <= r;
+  }
+  // One name per loud event, so each is asked and tested on its own and
+  // the radius beside it is the only place that number lives.
+  function heardFight(x, y) { return inEarshot(x, y, 'fight'); }
+  function heardDoor(x, y) { return inEarshot(x, y, 'door'); }
+  function heardChest(x, y) { return inEarshot(x, y, 'chest'); }
+  function heardStair(x, y) { return inEarshot(x, y, 'stair'); }
+  function heardBreak(x, y) { return inEarshot(x, y, 'break'); }
+  // The hero did something loud at their own tile: wake every sleeper
+  // in earshot of it. `kind` is one of the five names above.
+  function makeNoise(kind) {
+    prepareMinds();
+    if (!noiseRadius(kind)) return;
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (!e || !e.alive) continue;
+      if (inEarshot(e.at[0], e.at[1], kind)) wakeOne(e);
+    }
+  }
+  // A monster's group wakes with it: every other living member of that
+  // group is awake in this same phase, and each one the wake caught
+  // here spends it as its free turn. So a group wakes all at once and
+  // never lands its first blow all at once. A monster with no group
+  // wakes alone and acts at once, exactly as it always did.
+  //
+  // This is the one place a group is consulted, and the monster turn is
+  // its only caller - the spread happens inside a monster phase, which
+  // is what makes the free turn mean anything.
+  function wakeGroup(e, awake) {
+    if (!awake || !e) return false;
+    e.wakeSpread = true;
+    if (!e.group) return true;
+    var members = groupMembers(e.group);
+    for (var i = 0; i < members.length; i++) {
+      var other = members[i];
+      if (other === e || other.awake) continue;
+      other.awake = true;
+      other.grace = true;
+      other.wakeSpread = true;
+    }
+    return true;
+  }
   // One enemy's turn. Next to the hero -> hit them. Badly hurt with
   // the hero in sight -> step away down the map. In sight -> step one
   // tile closer, the short way round the floor rather than into a wall.
   // Out of sight -> drift toward the nearest other monster, so a pack
   // stays a pack instead of scattering into corners. Alone and out of
   // sight -> it holds still.
+  //
+  // A member of a group is held to its leash instead: it never steps
+  // past its home's line, on the line it fights from where it stands,
+  // and with the hero out of sight it walks home and idles there awake.
   function enemyAct(e, maps) {
     var d = manhattan(e.at[0], e.at[1], hero[0], hero[1]);
     if (d === 1) return enemyAttack(e);
+    var leash = leashOf(e);
+    if (leash) {
+      if (d > e.sight) return stepHome(e, leash);
+      // On the line: nothing between this monster and the hero but the
+      // leash, and the hero is not close enough to hit. It holds.
+      if (onLeashEdge(e, leash)) return false;
+      if (badlyHurt(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), -1, leash);
+      return stepAlong(e, distances(maps, hero[0], hero[1]), 1, leash);
+    }
     if (d <= e.sight) {
       if (badlyHurt(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), -1);
       return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
@@ -131,6 +237,7 @@
   // shared distance maps; an asleep one costs nothing and is skipped.
   // The hero's death ends the turn early (and wakes them elsewhere).
   function enemyTurn() {
+    prepareMinds();
     // The harness reads this once, at the end of a run, so it is
     // reset per turn, not per flood: it always shows the last turn.
     window.VEFR_FLOOD_STATS = { floods: 0, tiles: 0, maxSpan: 0 };
@@ -140,23 +247,50 @@
     // every awake monster stands within its own wake radius of the
     // hero, and the flood reaches wakeRadius + 4 tiles from wherever
     // it starts, so no step an awake monster could take before is
-    // lost. Known limit: a monster whose walk the long way round runs
-    // farther than this can now hold still where it used to keep
+    // lost - and never more than FLOOD_CUTOFF steps, which is the ADR's
+    // turn cost. Known limit: a monster whose walk the long way round
+    // runs farther than this can now hold still where it used to keep
     // coming.
     var far = 10;
     for (var j = 0; j < roster.length; j++) {
       if (roster[j].alive) far = Math.max(far, wakeRadius(roster[j]));
     }
-    floodLimit = far + 4;
-    // Who acts: awake by the wake radius, asked through the group
-    // seam - a later slice adds group ids in wakeGroup alone.
+    floodLimit = Math.min(far + 4, FLOOD_CUTOFF);
+    // Who acts, in two passes. First every monster asks whether it is
+    // awake: one that was already awake stays awake - a group, a hit, a
+    // noise - and one that is not is woken here if the hero ended the
+    // turn in its earshot. A monster that woke on its own has no free
+    // turn, so it acts in this same phase and everything E0d did
+    // happens exactly as it did.
     var awake = [];
     for (var k = 0; k < roster.length; k++) {
       if (!roster[k].alive) continue;
-      awake[k] = wakeGroup(roster[k], !asleep(roster[k]));
+      if (!roster[k].awake && !asleep(roster[k])) {
+        roster[k].awake = true;
+        roster[k].wakeSpread = false;
+      }
+      awake[k] = roster[k].awake;
+    }
+    // Then the groups, through the one seam: anything awake that still
+    // owes its group a wake gets the rest of it in this phase, so no
+    // member of a group is awake later than any other.
+    for (var s = 0; s < roster.length; s++) {
+      if (!roster[s].alive || !awake[s] || roster[s].wakeSpread) continue;
+      awake[s] = wakeGroup(roster[s], true);
+    }
+    // The spread woke members the pass above had already passed, so the
+    // act list is read once more off the roster: everybody the group
+    // caught acts in this same phase, minus the free turn.
+    for (var a = 0; a < roster.length; a++) {
+      if (roster[a].alive) awake[a] = roster[a].awake;
     }
     for (var i = 0; i < roster.length; i++) {
       if (!roster[i].alive || !awake[i]) continue;
+      // The free turn a group wake grants: spent here, once. A monster
+      // caught by its group's wake is awake from the next phase and
+      // acts from the next phase, so a group wakes together and never
+      // strikes together.
+      if (roster[i].grace) { roster[i].grace = false; continue; }
       if (enemyAct(roster[i], maps)) {
         flushGrowth(); draw(); combatSnapshot(); return;
       }
@@ -182,9 +316,36 @@
     }
     combatSnapshot();
   }
+  // The mind state of every monster, in the same order as `enemies` and
+  // carrying the same `id`: whether it is on its feet, which group it
+  // belongs to, whether it leads that group or wards the floor, and the
+  // tile that group calls home. It is a sibling of `enemies` and not a
+  // part of it: an enemy record is the fight as a harness has always
+  // read it - six fields, no more - and four tests read it that way.
+  // This is the ADR's part of the fight, kept beside it so the fight
+  // itself did not have to change. Nothing in here is ever saved: it is
+  // read off the live records and is dropped with them when the region
+  // is left.
+  function combatMinds() {
+    var out = [];
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (!e) continue;
+      out.push({ id: e.id, awake: !!e.awake, grace: !!e.grace,
+                 group: e.group || '', leader: !!e.leader,
+                 warden: !!e.warden,
+                 home: e.spawn ? e.spawn.slice() : null });
+    }
+    return out;
+  }
   // A harness-readable snapshot of the fight, refreshed every turn
   // (precedent: window.VEFR_DESK_LAST).
   function combatSnapshot() {
+    // The mind state is read here too: the snapshot is the harness's
+    // window onto the fight, and a region that has just been entered
+    // has not run a monster turn yet, so it has no mind state to publish
+    // until `prepareMinds` has made one.
+    prepareMinds();
     window.VEFR_COMBAT = {
       region: regionName,
       hero: { hp: HERO_HP, max: heroMax(), atk: heroAtk(), at: hero.slice() },
@@ -193,6 +354,7 @@
         return { id: e.id, at: e.at.slice(), hp: e.hp, atk: e.atk,
                  sight: e.sight, alive: e.alive };
       }),
+      minds: combatMinds(),
       bag: bagItems(),
       floor: floor.filter(function (d) { return d.region === regionName; })
         .map(function (d) {
