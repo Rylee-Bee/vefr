@@ -182,6 +182,22 @@ fields that control it (floor, tone, verbs, transitions) are in
 
 ### The engine and the pack
 
+VEFR uses one creator vocabulary at three levels:
+
+- the **game** owns its characters, maps, art, story and one-off rules;
+- a **gameplay feature** is a reusable way to play, such as turns, dialogue,
+  detection or scoring (game developers also call this a gameplay system or
+  mechanic);
+- the **VEFR core** owns the small common machinery those features need:
+  things, places, state, rules, input, presentation, audio and saves.
+
+A game-specific need stays in the game. A reusable gameplay feature is promoted
+only after real games prove the same need. Core changes are rarer still. These
+are logical boundaries, not a plugin framework or a second language: games and
+features use the same public VEFR surface. See
+[Gameplay features](docs/guides/gameplay-features.md) and
+[ADR 0011](docs/adr/0011-gameplay-features.md).
+
 The engine never contains story. Here's what it reads and what it
 doesn't:
 

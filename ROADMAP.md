@@ -9,6 +9,28 @@
 
 Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through VEFR over one night) turned this roadmap from "make a game possible" into "make the next game easier". Acts 2 and 3 are part of the larger three-act direction and were left for later by Rylee's decision; that is a scoping choice, not an engine limit. This board is built from what the run proved and from the ranked discovery record, [`docs/research/cottage-release-1-learnings.md`](docs/research/cottage-release-1-learnings.md) (ten findings, each with evidence). The long list below stays as the history. Tags: **[engine]** capability, **[authoring]** developer experience, **[QA]** validation and checks, **[player]** what the player sees, **[Cottage]** content that lives in the game's repo.
 
+### HOW VEFR GROWS
+
+The architecture rule is deliberately small ([ADR 0011](docs/adr/0011-gameplay-features.md)):
+
+```text
+specific to one game          -> game
+reused by two real games      -> gameplay feature
+needed beneath several uses   -> VEFR core
+```
+
+A **gameplay feature** is the learner-facing name for a reusable gameplay system
+or mechanic. Features use the same public VEFR vocabulary as games; this does
+not add a plugin loader, package manager, second runtime or second authoring
+language. Promotion is evidence-driven: the second real consumer earns the
+abstraction, and the change must delete duplication or make an invariant
+enforceable rather than merely shorten syntax.
+
+Cottage is the depth test. Independent overnight games are breadth tests.
+Burrito Journalism is the later composition test: many short chapters may feel
+like different kinds of games, but should prefer combinations of existing
+gameplay features over new core machinery.
+
 ### SHIPPED (proven by Cottage Release 1)
 - [engine] `complete-act`: a story beat can end with one accessible card, once per save (#252). It does not advance acts yet.
 - [engine] Locks on doors and stairs, used for three stairs and a sealed door (#229); equipment in five slots (#244 to #251); Blueprint families (22 families, 73 creatures); durable rule saves; the skin loader.
@@ -38,6 +60,9 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 
 ### LATER (worthwhile, no immediate evidence or dependency)
 - [authoring] `vefr where|explain|map` development questions (finding 10, new).
+- [authoring + QA] **Independent overnight game trials**: rotate capable models, give each the public creator surface and a blank game, forbid engine edits unless the game truly cannot be expressed, and record complete / gameplay-feature change / core change / workaround / docs gap. Repeated friction across unrelated games is evidence; one strange game is not.
+- [QA] **1.0 readiness signal**: use ten consecutive independent overnight runs as a working window. Aim for at least eight complete playable games, at least seven with no core change, and no repeated unresolved creator-surface failure. This is a product signal, not a compatibility promise.
+- [release] **Burrito Journalism composition pass**: the launch game may use many short chapters with different play styles; add or combine gameplay features before adding genre-specific core code.
 - [player] Music; a second skin; per-run guardians and weighted tables; `stakes` as a real mechanic; optional Ink conversations (#143); richer floors (#145); save compatibility across content changes.
 
 ## Landed
