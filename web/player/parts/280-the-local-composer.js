@@ -18,10 +18,10 @@ function mulberry32(seed) {
 
 function saveSeed() {
   try {
-    let s = localStorage.getItem('vefr-save-seed');
+    let s = store.get('vefr-save-seed');
     if (!s) {
       s = String(Math.floor(Math.random() * 0x7fffffff));
-      localStorage.setItem('vefr-save-seed', s);
+      store.set('vefr-save-seed', s);
     }
     return parseInt(s, 10) || 1;
   } catch (e) { return 1; }
@@ -29,8 +29,8 @@ function saveSeed() {
 
 function nextDraw() {
   try {
-    const n = (parseInt(localStorage.getItem('vefr-localgen-draws') || '0', 10) || 0) + 1;
-    localStorage.setItem('vefr-localgen-draws', String(n));
+    const n = (parseInt(store.get('vefr-localgen-draws') || '0', 10) || 0) + 1;
+    store.set('vefr-localgen-draws', String(n));
     return n;
   } catch (e) { return 1; }
 }

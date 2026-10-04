@@ -1,0 +1,11 @@
+# B0 brief: sprites by name (foreman plan)
+
+Objective: make `tests/test_sprites_by_name.py` AND `tests/test_sprites_by_name_gaps.py` pass (read both first; frozen; never edit them; if one contradicts this brief STOP and report). Context: `docs/adr/0010-things-and-places.md` (slice B0) and `docs/plans/tighten-shapes/PLAN.md` (slice B0).
+
+One worker (tier `code`). Seams:
+1. `src/vefr/cli.py`, `_player_sprites(pack, world)`: today it bakes only the entries of `player.sprites`. New: the set of baked keys is (a) every explicit entry, exactly as today, plus (b) every REFERENCED key that has a file `sprites/<key>.png|webp|jpg|jpeg|gif` at the pack root. References: an item's `sprite`, an enemy's `sprite` in any region contract, a speaker key, and `hero`. An explicit entry wins over a file of the same name. Files named `*-sheet.*` and any `*.sheet.json` are never sprites by name. An unreferenced, unlisted file is not baked. Keep the same real-path guard (`_inside`) for every file read.
+2. `_player_sprite_sheets(pack, world)` (and anything else that walks `player.sprites` to find sprite files, grep for it): it must use the same resolved key-to-file map, so `hero.sheet.json` keeps baking when `hero` is found by name.
+3. `src/vefr/maplab.py` (`sprite_scale` validation): a key is valid when the sprite exists by explicit entry OR by name (the same resolution); a key naming nothing is still one plain sentence naming it.
+Put the shared resolution in ONE helper (for example `resolve_sprites(pack, world) -> dict[key, relative path]`) used by all three places; do not copy the logic.
+Acceptance: `bash tests/run.sh tests/test_sprites_by_name.py tests/test_sprites_by_name_gaps.py tests/test_walk_sheets.py tests/test_sprite_scale.py tests/test_builder_weave.py tests/test_player_build.py --runxfail` AND `uv run python scripts/weave_digest.py` before and after must print identical lines for `sample-world` (it lists its sprites explicitly or has none) and, if present, `cottage-of-the-breeze` (report both).
+Constraints: stdlib; neutral names; no change to `web/`; `git add` only changed files; never commit PLAN.md or this brief. Run every worker in the foreground with a long timeout; never background, nohup or a monitor. Final report: one JSON line `{"done": bool, "files": [...], "escalations": []}`.

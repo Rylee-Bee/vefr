@@ -17,15 +17,14 @@ var REWARD_ON = (function () {
 })();
 
 function heroGold() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(GOLD_KEY), 10); } catch (e) {}
+  var n = parseInt(store.get(GOLD_KEY), 10);
   if (isFinite(n) && n >= 0) return n;
   var baked = window.VEFR_HERO && window.VEFR_HERO.gold;
   return (typeof baked === 'number' && baked >= 0) ? baked : 0;
 }
 function saveGold(n) {
   n = Math.max(0, Math.floor(n));
-  try { localStorage.setItem(GOLD_KEY, String(n)); } catch (e) {}
+  store.set(GOLD_KEY, n);
   return n;
 }
 
@@ -44,12 +43,10 @@ function itemSpriteSrc(id) {
   return (window.VEFR_SPRITES || {})[name] || '';
 }
 function bagItems() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(BAG_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) {
-      return typeof id === 'string' && itemCatalog()[id];
-    }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(BAG_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) {
+    return typeof id === 'string' && itemCatalog()[id];
+  }) : [];
 }
 // Rebuild the harness-readable fight snapshot after bag/gold changes.
 // setupTown installs the real builder; before that (or in a pack with no
@@ -63,7 +60,7 @@ function bagAdd(id) {
   if (!itemCatalog()[id]) return false;
   var ids = bagItems();
   ids.push(id);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
@@ -75,7 +72,7 @@ function bagRemoveOne(id) {
   var i = ids.indexOf(id);
   if (i === -1) return false;
   ids.splice(i, 1);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();

@@ -10,12 +10,10 @@ function rulesNextKey() {
 function rulesNextLoad() {
   if (rulesNextLoaded) return;
   rulesNextLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesNextKey()) || '[]');
-    window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.place === 'string' && typeof e.line === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_NEXT = []; }
+  var a = store.getJSON(rulesNextKey(), []);
+  window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.place === 'string' && typeof e.line === 'string';
+  }) : [];
 }
 function rulesNextRecord(place, line) {
   if (typeof place !== 'string' || !place) return;
@@ -23,7 +21,7 @@ function rulesNextRecord(place, line) {
   // one row per place: the newest word wins
   window.VEFR_NEXT = window.VEFR_NEXT.filter(function (e) { return e.place !== place; });
   window.VEFR_NEXT.push({ place: place, line: line || ('To reach ' + place + '.') });
-  try { localStorage.setItem(rulesNextKey(), JSON.stringify(window.VEFR_NEXT)); } catch (e) {}
+  store.setJSON(rulesNextKey(), window.VEFR_NEXT);
 }
 
 // The two evidence panels the menu shows: where the world pointed,

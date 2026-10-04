@@ -61,7 +61,7 @@ function bindMenu() {
   };
   if (startoverCancel) startoverCancel.addEventListener('click', window.cancelStartover);
   if (startoverConfirm) startoverConfirm.addEventListener('click', function () {
-    try { window.startoverKeys(localStorage); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
+    try { window.startoverKeys(store.raw()); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
     window.location.reload();
   });
   if (startoverBody) startoverBody.addEventListener('keydown', function (e) {
