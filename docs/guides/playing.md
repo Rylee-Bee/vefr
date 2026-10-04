@@ -50,7 +50,7 @@ Its own words say what the next press will do:
 - "Open the chest"
 - "Talk to <name>"
 - "Trade with <name>"
-- "Go through the door", or "Go down the stairs"
+- "Go through the door", "Go down the stairs" or "Go up the stairs"
 - "Look at <place>"
 - "Fight <name>"
 

@@ -197,6 +197,8 @@ def test_all_seven_labels(report):
     assert report["labelTrader"] == "Trade with Bram"
     assert report["labelDoor"] == "Go through the door"
     assert report["labelStairs"] == "Go down the stairs"
+    assert report["labelStairsUp"] == "Go up the stairs"      # a stair named "... up" climbs
+    assert report["labelStairsDown"] == "Go down the stairs"
     assert report["labelPlace"] == "Look at the old well"
     assert report["labelEnemy"] == "Fight the cellar rat"
     assert report["labelNull"] is None
