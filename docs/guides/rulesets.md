@@ -238,6 +238,9 @@ exactly one `item`/`flag`, points at an unknown item or flag, or carries
 an unknown key, and a `locked_text` that is not one plain sentence of 1
 to 200 characters (design/gates-and-guardians.md).
 
+`vefr check` now follows the locks from the start region and names a
+key that cannot be obtained before its door.
+
 Known gap (this slice): only the **first** region's full geometry is
 validated today (rectangular map, reachable tiles, pois, sanctuary,
 water). Other regions' maps are read only for the door checks; their

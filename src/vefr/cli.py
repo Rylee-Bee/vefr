@@ -601,6 +601,16 @@ def cmd_map(args) -> int:
         from . import blueprint
         for note in blueprint.notes(Path(str(args.pack))):
             print(note)
+    # `vefr check` also follows the locks: print every key that cannot be
+    # obtained before its door and fail the check. A pack with no item
+    # lock (or no `requires` at all) prints nothing and is unchanged.
+    if args.map_cmd == 'validate' and getattr(args, 'pack', None):
+        from . import locks
+        lock_findings = locks.findings(Path(str(args.pack)))
+        for finding in lock_findings:
+            print(finding)
+        if lock_findings:
+            return EXIT_ERROR
     return rc
 
 
