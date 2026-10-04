@@ -121,8 +121,8 @@ One sentence plus a JSON pointer each: an unknown key (or `moves`) in an affix, 
 
 ## Owner decisions (2026-10-04) and open questions
 
-1. **Decided: sight plus noise.** A monster wakes when the hero comes within its wake radius, or when fighting or other loud events happen within earshot. (E0d built sight only; noise is added in E7.) **Loud events (owner, 2026-10-04): fighting, opening doors and chests, breaking things, and using stairs.** Left open: the noise radius for each.
-2. Does the warden sleep, or wait awake in its hall?
+1. **Decided: sight plus noise.** A monster wakes when the hero comes within its wake radius, or when fighting or other loud events happen within earshot. (E0d built sight only; noise is added in E7.) **Loud events (owner, 2026-10-04): fighting, opening doors and chests, breaking things, and using stairs.** **Noise radius (owner, 2026-10-04): fighting 12 tiles, doors and chests 6, stairs and breaking 8.**
+2. **Decided: the warden is awake and hunts the hero once the hero enters its hall** (it does not sleep). The hall entrance is the trigger; the validator must prove every warden hall has one.
 3. Is wake grace (a free turn when monsters wake) the feel you want?
 4. What should the affixes and their labels be called?
-5. Is it acceptable that reloading resets sleepers, or should awake state be saved?
+5. **Decided: reloading resets sleepers to asleep.** No awake state is saved.
