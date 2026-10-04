@@ -2020,6 +2020,12 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     out_html = out_html.replace('{{album_json}}',
                                 _json.dumps(_player_album(world),
                                             ensure_ascii=False))
+    # The pack's optional sound set (docs/guides/rulesets.md): the
+    # literal `null` when the pack declares none, so every existing
+    # pack weaves exactly as it did.
+    out_html = out_html.replace('{{sound_json}}',
+                                _json.dumps(world.get('sound'),
+                                            ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',

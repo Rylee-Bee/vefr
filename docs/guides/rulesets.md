@@ -649,6 +649,15 @@ earned, and a `secret` appears only in a count. Rewards only add.
 Code: `src/vefr/maplab.py` (`album_errors`) + `src/vefr/cli.py`
 (`_player_album`) + `web/packaged.html`; tests: `tests/test_album.py`.
 
+## Sound
+
+A `world.json` may carry `sound`, an optional object: `{"theme": "soft"}`.
+No audio files: every cue is synthesized in the browser; `soft` is the only theme.
+The nine cues are `hit`, `hurt`, `defeat`, `pickup`, `door`, `locked`, `level`, `sticker` and `end`.
+Each fires at one moment of play, never on a timer, and the live line already says it in words.
+Menu > Display > Sound turns them off for this browser, on by default; a pack with no `sound` has no switch.
+Code: `src/vefr/maplab.py` (`sound_errors`) + `src/vefr/cli.py` + `web/packaged.html`; tests: `tests/test_sound.py`.
+
 ## Skins (a picture pack for the interface)
 
 A skin is a folder of pictures that repaints the player's interface. It is
