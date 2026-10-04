@@ -1,0 +1,13 @@
+# A1 brief: the album, slice 1 (foreman plan)
+
+Objective: make `tests/test_album.py` pass (read it first; frozen contract, never edit it; if a test contradicts this brief STOP and report). Design: `design/album.md` (read the "one record, many views" and "How it looks" parts; ignore the bestiary/items/map logs).
+
+One worker (tier `code`), three seams:
+1. Validator: `maplab.album_errors(w, pack_dir)` wired into `maplab.validate` (follow how `rules_errors` is wired and reuse its identity model, `_rule_known_ids`, for the `when` payload). One plain sentence per problem, always naming the sticker id (or the unknown thing). Only when the pack declares `album`.
+2. Bake: `cli.py` bakes the album list into the woven file (a `VEFR_ALBUM_DEF` constant, only when declared; mirror how rules are baked in `_player_rules`/the weave template).
+3. Player (`web/packaged.html`): a small pure block between its own `// -- album start --` / `// -- album end --` markers (like the rules block) that, given the defs, the found list and an event (name + data), returns newly earned sticker ids; wire it where `fireRule(eventName, data)` runs so every rules event also checks the album; store found ids in `localStorage['vefr-album-<world>']` (every storage access in try/catch); `window.VEFR_ALBUM = {found, total}`; say "You found a sticker: <name>." in the live line (`combatSay`) once when earned; a Menu button `data-panel="album"` (+ panel `#album-panel`, same pattern as the Books panel) shown only when the pack has an album; panel text: "N of M found", found stickers by name, unfound open by name marked "not yet", unfound riddle by riddle text only, secrets only as "N secret(s)". Reuse existing panel/focus/skin patterns; 44px targets; no new colours (use the existing theme variables); respect reduced motion (no animation needed).
+Also: add `tests/test_album.py` to the `album` entry in `docs/features.json` (change its status to `partial` if the schema allows, else leave) and add a short "Album" section to `docs/guides/rulesets.md` (what a pack declares, six lines). Do not touch `design/album.md` except changing its Status line to "slice 1 built".
+
+Constraints: stdlib only; neutral names only (VEFR is public); don't change other tests; run `bash tests/run.sh tests/test_album.py tests/test_rules_engine.py tests/test_rules_validator.py tests/test_features.py tests/test_overlay_interact.py --runxfail` as acceptance (the last four guard against regressions). `git add` only the files you changed; never commit PLAN.md or this brief.
+Run every worker in the foreground with a long timeout; never background, nohup or a monitor.
+Final report: one JSON line `{"done": bool, "files": [...], "escalations": []}`.
