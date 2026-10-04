@@ -100,8 +100,15 @@
   #cfg-error { color: var(--danger); font-weight: 700; margin: 10px 0 0; }
 
   /* ---- the game view ---- */
-  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
+  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink);
+    --stage-x: 0px; --stage-y: 0px; --stage-w: 100%; --stage-h: 100%; }
   #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* The in-world interface sits on the drawn map, not the window. publishStage()
+     sets the four --stage-* properties on #stage; the fallbacks above are the
+     whole stage, which is what a frame looks like before the first publish. */
+  .hud-frame { position: absolute; left: var(--stage-x); top: var(--stage-y);
+    width: var(--stage-w); height: var(--stage-h); pointer-events: none; container-type: size; }
+  .hud-frame > * { pointer-events: auto; }
   .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* leave room for the Menu button (about 88 px) so the health/level/gold row wraps instead of running under it */
   .hud--tl { left: 12px; max-width: calc(100% - 124px); }
@@ -241,6 +248,62 @@
   }
   /* very narrow phones: the health, level and gold row can wrap to three lines */
   @media (max-width: 400px) { .toasts { top: 150px; } }
+  /* A short frame (a small letterboxed map on a phone, where the drawn map is
+     only a few hundred pixels tall): the window-sized phone layout is far
+     taller than the map, so the pieces tuck into the frame's own corners and
+     the action row lies flat. Targets stay at the 44px floor. */
+  @container (max-height: 480px) {
+    .hud--tl { top: 6px; left: 6px; max-width: 64%; }
+    .hud--tr { top: 6px; right: 6px; max-width: 42%; }
+    .toasts { top: 54px; left: auto; right: 6px; width: min(200px, 58%); }
+    .dpad { left: 6px; bottom: 6px; grid-template-columns: repeat(3, 44px); gap: 2px; }
+    .dpad button { width: 44px; height: 44px; }
+    .acts { flex-direction: row; align-items: flex-end; right: 6px; bottom: 6px; gap: 2px; }
+    .acts .gbtn--main { width: 52px; height: 52px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+    .acts .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+    .acts kbd { display: none; }
+  }
+  /* The narrowest frames cannot hold the action row beside the d-pad: shave the
+     gaps and the Interact circle to the 44px floor so the two sit side by side. */
+  @container (max-width: 380px) {
+    .dpad { left: 4px; gap: 0; }
+    .acts { right: 4px; gap: 0; }
+    .acts .gbtn--main { width: 44px; height: 44px; }
+  }
+  /* The phone dock (I2, docs/plans/interface/PLAN.md). On a narrow portrait
+     window the stage grows to the whole window (publishStage sets
+     `.stage--dock` on #stage and the --map-* properties), the drawn map is
+     letterboxed with spare room above and below, and the HUD takes the room
+     above while the d-pad and the action row share the room below, side by
+     side. These rules carry #stage, so they beat the @container and @media
+     blocks above: in dock mode the frame is the window, so those measure the
+     window and no longer describe the map. Targets keep the 44px floor and no
+     piece crosses the map. The ground stays the existing dark #stage. */
+  #stage.stage--dock .hud--tl {
+    top: 8px; left: 8px; max-width: calc(58% - 8px);
+    flex-direction: column; align-items: flex-start;
+  }
+  #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  /* Anchor the messages to the map's own top edge (published as --map-y) so
+     they grow up into the spare room instead of down over the map; the HUD
+     row and the map top are the two fixed things in the dock. */
+  #stage.stage--dock .toasts {
+    left: auto; right: 8px; top: auto; bottom: calc(100% - var(--map-y) + 8px);
+    width: calc(42% - 8px);
+  }
+  #stage.stage--dock .acts {
+    left: auto; right: 8px; top: auto; bottom: 8px;
+    flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end;
+    gap: 2px; max-width: calc(100% - 164px);
+  }
+  #stage.stage--dock .dpad {
+    display: grid; left: 8px; right: auto; top: auto; bottom: 8px;
+    grid-template-columns: repeat(3, 44px); gap: 2px;
+  }
+  #stage.stage--dock .dpad button { width: 44px; height: 44px; }
+  #stage.stage--dock .gbtn--main { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+  #stage.stage--dock .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+  #stage.stage--dock .acts kbd { display: none; }
   /* pause menu */
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
@@ -311,30 +374,45 @@
   <div id="play" hidden>
     <div class="stage" id="stage">
       <canvas id="town-canvas" width="480" height="336" role="img" aria-label="The town, seen from above"></canvas>
-      <div class="hud hud--tl">
-        <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
-          <span class="hud-hp-label">Health</span>
-          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
-          <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+      <div class="hud-frame" id="hud-frame">
+        <div class="hud hud--tl">
+          <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
+            <span class="hud-hp-label">Health</span>
+            <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+            <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+          </div>
+          <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
+          <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
+          <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
+          <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
         </div>
-        <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
-        <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
-        <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
-        <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
-      </div>
-      <div class="hud hud--tr">
-        <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
-      </div>
-      <div class="toasts" id="toasts">
-        <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
-        <p class="glass" id="status" role="status" aria-live="polite"></p>
-        <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
-        <p class="glass" id="near" aria-live="polite"></p>
-        <p class="glass" id="poi" aria-live="polite"></p>
-        <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
-        <p class="glass" id="library-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        <div class="hud hud--tr">
+          <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
+        </div>
+        <div class="toasts" id="toasts">
+          <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
+          <p class="glass" id="status" role="status" aria-live="polite"></p>
+          <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
+          <p class="glass" id="near" aria-live="polite"></p>
+          <p class="glass" id="poi" aria-live="polite"></p>
+          <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
+          <p class="glass" id="library-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        </div>
+        <div class="dpad" id="dpad" aria-label="Move">
+          <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
+          <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
+          <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
+          <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
+        </div>
+        <div class="acts">
+          <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
+          <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+          <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+          <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+          <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
+        </div>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
@@ -383,19 +461,6 @@
       </div>
       <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
       <p class="glass" id="combat-log" aria-live="polite"></p>
-      <div class="dpad" id="dpad" aria-label="Move">
-        <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
-        <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
-        <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
-        <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
-      </div>
-      <div class="acts">
-        <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
-        <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
-        <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
-        <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
-        <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
-      </div>
     </div>
     <section id="kitchen" hidden>
       <p class="status" id="k-open" aria-live="polite"></p>
@@ -3996,11 +4061,87 @@ function setupTown() {
   var cols = 0, rows = 0;
   var T = town.tile, viewW = 0, viewH = 0;
   var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
+  var HUD_BAND = 72;       // room the HUD frame needs above and below a whole map
+  var MIN_STAGE_W = 420, MIN_STAGE_H = 360;  // enough for the HUD frame's corners
   function fitZoom() {
-    if (fogOn) return 32 / town.tile;   // a dark map is read up close, and scrolls
-    var fit = Math.min(viewW / (cols * town.tile), viewH / (rows * town.tile));
+    // The HUD sits in the stage's corners, so a whole map must leave a band
+    // above and below for it; otherwise it reads whole and still reaches
+    // under the buttons.
+    var fitW = viewW / (cols * town.tile);
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    if (fogOn) {
+      // A dark map is read up close at one tile. A map already small enough
+      // to read whole shrinks into the HUD's band (and letterboxes on the
+      // dock); a bigger one still scrolls, exactly as it did.
+      var z = 32 / town.tile;
+      var fitH = Math.max(viewH - 2 * HUD_BAND, 1) / (rows * town.tile);
+      var whole = cols * town.tile * z <= viewW && rows * town.tile * z <= viewH;
+      return (dock || whole) ? Math.min(z, fitW, fitH) : z;
+    }
+    var fit = Math.min(fitW, viewH / (rows * town.tile));
     if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
+  }
+  // The drawn map's rectangle, in viewport CSS pixels, published for the
+  // in-world interface (docs/plans/interface/PLAN.md). `window.VEFR_STAGE`
+  // is read by the browser contract; the `--stage-*` properties place
+  // `.hud-frame`, a child of #stage, so they carry #stage's own offset
+  // subtracted out. Published after every resize, which is where a window
+  // resize, a door's region swap and the fog toggle's zoom change all meet.
+  //
+  // On a narrow portrait window (`stage--dock`) the map is letterboxed
+  // with spare room above and below, so the stage grows to the whole
+  // window and `VEFR_STAGE.map` keeps the drawn map inside it; the dock
+  // CSS places the HUD, d-pad and action row in that spare room. A map
+  // smaller than the stage's minimum would leave the HUD frame's corners
+  // on map tiles, so the stage grows to the window there too and the map
+  // is centred inside it, clear of every corner; a map big enough for
+  // its frame keeps the map rectangle as the stage. The `--map-*`
+  // properties are the map inside #stage, using the same #stage-relative
+  // convention as the `--stage-*` ones.
+  function publishStage() {
+    var mapW = cols * T, mapH = rows * T;
+    var rect = canvas.getBoundingClientRect();
+    var mx, my, mw, mh;
+    if (mapW <= viewW && mapH <= viewH) {
+      // The whole map reads: it is centred on the canvas.
+      mx = rect.left + (viewW - mapW) / 2;
+      my = rect.top + (viewH - mapH) / 2;
+      mw = mapW;
+      mh = mapH;
+    } else {
+      // It scrolls past the window edges: the canvas, clipped to the window.
+      mx = Math.max(0, rect.left);
+      my = Math.max(0, rect.top);
+      mw = Math.min(rect.right, window.innerWidth) - mx;
+      mh = Math.min(rect.bottom, window.innerHeight) - my;
+    }
+    // A phone held upright: width <= 600 and taller than it is wide. The
+    // stage is the window; the map stays the drawn rectangle inside it.
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    // A map too small for the HUD frame's corners gets the window as its
+    // stage as well, so those corners fall on the spare room, not the map.
+    var grow = dock || mw < MIN_STAGE_W || mh < MIN_STAGE_H;
+    var x = grow ? 0 : mx, y = grow ? 0 : my;
+    var w = grow ? window.innerWidth : mw, h = grow ? window.innerHeight : mh;
+    window.VEFR_STAGE = {
+      x: x, y: y, w: w, h: h,
+      map: { x: mx, y: my, w: mw, h: mh }
+    };
+    var stage = document.getElementById('stage');
+    if (stage) {
+      var box = stage.getBoundingClientRect();
+      stage.style.setProperty('--stage-x', (x - box.left) + 'px');
+      stage.style.setProperty('--stage-y', (y - box.top) + 'px');
+      stage.style.setProperty('--stage-w', w + 'px');
+      stage.style.setProperty('--stage-h', h + 'px');
+      stage.style.setProperty('--map-x', (mx - box.left) + 'px');
+      stage.style.setProperty('--map-y', (my - box.top) + 'px');
+      stage.style.setProperty('--map-w', mw + 'px');
+      stage.style.setProperty('--map-h', mh + 'px');
+      if (dock) stage.classList.add('stage--dock');
+      else stage.classList.remove('stage--dock');
+    }
   }
   function resize() {
     cols = town.map[0].length;
@@ -4012,6 +4153,7 @@ function setupTown() {
     canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     T = town.tile * fitZoom();
+    publishStage();
   }
   window.addEventListener('resize', function () { resize(); draw(); });
 
