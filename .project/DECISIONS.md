@@ -1,5 +1,36 @@
 # DECISIONS — vefr
 
+## 2026-10-03 — a hue used for text carries a contrast floor; a fill does not
+
+**Decision (Rylee asked which fix was best for engineering, 2026-10-03).** #218's own body suggested "a darker accent". That is backwards: on a dark surface, darkening *lowers* contrast. The fix is one step up the ramp, and the palette already had it (`teal-400`).
+
+**The real defect, and the decision that follows from it.** One token, `--teal`, was doing two jobs. It is the brand/AI-presence colour, tuned for dots, borders and fills, where WCAG asks nothing of it — and four small labels (12px, 13px, 10px) took their *text* colour from it. The 12px menu heading sat at 4.36:1 on a card where body text needs 4.5.
+
+1. **Two jobs, two names.** `--color-teal-text` and `--color-teal-text-hi`, declared **per theme**, one step up the ramp from the brand step. Not a redefinition of `--teal`: that would fix today's four labels and leave the trap for the next person who writes a small teal label, silently, because nothing would be measuring. Every dot, border and fill keeps `--teal` exactly as it was.
+2. **Declared per theme, and this was load-bearing.** Inheriting the warm value would have given `max-contrast` a teal text *dimmer* than its own accent, walking back the entire purpose of that theme. The new test caught this before it shipped — which is the argument for writing the test before trusting the fix.
+3. **A hue used for text has a contrast floor (4.5:1); the same hue used for a fill does not.** The two only stay separate if they have two names. Recorded as rule 2 in `docs/guides/accessibility-contract.md`.
+4. **The guard is a test, not prose.** `tests/test_teal_contrast.py` computes the WCAG ratio for all three themes plus the worst case (a 10px badge on a 15% teal wash, 5.19), asserts the hover is never dimmer than the resting colour, **fails if any stylesheet sets `color:` from a fill token** (the original bug), and fails if `--teal-light` reappears.
+5. **A second bug in the same block, found by looking:** `--teal-light` was used once, on `.context__evidence-link:hover`, and defined nowhere in the repo. The declaration was invalid at computed-value time, so the hover silently fell back to the inherited colour instead of getting brighter. Fixed and pinned.
+
+**Honest limit.** This was measured against the shipped default theme. #218 was originally measured against the Cottage skin (#211), which this session cannot see. A skin that overrides `--teal` or paints its own surfaces needs the same treatment; the test only reads this repo's stylesheets. **UNVERIFIED for the private pack.**
+
+**Status.** ACCEPTED (2026-10-03). Owner: Rylee (the direction: "what's the best fix for engineering?").
+
+## 2026-10-03 — a worker that stops is worth more than one that passes
+
+**Lesson (2026-10-03, the #217 A2 engine packet).** The offload worker was given a frozen 18-test contract and stopped instead of making them pass, naming two pins as unreachable. **Both faults were mine, in the tests:**
+
+- `statsNoHp` asserted `hp: 6` while its own comment *and* my brief said a missing base `hp` starts at 0. Only `2` was reachable.
+- `equipSwap` tried to swap a `charm` item into a `body` slot, which the `wrong-slot` rule correctly refuses — and no two catalog items shared a slot, so the swap was **untestable as written**. A real hole in the contract.
+
+It also reported that my brief's predicted test count was wrong (71, not 39) and that strict `xfail` makes the literal acceptance command meaningless. All three were true.
+
+**Rule.** When a worker escalates a frozen test, check the test before the worker. This is the second time the recorded process caught a bad test rather than a bad builder (`docs/guides/gates-and-guardians.md`'s locks, and the #219 campaign). **The xfail contract is a spec, and a spec written in one sitting has holes — a worker that stops on a hole is doing its job, not failing it.**
+
+Corollary: pin a swap against two items that genuinely share a slot, or the swap is not testable. And keep the brief's acceptance command honest — a predicted count that is wrong trains the reader to distrust the brief.
+
+**Status.** ACCEPTED (2026-10-03). Owner: the integrator (recorded from the session).
+
 ## 2026-10-03 — equipment's pack fields, and one function for two readers
 
 **Decision.** Equipment step 1 (`design/equipment.md`, #217 track A slice A1, [PR #244](https://github.com/Rylee-Bee/vefr/issues/244)) is the pack fields and the bake, nothing else. The rules below are the frozen contract from #239, which Rylee merged as written; they are recorded here because they are pack contract, not implementation detail.

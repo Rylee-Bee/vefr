@@ -8,6 +8,8 @@
 
 ## 2026-10-03 (the packet lands; equipment step 1)
 
+**Also landed the same day:** the **pure equipment engine** (`window.VEFR_EQUIP_ENGINE`, [PR #247](https://github.com/Rylee-Bee/vefr/issues/247)): the sums, the four named refusals, the swap, the health clamp and `clean`, all pure and pinned by a jsdom harness against the real woven file. **#218 is closed** ([PR #248](https://github.com/Rylee-Bee/vefr/issues/248)): teal text got its own token with a 4.5 floor, and the dead `--teal-light` hover is gone.
+
 **Landed (main `2e8cc27`, every check green and merged):**
 - **The language-architecture research packet** ([PR #242](https://github.com/Rylee-Bee/vefr/issues/242), `docs/research/language-architecture/`, 13 documents): the Phase A disposition is **GO WITH CONSTRAINTS**. The evidence earns an *optional, build-time* source layer — and the Blueprint, which is that first slice, is already built and trialled on Cottage. The evidence explicitly does **not** earn a new runtime, event sourcing, a logic engine, natural-language authoring, a plugin system, an estate-wide kernel or broad pack migration. Prior-art claims about Datalog/JSON Schema/event sourcing were corrected; some project-history claims stay `UNVERIFIED`. The Opus brief and the open decisions are `13-opus-brief.md` and `11-open-decisions.md`.
 - **Equipment, the pack fields** ([PR #244](https://github.com/Rylee-Bee/vefr/issues/244), #217 track A slice A1): an item may carry `slot` (one of `hand`, `body`, `head`, `feet`, `charm`) and, only beside it, `mods` (`atk` and `hp`, whole numbers 0 to 9, bools refused). A slotted item may still carry `value` and `keep` but not `heal`, `light` or `use`; an item a locked door names as its key may not be worn. The 19 strict xfails from #239 now pass. Additive: a pack with no `slot` anywhere is unchanged, and nothing at runtime reads the fields yet.
@@ -19,7 +21,9 @@
 
 **Known gaps:** the stale `blueprint.cpython-312.pyc` that the 2026-10-02 plan recorded as a live hazard (same mtime to the second, same size, wrong `FIELD_ORDER`) is **gone** from this checkout — resolved, no longer a risk. The hazard's habit is still real: use `PYTHONPYCACHEPREFIX` for checks after any temporary edit.
 
-**Next, in order:** the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve, #215), then the album (#216), then equipment's remaining slices — the equip state and stat sums as pure functions, then the Bag "You" section — and a real act 2 (#217).
+**Next, in order:** **equipment A3, the Bag "You" section** (the five slot icons with empty outlines, the Equip/Take off buttons, the swap, the live line, `localStorage['vefr-equipped-<world>']`, and the hero wiring — `design/equipment.md` build step 3 of 5, the same tests-first-then-worker path that has now worked twice). Then the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve, #215), the album (#216), and a real act 2 (#217).
+
+**Not dispatchable to a worker, and why** — so the next session does not re-litigate it. **#215** needs a new `guardians` pack block, which is a pack-contract change (ask-first), and its design says in writing that the names, the treasure and the lore note's words are Rylee's: *"nothing is canon until she writes or picks them."* The blocking step is a decision, not code. **#216** (album) and **#143/#144/#145** (Ink, audio pairing, richer floors) have no contract to test against; dispatching a worker to write both the spec and the code is how this repo ends up with a mess. Write the contract first, then dispatch.
 
 ## 2026-10-02 (the language campaign)
 

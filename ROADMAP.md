@@ -42,6 +42,22 @@
       because that object is what gets saved. Pinned by a jsdom harness
       against the real woven file (`tests/test_equipment_engine.py`).
       Nothing wears anything yet: the Bag panel is the next slice.
+- [x] **Teal text has a contrast floor** (2026-10-03, #218): `--teal` is the
+      brand/AI-presence colour, tuned for dots, borders and fills where WCAG
+      asks nothing, and four small labels took their *text* colour from it. The
+      12px menu heading sat at 4.36:1 on a card where body text needs 4.5, and
+      the 10px world-card badge was worse on a translucent teal wash. The two
+      jobs now have two names, `--teal-text` and `--teal-text-hi`, declared per
+      theme and one step up the same ramp: 6.25 on a card, 5.19 on the badge
+      wash, 8.68 on hover. Every dot, border and fill is untouched. Also fixed
+      a second bug in the same block: `--teal-light` was used once on
+      `.context__evidence-link:hover` and defined nowhere, so that hover
+      silently fell back to the inherited colour.
+      `tests/test_teal_contrast.py` is the guard - it computes the ratio for all
+      three themes, fails if any stylesheet takes a text colour from a fill
+      token, and fails if `--teal-light` reappears. Rule 2 of
+      [`accessibility-contract.md`](docs/guides/accessibility-contract.md) now
+      carries the general lesson.
 - [x] **Durable rule saves** (2026-10-02, PRs #222 and #225): an optional `saves` block
       (`"rules": "persist" | "reset"`, `"legacy": "fresh" | "from-log"`); persist keeps a
       reload from forgetting fired rules, flags, beliefs and items, and fires `starts`
