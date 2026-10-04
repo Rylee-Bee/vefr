@@ -1,0 +1,44 @@
+{
+  "blueprint": 3,
+  "families": {
+    "beetle": {
+      "defaults": {
+        "name": "a beetle",
+        "sprite": "beetle",
+        "hp": 3,
+        "atk": 1
+      }
+    }
+  },
+  "regions": {
+    "act-1/hall": {
+      "enemies": [
+        {
+          "id": "k1",
+          "family": "beetle",
+          "at": [
+            3,
+            1
+          ],
+          "properties": {
+            "drops": [
+              "shell"
+            ]
+          }
+        }
+      ],
+      "places": [
+        {
+          "id": "d1",
+          "kind": "door",
+          "at": "7,3",
+          "glyph": "+",
+          "to": "far-hall",
+          "to_at": "3,4",
+          "needs": "shell",
+          "locked_text": "The door will not open yet."
+        }
+      ]
+    }
+  }
+}

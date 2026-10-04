@@ -1,0 +1,14 @@
+{
+  "blueprint": 3,
+  "regions": {
+    "act-1/hall": {
+      "places": [
+        {
+          "kind": "sign",
+          "at": "3,6",
+          "glyph": "?"
+        }
+      ]
+    }
+  }
+}

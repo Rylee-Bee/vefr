@@ -1,0 +1,18 @@
+{
+  "blueprint": 3,
+  "regions": {
+    "act-1/hall": {
+      "places": [
+        {
+          "id": "d1",
+          "kind": "door",
+          "at": "3,6",
+          "glyph": "+",
+          "to": "far-hall",
+          "to_at": "3,4",
+          "label": "the gate"
+        }
+      ]
+    }
+  }
+}
