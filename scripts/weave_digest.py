@@ -10,7 +10,7 @@ from pathlib import Path
 from vefr import cli
 
 root = Path(__file__).resolve().parents[1]
-packs = [Path(p) for p in sys.argv[1:]] or [root / "worlds" / "sample-world", root / "worlds" / "lore"]
+packs = [Path(p) for p in sys.argv[1:]] or sorted(d for d in (root / "worlds").iterdir() if (d / "world.json").is_file())
 for pack in packs:
     first, second = cli.weave_html(pack), cli.weave_html(pack)
     assert first == second, f"{pack.name}: the weave is not deterministic"
