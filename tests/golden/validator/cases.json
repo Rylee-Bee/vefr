@@ -1,0 +1,348 @@
+[
+ {
+  "block": "saves",
+  "case": "absent",
+  "world": {},
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "null",
+  "world": {
+   "saves": null
+  },
+  "errors": [
+   "saves must be an object such as {\"rules\": \"persist\"}"
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "0",
+  "world": {
+   "saves": 0
+  },
+  "errors": [
+   "saves must be an object such as {\"rules\": \"persist\"}"
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "\"x\"",
+  "world": {
+   "saves": "x"
+  },
+  "errors": [
+   "saves must be an object such as {\"rules\": \"persist\"}"
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "[]",
+  "world": {
+   "saves": []
+  },
+  "errors": [
+   "saves must be an object such as {\"rules\": \"persist\"}"
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{}",
+  "world": {
+   "saves": {}
+  },
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"persist\"}",
+  "world": {
+   "saves": {
+    "rules": "persist"
+   }
+  },
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"reset\"}",
+  "world": {
+   "saves": {
+    "rules": "reset"
+   }
+  },
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"nope\"}",
+  "world": {
+   "saves": {
+    "rules": "nope"
+   }
+  },
+  "errors": [
+   "saves.rules must be \"persist\" or \"reset\""
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": 3}",
+  "world": {
+   "saves": {
+    "rules": 3
+   }
+  },
+  "errors": [
+   "saves.rules must be \"persist\" or \"reset\""
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"persist\", \"legacy\": \"fresh\"}",
+  "world": {
+   "saves": {
+    "rules": "persist",
+    "legacy": "fresh"
+   }
+  },
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"persist\", \"legacy\": \"from-log\"}",
+  "world": {
+   "saves": {
+    "rules": "persist",
+    "legacy": "from-log"
+   }
+  },
+  "errors": []
+ },
+ {
+  "block": "saves",
+  "case": "{\"legacy\": \"bad\"}",
+  "world": {
+   "saves": {
+    "legacy": "bad"
+   }
+  },
+  "errors": [
+   "saves.legacy must be \"fresh\" or \"from-log\""
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"legacy\": null}",
+  "world": {
+   "saves": {
+    "legacy": null
+   }
+  },
+  "errors": [
+   "saves.legacy must be \"fresh\" or \"from-log\""
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"extra\": 1}",
+  "world": {
+   "saves": {
+    "extra": 1
+   }
+  },
+  "errors": [
+   "saves has an unknown key 'extra'; it may only hold rules and legacy"
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"rules\": \"x\", \"legacy\": \"y\", \"extra\": 1, \"more\": 2}",
+  "world": {
+   "saves": {
+    "rules": "x",
+    "legacy": "y",
+    "extra": 1,
+    "more": 2
+   }
+  },
+  "errors": [
+   "saves has an unknown key 'extra'; it may only hold rules and legacy",
+   "saves has an unknown key 'more'; it may only hold rules and legacy",
+   "saves.rules must be \"persist\" or \"reset\"",
+   "saves.legacy must be \"fresh\" or \"from-log\""
+  ]
+ },
+ {
+  "block": "saves",
+  "case": "{\"zeta\": 1, \"rules\": \"persist\", \"alpha\": 2}",
+  "world": {
+   "saves": {
+    "zeta": 1,
+    "rules": "persist",
+    "alpha": 2
+   }
+  },
+  "errors": [
+   "saves has an unknown key 'zeta'; it may only hold rules and legacy",
+   "saves has an unknown key 'alpha'; it may only hold rules and legacy"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "absent",
+  "world": {},
+  "errors": []
+ },
+ {
+  "block": "sound",
+  "case": "null",
+  "world": {
+   "sound": null
+  },
+  "errors": [
+   "sound must be an object such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "0",
+  "world": {
+   "sound": 0
+  },
+  "errors": [
+   "sound must be an object such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "\"x\"",
+  "world": {
+   "sound": "x"
+  },
+  "errors": [
+   "sound must be an object such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "[]",
+  "world": {
+   "sound": []
+  },
+  "errors": [
+   "sound must be an object such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{}",
+  "world": {
+   "sound": {}
+  },
+  "errors": [
+   "sound must hold a theme, such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": \"soft\"}",
+  "world": {
+   "sound": {
+    "theme": "soft"
+   }
+  },
+  "errors": []
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": \"loud\"}",
+  "world": {
+   "sound": {
+    "theme": "loud"
+   }
+  },
+  "errors": [
+   "sound theme must be the string \"soft\""
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": 1}",
+  "world": {
+   "sound": {
+    "theme": 1
+   }
+  },
+  "errors": [
+   "sound theme must be the string \"soft\""
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": null}",
+  "world": {
+   "sound": {
+    "theme": null
+   }
+  },
+  "errors": [
+   "sound theme must be the string \"soft\""
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": \"soft\", \"volume\": 3}",
+  "world": {
+   "sound": {
+    "theme": "soft",
+    "volume": 3
+   }
+  },
+  "errors": [
+   "sound may only hold theme, not 'volume'"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"volume\": 3}",
+  "world": {
+   "sound": {
+    "volume": 3
+   }
+  },
+  "errors": [
+   "sound may only hold theme, not 'volume'",
+   "sound must hold a theme, such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"b\": 1, \"a\": 2}",
+  "world": {
+   "sound": {
+    "b": 1,
+    "a": 2
+   }
+  },
+  "errors": [
+   "sound may only hold theme, not 'b'",
+   "sound may only hold theme, not 'a'",
+   "sound must hold a theme, such as {\"theme\": \"soft\"}"
+  ]
+ },
+ {
+  "block": "sound",
+  "case": "{\"theme\": \"loud\", \"x\": 1}",
+  "world": {
+   "sound": {
+    "theme": "loud",
+    "x": 1
+   }
+  },
+  "errors": [
+   "sound may only hold theme, not 'x'",
+   "sound theme must be the string \"soft\""
+  ]
+ }
+]
