@@ -5,14 +5,13 @@
 // deterministic, model-free. No timers: tickets wait.
 var KITCHEN_KEY = 'vefr-packaged-kitchen';
 function kitchenJournal() {
-  try { return JSON.parse(localStorage.getItem(KITCHEN_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(KITCHEN_KEY, []);
 }
 function kitchenLog(entry) {
   var j = kitchenJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(KITCHEN_KEY, j);
   return entry;
 }
 function initKitchen() {

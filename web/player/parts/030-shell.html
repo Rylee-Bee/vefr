@@ -33,30 +33,45 @@
   <div id="play" hidden>
     <div class="stage" id="stage">
       <canvas id="town-canvas" width="480" height="336" role="img" aria-label="The town, seen from above"></canvas>
-      <div class="hud hud--tl">
-        <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
-          <span class="hud-hp-label">Health</span>
-          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
-          <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+      <div class="hud-frame" id="hud-frame">
+        <div class="hud hud--tl">
+          <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
+            <span class="hud-hp-label">Health</span>
+            <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+            <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+          </div>
+          <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
+          <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
+          <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
+          <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
         </div>
-        <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
-        <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
-        <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
-        <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
-      </div>
-      <div class="hud hud--tr">
-        <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
-      </div>
-      <div class="toasts" id="toasts">
-        <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
-        <p class="glass" id="status" role="status" aria-live="polite"></p>
-        <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
-        <p class="glass" id="near" aria-live="polite"></p>
-        <p class="glass" id="poi" aria-live="polite"></p>
-        <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
-        <p class="glass" id="library-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        <div class="hud hud--tr">
+          <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
+        </div>
+        <div class="toasts" id="toasts">
+          <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
+          <p class="glass" id="status" role="status" aria-live="polite"></p>
+          <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
+          <p class="glass" id="near" aria-live="polite"></p>
+          <p class="glass" id="poi" aria-live="polite"></p>
+          <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
+          <p class="glass" id="library-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        </div>
+        <div class="dpad" id="dpad" aria-label="Move">
+          <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
+          <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
+          <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
+          <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
+        </div>
+        <div class="acts">
+          <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
+          <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+          <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+          <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+          <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
+        </div>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
@@ -105,19 +120,6 @@
       </div>
       <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
       <p class="glass" id="combat-log" aria-live="polite"></p>
-      <div class="dpad" id="dpad" aria-label="Move">
-        <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
-        <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
-        <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
-        <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
-      </div>
-      <div class="acts">
-        <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
-        <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
-        <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
-        <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
-        <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
-      </div>
     </div>
     <section id="kitchen" hidden>
       <p class="status" id="k-open" aria-live="polite"></p>

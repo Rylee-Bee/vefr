@@ -1227,26 +1227,115 @@ def _sprite_scales(world: dict) -> dict[str, float]:
     return out
 
 
+def _referenced_sprite_keys(world: dict) -> set[str]:
+    """Every sprite key the world asks for: `hero`, each item's or
+    enemy's `sprite`, and each speaker key. The world dict is assembled
+    from several pack shapes, so each block is read defensively: a
+    missing or oddly shaped block simply adds nothing.
+    """
+    keys: set[str] = {'hero'}
+
+    def _sprite(spec) -> None:
+        if (isinstance(spec, dict) and isinstance(spec.get('sprite'), str)
+                and spec['sprite']):
+            keys.add(spec['sprite'])
+
+    def _speakers(block) -> None:
+        if isinstance(block, dict):
+            keys.update(k for k in block if isinstance(k, str) and k)
+
+    def _enemies(block) -> None:
+        if isinstance(block, list):
+            for spec in block:
+                _sprite(spec)
+
+    items = world.get('items')
+    if isinstance(items, dict):
+        for spec in items.values():
+            _sprite(spec)
+    _speakers(world.get('speakers'))
+    regions = world.get('regions')
+    if isinstance(regions, dict):
+        for rdata in regions.values():
+            if isinstance(rdata, dict):
+                _enemies(rdata.get('enemies'))
+    town = world.get('town')
+    if isinstance(town, dict):
+        _enemies(town.get('enemies'))
+    acts = world.get('acts')
+    if isinstance(acts, list):
+        for act in acts:
+            if not isinstance(act, dict):
+                continue
+            _speakers(act.get('speakers'))
+            act_regions = act.get('regions')
+            if isinstance(act_regions, dict):
+                for rdata in act_regions.values():
+                    if not isinstance(rdata, dict):
+                        continue
+                    contract = rdata.get('contract')
+                    if isinstance(contract, dict):
+                        _enemies(contract.get('enemies'))
+    return keys
+
+
+def resolve_sprites(pack: Path, world: dict) -> dict[str, str]:
+    """The pack's sprites, key -> pack-relative picture path.
+
+    A key resolves when `player.sprites` lists it (the explicit entry
+    wins over a file of the same name) or when something references it -
+    an item's or an enemy's `sprite`, a speaker key, or `hero` - and
+    `sprites/<key>.<art>` exists at the pack root. `*-sheet.*` files and
+    `*.sheet.json` sidecars belong to the walk sheet and are never
+    sprites by name, and a file nothing references and nothing lists is
+    not baked. Every caller keeps its real-path guard on the read.
+    """
+    player = world.get('player')
+    if not isinstance(player, dict):
+        player = world.get('_player')
+    player = player if isinstance(player, dict) else {}
+    named = player.get('sprites') if isinstance(player.get('sprites'), dict) else {}
+    out: dict[str, str] = {}
+    for key, rel in named.items():
+        if isinstance(rel, str) and rel:
+            out[str(key)] = rel
+    refs = _referenced_sprite_keys(world)
+    base = os.path.realpath(pack)
+    root = _inside(base, 'sprites')
+    if root is None or not os.path.isdir(root):
+        return out
+    for name in sorted(os.listdir(root)):
+        suffix = os.path.splitext(name)[1].lower()
+        if suffix not in _ART_TYPES:
+            continue
+        key = name[:-len(suffix)]
+        if not key or key.endswith('-sheet') or key in out or key not in refs:
+            continue
+        target = _inside(root, name)
+        if target is None or not os.path.isfile(target):
+            continue
+        out[key] = f'sprites/{name}'
+    return out
+
+
 def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     """Inline the pack's character sprites, keyed by name.
 
     A pack names one sprite per character under `player.sprites` in
     world.json, relative to the pack root: `hero` for the player, and one
-    named for each speaker key. Both the studio's live player and the woven
-    player draw them where a character stands, falling back to the drawn
-    figure when a name has no sprite. Only a file inside the pack is read -
-    the same real-path guard the title art takes - so a namespaced path can
-    never reach outside the pack.
+    named for each speaker key. A referenced key whose picture sits at
+    `sprites/<key>.<art>` rides even when nothing lists it; the one
+    resolution rule is `resolve_sprites`. Both the studio's live player
+    and the woven player draw them where a character stands, falling back
+    to the drawn figure when a name has no sprite. Only a file inside the
+    pack is read - the same real-path guard the title art takes - so a
+    namespaced path can never reach outside the pack.
     """
     import base64
 
-    player = world.get('player') if isinstance(world.get('player'), dict) else {}
-    named = player.get('sprites') if isinstance(player.get('sprites'), dict) else {}
     base = os.path.realpath(pack)
     out: dict[str, str] = {}
-    for name, rel in named.items():
-        if not isinstance(rel, str) or not rel:
-            continue
+    for name, rel in resolve_sprites(pack, world).items():
         target = os.path.realpath(os.path.join(base, rel))
         if not target.startswith(base + os.sep):
             continue
@@ -1264,20 +1353,18 @@ def _player_sprite_sheets(pack: Path, world: dict) -> dict[str, dict]:
     a frame sheet (`image`, `frame`, `fps`, `directions`). The bake
     replaces the sheet's `image` name with a data URI; a missing or
     broken sheet drops the key entirely, so the player only ever meets
-    a complete sheet and the weave never crashes. The sheet's image
-    resolves beside the sheet itself and goes through the same
-    real-path guard the sprites take, so pack data can never read
+    a complete sheet and the weave never crashes. Any resolved sprite
+    (explicit or found by name through `resolve_sprites`) keeps its
+    sheet, so a `hero` found by name still bakes `hero.sheet.json`. The
+    sheet's image resolves beside the sheet itself and goes through the
+    same real-path guard the sprites take, so pack data can never read
     outside the pack. Returns {} for a pack with no sheets.
     """
     import base64
 
-    player = world.get('player') if isinstance(world.get('player'), dict) else {}
-    named = player.get('sprites') if isinstance(player.get('sprites'), dict) else {}
     base = os.path.realpath(pack)
     out: dict[str, dict] = {}
-    for name, rel in named.items():
-        if not isinstance(rel, str) or not rel:
-            continue
+    for name, rel in resolve_sprites(pack, world).items():
         pic = _inside(base, rel)
         if pic is None:
             continue
@@ -2710,6 +2797,36 @@ def cmd_volumes_shell(args) -> int:
     """
     from . import volumes as vol_mod
     return vol_mod.shell(args.pack)
+
+
+# --------------------------------------------------------------- art
+# ADR 0011: a pack's art/ledger/round-NN.json. `check` validates the
+# whole ledger dir; `credits` prints the generated markdown.
+
+def cmd_art_check(args) -> int:
+    """Validate every round-*.json in --ledger; exit 1 on any problem.
+
+    --root is where each picture's `to` path resolves (normally the
+    pack root); it defaults to the ledger dir's grandparent, since the
+    ledger lives at <root>/art/ledger.
+    """
+    from . import art_ledger
+    ledger = Path(args.ledger).expanduser()
+    root = Path(args.root).expanduser() if args.root else ledger.parent.parent
+    problems = art_ledger.check(ledger, root)
+    if not problems:
+        print("ok")
+        return EXIT_OK
+    for problem in problems:
+        print(problem)
+    return EXIT_ERROR
+
+
+def cmd_art_credits(args) -> int:
+    """Print the ledger's generated credits markdown."""
+    from . import art_ledger
+    print(art_ledger.credits(Path(args.ledger).expanduser()), end="")
+    return EXIT_OK
 
 
 # --------------------------------------------------------- shared wiring
@@ -4652,6 +4769,34 @@ def vefr_main() -> int:
     skp.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
     skp.add_argument('--json', action='store_true', help='print the result envelope')
     skp.set_defaults(fn=cmd_vefr_skipa)
+
+    art = sub.add_parser(
+        'art', help='check a pack\'s art ledger and print its credits',
+        description='work with a pack\'s art/ledger (ADR 0011): validate '
+                    'each round file, or print generated credits',
+        epilog='see: docs/adr/0011-art-ledger.md',
+    )
+    art_sub = art.add_subparsers(dest='art_verb', required=True)
+
+    art_check = art_sub.add_parser(
+        'check', help='validate every round-*.json in the ledger',
+        description='validate keys, roles, ids, sha256 and the clean-credits '
+                    'rule across a pack\'s art ledger',
+    )
+    art_check.add_argument('--ledger', required=True,
+                           help='the art ledger directory (art/ledger)')
+    art_check.add_argument('--root', default=None,
+                           help='where picture `to` paths resolve (default: '
+                                "the ledger dir's grandparent)")
+    art_check.set_defaults(fn=cmd_art_check)
+
+    art_credits = art_sub.add_parser(
+        'credits', help='print the ledger as credits markdown',
+        description='print generated credits, one line per picture',
+    )
+    art_credits.add_argument('--ledger', required=True,
+                             help='the art ledger directory (art/ledger)')
+    art_credits.set_defaults(fn=cmd_art_credits)
 
     # Escape hatches: the old CLIs, run verbatim. add_help=False keeps
     # -h for the old CLI to answer; parse_known_args below captures the

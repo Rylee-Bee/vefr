@@ -93,8 +93,15 @@
   #cfg-error { color: var(--danger); font-weight: 700; margin: 10px 0 0; }
 
   /* ---- the game view ---- */
-  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
+  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink);
+    --stage-x: 0px; --stage-y: 0px; --stage-w: 100%; --stage-h: 100%; }
   #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* The in-world interface sits on the drawn map, not the window. publishStage()
+     sets the four --stage-* properties on #stage; the fallbacks above are the
+     whole stage, which is what a frame looks like before the first publish. */
+  .hud-frame { position: absolute; left: var(--stage-x); top: var(--stage-y);
+    width: var(--stage-w); height: var(--stage-h); pointer-events: none; container-type: size; }
+  .hud-frame > * { pointer-events: auto; }
   .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* leave room for the Menu button (about 88 px) so the health/level/gold row wraps instead of running under it */
   .hud--tl { left: 12px; max-width: calc(100% - 124px); }
@@ -234,6 +241,62 @@
   }
   /* very narrow phones: the health, level and gold row can wrap to three lines */
   @media (max-width: 400px) { .toasts { top: 150px; } }
+  /* A short frame (a small letterboxed map on a phone, where the drawn map is
+     only a few hundred pixels tall): the window-sized phone layout is far
+     taller than the map, so the pieces tuck into the frame's own corners and
+     the action row lies flat. Targets stay at the 44px floor. */
+  @container (max-height: 480px) {
+    .hud--tl { top: 6px; left: 6px; max-width: 64%; }
+    .hud--tr { top: 6px; right: 6px; max-width: 42%; }
+    .toasts { top: 54px; left: auto; right: 6px; width: min(200px, 58%); }
+    .dpad { left: 6px; bottom: 6px; grid-template-columns: repeat(3, 44px); gap: 2px; }
+    .dpad button { width: 44px; height: 44px; }
+    .acts { flex-direction: row; align-items: flex-end; right: 6px; bottom: 6px; gap: 2px; }
+    .acts .gbtn--main { width: 52px; height: 52px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+    .acts .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+    .acts kbd { display: none; }
+  }
+  /* The narrowest frames cannot hold the action row beside the d-pad: shave the
+     gaps and the Interact circle to the 44px floor so the two sit side by side. */
+  @container (max-width: 380px) {
+    .dpad { left: 4px; gap: 0; }
+    .acts { right: 4px; gap: 0; }
+    .acts .gbtn--main { width: 44px; height: 44px; }
+  }
+  /* The phone dock (I2, docs/plans/interface/PLAN.md). On a narrow portrait
+     window the stage grows to the whole window (publishStage sets
+     `.stage--dock` on #stage and the --map-* properties), the drawn map is
+     letterboxed with spare room above and below, and the HUD takes the room
+     above while the d-pad and the action row share the room below, side by
+     side. These rules carry #stage, so they beat the @container and @media
+     blocks above: in dock mode the frame is the window, so those measure the
+     window and no longer describe the map. Targets keep the 44px floor and no
+     piece crosses the map. The ground stays the existing dark #stage. */
+  #stage.stage--dock .hud--tl {
+    top: 8px; left: 8px; max-width: calc(58% - 8px);
+    flex-direction: column; align-items: flex-start;
+  }
+  #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  /* Anchor the messages to the map's own top edge (published as --map-y) so
+     they grow up into the spare room instead of down over the map; the HUD
+     row and the map top are the two fixed things in the dock. */
+  #stage.stage--dock .toasts {
+    left: auto; right: 8px; top: auto; bottom: calc(100% - var(--map-y) + 8px);
+    width: calc(42% - 8px);
+  }
+  #stage.stage--dock .acts {
+    left: auto; right: 8px; top: auto; bottom: 8px;
+    flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end;
+    gap: 2px; max-width: calc(100% - 164px);
+  }
+  #stage.stage--dock .dpad {
+    display: grid; left: 8px; right: auto; top: auto; bottom: 8px;
+    grid-template-columns: repeat(3, 44px); gap: 2px;
+  }
+  #stage.stage--dock .dpad button { width: 44px; height: 44px; }
+  #stage.stage--dock .gbtn--main { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+  #stage.stage--dock .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+  #stage.stage--dock .acts kbd { display: none; }
   /* pause menu */
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }

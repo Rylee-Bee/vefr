@@ -7,14 +7,13 @@
 // same rules with the engine owning truth.
 var DESK_KEY = 'vefr-packaged-desk';
 function deskJournal() {
-  try { return JSON.parse(localStorage.getItem(DESK_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(DESK_KEY, []);
 }
 function deskLog(entry) {
   var j = deskJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(DESK_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(DESK_KEY, j);
   return entry;
 }
 function deskLive() {

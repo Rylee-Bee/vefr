@@ -100,8 +100,15 @@
   #cfg-error { color: var(--danger); font-weight: 700; margin: 10px 0 0; }
 
   /* ---- the game view ---- */
-  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink); }
+  .stage { position: relative; height: 100vh; height: 100dvh; background: #0B0C0E; overflow: hidden; color: var(--glass-ink);
+    --stage-x: 0px; --stage-y: 0px; --stage-w: 100%; --stage-h: 100%; }
   #town-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* The in-world interface sits on the drawn map, not the window. publishStage()
+     sets the four --stage-* properties on #stage; the fallbacks above are the
+     whole stage, which is what a frame looks like before the first publish. */
+  .hud-frame { position: absolute; left: var(--stage-x); top: var(--stage-y);
+    width: var(--stage-w); height: var(--stage-h); pointer-events: none; container-type: size; }
+  .hud-frame > * { pointer-events: auto; }
   .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* leave room for the Menu button (about 88 px) so the health/level/gold row wraps instead of running under it */
   .hud--tl { left: 12px; max-width: calc(100% - 124px); }
@@ -241,6 +248,62 @@
   }
   /* very narrow phones: the health, level and gold row can wrap to three lines */
   @media (max-width: 400px) { .toasts { top: 150px; } }
+  /* A short frame (a small letterboxed map on a phone, where the drawn map is
+     only a few hundred pixels tall): the window-sized phone layout is far
+     taller than the map, so the pieces tuck into the frame's own corners and
+     the action row lies flat. Targets stay at the 44px floor. */
+  @container (max-height: 480px) {
+    .hud--tl { top: 6px; left: 6px; max-width: 64%; }
+    .hud--tr { top: 6px; right: 6px; max-width: 42%; }
+    .toasts { top: 54px; left: auto; right: 6px; width: min(200px, 58%); }
+    .dpad { left: 6px; bottom: 6px; grid-template-columns: repeat(3, 44px); gap: 2px; }
+    .dpad button { width: 44px; height: 44px; }
+    .acts { flex-direction: row; align-items: flex-end; right: 6px; bottom: 6px; gap: 2px; }
+    .acts .gbtn--main { width: 52px; height: 52px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+    .acts .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+    .acts kbd { display: none; }
+  }
+  /* The narrowest frames cannot hold the action row beside the d-pad: shave the
+     gaps and the Interact circle to the 44px floor so the two sit side by side. */
+  @container (max-width: 380px) {
+    .dpad { left: 4px; gap: 0; }
+    .acts { right: 4px; gap: 0; }
+    .acts .gbtn--main { width: 44px; height: 44px; }
+  }
+  /* The phone dock (I2, docs/plans/interface/PLAN.md). On a narrow portrait
+     window the stage grows to the whole window (publishStage sets
+     `.stage--dock` on #stage and the --map-* properties), the drawn map is
+     letterboxed with spare room above and below, and the HUD takes the room
+     above while the d-pad and the action row share the room below, side by
+     side. These rules carry #stage, so they beat the @container and @media
+     blocks above: in dock mode the frame is the window, so those measure the
+     window and no longer describe the map. Targets keep the 44px floor and no
+     piece crosses the map. The ground stays the existing dark #stage. */
+  #stage.stage--dock .hud--tl {
+    top: 8px; left: 8px; max-width: calc(58% - 8px);
+    flex-direction: column; align-items: flex-start;
+  }
+  #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  /* Anchor the messages to the map's own top edge (published as --map-y) so
+     they grow up into the spare room instead of down over the map; the HUD
+     row and the map top are the two fixed things in the dock. */
+  #stage.stage--dock .toasts {
+    left: auto; right: 8px; top: auto; bottom: calc(100% - var(--map-y) + 8px);
+    width: calc(42% - 8px);
+  }
+  #stage.stage--dock .acts {
+    left: auto; right: 8px; top: auto; bottom: 8px;
+    flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end;
+    gap: 2px; max-width: calc(100% - 164px);
+  }
+  #stage.stage--dock .dpad {
+    display: grid; left: 8px; right: auto; top: auto; bottom: 8px;
+    grid-template-columns: repeat(3, 44px); gap: 2px;
+  }
+  #stage.stage--dock .dpad button { width: 44px; height: 44px; }
+  #stage.stage--dock .gbtn--main { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
+  #stage.stage--dock .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
+  #stage.stage--dock .acts kbd { display: none; }
   /* pause menu */
   #menu { position: fixed; inset: 0; z-index: 50; background: rgba(8, 9, 11, 0.72); display: grid;
     grid-template-columns: minmax(200px, 240px) minmax(0, 560px); gap: 16px; align-content: start; justify-content: center; padding: 6vh 16px; overflow-y: auto; }
@@ -311,30 +374,45 @@
   <div id="play" hidden>
     <div class="stage" id="stage">
       <canvas id="town-canvas" width="480" height="336" role="img" aria-label="The town, seen from above"></canvas>
-      <div class="hud hud--tl">
-        <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
-          <span class="hud-hp-label">Health</span>
-          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
-          <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+      <div class="hud-frame" id="hud-frame">
+        <div class="hud hud--tl">
+          <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
+            <span class="hud-hp-label">Health</span>
+            <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+            <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+          </div>
+          <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
+          <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
+          <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
+          <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
         </div>
-        <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
-        <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
-        <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
-        <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
-      </div>
-      <div class="hud hud--tr">
-        <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
-      </div>
-      <div class="toasts" id="toasts">
-        <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
-        <p class="glass" id="status" role="status" aria-live="polite"></p>
-        <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
-        <p class="glass" id="near" aria-live="polite"></p>
-        <p class="glass" id="poi" aria-live="polite"></p>
-        <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
-        <p class="glass" id="library-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
-        <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        <div class="hud hud--tr">
+          <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
+        </div>
+        <div class="toasts" id="toasts">
+          <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
+          <p class="glass" id="status" role="status" aria-live="polite"></p>
+          <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
+          <p class="glass" id="near" aria-live="polite"></p>
+          <p class="glass" id="poi" aria-live="polite"></p>
+          <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
+          <p class="glass" id="library-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
+          <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+        </div>
+        <div class="dpad" id="dpad" aria-label="Move">
+          <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
+          <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
+          <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
+          <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
+        </div>
+        <div class="acts">
+          <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
+          <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+          <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+          <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+          <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
+        </div>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
         <p class="speaker" id="npc-name"></p>
@@ -383,19 +461,6 @@
       </div>
       <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
       <p class="glass" id="combat-log" aria-live="polite"></p>
-      <div class="dpad" id="dpad" aria-label="Move">
-        <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
-        <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
-        <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
-        <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
-      </div>
-      <div class="acts">
-        <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
-        <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
-        <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
-        <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
-        <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
-      </div>
     </div>
     <section id="kitchen" hidden>
       <p class="status" id="k-open" aria-live="polite"></p>
@@ -645,14 +710,41 @@ const STATE = (function () {
   };
 })();
 
+// ---- store: the one place the player touches browser storage ----
+// A sandboxed iframe, or a browser that blocks storage, can make
+// browser storage throw. Every method here wraps the access, so a
+// player never sees the failure: get returns null, getJSON returns
+// its fallback, and set/setJSON give up quietly. `raw()` hands the
+// real storage object to startover (which clears every vefr- save);
+// nothing else may name the backing global.
+var store = {
+  get: function (key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  },
+  set: function (key, value) {
+    try { localStorage.setItem(key, String(value)); } catch (e) {}
+  },
+  getJSON: function (key, fallback) {
+    try {
+      var raw = store.get(key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch (e) { return fallback; }
+  },
+  setJSON: function (key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  },
+  raw: function () {
+    try { return localStorage; } catch (e) { return null; }
+  }
+};
 // ---- config persistence ----
 const CONFIG_KEY = 'vefr-packaged-config';
 function loadConfig() {
-  try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); }
-  catch (_) { return {}; }
+  return store.getJSON(CONFIG_KEY, {});
 }
 function saveConfig(c) {
-  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch (_) { /* blocked storage: keep going in memory */ }
+  store.setJSON(CONFIG_KEY, c);   // blocked storage: keep going in memory
 }
 // ---- endpoint join + post ----
 // The config URL is player-entered: it may or may not end in /v1 (the
@@ -766,14 +858,14 @@ function tutorialKey() {
   return 'vefr-tutorial-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 }
 function tutorialDone() {
-  try { return localStorage.getItem(tutorialKey()) === '1'; } catch (e) { return false; }
+  return store.get(tutorialKey()) === '1';
 }
 function quietTutorial() {
   var el = document.getElementById('status');
   if (!el || el.getAttribute('data-tutorial') !== '1') return;
   el.textContent = '';
   el.removeAttribute('data-tutorial');
-  try { localStorage.setItem(tutorialKey(), '1'); } catch (e) {}
+  store.set(tutorialKey(), '1');
 }
 
 // ---- speech box: whoever is talking, in a box over the game ----
@@ -798,10 +890,8 @@ function libraryBooks() {
 }
 
 function booksFound() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(LIBRARY_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
 }
 
 function bookIsFound(id) { return booksFound().indexOf(id) !== -1; }
@@ -810,7 +900,7 @@ function libraryRemember(id) {
   var ids = booksFound();
   if (ids.indexOf(id) === -1) {
     ids.push(id);
-    try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(ids)); } catch (e) {}
+    store.setJSON(LIBRARY_KEY, ids);
   }
 }
 
@@ -855,8 +945,8 @@ function libraryFromSpeaker(key) {
 // events the woven player has no way to observe, so they stay unfound
 // here rather than invent one.
 function libraryFirstVisit() {
-  // A storage that throws (a sandboxed iframe) cannot remember a first visit, so treat it as seen.
-  try { if (localStorage.getItem(LIBRARY_KEY) !== null) return; } catch (e) { return; }
+  // A first visit is the load with no saved found-list yet.
+  if (store.get(LIBRARY_KEY) !== null) return;
   libraryBooks().forEach(function (b) {
     if (b && b.found === 'earned' && b.when === 'first-visit' && !bookIsFound(b.id)) {
       foundBook(b, 'first-visit');
@@ -1034,10 +1124,10 @@ function bindMessagePanel() {
   function setCollapsed(c) {
     panel.classList.toggle('is-collapsed', c);
     toggle.setAttribute('aria-expanded', c ? 'false' : 'true');
-    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+    store.set(key, c ? '1' : '0');
   }
   toggle.addEventListener('click', function () { setCollapsed(!panel.classList.contains('is-collapsed')); });
-  try { if (localStorage.getItem(key) === '1') setCollapsed(true); } catch (e) {}
+  if (store.get(key) === '1') setCollapsed(true);
 }
 
 function bindLibrary() {
@@ -1058,12 +1148,12 @@ function bindLibrary() {
 // or throwing context must never throw out of a cue. The preference is
 // read once, here at boot, from the same per-world key pattern the fog
 // and the rule log use, and every storage access is wrapped (a
-// sandboxed iframe's localStorage throws).
+// sandboxed iframe's browser storage throws).
 var SOUND_KEY = 'vefr-sound-'
   + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 if (window.VEFR_SOUND_DEF && window.VEFR_SOUND_DEF.theme) {
   var soundOn = true;
-  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) {}
+  soundOn = store.get(SOUND_KEY) !== 'off';
   window.VEFR_SOUND = { theme: window.VEFR_SOUND_DEF.theme,
                         on: soundOn, played: [] };
 }
@@ -1170,9 +1260,7 @@ if (window.VEFR_SOUND) {
     box.checked = window.VEFR_SOUND.on;
     box.addEventListener('change', function () {
       window.VEFR_SOUND.on = box.checked;
-      try {
-        localStorage.setItem(SOUND_KEY, box.checked ? 'on' : 'off');
-      } catch (e) {}
+      store.set(SOUND_KEY, box.checked ? 'on' : 'off');
     });
     label.appendChild(box);
     label.appendChild(document.createTextNode(' Sound'));
@@ -1198,17 +1286,15 @@ var ALBUM_MEMORY = null;
 function albumFoundIds() {
   if (ALBUM_MEMORY !== null) return ALBUM_MEMORY.slice();
   var ids = [];
-  try {
-    var raw = JSON.parse(localStorage.getItem(ALBUM_KEY) || '[]');
-    if (Array.isArray(raw)) {
-      ids = raw.filter(function (id) { return typeof id === 'string'; });
-    }
-  } catch (e) { ids = []; }
+  var raw = store.getJSON(ALBUM_KEY, []);
+  if (Array.isArray(raw)) {
+    ids = raw.filter(function (id) { return typeof id === 'string'; });
+  }
   return ids;
 }
 function albumRemember(ids) {
   ALBUM_MEMORY = ids.slice();
-  try { localStorage.setItem(ALBUM_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(ALBUM_KEY, ids);
 }
 // window.VEFR_ALBUM is the harness snapshot, and exists ONLY when the
 // pack has an album: a pack without one leaves it undefined.
@@ -1363,15 +1449,14 @@ var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'w
 // the engine refuses any slot not in this list.
 var EQUIP_SLOTS = ['hand', 'body', 'head', 'feet', 'charm'];
 // Per-world saved state: `{slot: itemId}`. Lives alongside the bag and
-// the purse, and is read and written through `try {} catch {}` like
-// them, because a sandboxed iframe can make `localStorage` throw.
+// the purse, and is read and written through the store helper like
+// them, because a sandboxed iframe can make browser storage throw.
 var EQUIP_KEY = 'vefr-equipped-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 // Filled in by `loadEquipped` at boot; a worn id the catalog no longer
 // has is dropped on load, never a crash.
 var EQUIP_STATE = {};
 function loadEquipped() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(EQUIP_KEY) || 'null'); } catch (e) {}
+  var raw = store.getJSON(EQUIP_KEY, null);
   var engine = window.VEFR_EQUIP_ENGINE;
   if (!engine) { EQUIP_STATE = {}; return; }
   // A stored value that is not a usable object reads as nothing worn.
@@ -1386,11 +1471,11 @@ function loadEquipped() {
   });
   if (Object.keys(worn).length) {
     var bag = bagItems().filter(function (id) { return !worn[id]; });
-    try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
+    store.setJSON(BAG_KEY, bag);
   }
 }
 function saveEquipped(st) {
-  try { localStorage.setItem(EQUIP_KEY, JSON.stringify(st || {})); } catch (e) {}
+  store.setJSON(EQUIP_KEY, st || {});
 }
 // True when an id is currently worn in any slot. Used to keep a worn
 // thing out of the bag list, the strip, and the Use button.
@@ -1427,15 +1512,14 @@ var REWARD_ON = (function () {
 })();
 
 function heroGold() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(GOLD_KEY), 10); } catch (e) {}
+  var n = parseInt(store.get(GOLD_KEY), 10);
   if (isFinite(n) && n >= 0) return n;
   var baked = window.VEFR_HERO && window.VEFR_HERO.gold;
   return (typeof baked === 'number' && baked >= 0) ? baked : 0;
 }
 function saveGold(n) {
   n = Math.max(0, Math.floor(n));
-  try { localStorage.setItem(GOLD_KEY, String(n)); } catch (e) {}
+  store.set(GOLD_KEY, n);
   return n;
 }
 
@@ -1454,12 +1538,10 @@ function itemSpriteSrc(id) {
   return (window.VEFR_SPRITES || {})[name] || '';
 }
 function bagItems() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(BAG_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) {
-      return typeof id === 'string' && itemCatalog()[id];
-    }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(BAG_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) {
+    return typeof id === 'string' && itemCatalog()[id];
+  }) : [];
 }
 // Rebuild the harness-readable fight snapshot after bag/gold changes.
 // setupTown installs the real builder; before that (or in a pack with no
@@ -1473,7 +1555,7 @@ function bagAdd(id) {
   if (!itemCatalog()[id]) return false;
   var ids = bagItems();
   ids.push(id);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
@@ -1485,7 +1567,7 @@ function bagRemoveOne(id) {
   var i = ids.indexOf(id);
   if (i === -1) return false;
   ids.splice(i, 1);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
@@ -2051,7 +2133,7 @@ function bindMenu() {
   };
   if (startoverCancel) startoverCancel.addEventListener('click', window.cancelStartover);
   if (startoverConfirm) startoverConfirm.addEventListener('click', function () {
-    try { window.startoverKeys(localStorage); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
+    try { window.startoverKeys(store.raw()); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
     window.location.reload();
   });
   if (startoverBody) startoverBody.addEventListener('keydown', function (e) {
@@ -2076,7 +2158,7 @@ function bindMenu() {
 
 // ---- the surface costume (hp bar, encounter prompt, verbs) ----
 // The hero's health is real now: `VEFR_HERO.hp` is the max, the
-// current value is carried per world in localStorage
+// current value is carried per world in browser storage
 // (`vefr-hp-<world>`), and the bar shows it honestly. Deterministic:
 // fixed numbers, no randomness, no clock. A drop to zero is Cozy
 // (see setupTown).
@@ -2093,8 +2175,7 @@ function growthKey() {
   return 'vefr-growth-' + w;
 }
 function loadGrowth() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(growthKey()) || 'null'); } catch (e) {}
+  var raw = store.getJSON(growthKey(), null);
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     return { xp: (typeof raw.xp === 'number' ? raw.xp : 0),
              counts: (raw.counts && typeof raw.counts === 'object' ? raw.counts : {}) };
@@ -2104,7 +2185,7 @@ function loadGrowth() {
 var GROWTH_STATE = loadGrowth();
 var XP_WORD = 'experience';
 function saveGrowth() {
-  try { localStorage.setItem(growthKey(), JSON.stringify(GROWTH_STATE)); } catch (e) {}
+  store.setJSON(growthKey(), GROWTH_STATE);
 }
 // The extra hp/atk the state has earned. No growth block (or a missing
 // engine) reads as no growth, so a plain pack plays exactly as before.
@@ -2130,14 +2211,13 @@ function heroHpKey() {
   return 'vefr-hp-' + w;
 }
 function loadHeroHp() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(heroHpKey()), 10); } catch (e) {}
+  var n = parseInt(store.get(heroHpKey()), 10);
   var max = heroMax();
   HERO_HP = (isFinite(n) && n > 0) ? Math.min(n, max) : max;
   return HERO_HP;
 }
 function saveHeroHp() {
-  try { localStorage.setItem(heroHpKey(), String(HERO_HP)); } catch (e) {}
+  store.set(heroHpKey(), HERO_HP);
 }
 function renderHp() {
   var fill = document.getElementById('hud-hp-fill');
@@ -2327,25 +2407,23 @@ globalThis.startoverKeys = function (storage) {
 // (/api/combat/action): the action only lives in the log.
 const COMBAT_KEY = 'vefr-packaged-combat';
 function recordVerb(verb) {
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(COMBAT_KEY, []);
   log.push({ verb: verb, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(COMBAT_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(COMBAT_KEY, log);
   renderCombatLog(log);
 }
 
 // Arrivals journal - the packaged twin of /api/journal/move: one
-// entry per change of named place under the hero, localStorage
+// entry per change of named place under the hero, browser storage
 // only, same no-failure contract as the verbs above.
 const MOVES_KEY = 'vefr-packaged-moves';
 var lastPlace = null;
 function journalVisit(poi, x, y) {
   if (poi === lastPlace) return;
   lastPlace = poi;
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(MOVES_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(MOVES_KEY, []);
   log.push({ kind: 'move', poi: poi, x: x, y: y, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(MOVES_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(MOVES_KEY, log);
 }
 
 function renderCombatLog(log) {
@@ -2487,10 +2565,7 @@ function esc(s) {
 // from the pool. Used entries are remembered per combo; when a
 // combo is spent, unused lines from any other combo keep the world
 // speaking; when the whole pool is spent, say so plainly.
-const POOL_USED = (function () {
-  try { return JSON.parse(localStorage.getItem('vefr-pool-used') || '{}'); }
-  catch (e) { return {}; }
-})();
+const POOL_USED = store.getJSON('vefr-pool-used', {});
 
 function poolDraw(key) {
   const pool = window.VEFR_POOL || {};
@@ -2506,7 +2581,7 @@ function poolDraw(key) {
     if (!fresh.length) continue;
     const idx = fresh[Math.floor(Math.random() * fresh.length)];
     POOL_USED[k] = used.concat(idx);
-    try { localStorage.setItem('vefr-pool-used', JSON.stringify(POOL_USED)); } catch (e) {}
+    store.setJSON('vefr-pool-used', POOL_USED);
     return entries[idx];
   }
   return null;
@@ -2532,10 +2607,10 @@ function mulberry32(seed) {
 
 function saveSeed() {
   try {
-    let s = localStorage.getItem('vefr-save-seed');
+    let s = store.get('vefr-save-seed');
     if (!s) {
       s = String(Math.floor(Math.random() * 0x7fffffff));
-      localStorage.setItem('vefr-save-seed', s);
+      store.set('vefr-save-seed', s);
     }
     return parseInt(s, 10) || 1;
   } catch (e) { return 1; }
@@ -2543,8 +2618,8 @@ function saveSeed() {
 
 function nextDraw() {
   try {
-    const n = (parseInt(localStorage.getItem('vefr-localgen-draws') || '0', 10) || 0) + 1;
-    localStorage.setItem('vefr-localgen-draws', String(n));
+    const n = (parseInt(store.get('vefr-localgen-draws') || '0', 10) || 0) + 1;
+    store.set('vefr-localgen-draws', String(n));
     return n;
   } catch (e) { return 1; }
 }
@@ -2728,7 +2803,7 @@ function whisperFromFragments(seedOverride) {
 // Every call site is one line at a point that already existed, and no
 // returned action is ever fed back in as an event (a give is not a
 // picks-up). With no engine or no baked rules it returns before ANY
-// side effect at all - no DOM, no localStorage, no snapshot - which is
+// side effect at all - no DOM, no browser storage, no snapshot - which is
 // every existing pack's path. Deterministic: no clock, no randomness,
 // no model call lives here.
 function fireRule(eventName, data) {
@@ -2823,9 +2898,9 @@ function rulesSpeakerName(key) {
 
 // The player's rule log: the last 20 fired rules as { id, why }, one
 // entry per rule per fire, kept on window (VEFR_WHY) and mirrored to
-// localStorage under the file's own per-world pattern (the same shape
+// browser storage under the file's own per-world pattern (the same shape
 // as vefr-fog-<world>-...). EVERY storage access is wrapped: a
-// sandboxed iframe's localStorage throws, and a thrown log must never
+// sandboxed iframe's browser storage throws, and a thrown log must never
 // take the game down.
 window.VEFR_WHY = [];
 var rulesWhyLoaded = false;
@@ -2835,12 +2910,10 @@ function rulesWhyKey() {
 function rulesWhyLoad() {
   if (rulesWhyLoaded) return;
   rulesWhyLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesWhyKey()) || '[]');
-    window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.id === 'string' && typeof e.why === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_WHY = []; }
+  var a = store.getJSON(rulesWhyKey(), []);
+  window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.id === 'string' && typeof e.why === 'string';
+  }) : [];
 }
 function rulesWhyRecord(fired) {
   if (!Array.isArray(fired) || !fired.length) return;
@@ -2849,7 +2922,7 @@ function rulesWhyRecord(fired) {
     window.VEFR_WHY.push({ id: f.id, why: f.why });
   });
   while (window.VEFR_WHY.length > 20) window.VEFR_WHY.shift();
-  try { localStorage.setItem(rulesWhyKey(), JSON.stringify(window.VEFR_WHY)); } catch (e) {}
+  store.setJSON(rulesWhyKey(), window.VEFR_WHY);
 }
 
 // ---- durable rule saves (docs/adr/0009-rule-saves.md) ----
@@ -2901,8 +2974,7 @@ function rulesKnowsHolder(who) {
 // Read the stored save: null when absent, unparseable, or not an
 // object. The version and shape are checked by the caller.
 function rulesSaveRead() {
-  var raw = null;
-  try { raw = localStorage.getItem(rulesSaveKey()); } catch (e) { return null; }
+  var raw = store.get(rulesSaveKey());
   if (typeof raw !== 'string' || !raw) return null;
   var saved = null;
   try { saved = JSON.parse(raw); } catch (e) { return null; }
@@ -2997,7 +3069,7 @@ function saveRulesState() {
     beliefs: RULES_STATE.beliefs,
     items: RULES_STATE.items
   };
-  try { localStorage.setItem(rulesSaveKey(), JSON.stringify(payload)); } catch (e) {}
+  store.setJSON(rulesSaveKey(), payload);
 }
 // `starts` fires once per save: skipped only when a valid save loaded
 // this session. A fresh (or cleared) start and reset mode fire it.
@@ -3020,12 +3092,10 @@ function rulesNextKey() {
 function rulesNextLoad() {
   if (rulesNextLoaded) return;
   rulesNextLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesNextKey()) || '[]');
-    window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.place === 'string' && typeof e.line === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_NEXT = []; }
+  var a = store.getJSON(rulesNextKey(), []);
+  window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.place === 'string' && typeof e.line === 'string';
+  }) : [];
 }
 function rulesNextRecord(place, line) {
   if (typeof place !== 'string' || !place) return;
@@ -3033,7 +3103,7 @@ function rulesNextRecord(place, line) {
   // one row per place: the newest word wins
   window.VEFR_NEXT = window.VEFR_NEXT.filter(function (e) { return e.place !== place; });
   window.VEFR_NEXT.push({ place: place, line: line || ('To reach ' + place + '.') });
-  try { localStorage.setItem(rulesNextKey(), JSON.stringify(window.VEFR_NEXT)); } catch (e) {}
+  store.setJSON(rulesNextKey(), window.VEFR_NEXT);
 }
 
 // The two evidence panels the menu shows: where the world pointed,
@@ -3662,15 +3732,13 @@ function setupTown() {
     return 'vefr-slain-' + w + '-' + regionName;
   }
   function loadSlain() {
-    try {
-      var a = JSON.parse(localStorage.getItem(slainKey()) || '[]');
-      return Array.isArray(a) ? a : [];
-    } catch (e) { return []; }
+    var a = store.getJSON(slainKey(), []);
+    return Array.isArray(a) ? a : [];
   }
   function saveSlain() {
     var dead = enemies.filter(function (e) { return !e.alive; })
       .map(function (e) { return e.id + '#' + (e.sig || ''); });
-    try { localStorage.setItem(slainKey(), JSON.stringify(dead)); } catch (e) {}
+    store.setJSON(slainKey(), dead);
   }
   // A monster is remembered by what it *is*, not only by its name: move it,
   // restat it, or regenerate the floor, and it is a new monster again. So a
@@ -3823,15 +3891,14 @@ function setupTown() {
     return 'vefr-floor-' + w;
   }
   function loadFloor() {
-    var a = [];
-    try { a = JSON.parse(localStorage.getItem(floorKey()) || '[]'); } catch (e) { a = []; }
+    var a = store.getJSON(floorKey(), []);
     floor = Array.isArray(a) ? a.filter(function (d) {
       return d && typeof d.item === 'string' && typeof d.region === 'string'
         && Array.isArray(d.at) && d.at.length === 2 && itemCatalog()[d.item];
     }) : [];
   }
   function saveFloor() {
-    try { localStorage.setItem(floorKey(), JSON.stringify(floor)); } catch (e) {}
+    store.setJSON(floorKey(), floor);
   }
   function dropsAt(x, y) {
     return floor.filter(function (d) {
@@ -3994,11 +4061,87 @@ function setupTown() {
   var cols = 0, rows = 0;
   var T = town.tile, viewW = 0, viewH = 0;
   var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
+  var HUD_BAND = 72;       // room the HUD frame needs above and below a whole map
+  var MIN_STAGE_W = 420, MIN_STAGE_H = 360;  // enough for the HUD frame's corners
   function fitZoom() {
-    if (fogOn) return 32 / town.tile;   // a dark map is read up close, and scrolls
-    var fit = Math.min(viewW / (cols * town.tile), viewH / (rows * town.tile));
+    // The HUD sits in the stage's corners, so a whole map must leave a band
+    // above and below for it; otherwise it reads whole and still reaches
+    // under the buttons.
+    var fitW = viewW / (cols * town.tile);
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    if (fogOn) {
+      // A dark map is read up close at one tile. A map already small enough
+      // to read whole shrinks into the HUD's band (and letterboxes on the
+      // dock); a bigger one still scrolls, exactly as it did.
+      var z = 32 / town.tile;
+      var fitH = Math.max(viewH - 2 * HUD_BAND, 1) / (rows * town.tile);
+      var whole = cols * town.tile * z <= viewW && rows * town.tile * z <= viewH;
+      return (dock || whole) ? Math.min(z, fitW, fitH) : z;
+    }
+    var fit = Math.min(fitW, viewH / (rows * town.tile));
     if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
+  }
+  // The drawn map's rectangle, in viewport CSS pixels, published for the
+  // in-world interface (docs/plans/interface/PLAN.md). `window.VEFR_STAGE`
+  // is read by the browser contract; the `--stage-*` properties place
+  // `.hud-frame`, a child of #stage, so they carry #stage's own offset
+  // subtracted out. Published after every resize, which is where a window
+  // resize, a door's region swap and the fog toggle's zoom change all meet.
+  //
+  // On a narrow portrait window (`stage--dock`) the map is letterboxed
+  // with spare room above and below, so the stage grows to the whole
+  // window and `VEFR_STAGE.map` keeps the drawn map inside it; the dock
+  // CSS places the HUD, d-pad and action row in that spare room. A map
+  // smaller than the stage's minimum would leave the HUD frame's corners
+  // on map tiles, so the stage grows to the window there too and the map
+  // is centred inside it, clear of every corner; a map big enough for
+  // its frame keeps the map rectangle as the stage. The `--map-*`
+  // properties are the map inside #stage, using the same #stage-relative
+  // convention as the `--stage-*` ones.
+  function publishStage() {
+    var mapW = cols * T, mapH = rows * T;
+    var rect = canvas.getBoundingClientRect();
+    var mx, my, mw, mh;
+    if (mapW <= viewW && mapH <= viewH) {
+      // The whole map reads: it is centred on the canvas.
+      mx = rect.left + (viewW - mapW) / 2;
+      my = rect.top + (viewH - mapH) / 2;
+      mw = mapW;
+      mh = mapH;
+    } else {
+      // It scrolls past the window edges: the canvas, clipped to the window.
+      mx = Math.max(0, rect.left);
+      my = Math.max(0, rect.top);
+      mw = Math.min(rect.right, window.innerWidth) - mx;
+      mh = Math.min(rect.bottom, window.innerHeight) - my;
+    }
+    // A phone held upright: width <= 600 and taller than it is wide. The
+    // stage is the window; the map stays the drawn rectangle inside it.
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    // A map too small for the HUD frame's corners gets the window as its
+    // stage as well, so those corners fall on the spare room, not the map.
+    var grow = dock || mw < MIN_STAGE_W || mh < MIN_STAGE_H;
+    var x = grow ? 0 : mx, y = grow ? 0 : my;
+    var w = grow ? window.innerWidth : mw, h = grow ? window.innerHeight : mh;
+    window.VEFR_STAGE = {
+      x: x, y: y, w: w, h: h,
+      map: { x: mx, y: my, w: mw, h: mh }
+    };
+    var stage = document.getElementById('stage');
+    if (stage) {
+      var box = stage.getBoundingClientRect();
+      stage.style.setProperty('--stage-x', (x - box.left) + 'px');
+      stage.style.setProperty('--stage-y', (y - box.top) + 'px');
+      stage.style.setProperty('--stage-w', w + 'px');
+      stage.style.setProperty('--stage-h', h + 'px');
+      stage.style.setProperty('--map-x', (mx - box.left) + 'px');
+      stage.style.setProperty('--map-y', (my - box.top) + 'px');
+      stage.style.setProperty('--map-w', mw + 'px');
+      stage.style.setProperty('--map-h', mh + 'px');
+      if (dock) stage.classList.add('stage--dock');
+      else stage.classList.remove('stage--dock');
+    }
   }
   function resize() {
     cols = town.map[0].length;
@@ -4010,6 +4153,7 @@ function setupTown() {
     canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     T = town.tile * fitZoom();
+    publishStage();
   }
   window.addEventListener('resize', function () { resize(); draw(); });
 
@@ -4562,10 +4706,10 @@ function setupTown() {
     return 'vefr-fogpref-' + w;
   }
   function fogPrefOn() {
-    try { return localStorage.getItem(fogPrefKey()) !== 'off'; } catch (e) { return true; }
+    return store.get(fogPrefKey()) !== 'off';
   }
   function setFogPref(on) {
-    try { localStorage.setItem(fogPrefKey(), on ? 'on' : 'off'); } catch (e) {}
+    store.set(fogPrefKey(), on ? 'on' : 'off');
   }
   function fogEnabled() { return !!town.fog && fogPrefOn(); }
   var fogOn = fogEnabled();
@@ -4577,13 +4721,11 @@ function setupTown() {
   }
   function loadFog() {
     explored = {};
-    try {
-      var a = JSON.parse(localStorage.getItem(fogKey()) || '[]');
-      (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
-    } catch (e) { explored = {}; }
+    var a = store.getJSON(fogKey(), []);
+    (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
   }
   function saveFog() {
-    try { localStorage.setItem(fogKey(), JSON.stringify(Object.keys(explored))); } catch (e) {}
+    store.setJSON(fogKey(), Object.keys(explored));
   }
   function litNow() {
     var out = {};
@@ -5951,7 +6093,7 @@ function setupTown() {
 
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
-  try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
+  renderCombatLog(store.getJSON(COMBAT_KEY, []));
   /* The act's verbs are the pack's own vocabulary; baked defaults
      keep the old costume when the act declares none. The list lives
      in surfaceVerbs() so the row and the enemy menu share one home. */
@@ -6096,14 +6238,13 @@ function setupTown() {
 // deterministic, model-free. No timers: tickets wait.
 var KITCHEN_KEY = 'vefr-packaged-kitchen';
 function kitchenJournal() {
-  try { return JSON.parse(localStorage.getItem(KITCHEN_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(KITCHEN_KEY, []);
 }
 function kitchenLog(entry) {
   var j = kitchenJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(KITCHEN_KEY, j);
   return entry;
 }
 function initKitchen() {
@@ -6333,14 +6474,13 @@ function initKitchen() {
 // same rules with the engine owning truth.
 var DESK_KEY = 'vefr-packaged-desk';
 function deskJournal() {
-  try { return JSON.parse(localStorage.getItem(DESK_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(DESK_KEY, []);
 }
 function deskLog(entry) {
   var j = deskJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(DESK_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(DESK_KEY, j);
   return entry;
 }
 function deskLive() {
