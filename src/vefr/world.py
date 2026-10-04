@@ -353,12 +353,17 @@ def fragments_for_pack(pack: Path) -> dict[str, list[str]]:
 def _discover_sprites(sprites_dir: Path) -> dict:
     """Convention: every file under sprites/ is a named sprite. The
     loader returns {name: relative_path}. The web layer resolves the
-    path against the act's static mount."""
+    path against the act's static mount.
+
+    A `<key>.sheet.json` sidecar describes an optional walk sheet for
+    the sprite beside it; it is never a sprite of its own, so it is
+    skipped here (`*.sheet.json` is read by the weaver and validator).
+    """
     if not sprites_dir.is_dir():
         return {}
     out = {}
     for f in sorted(sprites_dir.rglob("*")):
-        if f.is_file():
+        if f.is_file() and not f.name.endswith(".sheet.json"):
             out[f.stem] = str(f.relative_to(sprites_dir))
     return out
 

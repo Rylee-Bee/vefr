@@ -290,6 +290,20 @@
       "tests": [
         "tests/test_sound.py"
       ]
+    },
+    {
+      "id": "walk-sheets",
+      "name": "A character that walks",
+      "what": "An optional sprite sheet beside a sprite gives it a walk cycle: idle when standing, one frame per step, and a missing side mirrored.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": "design/pack-art-proposal.md",
+      "tests": [
+        "tests/test_walk_sheets.py"
+      ]
     }
   ]
 }

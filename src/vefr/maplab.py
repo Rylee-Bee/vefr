@@ -1207,6 +1207,168 @@ def skin_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# Walk sheets (design/pack-art-proposal.md, phase B): the directions a
+# sheet may name, the frame size and fps bounds, and the walk length.
+SHEET_DIRECTIONS = ('down', 'up', 'left', 'right')
+SHEET_FRAME_MIN, SHEET_FRAME_MAX = 8, 512
+SHEET_FPS_MIN, SHEET_FPS_MAX = 1, 30
+SHEET_WALK_MIN, SHEET_WALK_MAX = 2, 16
+
+
+def _sprite_sheet_files(pack_dir: Path) -> list[tuple[Path, Path]]:
+    """Every `*.sheet.json` under a pack's `sprites/` dirs: (path, rel).
+
+    The pack root's own `sprites/` and each act region's
+    `acts/<act>/<region>/sprites/`, the same two places the loader
+    reads sprites from. `rel` is relative to the pack, so a message can
+    name the file the author sees.
+    """
+    from .cli import _inside
+
+    base = os.path.realpath(str(pack_dir))
+    roots: list[Path] = []
+    own = _inside(base, 'sprites')
+    if own is not None and os.path.isdir(own):
+        roots.append(Path(own))
+    acts = _inside(base, 'acts')
+    if acts is not None and os.path.isdir(acts):
+        for act_name in sorted(os.listdir(acts)):
+            act_dir = _inside(acts, act_name)
+            if act_dir is None or not os.path.isdir(act_dir):
+                continue
+            for region_name in sorted(os.listdir(act_dir)):
+                region = _inside(act_dir, region_name)
+                if region is None or not os.path.isdir(region):
+                    continue
+                sprites = _inside(region, 'sprites')
+                if sprites is not None and os.path.isdir(sprites):
+                    roots.append(Path(sprites))
+    out: list[tuple[Path, Path]] = []
+    for root in roots:
+        for f in sorted(root.rglob('*.sheet.json')):
+            if f.is_file():
+                out.append((f, f.relative_to(base)))
+    return out
+
+
+def sprite_sheet_errors(pack_dir: Path | None) -> list[str]:
+    """Every problem with a pack's optional walk sheets (empty = good).
+
+    A `sprites/<key>.sheet.json` beside a sprite describes the frames a
+    character walks through (design/pack-art-proposal.md, phase B). The
+    check is shape-only: the JSON must be an object; `image` must name
+    a real picture beside the sheet and inside the pack; `frame` two
+    whole numbers from 8 to 512; `fps` a whole number from 1 to 30;
+    every direction an object with an `idle` of exactly one frame and a
+    `walk` of 2 to 16; and every frame inside the sheet's grid. `down`
+    is required. Each message names the sheet file, plainly. A pack
+    that ships no sheet gets nothing here at all.
+    """
+    if pack_dir is None:
+        return []
+    from .cli import _ART_TYPES, _inside
+
+    errors: list[str] = []
+    for sheet_path, rel in _sprite_sheet_files(pack_dir):
+        label = rel.as_posix()
+        try:
+            data = json.loads(sheet_path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            errors.append(f'{label} is not valid JSON')
+            continue
+        if not isinstance(data, dict):
+            errors.append(f'{label} must be a JSON object')
+            continue
+
+        image_path = None
+        image = data.get('image')
+        if not isinstance(image, str) or not image:
+            errors.append(f"{label} needs a non-empty string 'image'")
+        else:
+            sheet_dir = os.path.realpath(sheet_path.parent)
+            target = _inside(sheet_dir, image)
+            if target is None or not os.path.isfile(target):
+                errors.append(f"{label} names image '{image}', which does "
+                              'not exist beside the sheet')
+            else:
+                image_path = Path(target)
+                if image_path.suffix.lower() not in _ART_TYPES:
+                    errors.append(f"{label} image '{image}' is not a known "
+                                  'picture type')
+                    image_path = None
+
+        frame = data.get('frame')
+        fw = fh = None
+        if (not isinstance(frame, list) or len(frame) != 2
+                or not all(_is_whole(v) and SHEET_FRAME_MIN <= v <= SHEET_FRAME_MAX
+                           for v in frame)):
+            errors.append(f"{label} 'frame' must be two whole numbers "
+                          f'from {SHEET_FRAME_MIN} to {SHEET_FRAME_MAX}')
+        else:
+            fw, fh = frame
+
+        fps = data.get('fps')
+        if not (_is_whole(fps) and SHEET_FPS_MIN <= fps <= SHEET_FPS_MAX):
+            errors.append(f"{label} 'fps' must be a whole number "
+                          f'from {SHEET_FPS_MIN} to {SHEET_FPS_MAX}')
+
+        indices: list[int] = []
+        directions = data.get('directions')
+        if not isinstance(directions, dict):
+            errors.append(f"{label} needs a 'directions' object")
+        else:
+            for dname in directions:
+                if dname not in SHEET_DIRECTIONS:
+                    errors.append(f"{label} names an unknown direction "
+                                  f"'{dname}'")
+            if 'down' not in directions:
+                errors.append(f"{label} needs a 'down' direction")
+            for dname, frames in directions.items():
+                if dname not in SHEET_DIRECTIONS:
+                    continue
+                if not isinstance(frames, dict):
+                    errors.append(f"{label} direction '{dname}' must be an "
+                                  'object with idle and walk lists')
+                    continue
+                idle = frames.get('idle')
+                if (not isinstance(idle, list) or len(idle) != 1
+                        or not _is_whole(idle[0])):
+                    errors.append(f"{label} direction '{dname}' needs an "
+                                  "'idle' list of exactly one frame")
+                else:
+                    indices.append(idle[0])
+                walk = frames.get('walk')
+                if (not isinstance(walk, list)
+                        or not SHEET_WALK_MIN <= len(walk) <= SHEET_WALK_MAX
+                        or not all(_is_whole(v) for v in walk)):
+                    errors.append(f"{label} direction '{dname}' needs a "
+                                  f"'walk' list of {SHEET_WALK_MIN} to "
+                                  f'{SHEET_WALK_MAX} frames')
+                else:
+                    indices.extend(walk)
+
+        # The grid: image size / frame size, read from the picture's own
+        # header. An unreadable header (None) skips only this check.
+        if image_path is not None and fw and fh:
+            size = _picture_size(str(image_path))
+            if size is not None:
+                cols, rows = size[0] // fw, size[1] // fh
+                for idx in indices:
+                    if cols < 1 or rows < 1:
+                        inside = False
+                    else:
+                        # Both the column and the row must be in range; floor
+                        # division sends a negative index to a negative row,
+                        # which the old row-only check let through.
+                        inside = (0 <= idx % cols < cols
+                                  and 0 <= idx // cols < rows)
+                    if not inside:
+                        errors.append(f'{label} frame {idx} is outside the '
+                                      "sheet's grid "
+                                      f'({cols} columns by {rows} rows)')
+    return errors
+
+
 def rules_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     """Every problem with a pack's optional flags/claims/people/rules.
 
@@ -1952,6 +2114,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # The pack's optional skin (design/ui-skin.md), checked beside the
     # other optional catalogs. A pack that declares none gets nothing.
     errors.extend(skin_errors(w, pack_dir))
+    # The pack's optional walk sheets (design/pack-art-proposal.md,
+    # phase B), checked beside the other optional catalogs. A pack that
+    # ships no `*.sheet.json` gets nothing here.
+    errors.extend(sprite_sheet_errors(pack_dir))
     # The pack's optional growth block (design/growth.md), checked
     # beside the other optional catalogs. A pack that declares none
     # gets nothing here.
