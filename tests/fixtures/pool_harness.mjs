@@ -36,6 +36,21 @@ function makeSandbox(store) {
     },
     window: {},
   };
+  // The extracted pool code goes through the player's store helper. This
+  // shim matches its contract and rides the same stub localStorage object.
+  ctx.store = {
+    get: (k) => { try { return ctx.localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { ctx.localStorage.setItem(k, String(v)); } catch (e) {} },
+    getJSON: (k, fallback) => {
+      try {
+        const raw = ctx.localStorage.getItem(k);
+        if (raw === null) return fallback;
+        return JSON.parse(raw);
+      } catch (e) { return fallback; }
+    },
+    setJSON: (k, v) => { try { ctx.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    raw: () => ctx.localStorage,
+  };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   vm.runInContext(code, ctx, { timeout: 5000 });

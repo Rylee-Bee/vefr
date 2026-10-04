@@ -1,5 +1,11 @@
 # DECISIONS — vefr
 
+## 2026-10-04 — the endless dungeon: sections, key wardens, acts change the town only (Rylee)
+
+**Decisions (Rylee, in chat).** (1) The dungeon is one line of generated floors cut into sections of 8 to 11; each section ends in a key warden whose key opens a vault with a lore note that advances the act. (2) Acts change the town, never the dungeon generator; the King ends Act 3, then an endless mode. (3) Each floor has randoms plus one or two elites and linked groups; hand-painted room "stamps" can be placed in generated floors; maps get much bigger. (4) Everything is a VEFR feature; a game supplies data. (5) The stairs to the next section stay locked until the town visit, with a paid shortcut. (6) Target sizes up to 128x96, optimized for phones: monsters sleep until near, the flood fill is radius-bounded, fog becomes a bitset (E0a evidence, #278). (7) Fog style: a circle plus whole-room reveal. (8) The Keybearers are named Ashwing, Brother Sporeling and Sir Hollowhorn (Cottage), candidates for section wardens. (9) A playable generated prototype comes before the Cottage Act 1 rebuild.
+
+**Why.** She wants a game she can play for hours after the story ends. The Opus plan and the research (`docs/research/big-generated-maps.md`) back the choices; lengths and the shortcut price stay open until a prototype. **Supersedes** the Cottage acts-2-3 plan and ADR 0006 as written (rescoped to town states).
+
 ## 2026-10-03 — four decisions: resistances live on both, "the Keybearer", one foreman, equipment first
 
 **Decisions (Rylee, 2026-10-03, in chat).** Asked four focused questions; all four answered.

@@ -6,12 +6,12 @@
 // or throwing context must never throw out of a cue. The preference is
 // read once, here at boot, from the same per-world key pattern the fog
 // and the rule log use, and every storage access is wrapped (a
-// sandboxed iframe's localStorage throws).
+// sandboxed iframe's browser storage throws).
 var SOUND_KEY = 'vefr-sound-'
   + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 if (window.VEFR_SOUND_DEF && window.VEFR_SOUND_DEF.theme) {
   var soundOn = true;
-  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) {}
+  soundOn = store.get(SOUND_KEY) !== 'off';
   window.VEFR_SOUND = { theme: window.VEFR_SOUND_DEF.theme,
                         on: soundOn, played: [] };
 }
@@ -118,9 +118,7 @@ if (window.VEFR_SOUND) {
     box.checked = window.VEFR_SOUND.on;
     box.addEventListener('change', function () {
       window.VEFR_SOUND.on = box.checked;
-      try {
-        localStorage.setItem(SOUND_KEY, box.checked ? 'on' : 'off');
-      } catch (e) {}
+      store.set(SOUND_KEY, box.checked ? 'on' : 'off');
     });
     label.appendChild(box);
     label.appendChild(document.createTextNode(' Sound'));

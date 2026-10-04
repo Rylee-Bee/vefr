@@ -258,7 +258,7 @@ def test_packaged_carries_the_surface_costume(tmp_path, monkeypatch, canned_gene
     assert 'body[data-surface="investigation"] .verb-row' in html
     # The verbs record honestly, locally - same no-failure contract
     # as the server route, minus the server.
-    assert "localStorage.getItem(COMBAT_KEY" in html
+    assert "store.getJSON(COMBAT_KEY" in html
     # Engine neutrality: the costume never names a pack's phase
     # vocabulary. (The live app once grew a lines dict keyed by the
     # author's own phase names; the packaged file must not repeat it.)

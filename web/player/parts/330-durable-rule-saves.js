@@ -47,8 +47,7 @@ function rulesKnowsHolder(who) {
 // Read the stored save: null when absent, unparseable, or not an
 // object. The version and shape are checked by the caller.
 function rulesSaveRead() {
-  var raw = null;
-  try { raw = localStorage.getItem(rulesSaveKey()); } catch (e) { return null; }
+  var raw = store.get(rulesSaveKey());
   if (typeof raw !== 'string' || !raw) return null;
   var saved = null;
   try { saved = JSON.parse(raw); } catch (e) { return null; }
@@ -143,7 +142,7 @@ function saveRulesState() {
     beliefs: RULES_STATE.beliefs,
     items: RULES_STATE.items
   };
-  try { localStorage.setItem(rulesSaveKey(), JSON.stringify(payload)); } catch (e) {}
+  store.setJSON(rulesSaveKey(), payload);
 }
 // `starts` fires once per save: skipped only when a valid save loaded
 // this session. A fresh (or cleared) start and reset mode fire it.

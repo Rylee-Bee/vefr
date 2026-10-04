@@ -10,10 +10,8 @@ function libraryBooks() {
 }
 
 function booksFound() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(LIBRARY_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
 }
 
 function bookIsFound(id) { return booksFound().indexOf(id) !== -1; }
@@ -22,7 +20,7 @@ function libraryRemember(id) {
   var ids = booksFound();
   if (ids.indexOf(id) === -1) {
     ids.push(id);
-    try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(ids)); } catch (e) {}
+    store.setJSON(LIBRARY_KEY, ids);
   }
 }
 
@@ -67,8 +65,8 @@ function libraryFromSpeaker(key) {
 // events the woven player has no way to observe, so they stay unfound
 // here rather than invent one.
 function libraryFirstVisit() {
-  // A storage that throws (a sandboxed iframe) cannot remember a first visit, so treat it as seen.
-  try { if (localStorage.getItem(LIBRARY_KEY) !== null) return; } catch (e) { return; }
+  // A first visit is the load with no saved found-list yet.
+  if (store.get(LIBRARY_KEY) !== null) return;
   libraryBooks().forEach(function (b) {
     if (b && b.found === 'earned' && b.when === 'first-visit' && !bookIsFound(b.id)) {
       foundBook(b, 'first-visit');
@@ -246,10 +244,10 @@ function bindMessagePanel() {
   function setCollapsed(c) {
     panel.classList.toggle('is-collapsed', c);
     toggle.setAttribute('aria-expanded', c ? 'false' : 'true');
-    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+    store.set(key, c ? '1' : '0');
   }
   toggle.addEventListener('click', function () { setCollapsed(!panel.classList.contains('is-collapsed')); });
-  try { if (localStorage.getItem(key) === '1') setCollapsed(true); } catch (e) {}
+  if (store.get(key) === '1') setCollapsed(true);
 }
 
 function bindLibrary() {
