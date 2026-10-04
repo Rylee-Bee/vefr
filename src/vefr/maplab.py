@@ -692,7 +692,7 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
         return [f"rule '{rid}' when must name exactly one event"]
     name = next(iter(when))
     if name not in RULE_EVENTS:
-        return [f"rule '{rid}' when names unknown event '{name}' - the six events are "
+        return [f"rule '{rid}' when names unknown event '{name}' - the events are "
                 + ', '.join(RULE_EVENTS)]
     payload = when[name]
     if not isinstance(payload, dict):

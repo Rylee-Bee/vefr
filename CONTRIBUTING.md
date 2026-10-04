@@ -97,7 +97,7 @@ including ones that don't exist yet. To keep that:
 - No game-specific names in engine code, prompts, or API titles
 - No runtime state (sessions, vault, journal)
 - No model calls in deterministic surfaces
-  (`export.py`, `weave.py`, `maplab.py`, `journal.py`)
+  (`export.py`, `weave.py`, `maplab.py`, `journal.py`, `blueprint.py`)
 
 ## Commit messages
 
