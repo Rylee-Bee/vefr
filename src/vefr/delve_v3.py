@@ -1,0 +1,1329 @@
+"""delve_v3 - the v3 floor generator: five pure stages, one stream each.
+
+PLAN.md section 2 is the spec. `generate_floor_v3` takes a seed, a floor
+size, a Section pack and a floor kind, and returns a FloorPlan dict: the
+grid, the rooms, the anchors, the points of interest, the secrets, the
+monsters and the chests.
+
+The five stages run in a fixed order, each drawing from its own stream
+keyed off the floor key:
+
+  1. plan    `v3|<floor_key>|plan`    quotas and flavour, never a wall
+  2. layout  `v3|<floor_key>|layout`  spine, stamp rooms, accretion, loops
+  3. graph   no draws at all           the room graph, the path, the warden
+  4. pop     `v3|<floor_key>|pop`     monsters, elites, groups, chests
+  5. validate, and on a failure retry the whole floor with `|try{n}`
+
+The layout stream is the only stream that carves, so a rewritten affix,
+group or family table cannot move a wall. That is the sub-seed rule of
+PLAN.md section 2. After `MAX_TRIES` retries the caller gets v2 geometry
+with `gen: 2`.
+
+PLAN.md section 2 also names a `loot` stream per mob and a `chest`
+stream per chest. Neither is drawn by this slice: a FloorPlan carries a
+chest's table id and a mob's family and affix, and what is inside either
+is the work of the elites and groups slice.
+
+Determinism: `delve.prng` and its 32-bit integer maths are the only
+source of randomness. No `random`, no clock, no global, no dictionary is
+ever iterated while draws are consumed - every list here is a list.
+"""
+
+from __future__ import annotations
+
+import json
+from collections import deque
+
+from vefr.delve import generate_floor_v2, prng
+
+# The alphabet of a generated floor: `#` is wall, the rest stand on.
+WALL = "#"
+FLOOR = "."
+UP = "u"
+DOWN = "d"
+
+# The floor kinds the endless dungeon knows. A v3 floor is one of these.
+FLOOR_KINDS = ("normal", "treasure", "infested", "hub")
+
+# How many times stage 5 may retry a floor before the caller gets v2
+# geometry. PLAN.md section 2 caps the fallback rate at 0.5%; the layout
+# is built to satisfy the properties by construction, so a retry is rare.
+MAX_TRIES = 8
+
+# How many spine chords a floor may close. PLAN.md section 4 wants two
+# room-graph cycles and one chord makes three, so this is the plan
+# stage's range for a number no floor needs the top of.
+LOOPS_MIN = 2
+LOOPS_MAX = 3
+
+# Rooms a v3 floor keeps. The loop property of PLAN.md section 4 bites
+# at 12 rooms, and a floor that cannot hold a dozen of them is a narrow
+# one the pack asked for anyway; below this the retry ladder tries
+# again and v2 geometry is the last answer.
+ROOMS_FLOOR = 6
+
+# The pop stage's own spacing rule: a monster, a chest or a secret stands
+# at least this many tiles (Chebyshev) from both stairs.
+STAIR_CLEAR = 7
+
+# One floor tile this many times is one monster slot, before the clamps.
+TILES_PER_MOB = 30
+MOBS_MIN = 4
+MOBS_MAX = 36
+
+# Chest tables. The value of a chest is `section["chest_values"][table]`,
+# or 1 when the table is unmapped, so these are ids and never amounts.
+CHEST_TABLES = ("t1", "t2")
+
+# The room shape menu a room draws from. Brogue's menu, trimmed: PLAN.md
+# section 2 steals a shape menu, and a shape is a short lowercase word.
+# The three stamp shapes - hall, landmark and vault - are NOT in here:
+# the graph stage names the rooms that hold them, and a shape that two
+# rooms can hold for two different reasons says nothing.
+SHAPES = ("cell", "closet", "den", "nook")
+
+# The names a point of interest falls back on when the Section pack names
+# none. A real pack carries its own list in `section["pois"]`.
+FALLBACK_POIS = ("the drowned well", "the ash alcove", "the rusted grate")
+
+# The packs of a floor that are not a Section pack are defaulted here, so
+# a missing key never raises. PLAN.md section 2's data shapes.
+DEFAULT_ROOMS = (12, 12)
+DEFAULT_FAMILIES = ({"family": "rat", "weight": 1},)
+DEFAULT_ELITES = {"per_floor": (0, 0), "affixes": ()}
+DEFAULT_GROUPS = {"per_floor": (0, 0), "minions": (2, 3)}
+
+
+def _rand(rng, lo: int, hi: int) -> int:
+    """A whole number in [lo, hi], both inclusive, from one draw.
+
+    `lo + floor(rng() * (hi - lo + 1))`, so a JavaScript twin using
+    `Math.floor` gets the identical number. `delve._rand_range` is the
+    same line; it is written out here so the twin has one place to read.
+    """
+    return lo + int(rng() * (hi - lo + 1))
+
+
+def _pick(rng, count: int) -> int:
+    """An index in [0, count) from one draw, the list-position twin."""
+    return int(rng() * count)
+
+
+# ------------------------------------------------------------- pack reading
+# Every accessor here defaults, because PLAN.md section 2 says only `id`,
+# `rooms`, `families`, `elites`, `groups` and `pois` are required and a
+# missing key must never raise.
+
+
+def _pair(value, fallback: tuple[int, int]) -> tuple[int, int]:
+    """A `[lo, hi]` pair of whole numbers, sorted, or `fallback`."""
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        try:
+            lo, hi = int(value[0]), int(value[1])
+        except (TypeError, ValueError):
+            return fallback
+        return (lo, hi) if lo <= hi else (hi, lo)
+    return fallback
+
+
+def _names(value, fallback) -> list[str]:
+    """A list of non-empty strings, or `fallback` when it is not one."""
+    if isinstance(value, (list, tuple)):
+        names = [str(item) for item in value if str(item)]
+        if names:
+            return names
+    return list(fallback)
+
+
+def _read_rooms(section: dict) -> tuple[int, int]:
+    """The room quota range of a Section pack."""
+    return _pair(section.get("rooms"), DEFAULT_ROOMS)
+
+
+def _read_families(section: dict) -> list[dict]:
+    """The family table, each entry `{family, weight}`, weights positive."""
+    raw = section.get("families")
+    if not isinstance(raw, (list, tuple)):
+        return [dict(family) for family in DEFAULT_FAMILIES]
+    families: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("family", ""))
+        if not name:
+            continue
+        try:
+            weight = int(item.get("weight", 1))
+        except (TypeError, ValueError):
+            weight = 1
+        families.append({"family": name, "weight": max(0, weight)})
+    if not any(family["weight"] for family in families):
+        for family in families:
+            family["weight"] = 1
+    return families or [dict(family) for family in DEFAULT_FAMILIES]
+
+
+def _read_elites(section: dict) -> tuple[int, int, list[str]]:
+    """How many elites a floor carries, and their affix ids."""
+    raw = section.get("elites")
+    if not isinstance(raw, dict):
+        lo, hi = DEFAULT_ELITES["per_floor"]
+        return lo, hi, list(DEFAULT_ELITES["affixes"])
+    lo, hi = _pair(raw.get("per_floor"), (0, 0))
+    return lo, hi, _names(raw.get("affixes"), ())
+
+
+def _read_groups(section: dict) -> tuple[int, int, int, int]:
+    """How many groups a floor carries, and the minion count range."""
+    raw = section.get("groups")
+    if not isinstance(raw, dict):
+        return DEFAULT_GROUPS["per_floor"] + DEFAULT_GROUPS["minions"]
+    return _pair(raw.get("per_floor"), (0, 0)) + _pair(raw.get("minions"), (2, 3))
+
+
+def _draw_family(rng, families: list[dict]) -> str:
+    """One family id, drawn by weight over the list in pack order."""
+    total = sum(family["weight"] for family in families)
+    if total <= 0:
+        return families[0]["family"]
+    roll = _pick(rng, total)
+    walked = 0
+    for family in families:
+        walked += family["weight"]
+        if roll < walked:
+            return family["family"]
+    return families[-1]["family"]
+
+
+def _read_size(size_range) -> tuple[int, int]:
+    """The floor size, and only the `(w, h)` form of it.
+
+    A pair of whole numbers and nothing else: a lone width, a triple, a
+    string or a fractional width is a caller's mistake and raises rather
+    than being rounded into a floor of some other shape.
+    """
+    if not isinstance(size_range, (list, tuple)) or len(size_range) != 2:
+        raise ValueError("size_range must be a (w, h) pair of whole numbers")
+    if any(not isinstance(value, int) or isinstance(value, bool)
+           for value in size_range):
+        raise ValueError("size_range must be a (w, h) pair of whole numbers")
+    width, height = size_range
+    if width < 8 or height < 8:
+        raise ValueError("a v3 floor needs a size of at least 8 by 8")
+    return width, height
+
+
+# ------------------------------------------------------------------ canvas
+
+
+class Canvas:
+    """The grid under construction, with the bookkeeping v3 needs.
+
+    Three tile sets, kept disjoint on purpose. `owner` names the room a
+    tile belongs to (-1 for none), `corr` holds the corridor tiles, and
+    `walk` holds both. The frozen tests read the room graph back off
+    `rows` and `rooms` alone, so every carved tile has to belong to a
+    room or to a corridor region that touches one. Carving a corridor
+    that runs through a room therefore moves those tiles from `corr` into
+    `owner`, which is what keeps the two sets disjoint.
+    """
+
+    def __init__(self, width: int, height: int):
+        self.w = width
+        self.h = height
+        self.grid = [[WALL] * width for _ in range(height)]
+        self.owner = [-1] * (width * height)
+        self.corr: set[int] = set()
+        self.walk: set[int] = set()
+        self.rooms: list[list] = []
+
+    def carve_room(self, rect: tuple[int, int, int, int], index: int) -> None:
+        """Fill a room rectangle with floor and claim every one of its tiles."""
+        x, y, width, height = rect
+        for yy in range(y, y + height):
+            row = self.grid[yy]
+            for xx in range(x, x + width):
+                here = yy * self.w + xx
+                row[xx] = FLOOR
+                self.owner[here] = index
+                self.corr.discard(here)
+                self.walk.add(here)
+
+    def carve_h(self, x0: int, x1: int, y: int) -> None:
+        """Carve a horizontal run, inclusive of both ends."""
+        for x in range(min(x0, x1), max(x0, x1) + 1):
+            self._carve(x, y)
+
+    def carve_v(self, y0: int, y1: int, x: int) -> None:
+        """Carve a vertical run, inclusive of both ends."""
+        for y in range(min(y0, y1), max(y0, y1) + 1):
+            self._carve(x, y)
+
+    def _carve(self, x: int, y: int) -> None:
+        here = y * self.w + x
+        if self.grid[y][x] == WALL:
+            self.grid[y][x] = FLOOR
+            self.walk.add(here)
+        if self.owner[here] < 0:
+            self.corr.add(here)
+
+    def rows(self) -> list[str]:
+        """The grid as the FloorPlan's `rows`: one string per row."""
+        return ["".join(row) for row in self.grid]
+
+
+def _overlaps(a: tuple[int, int, int, int], b: tuple[int, int, int, int], pad: int) -> bool:
+    """True when two room rectangles touch or sit closer than `pad`.
+
+    One idea per line, and the pad is what keeps a wall between two
+    rooms: two rooms that touch would be neighbours in the room graph
+    with no corridor between them, and v3 lays its corridors through the
+    gap it drew.
+    """
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    return ((ax - pad) < (bx + bw) and (bx - pad) < (ax + aw)
+            and (ay - pad) < (by + bh) and (by - pad) < (ay + ah))
+
+
+def _center(rect: tuple[int, int, int, int]) -> tuple[int, int]:
+    """The middle tile of a room, floors as `generate_floor_v2` does."""
+    x, y, width, height = rect
+    return x + width // 2, y + height // 2
+
+
+def _fits(canvas: Canvas, rect: tuple[int, int, int, int]) -> bool:
+    """True when a rectangle is inside the grid and clear of every room."""
+    x, y, width, height = rect
+    if x < 1 or y < 1 or x + width > canvas.w - 1 or y + height > canvas.h - 1:
+        return False
+    return not any(_overlaps(rect, tuple(room[:4]), 1) for room in canvas.rooms)
+
+
+# --------------------------------------------------------------- corridors
+
+
+def _link(rng, canvas: Canvas,
+          first: tuple[int, int, int, int],
+          second: tuple[int, int, int, int]) -> None:
+    """An L-shaped corridor between two room rectangles, `delve`'s shape.
+
+    The door sockets are the tile of each room's facing side that faces
+    the other room: the last column and the middle row of the left room
+    against the first column of the right one, and the same on the
+    vertical. The axis is the one the two rooms are further apart on, so
+    the long leg of the L runs along the gap and the short leg steps
+    into the second room.
+    """
+    ax, ay, aw, ah = first
+    bx, by, bw, bh = second
+    gap_x = max(ax - (bx + bw), bx - (ax + aw))
+    gap_y = max(ay - (by + bh), by - (ay + ah))
+    if rng() < 0.5:
+        # The first leg runs from `first` to the bend.
+        if gap_x >= gap_y:
+            start = (ax + aw - 1, ay + ah // 2)
+            end = (bx, by + bh // 2)
+            canvas.carve_h(start[0], end[0], start[1])
+            canvas.carve_v(start[1], end[1], end[0])
+        else:
+            start = (ax + aw // 2, ay + ah - 1)
+            end = (bx + bw // 2, by)
+            canvas.carve_v(start[1], end[1], start[0])
+            canvas.carve_h(start[0], end[0], end[1])
+    else:
+        # The same two legs, the other way round the bend.
+        if gap_x >= gap_y:
+            start = (ax + aw // 2, ay + ah // 2)
+            end = (bx + bw // 2, by + bh // 2)
+            canvas.carve_v(start[1], end[1], start[0])
+            canvas.carve_h(start[0], end[0], end[1])
+        else:
+            start = (ax + aw // 2, ay + ah // 2)
+            end = (bx + bw // 2, by + bh // 2)
+            canvas.carve_h(start[0], end[0], start[1])
+            canvas.carve_v(start[1], end[1], end[0])
+
+
+def _gallery_loop(canvas: Canvas, horizontal: bool,
+                  first: tuple[int, int, int, int],
+                  second: tuple[int, int, int, int],
+                  row: int) -> None:
+    """A corridor that runs along one gallery row to close a cycle.
+
+    The run is carved on a row that is a wall, one tile clear of the
+    rooms it serves, and it is entered from each end. So the run passes
+    over the wall between every pair of rooms it spans and reads as one
+    corridor region that touches all of them, which is exactly the edge
+    the loop needs: two rooms that were only joined by the chain.
+    """
+    ax, ay, aw, ah = first
+    bx, by, bw, bh = second
+    if horizontal:
+        near, far = ax + aw - 1, bx
+        if near > far:
+            near, far = far, near
+        canvas.carve_h(near, far, row)
+        canvas.carve_v(row, ay + ah // 2, ax + aw - 1)
+        canvas.carve_v(row, by + bh // 2, bx)
+    else:
+        near, far = ay + ah - 1, by
+        if near > far:
+            near, far = far, near
+        canvas.carve_v(near, far, row)
+        canvas.carve_h(row, ax + aw // 2, ay + ah - 1)
+        canvas.carve_h(row, bx + bw // 2, by)
+
+
+# ----------------------------------------------------------------- stage 1
+# the plan stream - the exact order of draws. A JavaScript twin must
+# follow this line for line; `rng()` is one call of
+# `prng("v3|" + floor_key + "|plan")`, and a whole number `rand(lo, hi)`
+# is `lo + floor(rng() * (hi - lo + 1))`.
+#
+#  1. quota  = rand(rooms_lo, rooms_hi)   from `section["rooms"]`,
+#     defaulted to (12, 12). The room quota of the floor.
+##  2. loops  = rand(LOOPS_MIN, LOOPS_MAX)  how many spine chords to
+#     close. Stage 2 draws at most this many; one chord is already
+#     three cycles, and validate wants at least two.
+#  3. secrets = rand(0, 2)                 how many leaf rooms to turn
+#     into secret rooms. PLAN.md section 4 wants at least half the
+#     floors to hold one.
+##  4. flavour = floor(rng() * FLAVOURS)     which of the pack's named
+#     points of interest becomes this floor's landmark. The name it
+#     picks is a name, not a tile: it cannot move a wall.
+#  5. waypoint = floor(rng() * 2)           a floor kind of "hub" is a
+#     waypoint when this lands on 0, and nothing else ever is.
+#
+# Nothing above moves a wall. The quota reaches stage 2 as a number to
+# lay out, not as a decision this stage makes about the grid, so the
+# plan stream stays the reason a rewritten affix table cannot move a
+# stone.
+FLAVOURS = 4
+
+
+def _plan_stage(rng, section: dict, floor_kind: str) -> dict:
+    """The plan stage: quotas and flavour, drawn from the plan stream."""
+    lo, hi = _read_rooms(section)
+    return {
+        "quota": _rand(rng, lo, hi),
+        "loops": _rand(rng, LOOPS_MIN, LOOPS_MAX),
+        "secrets": _rand(rng, 0, 2),
+        "flavour": _pick(rng, FLAVOURS),
+        "waypoint": floor_kind == "hub" and _pick(rng, 2) == 0,
+    }
+
+
+# ----------------------------------------------------------------- stage 2
+# the layout stream - the exact order of draws. `rng()` is one call of
+# `prng("v3|" + floor_key + "|layout")`, `rand(lo, hi)` is
+# `lo + floor(rng() * (hi - lo + 1))` and `pick(n)` is
+# `floor(rng() * n)`. This is the only stage that carves.
+#
+#  1. row_h = rand(5, 7)          the pitch of a slot row across the
+#     short axis, so a room of up to `row_h - 1` tiles and a wall.
+#     band = row_h - 1.
+#  2. n_slots = (short - 2) // row_h;
+#     band_slot = n_slots // 2;   the spine's slot row, the middle one.
+#     band_lo = 1 + band_slot * row_h.
+#  3. spine: the up-stair end first. Repeat while the plan's quota is
+#     not half spent and the cursor is inside the long axis:
+#       da = rand(4, 6)            the room's size along the long axis;
+#       shape = pick(len(SHAPES));
+#       place (cursor, band_lo, da, band); cursor = cursor + da + 1.
+#     A draw that will not fit ends the spine, and no further draw is
+#     taken. Each room is joined to the one before it with one L-shaped
+#     corridor, which takes one draw for the bend.
+#  4. accretion: children go on ONE side of the band first, and the
+#     side with the most free slot rows wins, the lower one on a tie.
+#     The free rows of that side, nearest the spine first, are the rows
+#     the children may use. Walk the spine in order and, for each spine
+#     room, try those rows in turn. Stop for a room once `cap` children
+#     are placed or the quota is met. If the quota is still short when
+#     the spine is done, do the whole thing again over the free rows of
+#     the other side, in the same order and the same draws; a floor the
+#     first pass filled - every floor of the sizes in PLAN.md section 3
+#     - takes no draw at all here. Each attempt, in this order and
+#     whether or not it is placed:
+#       da = rand(3, 5)            the child's size along the long axis;
+#       db = rand(3, band)         its size across the short axis.
+#     A child is centred on its parent, clamped inside the long axis,
+#     skipped when it does not fit its slot row or touches another
+#     room, and otherwise placed and joined to its parent by one
+#     L-shaped corridor, which takes one draw for the bend.
+#  5. the child gallery: on the child side, on the wall row just past
+#     the outermost child row - the one row no child's corridor can
+#     reach, because every corridor stops at its own room - a run from
+#     the first child of that row to the last. It serves every child it
+#     runs past, so those rooms gain a second way in and the room graph
+#     stops being a tree of dead ends.
+#  6. the spine chords, which are the loops. Take the pairs
+#       (0, 3), (4, 7), (8, 11), ... clipped to the last spine room,
+#     one per four rooms, and the first `plan["loops"]` of them - the
+#     one number the plan stage drew that the layout stage reads. Each is
+#     closed with a gallery corridor on the wall row just off the band
+#     on the side NO child was placed on, so a chord is a region of its
+#     own and two chords do not run into one another. A run over four
+#     rooms joins all six pairs of those four, and the chain already
+#     has three of them, so one chord is three cycles: more than the
+#     two PLAN.md section 4 asks for, out of one corridor.
+#
+# A chord's own pair is three rooms apart, not four, and its grid gap
+# is however wide the spine is. The plan's rule is kept in the order it
+# was written and could not be met as written: two rooms four steps
+# apart along a chain of this pitch are a dozen tiles from each other,
+# so "at least 4 apart in the graph" and "a grid gap of 6 or less" are
+# two conditions no pair meets at once. What the sweep measures is the
+# cycle, and a chord makes three of them.
+
+
+def _child_rows(band_slot: int, n_slots: int) -> tuple[list[int], int]:
+    """The free slot rows children may use, and the side they are on.
+
+    1 is the side past the band, where `across` grows, and -1 the side
+    before it. The side with the most free rows wins and the lower one
+    on a tie, so the choice follows from the floor's shape and is not a
+    draw.
+    """
+    below = list(range(band_slot + 1, n_slots))
+    above = list(range(band_slot - 1, -1, -1))
+    if len(below) >= len(above):
+        return below, 1
+    return list(reversed(above)), -1
+
+
+def _far_rows(band_slot: int, n_slots: int, side: int) -> list[int]:
+    """The free slot rows on the other side of the band, nearest first.
+
+    The second accretion pass, for a floor the first one could not fill.
+    """
+    if side == 1:
+        return list(reversed(range(band_slot - 1, -1, -1)))
+    return list(range(band_slot + 1, n_slots))
+
+
+def _layout_stage(rng, canvas: Canvas, plan: dict) -> list[int]:
+    """The layout stage: the spine, accretion and the galleries.
+
+    Rooms are laid out along the long axis and across the short one, in
+    "along, across" order, so a tall floor lays its spine down rather
+    than across. A floor is square-free either way: the grid is always
+    carved as rooms joined by corridors.
+
+    Returns the spine, the rooms in chain order, so the graph stage can
+    put the two stairs at its ends.
+    """
+    width, height = canvas.w, canvas.h
+    horizontal = width >= height
+    long_len, short_len = (width, height) if horizontal else (height, width)
+
+    def rect(along: int, across: int, along_size: int, across_size: int):
+        if horizontal:
+            return (along, across, along_size, across_size)
+        return (across, along, across_size, along_size)
+
+    def place(along: int, across: int, along_size: int, across_size: int) -> int:
+        index = len(canvas.rooms)
+        box = rect(along, across, along_size, across_size)
+        canvas.carve_room(box, index)
+        canvas.rooms.append([box[0], box[1], box[2], box[3], SHAPES[_pick(rng, len(SHAPES))]])
+        return index
+
+    row_h = _rand(rng, 5, 7)
+    band = row_h - 1
+    n_slots = (short_len - 2) // row_h
+    band_slot = n_slots // 2
+    band_lo = 1 + band_slot * row_h
+    if n_slots < 1:
+        return []
+
+    # 3. the spine, one room after another down the long axis.
+    spine: list[int] = []
+    cursor = 1
+    spine_target = max(3, (plan["quota"] + 1) // 2)
+    while len(spine) < spine_target:
+        along_size = _rand(rng, 4, 6)
+        if cursor + along_size > long_len - 1:
+            break
+        index = place(cursor, band_lo, along_size, band)
+        if spine:
+            _link(rng, canvas, tuple(canvas.rooms[spine[-1]][:4]), tuple(canvas.rooms[index][:4]))
+        spine.append(index)
+        cursor += along_size + 1
+    if len(spine) < 2:
+        return []
+
+    # 4. accretion, every spine room grown into the free rows of one
+    #    side, then into the free rows of the other if that was not
+    #    enough to reach the quota. A second pass draws nothing at all
+    #    on a floor the first pass filled, which is every floor of the
+    #    sizes in PLAN.md section 3.
+    near_rows, side = _child_rows(band_slot, n_slots)
+    far_rows = _far_rows(band_slot, n_slots, side)
+    cap = max(2, -(-(plan["quota"] - len(spine)) // len(spine)))
+    spine_set = set(spine)
+    for row_set in (near_rows, far_rows):
+        if len(canvas.rooms) >= plan["quota"]:
+            break
+        for parent in spine:
+            if len(canvas.rooms) >= plan["quota"]:
+                break
+            grown = 0
+            for slot in row_set:
+                if grown >= cap or len(canvas.rooms) >= plan["quota"]:
+                    break
+                along_size = _rand(rng, 3, 5)
+                across_size = _rand(rng, 3, band)
+                across = 1 + slot * row_h
+                if across + across_size > short_len - 1:
+                    continue
+                along = canvas.rooms[parent][0] + (canvas.rooms[parent][2] - along_size) // 2
+                along = max(1, min(along, long_len - 1 - along_size))
+                if not _fits(canvas, rect(along, across, along_size, across_size)):
+                    continue
+                index = place(along, across, along_size, across_size)
+                _link(rng, canvas, tuple(canvas.rooms[parent][:4]),
+                      tuple(canvas.rooms[index][:4]))
+                grown += 1
+    children = [room for room in range(len(canvas.rooms)) if room not in spine_set]
+
+    # 5. the child gallery, in front of the outermost child row.
+    if children and near_rows:
+        _child_gallery(canvas, horizontal, children, near_rows[-1] + side, row_h,
+                       short_len, side)
+
+    # 6. the spine chords, on the side of the band no child was placed on.
+    edge = canvas.h if horizontal else canvas.w
+    gallery = band_lo - 1 if side == 1 else band_lo + band
+    if 1 <= gallery <= edge - 2:
+        for nth, i in enumerate(range(0, len(spine) - 1, 4)):
+            if nth >= plan["loops"] or i + 3 >= len(spine):
+                break
+            _gallery_loop(canvas, horizontal, tuple(canvas.rooms[spine[i]][:4]),
+                          tuple(canvas.rooms[spine[i + 3]][:4]), gallery)
+    return spine
+
+
+def _child_gallery(canvas: Canvas, horizontal: bool, children: list[int],
+                   slot: int, row_h: int, short_len: int, side: int) -> None:
+    """A corridor in front of the outermost row of child rooms.
+
+    The run is carved on the wall row just past that row, which no
+    child's corridor reaches, so it is a region of its own that serves
+    exactly the rooms of that row. Two of those rooms were only joined
+    by the whole length of the spine; now the region joins them to each
+    other, and that is a cycle.
+    """
+    if slot < 0 or slot + 1 > (short_len - 2) // row_h:
+        return
+    across = 1 + slot * row_h
+    row = across if side == 1 else across - 1
+    if not 1 <= row <= (canvas.h if horizontal else canvas.w) - 2:
+        return
+    same = [room for room in children
+            if (canvas.rooms[room][1] if horizontal else canvas.rooms[room][0]) == across]
+    if len(same) < 2:
+        return
+    _gallery_loop(canvas, horizontal, tuple(canvas.rooms[same[0]][:4]),
+                  tuple(canvas.rooms[same[-1]][:4]), row)
+
+
+# ----------------------------------------------------------------- stage 3
+# the graph stage - no draws at all. It reads the layout back out of the
+# grid, exactly the way `tests/test_floor_v3_properties.py` does, so the
+# main path the warden and the chests are placed against is the same
+# main path the sweep measures.
+#
+#  1. A node per room, in `rooms` order, then a node per maximal
+#     4-connected run of corridor tiles. Corridor nodes are numbered in
+#     the row-major order of their first tile, so the numbering matches
+#     the sweep's to the node.
+#  2. An edge when a corridor tile is 4-adjacent to a room tile, and
+#     when two room tiles are 4-adjacent across no corridor.
+#  3. The main path is a breadth-first walk of that region graph from
+#     the room holding the up-stair to the room holding the down-stair,
+#     neighbours visited in ascending node order, so the lower index
+#     wins a tie. Its room nodes, in order, are the main path.
+#  4. Distances are counted from the up room over the room graph.
+#  5. The warden goes in the farthest room off the main path, ties
+#     broken by the lower room index: the gates-and-guardians rule.
+#  6. The landmark goes in the next room off the path after that, and
+#     the vault in the one after it when the pack names a vault.
+
+
+def _bfs_path(adj: list[set[int]], start: int, goal: int) -> list[int] | None:
+    """The shortest node path start -> goal, ties broken by node index.
+
+    Neighbours are visited in ascending node order, so the first route
+    found is the canonical one. This is the sweep's own routine, kept
+    line for line: a path that differs here is a path that differs
+    there, and the warden would be placed against the wrong one.
+    """
+    if start == goal:
+        return [start]
+    prev: dict[int, int | None] = {start: None}
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        for nxt in sorted(adj[node]):
+            if nxt in prev:
+                continue
+            prev[nxt] = node
+            if nxt == goal:
+                path = [nxt]
+                while prev[path[-1]] is not None:
+                    path.append(prev[path[-1]])
+                return path[::-1]
+            queue.append(nxt)
+    return None
+
+
+def _bfs_depth(adj: list[set[int]], start: int, count: int) -> list[int]:
+    """The hop count from `start` to every node, -1 where there is none."""
+    depth = [-1] * count
+    depth[start] = 0
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        for nxt in sorted(adj[node]):
+            if depth[nxt] < 0:
+                depth[nxt] = depth[node] + 1
+                queue.append(nxt)
+    return depth
+
+
+def _region_graph(canvas: Canvas) -> list[set[int]]:
+    """The region graph: rooms first, corridor regions after.
+
+    Read back out of the carved grid rather than kept alongside it, so
+    the graph the generator reasons about is the graph a reader can
+    derive from `rows` and `rooms`.
+    """
+    width, height = canvas.w, canvas.h
+    rooms = canvas.rooms
+    room_count = len(rooms)
+    adj: list[set[int]] = [set() for _ in range(room_count)]
+    seen: set[int] = set()
+    for index in sorted(canvas.corr):
+        if index in seen:
+            continue
+        node = len(adj)
+        adj.append(set())
+        seen.add(index)
+        stack = [index]
+        while stack:
+            here = stack.pop()
+            x, y = here % width, here // width
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if not (0 <= nx < width and 0 <= ny < height):
+                    continue
+                other = ny * width + nx
+                room = canvas.owner[other]
+                if room >= 0:
+                    adj[node].add(room)
+                elif other in canvas.corr and other not in seen:
+                    seen.add(other)
+                    stack.append(other)
+    # Two rooms sharing a tile edge are neighbours with no corridor.
+    for index, room in enumerate(rooms):
+        x, y, w, h = room[0], room[1], room[2], room[3]
+        for yy in range(y, y + h):
+            for xx in range(x, x + w):
+                for nx, ny in ((xx + 1, yy), (xx - 1, yy), (xx, yy + 1), (xx, yy - 1)):
+                    if not (0 <= nx < width and 0 <= ny < height):
+                        continue
+                    other = canvas.owner[ny * width + nx]
+                    if 0 <= other != index:
+                        adj[index].add(other)
+                        adj[other].add(index)
+    # The flood above only ever writes a corridor node's edge, so the
+    # region graph is made undirected here, the way the sweep does.
+    for node, neighbours in enumerate(adj):
+        for other in sorted(neighbours):
+            adj[other].add(node)
+    return adj
+
+
+def _room_graph(adj: list[set[int]], room_count: int) -> list[set[int]]:
+    """The room graph: two rooms joined directly or through one corridor.
+
+    A corridor that serves three rooms joins all three pairs, which is
+    the sweep's rule and the reason a gallery corridor reads as an edge
+    between every pair of rooms it runs past.
+    """
+    room_adj: list[set[int]] = [set() for _ in range(room_count)]
+    for node, neighbours in enumerate(adj):
+        low = sorted(other for other in neighbours if other < room_count)
+        if node < room_count:
+            for other in low:
+                if other != node:
+                    room_adj[node].add(other)
+                    room_adj[other].add(node)
+        for i, first in enumerate(low):
+            for second in low[i + 1:]:
+                room_adj[first].add(second)
+                room_adj[second].add(first)
+    return room_adj
+
+
+class Graph:
+    """What stage 3 reads back out of a carved floor."""
+
+    def __init__(self, adj: list[set[int]], room_adj: list[set[int]]):
+        self.adj = adj
+        self.room_adj = room_adj
+        self.room_count = len(room_adj)
+        self.main: list[int] = []
+        self.main_rooms: list[int] = []
+        self.depth: list[int] = []
+
+
+def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
+                 section: dict) -> tuple[Graph, dict, list[dict], list[list]]:
+    """The graph stage: the stairs, the main path, the warden, the pois.
+
+    Nothing is drawn here. Everything below is read out of the grid the
+    layout stage left, so the two stages cannot disagree about where a
+    room is or which rooms the path runs through.
+    """
+    up_room, down_room = spine[0], spine[-1]
+    up = _center(tuple(canvas.rooms[up_room][:4]))
+    down = _center(tuple(canvas.rooms[down_room][:4]))
+    canvas.grid[up[1]][up[0]] = UP
+    canvas.grid[down[1]][down[0]] = DOWN
+
+    adj = _region_graph(canvas)
+    room_adj = _room_graph(adj, len(canvas.rooms))
+    graph = Graph(adj, room_adj)
+    path = _bfs_path(adj, up_room, down_room)
+    if path is not None:
+        graph.main = path
+        graph.main_rooms = [node for node in path if node < graph.room_count]
+    graph.depth = _bfs_depth(room_adj, up_room, graph.room_count)
+
+    on_path = set(graph.main_rooms)
+    # The farthest room off the path, then the next, then the next. The
+    # warden takes the first, the landmark the second, the vault the
+    # third, each sorted by hop count from the up-stair and then by room
+    # index so a tie never depends on a draw.
+    off_path = sorted(
+        (room for room in range(graph.room_count) if room not in on_path),
+        key=lambda room: (-graph.depth[room], room),
+    )
+    warden_room = off_path[0] if off_path else up_room
+    landmark_room = off_path[1] if len(off_path) > 1 else warden_room
+    vault_room = off_path[2] if (len(off_path) > 2 and section.get("vault")) else None
+
+    # A stamp reads as the room it sits in, so the room that holds the
+    # warden hall, the landmark or the vault is named in `rooms`.
+    canvas.rooms[warden_room][4] = "hall"
+    canvas.rooms[landmark_room][4] = "landmark"
+    if vault_room is not None:
+        canvas.rooms[vault_room][4] = "vault"
+
+    names = _names(section.get("pois"), FALLBACK_POIS)
+    poi_at = _center(tuple(canvas.rooms[landmark_room][:4]))
+    pois = [{
+        "at": [poi_at[0], poi_at[1]],
+        "name": names[plan["flavour"] % len(names)],
+        "stamp": "landmark",
+    }]
+    if vault_room is not None:
+        vault_at = _center(tuple(canvas.rooms[vault_room][:4]))
+        pois.append({
+            "at": [vault_at[0], vault_at[1]],
+            "name": names[(plan["flavour"] + 1) % len(names)],
+            "stamp": "vault",
+        })
+
+    # A leaf room is a room with one way in, and PLAN.md section 2 turns
+    # leaves into secret rooms. The stamp rooms are spoken for already.
+    taken = {warden_room, landmark_room}
+    if vault_room is not None:
+        taken.add(vault_room)
+    leaves = [
+        room for room in range(graph.room_count)
+        if room not in taken and room not in on_path
+        and len(room_adj[room]) == 1
+    ]
+    secrets = []
+    for room in leaves[:plan["secrets"]]:
+        x, y = _center(tuple(canvas.rooms[room][:4]))
+        secrets.append([x, y])
+
+    anchors = {
+        "up": [up[0], up[1]],
+        "down": [down[0], down[1]],
+        "warden": None,
+        "vault": None,
+        "landmark": [poi_at[0], poi_at[1]],
+    }
+    for name, room in (("warden", warden_room), ("vault", vault_room)):
+        if room is None:
+            continue
+        x, y = _center(tuple(canvas.rooms[room][:4]))
+        anchors[name] = [x, y]
+    return graph, anchors, pois, secrets
+
+
+# ----------------------------------------------------------------- stage 4
+# the pop stream - the exact order of draws. `rng()` is one call of
+# `prng("v3|" + floor_key + "|pop")`, `rand(lo, hi)` is
+# `lo + floor(rng() * (hi - lo + 1))` and `pick(n)` is `floor(rng() * n)`.
+#
+# The candidates are read off the grid, in row-major order, before the
+# first draw: every walkable tile at least STAIR_CLEAR (7) tiles
+# (Chebyshev) from both stairs. A tile is taken at most once.
+#
+#  1. The plain monsters, by area budget, not by a draw:
+#       count = clamp(walkable // TILES_PER_MOB, MOBS_MIN, MOBS_MAX).
+#     For each, in order: a family drawn by weight, then a tile.
+#  2. Elites: count = rand(elite_lo, elite_hi) from
+#     `section["elites"]["per_floor"]` - a pack that names an elite
+#     count and no affix table draws the count and places nothing, so
+#     the stream does not move when only the table changes. For each,
+#     an affix by index from `["affixes"]`, then a tile.
+#  3. Groups: count = rand(group_lo, group_hi) from
+#     `section["groups"]["per_floor"]`; for each, a minion count
+#     `rand(minion_lo, minion_hi)`, a leader family, a leader tile, then
+#     per minion a family and the nearest free tile to the leader,
+#     falling back to the next free tile in the candidate list.
+#  4. Chests: count = min(rand(2, 2 + quota // 8), the number of rooms
+#     off the main path no mob holds). Rooms off the main path first,
+#     farthest from the up-stair first; a room whose centre a monster,
+#     an elite or a minion already holds is dropped, and a table by index
+#     from CHEST_TABLES per chest. Every chest lands off the main path, so
+#     the whole of the floor's chest value is off it and exploring pays.
+#
+# The chest value of a table is `section["chest_values"][table]`, or 1
+# when the pack does not name it. No chest is placed by its value, so
+# no table can move a chest onto the path.
+
+
+def _eligible(canvas: Canvas, stairs: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Every walkable tile clear of both stairs, in row-major order."""
+    width = canvas.w
+    clear: list[tuple[int, int]] = []
+    for index in sorted(canvas.walk):
+        x, y = index % width, index // width
+        if all(max(abs(x - sx), abs(y - sy)) >= STAIR_CLEAR for sx, sy in stairs):
+            clear.append((x, y))
+    return clear
+
+
+def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
+               section: dict, up: tuple[int, int], down: tuple[int, int]):
+    """The pop stage: monsters, elites, groups and chests."""
+    clear = _eligible(canvas, [up, down])
+    # Two different questions, so two different sets. `taken` holds the
+    # INDICES into `clear` that `take()` has handed out, and `occupied`
+    # holds the TILES that a monster, an elite, a minion or a chest holds.
+    # One set cannot answer both: a tuple is never a member of a set of
+    # ints, so a chest filter reading `taken` drops nothing.
+    taken: set[int] = set()
+    occupied: set[tuple[int, int]] = set()
+    # The index of the first candidate not yet taken. Tiles only ever
+    # leave the list, so this walks forward and never looks back unless
+    # a minion takes a tile out of order.
+    cursor = 0
+
+    def take(near: tuple[int, int] | None = None) -> tuple[int, int] | None:
+        """The next free tile, or the first one within 4 of `near`.
+
+        Both readings walk the candidate list in row-major order, which
+        is what makes the choice the same one in every language.
+        """
+        nonlocal cursor
+        if not clear:
+            return None
+        if near is not None:
+            for index, tile in enumerate(clear):
+                if index in taken or max(abs(tile[0] - near[0]),
+                                         abs(tile[1] - near[1])) > 4:
+                    continue
+                taken.add(index)
+                occupied.add(tile)
+                cursor = min(cursor, index + 1)
+                return tile
+        while cursor < len(clear) and cursor in taken:
+            cursor += 1
+        if cursor >= len(clear):
+            return None
+        taken.add(cursor)
+        tile = clear[cursor]
+        occupied.add(tile)
+        cursor += 1
+        return tile
+
+    families = _read_families(section)
+    spawns: list[dict] = []
+    budget = min(MOBS_MAX, max(MOBS_MIN, len(canvas.walk) // TILES_PER_MOB))
+    for _ in range(budget):
+        tile = take()
+        if tile is None:
+            break
+        spawns.append({
+            "id": f"m{len(spawns)}",
+            "family": _draw_family(rng, families),
+            "elite": None,
+            "group": None,
+            "leader": False,
+            "at": [tile[0], tile[1]],
+        })
+
+    # A pack with an elite count and no affix table carries no elite: the
+    # count is still drawn, so the stream does not depend on the table.
+    # The count draw is a statement of its own, BEFORE the loop, so a pack
+    # with no affix table consumes exactly the same draw a pack with one
+    # does. A twin written from the stage comment above replays it in
+    # that place; a conditional inside `range()` would read as "the count
+    # is only drawn when there are affixes" and the streams would part.
+    elite_lo, elite_hi, affixes = _read_elites(section)
+    elite_count = _rand(rng, elite_lo, elite_hi)
+    for _ in range(elite_count):
+        if not affixes:
+            continue
+        affix = affixes[_pick(rng, len(affixes))]
+        tile = take()
+        if tile is None:
+            break
+        spawns.append({
+            "id": f"m{len(spawns)}",
+            "family": _draw_family(rng, families),
+            "elite": affix,
+            "group": None,
+            "leader": False,
+            "at": [tile[0], tile[1]],
+        })
+
+    group_lo, group_hi, minion_lo, minion_hi = _read_groups(section)
+    for number in range(_rand(rng, group_lo, group_hi)):
+        leader = take()
+        if leader is None:
+            break
+        group = f"g{number}"
+        spawns.append({
+            "id": f"m{len(spawns)}",
+            "family": _draw_family(rng, families),
+            "elite": None,
+            "group": group,
+            "leader": True,
+            "at": [leader[0], leader[1]],
+        })
+        for _ in range(_rand(rng, minion_lo, minion_hi)):
+            tile = take(leader)
+            if tile is None:
+                break
+            spawns.append({
+                "id": f"m{len(spawns)}",
+                "family": _draw_family(rng, families),
+                "elite": None,
+                "group": group,
+                "leader": False,
+                "at": [tile[0], tile[1]],
+            })
+
+    chests: list[dict] = []
+    off_path = sorted(
+        (room for room in range(graph.room_count) if room not in set(graph.main_rooms)),
+        key=lambda room: (-graph.depth[room], room),
+    )
+    spots = [(_center(tuple(canvas.rooms[room][:4])), room) for room in off_path]
+    spots = [spot for spot in spots if spot[0] not in occupied]
+    for number in range(min(_rand(rng, 2, 2 + plan["quota"] // 8), len(spots))):
+        tile, _room = spots[number]
+        occupied.add(tile)
+        chests.append({
+            "id": f"c{number}",
+            "at": [tile[0], tile[1]],
+            "table": CHEST_TABLES[_pick(rng, len(CHEST_TABLES))],
+        })
+    return spawns, chests
+
+
+# ----------------------------------------------------------------- stage 5
+# the validate stage - the checks `tests/test_floor_v3_properties.py`
+# runs, run again here before the caller ever sees the floor. A failure
+# is not a bug in the floor, it is a bad draw: the retry ladder draws
+# the same floor key with `|try{n}` appended and does it again.
+#
+# Nothing is drawn here either. The stage reads the plan it was handed
+# and answers one question: is this floor good enough to ship?
+
+
+def _flood(canvas: Canvas, start: tuple[int, int]) -> set[int]:
+    """Every walkable tile 4-connected to `start`."""
+    width = canvas.w
+    seen = {start[1] * width + start[0]}
+    stack = [start]
+    while stack:
+        x, y = stack.pop()
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if not (0 <= nx < width and 0 <= ny < canvas.h):
+                continue
+            other = ny * width + nx
+            if other in canvas.walk and other not in seen:
+                seen.add(other)
+                stack.append((nx, ny))
+    return seen
+
+
+def _chest_value(section: dict, table: str) -> int:
+    """What one chest is worth: the pack's table, else 1 when unmapped."""
+    values = section.get("chest_values")
+    if not isinstance(values, dict):
+        return 1
+    worth = values.get(table, 1)
+    return worth if isinstance(worth, int) and not isinstance(worth, bool) else 1
+
+
+def _loops(graph: Graph) -> int:
+    """The cyclomatic number of the room graph: edges - nodes + 1."""
+    edges = sum(len(neighbours) for neighbours in graph.room_adj) // 2
+    return edges - graph.room_count + 1
+
+
+def _within_one_step(graph: Graph) -> set[int]:
+    """The rooms at room-graph distance 0 or 1 from the main path."""
+    near = set(graph.main_rooms)
+    for room in graph.main_rooms:
+        near |= graph.room_adj[room]
+    return near
+
+
+def _validate(plan: dict, canvas: Canvas, graph: Graph, section: dict) -> bool:
+    """Every property the sweep asserts, answered on the plan itself."""
+    rooms = plan["rooms"]
+    anchors = plan["anchors"]
+    if len(rooms) < 2 or not plan["pois"]:
+        return False
+    if anchors["up"] is None or anchors["down"] is None or anchors["warden"] is None:
+        return False
+    up = (anchors["up"][0], anchors["up"][1])
+    down = (anchors["down"][0], anchors["down"][1])
+    if up == down:
+        return False
+
+    # One connected component, and nothing carved that belongs to no room
+    # and no corridor: the rooms and the corridors tile the walkable set.
+    reach = _flood(canvas, up)
+    if len(reach) != len(canvas.walk):
+        return False
+    if sum(room[2] * room[3] for room in rooms) + len(canvas.corr) != len(canvas.walk):
+        return False
+
+    def room_of(tile: list[int]) -> int:
+        """Which room a named tile is in, by the room's rectangle."""
+        for index, room in enumerate(rooms):
+            if (room[0] <= tile[0] < room[0] + room[2]
+                    and room[1] <= tile[1] < room[1] + room[3]):
+                return index
+        return -1
+
+    for tile in anchors.values():
+        if tile is not None and tile[0] + tile[1] * canvas.w not in reach:
+            return False
+    for poi in plan["pois"]:
+        if poi["at"][0] + poi["at"][1] * canvas.w not in reach:
+            return False
+    for tile in plan["secrets"]:
+        if tile[0] + tile[1] * canvas.w not in reach:
+            return False
+    for spawn in plan["spawns"]:
+        if spawn["at"][0] + spawn["at"][1] * canvas.w not in reach:
+            return False
+    for chest in plan["chests"]:
+        if chest["at"][0] + chest["at"][1] * canvas.w not in reach:
+            return False
+
+    # The main path, the warden off it, and the stairs in one component.
+    if not graph.main_rooms:
+        return False
+    room_count = graph.room_count
+    up_room = room_of(anchors["up"])
+    down_room = room_of(anchors["down"])
+    warden_room = room_of(anchors["warden"])
+    if min(up_room, down_room, warden_room) < 0:
+        return False
+    if _bfs_path(graph.room_adj, up_room, down_room) is None:
+        return False
+    if warden_room in set(graph.main_rooms):
+        return False
+
+    if room_count >= 12 and _loops(graph) < LOOPS_MIN:
+        return False
+    if len(_within_one_step(graph)) < 0.40 * room_count:
+        return False
+    if plan["chests"]:
+        total = 0
+        off = 0
+        for chest in plan["chests"]:
+            worth = _chest_value(section, chest["table"])
+            total += worth
+            if room_of(chest["at"]) not in set(graph.main_rooms):
+                off += worth
+        if total and off < 0.60 * total:
+            return False
+    try:
+        json.dumps(plan, sort_keys=True)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+# ----------------------------------------------------------------- the door
+
+
+def _attempt(floor_key: str, width: int, height: int,
+             section: dict, floor_kind: str) -> dict | None:
+    """One draw of one floor: the five stages, or None when it fails.
+
+    Three streams are opened, one for each stage that draws, and the
+    graph and validate stages open none. Every stream name is the floor
+    key and the stage name, exactly as PLAN.md section 2 writes them, so
+    a JavaScript twin can replay a stage on its own.
+    """
+    plan_rng = prng(f"v3|{floor_key}|plan")
+    layout_rng = prng(f"v3|{floor_key}|layout")
+    pop_rng = prng(f"v3|{floor_key}|pop")
+
+    plan = _plan_stage(plan_rng, section, floor_kind)
+    canvas = Canvas(width, height)
+    spine = _layout_stage(layout_rng, canvas, plan)
+    if len(spine) < 2:
+        return None
+    graph, anchors, pois, secrets = _graph_stage(canvas, spine, plan, section)
+    if graph.room_count < ROOMS_FLOOR:
+        return None
+    up = (anchors["up"][0], anchors["up"][1])
+    down = (anchors["down"][0], anchors["down"][1])
+    spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down)
+
+    floor = {
+        "gen": 3,
+        "w": width,
+        "h": height,
+        "rows": canvas.rows(),
+        "rooms": [list(room) for room in canvas.rooms],
+        "anchors": anchors,
+        "pois": pois,
+        "secrets": secrets,
+        "spawns": spawns,
+        "chests": chests,
+        "waypoint": plan["waypoint"],
+    }
+    if not _validate(floor, canvas, graph, section):
+        return None
+    return floor
+
+
+def _fallback(seed: str, width: int, height: int, section: dict) -> dict:
+    """The v2 floor of PLAN.md section 2's last resort, as a FloorPlan.
+
+    v2 stays pinned by hash and stays the fallback, so a caller that
+    cannot have a v3 floor still gets the shape it always had: the rows,
+    the stairs, and the room rectangles v2 geometry can be read back
+    into. No point of interest, no secret, no monster, no chest.
+    """
+    quota = _read_rooms(section)[0]
+    rows = generate_floor_v2(f"{seed}/fallback", width, height, max(2, quota))
+    rooms = _read_rectangles(rows, width, height)
+    return {
+        "gen": 2,
+        "w": width,
+        "h": height,
+        "rows": rows,
+        "rooms": rooms,
+        "anchors": {
+            "up": _find(rows, UP, width, height),
+            "down": _find(rows, DOWN, width, height),
+            "warden": None,
+            "vault": None,
+            "landmark": None,
+        },
+        "pois": [],
+        "secrets": [],
+        "spawns": [],
+        "chests": [],
+        "waypoint": False,
+    }
+
+
+def _read_rectangles(rows: list[str], width: int, height: int) -> list[list]:
+    """The rectangles v2 geometry can be read back into, one per region.
+
+    v2 draws no room list, so the fallback reads the regions out of its
+    own rows: every 4-connected run of walkable tiles is one region, and
+    its bounding box is the rectangle. A v2 corridor and the room it
+    runs to are one region, so the boxes are generous by design; a
+    caller that wants a room list for a v2 floor is reading a floor that
+    never promised one.
+    """
+    seen = [[False] * width for _ in range(height)]
+    rooms: list[list] = []
+    for y in range(height):
+        for x in range(width):
+            if seen[y][x] or rows[y][x] == WALL:
+                continue
+            stack = [(x, y)]
+            seen[y][x] = True
+            lo_x = hi_x = x
+            lo_y = hi_y = y
+            while stack:
+                cx, cy = stack.pop()
+                lo_x, hi_x = min(lo_x, cx), max(hi_x, cx)
+                lo_y, hi_y = min(lo_y, cy), max(hi_y, cy)
+                for nx, ny in ((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)):
+                    if 0 <= nx < width and 0 <= ny < height and not seen[ny][nx]:
+                        if rows[ny][nx] in (FLOOR, UP, DOWN):
+                            seen[ny][nx] = True
+                            stack.append((nx, ny))
+            rooms.append([lo_x, lo_y, hi_x - lo_x + 1, hi_y - lo_y + 1, "open"])
+    return rooms
+
+
+def _find(rows: list[str], glyph: str, width: int, height: int) -> list[int] | None:
+    """The first tile carrying `glyph`, in row-major order."""
+    for y in range(height):
+        row = rows[y]
+        for x in range(width):
+            if row[x] == glyph:
+                return [x, y]
+    return None
+
+
+def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str) -> dict:
+    """Draw one v3 floor from `seed` and return its FloorPlan.
+
+    `size_range` is the chosen `(w, h)` of the floor and nothing else.
+    `section` is a Section pack; only `id`, `rooms`, `families`, `elites`,
+    `groups` and `pois` are read, every other key is defaulted, and a
+    missing key never raises. `floor_kind` is one of `normal`,
+    `treasure`, `infested` or `hub`.
+
+    The floor key is `f"{seed}/{section_id}/{floor_kind}"`, so the same
+    seed, section and kind is the same floor, and two kinds of one
+    section are two floors. A floor that fails stage 5 is drawn again
+    from the same key with `|try{n}` appended, up to `MAX_TRIES` times;
+    after that the caller gets v2 geometry with `gen: 2` and the same
+    keys. The fallback rate is the fraction of calls that come back with
+    a `gen` other than 3.
+
+    Deterministic: `delve.prng` is the only source of randomness, so the
+    same arguments always return the same plan. Raises `ValueError` for
+    a `size_range` that is not a pair of whole numbers of 8 or more, and
+    for a `floor_kind` outside `FLOOR_KINDS`.
+    """
+    width, height = _read_size(size_range)
+    if floor_kind not in FLOOR_KINDS:
+        raise ValueError(f"floor_kind must be one of {', '.join(FLOOR_KINDS)}")
+    pack = section if isinstance(section, dict) else {}
+    raw_id = pack.get("id", "")
+    section_id = raw_id if isinstance(raw_id, str) else str(raw_id or "")
+    base_key = f"{seed}/{section_id}/{floor_kind}"
+    for attempt in range(MAX_TRIES + 1):
+        floor_key = base_key if attempt == 0 else f"{base_key}|try{attempt}"
+        floor = _attempt(floor_key, width, height, pack, floor_kind)
+        if floor is not None:
+            return floor
+    return _fallback(str(seed), width, height, pack)
