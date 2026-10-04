@@ -108,7 +108,7 @@ These hold for every Section, for seeds `check-0..199`, in cycles 0 and 1:
 
 ## Owner decisions (2026-10-04) and open questions
 
-1. **Decided: offered from the second cycle on, and paid with a one-use item found in a vault** (not gold). Still open: which vault drops it and how many a cycle.
+1. **Decided: offered from the second cycle on, and paid with a one-use item found in a vault** (not gold). **Every section's vault drops one** (owner, 2026-10-04).
 2. In endless mode, does a town visit still gate each Section when the town no longer changes?
 3. Does "New descent" (a new seed) replay the story, or count as a later cycle?
 4. Do vault notes read again in endless mode, or do those vaults hold only loot?
