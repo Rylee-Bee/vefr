@@ -1,0 +1,490 @@
+{
+  "bench": "vefr-floor-play-bench",
+  "version": 1,
+  "sizes": [
+    [
+      48,
+      32,
+      16
+    ],
+    [
+      64,
+      48,
+      18
+    ],
+    [
+      96,
+      64,
+      24
+    ],
+    [
+      128,
+      96,
+      32
+    ]
+  ],
+  "play_seed": "bench-0",
+  "viewport": [
+    1280,
+    800
+  ],
+  "fog_radius": 6,
+  "command": "VEFR_BENCH=1 uv run pytest -q tests/browser/bench_floor_play.py -s",
+  "results": {
+    "js_generation": {
+      "48x32x16": {
+        "seeds": 200,
+        "sample": "mean of 10 generations of one seed",
+        "ms": {
+          "p50": 0.02,
+          "p95": 0.03
+        },
+        "ms_throttled4x": {
+          "p50": 0.07,
+          "p95": 0.11
+        },
+        "python_js_checksum_mismatches": 0
+      },
+      "64x48x18": {
+        "seeds": 200,
+        "sample": "mean of 10 generations of one seed",
+        "ms": {
+          "p50": 0.03,
+          "p95": 0.03
+        },
+        "ms_throttled4x": {
+          "p50": 0.1,
+          "p95": 0.14
+        },
+        "python_js_checksum_mismatches": 0
+      },
+      "96x64x24": {
+        "seeds": 200,
+        "sample": "mean of 10 generations of one seed",
+        "ms": {
+          "p50": 0.05,
+          "p95": 0.06
+        },
+        "ms_throttled4x": {
+          "p50": 0.19,
+          "p95": 0.24
+        },
+        "python_js_checksum_mismatches": 0
+      },
+      "128x96x32": {
+        "seeds": 200,
+        "sample": "mean of 10 generations of one seed",
+        "ms": {
+          "p50": 0.09,
+          "p95": 0.1
+        },
+        "ms_throttled4x": {
+          "p50": 0.36,
+          "p95": 0.43
+        },
+        "python_js_checksum_mismatches": 0
+      }
+    },
+    "monster_turn": {
+      "48x32x16:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 1.3,
+          "p95": 1.6
+        },
+        "flood_ms": {
+          "p50": 0.1,
+          "p95": 0.2
+        },
+        "turn_ms_throttled4x": {
+          "p50": 5.6,
+          "p95": 6.5
+        }
+      },
+      "48x32x16:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 3.6,
+          "p95": 4.2
+        },
+        "flood_ms": {
+          "p50": 0.1,
+          "p95": 0.2
+        },
+        "turn_ms_throttled4x": {
+          "p50": 15.2,
+          "p95": 16.2
+        }
+      },
+      "48x32x16:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 6.6,
+          "p95": 6.9
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 27.8,
+          "p95": 28.7
+        }
+      },
+      "64x48x18:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 2.2,
+          "p95": 2.3
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 9.4,
+          "p95": 10.2
+        }
+      },
+      "64x48x18:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 5.7,
+          "p95": 7.9
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 23.6,
+          "p95": 24.5
+        }
+      },
+      "64x48x18:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 10.8,
+          "p95": 11.2
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 44.3,
+          "p95": 45.4
+        }
+      },
+      "96x64x24:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 4.3,
+          "p95": 4.7
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 18,
+          "p95": 19.5
+        }
+      },
+      "96x64x24:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 11,
+          "p95": 12.1
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 44.3,
+          "p95": 45.3
+        }
+      },
+      "96x64x24:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 19.9,
+          "p95": 20.2
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 81.8,
+          "p95": 84.9
+        }
+      },
+      "128x96x32:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 7.3,
+          "p95": 7.4
+        },
+        "flood_ms": {
+          "p50": 0.7,
+          "p95": 0.8
+        },
+        "turn_ms_throttled4x": {
+          "p50": 29.7,
+          "p95": 31.1
+        }
+      },
+      "128x96x32:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 18.3,
+          "p95": 18.7
+        },
+        "flood_ms": {
+          "p50": 0.8,
+          "p95": 0.9
+        },
+        "turn_ms_throttled4x": {
+          "p50": 73.6,
+          "p95": 82.9
+        }
+      },
+      "128x96x32:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 33.3,
+          "p95": 34
+        },
+        "flood_ms": {
+          "p50": 0.8,
+          "p95": 1
+        },
+        "turn_ms_throttled4x": {
+          "p50": 133.8,
+          "p95": 136.2
+        }
+      }
+    },
+    "play": {
+      "48x32x16": {
+        "seed": "bench-0",
+        "map_tiles": 1536,
+        "walkable_tiles": 559,
+        "explore_turns_to_clear": 233,
+        "explore_restarts_after_cap": 0,
+        "final_status": "Nothing left to explore here.",
+        "fog_bytes": 10587,
+        "fog_tiles": 1399,
+        "fog_tiles_pct_of_map": 91.1,
+        "walkable_tiles_explored": 559,
+        "floor_loot_bytes": 0,
+        "frames": {
+          "desktop": {
+            "label": "desktop",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 73,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.8
+            },
+            "task_ms_per_frame": 2.16,
+            "task_ms_per_turn": 10.622,
+            "script_ms_per_frame": 0.611
+          },
+          "throttled4x": {
+            "label": "throttled4x",
+            "seconds": 6,
+            "frames": 346,
+            "turns": 69,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.8
+            },
+            "task_ms_per_frame": 14.045,
+            "task_ms_per_turn": 70.429,
+            "script_ms_per_frame": 3.067
+          }
+        }
+      },
+      "64x48x18": {
+        "seed": "bench-0",
+        "map_tiles": 3072,
+        "walkable_tiles": 868,
+        "explore_turns_to_clear": 369,
+        "explore_restarts_after_cap": 0,
+        "final_status": "Nothing left to explore here.",
+        "fog_bytes": 19611,
+        "fog_tiles": 2517,
+        "fog_tiles_pct_of_map": 81.9,
+        "walkable_tiles_explored": 868,
+        "floor_loot_bytes": 0,
+        "frames": {
+          "desktop": {
+            "label": "desktop",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 73,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.7
+            },
+            "task_ms_per_frame": 2.297,
+            "task_ms_per_turn": 11.297,
+            "script_ms_per_frame": 0.679
+          },
+          "throttled4x": {
+            "label": "throttled4x",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 70,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.7
+            },
+            "task_ms_per_frame": 11.624,
+            "task_ms_per_turn": 59.615,
+            "script_ms_per_frame": 2.786
+          }
+        }
+      },
+      "96x64x24": {
+        "seed": "bench-0",
+        "map_tiles": 6144,
+        "walkable_tiles": 1437,
+        "explore_turns_to_clear": 806,
+        "explore_restarts_after_cap": 2,
+        "final_status": "Nothing left to explore here.",
+        "fog_bytes": 40358,
+        "fog_tiles": 5146,
+        "fog_tiles_pct_of_map": 83.8,
+        "walkable_tiles_explored": 1437,
+        "floor_loot_bytes": 0,
+        "frames": {
+          "desktop": {
+            "label": "desktop",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 73,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.7
+            },
+            "task_ms_per_frame": 2.152,
+            "task_ms_per_turn": 10.581,
+            "script_ms_per_frame": 0.672
+          },
+          "throttled4x": {
+            "label": "throttled4x",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 70,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.8
+            },
+            "task_ms_per_frame": 7.914,
+            "task_ms_per_turn": 40.586,
+            "script_ms_per_frame": 2.194
+          }
+        }
+      },
+      "128x96x32": {
+        "seed": "bench-0",
+        "map_tiles": 12288,
+        "walkable_tiles": 2431,
+        "explore_turns_to_clear": 1419,
+        "explore_restarts_after_cap": 3,
+        "final_status": "Nothing left to explore here.",
+        "fog_bytes": 77649,
+        "fog_tiles": 9607,
+        "fog_tiles_pct_of_map": 78.2,
+        "walkable_tiles_explored": 2431,
+        "floor_loot_bytes": 0,
+        "frames": {
+          "desktop": {
+            "label": "desktop",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 73,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.7
+            },
+            "task_ms_per_frame": 1.995,
+            "task_ms_per_turn": 9.809,
+            "script_ms_per_frame": 0.733
+          },
+          "throttled4x": {
+            "label": "throttled4x",
+            "seconds": 6,
+            "frames": 359,
+            "turns": 68,
+            "interval_ms": {
+              "p50": 16.7,
+              "p95": 16.7
+            },
+            "task_ms_per_frame": 8.959,
+            "task_ms_per_turn": 47.296,
+            "script_ms_per_frame": 2.687
+          }
+        }
+      }
+    },
+    "explore_repeatability": {
+      "48x32x16": {
+        "runs": [
+          [
+            233,
+            10587,
+            1399
+          ],
+          [
+            233,
+            10587,
+            1399
+          ]
+        ],
+        "identical": true
+      }
+    }
+  }
+}
