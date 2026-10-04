@@ -47,6 +47,9 @@ COLLECT = """() => {
   return {stage: window.VEFR_STAGE || null, els: out, sw: document.documentElement.scrollWidth, iw: innerWidth};
 }"""
 
+# `COLLECT` returns innerWidth as `iw`; the UI3c containment case also needs the window height.
+INNER_HEIGHT = "() => innerHeight"
+
 
 @pytest.fixture(scope="module")
 def woven(tmp_path_factory):
@@ -62,6 +65,18 @@ def woven(tmp_path_factory):
     wj.write_text(json.dumps(cfg), encoding="utf-8")
     html = d / "stage.html"
     html.write_text(cli.weave_html(pack), encoding="utf-8")
+    return html
+
+
+ROOT_SAMPLE = ROOT / "worlds" / "sample-world"
+
+
+@pytest.fixture(scope="module")
+def woven_sample(tmp_path_factory):
+    """The shipped sample world, woven as-is: its small map is the UI3c case."""
+    d = tmp_path_factory.mktemp("stage-sample")
+    html = d / "sample.html"
+    html.write_text(cli.weave_html(ROOT_SAMPLE), encoding="utf-8")
     return html
 
 
@@ -142,5 +157,38 @@ def test_every_control_is_inside_the_stage(browser, woven, w, h, touch):
                    if e["l"] < st["x"] - 1 or e["t"] < st["y"] - 1
                    or e["r"] > st["x"] + st["w"] + 1 or e["b"] > st["y"] + st["h"] + 1]
         assert not outside, f"{len(outside)} piece(s) outside the stage {st}: {outside[:4]}"
+    finally:
+        ctx.close()
+
+
+# UI3c (Rylee, 2026-10-04): the sample world's map is small, so after I1+I2 the
+# stage rectangle is the map rectangle and the HUD frame is drawn straight over
+# map tiles. Frozen before the fix: no HUD piece may cover the drawn map.
+@pytest.mark.parametrize("w,h,touch", SIZES + PHONES)
+def test_no_hud_piece_covers_a_map_tile(browser, woven_sample, w, h, touch):
+    ctx = browser.new_context(viewport={"width": w, "height": h}, has_touch=touch, is_mobile=touch)
+    page = ctx.new_page()
+    try:
+        page.goto(woven_sample.as_uri())
+        page.click("#ts-enter")
+        if page.is_visible("#config"):
+            page.click("#cfg-save")
+        page.wait_for_function("window.VEFR_COMBAT", timeout=15000)
+        page.wait_for_timeout(500)
+        info = page.evaluate(COLLECT)
+        st = info["stage"]
+        assert st, "window.VEFR_STAGE is not published"
+        m = st.get("map")
+        assert m, f"VEFR_STAGE.map is not published: {st}"
+        for e in info["els"]:
+            ox = min(e["r"], m["x"] + m["w"]) - max(e["l"], m["x"])
+            oy = min(e["b"], m["y"] + m["h"]) - max(e["t"], m["y"])
+            assert not (ox > 4 and oy > 4), \
+                f"{e['id']} covers a map tile at {w}x{h}: rect={e} map={m}"
+        ih = page.evaluate(INNER_HEIGHT)
+        outside = [e for e in info["els"]
+                   if e["l"] < -1 or e["t"] < -1
+                   or e["r"] > info["iw"] + 1 or e["b"] > ih + 1]
+        assert not outside, f"{len(outside)} piece(s) outside the window at {w}x{h}: {outside[:4]}"
     finally:
         ctx.close()
