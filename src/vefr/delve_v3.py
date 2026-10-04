@@ -889,10 +889,11 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 #     per minion a family and the nearest free tile to the leader,
 #     falling back to the next free tile in the candidate list.
 #  4. Chests: count = min(rand(2, 2 + quota // 8), the number of rooms
-#     off the main path). Rooms off the main path first, farthest from
-#     the up-stair first, and a table by index from CHEST_TABLES per
-#     chest. Every chest lands off the main path, so the whole of the
-#     floor's chest value is off it and exploring pays.
+#     off the main path no mob holds). Rooms off the main path first,
+#     farthest from the up-stair first; a room whose centre a monster,
+#     an elite or a minion already holds is dropped, and a table by index
+#     from CHEST_TABLES per chest. Every chest lands off the main path, so
+#     the whole of the floor's chest value is off it and exploring pays.
 #
 # The chest value of a table is `section["chest_values"][table]`, or 1
 # when the pack does not name it. No chest is placed by its value, so
@@ -914,7 +915,13 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
                section: dict, up: tuple[int, int], down: tuple[int, int]):
     """The pop stage: monsters, elites, groups and chests."""
     clear = _eligible(canvas, [up, down])
-    taken: set[tuple[int, int]] = set()
+    # Two different questions, so two different sets. `taken` holds the
+    # INDICES into `clear` that `take()` has handed out, and `occupied`
+    # holds the TILES that a monster, an elite, a minion or a chest holds.
+    # One set cannot answer both: a tuple is never a member of a set of
+    # ints, so a chest filter reading `taken` drops nothing.
+    taken: set[int] = set()
+    occupied: set[tuple[int, int]] = set()
     # The index of the first candidate not yet taken. Tiles only ever
     # leave the list, so this walks forward and never looks back unless
     # a minion takes a tile out of order.
@@ -935,6 +942,7 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
                                          abs(tile[1] - near[1])) > 4:
                     continue
                 taken.add(index)
+                occupied.add(tile)
                 cursor = min(cursor, index + 1)
                 return tile
         while cursor < len(clear) and cursor in taken:
@@ -943,6 +951,7 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
             return None
         taken.add(cursor)
         tile = clear[cursor]
+        occupied.add(tile)
         cursor += 1
         return tile
 
@@ -964,8 +973,16 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
 
     # A pack with an elite count and no affix table carries no elite: the
     # count is still drawn, so the stream does not depend on the table.
+    # The count draw is a statement of its own, BEFORE the loop, so a pack
+    # with no affix table consumes exactly the same draw a pack with one
+    # does. A twin written from the stage comment above replays it in
+    # that place; a conditional inside `range()` would read as "the count
+    # is only drawn when there are affixes" and the streams would part.
     elite_lo, elite_hi, affixes = _read_elites(section)
-    for _ in range(_rand(rng, elite_lo, elite_hi) if affixes else 0):
+    elite_count = _rand(rng, elite_lo, elite_hi)
+    for _ in range(elite_count):
+        if not affixes:
+            continue
         affix = affixes[_pick(rng, len(affixes))]
         tile = take()
         if tile is None:
@@ -1012,10 +1029,10 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
         key=lambda room: (-graph.depth[room], room),
     )
     spots = [(_center(tuple(canvas.rooms[room][:4])), room) for room in off_path]
-    spots = [spot for spot in spots if spot[0] not in taken]
+    spots = [spot for spot in spots if spot[0] not in occupied]
     for number in range(min(_rand(rng, 2, 2 + plan["quota"] // 8), len(spots))):
         tile, _room = spots[number]
-        taken.add(tile)
+        occupied.add(tile)
         chests.append({
             "id": f"c{number}",
             "at": [tile[0], tile[1]],
