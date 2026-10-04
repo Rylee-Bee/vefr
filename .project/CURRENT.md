@@ -6,6 +6,14 @@
 >
 > Last refreshed: 2026-10-04 (later: the parts split, the interface and tighten-shapes plans).
 
+## 2026-10-04, evening (the endless dungeon is designed and measured)
+
+**Decided by Rylee:** the dungeon becomes sections of 8 to 11 generated floors, each ending in a key warden and a vault; acts change the town only; the King ends Act 3; an endless mode follows. Everything is a VEFR feature so any game can remake it; Cottage supplies data. Design `docs/plans/endless-dungeon/DESIGN.md`; Opus build plan `docs/plans/endless-dungeon/PLAN.md` (slices E0 to E10); epic #273. Cottage's matching rework is Cottage #91.
+
+**Measured (E0a, #278):** generation under 1 ms at 48x32 to 128x96 in Python and JS; the monster turn (10.8 ms at 64x48, 33 ms at 128x96, budget 8) and fog saves (10 to 78 KB per floor) are the limits. **Decided:** monsters sleep until near and the flood fill is bounded to a radius (E0d); fog becomes a bitset (F1) after K2; sizes are picked per section. **Read (E0b):** a lock can test a flag; generated regions can likely be inserted into the player's region tables; fog is stored as "x,y" strings.
+
+**Open PRs:** #275 interface (draft, held for UI3c), #276 K2 storage helper, #277 B0 sprites by name, #278 E0a bench and report. Merged today: #264, #266, #271, #272, #274.
+
 ## 2026-10-04, later (the player is built from parts; two plans are running)
 
 **Landed on main:** the player split (#264: `web/packaged.html` is generated from `web/player/parts/`, never edited by hand; `scripts/build_player.py`, `scripts/weave_digest.py`, `tests/test_player_build.py`), the size-and-language research (#263, #265) and the tighten-shapes plan (#266).
