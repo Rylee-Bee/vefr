@@ -55,7 +55,7 @@ REQUIRED_VERBS = {
     "doctor", "check", "chat", "map", "delve", "weave", "spark",
     "test", "ferry", "handbok", "skipa", "norns", "ratatoskr",
 }
-VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features", "normalize"}
+VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features", "normalize", "art"}
 
 
 # ------------------------------------------------------------- harness
@@ -261,6 +261,7 @@ SANCTIONED_FNS = {
         "cmd_deploy", "cmd_backup", "cmd_import", "cmd_scaffold",
         "cmd_vefr_skipa", "cmd_vefr_doctor", "cmd_find",
         "cmd_publish", "cmd_look", "cmd_probe", "cmd_features", "cmd_normalize",
+        "cmd_art_check", "cmd_art_credits",
     )
 }
 
@@ -276,6 +277,7 @@ EXPECTED_BOUND = {
     "probe": ("cmd_probe",),
     "features": ("cmd_features",),
     "normalize": ("cmd_normalize",),
+    "art": ("cmd_art_check", "cmd_art_credits"),
     "doctor": ("cmd_vefr_doctor",),
     "check": ("cmd_map",),
     "chat": ("cmd_chat",),
@@ -347,6 +349,7 @@ DISPATCH_ARGV = {
     "probe": ["probe", "--html", "x.html", "--fire", "reads:what=x"],
     "features": ["features"],
     "normalize": ["normalize", "--pack", "p"],
+    "art": ["art", "check", "--ledger", "l"],
     "doctor": ["doctor"],
     "check": ["check"],
     "chat": ["chat", "--name", "x"],
