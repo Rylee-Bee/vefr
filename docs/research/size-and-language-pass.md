@@ -34,3 +34,28 @@ Adding the one action `complete-act` touched **five places in three files** (map
 ## Order (proposed)
 1. A2 and A1-at-import (smallest change, biggest bytes). 2. B1 and B5 (pure defaults; no new syntax). 3. C with the `packaged.html` split. 4. B2 to B4 as one normalising layer, only after Rylee approves the sentence form (ask-first contract change). 5. D alongside C.
 Everything keeps the Blueprint rules: a canonical form that is checked in and readable, a lock against drift, and an exit ramp.
+
+---
+
+# Pass 2: the shapes we keep re-typing (measured 2026-10-04, after the split)
+
+The first pass looked at the pack and the player. This one looks at the shapes the *work itself* repeats, in the Blueprint spirit: a short source that expands to a canonical form, checked in, readable, with a lock and an exit ramp. Every number was counted on the repository today.
+
+| # | Shape we repeat | Measured | Shorter, more flexible form | Words saved |
+|---|---|---|---|---|
+| 1 | **Test harness boot** | 38 `*_harness.mjs` (6,253 lines); 22 build their own JSDOM, 13 define their own canvas stub; 637 lines (12%) appear verbatim in five or more. Four harnesses written last night each copied about 35 lines. | One `tests/fixtures/play.mjs` driven by a data spec: `{"steps": ["begin", "dir:right", "key:e", "wait:200"], "read": ["VEFR_ALBUM", "#combat-live"]}` prints the reads as JSON. A new feature test is a Python assert plus a 3-line spec. | about 600 lines now, about 30 per future test |
+| 2 | **Fixture packs** | 15 `make_*_pack.py` (1,354 lines); every new test also re-implements "load pack, edit world.json, write it back" (about 12 lines, 12 times last night). | `pack(base, patch)` where the patch is a JSON merge: `pack("lock", {"world.json": {"sound": {"theme": "soft"}}})`. | about 150 lines now, 12 per test |
+| 3 | **Shape checks in the validators** | `maplab.py` has 23 `*_errors` functions (2,721 lines) hand-writing "must be one of ...", "needs 1 to 60 characters", "names an id the pack does not declare". | One schema table (type, enum, range, required, reference-to-known-ids) rendered into the same plain sentences. The same table then gives: `vefr features --pack` detection (finding 5), generated reference docs, an exportable JSON Schema an agent can validate against while writing, and `vefr explain block album`. | an estimated third of `maplab.py`, plus the hand-typed shape tables in `rulesets.md` (777 lines) |
+| 4 | **Region files repeat the look** | In Cottage, 30% of the contract fields (legend, watch, water, colours) are identical across regions (945 of 3,154 bytes); changing the deep floor look meant editing four contracts by hand. | An act-level `defaults` block with per-region overrides, like a CSS cascade; `"legend": "dungeon"` names a reusable legend. | one edit instead of four; contracts shrink by about a third |
+| 5 | **Rule and sticker syntax** | (pass 1, finding B2/B3) nested objects for what people say as a sentence; instance ids where a family is meant. | `"when": "defeats any barrel-mimic"`, normalised to canonical JSON. | about 40% of rules and album text |
+| 6 | **Foreman briefs** | Five briefs written last night (V2, A1, S1, W1, I1) share about 80% of their words (constraints, "foreground only", "git add only", report shape) and two earlier ones omitted a fact the later ones needed ("edit parts, not packaged.html"). | A standing foreman contract file that briefs inherit; each brief is only objective, seams, acceptance. A `brief new` command fills it. | about 60% of every brief, and fewer omissions |
+| 7 | **Agent instructions** | 38 KB of `AGENTS.md`, policy and contributing text across the layers an agent loads at session start. | Not measured as redundant yet; the constitution already says never restate. Worth a one-hour read for duplicated sentences, and a check that fails when a rule appears in two files. | unknown |
+
+## What the shapes have in common
+Each one is a **sentence-sized source with a canonical expansion**: people and agents read and write the short form; the checked-in canonical form is what machines read; a lock catches drift; deleting the short form is the exit ramp. VEFR already has the proof (Blueprint: 508 values became 277, every record equal).
+
+## Proposed order (smallest risk first, tests first, foreman-built)
+1. Shared `play.mjs` and `pack()` (items 1 and 2): no contract change, pure test code, immediate savings, and they make every later slice cheaper.
+2. Foreman contract file (item 6): estate tooling, no VEFR contract.
+3. Schema table for the pack blocks that were added last (album, sound, walk sheets) as the first rows, then migrate validators one at a time (item 3), proving each with the existing tests (their sentences must not change).
+4. Region defaults (item 4) and the sentence forms (item 5): pack-contract changes, so they wait for Rylee's yes.
