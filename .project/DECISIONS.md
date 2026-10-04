@@ -661,3 +661,7 @@ Approved with the act-2 plan (CURRENT, 2026-10-02) and recorded here now. `{"com
 ## 2026-10-04: a size-and-language pass was asked for
 
 Rylee asked for a full optimization pass: smaller but more flexible, using language differently without costing human or agent readability. The measured result is `docs/research/size-and-language-pass.md`: 85% of the woven Cottage file is base64 pictures (about half is recoverable by baking WebP and storing identical pictures once), the pack's text is only 58 KB (the flexibility win is conventions and sentence forms that normalise to the canonical JSON, the Blueprint pattern), and the engine repeats its rule vocabulary in three files (one declarative vocabulary would end the lockstep). Nothing built; the order is in the document.
+
+## 2026-10-04: the player is built from parts
+
+`web/packaged.html` is now generated from `web/player/parts/` (56 files, order in `web/player/manifest.json`) by `scripts/build_player.py`; the generated file stays committed so every consumer, the wheel and the weaver are untouched. Chosen by Rylee ("split the packaged html ... in parallel" with the interface work). The proof of no behaviour change is byte-identical weave digests (`scripts/weave_digest.py`) plus `tests/test_player_build.py`. **Rule for agents and foremen: edit a part, run the build, commit both; never edit `web/packaged.html` by hand.** Parallel foremen can now work in different parts without colliding.
