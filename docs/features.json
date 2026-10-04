@@ -276,6 +276,20 @@
       "tests": [
         "tests/test_blueprint_conformance.py"
       ]
+    },
+    {
+      "id": "sound",
+      "name": "Small sounds",
+      "what": "A few soft synthesized sounds for the moments of play, off with one switch.",
+      "status": "built",
+      "detect": "none",
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
+      "design": null,
+      "tests": [
+        "tests/test_sound.py"
+      ]
     }
   ]
 }

@@ -192,6 +192,11 @@ def load_pack(pack_dir: Path) -> dict:
         # exactly as before, and the validator sees nothing new.
         if 'album' in config:
             unified['album'] = config['album']
+        # The optional sound block (docs/guides/rulesets.md), carried
+        # through ONLY when the pack declares it: a pack with no sound
+        # loads exactly as before, and the validator sees nothing new.
+        if 'sound' in config:
+            unified['sound'] = config['sound']
         # Every act, in sorted order, each with its own world.json
         # fields plus `region_geo` (that act's own maps + contracts).
         # The validator checks act 2 and later against their own
@@ -1003,6 +1008,31 @@ def saves_errors(w: dict) -> list[str]:
         errors.append('saves.rules must be "persist" or "reset"')
     if 'legacy' in saves and saves['legacy'] not in SAVES_LEGACY_MODES:
         errors.append('saves.legacy must be "fresh" or "from-log"')
+    return errors
+
+
+def sound_errors(w: dict) -> list[str]:
+    """Every problem with a pack's optional `sound` block (empty = good).
+
+    Sound is optional and additive: a pack that declares none gets no
+    output at all, exactly as before. A pack that declares one holds
+    exactly one key, `theme`, whose value is this slice's only theme;
+    every other shape is one plain sentence naming sound. See
+    `docs/guides/rulesets.md`.
+    """
+    if 'sound' not in w:
+        return []
+    sound = w.get('sound')
+    if not isinstance(sound, dict):
+        return ['sound must be an object such as {"theme": "soft"}']
+    errors: list[str] = []
+    for key in sound:
+        if key != 'theme':
+            errors.append(f"sound may only hold theme, not '{key}'")
+    if 'theme' not in sound:
+        errors.append('sound must hold a theme, such as {"theme": "soft"}')
+    elif sound['theme'] != 'soft':
+        errors.append('sound theme must be the string "soft"')
     return errors
 
 
@@ -1930,6 +1960,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # checked beside the other optional catalogs. A pack that declares
     # none gets nothing here.
     errors.extend(saves_errors(w))
+    # The pack's optional sound block (docs/guides/rulesets.md),
+    # checked beside the other optional catalogs. A pack that declares
+    # none gets nothing here.
+    errors.extend(sound_errors(w))
     town = w['town']
     m = town['map']
     legend = town['legend']
