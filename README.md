@@ -217,9 +217,12 @@ worlds/sample-world/ Emberfield, the example world (CC0 1.0, so it can
                      be shared freely)
 
 web/                 the studio workshop (app.html + studio.css + app.js),
-                     the woven player (packaged.html), studio art (web/art/),
+                     the woven player (packaged.html, generated from
+                     web/player/parts/ by scripts/build_player.py), studio art (web/art/),
                      the studio's own Library shelf (web/library/)
-tests/               pytest - pack contract, schemas, fallbacks
+tests/               pytest - pack contract, schemas, fallbacks; browser tests
+                     in tests/browser/; the player-build guard in
+                     tests/test_player_build.py
 ```
 
 The only world pack in this repo is the sample. Real games keep their
@@ -427,6 +430,12 @@ uv run --group test pytest -q
 uv run --group test norns validate --pack worlds/sample-world
 python3 scripts/check_public_surface.py
 ```
+
+`web/packaged.html` is generated. Edit a file in `web/player/parts/`, then run
+`uv run python scripts/build_player.py`; `tests/test_player_build.py` fails when
+it is stale, and `scripts/weave_digest.py` proves the build is byte-identical.
+Plans live in `docs/plans/`, decisions in `docs/adr/`, and what is next in
+`ROADMAP.md`.
 
 The last command is the **public-surface guard**. It fails the build
 if the repository contains private network addresses, real hostnames,
