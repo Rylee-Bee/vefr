@@ -187,6 +187,11 @@ def load_pack(pack_dir: Path) -> dict:
         # A pack with no `items` loads exactly as before.
         if 'items' in config:
             unified['items'] = config['items']
+        # The optional sticker album (design/album.md), carried through
+        # ONLY when the pack declares it: a pack with no album loads
+        # exactly as before, and the validator sees nothing new.
+        if 'album' in config:
+            unified['album'] = config['album']
         # Every act, in sorted order, each with its own world.json
         # fields plus `region_geo` (that act's own maps + contracts).
         # The validator checks act 2 and later against their own
@@ -1286,6 +1291,156 @@ def rules_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# The three sticker kinds (design/album.md): `open` shows its name from
+# the start, `riddle` hides behind its riddle until earned, `secret`
+# shows only ever as a count. The shine levels are looks only.
+ALBUM_KINDS = ('open', 'riddle', 'secret')
+ALBUM_SHINES = ('paper', 'foil', 'holo')
+ALBUM_NAME_LIMIT = 60
+
+
+def _album_name_errors(sid: str, where: str, val, known_set, noun: str) -> list[str]:
+    """One named thing inside a sticker's `when`, against the pack's ids."""
+    if not isinstance(val, str):
+        return [f"sticker '{sid}' {where} must be a {noun}"]
+    if val not in known_set:
+        return [f"sticker '{sid}' {where} names unknown {noun} '{val}'"]
+    return []
+
+
+def _album_when_errors(sid: str, when, known: dict) -> list[str]:
+    """The `when` of one sticker: exactly one rules event, right payload.
+
+    The same vocabulary and identity model as a rule's `when` - a
+    sticker may name only what the pack declares (`_rule_known_ids`) -
+    but the wording is the sticker author's, never the rule
+    validator's, because an album is not a rule and the author has no
+    rule to look at. Each problem is one plain sentence naming the
+    sticker id, and the unknown thing when there is one.
+    """
+    if not isinstance(when, dict):
+        return [f"sticker '{sid}' when must name one event"]
+    if len(when) != 1:
+        return [f"sticker '{sid}' when must name exactly one event"]
+    event = next(iter(when))
+    if event not in RULE_EVENTS:
+        return [f"sticker '{sid}' when names unknown event '{event}'"]
+    payload = when[event]
+    if not isinstance(payload, dict):
+        return [f"sticker '{sid}' when '{event}' carries an object payload"]
+    want = RULE_EVENT_KEYS[event]
+    errors: list[str] = []
+    for key in payload:
+        if key not in want:
+            errors.append(f"sticker '{sid}' when '{event}' has unknown key '{key}'")
+    for key in want:
+        if key not in payload:
+            errors.append(f"sticker '{sid}' when '{event}' needs key '{key}'")
+    if errors:
+        return errors
+    # The event's named thing is checked against the pack's own ids -
+    # the exact model a rule uses, so the two never drift.
+    if event == 'starts':
+        return []
+    if event == 'enters':
+        return _album_name_errors(sid, "when 'enters'", payload['place'],
+                                  known['places'], 'place')
+    if event == 'comes-near':
+        errors = _album_name_errors(sid, "when 'comes-near' who", payload['who'],
+                                    known['things'], 'thing')
+        distance = payload['distance']
+        if isinstance(distance, bool) or not isinstance(distance, int) \
+                or not 0 <= distance <= 9:
+            errors.append(f"sticker '{sid}' when 'comes-near' distance "
+                          "must be an integer 0 to 9")
+        return errors
+    if event == 'opens':
+        return _album_name_errors(sid, "when 'opens'", payload['what'],
+                                  known['things'], 'thing')
+    if event == 'picks-up':
+        return _album_name_errors(sid, "when 'picks-up'", payload['what'],
+                                  known['items'], 'item')
+    if event == 'uses-with':
+        errors = _album_name_errors(sid, "when 'uses-with' item", payload['item'],
+                                    known['items'], 'item')
+        errors += _album_name_errors(sid, "when 'uses-with' with", payload['with'],
+                                     known['things'], 'thing')
+        return errors
+    if event == 'defeats':
+        return _album_name_errors(sid, "when 'defeats'", payload['what'],
+                                  known['enemies'], 'enemy')
+    if event == 'buys':
+        return _album_name_errors(sid, "when 'buys'", payload['what'],
+                                  known['items'], 'item')
+    if event == 'sells':
+        return _album_name_errors(sid, "when 'sells'", payload['what'],
+                                  known['items'], 'item')
+    if event == 'reads':
+        return _album_name_errors(sid, "when 'reads'", payload['what'],
+                                  known['books'], 'book')
+    return _album_name_errors(sid, "when 'phase-changes'", payload['to'],
+                              known['phases'], 'phase')
+
+
+def album_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
+    """Every problem with a pack's optional sticker album (empty = good).
+
+    A pack that declares no `album` gets nothing here at all - exactly
+    as before, which is the load-bearing compatibility promise. A pack
+    that declares one gets every sticker checked at authoring time, one
+    plain sentence per problem, each naming the sticker id (or the
+    unknown thing). The `when` vocabulary and identity model are the
+    rules': `_rule_known_ids` is the one place that decides what a
+    sticker may name.
+    """
+    if 'album' not in w:
+        return []
+    album = w.get('album')
+    if not isinstance(album, list):
+        return ['album must be a list of stickers']
+    errors: list[str] = []
+    known = _rule_known_ids(w, pack_dir)
+    seen: set = set()
+    for index, entry in enumerate(album):
+        if not isinstance(entry, dict):
+            errors.append(f'the album entry at position {index} must be an object')
+            continue
+        sid = entry.get('id')
+        if not isinstance(sid, str) or not sid.strip():
+            errors.append(f'the album entry at position {index} '
+                          'needs a non-empty string id')
+            continue
+        if sid in seen:
+            errors.append(f"two stickers share the id '{sid}' - "
+                          'sticker ids must be unique')
+            continue
+        seen.add(sid)
+        name = entry.get('name')
+        if not isinstance(name, str) or not 1 <= len(name) <= ALBUM_NAME_LIMIT:
+            errors.append(f"sticker '{sid}' needs a name of 1 to "
+                          f'{ALBUM_NAME_LIMIT} characters')
+        kind = entry.get('kind')
+        if kind not in ALBUM_KINDS:
+            errors.append(f"sticker '{sid}' kind must be 'open', "
+                          "'riddle' or 'secret'")
+        riddle = entry.get('riddle')
+        if kind == 'riddle':
+            if not isinstance(riddle, str) or not riddle.strip():
+                errors.append(f"sticker '{sid}' is a riddle and needs "
+                              "a non-empty 'riddle'")
+        elif 'riddle' in entry:
+            errors.append(f"sticker '{sid}' has a riddle but is not "
+                          'a riddle sticker')
+        if 'shine' in entry and entry.get('shine') not in ALBUM_SHINES:
+            errors.append(f"sticker '{sid}' shine must be 'paper', "
+                          "'foil' or 'holo'")
+        if 'when' not in entry:
+            errors.append(f"sticker '{sid}' needs a 'when' event")
+        else:
+            errors.extend(_album_when_errors(sid, entry['when'], known))
+    return errors
+
+
 def _iter_conditions(node):
     """Yield every condition inside a rule's `if`, through `not` and `all-of`."""
     if isinstance(node, list):
@@ -1760,6 +1915,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # pack-authoring error, not a surprise in play. A pack that
     # declares none of the four keys gets nothing here.
     errors.extend(rules_errors(w, pack_dir))
+    # The pack's optional sticker album (design/album.md), checked
+    # beside the rules it names events from. A pack that declares no
+    # album gets nothing here.
+    errors.extend(album_errors(w, pack_dir))
     # The pack's optional skin (design/ui-skin.md), checked beside the
     # other optional catalogs. A pack that declares none gets nothing.
     errors.extend(skin_errors(w, pack_dir))

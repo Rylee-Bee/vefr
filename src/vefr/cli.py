@@ -1532,6 +1532,71 @@ def _player_rules(world: dict) -> dict:
     return out
 
 
+def _album_entry_bakes(entry) -> bool:
+    """Can this one sticker actually earn in the woven player?
+
+    Mirrors the album engine's reading: a usable id, name and kind, a
+    riddle for a riddle sticker, and a `when` in the same shape a rule
+    bakes with. An entry the engine could not read is dropped whole,
+    never baked half-broken. Pure shape logic: no clock, no model, no
+    filesystem, and no id here ever becomes a path.
+    """
+    from .maplab import ALBUM_KINDS, ALBUM_SHINES, RULE_EVENTS, RULE_EVENT_KEYS
+
+    if not isinstance(entry, dict):
+        return False
+    sid = entry.get('id')
+    if not isinstance(sid, str) or not sid.strip():
+        return False
+    name = entry.get('name')
+    if not isinstance(name, str) or not name:
+        return False
+    kind = entry.get('kind')
+    if kind not in ALBUM_KINDS:
+        return False
+    if kind == 'riddle':
+        riddle = entry.get('riddle')
+        if not isinstance(riddle, str) or not riddle.strip():
+            return False
+    if 'shine' in entry and entry.get('shine') not in ALBUM_SHINES:
+        return False
+    when = entry.get('when')
+    if not isinstance(when, dict) or len(when) != 1:
+        return False
+    event, payload = next(iter(when.items()))
+    if event not in RULE_EVENTS or not isinstance(payload, dict):
+        return False
+    if set(payload) != set(RULE_EVENT_KEYS[event]):
+        return False
+    for key, value in payload.items():
+        if key == 'distance':
+            # The engine matches "within N tiles"; anything outside the
+            # validator's 0..9 can never fire.
+            if (isinstance(value, bool) or not isinstance(value, int)
+                    or not 0 <= value <= 9):
+                return False
+        elif not isinstance(value, str) or not value:
+            return False
+    return True
+
+
+def _player_album(world: dict) -> list | None:
+    """The pack's optional sticker album, baked for the woven player.
+
+    Returns None when the pack declares no `album`: the placeholder
+    becomes the literal `null`, exactly the file every existing pack
+    weaves. An entry that could never earn is DROPPED, never baked
+    half-broken. No id is ever turned into a filesystem path - this
+    reads the already-loaded world dict and nothing else.
+    """
+    if 'album' not in world:
+        return None
+    album = world.get('album')
+    if not isinstance(album, list):
+        return None
+    return [entry for entry in album if _album_entry_bakes(entry)]
+
+
 def _player_chest(web_dir: Path) -> str:
     """The chest picture, inlined.
 
@@ -1948,6 +2013,13 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         '{{people_json}}',
         _json.dumps(rules_pack['people'] if rules_pack else None,
                     ensure_ascii=False))
+    # The pack's optional sticker album (design/album.md): the stickers
+    # to earn, baked beside the rule data. A pack that declares none
+    # bakes the literal `null` (every existing pack's file, unchanged);
+    # an entry that could never earn is dropped whole (_player_album).
+    out_html = out_html.replace('{{album_json}}',
+                                _json.dumps(_player_album(world),
+                                            ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',

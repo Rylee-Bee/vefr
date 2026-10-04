@@ -437,6 +437,7 @@
     <ul class="pm">
       <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
       <li><button type="button" data-panel="books">Books</button></li>
+      <li><button type="button" data-panel="album">Album</button></li>
       <li><button type="button" data-panel="next">Where next?</button></li>
       <li><button type="button" data-panel="why">Why did that happen?</button></li>
       <li><button type="button" data-panel="bag">Bag</button></li>
@@ -458,6 +459,13 @@
       <h2>Books</h2>
       <div id="book-list"></div>
       <p class="status" id="book-count"></p>
+    </div>
+    <div data-panel-body="album" id="album-panel" hidden>
+      <h2>Album</h2>
+      <p class="status">Stickers you have met and found. Nothing is ever lost.</p>
+      <div id="album-list"></div>
+      <p class="status" id="album-count"></p>
+      <p class="status" id="album-secrets"></p>
     </div>
     <div data-panel-body="next" hidden>
       <h2>Where next?</h2>
@@ -568,6 +576,10 @@ window.VEFR_RULES = {{rules_json}};
 window.VEFR_FLAGS = {{flags_json}};
 window.VEFR_CLAIMS = {{claims_json}};
 window.VEFR_PEOPLE = {{people_json}};
+// The pack's optional sticker album (design/album.md), baked beside
+// the rule data. The literal null when the pack declares no album, so
+// every existing pack weaves exactly as it did.
+window.VEFR_ALBUM_DEF = {{album_json}};
 // Where the game begins: {"region": "...", "at": [x, y]}. Empty when the
 // act does not say, and then the first region's own hero_start is used.
 window.VEFR_START = {{start_json}};
@@ -1021,6 +1033,170 @@ function bindLibrary() {
   document.getElementById('reader-next').addEventListener('click', function () { readerTurn(1); });
   document.getElementById('trade-close').addEventListener('click', closeTrade);
 }
+
+// ---- the album: stickers a world keeps, earned in play ----
+// A pack may bake a sticker album (window.VEFR_ALBUM_DEF): `open`
+// stickers show their name from the start, `riddle` stickers show only
+// their riddle until earned, and `secret` stickers only ever appear as
+// a count. Rewards only add: nothing is ever removed from the found
+// list. The pure engine lives between the "-- album start/end --"
+// markers, mirroring the rules block.
+var ALBUM_KEY = 'vefr-album-'
+  + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
+var ALBUM_DEF = Array.isArray(window.VEFR_ALBUM_DEF) ? window.VEFR_ALBUM_DEF : null;
+// The in-memory fallback when storage is blocked (a sandboxed iframe).
+var ALBUM_MEMORY = null;
+
+function albumFoundIds() {
+  if (ALBUM_MEMORY !== null) return ALBUM_MEMORY.slice();
+  var ids = [];
+  try {
+    var raw = JSON.parse(localStorage.getItem(ALBUM_KEY) || '[]');
+    if (Array.isArray(raw)) {
+      ids = raw.filter(function (id) { return typeof id === 'string'; });
+    }
+  } catch (e) { ids = []; }
+  return ids;
+}
+function albumRemember(ids) {
+  ALBUM_MEMORY = ids.slice();
+  try { localStorage.setItem(ALBUM_KEY, JSON.stringify(ids)); } catch (e) {}
+}
+// window.VEFR_ALBUM is the harness snapshot, and exists ONLY when the
+// pack has an album: a pack without one leaves it undefined.
+function albumSync() {
+  if (!ALBUM_DEF) return;
+  window.VEFR_ALBUM = { found: albumFoundIds(), total: ALBUM_DEF.length };
+}
+function albumName(id) {
+  var defs = ALBUM_DEF || [];
+  for (var i = 0; i < defs.length; i++) {
+    if (defs[i] && defs[i].id === id) return defs[i].name || id;
+  }
+  return id;
+}
+// One announce per sticker, ever: a reload that already has it found
+// earns nothing, so nothing is said again.
+function albumEarn(ids) {
+  var found = albumFoundIds();
+  var added = [];
+  ids.forEach(function (id) {
+    if (found.indexOf(id) === -1) { found.push(id); added.push(id); }
+  });
+  if (!added.length) return;
+  albumRemember(found);
+  albumSync();
+  renderAlbumPanel();
+  combatSay('You found a sticker: ' + albumName(added[0]) + '.');
+}
+// The one seam from every event into the album. Called at the very top
+// of fireRule, before its rules early return: a pack with an album but
+// no rules bakes VEFR_RULES = null, and that return would otherwise
+// skip the sticker a `starts` earns.
+function albumNotify(eventName, data) {
+  if (!ALBUM_DEF || !window.VEFR_ALBUM_ENGINE) return;
+  var earned = window.VEFR_ALBUM_ENGINE.earn(ALBUM_DEF, albumFoundIds(),
+                                             { name: eventName, data: data || {} });
+  if (earned.length) albumEarn(earned);
+}
+function renderAlbumPanel() {
+  var list = document.getElementById('album-list');
+  var count = document.getElementById('album-count');
+  var secretsLine = document.getElementById('album-secrets');
+  if (!list) return;
+  var defs = ALBUM_DEF || [];
+  var found = albumFoundIds();
+  list.textContent = '';
+  var secrets = 0;
+  defs.forEach(function (d) {
+    if (!d || typeof d.id !== 'string') return;
+    if (found.indexOf(d.id) !== -1) {
+      // Found: its name, plain.
+      var row = document.createElement('p');
+      row.className = 'status';
+      row.textContent = d.name || d.id;
+      list.appendChild(row);
+      return;
+    }
+    if (d.kind === 'riddle') {
+      // Unfound riddle: only its riddle, never its name.
+      var r = document.createElement('p');
+      r.className = 'status';
+      r.textContent = d.riddle || '';
+      list.appendChild(r);
+      return;
+    }
+    if (d.kind === 'secret') { secrets++; return; }   // only a count
+    // Unfound open: its name, marked not yet.
+    var o = document.createElement('p');
+    o.className = 'status';
+    o.textContent = (d.name || d.id) + ' - not yet';
+    list.appendChild(o);
+  });
+  if (count) count.textContent = found.length + ' of ' + defs.length + ' found';
+  if (secretsLine) {
+    secretsLine.textContent = secrets
+      ? secrets + (secrets === 1 ? ' secret' : ' secrets') : '';
+  }
+}
+albumSync();
+
+// -- album start --
+// The album engine: the baked defs, the ids already found, and one
+// event in, the newly earned ids out. Pure logic only - no DOM, no
+// clock, no randomness, no fetch, no network - so a harness can run
+// this exact text in a bare node vm with nothing but the built-ins.
+window.VEFR_ALBUM_ENGINE = (function () {
+  function isObj(v) {
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
+  }
+
+  // Does this sticker's `when` describe the event? The same single
+  // event vocabulary the validator checks; a `distance` reads as
+  // "within N tiles", the way a rule's does.
+  function whenMatches(when, name, data) {
+    if (!isObj(when)) return false;
+    var keys = Object.keys(when);
+    if (keys.length !== 1 || keys[0] !== name) return false;
+    var want = when[keys[0]];
+    if (!isObj(want)) return false;
+    var wantKeys = Object.keys(want);
+    for (var i = 0; i < wantKeys.length; i++) {
+      var k = wantKeys[i];
+      if (k === 'distance') {
+        if (typeof want[k] !== 'number' || typeof data[k] !== 'number'
+            || data[k] > want[k]) return false;
+      } else if (data[k] !== want[k]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // earn(defs, found, event) -> the ids newly earned, in declaration
+  // order. It never mutates the arguments: the caller owns the record
+  // and adds only what comes back.
+  function earn(defs, found, event) {
+    var out = [];
+    if (!Array.isArray(defs) || !isObj(event)) return out;
+    var have = {};
+    (Array.isArray(found) ? found : []).forEach(function (id) {
+      if (typeof id === 'string') have[id] = true;
+    });
+    var name = event.name;
+    var data = isObj(event.data) ? event.data : {};
+    for (var i = 0; i < defs.length; i++) {
+      var d = defs[i];
+      if (!isObj(d) || typeof d.id !== 'string' || !d.id) continue;
+      if (have[d.id]) continue;
+      if (whenMatches(d.when, name, data)) out.push(d.id);
+    }
+    return out;
+  }
+
+  return { earn: earn };
+})();
+// -- album end --
 
 // ---- the bag: what the hero is carrying (loot + reward, first slice) ----
 // A kill leaves its drop on the floor (see setupTown); walking onto it
@@ -1671,6 +1847,12 @@ function bindMenu() {
     var modelItem = menu.querySelector('[data-panel="model"]');
     if (modelItem) modelItem.closest('li').remove();
   }
+  // The Album button exists only when the pack declares an album
+  // (design/album.md): a pack without one has no shelf to show.
+  if (!ALBUM_DEF) {
+    var albumItem = menu.querySelector('[data-panel="album"]');
+    if (albumItem) albumItem.closest('li').remove();
+  }
   function showPanel(name) {
     menu.querySelectorAll('[data-panel]').forEach(function (b) {
       b.setAttribute('aria-current', b.dataset.panel === name ? 'true' : 'false');
@@ -1699,6 +1881,7 @@ function bindMenu() {
       // from real records (the point-to hints; the fired rules).
       if (b.dataset.panel === 'next') renderNextPanel();
       if (b.dataset.panel === 'why') renderWhyPanel();
+      if (b.dataset.panel === 'album') renderAlbumPanel();
     });
   });
   // Start over: one confirmation, safe by default (focus lands on
@@ -2400,6 +2583,10 @@ function whisperFromFragments(seedOverride) {
 // every existing pack's path. Deterministic: no clock, no randomness,
 // no model call lives here.
 function fireRule(eventName, data) {
+  // The album checks every event first, before the rules early return:
+  // a pack with an album but no rules bakes VEFR_RULES = null, and the
+  // return below would otherwise skip the sticker its `starts` earns.
+  albumNotify(eventName, data);
   var engine = window.VEFR_RULES_ENGINE;
   var rules = window.VEFR_RULES;
   if (!engine || !Array.isArray(rules) || !rules.length) return;
