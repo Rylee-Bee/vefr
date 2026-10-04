@@ -74,7 +74,7 @@ Columns: id, repo, files touched, frozen tests, acceptance, who builds it, time 
 | **B1** things | vefr | `blueprint.py` (format 2), fixtures `v2/` | `tests/test_blueprint_things.py` | the test, plus the trial | foreman | 90 min | no |
 | **B4** stickers from the cast | vefr | `blueprint.py` or album expansion | `tests/test_album_from_cast.py` | the test, plus the album tests | foreman | 60 min | no |
 
-Format numbering: B2 lands before B1, so the order in the files is "format 2 = places, format 3 = things". The table names the formats by content; whichever lands first takes 2.
+Format numbering: B2 lands before B1, but the files number them the other way round: places is format 3, and format 2 is reserved for things. A format-3 file is complete on its own; it never waits for format 2.
 
 ## 3. Collisions and sequencing
 

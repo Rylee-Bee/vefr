@@ -1,0 +1,2 @@
+locked_text
+/regions/act-1~1hall/places/0/locked_text

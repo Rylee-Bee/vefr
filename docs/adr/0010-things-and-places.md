@@ -15,7 +15,7 @@ Adding one monster, one piece of gear, one door or one region touches 8, 6, 6 an
 Extend that one pattern, in small slices, never adding a parallel system:
 
 - **B0, sprites by name.** A picture file `sprites/<key>.*` is the sprite named `<key>`; a key is baked when `player.sprites` lists it or when something references it (an item, an enemy, a speaker, `hero`). Unused files are not baked. No Blueprint needed; `tests/test_sprites_by_name.py`.
-- **B2, places (first, format 2).** See below.
+- **B2, places (first, format 3).** See below. Format `1` is enemies, format `3` is places, and format `2` is reserved for things (B1) and does not exist yet. A `"blueprint": 3` file is complete on its own and never waits for format 2. A format-1 pack stays unchanged byte for byte.
 - **B1, things (after places).** `blueprint.json` gains `things`: gear and items as one record each (name, slot, mods, value, `from` = the carrier instance). Expansion writes the `items` entry and the carrier's `drops`; the sprite is found by name. Owned keys follow ADR 0008's stale rule.
 - **B2, places.** Per region, `places`: doors, stairs, chests, signs as `{kind, at, to, needs, text}`. Expansion writes the legend entry, the transition, the poi and its text **and the glyph into `map.md`** (`map.md` is a generated surface at those tiles; the lock records their hashes).
 - **B3, placement sentences.** `at` may be a short sentence instead of coordinates, resolved once by `vefr normalize` and then locked, so a regenerated floor keeps its guardian and its door. The whole language is six words, ANDed, each reading as English left to right:
