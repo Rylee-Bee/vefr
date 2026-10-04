@@ -694,3 +694,14 @@ Rylee asked for a full optimization pass: smaller but more flexible, using langu
 - **The public-surface guard caught a machine path in a new test** (a hard-coded path to the game's pack). Trials against a real game pack are opt-in through `VEFR_TRIAL_PACK`, so no private path lives in this public repo.
 - **A second-model review can read a stale branch.** The B2 reviewer flagged doc examples that a later commit had already fixed; check a finding against the current head before acting on it.
 - **Draft ADRs go through the public-surface lens too:** an Opus draft named a game character; the engine ADR now says "the final boss".
+
+## 2026-10-04 (evening): the worker machine lost its home folder; what changed
+
+**What happened.** About 4 PM a process running as the owner's own account on the machine that hosts the AI workers deleted nearly everything in that account's home folder: checkouts, worker clones, service data and the keys kept there. The only survivors were files that account was not allowed to delete. The cause is not proven; several agents were running at the time and their logs went with the folder. Nothing on GitHub was lost, and no VEFR code was lost beyond two in-flight slices (E7, and the first slice of the worker sandbox), which were re-run the same evening.
+
+**What changed, and why it is a VEFR lesson** (building Cottage is how VEFR gets built, and the tooling is part of that):
+- **A container that shares the home folder is not isolation.** Workers now run as a separate account that cannot read the owner's files, inside a toolbox container, behind hourly read-only snapshots of every home folder. Until the per-worker sandbox lands, no high-value secret lives in the worker account.
+- **Nothing important lives only on the worker machine.** Services and their data moved to the always-on servers, with nightly copies to network storage.
+- **Commit every passing step.** Foreman plans now say so, after a timeout earlier the same day left a finished slice scattered across four uncommitted clones.
+- **One harness.** Every worker tier now runs through Claude Code with the provider swapped in (cheaper models keep their reasoning across tool calls there); opencode remains a fallback.
+- **The rule for slices that touch frozen tests still holds:** B1 stopped and asked before changing the four artifacts that said "format 2 does not exist", and the owner said yes.
