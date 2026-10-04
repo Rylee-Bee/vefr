@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """import_art.py: bring Rylee's generated art into web/art/ as small, credited game-size files.
 
-  uv run --with pillow python tools/art/import_art.py [--media ../media_files] [--out web/art]
+  uv run --with pillow python tools/art/import_art.py [--media DIR] [--out web/art]
 
-The originals (1024 px and up, 600 MB in all) stay in the shared media library
-(`media_files/designs/vefr/art/`), which is the source of truth. This tool writes
+The originals (1024 px and up, 600 MB in all) live in the Media Archive. By
+default this tool reads them from an archive export (`media export --project
+vefr`), resolved via `VEFR_ART_MEDIA` or `MEDIA_ARCHIVE_HOME/exports/vefr`,
+falling back to the legacy shared `media_files/designs/vefr/art/` until the
+migration retires that path. This tool writes
 game-size WebP derivatives into `web/art/` and records every file in
 `web/art/MANIFEST.json`: where it came from, how big it is, and who made it. A file's credit
 says "Wan 2.7 Image Pro" only when a Wan record in the source folder names that file;
@@ -17,6 +20,7 @@ credit for every file under web/art/.
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -39,6 +43,30 @@ THEMES = "themes"
 
 def edge_for_theme_file(name: str) -> int:
     return 96 if name.startswith("tile-") else 128
+
+
+def resolve_media(root: Path) -> Path:
+    """Where the source art lives.
+
+    Preferred: a Media Archive export (`media export --project vefr`), so this
+    tool stops depending on the shared, mutable media library. Set
+    ``VEFR_ART_MEDIA`` to the export directory, or ``MEDIA_ARCHIVE_HOME`` and we
+    use ``<that>/exports/vefr``. Falls back to the legacy sibling
+    ``media_files`` until the archive migration retires that path.
+    """
+    candidates: list[Path] = []
+    if os.environ.get("VEFR_ART_MEDIA"):
+        candidates.append(Path(os.environ["VEFR_ART_MEDIA"]).expanduser())
+    if os.environ.get("MEDIA_ARCHIVE_HOME"):
+        candidates.append(Path(os.environ["MEDIA_ARCHIVE_HOME"]).expanduser()
+                         / "exports" / "vefr")
+    # Archive is a sibling of the estate root (`<code>/media-archive`), i.e. two
+    # levels up from this repo. Discovered, not hard-coded to a home dir.
+    candidates.append(root.parent.parent / "media-archive" / "exports" / "vefr")
+    for candidate in candidates:
+        if (candidate / SRC_ROOT).is_dir():
+            return candidate.resolve()
+    return root.parent / "media_files"
 
 
 def wan_models(src_dir: Path) -> dict:
@@ -77,7 +105,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default="web/art")
     a = ap.parse_args(argv)
     root = Path(__file__).resolve().parents[2]
-    media = Path(a.media).resolve() if a.media else (root.parent / "media_files")
+    media = Path(a.media).resolve() if a.media else resolve_media(root)
     out = (root / a.out) if not Path(a.out).is_absolute() else Path(a.out)
     base = media / SRC_ROOT
     if not base.is_dir():
