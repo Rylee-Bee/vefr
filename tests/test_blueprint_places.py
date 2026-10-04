@@ -81,8 +81,10 @@ INVALID = sorted(p for p in (V3 / "invalid").iterdir() if p.is_dir())
 # passing the same threshold Blueprint did). It has no `blueprint.json`
 # today, so this freezes "a pack with no Blueprint is completely
 # unchanged".
-COTTAGE = Path("/home/rylee/code/Rylee-Bee/cottage-of-the-breeze"
-               "/worlds/cottage-of-the-breeze")
+import os
+# A real game pack to trial against, named by the environment so no
+# machine path lives in this public repo. Unset means the trial skips.
+COTTAGE = Path(os.environ.get("VEFR_TRIAL_PACK", "/nonexistent-trial-pack"))
 
 
 # ------------------------------------------------------------------ the map
@@ -750,6 +752,6 @@ def test_deleting_the_blueprint_leaves_a_working_pack(tmp_path):
 # --------------------------------------------------------- the Cottage trial
 def test_the_cottage_trial_still_checks_clean():
     if not COTTAGE.is_dir():
-        pytest.skip(f"{COTTAGE} is not on this machine")
+        pytest.skip(f"{COTTAGE} is not set or not on this machine (set VEFR_TRIAL_PACK)")
     rc, out = vefr("check", "--pack", COTTAGE)
     assert rc == 0, out
