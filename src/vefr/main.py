@@ -1793,7 +1793,7 @@ def builder_character_place(payload: dict):
 
     # The tile checks below run against the room the person is going INTO: its map, its legend, its
     # arrival tile and the people who already stand in it. (They used to read the home room for every
-    # region, so a tile was judged against the wrong map; found placing a cat in Cottage's cottage.)
+    # region, so a tile was judged against the wrong map; found placing a cat in a pack's home room.)
     wr = w
     if has_acts:
         home = w.get("_region") or regions[0]

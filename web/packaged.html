@@ -734,6 +734,9 @@ var store = {
   setJSON: function (key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
   },
+  remove: function (key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+  },
   raw: function () {
     try { return localStorage; } catch (e) { return null; }
   }
@@ -3807,21 +3810,37 @@ function setupTown() {
     return !((town.legend[town.map[y][x]] || {}).solid);
   }
   // Steps from (x, y) to every walkable tile. `dist` has the source at
-  // 0 and no entry at all for a tile the flood never reached.
+  // 0 and no entry at all for a tile the flood never reached. The flood
+  // stops `floodLimit` tiles (Manhattan) from its own source: the
+  // monster turn sets that once, before any monster acts, to a little
+  // past the farthest wake, so a turn never floods the far end of the
+  // floor. It rides in a variable rather than an argument so the
+  // signature stays `distMap(x, y)`; 0 (no monster turn has set it)
+  // means unbounded. The turn's harness counter is fed from here too -
+  // enemyTurn resets it per turn, so it always shows the last turn.
+  var floodLimit = 0;
   function distMap(x, y) {
     var dist = {};
     var start = x + ',' + y;
     dist[start] = 0;
     var queue = [[x, y]];
+    var stats = window.VEFR_FLOOD_STATS;
+    if (stats) { stats.floods++; stats.tiles++; }
     for (var qi = 0; qi < queue.length; qi++) {
       var cx = queue[qi][0], cy = queue[qi][1];
       for (var i = 0; i < DIRS.length; i++) {
         var nx = cx + DIRS[i][0], ny = cy + DIRS[i][1];
+        var away = manhattan(nx, ny, x, y);
+        if (floodLimit && away > floodLimit) continue;
         var nk = nx + ',' + ny;
         if (dist[nk] !== undefined) continue;
         if (!floorOpen(nx, ny)) continue;
         dist[nk] = dist[cx + ',' + cy] + 1;
         queue.push([nx, ny]);
+        if (stats) {
+          stats.tiles++;
+          if (away > stats.maxSpan) stats.maxSpan = away;
+        }
       }
     }
     return dist;
@@ -3979,6 +3998,17 @@ function setupTown() {
     if (HERO_HP <= 0) { cozyDeath(); return true; }
     return false;
   }
+  // How near the hero a monster wakes: its own sight when that runs
+  // past ten, ten otherwise. Asleep costs a turn nothing at all -
+  // no flood, no step, no attack.
+  function wakeRadius(e) { return Math.max(10, e.sight || 0); }
+  function asleep(e) {
+    return manhattan(e.at[0], e.at[1], hero[0], hero[1]) > wakeRadius(e);
+  }
+  // A monster's group wakes with it. Nothing carries a group id
+  // yet, so this spreads the wake to nobody; it is the seam for
+  // when one does.
+  function wakeGroup(e, awake) { return awake; }
   // One enemy's turn. Next to the hero -> hit them. Badly hurt with
   // the hero in sight -> step away down the map. In sight -> step one
   // tile closer, the short way round the floor rather than into a wall.
@@ -3996,14 +4026,36 @@ function setupTown() {
     if (!ally) return false;
     return stepAlong(e, distances(maps, ally.at[0], ally.at[1]), 1);
   }
-  // Every living enemy acts once, in order, against the same shared
-  // distance maps. The hero's death ends the turn early (and wakes
-  // them elsewhere).
+  // Every living enemy takes its turn in order, against the same
+  // shared distance maps; an asleep one costs nothing and is skipped.
+  // The hero's death ends the turn early (and wakes them elsewhere).
   function enemyTurn() {
+    // The harness reads this once, at the end of a run, so it is
+    // reset per turn, not per flood: it always shows the last turn.
+    window.VEFR_FLOOD_STATS = { floods: 0, tiles: 0, maxSpan: 0 };
     var roster = enemies.slice();
     var maps = turnMaps();
+    // The flood only has to reach a little past the farthest wake:
+    // every awake monster stands within its own wake radius of the
+    // hero, and the flood reaches wakeRadius + 4 tiles from wherever
+    // it starts, so no step an awake monster could take before is
+    // lost. Known limit: a monster whose walk the long way round runs
+    // farther than this can now hold still where it used to keep
+    // coming.
+    var far = 10;
+    for (var j = 0; j < roster.length; j++) {
+      if (roster[j].alive) far = Math.max(far, wakeRadius(roster[j]));
+    }
+    floodLimit = far + 4;
+    // Who acts: awake by the wake radius, asked through the group
+    // seam - a later slice adds group ids in wakeGroup alone.
+    var awake = [];
+    for (var k = 0; k < roster.length; k++) {
+      if (!roster[k].alive) continue;
+      awake[k] = wakeGroup(roster[k], !asleep(roster[k]));
+    }
     for (var i = 0; i < roster.length; i++) {
-      if (!roster[i].alive) continue;
+      if (!roster[i].alive || !awake[i]) continue;
       if (enemyAct(roster[i], maps)) {
         flushGrowth(); draw(); combatSnapshot(); return;
       }
@@ -4697,7 +4749,11 @@ function setupTown() {
   // ---- fog of war ----
   // A region may declare `fog`: only what the hero has seen is drawn, a
   // radius around them is lit, and the rest of the memory is dimmed.
-  // Explored tiles are remembered per region, per world.
+  // Explored tiles are remembered per region, per world, as a bitset:
+  // one bit per tile of the region map, row-major, most significant bit
+  // first in each byte, base64 text under `vefr-fog2-...`. An old JSON
+  // array of "x,y" strings under `vefr-fog-...` converts on load - the
+  // bitset written, the old key dropped - so no tile is lost in the move.
   // A player preference on top of the pack's choice: a region may declare
   // fog, and the player may still turn the dark off for themselves. Kept
   // per world, beside the explored tiles.
@@ -4719,13 +4775,61 @@ function setupTown() {
     var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
     return 'vefr-fog-' + w + '-' + regionName;
   }
+  function fog2Key() {
+    var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
+    return 'vefr-fog2-' + w + '-' + regionName;
+  }
+  // One bit per tile: index = y*width + x over the region map, most
+  // significant bit first in each byte, then base64. In-memory stays
+  // keyed "x,y" - only the saved form is packed.
+  function encodeFog() {
+    var w = town.map[0].length, h = town.map.length;
+    var bits = new Uint8Array((w * h + 7) >> 3);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        if (!explored[x + ',' + y]) continue;
+        var i = y * w + x;
+        bits[i >> 3] |= 1 << (7 - (i & 7));
+      }
+    }
+    var s = '';
+    for (var b = 0; b < bits.length; b++) s += String.fromCharCode(bits[b]);
+    return btoa(s);
+  }
+  function decodeFog(value) {
+    var w = town.map[0].length, h = town.map.length;
+    var raw = atob(value);
+    for (var i = 0; i < w * h; i++) {
+      if (!(raw.charCodeAt(i >> 3) & (1 << (7 - (i & 7))))) continue;
+      explored[(i % w) + ',' + ((i / w) | 0)] = 1;
+    }
+  }
   function loadFog() {
     explored = {};
-    var a = store.getJSON(fogKey(), []);
-    (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
+    var packed = store.get(fog2Key());
+    if (packed) {
+      try { decodeFog(packed); } catch (e) { /* unreadable memory: start dark */ }
+      return;
+    }
+    // The old era's JSON array: read it either way, because fog off may
+    // not write but must not forget. The move to the bitset happens on
+    // the first save, which also drops the old key.
+    var old = store.getJSON(fogKey(), null);
+    if (!Array.isArray(old)) return;
+    old.forEach(function (k) { explored[k] = 1; });
+    if (fogOn) saveFog();
   }
   function saveFog() {
-    store.setJSON(fogKey(), Object.keys(explored));
+    if (!fogOn) return false;   // fog off, or no fog here: write nothing
+    var value;
+    // Encode first: a failure must leave the store untouched.
+    try { value = encodeFog(); } catch (e) { return false; }
+    store.set(fog2Key(), value);
+    // Drop the old array only once the bitset is really there: store.set
+    // swallows a failed write (quota, sandbox), and then the old key is
+    // all the memory there is.
+    if (store.get(fog2Key()) === value) store.remove(fogKey());
+    return true;
   }
   function litNow() {
     var out = {};

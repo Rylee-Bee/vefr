@@ -2829,6 +2829,17 @@ def cmd_art_credits(args) -> int:
     return EXIT_OK
 
 
+def cmd_art_kit(args) -> int:
+    """Report a skin kit's completeness; exit 1 on a missing piece.
+
+    --kit is the manifest (art/skin-kit.json), --src the directory
+    holding its pictures. The loader prints one line per piece and
+    the total; a bad manifest is one plain sentence on stderr.
+    """
+    from . import skin_kit
+    return skin_kit.run(Path(args.kit).expanduser(), Path(args.src).expanduser())
+
+
 # --------------------------------------------------------- shared wiring
 # The verbs vefr and ratatoskr spell the same way: one wiring, one set
 # of flags, one set_defaults - both front doors parse identically.
@@ -4771,9 +4782,11 @@ def vefr_main() -> int:
     skp.set_defaults(fn=cmd_vefr_skipa)
 
     art = sub.add_parser(
-        'art', help='check a pack\'s art ledger and print its credits',
+        'art', help='check a pack\'s art ledger, print its credits, or '
+                    'report its skin kit',
         description='work with a pack\'s art/ledger (ADR 0011): validate '
-                    'each round file, or print generated credits',
+                    'each round file, print generated credits, or report '
+                    'the skin kit manifest',
         epilog='see: docs/adr/0011-art-ledger.md',
     )
     art_sub = art.add_subparsers(dest='art_verb', required=True)
@@ -4797,6 +4810,18 @@ def vefr_main() -> int:
     art_credits.add_argument('--ledger', required=True,
                              help='the art ledger directory (art/ledger)')
     art_credits.set_defaults(fn=cmd_art_credits)
+
+    art_kit = art_sub.add_parser(
+        'kit', help='report a skin kit manifest\'s completeness',
+        description='print one line per skin kit piece (drawn, derived or '
+                    'missing) and the total, exiting 1 when a required '
+                    'piece is missing',
+    )
+    art_kit.add_argument('--kit', required=True,
+                         help='the skin kit manifest (art/skin-kit.json)')
+    art_kit.add_argument('--src', required=True,
+                         help='the directory holding the kit\'s pictures')
+    art_kit.set_defaults(fn=cmd_art_kit)
 
     # Escape hatches: the old CLIs, run verbatim. add_help=False keeps
     # -h for the old CLI to answer; parse_known_args below captures the
