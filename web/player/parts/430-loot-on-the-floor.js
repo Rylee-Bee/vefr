@@ -102,7 +102,7 @@
   // How near the hero a monster wakes: its own sight when that runs
   // past ten, ten otherwise. Asleep costs a turn nothing at all -
   // no flood, no step, no attack.
-  function wakeRadius(e) { return Math.max(10, e.sight); }
+  function wakeRadius(e) { return Math.max(10, e.sight || 0); }
   function asleep(e) {
     return manhattan(e.at[0], e.at[1], hero[0], hero[1]) > wakeRadius(e);
   }

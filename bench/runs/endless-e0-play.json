@@ -41,7 +41,7 @@
         },
         "ms_throttled4x": {
           "p50": 0.07,
-          "p95": 0.12
+          "p95": 0.11
         },
         "python_js_checksum_mismatches": 0
       },
@@ -49,12 +49,12 @@
         "seeds": 200,
         "sample": "mean of 10 generations of one seed",
         "ms": {
-          "p50": 0.02,
+          "p50": 0.03,
           "p95": 0.03
         },
         "ms_throttled4x": {
           "p50": 0.1,
-          "p95": 0.15
+          "p95": 0.14
         },
         "python_js_checksum_mismatches": 0
       },
@@ -66,8 +66,8 @@
           "p95": 0.06
         },
         "ms_throttled4x": {
-          "p50": 0.2,
-          "p95": 0.25
+          "p50": 0.19,
+          "p95": 0.24
         },
         "python_js_checksum_mismatches": 0
       },
@@ -79,10 +79,228 @@
           "p95": 0.1
         },
         "ms_throttled4x": {
-          "p50": 0.37,
-          "p95": 0.42
+          "p50": 0.36,
+          "p95": 0.43
         },
         "python_js_checksum_mismatches": 0
+      }
+    },
+    "monster_turn": {
+      "48x32x16:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 1.3,
+          "p95": 1.6
+        },
+        "flood_ms": {
+          "p50": 0.1,
+          "p95": 0.2
+        },
+        "turn_ms_throttled4x": {
+          "p50": 5.6,
+          "p95": 6.5
+        }
+      },
+      "48x32x16:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 3.6,
+          "p95": 4.2
+        },
+        "flood_ms": {
+          "p50": 0.1,
+          "p95": 0.2
+        },
+        "turn_ms_throttled4x": {
+          "p50": 15.2,
+          "p95": 16.2
+        }
+      },
+      "48x32x16:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 6.6,
+          "p95": 6.9
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 27.8,
+          "p95": 28.7
+        }
+      },
+      "64x48x18:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 2.2,
+          "p95": 2.3
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 9.4,
+          "p95": 10.2
+        }
+      },
+      "64x48x18:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 5.7,
+          "p95": 7.9
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 23.6,
+          "p95": 24.5
+        }
+      },
+      "64x48x18:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 10.8,
+          "p95": 11.2
+        },
+        "flood_ms": {
+          "p50": 0.2,
+          "p95": 0.3
+        },
+        "turn_ms_throttled4x": {
+          "p50": 44.3,
+          "p95": 45.4
+        }
+      },
+      "96x64x24:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 4.3,
+          "p95": 4.7
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 18,
+          "p95": 19.5
+        }
+      },
+      "96x64x24:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 11,
+          "p95": 12.1
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 44.3,
+          "p95": 45.3
+        }
+      },
+      "96x64x24:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 19.9,
+          "p95": 20.2
+        },
+        "flood_ms": {
+          "p50": 0.4,
+          "p95": 0.5
+        },
+        "turn_ms_throttled4x": {
+          "p50": 81.8,
+          "p95": 84.9
+        }
+      },
+      "128x96x32:10": {
+        "monsters": 10,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 10,
+        "floods_per_turn": 10,
+        "turn_ms": {
+          "p50": 7.3,
+          "p95": 7.4
+        },
+        "flood_ms": {
+          "p50": 0.7,
+          "p95": 0.8
+        },
+        "turn_ms_throttled4x": {
+          "p50": 29.7,
+          "p95": 31.1
+        }
+      },
+      "128x96x32:25": {
+        "monsters": 25,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 25,
+        "floods_per_turn": 25,
+        "turn_ms": {
+          "p50": 18.3,
+          "p95": 18.7
+        },
+        "flood_ms": {
+          "p50": 0.8,
+          "p95": 0.9
+        },
+        "turn_ms_throttled4x": {
+          "p50": 73.6,
+          "p95": 82.9
+        }
+      },
+      "128x96x32:45": {
+        "monsters": 45,
+        "placement": "first walkable tiles, row-major, seed bench-0; reset before every sample",
+        "awake": 45,
+        "floods_per_turn": 45,
+        "turn_ms": {
+          "p50": 33.3,
+          "p95": 34
+        },
+        "flood_ms": {
+          "p50": 0.8,
+          "p95": 1
+        },
+        "turn_ms_throttled4x": {
+          "p50": 133.8,
+          "p95": 136.2
+        }
       }
     },
     "play": {
@@ -106,24 +324,24 @@
             "turns": 73,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.7
+              "p95": 16.8
             },
-            "task_ms_per_frame": 2.196,
-            "task_ms_per_turn": 10.797,
-            "script_ms_per_frame": 0.617
+            "task_ms_per_frame": 2.16,
+            "task_ms_per_turn": 10.622,
+            "script_ms_per_frame": 0.611
           },
           "throttled4x": {
             "label": "throttled4x",
             "seconds": 6,
-            "frames": 348,
+            "frames": 346,
             "turns": 69,
             "interval_ms": {
               "p50": 16.7,
               "p95": 16.8
             },
-            "task_ms_per_frame": 14.266,
-            "task_ms_per_turn": 71.948,
-            "script_ms_per_frame": 3.149
+            "task_ms_per_frame": 14.045,
+            "task_ms_per_turn": 70.429,
+            "script_ms_per_frame": 3.067
           }
         }
       },
@@ -147,11 +365,11 @@
             "turns": 73,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.8
+              "p95": 16.7
             },
-            "task_ms_per_frame": 2.269,
-            "task_ms_per_turn": 11.16,
-            "script_ms_per_frame": 0.658
+            "task_ms_per_frame": 2.297,
+            "task_ms_per_turn": 11.297,
+            "script_ms_per_frame": 0.679
           },
           "throttled4x": {
             "label": "throttled4x",
@@ -160,11 +378,11 @@
             "turns": 70,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.8
+              "p95": 16.7
             },
-            "task_ms_per_frame": 11.847,
-            "task_ms_per_turn": 60.759,
-            "script_ms_per_frame": 2.737
+            "task_ms_per_frame": 11.624,
+            "task_ms_per_turn": 59.615,
+            "script_ms_per_frame": 2.786
           }
         }
       },
@@ -190,22 +408,22 @@
               "p50": 16.7,
               "p95": 16.7
             },
-            "task_ms_per_frame": 2.183,
-            "task_ms_per_turn": 10.735,
-            "script_ms_per_frame": 0.673
+            "task_ms_per_frame": 2.152,
+            "task_ms_per_turn": 10.581,
+            "script_ms_per_frame": 0.672
           },
           "throttled4x": {
             "label": "throttled4x",
             "seconds": 6,
-            "frames": 360,
+            "frames": 359,
             "turns": 70,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.7
+              "p95": 16.8
             },
-            "task_ms_per_frame": 8.192,
-            "task_ms_per_turn": 42.132,
-            "script_ms_per_frame": 2.249
+            "task_ms_per_frame": 7.914,
+            "task_ms_per_turn": 40.586,
+            "script_ms_per_frame": 2.194
           }
         }
       },
@@ -229,24 +447,24 @@
             "turns": 73,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.8
+              "p95": 16.7
             },
-            "task_ms_per_frame": 2.049,
-            "task_ms_per_turn": 10.076,
-            "script_ms_per_frame": 0.748
+            "task_ms_per_frame": 1.995,
+            "task_ms_per_turn": 9.809,
+            "script_ms_per_frame": 0.733
           },
           "throttled4x": {
             "label": "throttled4x",
             "seconds": 6,
-            "frames": 360,
+            "frames": 359,
             "turns": 68,
             "interval_ms": {
               "p50": 16.7,
-              "p95": 16.8
+              "p95": 16.7
             },
-            "task_ms_per_frame": 9.184,
-            "task_ms_per_turn": 48.62,
-            "script_ms_per_frame": 2.7
+            "task_ms_per_frame": 8.959,
+            "task_ms_per_turn": 47.296,
+            "script_ms_per_frame": 2.687
           }
         }
       }
