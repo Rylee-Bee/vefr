@@ -25,6 +25,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
+from . import shapes
 from .paths import world_name as _default_world_name
 from .world import VALID_FLOORS, VALID_TONES
 from .world import creed_from as _creed_from
@@ -980,10 +981,6 @@ def growth_errors(w: dict) -> list[str]:
     return errors
 
 
-SAVES_RULE_MODES = ('persist', 'reset')
-SAVES_LEGACY_MODES = ('fresh', 'from-log')
-
-
 def saves_errors(w: dict) -> list[str]:
     """Every problem with a pack's optional `saves` block (empty = good).
 
@@ -996,19 +993,7 @@ def saves_errors(w: dict) -> list[str]:
     """
     if 'saves' not in w:
         return []
-    saves = w.get('saves')
-    if not isinstance(saves, dict):
-        return ['saves must be an object such as {"rules": "persist"}']
-    errors: list[str] = []
-    for key in saves:
-        if key not in ('rules', 'legacy'):
-            errors.append(f"saves has an unknown key '{key}'; "
-                          'it may only hold rules and legacy')
-    if 'rules' in saves and saves['rules'] not in SAVES_RULE_MODES:
-        errors.append('saves.rules must be "persist" or "reset"')
-    if 'legacy' in saves and saves['legacy'] not in SAVES_LEGACY_MODES:
-        errors.append('saves.legacy must be "fresh" or "from-log"')
-    return errors
+    return [p.sentence for p in shapes.check(shapes.BLOCKS['saves'], w['saves'])]
 
 
 def sound_errors(w: dict) -> list[str]:
@@ -1022,18 +1007,7 @@ def sound_errors(w: dict) -> list[str]:
     """
     if 'sound' not in w:
         return []
-    sound = w.get('sound')
-    if not isinstance(sound, dict):
-        return ['sound must be an object such as {"theme": "soft"}']
-    errors: list[str] = []
-    for key in sound:
-        if key != 'theme':
-            errors.append(f"sound may only hold theme, not '{key}'")
-    if 'theme' not in sound:
-        errors.append('sound must hold a theme, such as {"theme": "soft"}')
-    elif sound['theme'] != 'soft':
-        errors.append('sound theme must be the string "soft"')
-    return errors
+    return [p.sentence for p in shapes.check(shapes.BLOCKS['sound'], w['sound'])]
 
 
 # The parts a skin may name (design/ui-skin.md). Anything else is a
