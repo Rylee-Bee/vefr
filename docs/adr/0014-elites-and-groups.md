@@ -119,9 +119,9 @@ One sentence plus a JSON pointer each: an unknown key (or `moves`) in an affix, 
 - `tests/browser/test_group_leash.py`: members never pass `leash`, and they return home once the hero is out of sight.
 - `tests/browser/test_turn_budget.py`: with 37 awake monsters on a 128x96 floor, a turn takes at most 8 ms on desktop and at most 30 ms on the phone proxy.
 
-## Open questions for Rylee
+## Owner decisions (2026-10-04) and open questions
 
-1. What is E0d's exact wake rule: the hero coming within sight, noise, or entering the room?
+1. **Decided: sight plus noise.** A monster wakes when the hero comes within its wake radius, or when fighting or other loud events happen within earshot. (E0d built sight only; noise is added in E7.) Left open: noise radius and which events are loud.
 2. Does the warden sleep, or wait awake in its hall?
 3. Is wake grace (a free turn when monsters wake) the feel you want?
 4. What should the affixes and their labels be called?

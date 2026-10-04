@@ -106,11 +106,11 @@ These hold for every Section, for seeds `check-0..199`, in cycles 0 and 1:
 - `tests/browser/test_shortcut.py`: there is no shortcut in cycle 0; in cycle 1 it charges once, and pressing again is free.
 - `tests/test_story_flags_survive.py`: after a town return, an identity mismatch and an eviction, the warden stays dead and the chest stays empty.
 
-## Open questions for Rylee
+## Owner decisions (2026-10-04) and open questions
 
-1. What is the shortcut's price, and is "offered only from the second cycle on" right?
+1. **Decided: offered from the second cycle on.** Still open: the price.
 2. In endless mode, does a town visit still gate each Section when the town no longer changes?
 3. Does "New descent" (a new seed) replay the story, or count as a later cycle?
 4. Do vault notes read again in endless mode, or do those vaults hold only loot?
-5. Is the throne room the Act 3 vault, or its own region behind the final boss's door?
+5. **Decided: its own region behind the final boss's door.**
 6. What are the town lines, residents and shop stock for each state?
