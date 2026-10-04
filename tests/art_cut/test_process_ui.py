@@ -13,7 +13,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "tools", "art"))
-import process_ui as ui
+import process_ui as ui  # noqa: E402
 
 MARGIN = (235, 228, 216)  # the flat background drawn around a panel
 BORDER = (26, 30, 58)     # a dark border

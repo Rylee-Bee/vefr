@@ -11,7 +11,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "tools", "art"))
-import process_sprites as ps
+import process_sprites as ps  # noqa: E402
 
 BACKGROUND = (210, 60, 60)
 SUBJECT = (30, 90, 200)
