@@ -5,6 +5,7 @@ catalog adds a cloak (body, +2 health), a bow (hand, +1 attack), a ring (charm, 
 all neutral engine-test canon. The sample's own torch and chalked map stay.
 """
 
+import base64
 import json
 import shutil
 import sys
@@ -20,6 +21,17 @@ BASE_ITEMS = {
     "potion-1": {"name": "a cloudy potion", "sprite": "potion", "heal": 3, "use": "drink", "value": 4},
 }
 
+# The sample world ships no sprite table, so an item naming a `sprite`
+# would never resolve and the Bag would fall back to a neutral dot. The
+# bake (`cli._player_sprites`) only inlines a real image file that lives
+# inside the pack, so the fixture writes one: a 1x1 transparent PNG per
+# name. The equipment tests care that a worn slot draws an image, not what
+# that image looks like. Neutral engine-test canon.
+SPRITE_NAMES = ("cloak", "bow", "ring", "potion")
+ONE_PIXEL_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+    "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+
 
 def build(dest: Path, items=None, replace=False, name="equip-test") -> Path:
     """`items` is merged into the base catalog (or replaces the whole catalog with replace=True)."""
@@ -34,6 +46,17 @@ def build(dest: Path, items=None, replace=False, name="equip-test") -> Path:
     catalog = {} if replace else {**world.get("items", {}), **json.loads(json.dumps(BASE_ITEMS))}
     catalog.update(json.loads(json.dumps(items or {})))
     world["items"] = catalog
+    # Give the pack the four pictures its catalog names, so
+    # `itemSpriteSrc` resolves and the equipment panel draws real art
+    # instead of falling back to its neutral dot. The bake only inlines a
+    # real image file inside the pack, so write the files.
+    art = pack / "assets" / "equip-sprites"
+    art.mkdir(parents=True, exist_ok=True)
+    player = world.setdefault("player", {})
+    sprites = player.setdefault("sprites", {})
+    for name in SPRITE_NAMES:
+        (art / f"{name}.png").write_bytes(ONE_PIXEL_PNG)
+        sprites.setdefault(name, f"assets/equip-sprites/{name}.png")
     world_json.write_text(json.dumps(world), encoding="utf-8")
     return pack
 
