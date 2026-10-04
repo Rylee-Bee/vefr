@@ -207,8 +207,11 @@ true: `saga.system_prompt` has carried the pack's `logbok.md` since
 2026-08-31. The orchestration plan's "pack-blind" note was wrong; a
 test now pins it (`test_rumor_prompt_carries_pack_canon`).
 
-Closed 2026-09-25 (see `DECISIONS.md`): munr kept separate (D5
-superseded); the local test packs deleted; commit `948df78` accepted as risk.
+Closed/clarified 2026-10-04 (see `DECISIONS.md`): Munr is one
+active game built in VEFR, with its own canonical repository; D5 is superseded.
+Historical norn-engine ancestry is provenance only and must not drive the
+game's lifecycle. The local test packs remain deleted; commit `948df78`
+remains accepted as risk.
 
 ## Known debt (small, safe to pick up)
 
