@@ -277,8 +277,11 @@
     flex-direction: column; align-items: flex-start;
   }
   #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  /* Anchor the messages to the map's own top edge (published as --map-y) so
+     they grow up into the spare room instead of down over the map; the HUD
+     row and the map top are the two fixed things in the dock. */
   #stage.stage--dock .toasts {
-    left: auto; right: 8px; top: 60px; bottom: auto;
+    left: auto; right: 8px; top: auto; bottom: calc(100% - var(--map-y) + 8px);
     width: calc(42% - 8px);
   }
   #stage.stage--dock .acts {

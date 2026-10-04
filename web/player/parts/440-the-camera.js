@@ -6,9 +6,24 @@
   var cols = 0, rows = 0;
   var T = town.tile, viewW = 0, viewH = 0;
   var MIN_FIT_TILE = 16;   // below this, scroll at a readable size instead
+  var HUD_BAND = 72;       // room the HUD frame needs above and below a whole map
+  var MIN_STAGE_W = 420, MIN_STAGE_H = 360;  // enough for the HUD frame's corners
   function fitZoom() {
-    if (fogOn) return 32 / town.tile;   // a dark map is read up close, and scrolls
-    var fit = Math.min(viewW / (cols * town.tile), viewH / (rows * town.tile));
+    // The HUD sits in the stage's corners, so a whole map must leave a band
+    // above and below for it; otherwise it reads whole and still reaches
+    // under the buttons.
+    var fitW = viewW / (cols * town.tile);
+    var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+    if (fogOn) {
+      // A dark map is read up close at one tile. A map already small enough
+      // to read whole shrinks into the HUD's band (and letterboxes on the
+      // dock); a bigger one still scrolls, exactly as it did.
+      var z = 32 / town.tile;
+      var fitH = Math.max(viewH - 2 * HUD_BAND, 1) / (rows * town.tile);
+      var whole = cols * town.tile * z <= viewW && rows * town.tile * z <= viewH;
+      return (dock || whole) ? Math.min(z, fitW, fitH) : z;
+    }
+    var fit = Math.min(fitW, viewH / (rows * town.tile));
     if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
   }
@@ -22,10 +37,13 @@
   // On a narrow portrait window (`stage--dock`) the map is letterboxed
   // with spare room above and below, so the stage grows to the whole
   // window and `VEFR_STAGE.map` keeps the drawn map inside it; the dock
-  // CSS places the HUD, d-pad and action row in that spare room. Every
-  // other window publishes the map rectangle as both the stage and its
-  // `map`. The `--map-*` properties are the map inside #stage, using the
-  // same #stage-relative convention as the `--stage-*` ones.
+  // CSS places the HUD, d-pad and action row in that spare room. A map
+  // smaller than the stage's minimum would leave the HUD frame's corners
+  // on map tiles, so the stage grows to the window there too and the map
+  // is centred inside it, clear of every corner; a map big enough for
+  // its frame keeps the map rectangle as the stage. The `--map-*`
+  // properties are the map inside #stage, using the same #stage-relative
+  // convention as the `--stage-*` ones.
   function publishStage() {
     var mapW = cols * T, mapH = rows * T;
     var rect = canvas.getBoundingClientRect();
@@ -46,8 +64,11 @@
     // A phone held upright: width <= 600 and taller than it is wide. The
     // stage is the window; the map stays the drawn rectangle inside it.
     var dock = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
-    var x = dock ? 0 : mx, y = dock ? 0 : my;
-    var w = dock ? window.innerWidth : mw, h = dock ? window.innerHeight : mh;
+    // A map too small for the HUD frame's corners gets the window as its
+    // stage as well, so those corners fall on the spare room, not the map.
+    var grow = dock || mw < MIN_STAGE_W || mh < MIN_STAGE_H;
+    var x = grow ? 0 : mx, y = grow ? 0 : my;
+    var w = grow ? window.innerWidth : mw, h = grow ? window.innerHeight : mh;
     window.VEFR_STAGE = {
       x: x, y: y, w: w, h: h,
       map: { x: mx, y: my, w: mw, h: mh }
