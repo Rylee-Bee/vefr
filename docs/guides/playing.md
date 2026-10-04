@@ -75,6 +75,25 @@ and you choose one.
 A monster with only one action acts at once, with no menu.
 Either way the monsters take their turn once your action resolves.
 
+## Wearing things
+
+Press `B` for the bag. At the top is a **"You"** section: five slots - hand, body, head, feet
+and charm - each in a row that says in words what is in it ("Body: a patched coat") or that it is
+empty ("Hand: empty"). A slot with nothing in it draws a plain outline; a worn thing draws its own
+picture.
+
+A carried thing your game says can be worn gets an **Equip** button. Something you are wearing gets
+**Take off**. Wearing a thing into a slot that is already full hands the old one back to the bag,
+and the line under the buttons says what changed: *"You put on a green hooded cloak. Health up by
+2."* A worn thing is not in the bag list, so you cannot sell or drink it while you have it on -
+take it off first.
+
+Tab moves between the buttons and `Enter` or `Space` presses one, the same as everywhere else.
+Nothing here needs a mouse.
+
+If your game gives no thing a slot, this section says "empty" five times and the game plays exactly
+as it always did.
+
 ## Start over
 
 Start over lives in the pause menu: press `Escape`, then choose **Start over**.

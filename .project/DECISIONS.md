@@ -1,5 +1,65 @@
 # DECISIONS — vefr
 
+## 2026-10-03 — four decisions: resistances live on both, "the Keybearer", one foreman, equipment first
+
+**Decisions (Rylee, 2026-10-03, in chat).** Asked four focused questions; all four answered.
+
+1. **The hero's resistances live in two places: the pack's `player` block as a base, and worn gear
+   on top.** She chose "both" over the single authored set, knowing it widens slice one. So the
+   pack contract carries `player.resist` / `player.immune` (a floor for the whole run) **and** an
+   item-level grant that equipment adds. The gear half is cheaper than it looks and dodges the ADR
+   entirely: Blueprint's closed `FIELD_KEYS` govern *enemy* records, not items, so an item field is
+   validated by `item_slot_errors` and baked in `_player_items` with no format change. The enemy
+   half still needs the ADR, because enemies must carry types.
+2. **The guardian role word is "the Keybearer"** (from the Diablo III Keywarden precedent, verified
+   the same day). Warm, storybook, and it tells the player exactly what the monster is for. Each
+   floor's proper name and its key's name are still hers; the Cellar King, the seal, and the first
+   lock (floor 3 to 4) are settled.
+3. **Campaign work runs as one foreman per campaign, slices in sequence, MiniMax M3.1, budget 8,
+   with the integrator reviewing every diff.** This answers `11-open-decisions.md` item 7, which
+   had to be stated before a multi-slice campaign launches. The reasoning that decided it: the
+   descent block splits into validator+bake and player generation, and those **share
+   `maplab.py` and `web/packaged.html`**, so two foremen would conflict on the same files anyway.
+   Four concurrent foremen was also rejected - the box has a documented history of an exit-137
+   out-of-memory kill under load, and four diffs in one file at once is unreviewable anyway.
+4. **Equipment is finished before anything new starts** (the glossary, the player guide, and the
+   pack demo). The thread is live and two steps short; leaving it dangling to open a fourth work
+   stream is how a repo accumulates half-landed slices.
+
+**Status.** ACCEPTED (2026-10-03). Owner: Rylee.
+
+## 2026-10-03 — wave 2: what the three stale issues actually cost
+
+**Findings (2026-10-03, checked in the repo, not from the issue text).** #143, #144 and #145 sat
+untouched from 2026-09-30. Their stated efforts do not survive contact with the code:
+
+- **#144 (audio pairing) presumes a system that does not exist.** The engine has **no audio at
+  all** - a search for `AudioContext`, `new Audio`, `playSound` and friends over `src/` and `web/`
+  returns nothing but a line of prose in a Library chapter *about* art. So "pair every sound with a
+  visual event" cannot be a pairing job; it is "build sound from nothing", and the stated `S-M` is
+  wrong. Note the irony: the issue's *accessibility* promise, that silence stays fully playable, is
+  **already true**, because there is no sound to silence. The valuable part is not a work item at
+  all - it is a rule to honour *if* audio is ever added, which is far cheaper to write down now
+  than to retrofit later.
+- **#143 (Ink) is the most expensive per unit of value, and it breaks a real constraint.**
+  `web/*.js` holds **six files, all first-party** - there is no vendored third-party JavaScript
+  anywhere. `web/packaged.html` is a single file that must run from `file://`. Inlining `inkjs` is
+  mechanically possible (the bake already inlines CSS, fonts and sprites), but it would be the
+  first vendored library in the player. Worse, its acceptance asks `maplab` to validate that a
+  pack's Ink *compiles*, which means running a JavaScript compiler from the Python validator - a
+  new dependency in the validate path, and `norns validate` is a deterministic surface.
+- **#145 (WFC) is largely superseded for the purpose it was filed under.** The approved weighted
+  descent already delivers per-run variety with a far simpler mechanism, and a second generator
+  shape is `M-L`. Its acceptance also depends on "#131 properties" (property tests), which is itself
+  unbuilt wave-1 work. What remains genuinely distinct about WFC is *tile coherence* - tilesets
+  that look hand-authored - which is an aesthetics question, not a variety one.
+
+**Recommendation, for Rylee's call:** close #144 as a work item and keep its rule as a note; defer
+#143 explicitly behind the descent block; narrow #145 to tile coherence so it stops carrying the
+per-run-variety burden the descent block now owns.
+
+**Status.** RECORDED (2026-10-03). No issue was closed or edited by this session.
+
 ## 2026-10-03 — two new campaigns approved: the weighted descent, and the full elemental triangle
 
 **Decisions (Rylee, 2026-10-03, in chat).** Asked what she wanted next, she chose the **larger** of

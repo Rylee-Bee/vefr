@@ -70,19 +70,30 @@ Every status effect needs exactly two properties to be checkable: a **duration**
 2. **The status store and its tick.** A list of `{effect, turns, ...}` per combatant, decremented
    at the four `lightTick()` boundaries. Does it persist across a reload, and does it save? That
    interacts with ADR 0009 (rule saves) and needs an answer.
-3. **What the player can carry.** The player is a combatant here, so the hero needs a resistance
-   surface too — a pack `player` block? Or is the hero's resistance authored per region? Not
-   decided, and it is the question that decides the pack contract.
+3. ~~**What the player can carry.**~~ **Settled 2026-10-03 (Rylee): resistances live in *two*
+   places — the pack's `player` block as a base, and worn gear on top.** So the contract carries
+   `player.resist` / `player.immune` as the floor for a whole run, and an item-level grant that
+   equipment adds. **The gear half is cheaper than it looks and needs no ADR:** Blueprint's closed
+   `FIELD_KEYS` govern *enemy* records, not items, so an item field is validated beside
+   `item_slot_errors` and baked in `_player_items` with no format change. The enemy half still does
+   need the ADR, because enemies must carry types.
 4. **Is a status effect a Blueprint field, a pack block, or both?** It touches the closed key
    sets either way, so it needs an ADR amendment before code.
+5. **Does gear-granted resistance stack, and does it show?** Rylee chose gear on top, which opens
+   two small questions the pack contract must answer: does a second resistant item stack or does the
+   strongest win, and does the hero's resistance get a visible readout. The accessibility rule
+   says it cannot be a tint on the health bar alone, so a readout is implied.
 
-## Build order, once the four above are answered
+## Build order, once the above are answered
 
 1. Types only, as pure maths plus the resolver, with a node harness. No status effects yet: this
    is the slice that makes the resolver honest.
-2. One status effect end to end (`burning`), on the `lightTick` pattern, with persistence decided.
-3. Resistances and immunities, per combatant, on both damage paths.
-4. The player surface, and the accessibility pass (every signal has a word).
+2. `player.resist` / `player.immune` as the base surface, read by the resolver on both paths.
+3. Gear-granted resistance, on top of the base — the item field, `item_slot_errors`, `_player_items`.
+   No ADR needed for this step, which is why it can come before the enemy work.
+4. One status effect end to end (`burning`), on the `lightTick` pattern, with persistence decided.
+   **This is the step that needs the ADR**, because the effect is authored on an enemy.
+5. The accessibility pass (every signal has a word; resistance is never a tint alone).
 
 **Deliberately not in this campaign:** a school-of-magic vocabulary (it is lore text and a sprite,
 zero mechanics, and it can ride along with any of the above), duration extensions, stacking,
