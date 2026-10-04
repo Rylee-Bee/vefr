@@ -22,6 +22,9 @@ var store = {
   setJSON: function (key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
   },
+  remove: function (key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+  },
   raw: function () {
     try { return localStorage; } catch (e) { return null; }
   }

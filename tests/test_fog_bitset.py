@@ -148,6 +148,7 @@ def test_a_fully_explored_region_saves_under_1_1_kb(tmp_path):
     )
     assert out["errors"] == []
     value = out["store"].get(only_fog2(out["store"]))
+    assert value != bitset(w, h, unset=lit), "the player's own save did not replace the seed"
     assert value is not None
     assert len(value.encode("utf-8")) < 1126
 
