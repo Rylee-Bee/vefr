@@ -48,9 +48,49 @@ COLLECT = """() => {
 def woven(tmp_path_factory):
     d = tmp_path_factory.mktemp("stage")
     out = subprocess.run([sys.executable, str(MAKE), str(d)], capture_output=True, text=True, check=True).stdout.strip()
+    pack = Path(out.splitlines()[-1])
+    # A full HUD: levels (the level chip) and gold (the gold chip), as a real game shows them.
+    import json
+    wj = pack / "world.json"
+    cfg = json.loads(wj.read_text(encoding="utf-8"))
+    cfg["growth"] = {"mode": "levels", "levels": {"xp": [0, 3, 6], "gain": {"hp": 2, "atk": 1}}}
+    cfg["player"]["gold"] = 128
+    wj.write_text(json.dumps(cfg), encoding="utf-8")
     html = d / "stage.html"
-    html.write_text(cli.weave_html(Path(out.splitlines()[-1])), encoding="utf-8")
+    html.write_text(cli.weave_html(pack), encoding="utf-8")
     return html
+
+
+def _overlaps(els):
+    """Pairs of pieces that cover each other by more than a few pixels (a piece may contain its own children)."""
+    bad = []
+    for i, a in enumerate(els):
+        for b in els[i + 1:]:
+            ox = min(a["r"], b["r"]) - max(a["l"], b["l"])
+            oy = min(a["b"], b["b"]) - max(a["t"], b["t"])
+            if ox > 4 and oy > 4:
+                inside = ((a["l"] <= b["l"] + 1 and a["t"] <= b["t"] + 1 and a["r"] >= b["r"] - 1 and a["b"] >= b["b"] - 1)
+                          or (b["l"] <= a["l"] + 1 and b["t"] <= a["t"] + 1 and b["r"] >= a["r"] - 1 and b["b"] >= a["b"] - 1))
+                if not inside:
+                    bad.append((a["id"], b["id"]))
+    return bad
+
+
+@pytest.mark.parametrize("w,h,touch", SIZES)
+def test_no_two_pieces_cover_each_other(browser, woven, w, h, touch):
+    """Rylee, 2026-10-04 (phone): a Messages button sat on top of the gold counter. Pieces may touch, not overlap."""
+    ctx = browser.new_context(viewport={"width": w, "height": h}, has_touch=touch, is_mobile=touch)
+    page = ctx.new_page()
+    try:
+        page.goto(woven.as_uri())
+        page.click("#ts-enter")
+        page.wait_for_function("window.VEFR_COMBAT", timeout=15000)
+        page.wait_for_timeout(500)
+        info = page.evaluate(COLLECT)
+        bad = _overlaps(info["els"])
+        assert not bad, f"pieces cover each other at {w}x{h}: {bad[:5]}"
+    finally:
+        ctx.close()
 
 
 @pytest.mark.parametrize("w,h,touch", SIZES)

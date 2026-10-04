@@ -12,6 +12,39 @@
     if (fit * town.tile >= MIN_FIT_TILE) return Math.min(fit, 3);  // the whole map reads
     return 32 / town.tile;   // a big map: scroll at a comfortable tile
   }
+  // The drawn map's rectangle, in viewport CSS pixels, published for the
+  // in-world interface (docs/plans/interface/PLAN.md). `window.VEFR_STAGE`
+  // is read by the browser contract; the `--stage-*` properties place
+  // `.hud-frame`, a child of #stage, so they carry #stage's own offset
+  // subtracted out. Published after every resize, which is where a window
+  // resize, a door's region swap and the fog toggle's zoom change all meet.
+  function publishStage() {
+    var mapW = cols * T, mapH = rows * T;
+    var rect = canvas.getBoundingClientRect();
+    var x, y, w, h;
+    if (mapW <= viewW && mapH <= viewH) {
+      // The whole map reads: it is centred on the canvas.
+      x = rect.left + (viewW - mapW) / 2;
+      y = rect.top + (viewH - mapH) / 2;
+      w = mapW;
+      h = mapH;
+    } else {
+      // It scrolls past the window edges: the canvas, clipped to the window.
+      x = Math.max(0, rect.left);
+      y = Math.max(0, rect.top);
+      w = Math.min(rect.right, window.innerWidth) - x;
+      h = Math.min(rect.bottom, window.innerHeight) - y;
+    }
+    window.VEFR_STAGE = { x: x, y: y, w: w, h: h };
+    var stage = document.getElementById('stage');
+    if (stage) {
+      var box = stage.getBoundingClientRect();
+      stage.style.setProperty('--stage-x', (x - box.left) + 'px');
+      stage.style.setProperty('--stage-y', (y - box.top) + 'px');
+      stage.style.setProperty('--stage-w', w + 'px');
+      stage.style.setProperty('--stage-h', h + 'px');
+    }
+  }
   function resize() {
     cols = town.map[0].length;
     rows = town.map.length;
@@ -22,6 +55,7 @@
     canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     T = town.tile * fitZoom();
+    publishStage();
   }
   window.addEventListener('resize', function () { resize(); draw(); });
 
