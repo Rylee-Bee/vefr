@@ -19,7 +19,7 @@ Making a player earn power before going deeper is **progression gating**. A *sof
 
 **1. A lock on a transition (neutral engine feature).** A transition may carry `requires`: `{"item": "<id>"}` or `{"flag": "<name>"}`, plus `locked_text`, one plain sentence shown when the hero tries it without ("The stair is shut. Something below keeps the key."). Interact on the stair with the item (or the flag set) opens it; with `keep: true` the key stays in the bag. Absent means today's behaviour, so every pack loads unchanged. The validator names a `requires` that points at an unknown item or flag.
 
-**2. A ladder of guardians, one per floor, and a king at the bottom (Rylee, 2026-10-02: "act 1 is the cellar, the main boss of the cellar is the cellar king, and we can have 5-6 levels that are randomly generated, each with a ... [duke] to progress").** Act 1 is the cellar: five or six generated floors. Every floor has one guardian, a tougher mob that carries the key to the stair down. The last floor's guardian is the Cellar King, the act's boss; beating him ends act 1. The pack declares them as a ladder:
+**2. A ladder of guardians, one per floor, and a king at the bottom (Rylee, 2026-10-02: "act 1 is the cellar, the main boss of the cellar is the cellar king, and we can have 5-6 levels that are randomly generated, each with a ... [duke] to progress").** Act 1 is the cellar: five or six generated floors. Every floor has one guardian, a tougher mob that carries the key to the stair down. The last floor's guardian is the Cellar King, the act's boss; beating him ends act 1. The pack declares them as a ladder (**proposed shape; no `guardians` key exists in the engine yet**):
 
 ```json
 "guardians": [
@@ -29,7 +29,11 @@ Making a player earn power before going deeper is **progression gating**. A *sof
 ]
 ```
 
-Each guardian is stronger than the last, tuned to the power curve of the levels. The generator places each one in the room farthest from that floor's arrival stair with its key in `drops`. Like the ending room, it is placed by the generator and never left to chance, so every seed can be finished. The `requires` lock from section 1 is on each floor's stair down. The names and looks of the guardians are Rylee's to choose; a rank scheme from a king's court (seneschal, chamberlain, marshal, warden, bailiff) is one option.
+Each guardian is stronger than the last, tuned to the power curve of the levels. The generator places each one in the room farthest from that floor's arrival stair with its key in `drops`. Like the ending room, it is placed by the generator and never left to chance, so every seed can be finished. The `requires` lock from section 1 is on each floor's stair down.
+
+**Naming, settled 2026-10-03 (Rylee asked "how does Diablo do it?").** Diablo III has this exact problem and solved it with the **Keywarden**: four of them, one per act, each a **Super Unique** — a *variant of a stock monster*, not a new creature — named **role label + proper name + epithet** ("Xah'Rith, the Keywarden of Terror, Tormentor of the Damned"), carrying a **named key** (the Key of Terror). Two consequences: the recurring label is **one functional word** rather than six invented names, and the king's-court rank scheme this note originally offered is the *wrong* read of the precedent, because it names monsters for their rank instead of for what they are. The role word, and each guardian's and key's proper name, are still Rylee's.
+
+**Generated per run, with weights (decided 2026-10-03).** The ladder is not hand-placed. A run seed is made per descent and each floor derives from `(run seed, floor number)`, so two people can walk the same cellar. Tables carry **weights** as well as counts, so a common rat stays common and a rare thing stays rare. That is `design/random-floors.md` phase 2 plus exactly one new concept — the weight — and the phase-2 block is itself still unbuilt. No per-depth stat scaling exists anywhere in the engine today, so "stronger than the last" needs building too.
 
 **3. Mobs come from tables, scaled by depth.** Each table row gets `depth` bands and a weight; `hp`/`atk` scale by floor; `xp` follows `design/growth.md`. The guardian is a row with `guardian: true`, never rolled as filler.
 
@@ -65,7 +69,7 @@ No timed locks, no lockpicking, no key ring UI, one lock per floor in the first 
 
 ## Open for Rylee
 
-- ~~The guardians' creatures~~ **Decided (Rylee, 2026-10-02):** variants of the monsters we already have, with names based on their art and abilities. Still hers: approving the names.
+- ~~The guardians' creatures~~ **Decided (Rylee, 2026-10-02):** variants of the monsters we already have, with names based on their art and abilities. **Naming pattern settled 2026-10-03** from the Diablo III precedent: a Super Unique is a *variant of a stock monster* carrying a **role label + proper name + epithet** ("Xah'Rith, the Keywarden of Terror, Tormentor of the Damned"), and the key is a named artefact (the Key of Terror). So the recurring label is **one functional word, not six invented names** — which is also why the king's-court rank scheme below is the wrong read: it names monsters for their rank rather than for what they are. Still hers: the role word itself, and each guardian's and key's proper name.
 - ~~Where the last room sits.~~ **Decided (Rylee, 2026-10-02):** "his seal opens like a treasure room with a lore note and a 'back to town' before you start the next set of dungeons". So the Cellar King's drop is a seal; using it on the last floor's sealed door opens a room with a treasure, a lore note, and a way back to town; act 2 starts after that. In the design: a guardian row may name `"opens": {"room": "king-room"}`, and the generator joins that authored room to the last floor on every seed (the "ending reachable on every seed" rule of `design/random-floors.md`). Still hers: what the treasure is and the lore note's words; nothing is canon until she writes or picks them.
 - ~~Which stair is the first lock?~~ **Decided (Rylee, 2026-10-02):** the stair from floor 3 to floor 4.
 - ~~Does the guardian's key look like a key?~~ **Decided (Rylee, 2026-10-02):** an actual key.

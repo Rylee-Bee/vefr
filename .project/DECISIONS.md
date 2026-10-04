@@ -1,5 +1,62 @@
 # DECISIONS — vefr
 
+## 2026-10-03 — two new campaigns approved: the weighted descent, and the full elemental triangle
+
+**Decisions (Rylee, 2026-10-03, in chat).** Asked what she wanted next, she chose the **larger** of
+both options offered, twice:
+
+1. **Guardians are generated per run with a weighted table.** Randomness lives in a per-run seed
+   (one per descent; each floor derived from `(run seed, floor number)`), **and** the tables gain
+   weights, so some creatures are common and some rare. The design already proposed
+   `per_floor: [min, max]` counts; weights are the one genuinely new concept, because they make
+   the table answer "which one" as well as "how many".
+2. **The full elemental triangle: damage types, status effects, and resistance/immunity.** Not the
+   lore-only version, and not types-plus-one-status. This is the richest option and the one that
+   turns every mob and the hero into a stat block.
+
+**These are campaigns, not slices.** Each needs tests written first and merged, then an
+implementation that flips exactly its own tests. #1 is close to one campaign. #2 is two or three
+slices with an ADR first.
+
+### What the code actually is today (surveyed 2026-10-03, evidence in the PR and `docs/guides/`)
+
+The survey is worth keeping because it says the blast radius is **small but the seams are sharp**:
+
+- **Damage is applied in exactly two functions.** `heroAttack` and `enemyAttack` in
+  `web/packaged.html`, both a bare integer subtraction. No randomness anywhere in combat (the file
+  says so in prose at three places). This is good news: the resolver has two seams, not twenty.
+- **The two paths are asymmetric.** The hero's damage goes through `heroAtk()`; the enemy applies
+  its **raw baked `atk`**. So a resistance or immunity rule cannot be a stat modifier - it needs a
+  **resolver** applied on both sides, or fire damage will resist and necrotic will not.
+- **The rules engine cannot own a status effect, by design.** `applyActions` in the pure engine
+  changes only `{flags, beliefs, fired, items, where, meanings}` - it has no combatant, no hp and
+  no timer. `validAction` is a closed if-chain that voids the whole rule for an unrecognised key,
+  and the code states the law: *"One returned action onto a surface that ALREADY exists - never a
+  new subsystem."* A status effect must therefore live in the **combat** layer. Extending the
+  rules vocabulary would break that law, so it is not the route.
+- **There are two timed-effect precedents and they are different shapes.** Item `light` is a real
+  countdown (`lightTurns`, `lightTick()`) and is the pattern to imitate; its four turn boundaries
+  (`lightTick(); enemyTurn();`) are the de-facto "the hero's turn is over" idiom a status effect
+  must hook. Growth's `practice` mode is the opposite shape - a monotone accumulator with a cap and
+  **no expiry** - so it is not a precedent for anything that ends.
+- **A new enemy field is silently dropped unless threaded through four allow-lists**, one of which
+  is the **closed** `FIELD_KEYS`/`FIELD_ORDER` in `src/vefr/blueprint.py`. So any enemy field is
+  also a **Blueprint format change**, and therefore an ADR amendment. This is the coupling that
+  makes campaign #2 bigger than it looks.
+- **No per-depth or per-band stat scaling exists anywhere.** The ladder's "scaled by depth" is
+  entirely unbuilt; growth is the only scaler and it is per-level or per-N-actions.
+
+### Recommended order, and why
+
+**The weighted descent first.** It is self-contained: it touches the generator, the bake and the
+player's floor generation, and it needs **no new enemy field** as long as the guardian ladder stays
+authored. It unblocks #215, whose only remaining blocker is the names. The elemental triangle
+should follow, and should open with an **ADR**, because it changes the Blueprint's closed key sets
+and adds a damage resolver - both of which are decisions to record before code, not after.
+
+**Status.** ACCEPTED as scope (2026-10-03). Owner: Rylee. The ADRs and the frozen contracts are the
+next step and are not yet written.
+
 ## 2026-10-03 — the language packet is approved; the gate is released
 
 **Decision (Rylee, 2026-10-03, in chat: "Approved. Go").** This releases the gate in

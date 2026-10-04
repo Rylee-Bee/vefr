@@ -23,7 +23,14 @@
 
 **Known gaps:** the stale `blueprint.cpython-312.pyc` that the 2026-10-02 plan recorded as a live hazard (same mtime to the second, same size, wrong `FIELD_ORDER`) is **gone** from this checkout — resolved, no longer a risk. The hazard's habit is still real: use `PYTHONPYCACHEPREFIX` for checks after any temporary edit.
 
-**Next, in order:** **equipment A3, the Bag "You" section** (the five slot icons with empty outlines, the Equip/Take off buttons, the swap, the live line, `localStorage['vefr-equipped-<world>']`, and the hero wiring — `design/equipment.md` build step 3 of 5, the same tests-first-then-worker path that has now worked twice). Then the guardian ladder and the Cottage lock on the floor 3 stair (names are hers to approve, #215), the album (#216), and a real act 2 (#217).
+**Equipment is now playable end to end** (A1 pack fields #244, A2 the pure engine #247, A3 the Bag panel #249). Remaining in `design/equipment.md`: step 4 (the glossary: *equip*, *take off*, *slot*; the rulesets and player guides) and step 5 (the private pack's cloak, bow and ring wired to the round-8 icons). The 1x1 fixture sprites are engine-test canon, **not** art — the real icons do not exist yet.
+
+**Next, in order:**
+1. **Equipment steps 4-5** — the glossary and the guide lines, then the private pack demo. Small, and it finishes the thread.
+2. **The weighted descent** (random floors phase 2, with weights, decided 2026-10-03) — self-contained, and it unblocks #215, whose only remaining blocker is the guardian names.
+3. **The album** (#216) — write the frozen contract first.
+4. **A real act 2** (#217's other half).
+5. **Damage types, status effects and resistances** (`design/elemental-and-status-effects.md`) — a campaign, not a slice, and it should open with an ADR.
 
 **Not dispatchable to a worker, and why** — so the next session does not re-litigate it. **#215** needs a new `guardians` pack block, which is a pack-contract change (ask-first), and its design says in writing that the names, the treasure and the lore note's words are Rylee's: *"nothing is canon until she writes or picks them."* The blocking step is a decision, not code. **#216** (album) and **#143/#144/#145** (Ink, audio pairing, richer floors) have no contract to test against; dispatching a worker to write both the spec and the code is how this repo ends up with a mess. Write the contract first, then dispatch.
 
@@ -142,9 +149,18 @@ Treat `docs/vefr/` as the canonical copy.
    hers: the role word, and each guardian's and key's proper name. The
    Cellar King, the seal and the first lock (floor 3 to 4) are settled.
    See `DECISIONS.md`, 2026-10-03.
-2. **The language packet's Foreman count and model**
+2. **The elemental campaign's four open decisions**
+   (`design/elemental-and-status-effects.md`): the damage resolver, the
+   status store and whether it saves across a reload, what surface the
+   *player's* resistances live on (this one decides the pack contract),
+   and whether a status is a Blueprint field or a pack block. Owed before
+   any code, because a new enemy field also touches the closed Blueprint
+   key sets and so needs an ADR amendment.
+3. **The language packet's Foreman count and model**
    (`11-open-decisions.md` item 7) — stated before any multi-slice
-   campaign launches. Only bites when a campaign is actually proposed.
+   campaign launches. **This now bites**: the weighted descent and the
+   elemental triangle are both multi-slice campaigns, so the count and
+   the model have to be stated before the first of them launches.
 
 **Closed 2026-10-03:** the language packet's disposition read. Rylee
 approved GO WITH CONSTRAINTS ("Approved. Go"). That releases the gate and

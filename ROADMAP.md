@@ -42,6 +42,19 @@
       because that object is what gets saved. Pinned by a jsdom harness
       against the real woven file (`tests/test_equipment_engine.py`).
       Nothing wears anything yet: the Bag panel is the next slice.
+- [x] **Equipment, the Bag panel** (2026-10-03, #217 track A slice A3): the "You"
+      section above the bag - five slots in order, each row named by one sentence the eye and a
+      screen reader share, empty slots drawn as inline-SVG outlines so no new art. **Equip** on a
+      bag row, **Take off** on a worn slot, a swap puts the outgoing thing back in the bag, and
+      one plain sentence names the change (and what came off). State at
+      `localStorage['vefr-equipped-<world>']`, every access in `try {} catch {}`; a saved id the
+      catalog no longer has is dropped on load; a worn thing is never in the bag list, so it
+      cannot be traded or drunk. `heroMax()`/`heroAtk()` add the worn mods beside growth's, and
+      taking off clamps health to the new max. `tests/test_equipment_ui.py` (14 pins, driven
+      through the DOM and real `heroAtk()` numbers) plus
+      `tests/fixtures/equip_ui_harness.mjs`. Review found and fixed a real defect: an occupied
+      slot with no resolvable sprite drew the *empty* outline, so a worn thing could look like an
+      empty one - the one signal that outline means. Equipment is playable end to end.
 - [x] **Teal text has a contrast floor** (2026-10-03, #218): `--teal` is the
       brand/AI-presence colour, tuned for dots, borders and fills where WCAG
       asks nothing, and four small labels took their *text* colour from it. The
@@ -2375,7 +2388,16 @@
       informed by that disposition, not blocked by it.
 
 - [ ] **Random floors, phase 2** (`design/random-floors.md`): the `descent` block, run seed,
-      depth tables, the Journal line and the New descent button.
+      depth tables, **weights on table rows** (decided 2026-10-03, so the tables answer "which
+      one" as well as "how many"; the guardian and the last room stay placed, not rolled, so the
+      ending is reachable on every seed), the Journal line and the New descent button. **Next in
+      order** — self-contained, and it unblocks #215.
+- [ ] **Damage types, status effects and resistances**
+      (`design/elemental-and-status-effects.md`, scope approved 2026-10-03): the full triangle.
+      A **campaign, not a slice** — it needs a damage resolver (the two damage paths are
+      asymmetric today), a status store on the `lightTick` turn pattern, a player resistance
+      surface, and an ADR amendment because a new enemy field must also pass the **closed**
+      Blueprint key sets. Four decisions are owed before any code.
 - [ ] **Gates and guardians, the rest** (`design/gates-and-guardians.md`): the `requires`
       lock landed (see Landed). Still to build: the key-carrying guardians and the generated
       ladder ending in the act's boss, and the boss's seal opening a treasure room. Decided
