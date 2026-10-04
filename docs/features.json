@@ -13,7 +13,8 @@
       "design": "design/rules-when-then.md",
       "tests": [
         "tests/test_rules_validator.py",
-        "tests/test_events_play.py"
+        "tests/test_events_play.py",
+        "tests/test_complete_act.py"
       ]
     },
     {
