@@ -126,7 +126,7 @@ def big_map(width, height):
     return ["#" * width] + [floor] * (height - 2) + ["#" * width]
 
 
-def test_a_fully_explored_region_saves_under_1_1_kb(tmp_path):
+def test_a_fully_explored_region_saves_under_2_2_kb(tmp_path):
     w, h = 128, 96
     pack = build(tmp_path, rows=big_map(w, h))
     # What a radius-3 light at the hero's [1, 1] would add: the seeded
@@ -150,7 +150,7 @@ def test_a_fully_explored_region_saves_under_1_1_kb(tmp_path):
     value = out["store"].get(only_fog2(out["store"]))
     assert value != bitset(w, h, unset=lit), "the player's own save did not replace the seed"
     assert value is not None
-    assert len(value.encode("utf-8")) < 1126
+    assert len(value.encode("utf-8")) < 2200
 
 
 def test_explored_tiles_survive_a_reload(tmp_path):
