@@ -53,7 +53,7 @@ surface, read the accessibility matrix first.
 |---|---|
 | Fix a bug | `GETTING_STARTED.md` → reproduce → fix → test gate → PR |
 | Add a feature | `ROADMAP.md` → find the Next item → discuss in an issue first |
-| Build a world | `GETTING_STARTED.md` §4 ("Make your own world") |
+| Build a world | `GETTING_STARTED.md` §3 ("Make your own world") |
 | Change the pack contract | `src/vefr/world.py` docstring — **ask first** |
 | Add a new API route | `src/vefr/main.py` — **ask first** |
 | Change the UI | `web/` — follow the accessibility matrix below |
