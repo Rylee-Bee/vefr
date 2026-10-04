@@ -658,16 +658,39 @@ The plan has succeeded when all of these are true.
 The plan deliberately follows established external patterns without making any
 of them architectural dependencies:
 
-- MCP demonstrates that tools can be described and invoked through small
-  schema-based contracts, and that interoperability belongs at trust
-  boundaries rather than inside every application component.
-- Current local inference servers demonstrate dynamic multi-model loading and
-  per-model presets, so VEFR does not need one permanent process/port per model.
-- Model hubs demonstrate revision-pinned artifacts and reusable local caches.
-- Multi-provider libraries/gateways demonstrate that one call surface can span
-  many online providers, while also proving that provider behavior still needs
-  capability testing rather than assuming API compatibility means functional
-  compatibility.
+- MCP demonstrates small discovery/call contracts for tools, resources and
+  prompts. Its 2026-07-28 protocol also moved to a stateless core, reinforcing
+  that VEFR should use MCP at interoperability boundaries rather than copy a
+  session framework internally.
+- Current `llama.cpp` server supports router mode, dynamic model
+  load/unload, a maximum resident-model count and per-model presets. That is
+  enough evidence to stop expanding VEFR's one-process/port-per-model pattern.
+  Its own server documentation says the built-in `/tools` endpoint is for
+  the Web UI and must not be treated as a downstream contract, which supports
+  keeping VEFR Tools independent of the inference runtime.
+- Hugging Face Hub supports revision-pinned downloads, including full commit
+  hashes, and a shared local cache. VEFR can therefore pin recommended
+  artifacts without baking large model files into the container image or
+  redownloading unchanged files on each upgrade.
+- Multi-provider compatibility layers demonstrate that one call surface can
+  span many providers, but also expose real feature differences. For example,
+  current LiteLLM provider documentation shows endpoints that omit tool calling
+  entirely and models that require provider-specific reasoning state across
+  turns. API compatibility is therefore not capability evidence.
+
+References checked 2026-10-04:
+
+- MCP 2026-07-28 release:
+  https://blog.modelcontextprotocol.io/posts/2026-07-28/
+- MCP primitives overview:
+  https://modelcontextprotocol.io/specification/draft/server/index
+- llama.cpp server/router/presets:
+  https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+- Hugging Face Hub downloads/revisions/cache:
+  https://huggingface.co/docs/huggingface_hub/en/guides/download
+- LiteLLM provider feature variation examples:
+  https://docs.litellm.ai/docs/providers/nadir
+  https://docs.litellm.ai/blog/mimo_v2_6
 
 Adopt the pattern, not the dependency.
 
