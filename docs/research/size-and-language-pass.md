@@ -1,0 +1,36 @@
+# Smaller and more flexible: a measured pass (2026-10-04)
+
+Asked by Rylee: find places where VEFR can get smaller but more flexible, looking especially at how a different use of *language* can buy flexibility without costing human or agent readability. Everything below was measured on the shipped Cottage pack and the engine at `6395276`; nothing is built. Contract changes are ask-first.
+
+## The one number that matters
+The woven Cottage game is **3.34 MB**. **85% of it (2.85 MB) is base64 pictures.** The engine template is 284 KB (8.5%). The pack's own text is tiny: `world.json` 16 KB, `blueprint.json` 17 KB, the region files 37 KB, all books 3 KB, about 58 KB in total. So "smaller" is mostly a picture question; "more flexible" is mostly a language question. They are separate wins.
+
+## A. Smaller: the bytes (measured)
+| Lever | Measured | Effect |
+|---|---|---|
+| A1. Pictures baked as WebP, not PNG | 38 sprites: 1,209 KB PNG -> 286 KB lossy WebP (q88, -76%) or 834 KB lossless (-31%). The walk sheet: 312 KB -> 86 KB. | Woven file about 3.34 MB -> about 1.7 MB (-49%) with lossy; about 2.7 MB lossless. |
+| A2. Identical pictures stored once | 11 region tile pictures, 6 unique: 208 KB -> 127 KB. The same deep tile is baked once per floor. | -80 KB. |
+| A3. Bake only what is used | Not yet measured: sprites no rule, item, enemy or sheet names. | Probably small; measure first. |
+Best place for A1: at *import* (the art-import verb, finding 6 of the discovery record), so the pack stores the small file and weaving stays byte-for-byte deterministic (an encoder upgrade would otherwise change every weave). Edge quality of cut-out sprites needs one look before lossy is the default; lossless is the safe floor.
+
+## B. More flexible, no less readable: say it the way people say it
+The pattern already exists and works: **Blueprint**. Authors edit a short source; `vefr normalize` expands it to the canonical form that is checked in and read-only; a lock catches drift; deleting the source is the exit ramp. The same move fits more places:
+- **B1. Convention over listing.** 36 of Cottage's 38 `player.sprites` entries say exactly `"key": "sprites/key.png"`. If the file is there, the key exists. An item's `sprite` defaults to its id (7 of 14 already match). Fewer places to forget, one fewer registration step.
+- **B2. Events as sentences.** Rylee's own twenty rule sentences (`design/named-edits-sentences.md`) are the natural form: `"when": "defeats floor-5-loud-1"` instead of `{"defeats": {"what": "floor-5-loud-1"}}`. Album stickers and rules both use it; normalised to the canonical JSON. Album: 3.0 KB -> about 1.3 KB; rules 2.5 KB -> about 1.6 KB. Agents read and write it more reliably than nested objects, and so do people.
+- **B3. Name groups, not instances.** The album's "met" stickers point at instance ids (`floor-5-loud-1`), so retargeting a Blueprint family can silently break them. `defeats any barrel-mimic` (by family) survives edits. Eight of Cottage's 25 stickers are this mechanical: `"album": {"meet": "each family"}` would generate them.
+- **B4. Roles as words.** Cottage's Keybearers are ordinary enemies that carry a key; the engine does not know they are guardians. A `role: keybearer` tag (a word the pack chooses) lets the lock check, the balance report and the album say "the guardian of this floor" without parsing names.
+- **B5. One word per idea.** The glossary admits `floor` is both the stakes setting and a dungeon floor. Accept `stakes` as the key, keep `floor` as an alias for old packs.
+Honest scale: these save about 5 KB of a 58 KB pack. The value is fewer mistakes and fewer edit sites, not bytes.
+
+## C. Smaller engine, one vocabulary
+Adding the one action `complete-act` touched **five places in three files** (maplab's key list and its checker, the bake filter in cli, the JS validity check and the JS performer). Adding a pack block (`sound`) touched the validator, the bake, a template placeholder, the JS, the feature catalog, a guide and a test. Events are listed twice (maplab and the JS `EVENTS` table). The rule grammar is kept "in lockstep" by comments.
+- **Shape:** one declarative `vocabulary` file (events with their payload keys, actions with their argument shape, pack blocks with their bake variable). The Python validator and the bake read it; the JS table is generated from it and checked in, with a drift check like Blueprint's. Adding an action or block becomes one entry plus its behaviour.
+- **Scale:** roughly 100 lines of parallel action/event code collapse; the real gain is that lockstep drift stops being possible. Pairs naturally with the `web/packaged.html` split (`docs/plans/player-split/PLAN.md`, #261), which is the biggest single edit-surface win (6,632 lines).
+
+## D. Smaller docs and catalog
+- `docs/features.json` is one file every feature appends to; two parallel foremen collided on it. One file per feature (or a catalog generated from the vocabulary) removes the hotspot and makes the pack-side `detect` honest (finding 5).
+- `docs/guides/rulesets.md` is 777 lines holding every block. One short guide per block, each also the source of its Library chapter, keeps humans and agents on the same page.
+
+## Order (proposed)
+1. A2 and A1-at-import (smallest change, biggest bytes). 2. B1 and B5 (pure defaults; no new syntax). 3. C with the `packaged.html` split. 4. B2 to B4 as one normalising layer, only after Rylee approves the sentence form (ask-first contract change). 5. D alongside C.
+Everything keeps the Blueprint rules: a canonical form that is checked in and readable, a lock against drift, and an exit ramp.

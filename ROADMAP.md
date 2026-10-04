@@ -32,6 +32,7 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 - [authoring] Honest feature detection and engine requirements per pack (finding 5, deepened); a pack art-import verb with clean credits (6, new); an overlay lane for hand edits to generated floors (9, deepened).
 - [QA] A route through a pack plus one stable play-state API (7, new); a balance report from pack data (8, new).
 - [player] Album logs (bestiary, items, map).
+- [authoring + engine] **Smaller and more flexible** ([`docs/research/size-and-language-pass.md`](docs/research/size-and-language-pass.md)): WebP at art import and identical pictures stored once (about half the woven bytes), conventions for sprite and item registration, event sentences and family names that normalise to canonical JSON, and one declarative vocabulary for events, actions and pack blocks. Ask-first where it touches the pack contract.
 
 ### LATER (worthwhile, no immediate evidence or dependency)
 - [authoring] `vefr where|explain|map` development questions (finding 10, new).
