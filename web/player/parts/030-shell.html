@@ -1,0 +1,252 @@
+</style>
+</head>
+<body>
+<div id="title-screen" role="banner" aria-label="Title screen">
+  {{title_art_img}}
+  <div class="ts-copy">
+    <h1 id="ts-title">{{title}}</h1>
+    <p class="title-tagline">{{tagline}}</p>
+    <button type="button" id="ts-enter" autofocus>Begin</button>
+  </div>
+  <p class="ts-byline">Made with VEFR</p>
+</div>
+<header class="game-head">
+  <h1>{{title}}</h1>
+  <p class="tagline">{{tagline}}</p>
+</header>
+<main>
+  <section id="config" hidden aria-labelledby="cfg-title">
+    <span class="label">Optional extra</span>
+    <h2 id="cfg-title">Connect your own model</h2>
+    <p>This game is complete on its own. If you run a language model, it can write fresh lines for the characters as you play.</p>
+    <label for="cfg-url">Model address (any OpenAI-compatible server)</label>
+    <input id="cfg-url" type="text" placeholder="http://localhost:11434/v1" autocomplete="off">
+    <label for="cfg-model">Model name</label>
+    <input id="cfg-model" type="text" placeholder="qwen3-1.7b" autocomplete="off">
+    <p id="cfg-error" role="alert" hidden></p>
+    <div class="btns">
+      <button type="button" id="cfg-save" class="cta cta--gold">Connect</button>
+      <button type="button" id="cfg-offline" class="cta">Keep playing without one</button>
+    </div>
+    <p class="hint">Works with llama.cpp, Ollama, LM Studio, or a phone running a local model server. Leave both blank to play offline; the game's own lines carry the world. Nothing leaves your device.</p>
+  </section>
+  <div id="play" hidden>
+    <div class="stage" id="stage">
+      <canvas id="town-canvas" width="480" height="336" role="img" aria-label="The town, seen from above"></canvas>
+      <div class="hud hud--tl">
+        <div class="hud-hp glass" id="hud-hp" role="status" aria-live="polite">
+          <span class="hud-hp-label">Health</span>
+          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hud-hp-fill" style="width:100%"></div></div>
+          <span class="hud-hp-value" id="hud-hp-value">0/0</span>
+        </div>
+        <div class="hud-level glass" id="hud-level" role="status" aria-live="polite" hidden></div>
+        <div class="hud-gold glass" id="hud-gold" role="status" hidden></div>
+        <div class="hud-bag glass" id="bag-strip" role="img" aria-label="Nothing carried" hidden></div>
+        <div class="hud-light glass" id="light-live" role="status" aria-live="polite" hidden></div>
+      </div>
+      <div class="hud hud--tr">
+        <button type="button" id="menu-open" class="gbtn" aria-haspopup="dialog">Menu</button>
+      </div>
+      <div class="toasts" id="toasts">
+        <button type="button" class="toasts-toggle" id="toasts-toggle" aria-expanded="true" aria-controls="toasts">Messages</button>
+        <p class="glass" id="status" role="status" aria-live="polite"></p>
+        <p class="glass encounter-prompt" id="encounter-prompt" aria-live="polite" hidden></p>
+        <p class="glass" id="near" aria-live="polite"></p>
+        <p class="glass" id="poi" aria-live="polite"></p>
+        <p class="glass sr-only" id="use-hint" aria-live="polite"></p>
+        <p class="glass" id="library-live" role="status" aria-live="polite"></p>
+        <p class="glass" id="combat-live" role="status" aria-live="polite"></p>
+        <p class="glass" id="explore-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
+        <p class="speaker" id="npc-name"></p>
+        <p class="npc-line" id="npc-line"></p>
+        <p class="npc-note" id="npc-note" hidden></p>
+        <button type="button" id="npc-close" class="cta">Continue</button>
+      </div>
+      <div id="reader" role="dialog" aria-modal="true"
+           aria-labelledby="reader-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="reader-title"></p>
+          <p class="reader-page" id="reader-text"></p>
+          <p class="status" id="reader-page-num" aria-live="polite"></p>
+          <div class="reader-controls">
+            <button type="button" id="reader-back" class="cta">Back</button>
+            <button type="button" id="reader-next" class="cta cta--gold">Read on</button>
+            <button type="button" id="reader-close" class="cta">Close</button>
+          </div>
+        </div>
+      </div>
+      <div id="act-end" role="dialog" aria-modal="true"
+           aria-labelledby="act-end-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="act-end-title"></p>
+          <p class="reader-page" id="act-end-line"></p>
+          <div class="reader-controls">
+            <button type="button" id="act-end-keep" class="cta cta--gold">Keep exploring</button>
+            <button type="button" id="act-end-startover" class="cta">Start over</button>
+          </div>
+        </div>
+      </div>
+      <div id="trade" role="dialog" aria-modal="true"
+           aria-labelledby="trade-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="trade-title"></p>
+          <p class="status" id="trade-gold" aria-live="polite"></p>
+          <h2>Sell</h2>
+          <div id="trade-sell"></div>
+          <h2>Buy</h2>
+          <div id="trade-buy"></div>
+          <p class="status" id="trade-live" role="status" aria-live="polite"></p>
+          <div class="reader-controls">
+            <button type="button" id="trade-close" class="cta">Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="verb-row" id="verb-row" role="group" aria-label="Combat actions"></div>
+      <p class="glass" id="combat-log" aria-live="polite"></p>
+      <div class="dpad" id="dpad" aria-label="Move">
+        <button type="button" data-dir="up" style="grid-area:u" aria-label="Up">&#8593;</button>
+        <button type="button" data-dir="left" style="grid-area:l" aria-label="Left">&#8592;</button>
+        <button type="button" data-dir="down" style="grid-area:d" aria-label="Down">&#8595;</button>
+        <button type="button" data-dir="right" style="grid-area:r" aria-label="Right">&#8594;</button>
+      </div>
+      <div class="acts">
+        <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
+        <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+        <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+        <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+        <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
+      </div>
+    </div>
+    <section id="kitchen" hidden>
+      <p class="status" id="k-open" aria-live="polite"></p>
+      <h2>The rail</h2>
+      <div id="k-tickets"></div>
+      <h2>The pantry</h2>
+      <div id="k-pantry" role="group" aria-label="Pantry"></div>
+      <h2>The wrapper</h2>
+      <p id="k-wrap" aria-live="polite"></p>
+      <div class="controls">
+        <button type="button" id="k-serve" class="primary">Serve</button>
+        <button type="button" id="k-undo">Take back</button>
+        <button type="button" id="k-aside">Set aside</button>
+      </div>
+      <p class="status" id="k-line" aria-live="polite"></p>
+      <section id="k-headlines" hidden>
+        <h2>The morning page</h2>
+        <p class="status">What does the paper say?</p>
+        <div id="k-headline-list"></div>
+      </section>
+      <section id="k-page" hidden tabindex="-1"></section>
+      <div class="controls" id="k-again" hidden>
+        <button type="button" id="k-sleep">Sleep and wake again</button>
+      </div>
+    </section>
+    <section id="desk" hidden>
+      <p class="status" id="d-open" aria-live="polite"></p>
+      <div class="controls">
+        <button type="button" id="d-whisper" class="primary">Listen for whispers</button>
+        <span class="status" id="d-status">No whispers yet.</span>
+      </div>
+      <section id="d-feed" aria-live="polite"></section>
+      <h2>The morning page</h2>
+      <div id="d-headlines"></div>
+      <h2>On the wire</h2>
+      <ul id="d-printed"></ul>
+      <h2>What the world knows</h2>
+      <ul id="d-facts"></ul>
+    </section>
+  </div>
+</main>
+<div id="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" hidden>
+  <div class="carved">
+    <span class="label" id="menu-title">Paused</span>
+    <ul class="pm">
+      <li><button type="button" data-panel="journal" aria-current="true">Journal</button></li>
+      <li><button type="button" data-panel="books">Books</button></li>
+      <li><button type="button" data-panel="album">Album</button></li>
+      <li><button type="button" data-panel="next">Where next?</button></li>
+      <li><button type="button" data-panel="why">Why did that happen?</button></li>
+      <li><button type="button" data-panel="bag">Bag</button></li>
+      <li><button type="button" data-panel="help">How to play</button></li>
+      <li><button type="button" data-panel="model">Model settings</button></li>
+      <li><button type="button" data-panel="display">Display</button></li>
+      <li><button type="button" data-panel="startover">Start over</button></li>
+    </ul>
+    <button type="button" id="menu-close" class="cta cta--gold">Resume</button>
+  </div>
+  <div class="carved" id="menu-panel">
+    <div data-panel-body="journal">
+      <h2>Journal</h2>
+      <section id="feed" aria-live="polite">
+        <p class="empty">Nothing yet. Press Whisper to hear what people are saying.</p>
+      </section>
+    </div>
+    <div data-panel-body="books" hidden>
+      <h2>Books</h2>
+      <div id="book-list"></div>
+      <p class="status" id="book-count"></p>
+    </div>
+    <div data-panel-body="album" id="album-panel" hidden>
+      <h2>Album</h2>
+      <p class="status">Stickers you have met and found. Nothing is ever lost.</p>
+      <div id="album-list"></div>
+      <p class="status" id="album-count"></p>
+      <p class="status" id="album-secrets"></p>
+    </div>
+    <div data-panel-body="next" hidden>
+      <h2>Where next?</h2>
+      <p class="status">What the world has pointed you toward, kept until you get there.</p>
+      <div id="next-list"></div>
+      <p class="status" id="next-count"></p>
+    </div>
+    <div data-panel-body="why" hidden>
+      <h2>Why did that happen?</h2>
+      <p class="status">The last things the world did, and what made them happen.</p>
+      <div id="why-list"></div>
+      <p class="status" id="why-count"></p>
+    </div>
+    <div data-panel-body="bag" hidden>
+      <h2>Bag</h2>
+      <p class="status" id="bag-gold"></p>
+      <h3 class="equip-heading" id="equip-heading">You</h3>
+      <div id="equip-slots" role="list" aria-label="What you are wearing"></div>
+      <div id="bag-list"></div>
+      <p class="status" id="bag-count"></p>
+      <p class="status" id="bag-live" role="status" aria-live="polite"></p>
+    </div>
+    <div data-panel-body="help" hidden>
+      <h2>How to play</h2>
+      <ul>
+        <li>Move with the arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>, or the pad on a touch screen.</li>
+        <li>Use what is near you with <kbd>E</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd>, <kbd>F</kbd> or the big Interact button. It always says what it will do. The same keys turn the pages of a note and close someone's speech, and <kbd>E</kbd> or <kbd>F</kbd> close a shop.</li>
+        <li>Hear a rumor with <kbd>Q</kbd> or the Whisper button.</li>
+        <li>Open your bag with <kbd>B</kbd> or the Bag button.</li>
+        <li>Walk the unexplored dark with <kbd>O</kbd> or the Explore button.</li>
+        <li>Turn the dark off with <kbd>V</kbd>, or in Display. Dusk and Dawn are in Display too, under Time of day.</li>
+        <li>Open and close this menu with <kbd>Esc</kbd>.</li>
+      </ul>
+    </div>
+    <div data-panel-body="model" hidden>
+      <h2>Model settings</h2>
+      <p>This game can use your own language model for fresh lines. It plays fully without one.</p>
+      <button type="button" id="menu-model" class="cta">Model settings</button>
+    </div>
+    <div data-panel-body="display" hidden>
+      <h2>Display</h2>
+      <p>The dark shows only the ground you have walked and lit. Turn it off to see the whole map.</p>
+      <button type="button" id="fog-toggle" class="cta" aria-pressed="true">Darkness: on</button>
+      <p class="status" id="fog-live" role="status" aria-live="polite"></p>
+      <h2 class="menu-sub">Time of day</h2>
+      <p>The world's mood. What people say changes with it.</p>
+      <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
+    </div>
+    <div data-panel-body="startover" id="startover-body" hidden>
+      <h2>Start over</h2>
+      <p>Start over? This clears your bag, gold, health, fog and the monsters you've beaten in this browser.</p>
+      <button type="button" id="startover-cancel" class="cta">Cancel</button>
+      <button type="button" id="startover-confirm" class="cta cta--gold">Start over</button>
+    </div>
+  </div>
+</div>

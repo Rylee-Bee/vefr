@@ -45,7 +45,7 @@ to this repo.
 | Path | Purpose |
 |---|---|
 | `src/vefr/` | The engine. `world.py` is the only seam between engine + story |
-| `web/` | The studio workshop (`app.html`, `studio.css`, `app.js`; `state.js` is the one client state), the woven player (`packaged.html`), art (`web/art/`), the studio shelf (`web/library/`) |
+| `web/` | The studio workshop (`app.html`, `studio.css`, `app.js`; `state.js` is the one client state), the woven player (`packaged.html`, GENERATED from `web/player/parts/`: edit a part, run `uv run python scripts/build_player.py`; a test fails if they disagree), art (`web/art/`), the studio shelf (`web/library/`) |
 | `worlds/sample-world/` | Playable demo pack, acts shape, validates green |
 | `worlds/lore/` | Three lore packs (norse, historical-event, norse-runes) |
 | `tests/` | pytest suite, incl. node-vm harnesses for shipped JS |
