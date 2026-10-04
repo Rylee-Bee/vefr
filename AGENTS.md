@@ -4,6 +4,8 @@ vefr - a rumor engine for playable worlds (MPL-2.0). Rylee's personal
 profile comes from the global agent config — do not add personal files
 to this repo.
 
+**Standing principle (Rylee, 2026-10-04):** building a game here is how the engine gets built, and the next game comes after this one. When a game needs a script, format or repeated manual step, build it as a VEFR feature (data in the pack, a `vefr` tool, a check, a guide) and record the lesson in the same work. A game supplies data only.
+
 ## Quick navigation
 
 | Want to... | Open this |
