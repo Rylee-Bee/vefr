@@ -205,7 +205,8 @@
       ],
       "design": "design/gates-and-guardians.md",
       "tests": [
-        "tests/test_locked_stairs.py"
+        "tests/test_locked_stairs.py",
+        "tests/test_lock_reachability.py"
       ]
     },
     {
