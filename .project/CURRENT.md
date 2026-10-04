@@ -26,8 +26,8 @@
 **Equipment is now playable end to end** (A1 pack fields #244, A2 the pure engine #247, A3 the Bag panel #249). Remaining in `design/equipment.md`: step 4 (the glossary: *equip*, *take off*, *slot*; the rulesets and player guides) and step 5 (the private pack's cloak, bow and ring wired to the round-8 icons). The 1x1 fixture sprites are engine-test canon, **not** art — the real icons do not exist yet.
 
 **Next, in order:**
-1. **Equipment steps 4-5** — the glossary and the guide lines, then the private pack demo. Small, and it finishes the thread.
-2. **The weighted descent** (random floors phase 2, with weights, decided 2026-10-03) — self-contained, and it unblocks #215, whose only remaining blocker is the guardian names.
+1. **Equipment step 5, the pack demo** — the *only* thing left in the equipment thread. The engine is done and verified; what remains is pack data, and it lives in the private pack repo, so the engine records the companion change instead of editing across the boundary (`docs/guides/equipment-pack-companion.md`). The ring is ready to become a charm slot today and needs no new art; **a cloak and a bow do not exist in the pack yet and their names are Rylee's.**
+2. **The weighted descent** (random floors phase 2, with weights) — self-contained, and it unblocks #215, whose only remaining blocker is the per-guardian proper names.
 3. **The album** (#216) — write the frozen contract first.
 4. **A real act 2** (#217's other half).
 5. **Damage types, status effects and resistances** (`design/elemental-and-status-effects.md`) — a campaign, not a slice, and it should open with an ADR.
@@ -145,22 +145,24 @@ Treat `docs/vefr/` as the canonical copy.
    D3's **Keywarden** — a Super Unique (a variant of a stock monster)
    named *role label + proper name + epithet*, carrying a named key. So
    the recurring label is one functional word, not six invented names,
-   and the court-rank scheme in the design is the wrong read of it. Still
-   hers: the role word, and each guardian's and key's proper name. The
-   Cellar King, the seal and the first lock (floor 3 to 4) are settled.
-   See `DECISIONS.md`, 2026-10-03.
-2. **The elemental campaign's four open decisions**
-   (`design/elemental-and-status-effects.md`): the damage resolver, the
-   status store and whether it saves across a reload, what surface the
-   *player's* resistances live on (this one decides the pack contract),
-   and whether a status is a Blueprint field or a pack block. Owed before
-   any code, because a new enemy field also touches the closed Blueprint
-   key sets and so needs an ADR amendment.
+   and the court-rank scheme in the design is the wrong read of it. **The
+   role word is settled: "the Keybearer".** Still hers: each guardian's
+   proper name and each key's. The Cellar King, the seal and the first
+   lock (floor 3 to 4) are settled. See `DECISIONS.md`, 2026-10-03.
+2. **The elemental campaign's remaining open decisions**
+   (`design/elemental-and-status-effects.md`). **Settled 2026-10-03:** the
+   hero's resistances live in **two** places — the pack's `player` block as
+   a base (`player.resist` / `player.immune`) and **worn gear on top**. The
+   gear half dodges the ADR entirely, because Blueprint's closed key sets
+   govern *enemy* records, not items. Still owed: the damage resolver, the
+   status store and whether it saves across a reload, and whether a status
+   is a Blueprint field or a pack block.
 3. **The language packet's Foreman count and model**
-   (`11-open-decisions.md` item 7) — stated before any multi-slice
-   campaign launches. **This now bites**: the weighted descent and the
-   elemental triangle are both multi-slice campaigns, so the count and
-   the model have to be stated before the first of them launches.
+   (`11-open-decisions.md` item 7). **Settled 2026-10-03: one foreman per
+   campaign, slices in sequence, MiniMax M3.1, budget 8, integrator
+   reviews every diff.** The deciding reason: the descent block's two halves
+   share `maplab.py` and `web/packaged.html`, so parallel foremen would
+   conflict on the same files anyway.
 
 **Closed 2026-10-03:** the language packet's disposition read. Rylee
 approved GO WITH CONSTRAINTS ("Approved. Go"). That releases the gate and

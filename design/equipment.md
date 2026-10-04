@@ -1,6 +1,6 @@
 # Equipment: slots and icons first
 
-Status: **steps 1 and 2 built** (the pack fields `slot` and `mods`, the validator, the bake, and the pure `VEFR_EQUIP_ENGINE`). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Steps 3-5 (the Bag "You" section, the buttons, the glossary, the demo) are not built.
+Status: **steps 1-4 built** (the pack fields `slot` and `mods`, the validator, the bake, the pure `VEFR_EQUIP_ENGINE`, the Bag panel, the glossary and the guides). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Step 5, the pack demo, is not in this repo - see the table below.
 
 ## What exists today
 
@@ -49,6 +49,23 @@ item drawn on every frame. That is later work.
 No weight, no durability, no set bonuses, no rarity by colour, no layered hero art, no selling a worn item, no two-handed rules. All of these can be added later without
 breaking this shape.
 
+## What is built (2026-10-03)
+
+All five steps except the pack demo, which needs pack data in a private repo and is written up as
+a companion change rather than an edit across the boundary
+(`docs/guides/equipment-pack-companion.md`).
+
+| Step | Where | Tests |
+|---|---|---|
+| 1. pack fields, validator, bake | `src/vefr/maplab.py` (`SLOTS`, `MOD_STATS`, `item_slot_and_mods`, `item_slot_errors`, `_door_key_items`), `src/vefr/cli.py` (`_player_items`) | `tests/test_equipment_validator.py` (39) |
+| 2. the pure engine | `web/packaged.html` (`window.VEFR_EQUIP_ENGINE`) | `tests/test_equipment_engine.py` (18) + `tests/fixtures/equip_engine_harness.mjs` |
+| 3. the Bag panel, equip/take off, storage, hero wiring | `web/packaged.html` | `tests/test_equipment_ui.py` (14) + `tests/fixtures/equip_ui_harness.mjs` |
+| 4. glossary and guides | `docs/guides/glossary.md` (`slot`, `equip`/`take off`), `docs/guides/playing.md`, `docs/guides/rulesets.md` | `tests/test_pack_neutrality.py` |
+| 5. the pack demo | **not in this repo** - needs a cloak and a bow, whose names are Rylee's | - |
+
+The five empty-slot outlines the design asked for are drawn in code (inline SVG), not new art. The
+1x1 sprites the tests use are engine-test canon and deliberately **not** the real icons.
+
 ## Art it needs
 
 The round 8 items brief already covers the hero's kit as 128 px icons (bow, dagger, shield, boots, cloak, cap, ring, amulet, staff, spellbook, runes, potion, gem).
@@ -69,10 +86,12 @@ Five small **empty-slot outlines** (hand, body, head, feet, charm) are the only 
 ## Build order
 
 1. Validator and the pack fields (small, safe, testable alone). **Done** (#244).
-2. Equip state and the stat maths as pure functions with the node harness. **Done** (the pure engine; storage comes with step 3).
-3. The Bag "You" section, buttons, live line, keyboard.
-4. Glossary (verbs **equip**, **take off**; noun **slot**), the rulesets guide, the player guide.
-5. A demo: Cottage's cloak, bow and ring wired to the round 8 icons.
+2. Equip state and the stat maths as pure functions with the node harness. **Done** (the pure engine, #247; storage came with step 3).
+3. The Bag "You" section, buttons, live line, keyboard. **Done** (#249).
+4. Glossary (verbs **equip**, **take off**; noun **slot**), the rulesets guide, the player guide. **Done** (#251).
+5. A demo: a private pack's cloak, bow and ring wired to real icons. **Not in this repo** - a companion change, and it needs a cloak and a bow that do not exist in the pack yet.
+4. ~~Glossary (verbs **equip**, **take off**; noun **slot**), the rulesets guide, the player guide.~~ **Done.**
+5. ~~A demo: a private pack's cloak, bow and ring wired to real icons.~~ **Not in this repo** - see the companion change.
 
 ## Decided and still open
 
