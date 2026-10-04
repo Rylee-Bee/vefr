@@ -1455,7 +1455,7 @@ def _action_bakes(action) -> bool:
                     and isinstance(value.get('line'), str))
         return False
     if key in ('show', 'hide', 'reveal', 'give', 'takes', 'set', 'unset',
-               'point-to'):
+               'point-to', 'complete-act'):
         return isinstance(value, str) and bool(value)
     if key == 'weather':
         return value in ('fog', 'clear')

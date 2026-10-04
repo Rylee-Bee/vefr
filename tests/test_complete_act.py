@@ -9,7 +9,7 @@ A pack can end a story beat with one rule action: {"complete-act": "<act id>"}.
     "Keep exploring". Interact (E) continues = closes the card. It does NOT advance acts.
     window.VEFR_ACT_COMPLETE = {act, shown} is the harness snapshot.
   - once per save: with saves.rules=persist a reload does not show the card again.
-  - a pack that never uses the action plays exactly as before (no #act-end element at all).
+  - a pack that never uses the action plays exactly as before (the card stays hidden).
 Neutral fixtures only: VEFR is public.
 """
 
@@ -115,6 +115,6 @@ def test_once_per_save_survives_a_reload(tmp_path):
 
 def test_a_pack_without_the_action_has_no_card(tmp_path):
     r = play(tmp_path, {}, [])
-    assert r["card"]["present"] is False
+    assert not r["card"]["visible"]  # the dialog exists hidden, like the reader and trade
     assert r["complete"] is None
     assert r["errors"] == []

@@ -615,3 +615,6 @@ verification is the safety net.
 **Evidence.** Round 3 variance analysis showed instability on ambiguous cases.
 
 **Status.** ACCEPTED.
+## 2026-10-03 (night): `complete-act` is a rule action (Cottage release 1)
+
+Approved with the act-2 plan (CURRENT, 2026-10-02) and recorded here now. `{"complete-act": "<act id>"}` names an act the pack declares; the player opens one end card on the overlay surface ("Keep exploring", "Start over"), once per save under `saves.rules: persist`. It records that a story beat is finished and does **not** advance acts (ADR 0006 is still unbuilt). Chosen over a new `ending` field or an `act-completes` event: the rule vocabulary already says when, so the one new thing is the action. Tests: `tests/test_complete_act.py`.

@@ -483,7 +483,7 @@ RULE_CONDITION_KEYS = ('has', 'flag', 'is', 'believes', 'not-believes',
 # copy of an item from what the hero carries (a delivery, a turn-in).
 RULE_ACTION_KEYS = ('say', 'show', 'hide', 'reveal', 'give', 'takes',
                     'set', 'unset', 'believes', 'stops-believing', 'tells',
-                    'weather', 'point-to')
+                    'weather', 'point-to', 'complete-act')
 
 
 def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
@@ -500,6 +500,7 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
     pack_cfg: dict = {}
     region_contracts: list[dict] = []
     book_ids: set = set()
+    act_ids: set = set()
     if pack_dir is not None:
         from .cli import _inside
 
@@ -529,6 +530,7 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
                 act_real = _inside(acts_dir, act)
                 if act_real is None or not os.path.isdir(act_real):
                     continue
+                act_ids.add(act)
                 for region in sorted(os.listdir(act_real)):
                     if region.startswith('.'):
                         continue
@@ -588,6 +590,7 @@ def _rule_known_ids(w: dict, pack_dir: Path | None) -> dict:
         'pois': pois,
         'books': book_ids,
         'enemies': enemies,
+        'acts': act_ids,
         'phases': set(phases) if isinstance(phases, dict) else set(),
         'things': items | people | places | pois | book_ids | enemies,
         # None means "declared but malformed": the shape error in
@@ -820,6 +823,12 @@ def _rule_action_errors(rid: str, action, known: dict) -> list[str]:
     if key == 'weather':
         if val not in ('fog', 'clear'):
             return [f"rule '{rid}' weather must be 'fog' or 'clear'"]
+        return []
+    if key == 'complete-act':
+        if not isinstance(val, str) or not val:
+            return [f"rule '{rid}' complete-act must name an act"]
+        if val not in known['acts']:
+            return [f"rule '{rid}' completes act '{val}', which the pack does not declare"]
         return []
     return _rule_value_errors(rid, 'point-to', val, 'place', known)
 
