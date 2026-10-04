@@ -1,5 +1,26 @@
 # DECISIONS — vefr
 
+## 2026-10-04 — Munr is a game built in VEFR, not a predecessor engine
+
+**Decision (Rylee, 2026-10-04, in chat).** Munr is one active private game.
+`Rylee-Bee/munr` is its canonical repository; VEFR is the engine/studio it is
+made in. The former `munr-story` repository is a migration-history source,
+not a second project identity.
+
+The old norn implementation in Munr's Git ancestry is historical engine
+lineage only. Moving reusable engine behavior into VEFR does **not** retire
+Munr, and inactivity in that historical engine code must not be used as stale
+or archive evidence for the game.
+
+**Relationship.** Munr and VEFR are separate project identities connected by
+the normal game/world-pack contract. Historical code ancestry is provenance,
+not a synchronization contract.
+
+**Supersedes/clarifies.** This closes the unresolved D5 question and clarifies
+the 2026-09-25 "keep, separate" ruling. D5 ("Retire munr") is superseded.
+
+**Status.** ACCEPTED.
+
 ## 2026-10-04 — the endless dungeon: sections, key wardens, acts change the town only (Rylee)
 
 **Decisions (Rylee, in chat).** (1) The dungeon is one line of generated floors cut into sections of 8 to 11; each section ends in a key warden whose key opens a vault with a lore note that advances the act. (2) Acts change the town, never the dungeon generator; the King ends Act 3, then an endless mode. (3) Each floor has randoms plus one or two elites and linked groups; hand-painted room "stamps" can be placed in generated floors; maps get much bigger. (4) Everything is a VEFR feature; a game supplies data. (5) The stairs to the next section stay locked until the town visit, with a paid shortcut. (6) Target sizes up to 128x96, optimized for phones: monsters sleep until near, the flood fill is radius-bounded, fog becomes a bitset (E0a evidence, #278). (7) Fog style: a circle plus whole-room reveal. (8) The Keybearers are named Ashwing, Brother Sporeling and Sir Hollowhorn (Cottage), candidates for section wardens. (9) A playable generated prototype comes before the Cottage Act 1 rebuild.
@@ -412,12 +433,11 @@ broke `test_no_historical_package_names` and turned `main` red. The
 engine tree must not name the sibling; this file is outside the audited
 roots, so the name lives here and AGENTS.md points here.
 
-**Open.** D5 (2026-09-21, "Retire munr — archive the repo") does not
-match reality: on 2026-09-25 munr is active (`wip/norn-journey`, commits
-that day), and VEFR-GAME-PLAN §2 casts munr as a later costume-ruleset
-pack on vefr. Owner to reconcile; until then treat D5 as UNKNOWN.
+**Resolved 2026-10-04.** The owner clarified that Munr is an active game
+built in VEFR, not a predecessor engine. The old shared engine lineage is
+historical provenance only; D5 is superseded.
 
-**Status.** ACCEPTED (not-synced rule); D5 OPEN.
+**Status.** ACCEPTED; D5 CLOSED/SUPERSEDED.
 
 ---
 
