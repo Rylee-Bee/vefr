@@ -1,4 +1,5 @@
 """Sound, slice 1 (Cottage release 1, plan S1). FROZEN CONTRACT.
+Played through the shared tests/play_kit.py.
 
 A small synthesized sound set, no audio files. A pack opts in with `"sound": {"theme": "soft"}` in world.json.
   - validator: `sound` must be an object with exactly one key `theme`, whose value is "soft" (the only theme in this
@@ -15,34 +16,35 @@ A small synthesized sound set, no audio files. A pack opts in with `"sound": {"t
 Neutral fixtures only.
 """
 
-import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-from vefr import cli, maplab
+from vefr import maplab
+
+import play_kit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests" / "fixtures"))
 import make_lock_pack as mk  # noqa: E402
 
-HARNESS = ROOT / "tests" / "fixtures" / "sound_harness.mjs"
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 STORE_KEY = f"vefr-sound-{mk.NAME}"
 
+SOUND = "VEFR_SOUND"
+TOGGLE = "exists:#sound-toggle"
+TOGGLE_CHECKED = "exists:#sound-toggle:checked"
+TO_DOOR = "walk:down,down,right,right,up,right,right,right,right,down,down,right,right"
+
 
 def build(tmp_path, sound=None, requires=None, extra=None):
-    pack = mk.build(tmp_path, requires=requires)
-    p = pack / "world.json"
-    cfg = json.loads(p.read_text(encoding="utf-8"))
+    world = dict(extra or {})
     if sound is not None:
-        cfg["sound"] = sound
-    cfg.update(extra or {})
-    p.write_text(json.dumps(cfg), encoding="utf-8")
-    return pack
+        world["sound"] = sound
+    patch = {"world.json": world} if world else None
+    return play_kit.pack(tmp_path, "lock", patch, requires=requires)
 
 
 def extra_errors(tmp_path, sound):
@@ -70,32 +72,30 @@ def test_a_bad_sound_block_is_named(tmp_path, bad):
 
 # --- player ------------------------------------------------------------------------------------
 
-def play(tmp_path, spec=None, **kw):
-    pack = build(tmp_path, **kw)
-    html = tmp_path / "sound.html"
-    html.write_text(cli.weave_html(pack), encoding="utf-8")
-    run = subprocess.run(["node", str(HARNESS), str(html), json.dumps(spec or {})],
-                         capture_output=True, text=True, timeout=120)
-    assert run.returncode == 0, run.stderr
-    return json.loads(run.stdout)
+def run(tmp_path, spec=None, **kw):
+    html = play_kit.weave(build(tmp_path, **kw), tmp_path)
+    return play_kit.play(html, spec or {})
 
 
 def test_the_snapshot_and_toggle_exist_when_opted_in(tmp_path):
-    r = play(tmp_path, sound={"theme": "soft"})
-    assert r["errors"] == []
-    assert r["sound"] == {"theme": "soft", "on": True, "played": []}
-    assert r["toggle"] == {"present": True, "checked": True}
+    out = run(tmp_path, {"steps": ["begin"], "read": [SOUND, TOGGLE, TOGGLE_CHECKED]},
+              sound={"theme": "soft"})
+    assert out["errors"] == []
+    assert out["reads"][SOUND] == {"theme": "soft", "on": True, "played": []}
+    assert out["reads"][TOGGLE] is True and out["reads"][TOGGLE_CHECKED] is True
 
 
 def test_a_door_makes_its_cue(tmp_path):
-    r = play(tmp_path, {"door": True}, sound={"theme": "soft"})
-    assert r["errors"] == []
-    assert r["sound"]["played"] == ["door"]
+    out = run(tmp_path, {"steps": ["begin", TO_DOOR, "key:e", "wait:200"], "read": [SOUND]},
+              sound={"theme": "soft"})
+    assert out["errors"] == []
+    assert out["reads"][SOUND]["played"] == ["door"]
 
 
 def test_a_locked_door_makes_the_locked_cue(tmp_path):
-    r = play(tmp_path, {"door": True}, sound={"theme": "soft"}, requires=mk.RING)
-    assert r["sound"]["played"] == ["locked"]
+    out = run(tmp_path, {"steps": ["begin", TO_DOOR, "key:e", "wait:200"], "read": [SOUND]},
+              sound={"theme": "soft"}, requires=mk.RING)
+    assert out["reads"][SOUND]["played"] == ["locked"]
 
 
 def test_a_sticker_and_the_end_have_cues(tmp_path):
@@ -103,18 +103,20 @@ def test_a_sticker_and_the_end_have_cues(tmp_path):
              "rules": [{"id": "the-end", "when": {"starts": {}}, "once": True,
                         "then": [{"complete-act": "act-1"}]}],
              "album": [{"id": "begin", "name": "Begin", "kind": "open", "when": {"starts": {}}}]}
-    r = play(tmp_path, sound={"theme": "soft"}, extra=extra)
-    assert sorted(r["sound"]["played"]) == ["end", "sticker"]
+    out = run(tmp_path, {"steps": ["begin"], "read": [SOUND]}, sound={"theme": "soft"}, extra=extra)
+    assert sorted(out["reads"][SOUND]["played"]) == ["end", "sticker"]
 
 
 def test_off_is_remembered_and_silences_everything(tmp_path):
-    r = play(tmp_path, {"door": True, "store": {STORE_KEY: "off"}}, sound={"theme": "soft"})
-    assert r["sound"] == {"theme": "soft", "on": False, "played": []}
-    assert r["toggle"] == {"present": True, "checked": False}
+    out = run(tmp_path, {"steps": ["begin", TO_DOOR, "key:e", "wait:200"],
+                         "read": [SOUND, TOGGLE, TOGGLE_CHECKED], "store": {STORE_KEY: "off"}},
+              sound={"theme": "soft"})
+    assert out["reads"][SOUND] == {"theme": "soft", "on": False, "played": []}
+    assert out["reads"][TOGGLE] is True and out["reads"][TOGGLE_CHECKED] is False
 
 
 def test_a_pack_without_sound_has_none(tmp_path):
-    r = play(tmp_path, {"door": True})
-    assert r["sound"] is None
-    assert r["toggle"]["present"] is False
-    assert r["errors"] == []
+    out = run(tmp_path, {"steps": ["begin", TO_DOOR, "key:e", "wait:200"], "read": [SOUND, TOGGLE]})
+    assert out["reads"][SOUND] is None
+    assert out["reads"][TOGGLE] is False
+    assert out["errors"] == []
