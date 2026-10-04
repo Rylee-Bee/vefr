@@ -266,7 +266,7 @@ there, still walkable, in the ordinary hand-written shape.
 ## Things (format 2)
 
 A **thing** is one item the player can pick up: gear, a potion, a
-keepsake. A pack that spells out seven items in `world.json` writes
+keepsake. A pack that spells out several items in `world.json` writes
 them once here instead, and `vefr normalize` writes the entries and
 puts them in the carriers' drops.
 
