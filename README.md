@@ -196,7 +196,7 @@ only after real games prove the same need. Core changes are rarer still. These
 are logical boundaries, not a plugin framework or a second language: games and
 features use the same public VEFR surface. See
 [Gameplay features](docs/guides/gameplay-features.md) and
-[ADR 0011](docs/adr/0011-gameplay-features.md).
+[ADR 0012](docs/adr/0012-gameplay-features.md).
 
 The engine never contains story. Here's what it reads and what it
 doesn't:

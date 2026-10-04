@@ -1,4 +1,4 @@
-# 0011 - Gameplay features: one vocabulary, three layers
+# 0012 - Gameplay features: one vocabulary, three layers
 
 Date: 2026-10-04
 

@@ -116,5 +116,5 @@ Gameplay features do **not** earn a second language.
 - game-specific data stays out of the engine;
 - no plugin loader, marketplace or new runtime until real evidence earns one.
 
-See [ADR 0011](../adr/0011-gameplay-features.md) for the decision and industry
+See [ADR 0012](../adr/0012-gameplay-features.md) for the decision and industry
 references.

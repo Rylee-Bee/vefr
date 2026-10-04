@@ -13,7 +13,7 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 
 ### HOW VEFR GROWS
 
-The architecture rule is deliberately small ([ADR 0011](docs/adr/0011-gameplay-features.md)):
+The architecture rule is deliberately small ([ADR 0012](docs/adr/0012-gameplay-features.md)):
 
 ```text
 specific to one game          -> game
@@ -28,7 +28,7 @@ language. Promotion is evidence-driven: the second real consumer earns the
 abstraction, and the change must delete duplication or make an invariant
 enforceable rather than merely shorten syntax.
 
-Cottage is the depth test. Independent overnight games are breadth tests.
+The endless dungeon is the first real use of the rule: sections, key wardens, stamps, elites and play-time floors are built as VEFR features ([plan](docs/plans/endless-dungeon/PLAN.md)) so a second game can reuse them by writing data, and Cottage only supplies content. Cottage is the depth test. Independent overnight games are breadth tests.
 Burrito Journalism is the later composition test: many short chapters may feel
 like different kinds of games, but should prefer combinations of existing
 gameplay features over new core machinery.
