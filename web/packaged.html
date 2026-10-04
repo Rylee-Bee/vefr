@@ -349,6 +349,17 @@
           </div>
         </div>
       </div>
+      <div id="act-end" role="dialog" aria-modal="true"
+           aria-labelledby="act-end-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="act-end-title"></p>
+          <p class="reader-page" id="act-end-line"></p>
+          <div class="reader-controls">
+            <button type="button" id="act-end-keep" class="cta cta--gold">Keep exploring</button>
+            <button type="button" id="act-end-startover" class="cta">Start over</button>
+          </div>
+        </div>
+      </div>
       <div id="trade" role="dialog" aria-modal="true"
            aria-labelledby="trade-title" tabindex="-1" hidden>
         <div class="reader-card">
@@ -865,6 +876,53 @@ function openReader(book) {
   renderReader();
   document.getElementById('reader').focus();
 }
+
+// complete-act: a story beat the pack says is finished. One end card on
+// the same overlay surface as a note: "Keep exploring" (what Interact
+// does) or "Start over" (which asks first, in the menu). It never
+// advances to another act. window.VEFR_ACT_COMPLETE is the harness
+// snapshot, like VEFR_COMBAT.
+var actEndOpener = null;
+function openActEnd(actId) {
+  var card = document.getElementById('act-end');
+  if (!card) return;
+  var w = window.VEFR_WORLD || {};
+  document.getElementById('act-end-title').textContent = w.title || w.name || 'The end';
+  document.getElementById('act-end-line').textContent =
+    'This part of the story is complete. You can keep exploring, or start over.';
+  actEndOpener = document.activeElement;
+  card.hidden = false;
+  window.VEFR_ACT_COMPLETE = { act: String(actId), shown: true };
+  // A `starts` rule can fire before the play area is shown, when a focus
+  // call lands nowhere: ask again once the screen has settled.
+  var keepBtn = document.getElementById('act-end-keep');
+  keepBtn.focus();
+  setTimeout(function () { if (!card.hidden) keepBtn.focus(); }, 60);
+}
+function closeActEnd() {
+  var card = document.getElementById('act-end');
+  if (!card || card.hidden) return;
+  card.hidden = true;
+  if (window.VEFR_ACT_COMPLETE) window.VEFR_ACT_COMPLETE.shown = false;
+  var back = actEndOpener;
+  actEndOpener = null;
+  try {
+    if (back && back !== document.body && back.focus) back.focus();
+    else document.getElementById('menu-open').focus();
+  } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', function () {
+  var keep = document.getElementById('act-end-keep');
+  var so = document.getElementById('act-end-startover');
+  if (keep) keep.addEventListener('click', closeActEnd);
+  if (so) so.addEventListener('click', function () {
+    closeActEnd();
+    var open = document.getElementById('menu-open');
+    if (open) open.click();
+    var b = document.querySelector('#menu [data-panel="startover"]');
+    if (b) b.click();
+  });
+});
 
 function closeReader() {
   var reader = document.getElementById('reader');
@@ -2407,6 +2465,7 @@ function performRuleAction(a) {
     if (window.VEFR_RULES_POINT_TO) window.VEFR_RULES_POINT_TO(v);
     return;
   }
+  if (key === 'complete-act') { openActEnd(v); return; }
   if (key === 'show' || key === 'hide' || key === 'reveal') {
     if (window.VEFR_RULES_SURFACE) window.VEFR_RULES_SURFACE(key, v);
   }
@@ -3873,7 +3932,7 @@ function setupTown() {
       }
       if (key === 'show' || key === 'hide' || key === 'reveal'
           || key === 'give' || key === 'takes' || key === 'set'
-          || key === 'unset' || key === 'point-to') {
+          || key === 'unset' || key === 'point-to' || key === 'complete-act') {
         return typeof v === 'string';
       }
       if (key === 'weather') return v === 'fog' || v === 'clear';
@@ -5474,6 +5533,16 @@ function setupTown() {
       || e.key === ' ' || e.key === 'Enter';
     var nativeClick = e.target && e.target.tagName === 'BUTTON'
       && (e.key === ' ' || e.key === 'Enter');
+    // The end card (complete-act) wins over everything: Interact and Escape
+    // continue the game; the buttons handle their own Enter and Space.
+    var actEndCard = document.getElementById('act-end');
+    if (actEndCard && !actEndCard.hidden) {
+      if (e.key === 'Escape' || (interactKey && !nativeClick)) {
+        e.preventDefault();
+        if (!e.repeat) closeActEnd();
+      }
+      return;
+    }
     // While the reader is open, its keys win and movement stops.
     var readerOpen = !document.getElementById('reader').hidden;
     if (readerOpen) {

@@ -71,7 +71,10 @@ Actions: `say` (a narrator string, or `{"who", "line"}`),
 `give` / **`takes`** (add / remove a carried item),
 `set` / `unset` (a flag), `believes` / `stops-believing` / `tells`
 (beliefs), `weather` (`"fog"` / `"clear"`), `point-to` (a direction
-that is kept in the **Where next?** panel).
+that is kept in the **Where next?** panel), **`complete-act`** (the
+name of a declared act: opens one end card, "Keep exploring" or "Start
+over", once per save with `saves.rules: persist`; it records that the
+story beat is finished and does not advance to another act).
 
 One rule fires at most once (`"once": true`, the default). In the
 default `reset` mode that holds only until a reload: the fired markers
