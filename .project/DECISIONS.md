@@ -618,3 +618,12 @@ verification is the safety net.
 ## 2026-10-03 (night): `complete-act` is a rule action (Cottage release 1)
 
 Approved with the act-2 plan (CURRENT, 2026-10-02) and recorded here now. `{"complete-act": "<act id>"}` names an act the pack declares; the player opens one end card on the overlay surface ("Keep exploring", "Start over"), once per save under `saves.rules: persist`. It records that a story beat is finished and does **not** advance acts (ADR 0006 is still unbuilt). Chosen over a new `ending` field or an `act-completes` event: the rule vocabulary already says when, so the one new thing is the action. Tests: `tests/test_complete_act.py`.
+
+## 2026-10-04: lessons from the Cottage release-1 night
+
+- **A bot that plays the pack finds what validators cannot.** The keyboard-only playthrough found a King that a level-8 hero could not beat (40 hp / 4 atk), guardians that woke and were killed before the lock could be tried, a wall tile that rendered as flat blocks (the 2x2 grid form; the 1x1 form works), and stairs labelled "down" on the way up. Run it before calling a pack done.
+- **Foremen need their diffs read.** The lock check and the album passed their acceptance and needed no change; the playthrough-bot worker's own run passed but failed on the current pack until the bot learned to grind and to relax an over-strict check. "Worker says done" is a claim.
+- **A tool-denied merge is not a reason to stop.** The classifier denied `gh pr merge` until Rylee said so in chat; branch-pinned CI let everything else proceed. Pin a pack's CI to a branch commit, then move it to main after the merge.
+- **Codex beat MiniMax for item icons** in Rylee's storybook style and for consistency with the cast; MiniMax is fine for quick drafts (kept as alternates).
+- **`gh pr update-branch` does not exist in this gh;** merge main into the branch yourself.
+- **Never `rm` with shell variables;** the safety check refuses it. Use `git rm` with literal paths.
