@@ -15,7 +15,7 @@ The Norse or studio name sits beside it. It never replaces it. If you add a new 
 | Plain name | What it is | Studio or old names | Status |
 |---|---|---|---|
 | **game** | One game's folder: its story, settings and art. Lives in `worlds/<name>/`. | "pack", "world pack", "world" | decided; docs first, code says `pack` for now |
-| **gameplay feature** | A reusable way to play that more than one game can use: dialogue, turns, detection, scoring, cards or a timer. | "gameplay system", "game mechanic"; not "module" or "bundle" | decided 2026-10-04; architecture name in [ADR 0011](../adr/0011-gameplay-features.md) |
+| **gameplay feature** | A reusable way to play that more than one game can use: dialogue, turns, detection, scoring, cards or a timer. | "gameplay system", "game mechanic"; not "module" or "bundle" | decided 2026-10-04; architecture name in [ADR 0012](../adr/0012-gameplay-features.md) |
 | **act** | A chapter of a game. | (same) | in use |
 | **level** | How far the hero has grown in `levels` mode. The hero starts at level 1; enough experience reaches the next level. | "hero level" | in use (`design/growth.md`) |
 | **experience** | The points a defeated enemy is worth in `levels` mode. Enough experience is a new level. | "XP" | in use (`design/growth.md`) |
