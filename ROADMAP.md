@@ -27,7 +27,6 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 ### NEXT (what Act 2 and the next games need)
 - [engine] **Act advance** (ADR 0006, #217) and **status effects** (fire first; `design/elemental-and-status-effects.md`, a campaign with an ADR amendment).
 - [engine + player] **The in-world interface** (Cottage `docs/plans/native-ui/PLAN.md`): skin parts the player does not yet draw, portraits in speech, hit and heal flashes, a fixed stage with everything inside it. Rylee's rule: no literal device frame; native to the world.
-- [engine] **Split `web/packaged.html` into blocks** before more features land in it (`docs/plans/player-split/PLAN.md`; Rylee chose it first).
 - [engine] **Random floors phase 2** (#215) and **guardians** as pack data.
 - [authoring] Honest feature detection and engine requirements per pack (finding 5, deepened); a pack art-import verb with clean credits (6, new); an overlay lane for hand edits to generated floors (9, deepened).
 - [QA] A route through a pack plus one stable play-state API (7, new); a balance report from pack data (8, new).
@@ -39,6 +38,8 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 - [player] Music; a second skin; per-run guardians and weighted tables; `stakes` as a real mechanic; optional Ink conversations (#143); richer floors (#145); save compatibility across content changes.
 
 ## Landed
+
+- [x] **The player is built from parts** (2026-10-04): `web/packaged.html` is generated from 56 parts in `web/player/parts/` by `scripts/build_player.py`; byte-identical weaves proven by `scripts/weave_digest.py`; `tests/test_player_build.py` guards it. Plan and rule: `docs/plans/player-split/PLAN.md`, `.project/DECISIONS.md`.
 
 - [x] **Cottage Release 1 and the VEFR it taught** (2026-10-04, PRs #252 to #258, #261): `complete-act` (the end card), lock reachability in `vefr check`, the sticker album (slice 1), the up-stairs label fix, sound (nine synthesized cues, one switch, opt-in per pack), walk sheets (phase B of the pack art proposal), and the plan to split the player file. Guides: `docs/guides/rules.md`, `docs/guides/rulesets.md` (Album, Sound, Walk sheets). Library: chapters 30 and 31. The discovery record: [`docs/research/cottage-release-1-learnings.md`](docs/research/cottage-release-1-learnings.md).
 

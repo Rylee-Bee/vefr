@@ -1,4 +1,7 @@
-# Split `web/packaged.html` into blocks (plan; proposed 2026-10-04, Rylee chose "refactor first")
+# Split `web/packaged.html` into blocks (built 2026-10-04: slices 1-4 in one mechanical step; Rylee chose "refactor first")
+
+**Built.** The player is 56 parts in `web/player/parts/` (head, style, shell, the pure engines, the town closure in its own sections, the skin, the title screen), listed in `web/player/manifest.json`, joined byte for byte by `scripts/build_player.py` into the committed `web/packaged.html`. Proof: `scripts/weave_digest.py` printed identical SHA-256s for every pack before and after (cottage-of-the-breeze `dfb0ee9f...`, sample-world `419b5a03...`); `tests/test_player_build.py` (6 cases, written first) keeps the generated file honest in CI. The slices below were done as one mechanical cut because a text-level split cannot change behaviour. What stays for later: splitting the 905-line `town-input-and-turns` and 564-line `the-camera` parts further, and giving parts real module boundaries.
+
 
 ## Why
 `web/packaged.html` is one 6,600-line file: markup, CSS, the pure engines (rules, growth, equipment, album, sound, locks) and the wiring. Every feature added in the Cottage night grew it (album, sound, walk sheets, end card). Edits collide, foremen get lost in it, and 26 files (tests, the weaver, packaging) read it directly.
