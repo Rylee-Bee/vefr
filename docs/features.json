@@ -214,11 +214,15 @@
       "id": "album",
       "name": "The album",
       "what": "One record of what you have met and found, and a sticker album that fills in as you play.",
-      "status": "proposed",
+      "status": "partial",
       "detect": "none",
-      "docs": [],
+      "docs": [
+        "docs/guides/rulesets.md"
+      ],
       "design": "design/album.md",
-      "tests": []
+      "tests": [
+        "tests/test_album.py"
+      ]
     },
     {
       "id": "equipment",

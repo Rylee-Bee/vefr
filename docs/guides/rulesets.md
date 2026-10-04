@@ -637,6 +637,18 @@ Code: `src/vefr/maplab.py` (`SLOTS`, `MOD_STATS`,
 `tests/test_equipment_engine.py` + `tests/fixtures/make_equip_pack.py` +
 `tests/fixtures/equip_engine_harness.mjs`.
 
+## Album (stickers a world keeps)
+
+A `world.json` may carry `album`, an optional list of stickers
+`{id, name, kind, when, riddle?, shine?}`. `id` is unique and `name` is
+1–60 characters; `kind` is `open`, `riddle` or `secret`; `shine` is
+`paper` (default), `foil` or `holo`. `when` is exactly one rules event,
+the same vocabulary and identity model a rule uses. An `open` sticker
+shows its name from the start, a `riddle` shows only its riddle until
+earned, and a `secret` appears only in a count. Rewards only add.
+Code: `src/vefr/maplab.py` (`album_errors`) + `src/vefr/cli.py`
+(`_player_album`) + `web/packaged.html`; tests: `tests/test_album.py`.
+
 ## Skins (a picture pack for the interface)
 
 A skin is a folder of pictures that repaints the player's interface. It is
