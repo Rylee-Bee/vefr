@@ -2799,6 +2799,36 @@ def cmd_volumes_shell(args) -> int:
     return vol_mod.shell(args.pack)
 
 
+# --------------------------------------------------------------- art
+# ADR 0011: a pack's art/ledger/round-NN.json. `check` validates the
+# whole ledger dir; `credits` prints the generated markdown.
+
+def cmd_art_check(args) -> int:
+    """Validate every round-*.json in --ledger; exit 1 on any problem.
+
+    --root is where each picture's `to` path resolves (normally the
+    pack root); it defaults to the ledger dir's grandparent, since the
+    ledger lives at <root>/art/ledger.
+    """
+    from . import art_ledger
+    ledger = Path(args.ledger).expanduser()
+    root = Path(args.root).expanduser() if args.root else ledger.parent.parent
+    problems = art_ledger.check(ledger, root)
+    if not problems:
+        print("ok")
+        return EXIT_OK
+    for problem in problems:
+        print(problem)
+    return EXIT_ERROR
+
+
+def cmd_art_credits(args) -> int:
+    """Print the ledger's generated credits markdown."""
+    from . import art_ledger
+    print(art_ledger.credits(Path(args.ledger).expanduser()), end="")
+    return EXIT_OK
+
+
 # --------------------------------------------------------- shared wiring
 # The verbs vefr and ratatoskr spell the same way: one wiring, one set
 # of flags, one set_defaults - both front doors parse identically.
@@ -4739,6 +4769,34 @@ def vefr_main() -> int:
     skp.add_argument('--nas-host', default=DEFAULT_BACKUP_HOST)
     skp.add_argument('--json', action='store_true', help='print the result envelope')
     skp.set_defaults(fn=cmd_vefr_skipa)
+
+    art = sub.add_parser(
+        'art', help='check a pack\'s art ledger and print its credits',
+        description='work with a pack\'s art/ledger (ADR 0011): validate '
+                    'each round file, or print generated credits',
+        epilog='see: docs/adr/0011-art-ledger.md',
+    )
+    art_sub = art.add_subparsers(dest='art_verb', required=True)
+
+    art_check = art_sub.add_parser(
+        'check', help='validate every round-*.json in the ledger',
+        description='validate keys, roles, ids, sha256 and the clean-credits '
+                    'rule across a pack\'s art ledger',
+    )
+    art_check.add_argument('--ledger', required=True,
+                           help='the art ledger directory (art/ledger)')
+    art_check.add_argument('--root', default=None,
+                           help='where picture `to` paths resolve (default: '
+                                "the ledger dir's grandparent)")
+    art_check.set_defaults(fn=cmd_art_check)
+
+    art_credits = art_sub.add_parser(
+        'credits', help='print the ledger as credits markdown',
+        description='print generated credits, one line per picture',
+    )
+    art_credits.add_argument('--ledger', required=True,
+                             help='the art ledger directory (art/ledger)')
+    art_credits.set_defaults(fn=cmd_art_credits)
 
     # Escape hatches: the old CLIs, run verbatim. add_help=False keeps
     # -h for the old CLI to answer; parse_known_args below captures the
