@@ -77,7 +77,10 @@
     // Encode first: a failure must leave the store untouched.
     try { value = encodeFog(); } catch (e) { return false; }
     store.set(fog2Key(), value);
-    store.remove(fogKey());   // the bitset is saved; the JSON era is over
+    // Drop the old array only once the bitset is really there: store.set
+    // swallows a failed write (quota, sandbox), and then the old key is
+    // all the memory there is.
+    if (store.get(fog2Key()) === value) store.remove(fogKey());
     return true;
   }
   function litNow() {

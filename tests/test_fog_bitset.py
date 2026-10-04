@@ -17,7 +17,7 @@ stays dark. What was explored is kept per region, per world:
   - The player's preference sits on top of the pack's: fog off
     (`vefr-fogpref-<world>` = "off"), or a region with no `fog` in its
     contract, writes nothing at all.
-  - A fully explored 128x96 region saves under 1.1 KB of base64.
+  - A fully explored 128x96 region saves under 2.2 KB of base64 (a 128x96 bitset is 2048 bytes).
 
 Neutral fixtures only, played through tests/play_kit.py.
 """
