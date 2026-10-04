@@ -1,5 +1,63 @@
 # DECISIONS — vefr
 
+## 2026-10-03 — the language packet is approved; the gate is released
+
+**Decision (Rylee, 2026-10-03, in chat: "Approved. Go").** This releases the gate in
+`docs/research/language-architecture/11-open-decisions.md` item 6, which held that *nothing is
+authorized until Rylee has read the disposition and says go*. She has now said go on the
+disposition: **GO WITH CONSTRAINTS**.
+
+**What the approval authorizes.** The earned scope only: an **optional, build-time source layer** —
+authoring source -> validate -> normalize -> today's pack structures -> today's runtime. The first
+slice of that is the **Blueprint**, and the Blueprint is already built, merged and trialled live on
+the private pack (`docs/adr/0008-blueprint-format.md`, PRs #219-#233). So the approval confirms a
+direction that is already partly spent; it does not by itself require new code.
+
+**What the approval explicitly does NOT authorize** — the packet's own "What it does not earn"
+list, unchanged by this ruling: a new runtime, event sourcing, a logic engine, natural-language
+authoring, a plugin system, an estate-wide kernel, a resolver framework, broad pack migration, or a
+new public pack contract. The kernel / dialect / pack horizon stays deferred until there is a
+**second real consumer** (the 2026-10-02 second-consumer rule). "Go" means the gate is open, not
+that the deferred list is now approved.
+
+**Also still open inside the packet** (these need their own answers, not this one): the Foreman
+count and model to state before any multi-slice campaign launches (`11-open-decisions.md` item 7),
+and how guardians and the ending room are authored (item 5) — which is #215 and is separately
+blocked on the guardian names.
+
+**Status.** ACCEPTED (2026-10-03). Owner: Rylee.
+
+## 2026-10-03 — Diablo's precedent for a key-guardian: a role, not a rank
+
+**Reference, verified 2026-10-03.** Rylee asked, for the guardian naming in #215, "how does Diablo
+do it?" The precedent is Diablo III's **Keywarden**, and it is the same problem: a tougher monster
+that carries the key you need to go deeper.
+
+- There are **four Keywardens**, one per act. Each is a **Super Unique** — a *variant of a stock
+  monster*, not a new creature. Xah'Rith the Keywarden is a Morlu Incinerator.
+- The name shape is **role label + proper name + epithet**: "Xah'Rith, the Keywarden of Terror,
+  Tormentor of the Damned."
+- The key is a **named artefact** in the same pattern: the Key of Terror.
+- The role word is **functional**, not a rank. It is not a court hierarchy.
+
+**What this settles for #215.** Three things, and they all reduce the naming burden rather than
+adding to it:
+
+1. **It confirms her 2026-10-02 decision.** "Variants of the monsters we already have, named from
+   their art and abilities" is exactly what a Super Unique is. The precedent and her instinct agree.
+2. **The recurring label is one word, and it is a function, not canon.** "Keywarden" tells the
+   player what the monster is for without inventing a person. That is a much smaller thing for her
+   to approve than six invented names.
+3. **The king's-court rank scheme is the wrong read of the precedent.** Seneschal / chamberlain /
+   marshal names the monsters for their rank, which is the opposite of naming them for their art
+   and abilities. Recorded so the next session does not re-derive it.
+
+**Still hers:** the role word itself, and the proper name for each floor's guardian and its key.
+The boss's name is already settled (the Cellar King), as is the seal, the treasure room and the
+fact that the first lock is the floor 3 to floor 4 stair.
+
+**Status.** RECORDED (2026-10-03). Owner: Rylee (the naming itself).
+
 ## 2026-10-03 — a hue used for text carries a contrast floor; a fill does not
 
 **Decision (Rylee asked which fix was best for engineering, 2026-10-03).** #218's own body suggested "a darker accent". That is backwards: on a dark surface, darkening *lowers* contrast. The fix is one step up the ramp, and the palette already had it (`teal-400`).

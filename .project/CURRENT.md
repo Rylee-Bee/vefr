@@ -8,7 +8,9 @@
 
 ## 2026-10-03 (the packet lands; equipment step 1)
 
-**Also landed the same day:** the **pure equipment engine** (`window.VEFR_EQUIP_ENGINE`, [PR #247](https://github.com/Rylee-Bee/vefr/issues/247)): the sums, the four named refusals, the swap, the health clamp and `clean`, all pure and pinned by a jsdom harness against the real woven file. **#218 is closed** ([PR #248](https://github.com/Rylee-Bee/vefr/issues/248)): teal text got its own token with a 4.5 floor, and the dead `--teal-light` hover is gone.
+**Also landed the same day:** the **pure equipment engine** (`window.VEFR_EQUIP_ENGINE`, [PR #247](https://github.com/Rylee-Bee/vefr/issues/247)): the sums, the four named refusals, the swap, the health clamp and `clean`, all pure and pinned by a jsdom harness against the real woven file. **#218 is closed** ([PR #248](https://github.com/Rylee-Bee/vefr/issues/248)): teal text got its own token with a 4.5 floor, and the dead `--teal-light` hover is gone. **The #218 caveat is resolved:** the private pack's skin sets only `on_panel` and `on_panel_dim` and never overrides teal — the "dusk teal" in that pack is paint in the floor tiles, not a UI token — so no companion change is needed there.
+
+**Owner decisions taken 2026-10-03 (in chat):** the language packet is **approved** (GO WITH CONSTRAINTS; the gate is released, the earned scope only — see `DECISIONS.md`); the guardian naming for #215 follows the **Diablo III Keywarden** precedent — a role label plus a proper name, not a court rank; and after A3 the order is **wave-2 staleness first, then the album**.
 
 **Landed (main `2e8cc27`, every check green and merged):**
 - **The language-architecture research packet** ([PR #242](https://github.com/Rylee-Bee/vefr/issues/242), `docs/research/language-architecture/`, 13 documents): the Phase A disposition is **GO WITH CONSTRAINTS**. The evidence earns an *optional, build-time* source layer — and the Blueprint, which is that first slice, is already built and trialled on Cottage. The evidence explicitly does **not** earn a new runtime, event sourcing, a logic engine, natural-language authoring, a plugin system, an estate-wide kernel or broad pack migration. Prior-art claims about Datalog/JSON Schema/event sourcing were corrected; some project-history claims stay `UNVERIFIED`. The Opus brief and the open decisions are `13-opus-brief.md` and `11-open-decisions.md`.
@@ -131,13 +133,26 @@ Treat `docs/vefr/` as the canonical copy.
 
 ## Open owner decisions
 
-1. **The language packet's disposition read** (raised 2026-10-03, the
-   gate on everything in `docs/research/language-architecture/`). The
-   packet says GO WITH CONSTRAINTS and authorizes nothing until Rylee
-   has read it (`11-open-decisions.md` item 6). The Blueprint — the
-   slice the evidence actually earns — is already built, so the ordinary
-   backlog is not blocked; the kernel and dialect layer stay deferred
-   until she says go.
+1. **The guardian names** (#215). The only thing blocking that slice.
+   Rylee asked "how does Diablo do it?" on 2026-10-03; the precedent is
+   D3's **Keywarden** — a Super Unique (a variant of a stock monster)
+   named *role label + proper name + epithet*, carrying a named key. So
+   the recurring label is one functional word, not six invented names,
+   and the court-rank scheme in the design is the wrong read of it. Still
+   hers: the role word, and each guardian's and key's proper name. The
+   Cellar King, the seal and the first lock (floor 3 to 4) are settled.
+   See `DECISIONS.md`, 2026-10-03.
+2. **The language packet's Foreman count and model**
+   (`11-open-decisions.md` item 7) — stated before any multi-slice
+   campaign launches. Only bites when a campaign is actually proposed.
+
+**Closed 2026-10-03:** the language packet's disposition read. Rylee
+approved GO WITH CONSTRAINTS ("Approved. Go"). That releases the gate and
+authorizes the earned scope only — the optional build-time source layer,
+whose first slice (Blueprint) is already built and trialled. It does
+**not** authorize a new runtime, event sourcing, a logic engine, a plugin
+system, a kernel, broad pack migration or a new public pack contract;
+those stay deferred until there is a second real consumer.
 
 "Should rumors read pack canon?" (raised 2026-09-25) was already
 true: `saga.system_prompt` has carried the pack's `logbok.md` since
