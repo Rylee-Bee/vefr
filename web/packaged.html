@@ -539,6 +539,11 @@ window.VEFR_TILES = {{tiles_json}};
 // speaker key. The same art the pack's own folder holds, so a character
 // looks like someone, not a dot. Empty when the pack names none.
 window.VEFR_SPRITES = {{sprites_json}};
+// Optional walk sheets, keyed by the same sprite names: a pack that
+// puts a `<key>-sheet.png` beside a sprite and describes its frames in
+// `<key>.sheet.json` walks through them, frame by frame. Empty for
+// every pack with no sheets, so nothing changes without one.
+window.VEFR_SPRITE_SHEETS = {{sprite_sheets_json}};
 // Each character's size relative to the standard (1.0 = 1.5 tiles tall), from the pack's `player.sprite_scale`.
 window.VEFR_SPRITE_SCALE = {{sprite_scale_json}};
 // The pack's item catalog, keyed by id: {"name": "...", "sprite": "..."}.
@@ -4481,6 +4486,29 @@ function setupTown() {
     spriteImgs[key] = im;
   });
 
+  // The optional walk sheets, preloaded the same way: a sprite that has
+  // one walks through its frames instead of sliding its single picture.
+  // Empty for a pack with no sheets, so the drawing below is unchanged.
+  var spriteSheets = window.VEFR_SPRITE_SHEETS || {};
+  var spriteSheetImgs = {};
+  Object.keys(spriteSheets).forEach(function (key) {
+    var im = new Image();
+    im.onload = function () { draw(); };
+    im.src = spriteSheets[key].image;
+    spriteSheetImgs[key] = im;
+  });
+  // A sheet is drawable only when its shape is complete: the validator
+  // reports a bad one, this just keeps a stray bake from crashing play.
+  function sheetUsable(sheet) {
+    return !!(sheet && Array.isArray(sheet.frame) && sheet.frame.length === 2
+      && sheet.frame[0] > 0 && sheet.frame[1] > 0 && sheet.directions);
+  }
+  var heroHasSheet = sheetUsable(spriteSheets.hero);
+  function spriteSheetReady(key) {
+    var im = spriteSheetImgs[key];
+    return !!(im && im.complete && im.naturalWidth > 0);
+  }
+
   // The door picture, preloaded like the rest. A door is a transition
   // tile; drawing it shows a way out instead of an invisible hole.
   var doorSrc = window.VEFR_DOOR || '';
@@ -4694,9 +4722,23 @@ function setupTown() {
   };
   // -- spriteScale end --
   // A character stands taller than its tile, feet on the tile's bottom.
+  // A character with a ready walk sheet shows its down-facing idle frame.
   function drawSprite(key, tx, ty) {
     var im = spriteImgs[key];
     var h = T * 1.5 * spriteScale(window.VEFR_SPRITE_SCALE, key);
+    var sheet = spriteSheets[key];
+    if (sheetUsable(sheet) && spriteSheetReady(key)) {
+      var sim = spriteSheetImgs[key];
+      var fw = sheet.frame[0], fh = sheet.frame[1];
+      var cols = Math.max(1, Math.floor(sim.naturalWidth / fw));
+      var down = (sheet.directions && sheet.directions.down) || {};
+      var idx = (down.idle && down.idle.length) ? down.idle[0] : 0;
+      var col = idx % cols, row = Math.floor(idx / cols);
+      var sw = h * (fw / fh || 1);
+      ctx.drawImage(sim, col * fw, row * fh, fw, fh,
+                    tx * T + (T - sw) / 2, ty * T + T - h, sw, h);
+      return;
+    }
     var w = h * (im.naturalWidth / im.naturalHeight || 1);
     ctx.drawImage(im, tx * T + (T - w) / 2, ty * T + T - h, w, h);
   }
@@ -4730,7 +4772,9 @@ function setupTown() {
   var STEP_HOP = 0.02;     // the hop's height, as a fraction of a tile
   var STEP_LEAN = 2;       // the lean into travel, in degrees
   var STEP_SQUASH = 0.04;  // the landing squash, as a fraction
-  function stepMotion(p, fx, fy, t, dir, reduced) {
+  // `hop` lets a walk sheet ride without the Phase A bob (0); it defaults
+  // to the standard hop, so every existing caller is unchanged.
+  function stepMotion(p, fx, fy, t, dir, reduced, hop) {
     // `reduced` is the identity: no offset, no lean, no squash.
     if (reduced) return { dx: 0, dy: 0, lean: 0, squash: 0 };
     if (p < 0) p = 0; else if (p > 1) p = 1;
@@ -4740,8 +4784,9 @@ function setupTown() {
     if (dir === 'right') lean = STEP_LEAN * arc;
     else if (dir === 'left') lean = -STEP_LEAN * arc;
     var land = p > 0.7 ? (p - 0.7) / 0.3 : 0;   // squash as the hero lands
+    var bob = (typeof hop === 'number') ? hop : STEP_HOP;
     return { dx: fx * t * ease,
-             dy: fy * t * ease - arc * t * STEP_HOP,   // negative y is up
+             dy: fy * t * ease - arc * t * bob,   // negative y is up
              lean: lean, squash: land * STEP_SQUASH };
   }
   // ---- end the hero's step motion ----
@@ -4750,6 +4795,42 @@ function setupTown() {
   // delta to travel, the way the hero faces, when it began, its rAF id.
   var heroAnim = null;
   var heroFacing = 'down';
+  // The walk-sheet pose: which frame index to draw, whether it is
+  // mirrored, and the one-step walk counter that advances per step.
+  var heroSheetIdx = 0;
+  var heroSheetMirror = false;
+  var heroWalkStep = 0;
+  // Which direction's frames to draw for the current facing, and whether
+  // the picture flips: a missing side uses the other side's frames
+  // mirrored, a missing up falls back to down.
+  function heroSheetFrames() {
+    var dirs = (spriteSheets.hero || {}).directions || {};
+    if (dirs[heroFacing]) return { frames: dirs[heroFacing], mirror: false };
+    if (heroFacing === 'left' && dirs.right) return { frames: dirs.right, mirror: true };
+    if (heroFacing === 'right' && dirs.left) return { frames: dirs.left, mirror: true };
+    if (heroFacing === 'up' && dirs.down) return { frames: dirs.down, mirror: false };
+    return null;
+  }
+  // Advance and publish the hero's pose. Only a hero with a sheet gets
+  // window.VEFR_HERO_FRAME; a pack without one never gets the global at
+  // all, so a harness reads null rather than a stale pose.
+  function heroSetPose(state) {
+    if (!heroHasSheet) return;
+    var pick = heroSheetFrames();
+    var frames = pick && pick.frames;
+    var idx = heroSheetIdx;
+    if (frames) {
+      if (state === 'walk' && Array.isArray(frames.walk) && frames.walk.length) {
+        idx = frames.walk[(heroWalkStep - 1) % frames.walk.length];
+      } else if (Array.isArray(frames.idle) && frames.idle.length) {
+        idx = frames.idle[0];
+      }
+    }
+    heroSheetIdx = idx;
+    heroSheetMirror = pick ? pick.mirror : false;
+    window.VEFR_HERO_FRAME = { dir: heroFacing, state: state, frame: idx,
+                               mirrored: heroSheetMirror };
+  }
   function nowMs() {
     return (window.performance && window.performance.now)
       ? window.performance.now() : Date.now();
@@ -4768,26 +4849,36 @@ function setupTown() {
     if (!heroAnim) return settled;
     var p = (nowMs() - heroAnim.start) / STEP_MS;
     if (p >= 1) return settled;
-    var off = stepMotion(p, heroAnim.fx, heroAnim.fy, T, heroAnim.dir, false);
+    var off = stepMotion(p, heroAnim.fx, heroAnim.fy, T, heroAnim.dir, false,
+                         heroAnim.hop);
     return { tile: [heroAnim.ox + off.dx / T, heroAnim.oy + off.dy / T], off: off };
   }
   // Begin the drawn tween for a step that has already happened in the
   // game. An interrupted step starts from where the hero is drawn, and
   // moves are never queued: the new one simply replaces the old.
   function heroStartStep(tx, ty, dx, dy) {
-    if (reducedMotion()) { heroAnim = null; return; }
+    if (reducedMotion()) { heroAnim = null; heroSettleSoon(); return; }
     var raf = heroAnim ? heroAnim.raf : 0;
     var from = heroAnim ? heroPose().tile : [tx - dx, ty - dy];
+    // A sheet already moves frame by frame, so the bob rides at 0.
     heroAnim = { ox: from[0], oy: from[1], fx: tx - from[0], fy: ty - from[1],
-                 dir: heroFacing, start: nowMs(), raf: raf };
+                 dir: heroFacing, hop: heroHasSheet ? 0 : STEP_HOP,
+                 start: nowMs(), raf: raf };
     if (!heroAnim.raf) heroAnim.raf = requestAnimationFrame(heroFrame);
   }
-  // Draw only while a step is running; on the last frame, stop and paint
-  // the settled tile. No idle loop.
+  // Back to idle when no tween will do it: a bump, a wall, or reduced
+  // motion still shows the walk frame, then settles on the same clock.
+  function heroSettleSoon() {
+    if (!heroHasSheet || heroAnim) return;
+    window.setTimeout(function () { heroSetPose('idle'); draw(); }, STEP_MS);
+  }
+  // Draw only while a step is running; on the last frame, stop, return
+  // the pose to idle, and paint the settled tile. No idle loop.
   function heroFrame() {
     if (!heroAnim) return;
     if (nowMs() - heroAnim.start >= STEP_MS) {
       heroAnim = null;
+      heroSetPose('idle');
       draw();
       return;
     }
@@ -4807,7 +4898,25 @@ function setupTown() {
     if (off.lean && typeof ctx.rotate === 'function') {
       ctx.rotate(off.lean * Math.PI / 180);
     }
-    if (spriteReady('hero')) {
+    if (heroHasSheet && spriteSheetReady('hero')) {
+      // One frame of the sheet: the cell at (idx mod cols, idx / cols),
+      // drawn 1.5 tiles tall with the same squash and mirror as the
+      // single picture. A missing side's frames are drawn flipped.
+      var sheet = spriteSheets.hero;
+      var sim = spriteSheetImgs.hero;
+      var fw = sheet.frame[0], fh = sheet.frame[1];
+      var cols = Math.max(1, Math.floor(sim.naturalWidth / fw));
+      var col = heroSheetIdx % cols, row = Math.floor(heroSheetIdx / cols);
+      var sheetH = T * 1.5 * spriteScale(window.VEFR_SPRITE_SCALE, 'hero');
+      var sheetW = sheetH * (fw / fh || 1);
+      var sh = sheetH * (1 - off.squash);
+      var sw = sheetW * (1 + off.squash);
+      if (heroSheetMirror) {
+        ctx.drawImage(sim, col * fw, row * fh, fw, fh, sw / 2, -sh, -sw, sh);
+      } else {
+        ctx.drawImage(sim, col * fw, row * fh, fw, fh, -sw / 2, -sh, sw, sh);
+      }
+    } else if (spriteReady('hero')) {
       var im = spriteImgs['hero'];
       var baseH = T * 1.5 * spriteScale(window.VEFR_SPRITE_SCALE, 'hero');
       var baseW = baseH * (im.naturalWidth / im.naturalHeight || 1);
@@ -5056,6 +5165,7 @@ function setupTown() {
     speakers = regionSpeakers(name);
     hero = (at || town.hero_start).slice();
     heroAnim = null;   // a new region's hero appears settled, not mid-hop
+    heroSetPose('idle');
     fogOn = fogEnabled();
     fogRadius = (town.fog && town.fog.radius) || 6;
     resetLight();
@@ -5457,9 +5567,19 @@ function setupTown() {
     else if (dx < 0) heroFacing = 'left';
     else if (dy > 0) heroFacing = 'down';
     else if (dy < 0) heroFacing = 'up';
+    // A sheet shows the walk frame the moment a direction is pressed (a
+    // step, a bump or a wall - the facing turns either way); the step's
+    // tween, or heroSettleSoon for the rest, returns it to idle. The
+    // cycle advances once per press and publishes NOW, not in the rAF,
+    // so a synchronous reader sees the walk itself.
+    heroWalkStep++;
+    heroSetPose('walk');
     updateUse();   // the words follow the turn, even when the step is refused
     var nx = hero[0] + dx, ny = hero[1] + dy;
-    if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) return;
+    if (nx < 0 || ny < 0 || ny >= town.map.length || nx >= town.map[0].length) {
+      heroSettleSoon();
+      return;
+    }
     // Bump to attack: a living enemy on the destination tile is struck
     // instead of walked into. Either way the enemies take their turn.
     var target = enemyAt(nx, ny);
@@ -5468,14 +5588,19 @@ function setupTown() {
       closeEnemyVerbs();   // a bump closes any open enemy menu
       lightTick();
       enemyTurn();
+      heroSettleSoon();
       return;
     }
-    if ((town.legend[town.map[ny][nx]] || {}).solid) return;
+    if ((town.legend[town.map[ny][nx]] || {}).solid) {
+      heroSettleSoon();
+      return;
+    }
     hero = [nx, ny];
     quietTutorial();
     // Draw-only: start the hop now, but the game state above is already
     // settled and the turn below is never gated on the animation.
     heroStartStep(nx, ny, dx, dy);
+    heroSettleSoon();
     var here = refreshPoi();
     if (here) journalVisit(here, nx, ny);
     // `comes-near` for a named place the hero walks up to: the tile is
@@ -5960,6 +6085,7 @@ function setupTown() {
   loadEnemies();
   combatSnapshot();
   resize();
+  heroSetPose('idle');   // the hero starts standing, facing down
   draw();
   updateUse();
 }

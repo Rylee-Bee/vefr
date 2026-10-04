@@ -719,6 +719,36 @@ Code: `src/vefr/maplab.py` (`skin_errors`) + `src/vefr/cli.py`
 (`_baked_skin`) + `web/packaged.html` (`applySkin`); tests:
 `tests/test_skin_validator.py` + `tests/test_skin_apply.py`.
 
+## Walk sheets (a character that walks)
+
+A sprite may carry a walk cycle: three files side by side in `sprites/`.
+
+    sprites/hero.png            the single picture (still the fallback)
+    sprites/hero-sheet.png      the frames, left to right, top to bottom
+    sprites/hero.sheet.json     which frame is which
+
+```json
+{
+  "image": "hero-sheet.png",
+  "frame": [32, 32],
+  "fps": 8,
+  "directions": {
+    "down":  {"idle": [0],  "walk": [1, 2, 3, 4]},
+    "right": {"idle": [10], "walk": [11, 12, 13, 14]},
+    "up":    {"idle": [15], "walk": [16, 17, 18, 19]}
+  }
+}
+```
+
+Frames number left to right, top to bottom.
+`frame` is one cell's size and `fps` its pace.
+A direction may be missing: a missing `left` or `right` is the other
+side mirrored, and a missing `up` falls back to `down`. `down` is
+required. The player draws the `idle` frame standing, a `walk` frame
+per step, and settles back to `idle`. The validator checks every
+sheet: the image exists beside it, `frame` and `fps` are in range, the
+directions are known, and every frame index is inside the sheet's grid.
+
 ## Adding a ruleset (the checklist later acts follow)
 
 1. Loader passthrough in `src/vefr/world.py` (acts + flat shapes).

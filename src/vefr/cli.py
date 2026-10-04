@@ -1257,6 +1257,56 @@ def _player_sprites(pack: Path, world: dict) -> dict[str, str]:
     return out
 
 
+def _player_sprite_sheets(pack: Path, world: dict) -> dict[str, dict]:
+    """Inline the pack's optional walk sheets, keyed by sprite name.
+
+    A sprite may carry a `<stem>.sheet.json` beside its picture naming
+    a frame sheet (`image`, `frame`, `fps`, `directions`). The bake
+    replaces the sheet's `image` name with a data URI; a missing or
+    broken sheet drops the key entirely, so the player only ever meets
+    a complete sheet and the weave never crashes. The sheet's image
+    resolves beside the sheet itself and goes through the same
+    real-path guard the sprites take, so pack data can never read
+    outside the pack. Returns {} for a pack with no sheets.
+    """
+    import base64
+
+    player = world.get('player') if isinstance(world.get('player'), dict) else {}
+    named = player.get('sprites') if isinstance(player.get('sprites'), dict) else {}
+    base = os.path.realpath(pack)
+    out: dict[str, dict] = {}
+    for name, rel in named.items():
+        if not isinstance(rel, str) or not rel:
+            continue
+        pic = _inside(base, rel)
+        if pic is None:
+            continue
+        sheet_path = Path(pic).with_suffix('.sheet.json')
+        if not sheet_path.is_file():
+            continue
+        try:
+            sheet = json.loads(sheet_path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(sheet, dict):
+            continue
+        image = sheet.get('image')
+        if not isinstance(image, str) or not image:
+            continue
+        sheet_dir = os.path.realpath(sheet_path.parent)
+        target = _inside(sheet_dir, image)
+        if target is None or not os.path.isfile(target):
+            continue
+        art = Path(target)
+        if art.suffix.lower() not in _ART_TYPES:
+            continue
+        blob = base64.b64encode(art.read_bytes()).decode('ascii')
+        sheet = dict(sheet)
+        sheet['image'] = f'data:{_ART_TYPES[art.suffix.lower()]};base64,{blob}'
+        out[str(name)] = sheet
+    return out
+
+
 def _player_items(world: dict) -> dict[str, dict]:
     """The pack's item catalog, keyed by id.
 
@@ -1970,6 +2020,8 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                             ensure_ascii=False))
     out_html = out_html.replace('{{sprites_json}}',
                                 _json.dumps(_player_sprites(pack, world), ensure_ascii=False))
+    out_html = out_html.replace('{{sprite_sheets_json}}',
+                                _json.dumps(_player_sprite_sheets(pack, world), ensure_ascii=False))
     out_html = out_html.replace('{{sprite_scale_json}}',
                                 _json.dumps(_sprite_scales(world), ensure_ascii=False))
     out_html = out_html.replace('{{items_json}}',

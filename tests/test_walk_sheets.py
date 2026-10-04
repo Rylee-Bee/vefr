@@ -18,7 +18,6 @@ A pack may put a sprite sheet next to a sprite:
 Neutral fixtures only.
 """
 
-import base64
 import json
 import shutil
 import struct
