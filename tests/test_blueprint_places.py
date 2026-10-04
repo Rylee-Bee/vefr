@@ -66,6 +66,7 @@ tile.
 
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 
@@ -81,7 +82,6 @@ INVALID = sorted(p for p in (V3 / "invalid").iterdir() if p.is_dir())
 # passing the same threshold Blueprint did). It has no `blueprint.json`
 # today, so this freezes "a pack with no Blueprint is completely
 # unchanged".
-import os
 # A real game pack to trial against, named by the environment so no
 # machine path lives in this public repo. Unset means the trial skips.
 COTTAGE = Path(os.environ.get("VEFR_TRIAL_PACK", "/nonexistent-trial-pack"))

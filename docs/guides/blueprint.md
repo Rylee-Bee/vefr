@@ -178,11 +178,11 @@ place, it is one entry, and `vefr normalize` writes the rest.
   "families": {},
   "regions": {
     "act-1/cave-2": {"places": [
-      {"id": "down", "kind": "stair", "at": [2, 7], "glyph": ">",
-       "tile": "stair-down", "to": "cave-3", "to_at": [3, 1]},
+      {"id": "down", "kind": "stair", "at": "2,7", "glyph": ">",
+       "tile": "stair-down", "to": "cave-3", "to_at": "3,1"},
       {"id": "keeper-door", "kind": "door", "at": "far:down off:down>up",
        "glyph": "D", "base": ["#332e26"], "to": "cave-3",
-       "to_at": [3, 1], "needs": "shell", "locked_text": "It will not open yet."},
+       "to_at": "3,1", "needs": "shell", "locked_text": "It will not open yet."},
       {"id": "warning", "kind": "sign", "at": "near:down", "glyph": "!",
        "label": "the cracked sign", "text": "The cave breathes here."}
     ]}
@@ -194,7 +194,7 @@ place, it is one entry, and `vefr normalize` writes the rest.
 |---|---|
 | `id` | a unique id within the region (required) |
 | `kind` | `door`, `stair` or `sign` (required) |
-| `at` | where it stands (required): a `[x, y]` pair or a sentence |
+| `at` | where it stands (required): one placement sentence (a string) |
 | `glyph` | the one character it paints on the map (required) |
 | `tile` | the tile picture for that character |
 | `base` | the legend colours; defaults to the region's `.` |
