@@ -11,6 +11,28 @@
 
 Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through VEFR over one night) turned this roadmap from "make a game possible" into "make the next game easier". Acts 2 and 3 are part of the larger three-act direction and were left for later by Rylee's decision; that is a scoping choice, not an engine limit. This board is built from what the run proved and from the ranked discovery record, [`docs/research/cottage-release-1-learnings.md`](docs/research/cottage-release-1-learnings.md) (ten findings, each with evidence). The long list below stays as the history. Tags: **[engine]** capability, **[authoring]** developer experience, **[QA]** validation and checks, **[player]** what the player sees, **[Cottage]** content that lives in the game's repo.
 
+### HOW VEFR GROWS
+
+The architecture rule is deliberately small ([ADR 0012](docs/adr/0012-gameplay-features.md)):
+
+```text
+specific to one game          -> game
+reused by two real games      -> gameplay feature
+needed beneath several uses   -> VEFR core
+```
+
+A **gameplay feature** is the learner-facing name for a reusable gameplay system
+or mechanic. Features use the same public VEFR vocabulary as games; this does
+not add a plugin loader, package manager, second runtime or second authoring
+language. Promotion is evidence-driven: the second real consumer earns the
+abstraction, and the change must delete duplication or make an invariant
+enforceable rather than merely shorten syntax.
+
+The endless dungeon is the first real use of the rule: sections, key wardens, stamps, elites and play-time floors are built as VEFR features ([plan](docs/plans/endless-dungeon/PLAN.md)) so a second game can reuse them by writing data, and Cottage only supplies content. Cottage is the depth test. Independent overnight games are breadth tests.
+Burrito Journalism is the later composition test: many short chapters may feel
+like different kinds of games, but should prefer combinations of existing
+gameplay features over new core machinery.
+
 ### SHIPPED (proven by Cottage Release 1)
 - [engine] `complete-act`: a story beat can end with one accessible card, once per save (#252). It does not advance acts yet.
 - [engine] Locks on doors and stairs, used for three stairs and a sealed door (#229); equipment in five slots (#244 to #251); Blueprint families (22 families, 73 creatures); durable rule saves; the skin loader.
@@ -24,6 +46,13 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 - **The endless dungeon** (epic [#273](https://github.com/Rylee-Bee/vefr/issues/273); design `docs/plans/endless-dungeon/DESIGN.md`, build plan `docs/plans/endless-dungeon/PLAN.md`, research `docs/research/big-generated-maps.md`): floors generated while you play from `seed + depth`, cut into sections of 8 to 11 floors; each ends in a key warden whose key opens a vault with a lore note; acts change the town only; elites, linked groups, hand-painted stamps and much bigger maps (up to 128x96, kept cheap for phones); an endless mode after the story. Measured so far ([E0a](docs/research/endless-e0.md), [E0b](docs/research/endless-e0b.md)): generation is under 1 ms at every size; the monster turn and fog storage are the limits. Next: F1 (fog as a bitset), E0d (sleeping monsters and a radius-bounded flood), then E1 to E10 in the plan. It absorbs "random floors phase 2" and rescopes "act advance" to town states.
 - **The in-world interface** (epic [#268](https://github.com/Rylee-Bee/vefr/issues/268); `docs/plans/interface/PLAN.md`): parchment and soft wood, Ledger type, everything on one stage. Slices I1 (the stage rectangle and HUD frame) and I2 (the phone dock) pass their containment tests on `feat/in-world-interface`, but the PR (#275) is held as a draft: on the real sample world the stage shrinks to a small map and the HUD overlaps it (visual gate 1.76% drift). UI3c fixes it by giving the stage a minimum size, tests first. I3 to I7 follow.
 - **Tighten the shapes** (epic [#267](https://github.com/Rylee-Bee/vefr/issues/267); `docs/plans/tighten-shapes/PLAN.md`, ADR 0010, `docs/research/size-and-language-pass.md`): a shared test kit and a storage helper with a lint, sprites found by name, one schema table for the validators (with a golden file of today's sentences first), one event table (the validator says "six events", there are eleven: #269), an art ledger with generated credits and a role-driven cut (then A3 to A5: a skin kit manifest with a completeness check, `vefr art draw`, `vefr art picker`; see `docs/research/art-pipeline-lessons.md`), and Blueprint growing places (doors written into `map.md`), things, placement sentences and stickers from the cast. Order of the foreman lane is in the plan. Done: the shared test kit (K1, #272). In review: the storage helper (K2, #276) and sprites by name (B0, #277).
+
+- **The orchestration platform** (agents repo, `docs/plans/orchestration-v2/`; decisions in its `DECISIONS.md`): a self-driving dispatcher with capacity-aware scheduling, commit-or-die workers, a land lane and escalations to a stronger model, so building games here needs less remembering. In flight: P0 (offload and mission fixes), P1 (capacity meters for six providers). Next: P2 worker contract, P3 dispatcher, P4 land lane, P5 attention, P6 backlog scanners, P7 delete the old pieces. Every lesson lands in VEFR or its tools, not in one game.
+- **Endless-dungeon engine slices running now:** F1 fog as a bitset, E0d sleeping monsters and a radius-bounded flood, E2 the Python floor generator with property sweeps; then E3 the JS twin, E4 sections, E5 stamps, E7 elites and groups, E8 wardens, vaults and the town-visit gate, E9 special floors, E10 endless mode.
+- **Blueprint growth:** B2 places (doors and stairs into `map.md`) is running; B1 things follows it; B4 packs and the Cottage trial after.
+- **Art tools:** A3 skin kit manifest and completeness check (built, being reviewed), then A4 `vefr art draw` (Codex and Wan backends; Wan Pro with picked pieces as style references drew a full piece set in minutes) and A5 `vefr art picker`.
+- **Gallery sync** (studio repo): `gallery sync` brings a project's docs, art, shots, build and timeline notes up to date from a manifest (built, being reviewed).
+- **Housekeeping from the audits:** three read-only contradiction audits (VEFR, Cottage, estate) have returned; verified findings become docs fixes, and the rest wait for a rule decision.
 
 ### NOW (small, high leverage, straight from real use)
 1. [authoring + QA] **Story status**: a pack can say which words are draft and which Rylee approved; `vefr check --release` lists drafts. (finding 1, new)
@@ -41,6 +70,9 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 
 ### LATER (worthwhile, no immediate evidence or dependency)
 - [authoring] `vefr where|explain|map` development questions (finding 10, new).
+- [authoring + QA] **Independent overnight game trials**: rotate capable models, give each the public creator surface and a blank game, forbid engine edits unless the game truly cannot be expressed, and record complete / gameplay-feature change / core change / workaround / docs gap. Repeated friction across unrelated games is evidence; one strange game is not.
+- [QA] **1.0 readiness signal**: use ten consecutive independent overnight runs as a working window. Aim for at least eight complete playable games, at least seven with no core change, and no repeated unresolved creator-surface failure. This is a product signal, not a compatibility promise.
+- [release] **Burrito Journalism composition pass**: the launch game may use many short chapters with different play styles; add or combine gameplay features before adding genre-specific core code.
 - [player] Music; a second skin; per-run guardians and weighted tables; `stakes` as a real mechanic; optional Ink conversations (#143); richer floors (#145); save compatibility across content changes.
 
 ## Landed
