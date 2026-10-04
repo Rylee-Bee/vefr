@@ -789,7 +789,7 @@ def plan(source: dict, *, pack_dir: str | Path) -> dict[str, dict]:
     version = source.get("blueprint") if isinstance(source, dict) else None
     reader = READERS.get(version) if type(version) is int else None
     if reader is None:
-        raise BlueprintError("blueprint version must be the integer 1", "/blueprint")
+        raise BlueprintError("blueprint version must be 1 or 3", "/blueprint")
     source = reader(source)
     pack = Path(pack_dir)
     families = source.get("families") or {}
