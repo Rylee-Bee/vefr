@@ -1,4 +1,5 @@
 """Locked doors and stairs (design/gates-and-guardians.md, build step 1). FROZEN CONTRACT.
+Played through the shared tests/play_kit.py.
 
 A transition may carry `requires` and `locked_text`:
   "requires": {"item": "<item id>"}  or  {"flag": "<declared flag>"}   (exactly one key)
@@ -9,21 +10,23 @@ A transition without `requires` behaves exactly as before. The lock is built; th
 """
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-from vefr import cli, maplab
+from vefr import maplab
+
+import play_kit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests" / "fixtures"))
 import make_lock_pack as mk  # noqa: E402
 
-HARNESS = ROOT / "tests" / "fixtures" / "lock_play_harness.mjs"
 DEFAULT_LINE = "It will not open yet."
 BAG = f"vefr-bag-{mk.NAME}"
+TO_DOOR = "walk:down,down,right,right,up,right,right,right,right,down,down,right,right"
+SNAP_READS = ["VEFR_COMBAT.region", "VEFR_COMBAT.hero.at", "text:#combat-live"]
 
 
 def _all_errors(tmp_path, requires, locked_text=None):
@@ -42,14 +45,16 @@ def errors_for(tmp_path, requires, locked_text=None):
     return extra
 
 
-def play(tmp_path, requires=None, locked_text=None, unlock_rule=False, store=None):
-    pack = mk.build(tmp_path, requires=requires, locked_text=locked_text, unlock_rule=unlock_rule)
-    html = tmp_path / "lock.html"
-    html.write_text(cli.weave_html(pack), encoding="utf-8")
-    run = subprocess.run(["node", str(HARNESS), str(html), json.dumps({"store": store or {}})],
-                         capture_output=True, text=True, timeout=120)
-    assert run.returncode == 0, run.stderr
-    return json.loads(run.stdout)
+def build(tmp_path, requires=None, locked_text=None, unlock_rule=False):
+    return play_kit.pack(tmp_path, "lock", requires=requires, locked_text=locked_text,
+                         unlock_rule=unlock_rule)
+
+
+def _run(html, store=None, interact=False):
+    # A read is one snapshot at the end: the state before Interact and after
+    # Interact are two runs over the same woven html.
+    steps = ["begin", TO_DOOR] + (["key:e", "wait:200"] if interact else [])
+    return play_kit.play(html, {"steps": steps, "read": SNAP_READS, "store": store or {}})
 
 
 # --- validator -------------------------------------------------------------------------------
@@ -84,34 +89,47 @@ def test_a_bad_locked_text_is_one_plain_sentence(tmp_path, text):
 # --- played in the real woven file -------------------------------------------------------------
 
 def test_a_locked_door_stays_shut_and_says_the_line(tmp_path):
-    out = play(tmp_path, mk.RING, "The door is shut. Something below keeps the key.")
-    assert out["errors"] == []
-    assert out["regionBefore"] == "town" and out["regionAfter"] == "town"
-    assert out["heroAfter"] == out["heroBefore"]
-    assert out["narrator"] == "The door is shut. Something below keeps the key."
+    html = play_kit.weave(build(tmp_path, mk.RING, "The door is shut. Something below keeps the key."),
+                          tmp_path)
+    before = _run(html)
+    after = _run(html, interact=True)
+    assert after["errors"] == []
+    assert before["reads"]["VEFR_COMBAT.region"] == "town"
+    assert after["reads"]["VEFR_COMBAT.region"] == "town"
+    assert after["reads"]["VEFR_COMBAT.hero.at"] == before["reads"]["VEFR_COMBAT.hero.at"]
+    assert after["reads"]["text:#combat-live"] == "The door is shut. Something below keeps the key."
 
 
 def test_the_default_line_when_locked_text_is_absent(tmp_path):
-    out = play(tmp_path, mk.RING)
-    assert out["regionAfter"] == "town" and out["narrator"] == DEFAULT_LINE
+    html = play_kit.weave(build(tmp_path, mk.RING), tmp_path)
+    after = _run(html, interact=True)
+    assert after["reads"]["VEFR_COMBAT.region"] == "town"
+    assert after["reads"]["text:#combat-live"] == DEFAULT_LINE
 
 
 def test_the_item_in_the_bag_opens_the_door_and_stays_in_the_bag(tmp_path):
-    out = play(tmp_path, mk.RING, "Shut.", store={BAG: json.dumps(["brass-ring"])})
+    html = play_kit.weave(build(tmp_path, mk.RING, "Shut."), tmp_path)
+    out = _run(html, store={BAG: json.dumps(["brass-ring"])}, interact=True)
     assert out["errors"] == []
-    assert out["regionAfter"] == "cellar" and out["heroAfter"] == [1, 1]
-    assert out["bag"] == ["brass-ring"]                          # kept, not consumed
-    assert out["narrator"] != "Shut."
+    assert out["reads"]["VEFR_COMBAT.region"] == "cellar"
+    assert out["reads"]["VEFR_COMBAT.hero.at"] == [1, 1]
+    assert json.loads(out["store"][BAG]) == ["brass-ring"]                # kept, not consumed
+    assert out["reads"]["text:#combat-live"] != "Shut."
 
 
 def test_a_flag_lock_stays_shut_until_the_flag_is_set(tmp_path):
-    shut = play(tmp_path / "a", mk.GATE_FLAG, "Shut.", unlock_rule=False)
-    assert shut["regionAfter"] == "town" and shut["narrator"] == "Shut."
-    opened = play(tmp_path / "b", mk.GATE_FLAG, "Shut.", unlock_rule=True)
-    assert opened["errors"] == [] and opened["regionAfter"] == "cellar"
+    shut = _run(play_kit.weave(build(tmp_path / "a", mk.GATE_FLAG, "Shut.", unlock_rule=False),
+                               tmp_path / "a"), interact=True)
+    assert shut["reads"]["VEFR_COMBAT.region"] == "town"
+    assert shut["reads"]["text:#combat-live"] == "Shut."
+    opened = _run(play_kit.weave(build(tmp_path / "b", mk.GATE_FLAG, "Shut.", unlock_rule=True),
+                                 tmp_path / "b"), interact=True)
+    assert opened["errors"] == [] and opened["reads"]["VEFR_COMBAT.region"] == "cellar"
 
 
 def test_an_unlocked_door_still_goes_through(tmp_path):
-    out = play(tmp_path, None)
+    html = play_kit.weave(build(tmp_path), tmp_path)
+    out = _run(html, interact=True)
     assert out["errors"] == []
-    assert out["regionAfter"] == "cellar" and out["heroAfter"] == [1, 1]
+    assert out["reads"]["VEFR_COMBAT.region"] == "cellar"
+    assert out["reads"]["VEFR_COMBAT.hero.at"] == [1, 1]
