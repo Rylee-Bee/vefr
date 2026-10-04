@@ -64,8 +64,8 @@ environment:
 ```
 
 For ollama specifically, the simplest is to add an `ollama`
-service to the same compose file. See `examples/ollama.yml`
-in the engine repo for a starter.
+service to the same compose file (there is no starter file in the
+repo yet).
 
 ### Point it at a phone-as-backend
 
