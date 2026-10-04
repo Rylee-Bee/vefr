@@ -16,9 +16,13 @@ add four things to E0d's sleeping monsters:
      is what keeps `tests/test_monster_sleep.py` green.
   3. **Noise.** A loud thing the hero does wakes every sleeper within
      earshot: fighting 12, doors 6, chests 6, stairs 8, breaking 8
-     tiles, measured Chebyshev. Only fighting has a call site in the
-     two parts this slice owns (`heroAttack`); the other four are named
-     and tested, and their call sites are reported as a gap.
+     tiles, measured Chebyshev. Fighting's call site is `heroAttack`
+     here; the doors, chests and stairs are wired in the interaction
+     dispatch (`web/player/parts/480-town-input-and-turns.js`) and the
+     last section below proves each one through the real woven player.
+     Breaking has no call site: the player has no break action to
+     attach it to, so `heardBreak` and `NOISE_BREAK` stay the tested-
+     but-uncalled reader they are.
   4. **The warden** is awake and never sleeps, so it hunts before
      anything else on the floor does.
 
@@ -366,6 +370,159 @@ def test_the_five_loud_events_carry_the_owners_radii(tmp_path):
             f"a {kind} {radius} tiles away is inside earshot"
         assert heard[1]["awake"] is False, \
             f"a {kind} {radius + 1} tiles away is not"
+
+
+# ---- the wired call sites, through the real interaction dispatch ----
+#
+# The reader above is proved on its own; these four are the other half of
+# the same claim - that the player actually MAKES each noise, at the
+# moment the hero does the loud thing. Every fixture is the big open room
+# with the hero standing still on [1, 1] and the one thing to interact
+# with one tile east at [2, 1] (reach one, so no turn is spent reaching
+# it, and nothing else in the room is in reach: no speaker, no chest
+# book, no second transition, so `pickTarget` has exactly one candidate
+# and the hero's facing cannot change which one it names).
+#
+# The two sleepers are placed past everything but the noise: each is
+# more than ten tiles from the hero in a straight line, so E0d's
+# Manhattan wake radius leaves it asleep, and each carries sight 4, so
+# the ADR's own-sight rule leaves it asleep too. Nothing in these four
+# tests can wake a sleeper but the noise it is named for.
+
+# Doors and chests carry 6 tiles. `near-ear` is Chebyshev 6 from the
+# hero's [1, 1] - twelve tiles away in a straight line - and `far-ear`
+# is one tile further out, so exactly one of them is in earshot.
+SIX_TILES = [
+    {"id": "near-ear", "name": "a near ear", "at": [7, 7],
+     "hp": 4, "atk": 1, "sight": 4, "sprite": "rat"},
+    {"id": "far-ear", "name": "a far ear", "at": [8, 7],
+     "hp": 4, "atk": 1, "sight": 4, "sprite": "rat"},
+]
+
+# Stairs carry 8. The same pair two tiles further east: `near-ear` is
+# Chebyshev 8 from the hero and `far-ear` is 9.
+EIGHT_TILES = [
+    {"id": "near-ear", "name": "a near ear", "at": [9, 7],
+     "hp": 4, "atk": 1, "sight": 4, "sprite": "rat"},
+    {"id": "far-ear", "name": "a far ear", "at": [10, 7],
+     "hp": 4, "atk": 1, "sight": 4, "sprite": "rat"},
+]
+
+# A door and a stair are the same transition, told apart by the region's
+# own naming of the tile (a `pois` that mentions a stair). Both open
+# into `beyond`, which this pack declares no region for: the door really
+# opens and really is loud, and the arrival has nowhere to go, so the
+# run stays in the room and the wake is read in the region the hero
+# stood in when the noise was made.
+BEYOND = [{"from": "town", "at": [2, 1], "to": "beyond", "to_at": [1, 1]}]
+
+LOUD_READS = [
+    "VEFR_COMBAT.region", "VEFR_COMBAT.hero.at",
+    "VEFR_COMBAT.minds.0.awake", "VEFR_COMBAT.minds.1.awake",
+    "VEFR_COMBAT.enemies.0.at", "VEFR_COMBAT.enemies.1.at",
+    "text:#combat-live",
+]
+
+INTERACT = ["begin", "key:e", "wait:200"]
+
+# A door and a stair open into `beyond` and refresh no snapshot of their
+# own - the arrival is the only thing that publishes a combat window,
+# and there is no arrival - so the run takes one quiet step south to end
+# on a snapshot taken AFTER the noise. That step cannot wake a sleeper
+# by itself: from the hero's [1, 2] the near ear is still eleven tiles
+# away in a straight line (thirteen, for the stairs) - past E0d's
+# Manhattan wake radius of ten - and the far ear further still, and
+# neither has the near eye (sight 4) to see the hero. The wake the run
+# reports is still the noise's alone.
+AFTER_NOISE = ["dir:down", "wait:200"]
+
+
+def loud_room(tmp_path, roster, transitions, pois=None):
+    """`open_room`'s room with nothing else in reach but the one thing
+    this test interacts with: no speakers, no chest book, and only the
+    transitions it names."""
+    p = open_room(tmp_path, roster)
+    town = p / "acts" / "act-1" / "town"
+    contract = json.loads((town / "contract.json").read_text(encoding="utf-8"))
+    contract["pois"] = pois or {}
+    (town / "contract.json").write_text(json.dumps(contract), encoding="utf-8")
+    for book in (p / "library").iterdir():
+        book.unlink()
+    act_path = p / "acts" / "act-1" / "world.json"
+    act = json.loads(act_path.read_text(encoding="utf-8"))
+    act["speakers"] = {}
+    act["transitions"] = transitions
+    act_path.write_text(json.dumps(act), encoding="utf-8")
+    return p
+
+
+def test_opening_a_door_wakes_the_sleeper_in_earshot(tmp_path):
+    """The hero opens the door beside it. A door carries 6 tiles, so
+    `near-ear` - Chebyshev 6 away, twelve in a straight line, asleep for
+    that alone - wakes, and `far-ear` at 7 does not. Opening the door
+    spends no turn and the one step the run ends on cannot wake either
+    of them, so nothing else is a candidate reason."""
+    html = woven_with_minds(loud_room(tmp_path, SIX_TILES, BEYOND),
+                            tmp_path, SIX_TILES)
+    out = play(html, {"steps": INTERACT + AFTER_NOISE, "read": LOUD_READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.region"] == "town", \
+        "the door opened with nowhere to go, so the fight is still this one"
+    assert reads["VEFR_COMBAT.hero.at"] == [1, 2]
+    assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
+        "opening a door 6 tiles away is inside the door's earshot"
+    assert reads["VEFR_COMBAT.minds.1.awake"] is False, \
+        "one tile past the door's 6 is out of earshot"
+    assert reads["VEFR_COMBAT.enemies.1.at"] == [8, 7], \
+        "a sleeper the noise missed is still exactly where it spawned"
+
+
+def test_opening_a_chest_wakes_the_sleeper_in_earshot(tmp_path):
+    """A chest is 6 tiles of noise exactly as a door is, and it is a
+    chest being opened whether the note inside it is a library book or
+    not. The chest's own line in the combat log says it opened."""
+    pack_dir = loud_room(tmp_path, SIX_TILES, [])
+    (pack_dir / "library" / "side-cache.md").write_text(
+        "---\ntitle: A Side Cache\nfound: map\nat: [2, 1]\n"
+        "chest: yes\ndrops: cloudy-potion\nkind: note\n---\n"
+        "A note left beside the wall.\n", encoding="utf-8")
+    html = woven_with_minds(pack_dir, tmp_path, SIX_TILES)
+    out = play(html, {"steps": INTERACT, "read": LOUD_READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.region"] == "town"
+    assert reads["VEFR_COMBAT.hero.at"] == [1, 1]
+    assert "cloudy" in (reads["text:#combat-live"] or ""), \
+        "the chest opened and handed over what it held"
+    assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
+        "opening a chest 6 tiles away is inside the chest's earshot"
+    assert reads["VEFR_COMBAT.minds.1.awake"] is False, \
+        "one tile past the chest's 6 is out of earshot"
+    assert reads["VEFR_COMBAT.enemies.0.at"] == [7, 7]
+    assert reads["VEFR_COMBAT.enemies.1.at"] == [8, 7]
+
+
+def test_using_stairs_wakes_the_sleeper_in_earshot(tmp_path):
+    """Stairs carry 8, so the pair stands two tiles further east than
+    the doors': `near-ear` is Chebyshev 8 away and wakes, `far-ear` at 9
+    does not. The tile is a stair because the region's `pois` names it
+    one - the same rule the player's own candidate list reads - and
+    using it spends no turn either."""
+    p = loud_room(tmp_path, EIGHT_TILES, BEYOND, {"2,1": "the stair down"})
+    html = woven_with_minds(p, tmp_path, EIGHT_TILES)
+    out = play(html, {"steps": INTERACT + AFTER_NOISE, "read": LOUD_READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.region"] == "town", \
+        "the stair was used with nowhere to go, so the fight is this one"
+    assert reads["VEFR_COMBAT.hero.at"] == [1, 2]
+    assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
+        "using stairs 8 tiles away is inside the stair's earshot"
+    assert reads["VEFR_COMBAT.minds.1.awake"] is False, \
+        "one tile past the stair's 8 is out of earshot"
+    assert reads["VEFR_COMBAT.enemies.1.at"] == [10, 7], \
+        "a sleeper the noise missed is still exactly where it spawned"
 
 
 def test_an_unknown_loud_event_carries_nothing(tmp_path):
