@@ -160,6 +160,9 @@ uv run ratatoskr test
 That's the full pytest suite. It should pass with zero setup beyond
 step 1 - the engine tests itself against the demonstration world.
 
+Working on the player itself? `web/packaged.html` is generated from `web/player/parts/`:
+edit a part, run `uv run python scripts/build_player.py`, and see `AGENTS.md`.
+
 ## 5. The CLI reference
 
 ```sh

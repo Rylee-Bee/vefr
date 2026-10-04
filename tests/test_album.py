@@ -1,4 +1,5 @@
 """The album, slice 1 (design/album.md; Cottage release 1, plan A1). FROZEN CONTRACT.
+Played through the shared tests/play_kit.py.
 
 A pack may declare `"album": [ {id, name, kind, when, riddle?, shine?} ]` in world.json.
   - id: unique, plain; name: 1-60 chars; kind: "open" | "riddle" | "secret";
@@ -20,21 +21,14 @@ Player:
 Neutral fixtures only.
 """
 
-import json
 import shutil
-import subprocess
-import sys
-from pathlib import Path
 
 import pytest
 
-from vefr import cli, maplab
+from vefr import maplab
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tests" / "fixtures"))
-import make_lock_pack as mk  # noqa: E402
+import play_kit
 
-HARNESS = ROOT / "tests" / "fixtures" / "album_harness.mjs"
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
 ALBUM = [
@@ -45,15 +39,17 @@ ALBUM = [
      "when": {"defeats": {"what": "storeroom-rat"}}},
 ]
 
+ALBUM_GLOBAL = "VEFR_ALBUM"
+LIVE = "text:#combat-live"
+BUTTON = 'exists:#menu [data-panel="album"]'
+BUTTON_VISIBLE = 'visible:#menu [data-panel="album"]'
+PANEL = "text:#album-panel"
+
 
 def build(tmp_path, album=ALBUM):
-    pack = mk.build(tmp_path)
-    p = pack / "world.json"
-    cfg = json.loads(p.read_text(encoding="utf-8"))
-    if album is not None:
-        cfg["album"] = album
-    p.write_text(json.dumps(cfg), encoding="utf-8")
-    return pack
+    if album is None:
+        return play_kit.pack(tmp_path, "lock")
+    return play_kit.pack(tmp_path, "lock", {"world.json": {"album": album}})
 
 
 def extra_errors(tmp_path, album):
@@ -97,27 +93,23 @@ def test_bad_stickers_are_named(tmp_path, bad, needle):
 
 # --- player ------------------------------------------------------------------------------------
 
-def play(tmp_path, spec=None, album=ALBUM):
-    pack = build(tmp_path, album)
-    html = tmp_path / "album.html"
-    html.write_text(cli.weave_html(pack), encoding="utf-8")
-    run = subprocess.run(["node", str(HARNESS), str(html), json.dumps(spec or {})],
-                         capture_output=True, text=True, timeout=120)
-    assert run.returncode == 0, run.stderr
-    return json.loads(run.stdout)
+def run(tmp_path, album=ALBUM, spec=None):
+    html = play_kit.weave(build(tmp_path, album), tmp_path)
+    return play_kit.play(html, spec or {})
 
 
 def test_the_first_event_earns_its_sticker_once(tmp_path):
-    r = play(tmp_path)
-    assert r["errors"] == []
-    assert r["album"] == {"found": ["first-steps"], "total": 3}
-    assert "You found a sticker: First steps" in r["live"]
+    out = run(tmp_path, spec={"steps": ["begin"], "read": [ALBUM_GLOBAL, LIVE]})
+    assert out["errors"] == []
+    assert out["reads"][ALBUM_GLOBAL] == {"found": ["first-steps"], "total": 3}
+    assert "You found a sticker: First steps" in out["reads"][LIVE]
 
 
 def test_the_panel_speaks_plainly_and_hides_what_it_should(tmp_path):
-    r = play(tmp_path)
-    assert r["button"]["present"] and r["button"]["visible"]
-    p = r["panel"]
+    out = run(tmp_path, spec={"steps": ["begin", "menu:album"],
+                              "read": [BUTTON, BUTTON_VISIBLE, PANEL]})
+    assert out["reads"][BUTTON] and out["reads"][BUTTON_VISIBLE]
+    p = out["reads"][PANEL]
     assert "1 of 3 found" in p
     assert "First steps" in p
     assert "Something small and round waits in a ledger." in p
@@ -126,14 +118,17 @@ def test_the_panel_speaks_plainly_and_hides_what_it_should(tmp_path):
 
 
 def test_it_persists_and_a_reload_does_not_announce_again(tmp_path):
-    first = play(tmp_path / "one")
-    second = play(tmp_path / "two", {"store": first["store"]})
-    assert second["album"]["found"] == ["first-steps"]
-    assert "You found a sticker" not in second["live"]
+    first = run(tmp_path / "one", spec={"steps": ["begin"], "read": [ALBUM_GLOBAL, LIVE]})
+    second = run(tmp_path / "two",
+                 spec={"store": first["store"], "steps": ["begin"], "read": [ALBUM_GLOBAL, LIVE]})
+    assert second["reads"][ALBUM_GLOBAL]["found"] == ["first-steps"]
+    assert "You found a sticker" not in second["reads"][LIVE]
 
 
 def test_a_pack_without_an_album_has_no_album(tmp_path):
-    r = play(tmp_path, album=None)
-    assert r["album"] is None
-    assert not (r["button"]["present"] and r["button"]["visible"])
-    assert r["errors"] == []
+    out = run(tmp_path, album=None,
+              spec={"steps": ["begin", "click:#menu-open"],
+                    "read": [ALBUM_GLOBAL, BUTTON, BUTTON_VISIBLE]})
+    assert out["reads"][ALBUM_GLOBAL] is None
+    assert not (out["reads"][BUTTON] and out["reads"][BUTTON_VISIBLE])
+    assert out["errors"] == []

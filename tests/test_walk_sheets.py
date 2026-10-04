@@ -1,4 +1,5 @@
 """Walk sheets, phase B of design/pack-art-proposal.md (Cottage release 1, plan W1). FROZEN CONTRACT.
+Played through the shared tests/play_kit.py.
 
 A pack may put a sprite sheet next to a sprite:
   sprites/<key>.png            the single picture (still the fallback)
@@ -21,21 +22,18 @@ Neutral fixtures only.
 import json
 import shutil
 import struct
-import subprocess
-import sys
 import zlib
-from pathlib import Path
 
 import pytest
 
-from vefr import cli, maplab
+from vefr import maplab
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tests" / "fixtures"))
-import make_lock_pack as mk  # noqa: E402
+import play_kit
 
-HARNESS = ROOT / "tests" / "fixtures" / "walk_harness.mjs"
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+
+SHEETS = "VEFR_SPRITE_SHEETS"
+FRAME = "VEFR_HERO_FRAME"
 
 
 def png(w, h, rgb=(180, 60, 60)):
@@ -54,18 +52,17 @@ SHEET = {"image": "hero-sheet.png", "frame": [32, 32], "fps": 8,
 
 
 def build(tmp_path, sheet=SHEET, image_size=(160, 128), with_image=True):
-    pack = mk.build(tmp_path)
-    sp = pack / "sprites"
+    # The kit builds the world; the sprite pictures and the sheet JSON are
+    # written onto the pack path it returns, exactly as before.
+    pack_dir = play_kit.pack(
+        tmp_path, "lock", {"world.json": {"player": {"sprites": {"hero": "sprites/hero.png"}}}})
+    sp = pack_dir / "sprites"
     (sp / "hero.png").write_bytes(png(1, 1))
-    wj = pack / "world.json"
-    cfg = json.loads(wj.read_text(encoding="utf-8"))
-    cfg["player"]["sprites"]["hero"] = "sprites/hero.png"
-    wj.write_text(json.dumps(cfg), encoding="utf-8")
     if sheet is not None:
         (sp / "hero.sheet.json").write_text(json.dumps(sheet), encoding="utf-8")
         if with_image:
             (sp / "hero-sheet.png").write_bytes(png(*image_size))
-    return pack
+    return pack_dir
 
 
 def extra_errors(tmp_path, **kw):
@@ -110,54 +107,59 @@ def test_bad_sheets_are_named(tmp_path, sheet, needle):
 # --- loader and weave -----------------------------------------------------------------------
 
 def test_a_sheet_json_is_not_a_sprite_and_the_sheet_is_baked(tmp_path):
-    pack = build(tmp_path)
-    html = cli.weave_html(pack)
+    pack_dir = build(tmp_path)
+    html = play_kit.weave(pack_dir, tmp_path).read_text(encoding="utf-8")
     assert '"hero.sheet"' not in html and '"hero-sheet"' not in html   # not baked as sprite keys
     assert "window.VEFR_SPRITE_SHEETS" in html
     assert "data:image/png;base64," in html.split("window.VEFR_SPRITE_SHEETS", 1)[1][:2000]
 
 
 def test_a_pack_with_no_sheets_bakes_an_empty_map(tmp_path):
-    html = cli.weave_html(build(tmp_path, sheet=None))
+    html = play_kit.weave(build(tmp_path, sheet=None), tmp_path).read_text(encoding="utf-8")
     assert "window.VEFR_SPRITE_SHEETS = {}" in html
 
 
 # --- player ------------------------------------------------------------------------------------
 
-def play(tmp_path, steps, **kw):
-    pack = build(tmp_path, **kw)
-    html = tmp_path / "walk.html"
-    html.write_text(cli.weave_html(pack), encoding="utf-8")
-    run = subprocess.run(["node", str(HARNESS), str(html), json.dumps({"steps": steps})],
-                         capture_output=True, text=True, timeout=120)
-    assert run.returncode == 0, run.stderr
-    return json.loads(run.stdout)
+def run(html, steps, reads=(FRAME,)):
+    # A read is one snapshot at the end, so standing, stepping and settling
+    # are three runs over the same woven html.
+    return play_kit.play(html, {"steps": steps, "read": list(reads)})
 
 
 def test_standing_then_a_step_then_standing(tmp_path):
-    r = play(tmp_path, ["right"])
-    assert r["errors"] == []
-    assert r["sheets"] == ["hero"]
-    assert r["start"] == {"dir": "down", "state": "idle", "frame": 0, "mirrored": False}
-    d = r["during"][0]
+    html = play_kit.weave(build(tmp_path), tmp_path)
+    start = run(html, ["begin"], [SHEETS, FRAME])
+    during = run(html, ["begin", "dir:right"])
+    settled = run(html, ["begin", "dir:right", "wait:1000"])
+    assert start["errors"] == []
+    assert list(start["reads"][SHEETS] or {}) == ["hero"]
+    assert start["reads"][FRAME] == {"dir": "down", "state": "idle", "frame": 0, "mirrored": False}
+    d = during["reads"][FRAME]
     assert d["dir"] == "right" and d["state"] == "walk" and d["frame"] in (11, 12, 13, 14) and d["mirrored"] is False
-    assert r["settled"] == {"dir": "right", "state": "idle", "frame": 10, "mirrored": False}
+    assert settled["reads"][FRAME] == {"dir": "right", "state": "idle", "frame": 10, "mirrored": False}
 
 
 def test_a_missing_side_is_the_other_mirrored(tmp_path):
-    r = play(tmp_path, ["left"])
-    d = r["during"][0]
+    html = play_kit.weave(build(tmp_path), tmp_path)
+    during = run(html, ["begin", "dir:left"])
+    settled = run(html, ["begin", "dir:left", "wait:1000"])
+    d = during["reads"][FRAME]
     assert d["dir"] == "left" and d["state"] == "walk" and d["frame"] in (11, 12, 13, 14) and d["mirrored"] is True
-    assert r["settled"]["frame"] == 10 and r["settled"]["mirrored"] is True
+    assert settled["reads"][FRAME]["frame"] == 10 and settled["reads"][FRAME]["mirrored"] is True
 
 
 def test_up_uses_its_own_frames(tmp_path):
-    r = play(tmp_path, ["up"])
-    d = r["during"][0]
+    html = play_kit.weave(build(tmp_path), tmp_path)
+    during = run(html, ["begin", "dir:up"])
+    d = during["reads"][FRAME]
     assert d["dir"] == "up" and d["frame"] in (16, 17, 18, 19)
 
 
 def test_a_pack_without_a_sheet_has_no_frame_snapshot(tmp_path):
-    r = play(tmp_path, ["right"], sheet=None)
-    assert r["sheets"] == [] and r["start"] is None and r["settled"] is None
-    assert r["errors"] == []
+    html = play_kit.weave(build(tmp_path, sheet=None), tmp_path)
+    start = run(html, ["begin"], [SHEETS, FRAME])
+    settled = run(html, ["begin", "dir:right", "wait:1000"])
+    assert list(start["reads"][SHEETS] or {}) == []
+    assert start["reads"][FRAME] is None and settled["reads"][FRAME] is None
+    assert start["errors"] == []

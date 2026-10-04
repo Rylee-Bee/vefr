@@ -4,7 +4,17 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-04 (after Cottage Release 1 and the reconcile pass).
+> Last refreshed: 2026-10-04 (later: the parts split, the interface and tighten-shapes plans).
+
+## 2026-10-04, later (the player is built from parts; two plans are running)
+
+**Landed on main:** the player split (#264: `web/packaged.html` is generated from `web/player/parts/`, never edited by hand; `scripts/build_player.py`, `scripts/weave_digest.py`, `tests/test_player_build.py`), the size-and-language research (#263, #265) and the tighten-shapes plan (#266).
+
+**In progress, tracked by epics:** the in-world interface ([#268](https://github.com/Rylee-Bee/vefr/issues/268), `docs/plans/interface/PLAN.md`; slice I1 built on `feat/in-world-interface`, held until the phone dock I2 passes) and tighten-the-shapes ([#267](https://github.com/Rylee-Bee/vefr/issues/267), `docs/plans/tighten-shapes/PLAN.md`, ADR 0010). Rylee's decisions on 2026-10-04: parchment and soft wood with Ledger type (Crimson Pro); doors and stairs write their glyphs into `map.md`; places before things; placement sentences are in scope with a six-word language; sound stays on by default.
+
+**How agents work here now:** edit a part and run the build; tests first and frozen; one foreman per lane; merge main into a branch yourself; the Cottage bot (`cottage-of-the-breeze/tests/playthrough/`) is the player-level proof.
+
+**Known and filed:** the rule-event list is typed three times and has drifted (#269); region names show raw in hints (#259); `vefr look` cannot start in a region (#260).
 
 ## 2026-10-04 (Cottage Release 1: what landed, what it taught, where things stand)
 

@@ -90,6 +90,11 @@ uv run vefr --help        # the front door: every verb, journey order
 uv run ratatoskr --help   # the old ops CLI, still an alias
 uv run norns --help       # the old craft CLI, still an alias
 
+# The player: web/packaged.html is GENERATED. Edit a part in web/player/parts/, then rebuild
+# (tests/test_player_build.py fails if it is stale); weave_digest.py proves byte-equality
+uv run python scripts/build_player.py
+uv run python scripts/weave_digest.py
+
 # Validate a world pack
 uv run norns validate --pack worlds/<name>
 
