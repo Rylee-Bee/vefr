@@ -57,8 +57,8 @@ plain process env vars, so any entry point picks them up:
 | `VEFR_INTERFACE_MODEL` | `qwen3.5-9b-mtp` | Model for the interface translator (`vefr-interface`); this 9B model is not laptop-sized |
 | `VEFR_KEEP_ALIVE` | `1m` | How long the server keeps the model resident |
 | `VEFR_HOME` | repo checkout (container: `/app`) | Where the engine root lives |
-| `VEFR_VAULT` | `<VEFR_HOME>/data/vault` | Session memory store |
-| `VEFR_JOURNAL` | `<VEFR_HOME>/data/journal` | Journal store |
+| `VEFR_VAULT` | `<data dir>/vault.json` | Session memory store |
+| `VEFR_JOURNAL` | `<data dir>/journal.json` | Journal store (`<data dir>` is `VEFR_DATA_DIR`, else `<VEFR_HOME>/data`) |
 | `VEFR_WORLD` | `sample-world` | Which pack under `worlds/` is active |
 | `VEFR_STORYTELLER_FIXTURES` | *(unset)* | PATH-style list of extra scene-fixture dirs for `norns storyteller-test`, searched before the engine's own |
 
