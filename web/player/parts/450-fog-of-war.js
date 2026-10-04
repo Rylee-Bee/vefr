@@ -10,10 +10,10 @@
     return 'vefr-fogpref-' + w;
   }
   function fogPrefOn() {
-    try { return localStorage.getItem(fogPrefKey()) !== 'off'; } catch (e) { return true; }
+    return store.get(fogPrefKey()) !== 'off';
   }
   function setFogPref(on) {
-    try { localStorage.setItem(fogPrefKey(), on ? 'on' : 'off'); } catch (e) {}
+    store.set(fogPrefKey(), on ? 'on' : 'off');
   }
   function fogEnabled() { return !!town.fog && fogPrefOn(); }
   var fogOn = fogEnabled();
@@ -25,13 +25,11 @@
   }
   function loadFog() {
     explored = {};
-    try {
-      var a = JSON.parse(localStorage.getItem(fogKey()) || '[]');
-      (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
-    } catch (e) { explored = {}; }
+    var a = store.getJSON(fogKey(), []);
+    (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
   }
   function saveFog() {
-    try { localStorage.setItem(fogKey(), JSON.stringify(Object.keys(explored))); } catch (e) {}
+    store.setJSON(fogKey(), Object.keys(explored));
   }
   function litNow() {
     var out = {};

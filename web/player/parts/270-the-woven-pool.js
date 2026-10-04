@@ -3,10 +3,7 @@
 // from the pool. Used entries are remembered per combo; when a
 // combo is spent, unused lines from any other combo keep the world
 // speaking; when the whole pool is spent, say so plainly.
-const POOL_USED = (function () {
-  try { return JSON.parse(localStorage.getItem('vefr-pool-used') || '{}'); }
-  catch (e) { return {}; }
-})();
+const POOL_USED = store.getJSON('vefr-pool-used', {});
 
 function poolDraw(key) {
   const pool = window.VEFR_POOL || {};
@@ -22,7 +19,7 @@ function poolDraw(key) {
     if (!fresh.length) continue;
     const idx = fresh[Math.floor(Math.random() * fresh.length)];
     POOL_USED[k] = used.concat(idx);
-    try { localStorage.setItem('vefr-pool-used', JSON.stringify(POOL_USED)); } catch (e) {}
+    store.setJSON('vefr-pool-used', POOL_USED);
     return entries[idx];
   }
   return null;

@@ -75,7 +75,7 @@
 
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
-  try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
+  renderCombatLog(store.getJSON(COMBAT_KEY, []));
   /* The act's verbs are the pack's own vocabulary; baked defaults
      keep the old costume when the act declares none. The list lives
      in surfaceVerbs() so the row and the enemy menu share one home. */

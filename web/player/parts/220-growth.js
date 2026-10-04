@@ -9,8 +9,7 @@ function growthKey() {
   return 'vefr-growth-' + w;
 }
 function loadGrowth() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(growthKey()) || 'null'); } catch (e) {}
+  var raw = store.getJSON(growthKey(), null);
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     return { xp: (typeof raw.xp === 'number' ? raw.xp : 0),
              counts: (raw.counts && typeof raw.counts === 'object' ? raw.counts : {}) };
@@ -20,7 +19,7 @@ function loadGrowth() {
 var GROWTH_STATE = loadGrowth();
 var XP_WORD = 'experience';
 function saveGrowth() {
-  try { localStorage.setItem(growthKey(), JSON.stringify(GROWTH_STATE)); } catch (e) {}
+  store.setJSON(growthKey(), GROWTH_STATE);
 }
 // The extra hp/atk the state has earned. No growth block (or a missing
 // engine) reads as no growth, so a plain pack plays exactly as before.
@@ -46,14 +45,13 @@ function heroHpKey() {
   return 'vefr-hp-' + w;
 }
 function loadHeroHp() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(heroHpKey()), 10); } catch (e) {}
+  var n = parseInt(store.get(heroHpKey()), 10);
   var max = heroMax();
   HERO_HP = (isFinite(n) && n > 0) ? Math.min(n, max) : max;
   return HERO_HP;
 }
 function saveHeroHp() {
-  try { localStorage.setItem(heroHpKey(), String(HERO_HP)); } catch (e) {}
+  store.set(heroHpKey(), HERO_HP);
 }
 function renderHp() {
   var fill = document.getElementById('hud-hp-fill');
