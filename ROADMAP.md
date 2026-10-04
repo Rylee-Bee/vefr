@@ -14,24 +14,27 @@ Cottage of the Breeze **Release 1** (a complete, polished Act 1, built through V
 - [engine] Locks on doors and stairs, used for three stairs and a sealed door (#229); equipment in five slots (#244 to #251); Blueprint families (22 families, 73 creatures); durable rule saves; the skin loader.
 - [QA] `vefr check` follows every lock and names a key that cannot be found, sits behind its own door, or could be sold (#253).
 - [player] The sticker album, slice 1 (#254); a small set of soft synthesized sounds with a switch (#257); walk sheets, a character that walks in four directions (#258); stairs say "up" when they go up (#255).
+- [authoring] The player is built from parts: 56 files in `web/player/parts/` joined byte for byte into the committed `web/packaged.html` by `scripts/build_player.py` (#264); `scripts/weave_digest.py` proves a refactor changed nothing.
 - [authoring] `vefr look`, `vefr probe`, `vefr publish`, `vefr features`; the Library chapters on locks and endings and on gear, albums, sound and walking (31 chapters on the shelf).
 - [Cottage] Six floors, three Keybearers and the Cellar King, the King's room and an ending, eight unique monsters, eight wearable items, 25 stickers, a keyboard-only playthrough bot (desktop and phone) and an accessibility pass. All story text is agent draft until Rylee approves it.
+
+### IN PROGRESS (decided by Rylee on 2026-10-04; tracked by epics)
+- **The in-world interface** (epic [#268](https://github.com/Rylee-Bee/vefr/issues/268); `docs/plans/interface/PLAN.md`): parchment and soft wood, Ledger type, everything on one stage. Slice I1 (the stage rectangle and HUD frame) is built on `feat/in-world-interface` and reads right on desktop; it is held back from merge until slice I2 (the phone dock) passes its tests; I3 to I7 follow.
+- **Tighten the shapes** (epic [#267](https://github.com/Rylee-Bee/vefr/issues/267); `docs/plans/tighten-shapes/PLAN.md`, ADR 0010, `docs/research/size-and-language-pass.md`): a shared test kit and a storage helper with a lint, sprites found by name, one schema table for the validators (with a golden file of today's sentences first), one event table (the validator says "six events", there are eleven: #269), an art ledger with generated credits and a role-driven cut, and Blueprint growing places (doors written into `map.md`), things, placement sentences and stickers from the cast. Order of the foreman lane is in the plan.
 
 ### NOW (small, high leverage, straight from real use)
 1. [authoring + QA] **Story status**: a pack can say which words are draft and which Rylee approved; `vefr check --release` lists drafts. (finding 1, new)
 2. [authoring + QA] **Scenarios**: open the game, `vefr look` and the bot in any named state; generalises #260. (finding 2, new)
-3. [QA] **Stage containment and panel accessibility**: check that every control lives inside the play stage at many sizes, and walk every menu panel with axe. (finding 3, new; it is the acceptance test for the in-world interface)
+3. [QA] **Stage containment and panel accessibility**: every control inside the stage at many sizes, and every menu panel walked with axe. (finding 3, new; the containment and no-overlap tests are written and drive the interface slices; the panel walk is still to do)
 4. [QA] **Obtainability**: widen the lock check to gear, books, stickers and creatures. (finding 4, deepened)
 5. [authoring] Region display names for hints (#259).
 
 ### NEXT (what Act 2 and the next games need)
 - [engine] **Act advance** (ADR 0006, #217) and **status effects** (fire first; `design/elemental-and-status-effects.md`, a campaign with an ADR amendment).
-- [engine + player] **The in-world interface** (Cottage `docs/plans/native-ui/PLAN.md`): skin parts the player does not yet draw, portraits in speech, hit and heal flashes, a fixed stage with everything inside it. Rylee's rule: no literal device frame; native to the world.
-- [engine] **Random floors phase 2** (#215) and **guardians** as pack data.
-- [authoring] Honest feature detection and engine requirements per pack (finding 5, deepened); a pack art-import verb with clean credits (6, new); an overlay lane for hand edits to generated floors (9, deepened).
+- [engine] **Random floors phase 2** (#215) and **guardians** as pack data (placement sentences from ADR 0010 are the first step).
+- [authoring] Honest feature detection and engine requirements per pack (finding 5); a route through a pack and one stable play-state API (finding 7); the overlay lane for hand edits on generated floors is superseded by Blueprint `places` (ADR 0010).
 - [QA] A route through a pack plus one stable play-state API (7, new); a balance report from pack data (8, new).
 - [player] Album logs (bestiary, items, map).
-- [authoring + engine] **Smaller and more flexible** ([`docs/research/size-and-language-pass.md`](docs/research/size-and-language-pass.md)): WebP at art import and identical pictures stored once (about half the woven bytes), conventions for sprite and item registration, event sentences and family names that normalise to canonical JSON, and one declarative vocabulary for events, actions and pack blocks. Ask-first where it touches the pack contract.
 
 ### LATER (worthwhile, no immediate evidence or dependency)
 - [authoring] `vefr where|explain|map` development questions (finding 10, new).

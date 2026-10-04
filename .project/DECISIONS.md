@@ -665,3 +665,10 @@ Rylee asked for a full optimization pass: smaller but more flexible, using langu
 ## 2026-10-04: the player is built from parts
 
 `web/packaged.html` is now generated from `web/player/parts/` (56 files, order in `web/player/manifest.json`) by `scripts/build_player.py`; the generated file stays committed so every consumer, the wheel and the weaver are untouched. Chosen by Rylee ("split the packaged html ... in parallel" with the interface work). The proof of no behaviour change is byte-identical weave digests (`scripts/weave_digest.py`) plus `tests/test_player_build.py`. **Rule for agents and foremen: edit a part, run the build, commit both; never edit `web/packaged.html` by hand.** Parallel foremen can now work in different parts without colliding.
+
+## 2026-10-04 (later): Rylee's decisions on the interface and the tightening work
+
+- **Interface look:** parchment and soft wood, Ledger type (Crimson Pro), no literal device frame, everything on one stage; chosen in the interface lab after fifteen researched styles. Plan: `docs/plans/interface/PLAN.md`.
+- **ADR 0010 (things and places):** glyphs are written into `map.md` (no weave-time overlay); places come before things; placement sentences are built in this mission, kept to six words (`far:`, `near:`, `off:`, `dead-end`, `room:`, `x,y`) with ties broken by a hash of the record id.
+- **Order and limits:** one foreman at a time per lane (the interface lane and the tighten lane may run together); at most one extra research worker; every slice tests-first, with the weave digest or the golden file as its proof of no change.
+- **Plan builder:** Opus wrote `docs/plans/tighten-shapes/PLAN.md` (the second of the two Opus calls allowed overnight, then re-approved by Rylee for this mission). Its corrections to the earlier estimates stand: `store()` saves 40 to 80 lines (its value is the lint), the schema table 150 to 250, and existing validator tests do not pin exact sentences, so a golden file comes first.
