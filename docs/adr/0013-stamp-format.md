@@ -109,7 +109,7 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 
 ## Open questions for Rylee
 
-1. Is 15x15 big enough for the throne-room redraw, or should that room become its own region?
+1. **Decided: go bigger, 21x21** for the throne-room redraw. The stamp size cap and the placement cost budget must allow 21x21; confirm in the E5 tests.
 2. Which 3–5 hand-drawn rooms become stamps, and which of them may rotate or mirror?
 3. May a landmark stamp leave out its point of interest and take a name from the Section list instead?
 4. UNKNOWN: is 95% the right placement bar, or should optional stamps be allowed to be rare on purpose?
