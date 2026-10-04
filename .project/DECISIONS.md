@@ -678,3 +678,19 @@ Rylee asked for a full optimization pass: smaller but more flexible, using langu
 - **ADR 0010 (things and places):** glyphs are written into `map.md` (no weave-time overlay); places come before things; placement sentences are built in this mission, kept to six words (`far:`, `near:`, `off:`, `dead-end`, `room:`, `x,y`) with ties broken by a hash of the record id.
 - **Order and limits:** one foreman at a time per lane (the interface lane and the tighten lane may run together); at most one extra research worker; every slice tests-first, with the weave digest or the golden file as its proof of no change.
 - **Plan builder:** Opus wrote `docs/plans/tighten-shapes/PLAN.md` (the second of the two Opus calls allowed overnight, then re-approved by Rylee for this mission). Its corrections to the earlier estimates stand: `store()` saves 40 to 80 lines (its value is the lint), the schema table 150 to 250, and existing validator tests do not pin exact sentences, so a golden file comes first.
+
+## 2026-10-04 (late afternoon): the endless dungeon's open questions answered; what the slices taught
+
+**Rylee's decisions** (asked one at a time as pickers; recorded in ADRs 0013 to 0015, #293):
+- **Wake rule:** sight plus noise. Loud events: fighting (12 tiles), opening doors and chests (6), breaking things and using stairs (8). Reloading puts sleepers back to sleep; no awake state is saved.
+- **Key warden:** awake, and hunts the hero once the hero enters its hall.
+- **Affixes:** cozy and cute names supplied by the pack; the engine ships neutral ids.
+- **Stamps:** six to start: a 21x21 throne room (not 15x15), a random elite room, a room of 3 to 6 chests where one is quite likely a monster, a shrine, a treasure nook and a sleeping den. Only decorative stamps rotate or mirror. Required stamps always place; optional ones may be rare on purpose.
+- **Town gate:** the paid shortcut that skips the town visit is a one-use item, one dropped by every section's vault, offered from the second cycle on. The final boss lives in its own region behind its door.
+- **Order:** things follow places (B1 after B2); the endless slices go E7, then E5, then E8.
+
+**What the slices taught** (each one is now a rule or a check, not just a note):
+- **A foreman that runs out of time leaves real work scattered across its workers' clones.** B2 timed out at 100 minutes with no commit, yet its tests, docs and two implementation attempts sat in four clones; assembling them gave a passing slice (88 tests). The platform's worker contract now requires workers to commit as they go, and timeouts are sized to the slice.
+- **The public-surface guard caught a machine path in a new test** (a hard-coded path to the game's pack). Trials against a real game pack are opt-in through `VEFR_TRIAL_PACK`, so no private path lives in this public repo.
+- **A second-model review can read a stale branch.** The B2 reviewer flagged doc examples that a later commit had already fixed; check a finding against the current head before acting on it.
+- **Draft ADRs go through the public-surface lens too:** an Opus draft named a game character; the engine ADR now says "the final boss".
