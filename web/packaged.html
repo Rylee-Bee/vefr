@@ -710,14 +710,41 @@ const STATE = (function () {
   };
 })();
 
+// ---- store: the one place the player touches browser storage ----
+// A sandboxed iframe, or a browser that blocks storage, can make
+// browser storage throw. Every method here wraps the access, so a
+// player never sees the failure: get returns null, getJSON returns
+// its fallback, and set/setJSON give up quietly. `raw()` hands the
+// real storage object to startover (which clears every vefr- save);
+// nothing else may name the backing global.
+var store = {
+  get: function (key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  },
+  set: function (key, value) {
+    try { localStorage.setItem(key, String(value)); } catch (e) {}
+  },
+  getJSON: function (key, fallback) {
+    try {
+      var raw = store.get(key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch (e) { return fallback; }
+  },
+  setJSON: function (key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  },
+  raw: function () {
+    try { return localStorage; } catch (e) { return null; }
+  }
+};
 // ---- config persistence ----
 const CONFIG_KEY = 'vefr-packaged-config';
 function loadConfig() {
-  try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); }
-  catch (_) { return {}; }
+  return store.getJSON(CONFIG_KEY, {});
 }
 function saveConfig(c) {
-  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(c)); } catch (_) { /* blocked storage: keep going in memory */ }
+  store.setJSON(CONFIG_KEY, c);   // blocked storage: keep going in memory
 }
 // ---- endpoint join + post ----
 // The config URL is player-entered: it may or may not end in /v1 (the
@@ -831,14 +858,14 @@ function tutorialKey() {
   return 'vefr-tutorial-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 }
 function tutorialDone() {
-  try { return localStorage.getItem(tutorialKey()) === '1'; } catch (e) { return false; }
+  return store.get(tutorialKey()) === '1';
 }
 function quietTutorial() {
   var el = document.getElementById('status');
   if (!el || el.getAttribute('data-tutorial') !== '1') return;
   el.textContent = '';
   el.removeAttribute('data-tutorial');
-  try { localStorage.setItem(tutorialKey(), '1'); } catch (e) {}
+  store.set(tutorialKey(), '1');
 }
 
 // ---- speech box: whoever is talking, in a box over the game ----
@@ -863,10 +890,8 @@ function libraryBooks() {
 }
 
 function booksFound() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(LIBRARY_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
 }
 
 function bookIsFound(id) { return booksFound().indexOf(id) !== -1; }
@@ -875,7 +900,7 @@ function libraryRemember(id) {
   var ids = booksFound();
   if (ids.indexOf(id) === -1) {
     ids.push(id);
-    try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(ids)); } catch (e) {}
+    store.setJSON(LIBRARY_KEY, ids);
   }
 }
 
@@ -920,8 +945,8 @@ function libraryFromSpeaker(key) {
 // events the woven player has no way to observe, so they stay unfound
 // here rather than invent one.
 function libraryFirstVisit() {
-  // A storage that throws (a sandboxed iframe) cannot remember a first visit, so treat it as seen.
-  try { if (localStorage.getItem(LIBRARY_KEY) !== null) return; } catch (e) { return; }
+  // A first visit is the load with no saved found-list yet.
+  if (store.get(LIBRARY_KEY) !== null) return;
   libraryBooks().forEach(function (b) {
     if (b && b.found === 'earned' && b.when === 'first-visit' && !bookIsFound(b.id)) {
       foundBook(b, 'first-visit');
@@ -1099,10 +1124,10 @@ function bindMessagePanel() {
   function setCollapsed(c) {
     panel.classList.toggle('is-collapsed', c);
     toggle.setAttribute('aria-expanded', c ? 'false' : 'true');
-    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+    store.set(key, c ? '1' : '0');
   }
   toggle.addEventListener('click', function () { setCollapsed(!panel.classList.contains('is-collapsed')); });
-  try { if (localStorage.getItem(key) === '1') setCollapsed(true); } catch (e) {}
+  if (store.get(key) === '1') setCollapsed(true);
 }
 
 function bindLibrary() {
@@ -1123,12 +1148,12 @@ function bindLibrary() {
 // or throwing context must never throw out of a cue. The preference is
 // read once, here at boot, from the same per-world key pattern the fog
 // and the rule log use, and every storage access is wrapped (a
-// sandboxed iframe's localStorage throws).
+// sandboxed iframe's browser storage throws).
 var SOUND_KEY = 'vefr-sound-'
   + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 if (window.VEFR_SOUND_DEF && window.VEFR_SOUND_DEF.theme) {
   var soundOn = true;
-  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) {}
+  soundOn = store.get(SOUND_KEY) !== 'off';
   window.VEFR_SOUND = { theme: window.VEFR_SOUND_DEF.theme,
                         on: soundOn, played: [] };
 }
@@ -1235,9 +1260,7 @@ if (window.VEFR_SOUND) {
     box.checked = window.VEFR_SOUND.on;
     box.addEventListener('change', function () {
       window.VEFR_SOUND.on = box.checked;
-      try {
-        localStorage.setItem(SOUND_KEY, box.checked ? 'on' : 'off');
-      } catch (e) {}
+      store.set(SOUND_KEY, box.checked ? 'on' : 'off');
     });
     label.appendChild(box);
     label.appendChild(document.createTextNode(' Sound'));
@@ -1263,17 +1286,15 @@ var ALBUM_MEMORY = null;
 function albumFoundIds() {
   if (ALBUM_MEMORY !== null) return ALBUM_MEMORY.slice();
   var ids = [];
-  try {
-    var raw = JSON.parse(localStorage.getItem(ALBUM_KEY) || '[]');
-    if (Array.isArray(raw)) {
-      ids = raw.filter(function (id) { return typeof id === 'string'; });
-    }
-  } catch (e) { ids = []; }
+  var raw = store.getJSON(ALBUM_KEY, []);
+  if (Array.isArray(raw)) {
+    ids = raw.filter(function (id) { return typeof id === 'string'; });
+  }
   return ids;
 }
 function albumRemember(ids) {
   ALBUM_MEMORY = ids.slice();
-  try { localStorage.setItem(ALBUM_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(ALBUM_KEY, ids);
 }
 // window.VEFR_ALBUM is the harness snapshot, and exists ONLY when the
 // pack has an album: a pack without one leaves it undefined.
@@ -1428,15 +1449,14 @@ var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'w
 // the engine refuses any slot not in this list.
 var EQUIP_SLOTS = ['hand', 'body', 'head', 'feet', 'charm'];
 // Per-world saved state: `{slot: itemId}`. Lives alongside the bag and
-// the purse, and is read and written through `try {} catch {}` like
-// them, because a sandboxed iframe can make `localStorage` throw.
+// the purse, and is read and written through the store helper like
+// them, because a sandboxed iframe can make browser storage throw.
 var EQUIP_KEY = 'vefr-equipped-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 // Filled in by `loadEquipped` at boot; a worn id the catalog no longer
 // has is dropped on load, never a crash.
 var EQUIP_STATE = {};
 function loadEquipped() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(EQUIP_KEY) || 'null'); } catch (e) {}
+  var raw = store.getJSON(EQUIP_KEY, null);
   var engine = window.VEFR_EQUIP_ENGINE;
   if (!engine) { EQUIP_STATE = {}; return; }
   // A stored value that is not a usable object reads as nothing worn.
@@ -1451,11 +1471,11 @@ function loadEquipped() {
   });
   if (Object.keys(worn).length) {
     var bag = bagItems().filter(function (id) { return !worn[id]; });
-    try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
+    store.setJSON(BAG_KEY, bag);
   }
 }
 function saveEquipped(st) {
-  try { localStorage.setItem(EQUIP_KEY, JSON.stringify(st || {})); } catch (e) {}
+  store.setJSON(EQUIP_KEY, st || {});
 }
 // True when an id is currently worn in any slot. Used to keep a worn
 // thing out of the bag list, the strip, and the Use button.
@@ -1492,15 +1512,14 @@ var REWARD_ON = (function () {
 })();
 
 function heroGold() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(GOLD_KEY), 10); } catch (e) {}
+  var n = parseInt(store.get(GOLD_KEY), 10);
   if (isFinite(n) && n >= 0) return n;
   var baked = window.VEFR_HERO && window.VEFR_HERO.gold;
   return (typeof baked === 'number' && baked >= 0) ? baked : 0;
 }
 function saveGold(n) {
   n = Math.max(0, Math.floor(n));
-  try { localStorage.setItem(GOLD_KEY, String(n)); } catch (e) {}
+  store.set(GOLD_KEY, n);
   return n;
 }
 
@@ -1519,12 +1538,10 @@ function itemSpriteSrc(id) {
   return (window.VEFR_SPRITES || {})[name] || '';
 }
 function bagItems() {
-  try {
-    var ids = JSON.parse(localStorage.getItem(BAG_KEY) || '[]');
-    return Array.isArray(ids) ? ids.filter(function (id) {
-      return typeof id === 'string' && itemCatalog()[id];
-    }) : [];
-  } catch (e) { return []; }
+  var ids = store.getJSON(BAG_KEY, []);
+  return Array.isArray(ids) ? ids.filter(function (id) {
+    return typeof id === 'string' && itemCatalog()[id];
+  }) : [];
 }
 // Rebuild the harness-readable fight snapshot after bag/gold changes.
 // setupTown installs the real builder; before that (or in a pack with no
@@ -1538,7 +1555,7 @@ function bagAdd(id) {
   if (!itemCatalog()[id]) return false;
   var ids = bagItems();
   ids.push(id);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
@@ -1550,7 +1567,7 @@ function bagRemoveOne(id) {
   var i = ids.indexOf(id);
   if (i === -1) return false;
   ids.splice(i, 1);
-  try { localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) {}
+  store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
@@ -2116,7 +2133,7 @@ function bindMenu() {
   };
   if (startoverCancel) startoverCancel.addEventListener('click', window.cancelStartover);
   if (startoverConfirm) startoverConfirm.addEventListener('click', function () {
-    try { window.startoverKeys(localStorage); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
+    try { window.startoverKeys(store.raw()); } catch (e) { /* blocked storage: nothing to clear */ }  // every vefr- key on this site
     window.location.reload();
   });
   if (startoverBody) startoverBody.addEventListener('keydown', function (e) {
@@ -2141,7 +2158,7 @@ function bindMenu() {
 
 // ---- the surface costume (hp bar, encounter prompt, verbs) ----
 // The hero's health is real now: `VEFR_HERO.hp` is the max, the
-// current value is carried per world in localStorage
+// current value is carried per world in browser storage
 // (`vefr-hp-<world>`), and the bar shows it honestly. Deterministic:
 // fixed numbers, no randomness, no clock. A drop to zero is Cozy
 // (see setupTown).
@@ -2158,8 +2175,7 @@ function growthKey() {
   return 'vefr-growth-' + w;
 }
 function loadGrowth() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(growthKey()) || 'null'); } catch (e) {}
+  var raw = store.getJSON(growthKey(), null);
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     return { xp: (typeof raw.xp === 'number' ? raw.xp : 0),
              counts: (raw.counts && typeof raw.counts === 'object' ? raw.counts : {}) };
@@ -2169,7 +2185,7 @@ function loadGrowth() {
 var GROWTH_STATE = loadGrowth();
 var XP_WORD = 'experience';
 function saveGrowth() {
-  try { localStorage.setItem(growthKey(), JSON.stringify(GROWTH_STATE)); } catch (e) {}
+  store.setJSON(growthKey(), GROWTH_STATE);
 }
 // The extra hp/atk the state has earned. No growth block (or a missing
 // engine) reads as no growth, so a plain pack plays exactly as before.
@@ -2195,14 +2211,13 @@ function heroHpKey() {
   return 'vefr-hp-' + w;
 }
 function loadHeroHp() {
-  var n = NaN;
-  try { n = parseInt(localStorage.getItem(heroHpKey()), 10); } catch (e) {}
+  var n = parseInt(store.get(heroHpKey()), 10);
   var max = heroMax();
   HERO_HP = (isFinite(n) && n > 0) ? Math.min(n, max) : max;
   return HERO_HP;
 }
 function saveHeroHp() {
-  try { localStorage.setItem(heroHpKey(), String(HERO_HP)); } catch (e) {}
+  store.set(heroHpKey(), HERO_HP);
 }
 function renderHp() {
   var fill = document.getElementById('hud-hp-fill');
@@ -2392,25 +2407,23 @@ globalThis.startoverKeys = function (storage) {
 // (/api/combat/action): the action only lives in the log.
 const COMBAT_KEY = 'vefr-packaged-combat';
 function recordVerb(verb) {
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(COMBAT_KEY, []);
   log.push({ verb: verb, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(COMBAT_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(COMBAT_KEY, log);
   renderCombatLog(log);
 }
 
 // Arrivals journal - the packaged twin of /api/journal/move: one
-// entry per change of named place under the hero, localStorage
+// entry per change of named place under the hero, browser storage
 // only, same no-failure contract as the verbs above.
 const MOVES_KEY = 'vefr-packaged-moves';
 var lastPlace = null;
 function journalVisit(poi, x, y) {
   if (poi === lastPlace) return;
   lastPlace = poi;
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(MOVES_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(MOVES_KEY, []);
   log.push({ kind: 'move', poi: poi, x: x, y: y, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(MOVES_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(MOVES_KEY, log);
 }
 
 function renderCombatLog(log) {
@@ -2552,10 +2565,7 @@ function esc(s) {
 // from the pool. Used entries are remembered per combo; when a
 // combo is spent, unused lines from any other combo keep the world
 // speaking; when the whole pool is spent, say so plainly.
-const POOL_USED = (function () {
-  try { return JSON.parse(localStorage.getItem('vefr-pool-used') || '{}'); }
-  catch (e) { return {}; }
-})();
+const POOL_USED = store.getJSON('vefr-pool-used', {});
 
 function poolDraw(key) {
   const pool = window.VEFR_POOL || {};
@@ -2571,7 +2581,7 @@ function poolDraw(key) {
     if (!fresh.length) continue;
     const idx = fresh[Math.floor(Math.random() * fresh.length)];
     POOL_USED[k] = used.concat(idx);
-    try { localStorage.setItem('vefr-pool-used', JSON.stringify(POOL_USED)); } catch (e) {}
+    store.setJSON('vefr-pool-used', POOL_USED);
     return entries[idx];
   }
   return null;
@@ -2597,10 +2607,10 @@ function mulberry32(seed) {
 
 function saveSeed() {
   try {
-    let s = localStorage.getItem('vefr-save-seed');
+    let s = store.get('vefr-save-seed');
     if (!s) {
       s = String(Math.floor(Math.random() * 0x7fffffff));
-      localStorage.setItem('vefr-save-seed', s);
+      store.set('vefr-save-seed', s);
     }
     return parseInt(s, 10) || 1;
   } catch (e) { return 1; }
@@ -2608,8 +2618,8 @@ function saveSeed() {
 
 function nextDraw() {
   try {
-    const n = (parseInt(localStorage.getItem('vefr-localgen-draws') || '0', 10) || 0) + 1;
-    localStorage.setItem('vefr-localgen-draws', String(n));
+    const n = (parseInt(store.get('vefr-localgen-draws') || '0', 10) || 0) + 1;
+    store.set('vefr-localgen-draws', String(n));
     return n;
   } catch (e) { return 1; }
 }
@@ -2793,7 +2803,7 @@ function whisperFromFragments(seedOverride) {
 // Every call site is one line at a point that already existed, and no
 // returned action is ever fed back in as an event (a give is not a
 // picks-up). With no engine or no baked rules it returns before ANY
-// side effect at all - no DOM, no localStorage, no snapshot - which is
+// side effect at all - no DOM, no browser storage, no snapshot - which is
 // every existing pack's path. Deterministic: no clock, no randomness,
 // no model call lives here.
 function fireRule(eventName, data) {
@@ -2888,9 +2898,9 @@ function rulesSpeakerName(key) {
 
 // The player's rule log: the last 20 fired rules as { id, why }, one
 // entry per rule per fire, kept on window (VEFR_WHY) and mirrored to
-// localStorage under the file's own per-world pattern (the same shape
+// browser storage under the file's own per-world pattern (the same shape
 // as vefr-fog-<world>-...). EVERY storage access is wrapped: a
-// sandboxed iframe's localStorage throws, and a thrown log must never
+// sandboxed iframe's browser storage throws, and a thrown log must never
 // take the game down.
 window.VEFR_WHY = [];
 var rulesWhyLoaded = false;
@@ -2900,12 +2910,10 @@ function rulesWhyKey() {
 function rulesWhyLoad() {
   if (rulesWhyLoaded) return;
   rulesWhyLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesWhyKey()) || '[]');
-    window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.id === 'string' && typeof e.why === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_WHY = []; }
+  var a = store.getJSON(rulesWhyKey(), []);
+  window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.id === 'string' && typeof e.why === 'string';
+  }) : [];
 }
 function rulesWhyRecord(fired) {
   if (!Array.isArray(fired) || !fired.length) return;
@@ -2914,7 +2922,7 @@ function rulesWhyRecord(fired) {
     window.VEFR_WHY.push({ id: f.id, why: f.why });
   });
   while (window.VEFR_WHY.length > 20) window.VEFR_WHY.shift();
-  try { localStorage.setItem(rulesWhyKey(), JSON.stringify(window.VEFR_WHY)); } catch (e) {}
+  store.setJSON(rulesWhyKey(), window.VEFR_WHY);
 }
 
 // ---- durable rule saves (docs/adr/0009-rule-saves.md) ----
@@ -2966,8 +2974,7 @@ function rulesKnowsHolder(who) {
 // Read the stored save: null when absent, unparseable, or not an
 // object. The version and shape are checked by the caller.
 function rulesSaveRead() {
-  var raw = null;
-  try { raw = localStorage.getItem(rulesSaveKey()); } catch (e) { return null; }
+  var raw = store.get(rulesSaveKey());
   if (typeof raw !== 'string' || !raw) return null;
   var saved = null;
   try { saved = JSON.parse(raw); } catch (e) { return null; }
@@ -3062,7 +3069,7 @@ function saveRulesState() {
     beliefs: RULES_STATE.beliefs,
     items: RULES_STATE.items
   };
-  try { localStorage.setItem(rulesSaveKey(), JSON.stringify(payload)); } catch (e) {}
+  store.setJSON(rulesSaveKey(), payload);
 }
 // `starts` fires once per save: skipped only when a valid save loaded
 // this session. A fresh (or cleared) start and reset mode fire it.
@@ -3085,12 +3092,10 @@ function rulesNextKey() {
 function rulesNextLoad() {
   if (rulesNextLoaded) return;
   rulesNextLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesNextKey()) || '[]');
-    window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.place === 'string' && typeof e.line === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_NEXT = []; }
+  var a = store.getJSON(rulesNextKey(), []);
+  window.VEFR_NEXT = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.place === 'string' && typeof e.line === 'string';
+  }) : [];
 }
 function rulesNextRecord(place, line) {
   if (typeof place !== 'string' || !place) return;
@@ -3098,7 +3103,7 @@ function rulesNextRecord(place, line) {
   // one row per place: the newest word wins
   window.VEFR_NEXT = window.VEFR_NEXT.filter(function (e) { return e.place !== place; });
   window.VEFR_NEXT.push({ place: place, line: line || ('To reach ' + place + '.') });
-  try { localStorage.setItem(rulesNextKey(), JSON.stringify(window.VEFR_NEXT)); } catch (e) {}
+  store.setJSON(rulesNextKey(), window.VEFR_NEXT);
 }
 
 // The two evidence panels the menu shows: where the world pointed,
@@ -3727,15 +3732,13 @@ function setupTown() {
     return 'vefr-slain-' + w + '-' + regionName;
   }
   function loadSlain() {
-    try {
-      var a = JSON.parse(localStorage.getItem(slainKey()) || '[]');
-      return Array.isArray(a) ? a : [];
-    } catch (e) { return []; }
+    var a = store.getJSON(slainKey(), []);
+    return Array.isArray(a) ? a : [];
   }
   function saveSlain() {
     var dead = enemies.filter(function (e) { return !e.alive; })
       .map(function (e) { return e.id + '#' + (e.sig || ''); });
-    try { localStorage.setItem(slainKey(), JSON.stringify(dead)); } catch (e) {}
+    store.setJSON(slainKey(), dead);
   }
   // A monster is remembered by what it *is*, not only by its name: move it,
   // restat it, or regenerate the floor, and it is a new monster again. So a
@@ -3888,15 +3891,14 @@ function setupTown() {
     return 'vefr-floor-' + w;
   }
   function loadFloor() {
-    var a = [];
-    try { a = JSON.parse(localStorage.getItem(floorKey()) || '[]'); } catch (e) { a = []; }
+    var a = store.getJSON(floorKey(), []);
     floor = Array.isArray(a) ? a.filter(function (d) {
       return d && typeof d.item === 'string' && typeof d.region === 'string'
         && Array.isArray(d.at) && d.at.length === 2 && itemCatalog()[d.item];
     }) : [];
   }
   function saveFloor() {
-    try { localStorage.setItem(floorKey(), JSON.stringify(floor)); } catch (e) {}
+    store.setJSON(floorKey(), floor);
   }
   function dropsAt(x, y) {
     return floor.filter(function (d) {
@@ -4704,10 +4706,10 @@ function setupTown() {
     return 'vefr-fogpref-' + w;
   }
   function fogPrefOn() {
-    try { return localStorage.getItem(fogPrefKey()) !== 'off'; } catch (e) { return true; }
+    return store.get(fogPrefKey()) !== 'off';
   }
   function setFogPref(on) {
-    try { localStorage.setItem(fogPrefKey(), on ? 'on' : 'off'); } catch (e) {}
+    store.set(fogPrefKey(), on ? 'on' : 'off');
   }
   function fogEnabled() { return !!town.fog && fogPrefOn(); }
   var fogOn = fogEnabled();
@@ -4719,13 +4721,11 @@ function setupTown() {
   }
   function loadFog() {
     explored = {};
-    try {
-      var a = JSON.parse(localStorage.getItem(fogKey()) || '[]');
-      (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
-    } catch (e) { explored = {}; }
+    var a = store.getJSON(fogKey(), []);
+    (Array.isArray(a) ? a : []).forEach(function (k) { explored[k] = 1; });
   }
   function saveFog() {
-    try { localStorage.setItem(fogKey(), JSON.stringify(Object.keys(explored))); } catch (e) {}
+    store.setJSON(fogKey(), Object.keys(explored));
   }
   function litNow() {
     var out = {};
@@ -6093,7 +6093,7 @@ function setupTown() {
 
   // The verbs. The journal is local storage - same honest shape as
   // the server route's entries, minus the server.
-  try { renderCombatLog(JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]')); } catch (e) {}
+  renderCombatLog(store.getJSON(COMBAT_KEY, []));
   /* The act's verbs are the pack's own vocabulary; baked defaults
      keep the old costume when the act declares none. The list lives
      in surfaceVerbs() so the row and the enemy menu share one home. */
@@ -6238,14 +6238,13 @@ function setupTown() {
 // deterministic, model-free. No timers: tickets wait.
 var KITCHEN_KEY = 'vefr-packaged-kitchen';
 function kitchenJournal() {
-  try { return JSON.parse(localStorage.getItem(KITCHEN_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(KITCHEN_KEY, []);
 }
 function kitchenLog(entry) {
   var j = kitchenJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(KITCHEN_KEY, j);
   return entry;
 }
 function initKitchen() {
@@ -6475,14 +6474,13 @@ function initKitchen() {
 // same rules with the engine owning truth.
 var DESK_KEY = 'vefr-packaged-desk';
 function deskJournal() {
-  try { return JSON.parse(localStorage.getItem(DESK_KEY) || '[]'); }
-  catch (e) { return []; }
+  return store.getJSON(DESK_KEY, []);
 }
 function deskLog(entry) {
   var j = deskJournal();
   entry.at = new Date().toISOString();
   j.push(entry);
-  try { localStorage.setItem(DESK_KEY, JSON.stringify(j)); } catch (e) {}
+  store.setJSON(DESK_KEY, j);
   return entry;
 }
 function deskLive() {

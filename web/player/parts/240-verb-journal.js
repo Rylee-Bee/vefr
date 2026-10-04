@@ -4,25 +4,23 @@
 // (/api/combat/action): the action only lives in the log.
 const COMBAT_KEY = 'vefr-packaged-combat';
 function recordVerb(verb) {
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(COMBAT_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(COMBAT_KEY, []);
   log.push({ verb: verb, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(COMBAT_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(COMBAT_KEY, log);
   renderCombatLog(log);
 }
 
 // Arrivals journal - the packaged twin of /api/journal/move: one
-// entry per change of named place under the hero, localStorage
+// entry per change of named place under the hero, browser storage
 // only, same no-failure contract as the verbs above.
 const MOVES_KEY = 'vefr-packaged-moves';
 var lastPlace = null;
 function journalVisit(poi, x, y) {
   if (poi === lastPlace) return;
   lastPlace = poi;
-  var log = [];
-  try { log = JSON.parse(localStorage.getItem(MOVES_KEY) || '[]'); } catch (e) {}
+  var log = store.getJSON(MOVES_KEY, []);
   log.push({ kind: 'move', poi: poi, x: x, y: y, phase: STATE.get().phase, at: new Date().toISOString() });
-  try { localStorage.setItem(MOVES_KEY, JSON.stringify(log)); } catch (e) {}
+  store.setJSON(MOVES_KEY, log);
 }
 
 function renderCombatLog(log) {

@@ -4,7 +4,7 @@
 // Every call site is one line at a point that already existed, and no
 // returned action is ever fed back in as an event (a give is not a
 // picks-up). With no engine or no baked rules it returns before ANY
-// side effect at all - no DOM, no localStorage, no snapshot - which is
+// side effect at all - no DOM, no browser storage, no snapshot - which is
 // every existing pack's path. Deterministic: no clock, no randomness,
 // no model call lives here.
 function fireRule(eventName, data) {
@@ -99,9 +99,9 @@ function rulesSpeakerName(key) {
 
 // The player's rule log: the last 20 fired rules as { id, why }, one
 // entry per rule per fire, kept on window (VEFR_WHY) and mirrored to
-// localStorage under the file's own per-world pattern (the same shape
+// browser storage under the file's own per-world pattern (the same shape
 // as vefr-fog-<world>-...). EVERY storage access is wrapped: a
-// sandboxed iframe's localStorage throws, and a thrown log must never
+// sandboxed iframe's browser storage throws, and a thrown log must never
 // take the game down.
 window.VEFR_WHY = [];
 var rulesWhyLoaded = false;
@@ -111,12 +111,10 @@ function rulesWhyKey() {
 function rulesWhyLoad() {
   if (rulesWhyLoaded) return;
   rulesWhyLoaded = true;
-  try {
-    var a = JSON.parse(localStorage.getItem(rulesWhyKey()) || '[]');
-    window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
-      return e && typeof e.id === 'string' && typeof e.why === 'string';
-    }) : [];
-  } catch (e) { window.VEFR_WHY = []; }
+  var a = store.getJSON(rulesWhyKey(), []);
+  window.VEFR_WHY = Array.isArray(a) ? a.filter(function (e) {
+    return e && typeof e.id === 'string' && typeof e.why === 'string';
+  }) : [];
 }
 function rulesWhyRecord(fired) {
   if (!Array.isArray(fired) || !fired.length) return;
@@ -125,6 +123,6 @@ function rulesWhyRecord(fired) {
     window.VEFR_WHY.push({ id: f.id, why: f.why });
   });
   while (window.VEFR_WHY.length > 20) window.VEFR_WHY.shift();
-  try { localStorage.setItem(rulesWhyKey(), JSON.stringify(window.VEFR_WHY)); } catch (e) {}
+  store.setJSON(rulesWhyKey(), window.VEFR_WHY);
 }
 

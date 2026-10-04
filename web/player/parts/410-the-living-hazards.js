@@ -12,15 +12,13 @@
     return 'vefr-slain-' + w + '-' + regionName;
   }
   function loadSlain() {
-    try {
-      var a = JSON.parse(localStorage.getItem(slainKey()) || '[]');
-      return Array.isArray(a) ? a : [];
-    } catch (e) { return []; }
+    var a = store.getJSON(slainKey(), []);
+    return Array.isArray(a) ? a : [];
   }
   function saveSlain() {
     var dead = enemies.filter(function (e) { return !e.alive; })
       .map(function (e) { return e.id + '#' + (e.sig || ''); });
-    try { localStorage.setItem(slainKey(), JSON.stringify(dead)); } catch (e) {}
+    store.setJSON(slainKey(), dead);
   }
   // A monster is remembered by what it *is*, not only by its name: move it,
   // restat it, or regenerate the floor, and it is a new monster again. So a

@@ -11,15 +11,14 @@
     return 'vefr-floor-' + w;
   }
   function loadFloor() {
-    var a = [];
-    try { a = JSON.parse(localStorage.getItem(floorKey()) || '[]'); } catch (e) { a = []; }
+    var a = store.getJSON(floorKey(), []);
     floor = Array.isArray(a) ? a.filter(function (d) {
       return d && typeof d.item === 'string' && typeof d.region === 'string'
         && Array.isArray(d.at) && d.at.length === 2 && itemCatalog()[d.item];
     }) : [];
   }
   function saveFloor() {
-    try { localStorage.setItem(floorKey(), JSON.stringify(floor)); } catch (e) {}
+    store.setJSON(floorKey(), floor);
   }
   function dropsAt(x, y) {
     return floor.filter(function (d) {

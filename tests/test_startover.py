@@ -80,4 +80,4 @@ def test_the_menu_item_and_handlers_are_wired():
     assert 'data-panel-body="startover"' in src
     assert 'id="startover-cancel"' in src
     assert 'id="startover-confirm"' in src
-    assert "window.startoverKeys(localStorage)" in src
+    assert "window.startoverKeys(store.raw())" in src
