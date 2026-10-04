@@ -1,6 +1,6 @@
 # Equipment: slots and icons first
 
-Status: **steps 1-4 built** (the pack fields `slot` and `mods`, the validator, the bake, the pure `VEFR_EQUIP_ENGINE`, the Bag panel, the glossary and the guides). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Step 5, the pack demo, is not in this repo - see the table below.
+Status: **steps 1-4 built** (the pack fields `slot` and `mods`, the validator, the bake, the pure `VEFR_EQUIP_ENGINE`, the Bag panel, the glossary and the guides). Rylee asked for this on 2026-10-01: "slots and icons first". Decided by Rylee on 2026-10-01: **five slots** (`hand`, `body`, `head`, `feet`, `charm`). Step 5, the pack demo, is done in Cottage (2026-10-04): eight wearable items across all five slots, four sold by the Trader and three dropped by monsters - see the table below for the original plan.
 
 ## What exists today
 

@@ -42,7 +42,7 @@ The weave took 0.02 s for this pack on the dev VM; the browser load was not time
 | --- | --- |
 | "A secret door behind the hearth"; "add a second floor" | a door or stairs edit, and a new-room edit |
 | "Opening the chest gives me a key" | a chest-with-drops edit |
-| "A little bell sound when the cat moves" | a sound edit (no sound surface exists) |
+| "A little bell sound when the cat moves" | a sound edit (no sound edit exists yet; the sound set itself landed 2026-10-04) |
 
 **What it taught.**
 - "Bigger" was ambiguous: the first attempt widened the room to the right only. A proposal must ask which way.

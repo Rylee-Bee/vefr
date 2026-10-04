@@ -4,15 +4,19 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-03 (evening).
+> Last refreshed: 2026-10-04 (after Cottage Release 1 and the reconcile pass).
 
-## 2026-10-04 (Cottage release 1: what Cottage taught VEFR)
+## 2026-10-04 (Cottage Release 1: what landed, what it taught, where things stand)
 
-**Landed on main (all CI green):** `complete-act` rule action (#252, the end card; no act advance yet), `vefr check` follows the locks (#253: a key that cannot be found, sits behind its own lock, or could be sold), the sticker album slice 1 (#254: `album` pack block, Menu > Album, rewards only add), and the up-stairs label fix (#255). Cottage's act 1 is now a complete game that a keyboard-only bot plays from the cottage to the ending and home (`cottage-of-the-breeze/tests/playthrough/`). Handoff: `cottage-of-the-breeze/docs/plans/release-1/HANDOFF.md`.
+**Release 1 is a complete, polished Act 1 of Cottage of the Breeze, built through VEFR.** Acts 2 and 3 remain part of the larger three-act direction; stopping after Act 1 was Rylee's decision, not a limit of the engine. Act advance and status effects are the next capabilities *because* the future acts will want them.
 
-**Known gaps found by the night's QA, not fixed:** `point-to` accepts only region ids, so hints read "To reach floor-1" (no region display names); `world.json` `player.wake` does not move the start, so `vefr look` cannot start in a given region; no audio at all (#144); status effects (design approved, ADR amendment owed) and act advance (ADR 0006) block acts 2 and 3; per-run guardians are still the approved campaign.
+**Landed on main (all CI green):** `complete-act` rule action (#252, one accessible end card, once per save; it does not advance acts), `vefr check` follows the locks (#253: a key that cannot be found, sits behind its own lock, or could be sold), the sticker album slice 1 (#254), the up-stairs label fix (#255), **sound** (#257: a pack opts in with `sound: {"theme": "soft"}`, nine synthesized cues, one switch in Menu > Display, on by default), **walk sheets** (#258: an optional `<key>-sheet.png` + `<key>.sheet.json` gives a character a walk cycle), and the plan to split `web/packaged.html` (#261, `docs/plans/player-split/PLAN.md`, `scripts/weave_digest.py` as the byte-for-byte proof). Earlier the same day: equipment was finished (#244 to #251) and Cottage uses it.
 
-**Next, in order:** act advance, then status effects slice 1 (one resolver on both sides), then the album logs, then per-run floors. Plans: `cottage-of-the-breeze/docs/plans/acts-2-3/PLAN.md`.
+**What the run taught:** `docs/research/cottage-release-1-learnings.md` ranks ten evidence-backed findings (seven new, three deepened) with a class and a priority each; the roadmap's NOW/NEXT/LATER board is built from it. Journal entries: `.project/DECISIONS.md` (2026-10-04).
+
+**Open and known:** `point-to` accepts only region ids (#259); `vefr look` cannot start in a given region (#260, generalised by finding 2 of the record); the feature catalog does not detect `sound`, `walk-sheets`, `album` or `rule-saves` in a pack (finding 5); sound is on by default where a pack opts in, which sits awkwardly with the README's "nothing makes a sound unless you turn it on" (that sentence is about the studio's Boiler Room; the default for games is Rylee's to rule on); `stakes` is documented but has no player mechanic, so death is always the cozy wake-in-the-temple.
+
+**Next, in order (see ROADMAP):** the NOW board (story draft status, scenarios, stage-containment checks, obtainability), then act advance and status effects (fire first), random floors phase 2, the native in-world interface (`cottage-of-the-breeze/docs/plans/native-ui/PLAN.md`), and the `packaged.html` split before more features land in it.
 
 ## 2026-10-03 (the packet lands; equipment step 1)
 

@@ -377,8 +377,9 @@ standards. See the
 - **Accessibility:** the studio's Boiler Room sets the contrast (Warm &
   Easy, Bright & Clear, Nothing Hides), the reading font (Atkinson
   Hyperlegible Next, OpenDyslexic, a serif, or your system font),
-  motion and sound. Nothing moves or makes a sound unless you turn it
-  on. The fonts are SIL OFL and self-hosted in `web/fonts/`. The
+  motion and sound. In the studio, nothing moves or makes a sound unless you turn it
+  on. (A woven game that declares `sound` plays its soft cues by default and has a
+  Sound switch in Menu > Display; see `docs/guides/rulesets.md`.) The fonts are SIL OFL and self-hosted in `web/fonts/`. The
   pattern is credited to Fluid Infusion's UI Options. See
   `docs/guides/accessibility-contract.md` for the rules every screen
   follows.

@@ -1,7 +1,7 @@
 # UI skin: a swappable picture pack for the game's interface
 
 Status: **loader built (2026-10-02)**. Rylee asked for "a UI pack" on 2026-10-01 and chose: parchment and carved wood; panels, buttons and tabs, bars and meters, dividers, banners and a cursor;
-used as swappable CSS skin files. Build steps 4 and 5 are done; step 6, a second tiny skin, is not.
+used as swappable CSS skin files. Build steps 4 and 5 are done; step 6, a second tiny skin, is not. **Update 2026-10-04:** the loader applies `panel`, `button`, `bar` and `cursor`; the other parts a skin may carry (slot, tab, toggle, tooltip, speech, divider, banner, corner, gold plate) are shipped in Cottage's skin but not yet applied. The in-world interface direction (`cottage-of-the-breeze/docs/plans/native-ui/PLAN.md`) is the next use of this contract.
 
 ## What exists today
 

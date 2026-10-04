@@ -33,7 +33,7 @@
 **Findings (2026-10-03, checked in the repo, not from the issue text).** #143, #144 and #145 sat
 untouched from 2026-09-30. Their stated efforts do not survive contact with the code:
 
-- **#144 (audio pairing) presumes a system that does not exist.** The engine has **no audio at
+- **#144 (audio pairing) presumes a system that does not exist.** *(Historical, 2026-10-03. Superseded in part on 2026-10-04: a small synthesized sound set landed as #257. The pairing rule below still governs it.)* The engine had **no audio at
   all** - a search for `AudioContext`, `new Audio`, `playSound` and friends over `src/` and `web/`
   returns nothing but a line of prose in a Library chapter *about* art. So "pair every sound with a
   visual event" cannot be a pairing job; it is "build sound from nothing", and the stated `S-M` is
@@ -627,3 +627,33 @@ Approved with the act-2 plan (CURRENT, 2026-10-02) and recorded here now. `{"com
 - **Codex beat MiniMax for item icons** in Rylee's storybook style and for consistency with the cast; MiniMax is fine for quick drafts (kept as alternates).
 - **`gh pr update-branch` does not exist in this gh;** merge main into the branch yourself.
 - **Never `rm` with shell variables;** the safety check refuses it. Use `git rm` with literal paths.
+
+## 2026-10-04: Release 1 scope, and decisions the run made durable
+
+- **Acts 2 and 3 were deferred by Rylee, deliberately.** Release 1 is a complete polished Act 1 that keeps the larger three-act direction. Do not read the absence of Acts 2 and 3 as an engine failure or an abandoned plan. Act advance (ADR 0006) and status effects (fire first) are the next engine capabilities because the future acts want them. Plan: `cottage-of-the-breeze/docs/plans/acts-2-3/PLAN.md`.
+- **Order of work chosen by Rylee (2026-10-04):** refactor `web/packaged.html` into blocks before act advance and status effects (`docs/plans/player-split/PLAN.md`); build the in-world interface direction (`cottage-of-the-breeze/docs/plans/native-ui/PLAN.md`) with the frame work first. Her interface rule: everything inside the game is in the game's themed UI, no literal device frame, native to the world, "cute, minimal, warm".
+- **Sound is opt-in per pack and on by default where a pack opts in.** Every cue already has its text in the live line, so silence is fully playable. This was an agent choice; the README's "nothing makes a sound unless you turn it on" describes the studio's Boiler Room settings. **Open for Rylee:** keep on-by-default for games, or default games to off.
+- **Story text is either an agent draft or approved by Rylee, and the pack should be able to say which** (finding 1 of `docs/research/cottage-release-1-learnings.md`). Until it can, drafts are flagged in the game's `NOTES.md`.
+- **The discovery record is the source for the roadmap board.** Findings are classed engine / authoring / QA / player and ranked now / next / later; nothing in it is built.
+- **Lessons from the night's workflow (also above):** the playthrough bot, not the validator, found the unwinnable King, the flat wall tile and the "down" stairs label; read every worker diff; parallel foremen collide on `docs/features.json` and `web/packaged.html`.
+
+## 2026-10-04: journal — Cottage Release 1, the night VEFR was asked to finish a game
+
+*(Engine and process history only. What happened to the hero, the town and the story is Cottage's own history: its `NOTES.md` and the in-game Chronicle. The two stay apart.)*
+
+**What Cottage asked VEFR to learn.** An ending for a story beat; proof that a locked door can always be opened; a shelf of collectables; a few sounds; a character that walks. Each was reusable, so each went into VEFR first (tests written first, built by foremen or by hand, reviewed, merged): `complete-act` (#252), lock reachability in `vefr check` (#253), the album (#254), sound (#257), walk sheets (#258), plus a one-word fix (#255). Equipment, locks and the Blueprint were already there and were used for real.
+
+**What surprised us.**
+- The validator passed everything and the game was still unwinnable: the first King was too strong for a level-8 hero. Only a bot playing by keyboard found it. Guardians that woke up and followed the hero were killed before the lock could be tried.
+- A wall picture made the same way as the floor rendered as flat grey blocks; it needed a different file form. Found by looking at a screenshot, not by any check.
+- Every stair in the game said "Go down the stairs", including the way back up.
+- The feature catalog (`vefr features --pack`) could not see five features Cottage used, and still listed finished features as partial.
+- Rylee's complaint about the interface (HUD icons floating on the page) was not what the overflow measurement checked; the check measured the window, not the stage.
+
+**What failed or needed correction.** A foreman's passing run failed on the current pack until the bot learned to grind and one check was relaxed; a change I made to hints (friendly names) failed the validator and was reverted within minutes; one art-source commit went straight to Cottage `main` instead of through a PR; Opus's plan mis-identified some art and the stakes mechanic, and was corrected by reading the code.
+
+**What the playthrough exposed.** Balance, pacing, the wall tile, the stair label, reduced-motion settling of the walk frame, and that everything Cottage promises (gear, stickers) hangs on single enemy ids. See findings 3, 4, 7 and 8 in `docs/research/cottage-release-1-learnings.md`.
+
+**The ten findings** (seven new, three deepened; ranked in the record): story draft/approved status; scenarios (start in any state); stage containment and panel accessibility checks; obtainability beyond keys; honest feature detection; a pack art-import verb with clean credits; a route and state API; a balance report; an overlay lane for hand edits to generated output; development questions VEFR can answer. The roadmap board puts the first four in NOW.
+
+**Workflow lessons from the autonomous mission** (also in the 2026-10-04 lessons above): tests first and frozen, `--runxfail` acceptance, read every diff, merge main into a branch yourself, never `rm` with a shell variable, ask the owner in chat before a merge the classifier blocks, and keep two foremen from editing `docs/features.json` and `web/packaged.html` at once.

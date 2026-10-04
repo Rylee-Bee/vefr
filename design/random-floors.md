@@ -1,6 +1,6 @@
 # Random floors: a new descent every run
 
-Status: **phase 1 built (2026-10-02)**: the shared PRNG and `generate_floor_v2`, in Python and as an exact JavaScript twin (`window.VEFR_DELVE`), proven row for row by `tests/test_floor_v2_parity.py`. Everything else (the `descent` block, run seed, tables, guardians, New descent) is still **proposed**. Asked for by Rylee on 2026-10-01 ("stuff the random dungeon floor generator idea into it"), for Cottage of the Breeze first. No code yet.
+Status: **phase 1 built (2026-10-02)**: the shared PRNG and `generate_floor_v2`, in Python and as an exact JavaScript twin (`window.VEFR_DELVE`), proven row for row by `tests/test_floor_v2_parity.py`. Everything else (the `descent` block, run seed, tables, guardians, New descent) is still **proposed** (no phase 2 code yet). Asked for by Rylee on 2026-10-01 ("stuff the random dungeon floor generator idea into it"), for Cottage of the Breeze first. Cottage's floors 4 to 6 are generated once at build time with phase 1 and dressed by hand; **a human edit on generated output (floor 6's sealed door) is not yet protected from a rerun** - see finding 9 of `docs/research/cottage-release-1-learnings.md`.
 `docs/guides/rulesets.md` (the "delve" section) says it plainly: "per-playthrough generation is a later slice". This is that slice.
 
 ## What exists

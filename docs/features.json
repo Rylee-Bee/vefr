@@ -227,8 +227,8 @@
     {
       "id": "equipment",
       "name": "Gear in five slots",
-      "what": "An item may name a slot and the atk and hp it changes, and a pure engine sums the worn stats and moves the worn state (built); the Bag 'You' section, the buttons and the live line (proposed).",
-      "status": "partial",
+      "what": "An item may name a slot and the atk and hp it changes; the Bag's 'You' section lets the hero wear and take off gear, with one plain sentence for every change.",
+      "status": "built",
       "detect": "slots",
       "docs": [
         "docs/guides/rulesets.md"

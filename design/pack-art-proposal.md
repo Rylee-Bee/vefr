@@ -1,6 +1,6 @@
 # Proposal: art a pack can bring (moving characters, its own tiles, tile variants)
 
-Status: **approved by Rylee on 2026-10-01 with the recommendations below** (4 directions, 4-frame walks, 3 variants per surface, a gentle hop). Pack-contract changes are ask-first; this is the ask and its answer. Build order: C, then A (in parallel where the code allows), then B.
+Status: **approved by Rylee on 2026-10-01 with the recommendations below** (4 directions, 4-frame walks, 3 variants per surface, a gentle hop). Pack-contract changes are ask-first; this is the ask and its answer. Build order: C, then A (in parallel where the code allows), then B. **Update 2026-10-04:** Phase B (sprite sheets) is built (#258, `tests/test_walk_sheets.py`) and Cottage's hero walks in four directions from a Codex-drawn sheet; other characters and monsters still use one picture.
 Why now: Cottage is making all its own art in its own style. Three things stop the engine from
 showing it: the hero is one painted picture that slides from tile to tile and never faces the way
 she walks; **ground tiles are read only from the engine's own `web/art/tiles/`** (`_tiles_for_legend`
