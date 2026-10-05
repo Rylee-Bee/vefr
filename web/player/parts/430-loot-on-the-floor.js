@@ -210,6 +210,14 @@
   // stays a pack instead of scattering into corners. Alone and out of
   // sight -> it holds still.
   //
+  // The warden is the one thing on the floor that does not drift. ADR
+  // 0014's owner decision 2 is that it hunts the hero, so out of the
+  // hero's sight it walks at the hero the same way it walks at the hero
+  // when the hero IS in sight: one tile closer, the short way round the
+  // floor. It gives up the drift entirely, so a warden that happened
+  // to spawn alone is not a monster that holds still on a floor with
+  // nobody else on it.
+  //
   // A member of a group is held to its leash instead: it never steps
   // past its home's line, on the line it fights from where it stands,
   // and with the hero out of sight it walks home and idles there awake.
@@ -229,6 +237,7 @@
       if (badlyHurt(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), -1);
       return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
     }
+    if (isWarden(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
     var ally = nearestAlly(e, maps);
     if (!ally) return false;
     return stepAlong(e, distances(maps, ally.at[0], ally.at[1]), 1);

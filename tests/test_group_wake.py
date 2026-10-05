@@ -94,16 +94,33 @@ FIGHT = [
      "hp": 4, "atk": 1, "sight": 6, "sprite": "rat"},
 ]
 
-# The warden and one ordinary monster two tiles west of it. The hero
-# ends this fixture at [2, 1], so the guard is twelve tiles away -
-# outside the wake radius of 10, and far outside its sight of 6 - and it
-# is asleep. The warden is fourteen tiles away, which is further still,
-# and it is awake. The warden has sight 6, so the hero is out of its
-# sight and it drifts the way any awake monster out of sight does:
-# toward the nearest other living monster, the sleeping guard.
+# The warden and one ordinary monster two tiles EAST of it - the side
+# away from the hero, so the two answers a monster out of the hero's
+# sight can give are two tiles apart and one turn cannot be both.
+#
+# The hero ends this fixture at [2, 1], ten tiles from the warden: the
+# default wake radius is 10, so the warden is awake, and its own sight
+# of 6 is four tiles short, so the hero is out of it. The guard is
+# twelve tiles from the hero - outside that same wake radius and far
+# outside its sight - so it is asleep, and it is the only other living
+# monster. The warden therefore has exactly one choice to make: walk
+# west at the hero, which is what ADR 0014's owner decision 2 says it
+# does, or drift east toward the guard, which is what every other
+# awake monster out of sight does.
 WARDEN = [
-    {"id": "hall-warden", "name": "the hall warden", "at": [16, 1],
+    {"id": "hall-warden", "name": "the hall warden", "at": [12, 1],
      "hp": 4, "atk": 1, "sight": 6, "sprite": "rat", "warden": True},
+    {"id": "hall-guard", "name": "a hall guard", "at": [14, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat"},
+]
+
+# The same two monsters, same tiles, same numbers - and no warden mark
+# on the first. This is the control for the test below: it is awake and
+# out of the hero's sight in exactly the same way, so whatever it does
+# is the drift every other awake monster has always done.
+DRIFTER = [
+    {"id": "hall-watcher", "name": "a hall watcher", "at": [12, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat"},
     {"id": "hall-guard", "name": "a hall guard", "at": [14, 1],
      "hp": 4, "atk": 1, "sight": 6, "sprite": "rat"},
 ]
@@ -582,13 +599,24 @@ def test_an_unknown_loud_event_carries_nothing(tmp_path):
 
 # ---- 3. the warden ----
 
-def test_the_warden_is_awake_and_the_guard_beside_it_is_not(tmp_path):
-    """The warden does not sleep. The hero is fourteen tiles from it, so
-    the sleeping rule would have it asleep - and `hall-guard`, two tiles
-    nearer the hero and two from the warden, is asleep too, which is what
-    makes the warden's wake its own doing. Awake and out of the hero's
-    sight, it drifts toward the nearest other living monster, the way
-    any awake monster out of sight has always done."""
+def test_the_warden_is_awake_and_hunts_the_hero_out_of_sight(tmp_path):
+    """The warden does not sleep, and it hunts (ADR 0014, owner
+    decision 2 of 2026-10-04).
+
+    Two separate claims, and this fixture is built so one turn can only
+    satisfy one of them at a time. The hero ends at [2, 1], ten tiles
+    from the warden: awake, because ten is the default wake radius, and
+    out of the hero's sight, because the warden's own is six. So the
+    generic "out of sight" branch is the one that runs - and the
+    ordinary monster beside it is asleep, twelve tiles out, so the drift
+    toward a neighbour is the other answer and not the only one.
+
+    Hunted: the warden walks WEST, one tile closer to the hero at
+    [2, 1], from [12, 1] to [11, 1]. Drifted: it would have walked
+    EAST, to [13, 1] toward the guard. `test_an_ordinary_monster_drifts`
+    below puts the same two monsters on the same tiles with no warden
+    mark and gets the east step, so this turn is the mark and nothing
+    else."""
     html = weave(open_room(tmp_path, WARDEN), tmp_path)
     out = play(html, {"steps": ["begin", "walk:right"], "read": READS})
     assert out["errors"] == []
@@ -596,8 +624,32 @@ def test_the_warden_is_awake_and_the_guard_beside_it_is_not(tmp_path):
     assert reads["VEFR_COMBAT.hero.at"] == [2, 1]
     assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
         "the warden is awake without the hero ever coming near it"
-    assert reads["VEFR_COMBAT.enemies.0.at"] == [15, 1], \
-        "an awake warden out of sight hunts toward the nearest monster"
+    assert reads["VEFR_COMBAT.enemies.0.at"] == [11, 1], \
+        "an awake warden out of the hero's sight walks at the hero, not " \
+        "at its neighbour: [11, 1] is toward the hero, [13, 1] is the " \
+        "drift every other awake monster does"
     assert reads["VEFR_COMBAT.minds.1.awake"] is False, \
         "the guard beside it is an ordinary sleeper and stays asleep"
+    assert reads["VEFR_COMBAT.enemies.1.at"] == [14, 1]
+
+
+def test_an_ordinary_monster_drifts(tmp_path):
+    """The control: the same room, the same two monsters, the same
+    numbers, and no warden mark on the first.
+
+    It is awake for the same reason and out of the hero's sight for the
+    same reason, so the only thing that could differ is the mark - and
+    it drifts east toward the sleeping guard, exactly as it always has.
+    A warden rule that reached past the mark, or one that changed the
+    drift for everybody, fails here."""
+    html = weave(open_room(tmp_path, DRIFTER), tmp_path)
+    out = play(html, {"steps": ["begin", "walk:right"], "read": READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
+        "the first monster is awake in exactly the same way the warden was"
+    assert reads["VEFR_COMBAT.enemies.0.at"] == [13, 1], \
+        "an ordinary awake monster out of sight drifts toward its " \
+        "neighbour, which is what the warden no longer does"
+    assert reads["VEFR_COMBAT.minds.1.awake"] is False
     assert reads["VEFR_COMBAT.enemies.1.at"] == [14, 1]
