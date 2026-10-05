@@ -302,11 +302,16 @@ def graph_findings(plan: dict) -> list[str]:
     2. is every anchor of a stamped room walkable from `up` at all, and
     3. is it walkable from `up` *without opening a secret*, which is the
        rule for a chest, a warden or a vault door: those are the three
-       things a hero is owed without having found a wall to open. A
-       room whose own used socket was a secret is exempt - the hero is
-       already opening a wall to get in there, and holding that room's
-       own chest to the same rule would report every secret room in the
-       pack on every floor it appeared in.
+       things a hero is owed without having found a wall to open. Only
+       the room's own secret is closed to that walk: a secret belongs to
+       the room that has to be found, and a room whose walk from `up`
+       happens to cross another room's secret is still a room the hero
+       walks into, so a secret that is not this room's own is a wall
+       nobody asked this room to have. A room whose own used socket was
+       a secret is exempt altogether - the hero is already opening a
+       wall to get in there, and holding that room's own chest to the
+       same rule would report every secret room in the pack on every
+       floor it appeared in.
 
     A floor with no stamped rooms says nothing, because most floors have
     none and a check that complained about them would always fail.
@@ -321,11 +326,11 @@ def graph_findings(plan: dict) -> list[str]:
     secrets = {tuple(spot) for spot in (plan.get("secrets") or [])
                if isinstance(spot, (list, tuple)) and len(spot) == 2}
     up = anchors.get("up")
+    # Secrets count as passable for the plain question, and each room is
+    # asked the second question with only its own secret closed, so both
+    # walks start from the same up-stair and differ only in what they may
+    # step on.
     open_tiles = _flood(rows, up)
-    # Secrets count as passable for the plain question and as walls for
-    # the one the ADR puts a rule on, so both walks start from the same
-    # up-stair and differ only in what they may step on.
-    honest_tiles = _flood(rows, up, secrets)
     found = []
     for index, placement in enumerate(placements):
         if not isinstance(placement, dict):
@@ -338,6 +343,12 @@ def graph_findings(plan: dict) -> list[str]:
                 f"placed at {at[0]},{at[1]} with no door in use, so nothing "
                 f"can reach it",
                 f"/stamps/{index}/socket"))
+        honest_tiles = open_tiles
+        if "secret" not in placement:
+            socket = placement.get("socket")
+            own = {tuple(socket)} if socket and tuple(socket) in secrets else set()
+            if own:
+                honest_tiles = _flood(rows, up, own)
         for name in sorted(placement.get("anchors") or {}):
             tile = tuple(placement["anchors"][name])
             if tile not in open_tiles:
@@ -346,7 +357,7 @@ def graph_findings(plan: dict) -> list[str]:
                     f"its {name} at {tile[0]},{tile[1]} cannot be reached "
                     f"from up at all",
                     f"/stamps/{index}/anchors/{name}"))
-            elif tile not in honest_tiles and "secret" not in placement:
+            elif tile not in honest_tiles:
                 found.append(stamps.sentence(
                     who,
                     f"its {name} at {tile[0]},{tile[1]} cannot be reached "

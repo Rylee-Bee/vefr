@@ -370,6 +370,27 @@ def test_a_room_reached_the_ordinary_way_is_not_reported():
     assert stamp_check.graph_findings(plan) == []
 
 
+def test_a_room_behind_another_rooms_secret_is_not_reported():
+    """Only the room's own secret is closed to that room's walk.
+
+    The up-corridor runs along the top and the only way down to the
+    hall is the secret at 3,2 - a secret that belongs to some other room
+    on this floor, not to this one. The hall has its own ordinary socket
+    at 7,2 and its warden is standing in it, so the hero walks in
+    through a door the author drew; holding the room to a wall it does
+    not own is how a pack full of secrets ends up with every room on the
+    floor reported.
+    """
+    plan = _floor(
+        ["##########", "#....u####", "###.###+##", "#........#", "##########"],
+        {"up": [5, 1], "down": [1, 3], "warden": [7, 3]},
+        [{"id": "test-hall", "role": "warden-hall", "room": 0, "at": [6, 2],
+          "size": [3, 1], "orientation": 0, "socket": [7, 2],
+          "anchors": {"warden": [7, 3]}}],
+        secrets=[[3, 2]])
+    assert stamp_check.graph_findings(plan) == []
+
+
 def test_a_room_reached_through_a_secret_is_not_held_to_the_secret_rule():
     """The exemption the ADR's own secret rooms need.
 
