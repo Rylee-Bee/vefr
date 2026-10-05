@@ -6,11 +6,29 @@
 // The whole sheet sits behind a media guard, so high contrast and forced
 // colours keep the plain flat player (rules 3 and 4).
 //
+// Every part the contract names is drawn, not the four the loader happened
+// to start with: slot, tab, toggle, tooltip, speech, divider, banner, corner
+// and gold-plate are painted too, each only when the skin carries it
+// (docs/plans/interface/PLAN.md, slice 4).
+//
 // Two more optional things a skin may name, both from
 // docs/plans/interface/PLAN.md: `backdrop`, the seamless picture the ground
 // outside the drawn map takes (painted on the canvas, in 480, once the
 // picture has decoded), and `fonts`, the display and body families the
 // engine bundles. A skin with neither plays exactly as it did.
+// The parts the contract names beyond the four the loader always drew
+// (docs/plans/interface/PLAN.md, slice 4). A skin carrying at least one of
+// them has opted into the themed interface, and the HUD marks and the speech
+// portrait (slice 5) belong to that opt-in: a skin that carries none of them
+// has asked for the plain panels, so it keeps the plain HUD too.
+var THEMED_PARTS = ['slot', 'tab', 'toggle', 'tooltip', 'speech',
+  'divider', 'banner', 'corner', 'gold-plate'];
+
+// How big a corner stud is, in px. The player draws 6 px accent dots; a stud
+// is a thing you can read as a stud, and it is decoration, so it takes no
+// pointer and it never sizes a control.
+var CORNER_STUD = 18;
+
 var SKIN_FONT_STACKS = {
   'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
   'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
@@ -56,6 +74,78 @@ function skinFontStack(family) {
     ? SKIN_FONT_STACKS[family] : null;
 }
 
+// ---- the HUD marks and the speech portrait (interface slice 5) ----
+// Five small inline SVGs, one per HUD line, in currentColor so each follows
+// the words it sits beside. They are decoration: aria-hidden, no alt, no words
+// of their own, and the words beside them are the words a screen reader reads.
+// Each sits BESIDE its line in the same HUD block and never inside it, so a
+// line the world does not use today still has its mark and the words do not
+// move when the line appears. The mark is a sibling, so the player's own
+// `[hidden] + .hud-icon` rule hides it exactly when its line is hidden.
+// A pack with no skin draws none of them and plays exactly as it did.
+var HUD_MARKS = {
+  heart: { at: 'hud-hp', draw: '<path d="M12 20.5S4.5 15.6 4.5 11a4.2 4.2 0 0 1 7.5-2.6A4.2 4.2 0 0 1 19.5 11c0 4.6-7.5 9.5-7.5 9.5z"/>' },
+  star: { at: 'hud-level', draw: '<path d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/>' },
+  coin: { at: 'hud-gold', draw: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5v9M9.6 10h4.8M9.6 14h4.8"/>' },
+  bag: { at: 'bag-strip', draw: '<path d="M8 9.5V7.4a4 4 0 0 1 8 0v2.1"/><rect x="4" y="9.5" width="16" height="11" rx="2"/>' },
+  door: { at: 'menu-open', draw: '<path d="M6.5 21V4.2a.7.7 0 0 1 .7-.7h7.3v17.5z"/><path d="M6.5 21H19"/><circle cx="12.4" cy="12" r=".9"/>' },
+};
+
+function addHudMarks() {
+  Object.keys(HUD_MARKS).forEach(function (name) {
+    var line = document.getElementById(HUD_MARKS[name].at);
+    if (!line || !line.parentNode) return;
+    if (line.parentNode.querySelector('svg[data-icon="' + name + '"]')) return;
+    var span = document.createElement('span');
+    span.className = 'hud-mark';
+    span.innerHTML = '<svg viewBox="0 0 24 24" data-icon="' + name + '"'
+      + ' fill="none" stroke="currentColor" stroke-width="1.8"'
+      + ' stroke-linecap="round" stroke-linejoin="round" focusable="false"'
+      + ' aria-hidden="true">'
+      + HUD_MARKS[name].draw + '</svg>';
+    line.parentNode.insertBefore(span, line.nextSibling);
+  });
+}
+
+// The speech box shows a portrait when the speaker has a picture. It is
+// decoration too: the speaker's name is already real text in .speaker, so the
+// picture is aria-hidden with an empty alt. A speaker the pack gave no picture
+// leaves the box exactly as it was - no empty slot, no broken image, and
+// nothing left over from the speaker before.
+function speakerPicture(speaker) {
+  if (typeof speaker !== 'string' || !speaker) return '';
+  var sprites = window.VEFR_SPRITES || {};
+  if (typeof sprites[speaker] === 'string') return sprites[speaker];
+  // A pack names its sprites by file stem, so "The Baker" looks for
+  // "the-baker" and "the_baker" as well as for the words themselves.
+  var slug = speaker.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  var keys = Object.keys(sprites);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (k === slug) return sprites[keys[i]];
+  }
+  return '';
+}
+
+// The portrait hook the speech box calls is this function, named on the window
+// when the skin loads (see 100-speech-box.js). The speech box reads it when it
+// shows a speaker, so the order the two parts load in does not matter.
+function dressSpeechBox(speaker) {
+  var box = document.getElementById('npc-box');
+  if (!box) return;
+  var old = box.querySelector('img.npc-face');
+  if (old) box.removeChild(old);
+  var src = speakerPicture(speaker);
+  if (!src) return;
+  var im = document.createElement('img');
+  im.className = 'npc-face';
+  im.src = src;
+  im.alt = '';
+  im.setAttribute('aria-hidden', 'true');
+  box.insertBefore(im, box.firstChild);
+}
+
 function applySkin() {
   var skin = window.VEFR_SKIN;
   if (!skin || typeof skin !== 'object') return;
@@ -79,6 +169,16 @@ function applySkin() {
     var s = (typeof slice === 'number' && slice > 0) ? slice : 0;
     return ' border-image: url(' + file + ') ' + s + (noFill ? '' : ' fill') + ' / ' + s
       + 'px / 0 round;';
+  }
+  // A picture laid across the whole of a thing, stretched to fit it: the
+  // picture may be smaller than what it paints, but never larger than the
+  // panel it sits on. Written as the background longhands on purpose, so it
+  // layers over the ground the player (or another part) already set underneath
+  // instead of wiping it - that dark base is what keeps the words readable when
+  // the picture is missing or a checker cannot see images.
+  function plate(file) {
+    return 'background-image: url(' + file + '); background-position: center;'
+      + ' background-size: 100% 100%; background-repeat: no-repeat;';
   }
   // The middle of a panel picture is a small patch (often 32 px). border-image would TILE it
   // across a wide panel and show the seams as stripes behind the text, so a panel keeps only
@@ -161,14 +261,154 @@ function applySkin() {
         + cursor.hand + ') ' + hs[0] + ' ' + hs[1] + ', auto; }\n';
     }
   }
-  if (!css) return;
 
-  var style = document.createElement('style');
-  style.id = 'vefr-skin-css';
-  style.textContent = '@media (prefers-contrast: no-preference) and'
-    + ' (not (forced-colors: active)) {\n' + css + '}\n';
-  document.head.appendChild(style);
+  // ---- the parts a skin may carry and the player did not draw ----
+  // design/ui-skin.md lists nine more parts than the four above: a skin ships
+  // their pictures and, until now, nothing ever drew them. Each is written
+  // only when the skin carries it, so a skin that leaves one out keeps the
+  // plain player's own rule for that thing exactly. Three of them (panel,
+  // speech, tab) are nine-slices and take the flat ground the panel does, so a
+  // small picture never tiles into stripes behind the words; the rest are
+  // pictures laid over a whole thing, stretched to it.
+  //
+  // Rules that never bend, and how each is kept:
+  //   - all words stay real text: nothing here paints a word, and the speech
+  //     box takes the skin's declared ink rather than a colour of its own;
+  //   - the focus ring is never removed and no rule adds a transition or an
+  //     animation, so the player's reduced-motion blanket still covers all of
+  //     it;
+  //   - no rule sets a width or a height on a control: the picture stretches,
+  //     the 44 px hit area is the player's own and is left alone;
+  //   - every rule is inside the one media guard below, so prefers-contrast:
+  //     more and forced colours return the plain flat style.
+  var slot = parts.slot;
+  if (slot && slot.file) {
+    css += '.equip-row {' + plate(slot.file) + ' border-radius: 6px; }\n';
+    if (slot.hover) css += '.equip-row:hover {' + plate(slot.hover) + ' }\n';
+    // The worn row is the one that carries the Take off control.
+    if (slot.selected) {
+      css += '.equip-row:has([data-action="takeoff"]) {' + plate(slot.selected) + ' }\n';
+    }
+  }
+  var tab = parts.tab;
+  if (tab && tab.file) {
+    var t = '#menu .pm button';
+    css += t + ' {' + nine(tab.file, tab.slice, true)
+      + ' background: var(--vefr-skin-ground, ' + ground() + '); }\n';
+    if (tab.selected) {
+      css += t + '[aria-current="true"] {' + nine(tab.selected, tab.slice, true)
+        + ' background: var(--vefr-skin-ground, ' + ground() + '); }\n';
+    }
+  }
+  // A switch is its two states: off is how it rests, on is what it is pressed
+  // into. Both switches the player already draws (the phase rail and the fog
+  // one) take the same pair, and each picture is written against the state it
+  // belongs to - the pressed control is never reached by the resting rule, so
+  // neither picture can sit on a switch in the state it is not in.
+  var toggle = parts.toggle;
+  if (toggle && (toggle.off || toggle.on)) {
+    ['.phase-rail button', '#fog-toggle'].forEach(function (sel) {
+      if (toggle.off) {
+        css += sel + '[aria-pressed="false"], ' + sel + ':not([aria-pressed]) {'
+          + plate(toggle.off) + ' }\n';
+      }
+      if (toggle.on) {
+        css += sel + '[aria-pressed="true"] {' + plate(toggle.on) + ' }\n';
+      }
+    });
+  }
+  // The small tool buttons' tooltip. It says what the button does: the words
+  // come out of the shell's own `data-tip` (the same word the button's
+  // screen-reader text carries, without the key letter the kbd chip already
+  // shows), and the picture is the skin's plate behind them. Drawn for the
+  // keyboard on focus exactly as it is for the pointer on hover. The dark
+  // base and the light ink under the picture are the player's own button
+  // face, so the words stay readable if the picture is missing.
+  var tip = parts.tooltip;
+  if (tip && tip.file) {
+    css += '.gbtn--tool[title]:hover::after, .gbtn--tool[title]:focus-visible::after {'
+      + ' content: attr(data-tip); position: absolute; left: 50%; bottom: -7px;'
+      + ' transform: translateX(-50%); padding: 6px 10px; border-radius: 3px;'
+      + ' white-space: nowrap; pointer-events: none;'
+      + ' color: #F4EEDD; background-color: #15181D;'
+      + plate(tip.file) + ' }\n';
+  }
+  var speech = parts.speech;
+  if (speech && speech.file) {
+    css += '.npc-box, #npc-box {' + nine(speech.file, speech.slice, true)
+      + ' background: var(--vefr-skin-ground, ' + ground() + ');'
+      + (ink.on_panel ? ' color: ' + ink.on_panel + ';' : '') + ' }\n';
+  }
+  var divider = parts.divider;
+  if (divider && divider.file) {
+    // The rule under the game head, drawn as the head's own bottom border.
+    // The head is a wrapping flex box, so a pseudo-element there would be a
+    // flex item: it would take a row of the head's own wrap instead of
+    // drawing a line under it. A border-image never joins the flow, and the
+    // player's own edge colour is under the picture in case it is missing.
+    // The slice gives the whole picture to the bottom edge (top, right and
+    // left slices 0, bottom 100%) and the width puts it in the 8 px border
+    // only, with no `fill`, so the picture never paints the head's face.
+    css += 'header.game-head { border-bottom: 8px solid var(--card-edge);'
+      + ' border-image: url(' + divider.file + ') 0 0 100% 0'
+      + ' / 0 0 8px 0 / 0 stretch; }\n';
+  }
+  var banner = parts.banner;
+  if (banner && banner.file) {
+    // The message panel. It is a picture behind the messages and nothing else:
+    // the map canvas and the HUD frame sit on the map and are not touched.
+    css += '.toasts {' + plate(banner.file) + ' padding: 6px 8px; border-radius: 4px; }\n';
+  }
+  var corner = parts.corner;
+  if (corner && corner.file) {
+    // The four corner studs. The player's own accents are two 6 px dots at the
+    // top corners; a skin's corner picture is a stud with a size of its own,
+    // and there are four of them, so the two pseudo-elements each paint a stud
+    // at two opposite corners and the two together make the four. Each is
+    // spread over the panel (which is what takes them out of the flow) and
+    // takes no pointer, so it never sits between a person and a control.
+    function studs(one, two) {
+      return 'content: ""; position: absolute; inset: 8px; width: auto; height: auto;'
+        + ' border-radius: 0; opacity: 1; pointer-events: none;'
+        + ' background-image: url(' + corner.file + '), url(' + corner.file + ');'
+        + ' background-position: ' + one + ', ' + two + ';'
+        + ' background-size: ' + CORNER_STUD + 'px ' + CORNER_STUD + 'px,'
+        + ' ' + CORNER_STUD + 'px ' + CORNER_STUD + 'px;'
+        + ' background-repeat: no-repeat;';
+    }
+    css += '.carved::before, #config::before {' + studs('left top', 'right bottom') + ' }\n';
+    css += '.carved::after, #config::after {' + studs('right top', 'left bottom') + ' }\n';
+  }
+  var gold = parts['gold-plate'];
+  if (gold && gold.file) {
+    // A plate behind the words on a gold control. The words stay real text on
+    // top of it, in the light button ink the button rule above already set.
+    css += '.cta--gold, .gbtn--gold, .stage button.primary {' + plate(gold.file) + ' }\n';
+  }
+
+  if (css) {
+    var style = document.createElement('style');
+    style.id = 'vefr-skin-css';
+    style.textContent = '@media (prefers-contrast: no-preference) and'
+      + ' (not (forced-colors: active)) {\n' + css + '}\n';
+    document.head.appendChild(style);
+  }
   document.body.classList.add('has-skin');
+  // A skin's marks belong to the skin, and to a skin that opted into the
+  // themed interface: they are added here and not by the shell, and only when
+  // the skin carries at least one of the parts above. A pack with no skin, and
+  // a skin that carries none of them, gets no mark and no portrait and keeps
+  // the HUD row the shell built.
+  var themed = THEMED_PARTS.some(function (name) { return !!parts[name]; });
+  if (themed) {
+    addHudMarks();
+    // The speech box asks for its portrait through this hook every time it
+    // shows a speaker (100-speech-box.js), so the portrait does not depend on
+    // which of the two parts the page happened to load first: a speech box
+    // declared after this part calls the hook all the same, and one declared
+    // before it did too. One hook, however many times a skin loads.
+    window.VEFR_SPEECH_BOX = dressSpeechBox;
+  }
 }
 applySkin();
 
