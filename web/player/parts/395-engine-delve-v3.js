@@ -2220,7 +2220,11 @@
     // random: a family, then a tile - and the tile is placed first, for the
     // same reason as the three above. A pack that names no elite and no group
     // therefore carries exactly the budget and nothing else.
-    for (var r = 0; r < budget - spawns.length; r++) {
+    // The count is read ONCE, as `range(budget - len(spawns))` reads it: a
+    // `for (r = 0; r < budget - spawns.length; r++)` re-reads a bound that
+    // falls as fast as the counter rises, and halves the budget's monsters.
+    var randoms = budget - spawns.length;
+    for (var r = 0; r < randoms; r++) {
       var randomTile = take(clear);
       if (randomTile === null) break;
       place(randomTile, drawFamily(rng, families), null, null, false, null);
