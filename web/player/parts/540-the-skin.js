@@ -24,6 +24,11 @@
 var THEMED_PARTS = ['slot', 'tab', 'toggle', 'tooltip', 'speech',
   'divider', 'banner', 'corner', 'gold-plate'];
 
+// How big a corner stud is, in px. The player draws 6 px accent dots; a stud
+// is a thing you can read as a stud, and it is decoration, so it takes no
+// pointer and it never sizes a control.
+var CORNER_STUD = 18;
+
 var SKIN_FONT_STACKS = {
   'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
   'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
@@ -350,9 +355,23 @@ function applySkin() {
   }
   var corner = parts.corner;
   if (corner && corner.file) {
-    // The four corner studs, so no carved panel keeps a plain accent dot.
-    css += '.carved::before, .carved::after, #config::before, #config::after {'
-      + plate(corner.file) + ' border-radius: 0; opacity: 1; }\n';
+    // The four corner studs. The player's own accents are two 6 px dots at the
+    // top corners; a skin's corner picture is a stud with a size of its own,
+    // and there are four of them, so the two pseudo-elements each paint a stud
+    // at two opposite corners and the two together make the four. Each is
+    // spread over the panel (which is what takes them out of the flow) and
+    // takes no pointer, so it never sits between a person and a control.
+    function studs(one, two) {
+      return 'content: ""; position: absolute; inset: 8px; width: auto; height: auto;'
+        + ' border-radius: 0; opacity: 1; pointer-events: none;'
+        + ' background-image: url(' + corner.file + '), url(' + corner.file + ');'
+        + ' background-position: ' + one + ', ' + two + ';'
+        + ' background-size: ' + CORNER_STUD + 'px ' + CORNER_STUD + 'px,'
+        + ' ' + CORNER_STUD + 'px ' + CORNER_STUD + 'px;'
+        + ' background-repeat: no-repeat;';
+    }
+    css += '.carved::before, #config::before {' + studs('left top', 'right bottom') + ' }\n';
+    css += '.carved::after, #config::after {' + studs('right top', 'left bottom') + ' }\n';
   }
   var gold = parts['gold-plate'];
   if (gold && gold.file) {

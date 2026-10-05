@@ -481,6 +481,33 @@ def test_the_corner_paints_the_four_studs(ran):
         _need(_drawn(css, "corner", "file", (stud,)), f"the corner picture on {stud}")
 
 
+def test_the_corner_paints_four_studs_at_the_four_corners(ran):
+    """The rule used to stretch the picture over the player's own 6 px accent
+    dots, which sit at the two top corners: a stretched picture, not a stud.
+    The four studs are four corners of the panel, each with a size of its own,
+    and they take no pointer - a decoration that spans the panel may never sit
+    between a person and a control."""
+    css = ran["parts"]["css"]
+    uri = mk.picture_uri(mk.PARTS_SKIN["corner"]["file"])
+    rules = [(sel, body) for sel, body in _rules(css) if uri in body]
+    _need(rules, "the corner rule")
+    corners = set()
+    for sel, body in rules:
+        assert "background-size: 100% 100%" not in body, (
+            f"{sel.strip()} stretches the corner picture over a dot")
+        for size in re.findall(r"background-size:\s*([^;}]+)", body):
+            for value in size.split(","):
+                px = re.match(r"\s*(\d+)px\s+(\d+)px\s*$", value)
+                assert px and int(px.group(1)) >= 16, (
+                    f"{sel.strip()} draws a {value.strip()} stud, which is no stud at all")
+        assert "pointer-events: none" in body, (
+            f"{sel.strip()} spreads the studs over the panel and may take a click")
+        where = re.search(r"background-position:\s*([^;}]+)", body)
+        assert where, f"{sel.strip()} does not place its studs"
+        corners |= {v.strip() for v in where.group(1).split(",")}
+    assert corners == {"left top", "right top", "left bottom", "right bottom"}, corners
+
+
 def test_the_gold_plate_paints_the_gold_controls(ran):
     """`gold-plate` is a plate behind the words on a gold control. The words
     stay real text on top of it, so the picture may not be a picture of words."""
