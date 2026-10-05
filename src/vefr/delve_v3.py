@@ -810,6 +810,17 @@ def _stamp_pool(section: dict, pack: list[dict], depth: int) -> list[dict]:
     return pool
 
 
+def stamp_pool(section: dict, pack: list[dict], depth: int) -> list[dict]:
+    """The public face of `_stamp_pool`, for `vefr stamp check`.
+
+    The check has to ask the same eligibility question a floor asks, or
+    a rate it reports is a rate against a second copy of the rule. It
+    draws nothing and places nothing, so it is safe to call from a
+    sweep; the twin writes its own, from this docstring.
+    """
+    return _stamp_pool(section, pack, depth)
+
+
 def _stamp_slots(plan: dict) -> list[str]:
     """The roles wanted on this floor, in the order ADR 0013 places them.
 
@@ -1790,7 +1801,7 @@ def _validate(plan: dict, canvas: Canvas, graph: Graph, section: dict) -> bool:
 
 def _attempt(floor_key: str, width: int, height: int, section: dict,
              floor_kind: str, stamp_pack: list[dict], depth: int,
-             pinned: bool) -> tuple[dict | None, str]:
+             pinned: bool, trace: dict | None = None) -> tuple[dict | None, str]:
     """One draw of one floor: the five stages, or None when it fails.
 
     Three streams are opened, one for each stage that draws, and the
@@ -1804,12 +1815,22 @@ def _attempt(floor_key: str, width: int, height: int, section: dict,
     ladder is meant to fix a bad draw, and a floor that fell back to v2
     over a stamp is a floor the author has to hear about (ADR 0013,
     Placement 4).
+
+    `trace`, when given, is filled in with the floor key and the roles
+    this floor wanted a stamped room for. The slot list is arithmetic on
+    the plan and takes no draw, so a caller that reports the list changes
+    nothing about the floor; `vefr stamp check` needs it because ADR
+    0013 calls a stamp eligible only where "its role is wanted on the
+    floor", and a secret room is wanted on a floor that drew no secret.
     """
     plan_rng = prng(f"v3|{floor_key}|plan")
     layout_rng = prng(f"v3|{floor_key}|layout")
     pop_rng = prng(f"v3|{floor_key}|pop")
 
     plan = _plan_stage(plan_rng, section, floor_kind)
+    if trace is not None:
+        trace["floor_key"] = floor_key
+        trace["slots"] = set(_stamp_slots(plan))
     canvas = Canvas(width, height)
     pool = _stamp_pool(section, stamp_pack, depth)
     spine, missing = _layout_stage(layout_rng, canvas, plan, pool, pinned)
@@ -1933,7 +1954,8 @@ def _find(rows: list[str], glyph: str, width: int, height: int) -> list[int] | N
 
 
 def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
-                      stamp_pack=None, depth: int = 1) -> dict:
+                      stamp_pack=None, depth: int = 1,
+                      trace: dict | None = None) -> dict:
     """Draw one v3 floor from `seed` and return its FloorPlan.
 
     `size_range` is the chosen `(w, h)` of the floor and nothing else.
@@ -1961,6 +1983,10 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
     (ADR 0013, Placement 4), and a floor that falls back to v2 over a
     stamp carries `stamp_defect` naming the role that would not place.
 
+    `trace`, when given, is a dict the floor writes its key and its
+    wanted stamp roles into - what `vefr stamp check` measures a rate
+    against. Passing one changes nothing about the floor.
+
     Deterministic: `delve.prng` is the only source of randomness, so the
     same arguments always return the same plan. Raises `ValueError` for
     a `size_range` that is not a pair of whole numbers of 8 or more, and
@@ -1978,7 +2004,8 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
     for attempt in range(MAX_TRIES + 1):
         floor_key = base_key if attempt == 0 else f"{base_key}|try{attempt}"
         floor, failed = _attempt(floor_key, width, height, pack, floor_kind,
-                                 records, depth, pinned=attempt == MAX_TRIES)
+                                 records, depth, pinned=attempt == MAX_TRIES,
+                                 trace=trace)
         if floor is not None:
             return floor
         if failed:

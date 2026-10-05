@@ -22,7 +22,7 @@ from types import SimpleNamespace
 import pytest
 
 import vefr.cli as cli
-from vefr import stamp_check
+from vefr import delve_v3, stamp_check, stamps
 
 
 # A 5x5 room per required role, each one a single component with a door
@@ -36,7 +36,7 @@ LANDMARK = {
 HALL = {
     "stamp": 1, "id": "test-hall", "role": "warden-hall", "tags": ["cellar"],
     "weight": 1,
-    "rows": ["#####", "#...#", "+#W.#", "#...#", "#####"],
+    "rows": ["#####", "#...#", "+W..#", "#...#", "#####"],
     "legend": {"W": {"anchor": "warden"}},
 }
 VAULT = {
@@ -61,8 +61,8 @@ SECTION = {
 
 def _pack(tmp_path, records=PACK, section=SECTION) -> str:
     """A pack directory with `stamps/` and `sections/` in it."""
-    (tmp_path / "stamps").mkdir()
-    (tmp_path / "sections").mkdir()
+    (tmp_path / "stamps").mkdir(exist_ok=True)
+    (tmp_path / "sections").mkdir(exist_ok=True)
     for record in records:
         (tmp_path / "stamps" / f"{record['id']}.json").write_text(
             json.dumps(record), encoding="utf-8")
@@ -101,7 +101,7 @@ def test_a_stamp_with_no_door_is_reported_and_exits_one(tmp_path, out):
     """
     broken = dict(LANDMARK, id="wine-alcove", poi="")
     broken["rows"] = ["#####", "#...#", ".....", "#...#", "#####"]
-    rc = cli.cmd_stamp_check(_args(_pack(tmp_path), PACK[:1] + (broken, HALL, VAULT)))
+    rc = cli.cmd_stamp_check(_args(_pack(tmp_path, PACK[:1] + (broken, HALL, VAULT))))
     assert rc == cli.EXIT_ERROR
     assert ("stamp wine-alcove: no door socket (+) on its edge, so nothing can "
             "reach it; put a + in the outer wall. /rows") in out()
@@ -193,7 +193,7 @@ def test_a_required_room_below_a_hundred_percent_is_reported():
 
 def test_an_optional_room_under_its_bar_is_reported_and_above_it_is_not():
     """Optional stamps may be rare on purpose, but not below the bar."""
-    for placed, expected in ((95, []), (94, 1)):
+    for placed, expected in ((95, 0), (94, 1)):
         findings = stamp_check.rate_findings(
             {"a": {"placed": placed, "eligible": 100, "sections": ["cellar"],
                    "width": 5, "min_width": 64}},
@@ -219,16 +219,16 @@ def test_a_required_room_too_big_for_its_section_is_reported():
 
     A 15x20 room on a 64x48 floor is 3% of the area and looks fine,
     which is exactly why the rule is a third of the width and the
-    height separately.
+    height separately. The width is inside a third of 64 and the height
+    is not inside a third of 48, so the height is what catches it.
     """
     big = dict(HALL, id="crypt-hall", rows=[
-        "###########", "#.........#", "+#.........#", "#.........#",
-        "#.........#", "#.........#", "#.........#", "#.........#",
-        "#.........#", "#.........#", "#.........#", "###########"])
+        "###############", "#W............#", "+.............#"] + [
+        "#.............#"] * 16 + ["###############"])
     findings = stamp_check.fit_findings(
         {big["id"]: stamp_check.stamps.read_v1(big)}, [SECTION])
     assert len(findings) == 1
-    assert findings[0].startswith("stamp crypt-hall: 11 wide and 12 tall")
+    assert findings[0].startswith("stamp crypt-hall: 15 wide and 20 tall")
     assert "cellar floors start at 64x48" in findings[0]
 
 
@@ -255,7 +255,7 @@ def test_a_21_by_21_landmark_is_refused_on_a_small_section(tmp_path, out):
     room.pop("poi")
     room["legend"] = {"P": {"anchor": "poi"}}
     small = dict(SECTION, size={"w": [48, 56], "h": [32, 40]})
-    rc = cli.cmd_stamp_check(_args(_pack(tmp_path), (room, HALL, VAULT), small)))
+    rc = cli.cmd_stamp_check(_args(_pack(tmp_path, (room, HALL, VAULT), small)))
     assert rc == cli.EXIT_ERROR
     assert "stamp throne-hall: 21 wide and 21 tall" in out()
 
@@ -264,7 +264,7 @@ def test_a_section_with_no_size_is_reported_and_skipped(tmp_path, out):
     """A Section that does not say how big its floors are cannot be swept."""
     shapeless = dict(SECTION)
     shapeless.pop("size")
-    rc = cli.cmd_stamp_check(_args(_pack(tmp_path), PACK, shapeless))
+    rc = cli.cmd_stamp_check(_args(_pack(tmp_path, PACK, shapeless)))
     assert rc == cli.EXIT_ERROR
     assert "section cellar: no size" in out()
 
@@ -344,9 +344,97 @@ def test_a_room_reached_the_ordinary_way_is_not_reported():
     assert stamp_check.graph_findings(plan) == []
 
 
+def test_a_room_reached_through_a_secret_is_not_held_to_the_secret_rule():
+    """The exemption the ADR's own secret rooms need.
+
+    A `secret` stamp is found, not walked into, so its own anchors sit
+    behind its own `?` by the author's drawing. Without the exemption
+    every secret room in a pack is reported on every floor it appears
+    in, and the check is a check nobody can pass.
+    """
+    plan = _floor(
+        ["#######", "#.....#", "###.###", "#.....#", "#######"],
+        {"up": [3, 1], "down": [3, 3], "warden": None},
+        [{"id": "test-nook", "role": "secret", "room": 0, "at": [1, 3],
+          "size": [5, 1], "orientation": 0, "socket": [3, 2],
+          "secret": [3, 2], "anchors": {"chest": [1, 3]}}],
+        secrets=[[3, 2]])
+    assert stamp_check.graph_findings(plan) == []
+
+
 def test_the_graph_check_ignores_a_floor_with_no_stamps():
     """Most floors have no stamps, and a check that complains about them
     would be a check that always fails."""
     plan = _floor(["#####", "#.u.#", "#####"],
                   {"up": [1, 1], "down": None}, [])
     assert stamp_check.graph_findings(plan) == []
+
+
+# ------------------------------------------------------------ across Sections
+
+
+def test_a_room_eligible_in_two_sections_names_both_of_them():
+    """A rate over four Sections belongs to none of them.
+
+    Naming the first one would give the author a sentence whose numbers
+    and whose name disagree, which is the one thing the share sentence
+    cannot be.
+    """
+    line = stamp_check.across_sentence(
+        "cistern-nook", 99, 288, ["cellar-hub", "cellar-normal"], 5, 64, 95)
+    assert line == (
+        "stamp cistern-nook: placed on 99 of 288 floors across cellar-hub "
+        "and cellar-normal (34%); it needs 95%. It is 5 wide and those "
+        "floors start at 64. /rows")
+
+
+def test_a_room_eligible_in_one_section_keeps_the_adrs_own_sentence():
+    line = stamp_check.across_sentence(
+        "cistern-nook", 99, 288, ["cellar"], 5, 64, 95)
+    assert "of 288 cellar floors" in line
+    assert "across" not in line
+
+
+# ------------------------------------------------------------ what is eligible
+
+
+def test_a_floor_reports_the_roles_it_wanted_a_stamped_room_for():
+    """The trace is what makes "eligible" mean the ADR's three things.
+
+    A floor that drew no secret has no slot for a secret room, and a
+    rate that counted it anyway would be a rate about a floor that never
+    asked for one.
+    """
+    records = [stamp_check.stamps.read_v1(record) for record in PACK]
+    trace: dict = {}
+    delve_v3.generate_floor_v3("check-0", (64, 48), SECTION, "normal",
+                                records, 3, trace=trace)
+    assert trace["floor_key"] == "check-0/cellar/normal"
+    assert set(stamps.REQUIRED_ROLES) <= trace["slots"]
+
+
+def test_a_trace_changes_nothing_about_the_floor():
+    """The trace is a dict the floor writes into, and writes no draws.
+
+    The whole check is measured against floors the generator would have
+    drawn anyway, so a floor with a trace and a floor without one have
+    to be the same floor.
+    """
+    records = [stamp_check.stamps.read_v1(record) for record in PACK]
+    plain = delve_v3.generate_floor_v3("check-0", (64, 48), SECTION, "normal",
+                                       records, 3)
+    trace: dict = {}
+    traced = delve_v3.generate_floor_v3("check-0", (64, 48), SECTION, "normal",
+                                        records, 3, trace=trace)
+    assert plain == traced
+
+
+def test_a_sweep_never_measures_a_room_on_a_floor_its_role_was_not_wanted_on():
+    """Every stamp's eligible count is a count of floors, and a subset."""
+    records = [stamp_check.stamps.read_v1(record) for record in PACK]
+    stats, findings, laid = stamp_check.sweep(records, [SECTION], seeds=2)
+    assert laid == 2 * SECTION["floors"] * len(delve_v3.FLOOR_KINDS)
+    for name, entry in stats.items():
+        assert 0 < entry["eligible"] <= laid, name
+        assert entry["placed"] <= entry["eligible"], name
+    assert findings == []

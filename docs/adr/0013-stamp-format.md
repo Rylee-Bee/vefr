@@ -86,8 +86,8 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 
 - **Static:** every rule above.
 - **Fit:** a required-role stamp is at most one third of the smallest width and height of every Section that uses it.
-- **Sweep:** run seeds `check-0..199` over every eligible Section and `k`. Each stamp must be placed on at least 95% of the floors where it is eligible, and required stamps on 100%.
-- **Graph:** each placed stamp has at least one used socket. Every anchor is reachable from `up`. Secret sockets count as passable, except on the route to `warden` or to the vault door.
+- **Sweep:** run seeds `check-0..199` over every eligible Section and `k`. Each stamp must be placed on at least 95% of the floors where it is eligible, and required stamps on 100%. Eligibility is the rule above, all three parts, so a room whose role no floor asked for is not counted against it. A bar below 100% is read to the nearest whole percent, half up: 189 of 200 is 94.5% and meets a 95% bar. 100% is 100%, with no rounding, because a floor that lost its warden hall is a floor with an empty hall in it. The share in the sentence is the truncated one, so 189 of 200 prints as 94 and the author can see the difference between the two numbers.
+- **Graph:** each placed stamp has at least one used socket. Every anchor is reachable from `up`. Secret sockets count as passable, except on the route to `warden` or to the vault door, and except inside a room whose own used socket was a secret - that room is behind a wall by the author's own drawing, and holding its anchors to the rule would report every secret room on every floor.
 
 **Failure in plain words.** One sentence per problem: the stamp, what is wrong, the fix, a JSON pointer. Exit 1. For example:
 
@@ -116,4 +116,4 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 1. **Decided: go bigger, 21x21** for the throne-room redraw. The stamp size cap and the placement cost budget must allow 21x21; confirm in the E5 tests.
 2. **Decided: the throne room plus 5 hand-drawn rooms (six stamps to start).** **Only decorative stamps may rotate or mirror; story rooms never do.** **The five (owner, 2026-10-04): a random elite monster room; a room of 3 to 6 random chests where one is quite likely a monster in disguise; a shrine or small chapel; a treasure nook; and a sleeping den for a linked monster group.** The first two are generated variants that use the stamp mechanism with random contents.
 3. May a landmark stamp leave out its point of interest and take a name from the Section list instead?
-4. **Decided: required stamps always place; optional stamps may be rare on purpose.** The 95% bar applies to required stamps only.
+4. **Decided: required stamps always place; optional stamps may be rare on purpose.** The 95% bar is the optional roles' bar; a required role's is 100%.
