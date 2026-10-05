@@ -32,7 +32,7 @@ from collections import deque
 
 import pytest
 
-from vefr import delve_v3, mob_stats
+from vefr import delve_v3
 
 
 # Two of the four sizes of PLAN.md section 3. 64x48 is the candidate
@@ -42,12 +42,14 @@ from vefr import delve_v3, mob_stats
 SIZES = [(48, 32, 16), (64, 48, 18)]
 SEEDS = [f"pop-{index}" for index in range(8)]
 
-# The closed spawn keys of ADR 0014, plus the three whole-number stats
-# this slice computes through `vefr.mob_stats`. `warden` is in the ADR's
-# list and is deliberately NOT in the set below: ADR 0015 owns the
-# warden and no spawn may carry the key until one exists.
+# The closed spawn keys of ADR 0014, all seven and nothing else. The
+# `hp`/`atk`/`xp` a brief once asked for are NOT in the set below: the
+# ADR closes the keys, and a spawn that carried one would pass this
+# check. `warden` is in the ADR's list and is deliberately NOT in the
+# set below either: ADR 0015 owns the warden and no spawn may carry
+# the key until one exists.
 SPAWN_KEYS = {
-    "id", "family", "at", "elite", "group", "leader", "warden", "hp", "atk", "xp",
+    "id", "family", "at", "elite", "group", "leader", "warden",
 }
 
 # The room shapes ADR 0014 names a stamp room by, as the graph stage
@@ -481,83 +483,29 @@ def test_spawn_keys_are_closed(w, h, rooms):
 
 @pytest.mark.parametrize("w, h, rooms", SIZES)
 def test_every_number_in_a_spawn_is_a_whole_number(w, h, rooms):
-    """No float ever reaches a spawn, and no `True` posing as a 1.
+    """`at` is a pair of whole-number tile indices, and no `True` posing as a 1.
 
-    ADR 0014's "Stats, in whole numbers only" and PLAN.md section 2's
-    forbidden list are the same rule seen from two sides: the stats are
-    `int` because the JavaScript twin computes them with `Math.floor`,
-    and `at` is a pair of tile indices.
+    `type(x) is int` is the whole assertion and it is not a
+    paraphrase of `isinstance`: `True` is an `int` in Python and would
+    sail through the looser spelling, and a float that happens to hold
+    a whole value would too. A tile index that arrives as either is a
+    number the JSON twin would not round-trip the same way.
+
+    The stats are not checked here because they are not here. ADR 0014
+    closes the spawn keys at `id, family, at, elite, group, leader,
+    warden`, so a spawn carries no `hp`, `atk` or `xp` to be whole:
+    `vefr.mob_stats` is reached by the balance report, and the numbers
+    it produces are proved whole there (E10), not here.
     """
     for seed in SEEDS:
         plan = floor(seed, (w, h), **{"rooms": [rooms, rooms]})
         for spawn in _spawns(plan):
-            for key in ("hp", "atk", "xp"):
-                value = spawn[key]
-                assert type(value) is int, (
-                    f"{seed}: {spawn['id']} {key} is {value!r}, a {type(value).__name__}"
-                )
-                assert value >= 0, f"{seed}: {spawn['id']} {key} is {value}"
             assert type(spawn["at"][0]) is int and type(spawn["at"][1]) is int
             for value in spawn["at"]:
-                assert type(value) is int
-
-
-# ---------------------------------------------------------------- the stats
-
-
-def test_stats_are_the_mob_stats_ones():
-    """Every spawn's `hp`/`atk`/`xp` is what `vefr.mob_stats` computes.
-
-    The maths is not restated here and is not restated in the generator
-    either: the pop stage hands `mob_stats` a base, an affix record, the
-    Section and the floor's position, and writes back what comes out. So
-    this test recomputes the same call from the pack and the spawn and
-    compares, which pins the wiring and not the formula.
-    """
-    for w, h, rooms in SIZES:
-        for seed in SEEDS:
-            section = pack(**{"rooms": [rooms, rooms]})
-            plan = delve_v3.generate_floor_v3(seed, (w, h), copy.deepcopy(section), "normal")
-            bases = {entry["family"]: entry for entry in section["families"]}
-            affixes = {record["id"]: record for record in section["affixes"]}
-            for spawn in _spawns(plan):
-                want = mob_stats.mob_stats(
-                    bases[spawn["family"]],
-                    affixes.get(spawn.get("elite")),
-                    section,
-                    1,
-                    0,
+                assert type(value) is int, (
+                    f"{seed}: {spawn['id']} at {spawn['at']} holds a "
+                    f"{type(value).__name__}, and `at` is a pair of tile indices"
                 )
-                for key in ("hp", "atk", "xp"):
-                    assert spawn[key] == want[key], (
-                        f"{seed} {w}x{h}: {spawn['id']} {key} is {spawn[key]}, "
-                        f"mob_stats says {want[key]}"
-                    )
-
-
-def test_an_elite_is_never_the_same_size_as_its_own_family():
-    """The affix is in the arithmetic, not decoration.
-
-    A `big` elite of a family with an 8 base hp comes back above 8; the
-    same family as a random comes back at 8. If the affix ever stopped
-    reaching `mob_stats` this is the test that notices, because the ids
-    and the shapes would all still be right.
-    """
-    plan = floor("pop-stats", (64, 48), **{
-        "rooms": [18, 18],
-        "elites": {"per_floor": [2, 2], "affixes": ["big"]},
-        "groups": {"per_floor": [0, 0], "minions": [2, 3]},
-    })
-    elites = _lone_elites(plan)
-    assert len(elites) == 2, f"expected two elites, got {elites}"
-    for elite in elites:
-        base = {"rat": 8, "moth": 5, "beetle": 12}[elite["family"]]
-        assert elite["hp"] > base, (
-            f"a big {elite['family']} is {elite['hp']} hp against a base of {base}"
-        )
-        assert elite["xp"] > {"rat": 4, "moth": 3, "beetle": 6}[elite["family"]], (
-            f"a big {elite['family']} is {elite['xp']} xp, no more than its base"
-        )
 
 
 # ------------------------------------------------------- the stream contract
