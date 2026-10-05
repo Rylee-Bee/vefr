@@ -737,6 +737,42 @@ def test_the_three_argument_call_still_works(ran):
             assert shown["noteHidden"] is True
 
 
+@pytest.fixture(scope="module")
+def orders():
+    """The speech box and the skin in one script tag each, in both orders."""
+    if shutil.which("node") is None:
+        pytest.skip("node not installed")
+    run = subprocess.run(["node", str(ROOT / "tests/fixtures/skin_speech_order_harness.mjs")],
+                         capture_output=True, text=True, timeout=120)
+    assert run.returncode == 0, run.stderr + run.stdout
+    return json.loads(run.stdout)
+
+
+def test_the_portrait_does_not_depend_on_which_part_loads_first(orders):
+    """The wrap was written at load time, so it only ever found a speech box
+    that was already on the window: a page that declared the speech box after
+    the skin got a hook that wrapped nothing and every portrait silently
+    vanished. The speech box asks for its portrait when it shows a speaker, so
+    both orders draw it - the one the parts ship in and the reverse."""
+    for name in ("shipped", "reversed"):
+        got = orders[name]
+        assert got["error"] is None, f"{name}: {got['error']}"
+        assert got["speaker"] == "marta", name
+        assert got["images"] == 1, f"{name}: no portrait in {got['children']}"
+        assert got["srcs"] == [got["expectedSrc"]], f"{name}: {got['srcs']}"
+    # And the words the speech box writes are its own either way.
+    assert orders["shipped"]["children"] == orders["reversed"]["children"]
+
+
+def test_a_pack_with_no_skin_has_no_hook_and_no_portrait(orders):
+    """The negative half of the hook: with no skin the speech box is the box it
+    always was, one read of a hook that is not there and nothing else."""
+    nope = orders["nope"]
+    assert nope["error"] is None, nope["error"]
+    assert nope["images"] == 0 and nope["icons"] == 0, nope
+    assert nope["children"] == ["p", "p", "p", "button"], nope["children"]
+
+
 def test_a_page_with_no_skin_has_no_icons_and_no_portrait(ran):
     """The icons belong to a skin: a pack with no skin plays exactly as it did."""
     for name in ICONS:

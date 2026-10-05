@@ -128,6 +128,9 @@ function speakerPicture(speaker) {
   return '';
 }
 
+// The portrait hook the speech box calls is this function, named on the window
+// when the skin loads (see 100-speech-box.js). The speech box reads it when it
+// shows a speaker, so the order the two parts load in does not matter.
 function dressSpeechBox(speaker) {
   var box = document.getElementById('npc-box');
   if (!box) return;
@@ -394,15 +397,14 @@ function applySkin() {
   // a skin that carries none of them, gets no mark and no portrait and keeps
   // the HUD row the shell built.
   var themed = THEMED_PARTS.some(function (name) { return !!parts[name]; });
-  if (themed) addHudMarks();
-  if (themed && typeof window.showSpeech === 'function' && !window.showSpeech.VEFR_PORTRAIT) {
-    var show = window.showSpeech;
-    var dressed = function (speaker, line, note) {
-      dressSpeechBox(speaker);
-      return show.call(this, speaker, line, note);
-    };
-    dressed.VEFR_PORTRAIT = true;      // one wrap, however many times a skin loads
-    window.showSpeech = dressed;
+  if (themed) {
+    addHudMarks();
+    // The speech box asks for its portrait through this hook every time it
+    // shows a speaker (100-speech-box.js), so the portrait does not depend on
+    // which of the two parts the page happened to load first: a speech box
+    // declared after this part calls the hook all the same, and one declared
+    // before it did too. One hook, however many times a skin loads.
+    window.VEFR_SPEECH_BOX = dressSpeechBox;
   }
 }
 applySkin();
