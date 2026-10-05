@@ -1140,7 +1140,8 @@ def _stamp_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
     The three required roles first, then the optional slots, each one
     drawing its stamp by weight and then spending up to 24 attempts on a
     spot. A stamp that reaches `max_per_floor` drops out of its role's
-    choices, so the draw never picks one that is already on the floor.
+    choices, so neither the draw nor the pinned try picks one that is
+    already on the floor.
 
     Returns the placements and the required roles that wanted a stamped
     room and did not get one: the caller fails the floor over that, and
@@ -1161,12 +1162,15 @@ def _stamp_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
     placed: list[dict] = []
     missing: list[str] = []
     for role in _stamp_slots(plan):
+        # `max_per_floor` is the limit a stamp declares for itself and it
+        # holds on the pinned path too: the pinned try takes the first id
+        # of the role in sorted order, and a stamp already on the floor
+        # has spent its place on this floor whichever try placed it.
+        choices = [record for record in groups.get(role, [])
+                   if used.get(record["id"], 0) < record["max_per_floor"]]
         if pinned and role in _PINNED_ROLES:
-            choices = groups.get(role, [])
             got = _pin_stamp(canvas, choices[0], spine, up) if choices else None
         else:
-            choices = [record for record in groups.get(role, [])
-                       if used.get(record["id"], 0) < record["max_per_floor"]]
             got = _try_stamp(rng, canvas, _weighted_stamp(rng, choices)) if choices else None
         if got is None:
             if role in stamps.REQUIRED_ROLES:
