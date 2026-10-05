@@ -342,6 +342,27 @@ def test_a_socket_with_nothing_behind_it_is_a_second_refusal():
     ]
 
 
+def test_every_space_against_the_room_is_reported():
+    """Two spaces leaning on one room is two sentences, not one.
+
+    The shape rule walked the rows, named the first space it found and
+    stopped, so a stamp with a second space on the far side came back
+    clean the moment the first was redrawn - one fix, then the same
+    refusal again, as many passes as there are spaces. Both come back in
+    one list now, in row-major order, which is the order the author fixes
+    them in.
+    """
+    found = stamps.problems(
+        case(rows=["#######", "#. . .#", "#.....#", "#...A.#", "##+####"]),
+        name="wine-alcove")
+    assert found == [
+        "stamp wine-alcove: the space at row 1 column 2 touches floor; a space "
+        "is outside the stamp, so the room may not lean on it /rows",
+        "stamp wine-alcove: the space at row 1 column 4 touches floor; a space "
+        "is outside the stamp, so the room may not lean on it /rows",
+    ]
+
+
 def test_the_file_name_and_the_id_are_the_same_name(tmp_path):
     """`load` reads a directory in sorted id order, and holds the names."""
     good = case()

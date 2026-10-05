@@ -375,8 +375,12 @@ def _pieces(tiles: set, neighbours) -> int:
 def _shape_problems(rows: list[str]):
     """The rules every stamp owes whatever its role: one room, one way in.
 
-    Returned in a fixed order - pieces, then spaces, then sockets - so
-    the first refusal of a badly drawn stamp is always the same one.
+    Returned in a fixed order - pieces, then every space against the
+    room, then sockets - so the refusals of a badly drawn stamp are
+    always the same sentences in the same order. Every space gets a
+    sentence of its own rather than the first one ending the walk
+    through the rows: they are all the same mistake and the author fixes
+    them in one pass.
     """
     height = len(rows)
     width = len(rows[0])
@@ -405,7 +409,10 @@ def _shape_problems(rows: list[str]):
                "all of them must touch", "/rows")
 
     # A space is outside the stamp and the generator decides what happens
-    # out there, so the room may not stand on it.
+    # out there, so the room may not stand on it. Every space that leans
+    # on the room gets its own sentence: the author is going to redraw
+    # the row anyway, and one sentence for the first of four spaces is a
+    # report they have to run again to finish reading.
     for y in range(height):
         for x in range(width):
             if rows[y][x] != OUTSIDE:
@@ -413,7 +420,6 @@ def _shape_problems(rows: list[str]):
             if any(here in standing for here in inside(x, y)):
                 yield (f"the space at row {y} column {x} touches floor; a space is "
                        "outside the stamp, so the room may not lean on it", "/rows")
-                return
 
     # A socket has exactly one way in, and a mouth for the corridor.
     for y in range(height):
