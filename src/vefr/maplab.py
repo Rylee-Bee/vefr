@@ -1019,6 +1019,13 @@ AFFIX_FILE = 'affixes.json'
 SECTIONS_DIR = 'sections'
 
 
+def _inside(pack: Path, name: str) -> Path:
+    """`pack/name`, or the pack itself if the name would leave the pack."""
+    root = os.path.realpath(pack)
+    full = os.path.realpath(os.path.join(root, name))
+    return Path(full) if full.startswith(root + os.sep) else Path(root)
+
+
 def _pack_json(path: Path):
     """One pack file's JSON, or the sentence that says it cannot be read."""
     try:
@@ -1052,7 +1059,7 @@ def _family_resolver(pack: Path):
     """
     from . import blueprint
 
-    source_path = pack / blueprint.BLUEPRINT_FILE
+    source_path = _inside(pack, blueprint.BLUEPRINT_FILE)
     if not source_path.is_file():
         return None
     try:
@@ -1118,14 +1125,15 @@ def section_errors(pack_dir) -> list[str]:
     errors: list[str] = []
 
     affixes = None
-    if (pack / AFFIX_FILE).is_file():
-        affixes, problem = _pack_json(pack / AFFIX_FILE)
+    affix_path = _inside(pack, AFFIX_FILE)
+    if affix_path.is_file():
+        affixes, problem = _pack_json(affix_path)
         if problem is not None:
             return [problem]
         errors.extend(_shape_sentences(
             AFFIX_FILE, shapes.check_affixes({}, affixes)))
 
-    sections = pack / SECTIONS_DIR
+    sections = _inside(pack, SECTIONS_DIR)
     paths = sorted(sections.glob('*.json')) if sections.is_dir() else []
     if not paths:
         return errors
