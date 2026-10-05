@@ -584,6 +584,62 @@ def test_normalize_puts_every_owned_value_back(label, edit, wanted, tmp_path):
     assert rc == 0, out
 
 
+def test_deleting_the_things_list_and_putting_them_back_works(tmp_path):
+    """The round trip, which is the claim behind the rule above.
+
+    Deleting the list is the softer ramp: the item stays, the appended
+    drop goes back to what the source still says, and the lock stops
+    naming the item. Putting the identical list back must then be
+    ordinary work - the item on disk holds exactly what the thing would
+    write, so nothing there is hand-declared, and refusing it would
+    make a deleted list a one-way door."""
+    from vefr import blueprint
+
+    pack = _normalized(tmp_path, _source([PEBBLE]))
+    source = _source_file(pack)
+    source.pop("things")
+    _write_source(pack, source)
+    rc, out = vefr("normalize", "--pack", pack, "--out", pack)
+    assert rc == 0, out
+    assert _record(pack, "b1").get("drops") is None
+    assert _items(pack)["pebble"] == {"name": "a smooth pebble",
+                                      "sprite": "pebble", "value": 4}
+    # and back again
+    source["things"] = [dict(PEBBLE)]
+    _write_source(pack, source)
+    rc, out = vefr("normalize", "--pack", pack, "--out", pack)
+    assert rc == 0, out
+    assert _items(pack)["pebble"] == {"name": "a smooth pebble",
+                                      "sprite": "pebble", "value": 4}
+    assert _record(pack, "b1")["drops"] == ["pebble"]
+    assert blueprint.check_errors(pack) == []
+    rc, out = vefr("check", "--pack", pack)
+    assert rc == 0, out
+
+
+def test_a_hand_edited_item_is_still_refused_after_a_deleted_list(
+        tmp_path):
+    """The round trip above must not open a hole: an entry that differs
+    from what the thing would write is somebody else's, and the refusal
+    is unchanged."""
+    from vefr import blueprint
+
+    pack = _normalized(tmp_path, _source([PEBBLE]))
+    source = _source_file(pack)
+    source.pop("things")
+    _write_source(pack, source)
+    rc, out = vefr("normalize", "--pack", pack, "--out", pack)
+    assert rc == 0, out
+    _edit_item_name(pack)
+    source["things"] = [dict(PEBBLE)]
+    _write_source(pack, source)
+    with pytest.raises(blueprint.BlueprintError) as err:
+        blueprint.expand(blueprint.read(pack / "blueprint.json"),
+                         pack_dir=pack)
+    assert err.value.pointer == "/things/0/id"
+    assert "by hand" in str(err.value)
+
+
 # ------------------------------------------------------- byte for byte
 # The one pack built twice from the equivalent format-1 and format-3
 # sources. Only `blueprint.json` (the version) and `blueprint.lock.json`

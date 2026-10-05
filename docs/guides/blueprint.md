@@ -328,7 +328,9 @@ thing written with two keys bakes as exactly that.
 A thing's own id counts as an item the Blueprint declares, so a carrier
 may drop a thing the same file declares. It may not take over an entry
 `world.json` already has by hand: a hand-written `items` entry with the
-same id fails, one sentence, with a pointer.
+same id fails, one sentence, with a pointer. An entry that holds exactly
+what the thing would write is not hand-declared, so deleting the `things`
+list and putting the identical list back is ordinary work.
 
 ### What one thing writes
 

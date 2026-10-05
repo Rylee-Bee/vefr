@@ -771,6 +771,17 @@ def _declared_items(pack_dir: Path) -> set[str]:
     return set(items) if isinstance(items, dict) else set()
 
 
+def _pack_item(pack: Path, item_id: str):
+    """The `items` entry `world.json` holds under that id, or None.
+
+    The committed value, read from the same file the writer and the
+    stale check read, so "is this entry ours?" is one comparison
+    against what a thing would write.
+    """
+    items = _read_json(pack / "world.json").get("items")
+    return items.get(item_id) if isinstance(items, dict) else None
+
+
 def _region_dir(pack_dir: Path, region_key: str, pointer: str) -> str:
     """Resolve acts/<act>/<region> under `pack_dir`, guarded by `_inside`."""
     from .cli import _inside  # lazy: cli will import this module
@@ -972,18 +983,23 @@ def _expand_things(pack: Path, source: dict, listed: list,
         base = f"/things/{i}"
         tid = thing["id"]
         pointer = f"/items/{_esc(tid)}"
-        # A hand-written entry is the ordinary shape and no lock of ours
-        # names it, so a thing may not take one over; a pointer our own
-        # lock already owns is this Blueprint's from last time.
-        if (tid in declared and pointer not in owned.get("world.json", set())):
-            raise BlueprintError(
-                f"the pack declares the item {tid!r} by hand, and a thing "
-                f"may not take it over", f"{base}/id")
         item = {"name": copy.deepcopy(thing["name"]),
                 "sprite": thing.get("sprite") or tid}
         for key in ITEM_ORDER[2:]:
             if key in thing:
                 item[key] = copy.deepcopy(thing[key])
+        # A hand-written entry is the ordinary shape and no lock of ours
+        # names it, so a thing may not take one over; a pointer our own
+        # lock already owns is this Blueprint's from last time. An entry
+        # that holds exactly what this thing would write is neither: a
+        # lock that no longer names it only means the list was edited
+        # (deleting `things` and putting it back), and the round trip
+        # has to work.
+        if (tid in declared and pointer not in owned.get("world.json", set())
+                and _pack_item(pack, tid) != item):
+            raise BlueprintError(
+                f"the pack declares the item {tid!r} by hand, and a thing "
+                f"may not take it over", f"{base}/id")
         record = {"id": tid, "source": base, "item": item, "pointer": pointer}
         carrier = thing.get("from")
         if carrier is not None:
