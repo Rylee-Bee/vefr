@@ -1013,12 +1013,14 @@ def _pack_enemies(pack: Path) -> list[dict]:
     an id nothing has.
     """
     out: list[dict] = []
-    acts = pack / "acts"
+    acts = Path(_inside_pack(pack, "acts"))
     if not acts.is_dir():
         return out
     for act in sorted(p for p in acts.iterdir() if p.is_dir()):
-        for region in sorted(p for p in act.iterdir() if p.is_dir()):
-            for record in _read_json(region / "contract.json").get("enemies") or []:
+        act_dir = _inside_pack(pack, f"acts/{act.name}")
+        for region in sorted(p for p in Path(act_dir).iterdir() if p.is_dir()):
+            region_dir = _inside_pack(pack, f"acts/{act.name}/{region.name}")
+            for record in _read_json(Path(region_dir) / "contract.json").get("enemies") or []:
                 if isinstance(record, dict):
                     out.append(record)
     return out
