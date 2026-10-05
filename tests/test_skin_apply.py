@@ -644,6 +644,22 @@ def test_a_page_with_no_skin_has_no_icons_and_no_portrait(ran):
     assert ran["plain"]["npcBox"]["withPortrait"]["images"] == 0
 
 
+def test_the_marks_and_the_portrait_go_only_to_a_skin_that_carries_them(ran):
+    """They are a skin's, and only for a skin that opted into the themed
+    interface. The `skinned` page carries the four parts the loader always drew
+    and none of the nine of interface slice 4, so it is not a themed skin and
+    its HUD is the plain player's HUD - no mark, no portrait. The `parts` page
+    carries the nine and gets all of it."""
+    for page, wanted in (("skinned", 0), ("parts", 1)):
+        for name in ICONS:
+            got = ran[page]["icons"][name]["count"]
+            assert got == wanted, f"{page}: {name} icon drawn {got} times, wanted {wanted}"
+        box = ran[page]["npcBox"]
+        assert box["error"] is None, f"{page}: {box['error']}"
+        assert box["withPortrait"]["images"] == wanted, (
+            f"{page}: {box['withPortrait']['children']}")
+
+
 def test_a_pack_with_no_skin_gains_no_element_of_any_kind(ran):
     """No style element, no has-skin class, no icon, no portrait, and the HUD
     row is the row the shell builds."""

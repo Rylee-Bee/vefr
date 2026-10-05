@@ -6835,6 +6835,14 @@ function renderFacts() {
 // outside the drawn map takes (painted on the canvas, in 480, once the
 // picture has decoded), and `fonts`, the display and body families the
 // engine bundles. A skin with neither plays exactly as it did.
+// The parts the contract names beyond the four the loader always drew
+// (docs/plans/interface/PLAN.md, slice 4). A skin carrying at least one of
+// them has opted into the themed interface, and the HUD marks and the speech
+// portrait (slice 5) belong to that opt-in: a skin that carries none of them
+// has asked for the plain panels, so it keeps the plain HUD too.
+var THEMED_PARTS = ['slot', 'tab', 'toggle', 'tooltip', 'speech',
+  'divider', 'banner', 'corner', 'gold-plate'];
+
 var SKIN_FONT_STACKS = {
   'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
   'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
@@ -7164,11 +7172,14 @@ function applySkin() {
     document.head.appendChild(style);
   }
   document.body.classList.add('has-skin');
-  // A skin's marks belong to the skin, so they are added here and not by the
-  // shell: a pack with no skin gets no mark and no portrait, and its HUD row
-  // is the row the shell built.
-  addHudMarks();
-  if (typeof window.showSpeech === 'function' && !window.showSpeech.VEFR_PORTRAIT) {
+  // A skin's marks belong to the skin, and to a skin that opted into the
+  // themed interface: they are added here and not by the shell, and only when
+  // the skin carries at least one of the parts above. A pack with no skin, and
+  // a skin that carries none of them, gets no mark and no portrait and keeps
+  // the HUD row the shell built.
+  var themed = THEMED_PARTS.some(function (name) { return !!parts[name]; });
+  if (themed) addHudMarks();
+  if (themed && typeof window.showSpeech === 'function' && !window.showSpeech.VEFR_PORTRAIT) {
     var show = window.showSpeech;
     var dressed = function (speaker, line, note) {
       dressSpeechBox(speaker);
