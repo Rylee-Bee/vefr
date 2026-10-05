@@ -1,4 +1,4 @@
-"""Blueprint A11: the guide, glossary and command docs tell the truth about format 1."""
+"""Blueprint A11: the guide, glossary and command docs tell the truth about every format."""
 
 import re
 from pathlib import Path
@@ -12,10 +12,23 @@ def test_guide_field_tables_list_exactly_the_closed_sets():
     guide = (ROOT / "docs" / "guides" / "blueprint.md").read_text()
     for name, keys in (("TOP_KEYS", blueprint.TOP_KEYS), ("FAMILY_KEYS", blueprint.FAMILY_KEYS),
                        ("FIELD_KEYS", blueprint.FIELD_KEYS), ("REGION_KEYS", blueprint.REGION_KEYS),
-                       ("INSTANCE_KEYS", blueprint.INSTANCE_KEYS)):
+                       ("INSTANCE_KEYS", blueprint.INSTANCE_KEYS),
+                       ("THING_KEYS", blueprint.THING_KEYS)):
         listed = set(re.findall(rf"<!-- {name}: ([^>]*?) -->", guide))
         assert listed, f"guide is missing the {name} marker"
         assert set(re.split(r",\s*", listed.pop())) == set(keys)
+
+
+def test_the_format_one_top_keys_are_pinned_by_value():
+    """The set formats 1 and 3 close their top level on, pinned by value
+    because nothing else in the suite reads it: `TOP_KEYS` is the
+    format-2 set, so a file that only ever checked `TOP_KEYS` would
+    never notice format 1 start accepting `things`."""
+    from vefr import blueprint
+
+    assert blueprint.TOP_KEYS_V1 == {"blueprint", "families", "regions"}
+    assert "things" not in blueprint.TOP_KEYS_V1
+    assert "places" not in blueprint.TOP_KEYS_V1
 
 
 def test_the_things_exit_ramp_says_what_the_code_does():
