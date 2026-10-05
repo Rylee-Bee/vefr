@@ -1,0 +1,15 @@
+{
+  "blueprint": 3,
+  "regions": {
+    "act-1/hall": {
+      "places": [
+        {
+          "id": "d1",
+          "kind": "door",
+          "at": "3,6",
+          "glyph": "+"
+        }
+      ]
+    }
+  }
+}

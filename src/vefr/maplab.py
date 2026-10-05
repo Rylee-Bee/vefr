@@ -25,6 +25,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
+from . import shapes
 from .paths import world_name as _default_world_name
 from .world import VALID_FLOORS, VALID_TONES
 from .world import creed_from as _creed_from
@@ -691,7 +692,7 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
         return [f"rule '{rid}' when must name exactly one event"]
     name = next(iter(when))
     if name not in RULE_EVENTS:
-        return [f"rule '{rid}' when names unknown event '{name}' - the six events are "
+        return [f"rule '{rid}' when names unknown event '{name}' - the events are "
                 + ', '.join(RULE_EVENTS)]
     payload = when[name]
     if not isinstance(payload, dict):
@@ -980,10 +981,6 @@ def growth_errors(w: dict) -> list[str]:
     return errors
 
 
-SAVES_RULE_MODES = ('persist', 'reset')
-SAVES_LEGACY_MODES = ('fresh', 'from-log')
-
-
 def saves_errors(w: dict) -> list[str]:
     """Every problem with a pack's optional `saves` block (empty = good).
 
@@ -996,19 +993,7 @@ def saves_errors(w: dict) -> list[str]:
     """
     if 'saves' not in w:
         return []
-    saves = w.get('saves')
-    if not isinstance(saves, dict):
-        return ['saves must be an object such as {"rules": "persist"}']
-    errors: list[str] = []
-    for key in saves:
-        if key not in ('rules', 'legacy'):
-            errors.append(f"saves has an unknown key '{key}'; "
-                          'it may only hold rules and legacy')
-    if 'rules' in saves and saves['rules'] not in SAVES_RULE_MODES:
-        errors.append('saves.rules must be "persist" or "reset"')
-    if 'legacy' in saves and saves['legacy'] not in SAVES_LEGACY_MODES:
-        errors.append('saves.legacy must be "fresh" or "from-log"')
-    return errors
+    return [p.sentence for p in shapes.check(shapes.BLOCKS['saves'], w['saves'])]
 
 
 def sound_errors(w: dict) -> list[str]:
@@ -1022,18 +1007,7 @@ def sound_errors(w: dict) -> list[str]:
     """
     if 'sound' not in w:
         return []
-    sound = w.get('sound')
-    if not isinstance(sound, dict):
-        return ['sound must be an object such as {"theme": "soft"}']
-    errors: list[str] = []
-    for key in sound:
-        if key != 'theme':
-            errors.append(f"sound may only hold theme, not '{key}'")
-    if 'theme' not in sound:
-        errors.append('sound must hold a theme, such as {"theme": "soft"}')
-    elif sound['theme'] != 'soft':
-        errors.append('sound theme must be the string "soft"')
-    return errors
+    return [p.sentence for p in shapes.check(shapes.BLOCKS['sound'], w['sound'])]
 
 
 # The parts a skin may name (design/ui-skin.md). Anything else is a
@@ -1053,6 +1027,57 @@ SKIN_PICTURE_BYTES = 300_000
 
 # The one colour shape `ink` accepts.
 _SKIN_INK_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+# The typefaces a skin may choose from: the families the engine bundles and
+# ships inside the woven file (docs/plans/interface/PLAN.md, slice 3). A name
+# outside this list would ask the browser for a font nobody has, so it is a
+# plain sentence instead.
+SKIN_FONTS = ('Cinzel', 'Atkinson Hyperlegible Next', 'Crimson Pro')
+
+# The two roles a skin may set the type for.
+SKIN_FONT_ROLES = ('display', 'body')
+
+
+def _skin_picture_errors(kind: str, fname, skin_dir: str) -> tuple[list[str], str | None]:
+    """Every problem with one picture a skin names; the path when it is good.
+
+    `kind` names the thing to fix ("skin part 'panel' file", "skin backdrop"),
+    so the sentence reads the way the author wrote the field. Returns the
+    messages and the resolved path (None when the picture is not usable).
+    """
+    if not isinstance(fname, str) or not fname.strip():
+        return ([f"{kind} must name a picture file"], None)
+    from .cli import _inside
+
+    target = _inside(skin_dir, fname)
+    if target is None or not os.path.isfile(target):
+        return ([f"{kind} names '{fname}', which does not exist in the skin folder"], None)
+    if os.path.splitext(fname)[1].lower() not in SKIN_SUFFIXES:
+        return ([f"{kind} names '{fname}', which is not a webp or png picture"], None)
+    size = os.path.getsize(target)
+    if size > SKIN_PICTURE_BYTES:
+        return ([f"{kind} picture '{fname}' is too big ({size} bytes; "
+                 f'the cap is {SKIN_PICTURE_BYTES})'], None)
+    return [], target
+
+
+def _font_errors(fonts) -> list[str]:
+    """Every problem with a skin's optional `fonts` block (empty = good)."""
+    if not isinstance(fonts, dict):
+        return ["skin.json 'fonts' must be an object naming a bundled family"]
+    errors = []
+    for role, family in fonts.items():
+        if role not in SKIN_FONT_ROLES:
+            errors.append(
+                f"skin.json fonts '{role}' is not a role; expected "
+                f"{' or '.join(SKIN_FONT_ROLES)}")
+        elif not isinstance(family, str) or not family.strip():
+            errors.append(f"skin.json fonts '{role}' must name a bundled family")
+        elif family not in SKIN_FONTS:
+            errors.append(
+                f"skin.json fonts '{role}' names '{family}', which the engine "
+                f'does not bundle ({", ".join(SKIN_FONTS)})')
+    return errors
 
 
 def _picture_size(path: str) -> tuple[int, int] | None:
@@ -1095,8 +1120,10 @@ def skin_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
     JSON object with a non-empty `name` and `credit`; every part key
     must be a known part; every named picture must exist, end in .png
     or .webp, and stay under the size cap; `slice` must fit inside its
-    picture; `ink` colours must be `#RRGGBB`. Every message is one
-    plain sentence naming the thing to fix.
+    picture; `ink` colours must be `#RRGGBB`; an optional `backdrop`
+    names one more picture under the same rules, and an optional
+    `fonts` names bundled families for the display and body roles.
+    Every message is one plain sentence naming the thing to fix.
     """
     if 'skin' not in w:
         return []
@@ -1144,33 +1171,18 @@ def skin_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
         if not isinstance(spec, dict):
             errors.append(f"skin part '{pname}' must be an object")
             continue
-        # Every picture a part names: real, webp/png, small enough.
+        # Every picture a part names: real, webp/png, small enough. The
+        # backdrop is checked by the same sentence, one key further out.
         found: dict[str, str] = {}
         for key in SKIN_PICTURE_KEYS:
             fname = spec.get(key)
             if fname is None:
                 continue
-            if not isinstance(fname, str) or not fname:
-                errors.append(
-                    f"skin part '{pname}' {key} must name a picture file")
-                continue
-            target = _inside(skin_dir, fname)
-            if target is None or not os.path.isfile(target):
-                errors.append(
-                    f"skin part '{pname}' {key} names '{fname}', which "
-                    'does not exist in the skin folder')
-                continue
-            found[key] = target
-            if os.path.splitext(fname)[1].lower() not in SKIN_SUFFIXES:
-                errors.append(
-                    f"skin part '{pname}' {key} names '{fname}', which is "
-                    'not a webp or png picture')
-                continue
-            size = os.path.getsize(target)
-            if size > SKIN_PICTURE_BYTES:
-                errors.append(
-                    f"skin part '{pname}' {key} picture '{fname}' is too "
-                    f'big ({size} bytes; the cap is {SKIN_PICTURE_BYTES})')
+            problems, target = _skin_picture_errors(
+                f"skin part '{pname}' {key}", fname, skin_dir)
+            errors.extend(problems)
+            if target is not None:
+                found[key] = target
         # `slice` fits inside the part's main picture: a whole number of
         # at least 1, at most half the smaller side.
         if 'slice' in spec:
@@ -1204,6 +1216,17 @@ def skin_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
                 if not isinstance(colour, str) or not _SKIN_INK_RE.match(colour):
                     errors.append(
                         f"skin.json ink '{name}' must be a #RRGGBB colour")
+
+    # The optional backdrop: one seamless picture for the ground the map does
+    # not cover. Checked exactly like a part's picture, and named in one
+    # sentence so an author knows which file to look at.
+    if 'backdrop' in data:
+        problems, _ = _skin_picture_errors("skin backdrop", data['backdrop'], skin_dir)
+        errors.extend(problems)
+
+    # The optional type: a family per role, from the ones the engine bundles.
+    if 'fonts' in data:
+        errors.extend(_font_errors(data['fonts']))
     return errors
 
 

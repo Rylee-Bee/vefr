@@ -18,21 +18,37 @@
     return !((town.legend[town.map[y][x]] || {}).solid);
   }
   // Steps from (x, y) to every walkable tile. `dist` has the source at
-  // 0 and no entry at all for a tile the flood never reached.
+  // 0 and no entry at all for a tile the flood never reached. The flood
+  // stops `floodLimit` tiles (Manhattan) from its own source: the
+  // monster turn sets that once, before any monster acts, to a little
+  // past the farthest wake, so a turn never floods the far end of the
+  // floor. It rides in a variable rather than an argument so the
+  // signature stays `distMap(x, y)`; 0 (no monster turn has set it)
+  // means unbounded. The turn's harness counter is fed from here too -
+  // enemyTurn resets it per turn, so it always shows the last turn.
+  var floodLimit = 0;
   function distMap(x, y) {
     var dist = {};
     var start = x + ',' + y;
     dist[start] = 0;
     var queue = [[x, y]];
+    var stats = window.VEFR_FLOOD_STATS;
+    if (stats) { stats.floods++; stats.tiles++; }
     for (var qi = 0; qi < queue.length; qi++) {
       var cx = queue[qi][0], cy = queue[qi][1];
       for (var i = 0; i < DIRS.length; i++) {
         var nx = cx + DIRS[i][0], ny = cy + DIRS[i][1];
+        var away = manhattan(nx, ny, x, y);
+        if (floodLimit && away > floodLimit) continue;
         var nk = nx + ',' + ny;
         if (dist[nk] !== undefined) continue;
         if (!floorOpen(nx, ny)) continue;
         dist[nk] = dist[cx + ',' + cy] + 1;
         queue.push([nx, ny]);
+        if (stats) {
+          stats.tiles++;
+          if (away > stats.maxSpan) stats.maxSpan = away;
+        }
       }
     }
     return dist;

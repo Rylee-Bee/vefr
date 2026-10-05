@@ -1,0 +1,2 @@
+room
+/regions/act-1~1hall/places/0/at

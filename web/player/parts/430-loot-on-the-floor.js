@@ -99,6 +99,17 @@
     if (HERO_HP <= 0) { cozyDeath(); return true; }
     return false;
   }
+  // How near the hero a monster wakes: its own sight when that runs
+  // past ten, ten otherwise. Asleep costs a turn nothing at all -
+  // no flood, no step, no attack.
+  function wakeRadius(e) { return Math.max(10, e.sight || 0); }
+  function asleep(e) {
+    return manhattan(e.at[0], e.at[1], hero[0], hero[1]) > wakeRadius(e);
+  }
+  // A monster's group wakes with it. Nothing carries a group id
+  // yet, so this spreads the wake to nobody; it is the seam for
+  // when one does.
+  function wakeGroup(e, awake) { return awake; }
   // One enemy's turn. Next to the hero -> hit them. Badly hurt with
   // the hero in sight -> step away down the map. In sight -> step one
   // tile closer, the short way round the floor rather than into a wall.
@@ -116,14 +127,36 @@
     if (!ally) return false;
     return stepAlong(e, distances(maps, ally.at[0], ally.at[1]), 1);
   }
-  // Every living enemy acts once, in order, against the same shared
-  // distance maps. The hero's death ends the turn early (and wakes
-  // them elsewhere).
+  // Every living enemy takes its turn in order, against the same
+  // shared distance maps; an asleep one costs nothing and is skipped.
+  // The hero's death ends the turn early (and wakes them elsewhere).
   function enemyTurn() {
+    // The harness reads this once, at the end of a run, so it is
+    // reset per turn, not per flood: it always shows the last turn.
+    window.VEFR_FLOOD_STATS = { floods: 0, tiles: 0, maxSpan: 0 };
     var roster = enemies.slice();
     var maps = turnMaps();
+    // The flood only has to reach a little past the farthest wake:
+    // every awake monster stands within its own wake radius of the
+    // hero, and the flood reaches wakeRadius + 4 tiles from wherever
+    // it starts, so no step an awake monster could take before is
+    // lost. Known limit: a monster whose walk the long way round runs
+    // farther than this can now hold still where it used to keep
+    // coming.
+    var far = 10;
+    for (var j = 0; j < roster.length; j++) {
+      if (roster[j].alive) far = Math.max(far, wakeRadius(roster[j]));
+    }
+    floodLimit = far + 4;
+    // Who acts: awake by the wake radius, asked through the group
+    // seam - a later slice adds group ids in wakeGroup alone.
+    var awake = [];
+    for (var k = 0; k < roster.length; k++) {
+      if (!roster[k].alive) continue;
+      awake[k] = wakeGroup(roster[k], !asleep(roster[k]));
+    }
     for (var i = 0; i < roster.length; i++) {
-      if (!roster[i].alive) continue;
+      if (!roster[i].alive || !awake[i]) continue;
       if (enemyAct(roster[i], maps)) {
         flushGrowth(); draw(); combatSnapshot(); return;
       }

@@ -1,0 +1,18 @@
+{
+  "blueprint": 3,
+  "regions": {
+    "act-1/hall": {
+      "places": [
+        {
+          "id": "st1",
+          "kind": "stair",
+          "at": "3,6",
+          "glyph": "u",
+          "to": "far-hall",
+          "to_at": "3,4",
+          "locked_text": "The stair is blocked."
+        }
+      ]
+    }
+  }
+}
