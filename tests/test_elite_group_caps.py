@@ -553,6 +553,75 @@ def test_elite_led_groups_scale_with_the_room_count(w, h, rooms, kind):
     )
 
 
+@lru_cache(maxsize=None)
+def _reversed_floor(per_floor: tuple[int, int], seed: str, rooms: int) -> dict:
+    """One floor of the base pack with `groups.per_floor` written reversed.
+
+    The base pack is the everyday one - `per_floor [1, 2]`, an elite-led
+    group, affixes to lead it - with one range replaced, so the only thing
+    that can move a floor is the number the Section asked for.
+    """
+    section = _pack_for("base", rooms)
+    section["groups"]["per_floor"] = list(per_floor)
+    return delve_v3.generate_floor_v3(seed, (64, 48), section, "normal")
+
+
+@pytest.mark.parametrize("per_floor, wants_a_group", [((1, 0), True),
+                                                      ((0, 0), False)])
+def test_a_reversed_per_floor_range_still_means_its_low_bound(per_floor, wants_a_group):
+    """`per_floor: [1, 0]` asks for one group; `[0, 0]` asks for none.
+
+    ADR 0014's cap is phrased off the LOW bound of this range - "1
+    elite-led group per 8 rooms, but at least 1 when the Section's
+    `per_floor` range asks for one" - so a low bound the generator reads
+    as something else is a cap that is never reached and a pack that does
+    not get what it wrote down. `_pair` re-ordered a reversed range by
+    swapping its halves, so `[1, 0]` was read as `rand(0, 1)`: a group on
+    about half the floors and none on the rest, and the cap's `max(1, ...)`
+    waiting behind a count that was zero half the time. Before the fix,
+    20 of the first 40 seeds here carried no elite-led group at all.
+
+    The control is the other half of the same sentence, and it is the one
+    that keeps the fix honest: a Section that writes `[0, 0]` asks for no
+    group whatever, so a floor that carries none is the right floor, and
+    one that carried some would be the cap being over-generous. The demand
+    is measured over 200 seeds at 64x48 and every floor that could hold a
+    leader - a walkable tile at least `STAIR_CLEAR` from both stairs - is
+    counted, so a pass cannot come from a case that measured nothing.
+    """
+    rooms = 18
+    missing = 0
+    spare = 0
+    measured = 0
+    for seed in SEEDS:
+        plan = _reversed_floor(per_floor, seed, rooms)
+        if plan["gen"] != 3:
+            continue
+        led = _elite_led(_groups_of(plan["spawns"]))
+        clear = [tile for tile in _walkable_tiles(plan)
+                 if _stair_gap(tile, plan) >= STAIR_CLEAR]
+        if not clear:
+            continue
+        measured += 1
+        if not led:
+            missing += 1
+        if not wants_a_group and led:
+            spare += 1
+    assert measured, (
+        f"per_floor {list(per_floor)}: no floor of the sweep could carry a "
+        "leader, so the demand was never measured"
+    )
+    assert not spare, (
+        f"per_floor {list(per_floor)}: {spare} floors carry an elite-led "
+        "group although the range asks for none"
+    )
+    assert not (missing and wants_a_group), (
+        f"per_floor {list(per_floor)}: {missing} of {measured} floors that "
+        "could hold a leader carry no elite-led group, although the low "
+        "bound of the range asks for one"
+    )
+
+
 @pytest.mark.parametrize("w, h, rooms, kind", _cases(), ids=_case_ids())
 def test_minions_stay_within_two_of_their_leader(w, h, rooms, kind):
     """Every minion is within Chebyshev 2 of its group's leader tile.

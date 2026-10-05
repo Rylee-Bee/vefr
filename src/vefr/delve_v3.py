@@ -167,6 +167,35 @@ def _pair(value, fallback: tuple[int, int]) -> tuple[int, int]:
     return fallback
 
 
+def _demand(value, fallback: tuple[int, int]) -> tuple[int, int]:
+    """A `[lo, hi]` count whose low bound is a DEMAND, not a suggestion.
+
+    `_pair` orders a reversed pair by swapping its halves, which is the
+    right thing for a range whose two ends are interchangeable - a room
+    quota, a minion count. It is the wrong thing for a count, because a
+    count's low bound is what the Section ASKS for: ADR 0014 says so out
+    loud in the cap list ("1 elite-led group per 8 rooms, but at least 1
+    when the Section's `per_floor` range asks for one"), and the low bound
+    of a reversed pair is the only half of it the author wrote twice.
+
+    So a reversed count is resolved to its low bound. `per_floor: [1, 0]`
+    - "at least one group a floor, and none" - is a pack that contradicts
+    itself, and the number both halves of it agree on is the one it
+    states most firmly. Read as `rand(1, 1)` the floor carries the group
+    the pack asked for and the cap above it is reachable; read as
+    `rand(0, 1)` the same pack loses half its groups, and the cap that
+    was written to protect them is never even consulted. The pack can
+    still ask for no groups at all, by writing `[0, 0]`.
+    """
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        try:
+            lo, hi = int(value[0]), int(value[1])
+        except (TypeError, ValueError):
+            return fallback
+        return (lo, hi) if lo <= hi else (lo, lo)
+    return fallback
+
+
 def _names(value, fallback) -> list[str]:
     """A list of non-empty strings, or `fallback` when it is not one."""
     if isinstance(value, (list, tuple)):
@@ -217,12 +246,17 @@ def _read_families(section: dict) -> list[dict]:
 
 
 def _read_elites(section: dict) -> tuple[int, int, list[str]]:
-    """How many elites a floor carries, and their affix ids."""
+    """How many elites a floor carries, and their affix ids.
+
+    `per_floor` is read by `_demand` and not by `_pair`: a count's low
+    bound is what the Section asks for, so a reversed one is a count, not
+    a range to be re-ordered.
+    """
     raw = section.get("elites")
     if not isinstance(raw, dict):
         lo, hi = DEFAULT_ELITES["per_floor"]
         return lo, hi, list(DEFAULT_ELITES["affixes"])
-    lo, hi = _pair(raw.get("per_floor"), (0, 0))
+    lo, hi = _demand(raw.get("per_floor"), (0, 0))
     return lo, hi, _names(raw.get("affixes"), ())
 
 
@@ -238,6 +272,13 @@ def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool]:
     shows. A linked group that wakes as one thing is one kind of thing,
     and a pack that wants a mixed mob says `false` and pays a family
     draw for every minion.
+
+    `per_floor` is read by `_demand` and not by `_pair`, for the reason
+    the cap below gives: ADR 0014's elite-led-group cap is phrased off
+    this range's LOW bound, so a low bound the draw does not honour is a
+    cap that is never reached. `minions` stays a range - two ends the
+    author can mean in either order, with no cap of its own reading
+    either end.
     """
     raw = section.get("groups")
     if not isinstance(raw, dict):
@@ -246,7 +287,7 @@ def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool]:
     leader = str(raw.get("leader", DEFAULT_GROUPS["leader"]))
     if leader not in ("elite", "normal"):
         leader = DEFAULT_GROUPS["leader"]
-    return (_pair(raw.get("per_floor"), (0, 0))
+    return (_demand(raw.get("per_floor"), (0, 0))
             + _pair(raw.get("minions"), (2, 3))
             + (leader, bool(raw.get("same_family", DEFAULT_GROUPS["same_family"]))))
 
@@ -1323,8 +1364,19 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
     # ROOMS_PER_ELITE_GROUP rooms - never below one, while the Section's
     # own `groups.per_floor` still asks for a group at all.
     group_lo, group_hi, minion_lo, minion_hi, led_by, same_family = _read_groups(section)
+    # ADR 0014's own phrasing of the cap: "1 elite-led group per 8 rooms,
+    # but at least 1 when the Section's `per_floor` range asks for one",
+    # and the range asks for one whenever either of its ends says so. The
+    # question is asked of BOTH ends rather than of the high one alone,
+    # because the high bound is the end a pack writes to cap itself and
+    # the low bound is the end it writes to ask - and a Section that
+    # writes `per_floor: [1, 0]` is asking. `_demand` above is what makes
+    # that true of the draw as well as of the cap; before it, the same
+    # pack was read as `rand(0, 1)` and half its floors carried no group
+    # at all, with a cap of one waiting behind a count of zero.
+    asks_for_a_group = group_lo > 0 or group_hi > 0
     elite_led_cap = (max(1, graph.room_count // ROOMS_PER_ELITE_GROUP)
-                     if group_hi >= 1 else 0)
+                     if asks_for_a_group else 0)
     group_count = _rand(rng, group_lo, group_hi)
     elite_led = 0
     for number in range(group_count):
