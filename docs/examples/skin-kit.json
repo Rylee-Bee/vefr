@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "kit": "cottage",
+  "pieces": [
+    {
+      "name": "panel.webp",
+      "kind": "box",
+      "size": [96, 96],
+      "slice": 32,
+      "fill": "parchment.png",
+      "make": "draw"
+    },
+    {
+      "name": "speech.webp",
+      "kind": "box",
+      "size": [192, 96],
+      "slice": 24,
+      "make": "draw"
+    },
+    {
+      "name": "tooltip.webp",
+      "kind": "box",
+      "size": [96, 64],
+      "slice": 20,
+      "make": "draw"
+    },
+    {
+      "name": "button.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "draw"
+    },
+    {
+      "name": "button-hover.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "derive:tint(255,255,255,0.10)"
+    },
+    {
+      "name": "button-pressed.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "derive:tint(0,0,0,0.15)"
+    },
+    {
+      "name": "button-disabled.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "derive:tint(128,128,128,0.45)"
+    },
+    {
+      "name": "tab.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "draw"
+    },
+    {
+      "name": "tab-selected.webp",
+      "kind": "box",
+      "size": [96, 40],
+      "slice": 14,
+      "make": "draw"
+    },
+    {
+      "name": "toggle-off.webp",
+      "kind": "strip",
+      "size": [64, 32],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "toggle-on.webp",
+      "kind": "strip",
+      "size": [64, 32],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "bar-frame.webp",
+      "kind": "box",
+      "size": [192, 32],
+      "slice": 10,
+      "make": "draw"
+    },
+    {
+      "name": "bar-fill.webp",
+      "kind": "strip",
+      "size": [176, 20],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "gold-plate.webp",
+      "kind": "box",
+      "size": [96, 32],
+      "slice": 10,
+      "make": "draw"
+    },
+    {
+      "name": "slot.webp",
+      "kind": "box",
+      "size": [64, 64],
+      "slice": 16,
+      "fill": "parchment.png",
+      "make": "draw"
+    },
+    {
+      "name": "divider.webp",
+      "kind": "strip",
+      "size": [192, 16],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "banner.webp",
+      "kind": "strip",
+      "size": [192, 48],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "corner.webp",
+      "kind": "strip",
+      "size": [48, 48],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "cursor.webp",
+      "kind": "strip",
+      "size": [32, 32],
+      "slice": 0,
+      "make": "draw"
+    },
+    {
+      "name": "parchment.png",
+      "kind": "copy",
+      "size": [0, 0],
+      "slice": 0,
+      "make": "copy"
+    },
+    {
+      "name": "wood.png",
+      "kind": "copy",
+      "size": [0, 0],
+      "slice": 0,
+      "make": "copy"
+    },
+    {
+      "name": "brass.png",
+      "kind": "copy",
+      "size": [0, 0],
+      "slice": 0,
+      "make": "copy"
+    }
+  ]
+}

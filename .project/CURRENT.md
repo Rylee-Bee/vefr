@@ -4,7 +4,23 @@
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.
 >
-> Last refreshed: 2026-10-04 (later: the parts split, the interface and tighten-shapes plans).
+> Last refreshed: 2026-10-04, late afternoon (the endless-dungeon ADRs, B2 places, the agent-platform move).
+
+## 2026-10-04, evening (the worker machine was rebuilt; work paused cleanly)
+
+**Landed or opened since the afternoon note:** #294 docs sync, #297 B1 things in Blueprint format 2 (open, owner-approved test updates, closes #296). The orchestration tooling made Claude Code the default worker harness. See DECISIONS (2026-10-04, evening) for the worker-machine rebuild and its lessons.
+
+**Paused on purpose:** the two foreman lanes were paused by Rylee to switch gears; E7 (elites and groups) and the sandbox slice are finishing their current runs and nothing new starts.
+
+## 2026-10-04, late afternoon (slices landing; three ADRs decided)
+
+**Landed on main since the evening note:** #275 the stage and phone dock, #276 one `store()` helper (K2), #277 sprites by name (B0), #278 E0a bench, #281 schema table core (S1), #283 art ledger (A1), #286 source art from the Media Archive, #287 fog as a bitset (F1), #288 sleeping monsters (E0d), #289 the v3 floor generator (E2), #290 skin kit manifest (A3), #291 four audit fixes, #292 places in Blueprint format 3 (B2), #293 ADRs 0013 to 0015 (Proposed).
+
+**Decided by Rylee (recorded in the ADRs and in DECISIONS):** the wake rule, noise ranges, the warden's behaviour, reload, affix style, six starting stamps and their rotation and rarity rules, the shortcut item and the final boss's region. See `.project/DECISIONS.md` (2026-10-04, late afternoon).
+
+**Running:** E7 elites and groups (foreman), B1 things (foreman). **Next, in Rylee's order:** E5 stamps, then E8 wardens and vaults.
+
+**Known:** the 128x96 monster-turn bench was not rerun after E0d (the bench needs reworking for sleeping monsters); #269, #259, #260 still open. The orchestration tooling now lives in `Rylee-Bee/agent-platform` (the `agents` repo is archived).
 
 ## 2026-10-04, evening (the endless dungeon is designed and measured)
 
