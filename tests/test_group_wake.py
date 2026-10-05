@@ -41,6 +41,7 @@ wall-clock, no mocks. Run with:
 """
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -345,12 +346,44 @@ def test_walking_away_leaves_the_same_sleeper_asleep(tmp_path):
 
 # ---- the five loud events, straight at the reader ----
 
+def test_every_loud_event_is_called_and_none_is_wrapped():
+    """The noise table and the player's call sites, read off the parts.
+
+    Two things, and both are about the table not lying. `makeNoise` is
+    the only way a loud event reaches the floor, so a row of the table
+    that nothing names is a number nothing ever asks: `fight`, `door`,
+    `chest` and `stair` each have a call site in the shipped player and
+    `break` is the one exception, named here with its reason (the player
+    has no break action to attach one to). And a per-kind wrapper -
+    `heardFight` and its four sisters - is a name nothing ever spells
+    and a function nothing ever calls, so there are none: `inEarshot`
+    and `makeNoise` are the whole of the surface.
+    """
+    parts = "\n".join(path.read_text(encoding="utf-8")
+                      for path in sorted(PARTS.glob("*.js")))
+    called = set(re.findall(r"makeNoise\('([a-z]+)'\)", parts))
+    assert called == {"fight", "door", "chest", "stair"}, \
+        ("the loud events the player actually makes changed; a new one "
+         "belongs in this set, and 'break' only once the player has a "
+         "break action to call it from")
+    assert set(NOISE) - called == {"break"}, \
+        "a row of the table with no call site must be the one named here"
+    for kind in NOISE:
+        assert f"NOISE_{kind.upper()}" in parts, \
+            f"the {kind} radius is not in the table at all"
+    wrappers = re.findall(r"function heard[A-Z]\w*\(", parts)
+    assert not wrappers, \
+        (f"{wrappers} are dead: nothing in the player calls them, and "
+         "`makeNoise`/`inEarshot` are the whole of the surface")
+
+
 # The three AI parts verbatim, in a node vm, with the rest of the player
 # stubbed the way tests/browser/bench_floor_play.py stubs it for the
 # same measurement. Nothing here rewrites the engine: `noiseRadius` and
-# `makeNoise` are the shipped functions, called directly, because four
-# of the five loud events happen in a part this slice does not own and
-# so have no in-player route to prove.
+# `makeNoise` are the shipped functions, called directly, because
+# `break` - the one loud event with no call site - is reached by asking
+# `makeNoise` for it, and the four that do have call sites are proved
+# through the real player in the section above.
 NOISE_DRIVER = """
 import fs from 'node:fs';
 import vm from 'node:vm';

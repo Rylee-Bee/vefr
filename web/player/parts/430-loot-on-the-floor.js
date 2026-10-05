@@ -149,6 +149,17 @@
   // The radius for one loud event. The table is closed: a kind nobody
   // declared carries nothing, so a call site that gets its own spelling
   // wrong wakes nobody rather than waking the floor.
+  //
+  // `makeNoise(kind)` is the only way a loud event reaches the floor,
+  // and this table is the only place a radius is written: four of the
+  // five rows are asked by a real call site in the shipped player -
+  // fighting in `heroAttack`, the other three in the interaction
+  // dispatch (part 480) - and each is reached only by naming it
+  // there. There are no per-kind wrappers, because a wrapper nobody
+  // calls is a number nothing ever asks and a name nothing ever
+  // spells. `break` is the fifth row and has no call site, because the
+  // player has no break action to attach one to; the number is the
+  // owner's and stays here ready for the day one exists.
   function noiseRadius(kind) {
     if (kind === 'fight') return NOISE_FIGHT;
     if (kind === 'door') return NOISE_DOOR;
@@ -162,13 +173,6 @@
     if (!r) return false;
     return chebyshev(x, y, hero[0], hero[1]) <= r;
   }
-  // One name per loud event, so each is asked and tested on its own and
-  // the radius beside it is the only place that number lives.
-  function heardFight(x, y) { return inEarshot(x, y, 'fight'); }
-  function heardDoor(x, y) { return inEarshot(x, y, 'door'); }
-  function heardChest(x, y) { return inEarshot(x, y, 'chest'); }
-  function heardStair(x, y) { return inEarshot(x, y, 'stair'); }
-  function heardBreak(x, y) { return inEarshot(x, y, 'break'); }
   // The hero did something loud at their own tile: wake every sleeper
   // in earshot of it. `kind` is one of the five names above.
   function makeNoise(kind) {
