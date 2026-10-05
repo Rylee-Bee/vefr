@@ -456,6 +456,25 @@ def test_a_repeated_affix_id_is_refused():
         '/affixes/1/id')
 
 
+def test_a_repeated_affix_id_is_refused_away_from_its_neighbour():
+    """The pair that collides need not be side by side.
+
+    "Ids are unique" (ADR 0014, "Affix") is a claim about the whole
+    list, so `[big, quick, big]` is as much a repeat as `[big, big]`
+    is. A check that only compared each id with the one before it would
+    call this list good and let two packs' elites draw the same record.
+    The pointer is the second record that carries the id, so the pair
+    that collides is named whichever distance apart they are.
+    """
+    apart = [a_good_affix(),
+             dict(a_good_affix(), id="quick", label="Quick {name}"),
+             dict(a_good_affix(), label="Wide {name}")]
+    assert sentence_and_pointer(shapes.check_section(
+        a_good_section(), apart, resolver(a_good_blueprint()))) == (
+        "every affix id must be its own, and 'big' is used twice",
+        '/affixes/2/id')
+
+
 def test_a_family_the_blueprint_does_not_have_is_refused():
     section = a_good_section()
     section["families"] = [{"family": "beast", "weight": 1},

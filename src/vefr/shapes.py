@@ -449,10 +449,17 @@ def check_affixes(section: dict, affixes) -> list[Problem]:
     if problems or len(ids) != len(affixes):
         return problems
 
-    for i, aid in enumerate(ids[1:], start=1):
-        if aid == ids[i - 1]:
+    # Every id against every id that came before it, not just the one
+    # beside it: "ids are unique" (ADR 0014, "Affix") is a claim about
+    # the whole list, and `[big, quick, big]` repeats an id exactly as
+    # much as `[big, big]` does. The pointer is the SECOND record to
+    # carry the id, so the pair that collides is named in one sentence.
+    seen: set[str] = set()
+    for i, aid in enumerate(ids):
+        if aid in seen:
             return [Problem('duplicate-id', f'/affixes/{i}/id',
                              _DEFAULTS['duplicate-id'].format(id=aid))]
+        seen.add(aid)
 
     defined = set(ids)
     for i, aid in enumerate(_used_affix_ids(section)):
