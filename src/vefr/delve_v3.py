@@ -1420,8 +1420,17 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
     warden_room = hall["room"] if hall else (off_path[0] if off_path else up_room)
     landmark_room = landmark["room"] if landmark else (
         off_path[1] if len(off_path) > 1 else warden_room)
-    vault_room = vault["room"] if vault else (
-        off_path[2] if (len(off_path) > 2 and section.get("vault")) else None)
+    vault_room = None
+    if section.get("vault"):
+        # A Section that names no vault has no vault to open, so the floor
+        # gets no vault anchor and no vault point of interest out of the
+        # off-path walk. The pool keeps a vault stamp off such a Section's
+        # floors already, and this is the same rule read at the other end
+        # of the floor: an anchor is the Section's promise, not the
+        # placer's to make, and one that points at nothing is worse than
+        # no anchor at all.
+        vault_room = vault["room"] if vault else (
+            off_path[2] if len(off_path) > 2 else None)
 
     # A stamp reads as the room it sits in, so the room that holds the
     # warden hall, the landmark or the vault is named in `rooms`.

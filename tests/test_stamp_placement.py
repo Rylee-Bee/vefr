@@ -77,3 +77,54 @@ def test_a_stamp_under_its_limit_is_pinned_twice(monkeypatch):
     assert missing == []
 
 
+# ------------------------------------------------------- a Section with no vault
+
+
+def _graph_stage_with_vault(section: dict):
+    """The graph stage over two rooms, the second one a stamped vault."""
+    canvas = _canvas((2, 2, 6, 4), (12, 2, 6, 4))
+    canvas.stamps.append({
+        "id": "test-vault", "role": "vault", "orientation": 0, "room": 1,
+        "at": [12, 2], "size": [6, 4], "socket": [12, 4],
+        "anchors": {"chest": [14, 3], "note": [15, 3], "home": [16, 3]},
+    })
+    return delve_v3._graph_stage(canvas, [0, 1], {"flavour": 0, "secrets": 0}, section)
+
+
+def test_a_section_with_no_vault_gets_no_vault_anchor():
+    """A Section that names no vault has no vault to open.
+
+    The pool keeps a vault stamp off such a Section's floors already, and
+    this is the same rule read at the other end of the floor: a vault
+    anchor is a promise to the player that there is a door to unlock, and
+    on a Section that has none it points at nothing.
+    """
+    _graph, anchors, _pois, _secrets = _graph_stage_with_vault(
+        {"id": "cellar", "pois": ["the drowned well"]})
+    assert anchors["vault"] is None, (
+        f"a Section with no vault got the vault anchor {anchors['vault']}")
+
+
+def test_a_section_that_names_a_vault_still_gets_its_anchor():
+    """The same floor, on a Section that names a vault: nothing changes."""
+    _graph, anchors, _pois, _secrets = _graph_stage_with_vault(
+        {"id": "cellar", "pois": ["the drowned well"], "vault": "vault-cellar"})
+    assert anchors["vault"] is not None
+
+
+def test_a_vault_stamp_is_not_offered_to_a_section_with_no_vault():
+    """The pool half of the same rule, asked of the pool a floor asks.
+
+    `stamp_pool` is public for `vefr stamp check` so the check measures
+    the generator's own eligibility rather than a second copy of it, and
+    that copy has to agree with the placer about the vault.
+    """
+    records = [stamps.read_v1(VAULT)]
+    assert delve_v3.stamp_pool({"id": "cellar", "stamps": ["cellar"]},
+                               records, 1) == []
+    offered = delve_v3.stamp_pool(
+        {"id": "cellar", "stamps": ["cellar"], "vault": "vault-cellar"},
+        records, 1)
+    assert [record["id"] for record in offered] == ["test-vault"]
+
+
