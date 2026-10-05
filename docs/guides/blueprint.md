@@ -317,10 +317,13 @@ sits beside `regions`, and a region on format 2 carries `enemies` only.
 
 `id` and `name` are always required. A thing with no name is refused
 rather than written, because an item entry with no name never reaches
-the player. `from` is optional: name it and the thing is a drop, leave
-it out and the thing is written to `world.json` and nothing carries it.
-The rest ride along only when the record gives them, so a thing written
-with two keys bakes as exactly that.
+the player. An `id` holding `/` or `~` is refused too: the id is one
+token of the `/items/<id>` pointer that owns the written entry, and
+either character would make the entry a different key than the one the
+stale check reads. `from` is optional: name it and the thing is a drop,
+leave it out and the thing is written to `world.json` and nothing
+carries it. The rest ride along only when the record gives them, so a
+thing written with two keys bakes as exactly that.
 
 A thing's own id counts as an item the Blueprint declares, so a carrier
 may drop a thing the same file declares. It may not take over an entry

@@ -232,6 +232,16 @@ def _check_things(things: object, base: str) -> None:
             raise BlueprintError(
                 f"duplicate thing id {thing['id']!r}", f"{tbase}/id")
         seen.add(thing["id"])
+        # The id is one token of the `/items/<id>` pointer that owns the
+        # written entry, and the writer stores the token as it stands
+        # rather than un-escaping it - so an id holding `/` or `~` would
+        # bake an entry under a name nothing reads back, and the next
+        # check would call the pack stale for good. Refused here, where
+        # the author is still editing a source.
+        if "/" in thing["id"] or "~" in thing["id"]:
+            raise BlueprintError(
+                f"thing id {thing['id']!r} may not hold / or ~ (it would "
+                f"be a pointer token)", f"{tbase}/id")
         if "from" in thing and (
                 not isinstance(thing["from"], str) or not thing["from"]):
             raise BlueprintError(

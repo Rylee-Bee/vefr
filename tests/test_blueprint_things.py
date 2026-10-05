@@ -400,6 +400,35 @@ def test_a_hand_items_entry_with_the_same_id_is_refused(tmp_path):
     assert "shell" in str(err)
 
 
+@pytest.mark.parametrize("tid", ["a/b", "a~b"])
+def test_a_thing_id_holding_a_pointer_token_is_refused(tid, tmp_path):
+    """A thing's id becomes a JSON pointer token (`/items/<id>`), and the
+    writer stores the token as it stands rather than un-escaping it: an
+    id holding `/` or `~` would bake an entry under a name nothing can
+    read back, and the next `vefr check` would call the pack stale
+    forever. A plain id is refused at the reader instead, one sentence
+    and a pointer, where the author can see it."""
+    err = _refuse(tmp_path, {"id": tid, "from": "b1",
+                             "name": "a smooth pebble"})
+    assert err.pointer == "/things/0/id"
+    assert tid in str(err)
+    assert "pointer token" in str(err)
+
+
+@pytest.mark.parametrize("tid", ["a/b", "a~b"])
+def test_a_thing_id_holding_a_pointer_token_never_reaches_a_pack(tid, tmp_path):
+    """The guard above is the reader's, so a refresh refuses the source
+    before it writes: no `items` entry appears under the escaped name
+    and the pack is left as it was found."""
+    pack = _pack(tmp_path, blueprint=_source([{"id": tid, "from": "b1",
+                                               "name": "a smooth pebble"}]))
+    before = (pack / "world.json").read_bytes()
+    rc, out = vefr("normalize", "--pack", pack, "--out", pack)
+    assert rc != 0
+    assert "pointer token" in out
+    assert (pack / "world.json").read_bytes() == before
+
+
 def test_an_unknown_thing_key_is_one_plain_sentence_naming_the_field(tmp_path):
     """The closed set is a promise a reader can check without a pack, so
     the refusal is the reader's, before any file is read."""

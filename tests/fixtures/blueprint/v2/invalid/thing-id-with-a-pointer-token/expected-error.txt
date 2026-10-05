@@ -1,0 +1,2 @@
+pointer token
+/things/0/id
