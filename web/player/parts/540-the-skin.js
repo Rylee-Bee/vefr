@@ -309,15 +309,20 @@ function applySkin() {
       }
     });
   }
-  // The small tool buttons' tooltip. The words are the button's own and the
-  // native title's; the picture is the skin's plate that says "there is more
-  // here", drawn for the keyboard exactly as it is for the pointer.
+  // The small tool buttons' tooltip. It says what the button does: the words
+  // come out of the shell's own `data-tip` (the same word the button's
+  // screen-reader text carries, without the key letter the kbd chip already
+  // shows), and the picture is the skin's plate behind them. Drawn for the
+  // keyboard on focus exactly as it is for the pointer on hover. The dark
+  // base and the light ink under the picture are the player's own button
+  // face, so the words stay readable if the picture is missing.
   var tip = parts.tooltip;
   if (tip && tip.file) {
     css += '.gbtn--tool[title]:hover::after, .gbtn--tool[title]:focus-visible::after {'
-      + ' content: ""; position: absolute; left: 50%; bottom: -7px;'
+      + ' content: attr(data-tip); position: absolute; left: 50%; bottom: -7px;'
       + ' transform: translateX(-50%); padding: 6px 10px; border-radius: 3px;'
-      + ' pointer-events: none;'
+      + ' white-space: nowrap; pointer-events: none;'
+      + ' color: #F4EEDD; background-color: #15181D;'
       + plate(tip.file) + ' }\n';
   }
   var speech = parts.speech;

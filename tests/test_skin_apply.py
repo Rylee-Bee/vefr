@@ -397,6 +397,34 @@ def test_the_tooltip_paints_the_tool_buttons_that_carry_a_title(ran):
           "the tooltip picture on .gbtn--tool[title]:focus-visible")
 
 
+def test_the_tooltip_says_what_the_button_does(ran):
+    """The rule used to paint a blank plate: `content: ""` with nothing in it,
+    so the skin's tooltip was a picture with no words on it and no size. It
+    says what the button does now, out of the shell's own `data-tip`, which is
+    the same word the button already carries for a screen reader."""
+    css = ran["parts"]["css"]
+    uri = mk.picture_uri(mk.PARTS_SKIN["tooltip"]["file"])
+    rules = [(sel, body) for sel, body in _rules(css) if uri in body]
+    _need(rules, "the tooltip rule")
+    for sel, body in rules:
+        assert "content: attr(data-tip)" in body, (
+            f"{sel.strip()} paints the tooltip with no words in it")
+    tips = ran["parts"]["tips"]
+    assert len(tips) >= 4, tips
+    for button in tips:
+        assert button["tip"], f"the {button['id']} button has a title and no words to show"
+        assert button["tip"] == button["sr"], (
+            f"the {button['id']} tooltip says {button['tip']!r} and its screen-reader "
+            f"text says {button['sr']!r}")
+    # the words on the tooltip, not just on the button: the tooltip paints them
+    # on the player's own dark face, and they clear the 4.5:1 floor there.
+    ink, base = "#F4EEDD", "#15181D"
+    for _sel, body in rules:
+        assert f"color: {ink}" in body and f"background-color: {base}" in body, body
+    got = contrast(ink, base)
+    assert got >= 4.5, f"the tooltip words are {got:.2f}:1 on their own base"
+
+
 def test_the_speech_part_paints_the_speech_box_like_a_panel(ran):
     """`speech` is a nine-slice like `panel`, and the words inside it keep the
     skin's ink rather than taking a colour of their own."""

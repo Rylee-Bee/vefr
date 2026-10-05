@@ -227,6 +227,15 @@ async function report(path, contrastMore) {
   }
   r.npcBox = npc;
   r.stateRules = stateReport(w, r.css);
+  // The small tool buttons, and the words a themed tooltip can show: the
+  // native title, the data-tip the skin sheet reads, and the screen-reader
+  // text the words must agree with.
+  r.tips = [...w.document.querySelectorAll('.gbtn--tool[title]')].map((b) => ({
+    id: b.id,
+    title: b.getAttribute('title'),
+    tip: b.getAttribute('data-tip'),
+    sr: text(b.querySelector('.sr-only')),
+  }));
 
   w.close();
   return r;

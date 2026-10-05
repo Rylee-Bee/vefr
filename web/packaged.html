@@ -426,10 +426,10 @@
         </div>
         <div class="acts">
           <button type="button" id="interact" class="gbtn gbtn--main"><span id="interact-label">Interact</span> <kbd>F</kbd></button>
-          <button type="button" id="talk" class="gbtn gbtn--tool" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
-          <button type="button" id="whisper" class="gbtn gbtn--tool" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
-          <button type="button" id="bagbtn" class="gbtn gbtn--tool" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
-          <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
+          <button type="button" id="talk" class="gbtn gbtn--tool" data-tip="Talk" title="Talk (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="sr-only">Talk</span><kbd>E</kbd></button>
+          <button type="button" id="whisper" class="gbtn gbtn--tool" data-tip="Whisper" title="Whisper (Q)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9v6M9 6v12M13 9v6M17 7v10"/></svg><span class="sr-only">Whisper</span><kbd>Q</kbd></button>
+          <button type="button" id="bagbtn" class="gbtn gbtn--tool" data-tip="Bag" title="Bag (B)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 9V7a4 4 0 0 1 8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg><span class="sr-only">Bag</span><kbd>B</kbd></button>
+          <button type="button" id="explore" class="gbtn gbtn--tool" aria-pressed="false" data-tip="Explore" title="Explore (O)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="sr-only">Explore</span><kbd>O</kbd></button>
         </div>
       </div>
       <div class="npc-box" id="npc-box" role="dialog" aria-labelledby="npc-name" hidden>
@@ -7128,15 +7128,20 @@ function applySkin() {
       }
     });
   }
-  // The small tool buttons' tooltip. The words are the button's own and the
-  // native title's; the picture is the skin's plate that says "there is more
-  // here", drawn for the keyboard exactly as it is for the pointer.
+  // The small tool buttons' tooltip. It says what the button does: the words
+  // come out of the shell's own `data-tip` (the same word the button's
+  // screen-reader text carries, without the key letter the kbd chip already
+  // shows), and the picture is the skin's plate behind them. Drawn for the
+  // keyboard on focus exactly as it is for the pointer on hover. The dark
+  // base and the light ink under the picture are the player's own button
+  // face, so the words stay readable if the picture is missing.
   var tip = parts.tooltip;
   if (tip && tip.file) {
     css += '.gbtn--tool[title]:hover::after, .gbtn--tool[title]:focus-visible::after {'
-      + ' content: ""; position: absolute; left: 50%; bottom: -7px;'
+      + ' content: attr(data-tip); position: absolute; left: 50%; bottom: -7px;'
       + ' transform: translateX(-50%); padding: 6px 10px; border-radius: 3px;'
-      + ' pointer-events: none;'
+      + ' white-space: nowrap; pointer-events: none;'
+      + ' color: #F4EEDD; background-color: #15181D;'
       + plate(tip.file) + ' }\n';
   }
   var speech = parts.speech;
