@@ -18,6 +18,19 @@ def test_guide_field_tables_list_exactly_the_closed_sets():
         assert set(re.split(r",\s*", listed.pop())) == set(keys)
 
 
+def test_the_things_exit_ramp_says_what_the_code_does():
+    """`tests/test_blueprint_things.py` pins the behavior: deleting the
+    `things` list leaves the written item alone and takes the appended
+    drop back to what the source still says. A guide sentence claiming
+    the drop stays would send an author looking for a drop that is gone.
+    """
+    text = re.sub(r"\s+", " ", (ROOT / "docs" / "guides" / "blueprint.md").read_text())
+    assert "leaves every item and every drop in place" not in text
+    assert ("deleting only the `things` list leaves every written item in "
+            "place") in text
+    assert "the appended drop goes back to what the source still says" in text
+
+
 def test_glossary_and_command_docs_name_blueprint_and_normalize():
     assert "Blueprint" in (ROOT / "docs" / "guides" / "glossary.md").read_text()
     assert "normalize" in (ROOT / "docs" / "guides" / "vefr-command.md").read_text()

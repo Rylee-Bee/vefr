@@ -427,7 +427,8 @@ is a normal hand-written pack again. A place is already written in the
 hand-written shape too, glyph and all, so a pack with places leaves
 the same way. A thing is already written in the hand-written shape too,
 so a pack with things leaves the same way, and deleting only the
-`things` list leaves every item and every drop in place.
+`things` list leaves every written item in place while the appended
+drop goes back to what the source still says.
 
 ## What it will not do
 
