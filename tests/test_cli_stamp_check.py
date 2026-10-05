@@ -155,29 +155,24 @@ def test_the_placement_sentence_is_the_adrs_second_example():
 
 
 def test_a_required_room_is_told_it_needs_a_hundred_percent():
-    """Owner decision 4: the 95% bar is for optional rooms only."""
+    """Required rooms must place on every eligible floor."""
     line = stamp_check.placement_sentence(
         "throne-hall", 199, 200, "cellar", 21, 64, 100)
     assert "it needs 100%" in line
 
 
-def test_a_stamp_under_its_bar_is_reported_and_one_over_it_is_not():
-    """The bar is the rule, and it is a ratio and not a printed number.
-
-    171/200 prints as 85, which is under 95 either way; 189/200 prints
-    as 94 and is still over 95, which a rounded comparison would have
-    failed.
-    """
+def test_the_bar_is_a_ratio_for_a_required_room():
+    """171/200 of a required room is reported; 200/200 is not."""
     below = stamp_check.rate_findings(
         {"a": {"placed": 171, "eligible": 200, "sections": ["cellar"],
                "width": 15, "min_width": 64}},
-        {"a": {"role": "filler"}})
+        {"a": {"role": "warden-hall"}})
     assert len(below) == 1
     assert "placed on 171 of 200" in below[0]
     assert stamp_check.rate_findings(
-        {"a": {"placed": 189, "eligible": 200, "sections": ["cellar"],
+        {"a": {"placed": 200, "eligible": 200, "sections": ["cellar"],
                "width": 15, "min_width": 64}},
-        {"a": {"role": "filler"}}) == []
+        {"a": {"role": "warden-hall"}}) == []
 
 
 def test_a_required_room_below_a_hundred_percent_is_reported():
@@ -191,14 +186,14 @@ def test_a_required_room_below_a_hundred_percent_is_reported():
     assert "it needs 100%" in findings[0]
 
 
-def test_an_optional_room_under_its_bar_is_reported_and_above_it_is_not():
-    """Optional stamps may be rare on purpose, but not below the bar."""
-    for placed, expected in ((95, 0), (94, 1)):
-        findings = stamp_check.rate_findings(
+def test_an_optional_room_has_no_minimum():
+    """Owner decision 4 (confirmed by Rylee 2026-10-04): optional rooms may be
+    rare on purpose, so no placement rate ever fails the check."""
+    for placed in (0, 1, 50, 94, 100):
+        assert stamp_check.rate_findings(
             {"a": {"placed": placed, "eligible": 100, "sections": ["cellar"],
                    "width": 5, "min_width": 64}},
-            {"a": {"role": "filler"}})
-        assert len(findings) == expected
+            {"a": {"role": "filler"}}) == []
 
 
 def test_a_stamp_no_section_can_use_is_not_measured():

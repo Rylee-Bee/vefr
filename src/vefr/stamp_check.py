@@ -9,8 +9,8 @@ ADR 0013's Validation section, in four parts:
   would only find out over a hundred silent sweeps.
 - **sweep** - lay the pack's floors and count how often each stamp came
   out. Required roles have to be on every floor they are eligible for;
-  optional ones may be rare on purpose (owner decision 4) but not below
-  95%.
+  optional ones may be rare on purpose and have no minimum (owner
+  decision 4); the sweep only reports how often they place.
 - **graph** - read a floor back and complain about a stamped room with
   no door in use, or with an anchor the hero cannot walk to.
 
@@ -34,7 +34,6 @@ from . import stamps
 # problems reach the same function.
 __all__ = [
     "stamps",
-    "OPTIONAL_BAR",
     "REQUIRED_BAR",
     "FIT_SHARE",
     "SEED_PREFIX",
@@ -49,10 +48,10 @@ __all__ = [
     "report",
 ]
 
-# The two bars of the sweep. A required role is on every floor or the
-# check fails (ADR 0013, Validation; owner decision 4), and an optional
-# stamp is allowed to be rare on purpose but not to be rarer than this.
-OPTIONAL_BAR = 95
+# The sweep's bar. A required role is on every floor it is eligible for or the
+# check fails (ADR 0013, Validation). Optional rooms have no minimum: they may be
+# rare on purpose (owner decision 4, confirmed by Rylee 2026-10-04); the sweep
+# only reports how often they place.
 REQUIRED_BAR = 100
 
 # A required room has to be at most a third of the small side of the
@@ -148,8 +147,8 @@ def rate_findings(stats: dict, records: dict) -> list[str]:
     `stats` is what the sweep counted - `placed`, `eligible`, the
     Sections the stamp was eligible in, its width and the smallest of
     those Sections' widths. `records` is what the reader made, keyed the
-    same way, and only its `role` is read: the bar is 100% for the
-    required roles and 95% for the rest (owner decision 4).
+    same way, and only its `role` is read: required roles must place on
+    every eligible floor; optional roles have no minimum (owner decision 4).
 
     A stamp no Section can use is not measured. A rate over zero
     eligible floors is not a rate, and printing 0% for a room nobody
@@ -162,7 +161,9 @@ def rate_findings(stats: dict, records: dict) -> list[str]:
         if eligible <= 0:
             continue
         role = (records.get(name) or {}).get("role", "")
-        bar = REQUIRED_BAR if role in stamps.REQUIRED_ROLES else OPTIONAL_BAR
+        if role not in stamps.REQUIRED_ROLES:
+            continue   # owner decision 4: optional rooms may be rare on purpose; no minimum
+        bar = REQUIRED_BAR
         if _meets(int(entry.get("placed", 0) or 0), eligible, bar):
             continue
         sections = list(entry.get("sections") or [])
