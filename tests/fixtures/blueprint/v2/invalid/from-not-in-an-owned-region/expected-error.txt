@@ -1,0 +1,2 @@
+blueprint owns
+/things/0/from

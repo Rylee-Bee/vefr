@@ -1,0 +1,13 @@
+{
+  "blueprint": 2,
+  "regions": {
+    "act-1/cave-2": {
+      "things": [
+        {
+          "id": "pebble",
+          "name": "a smooth pebble"
+        }
+      ]
+    }
+  }
+}

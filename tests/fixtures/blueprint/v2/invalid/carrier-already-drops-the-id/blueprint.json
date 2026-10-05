@@ -1,0 +1,40 @@
+{
+  "blueprint": 2,
+  "families": {
+    "beetle": {
+      "defaults": {
+        "name": "a beetle",
+        "sprite": "beetle",
+        "hp": 3,
+        "atk": 1
+      }
+    }
+  },
+  "regions": {
+    "act-1/cave-2": {
+      "enemies": [
+        {
+          "id": "b2",
+          "family": "beetle",
+          "at": [
+            6,
+            4
+          ],
+          "properties": {
+            "drops": [
+              "shell",
+              "pebble"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "things": [
+    {
+      "id": "pebble",
+      "from": "b2",
+      "name": "a smooth pebble"
+    }
+  ]
+}

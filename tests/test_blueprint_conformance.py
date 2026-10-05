@@ -57,8 +57,8 @@ def test_flat_shape_pack_is_refused(tmp_path):
 def test_reader_registry_and_closed_sets():
     from vefr import blueprint
 
-    assert set(blueprint.READERS) == {1, 3}
-    assert blueprint.TOP_KEYS == {"blueprint", "families", "regions"}
+    assert set(blueprint.READERS) == {1, 2, 3}
+    assert blueprint.TOP_KEYS == {"blueprint", "families", "regions", "things"}
     assert blueprint.FAMILY_KEYS == {"defaults", "extends"}
     assert blueprint.FIELD_KEYS == {"name", "sprite", "hp", "atk", "xp", "sight", "drops"}
     assert blueprint.REGION_KEYS == {"enemies", "places"}

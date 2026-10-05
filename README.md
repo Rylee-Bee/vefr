@@ -4,11 +4,11 @@
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml/badge.svg)](https://github.com/Rylee-Bee/vefr/actions/workflows/ci.yml)
 
-> **Successor note (2026-09-28):** VEFR is where the retiring `norn` engine is
-> being folded in as a story pack, and where that engine's packs are being
-> ported. The owner's ruling on the predecessor is in
-> [`.project/DECISIONS.md`](.project/DECISIONS.md) (2026-09-25); its retirement
-> notice lives in its `README.md` on `origin/wip/norn-journey`.
+> **Project boundary (2026-10-04):** VEFR is the engine/studio. Games remain
+> separate game projects and repositories that VEFR loads through the world-pack
+> contract. Historical predecessor-engine lineage does not make a game a
+> predecessor, and engine consolidation does not retire a game. See
+> [`.project/DECISIONS.md`](.project/DECISIONS.md).
 
 > *The loom is strung; the world provides the thread.*
 
