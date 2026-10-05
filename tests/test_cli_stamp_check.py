@@ -325,24 +325,36 @@ def test_a_placed_room_with_no_door_in_use_is_reported():
     assert findings[0].startswith("stamp test-alcove: placed at 1,1 with no door in use")
 
 
-def test_a_room_whose_anchor_is_behind_a_secret_is_reported():
+def test_a_vault_behind_a_secret_is_reported():
     """Graph check 3: secrets count as passable, except to warden and vault.
 
-    A chest you can only reach by opening a secret is a secret, not a
-    chest, and the warden behind one is a floor the player cannot
-    finish.
+    The vault's own door at 3,3 is an ordinary socket, but the only way
+    to it from up is the secret at 3,2: a vault the hero can only reach
+    by finding a wall is a promise the floor did not keep.
     """
     plan = _floor(
+        ["#######", "#.u...#", "###.###", "###+###", "#.....#", "#######"],
+        {"up": [2, 1], "down": [5, 1]},
+        [{"id": "test-vault", "role": "vault", "room": 0, "at": [1, 4],
+          "size": [5, 1], "orientation": 0, "socket": [3, 3],
+          "anchors": {"chest": [1, 4]}}],
+        secrets=[[3, 2]])
+    findings = stamp_check.graph_findings(plan)
+    assert len(findings) == 1
+    assert ("stamp test-vault: its chest at 1,4 cannot be reached from up "
+            "without opening a secret") in findings[0]
+
+
+def test_a_chest_behind_its_own_rooms_secret_is_not_reported():
+    """A chest is not owed: past a secret it is the reward for finding it."""
+    plan = _floor(
         ["#######", "#.....#", "###.###", "#.....#", "#######"],
-        {"up": [3, 1], "down": [3, 3], "warden": [1, 1], "chest": None},
+        {"up": [3, 1], "down": [3, 3]},
         [{"id": "test-alcove", "role": "landmark", "room": 0, "at": [1, 3],
           "size": [5, 1], "orientation": 0, "socket": [3, 2],
           "anchors": {"chest": [1, 3]}}],
         secrets=[[3, 2]])
-    findings = stamp_check.graph_findings(plan)
-    assert len(findings) == 1
-    assert ("stamp test-alcove: its chest at 1,3 cannot be reached from up "
-            "without opening a secret") in findings[0]
+    assert stamp_check.graph_findings(plan) == []
 
 
 def test_a_room_whose_warden_is_behind_a_secret_is_reported():
@@ -370,16 +382,14 @@ def test_a_room_reached_the_ordinary_way_is_not_reported():
     assert stamp_check.graph_findings(plan) == []
 
 
-def test_a_room_behind_another_rooms_secret_is_not_reported():
-    """Only the room's own secret is closed to that room's walk.
+def test_a_warden_behind_another_rooms_secret_is_reported():
+    """The warden is owed to the hero: no secret on the floor opens its way.
 
     The up-corridor runs along the top and the only way down to the
     hall is the secret at 3,2 - a secret that belongs to some other room
-    on this floor, not to this one. The hall has its own ordinary socket
-    at 7,2 and its warden is standing in it, so the hero walks in
-    through a door the author drew; holding the room to a wall it does
-    not own is how a pack full of secrets ends up with every room on the
-    floor reported.
+    on this floor. ADR 0013 (Graph) counts secrets as passable except on
+    the route to the warden or to the vault door, so the hall is
+    reported even though its own socket at 7,2 is an ordinary door.
     """
     plan = _floor(
         ["##########", "#....u####", "###.###+##", "#........#", "##########"],
@@ -387,6 +397,25 @@ def test_a_room_behind_another_rooms_secret_is_not_reported():
         [{"id": "test-hall", "role": "warden-hall", "room": 0, "at": [6, 2],
           "size": [3, 1], "orientation": 0, "socket": [7, 2],
           "anchors": {"warden": [7, 3]}}],
+        secrets=[[3, 2]])
+    found = stamp_check.graph_findings(plan)
+    assert any("test-hall" in line and "without opening a secret" in line
+               for line in found), found
+
+
+def test_a_chest_behind_another_rooms_secret_is_not_reported():
+    """Only the warden and the vault are held to the secret rule.
+
+    The same floor, but the room is a `special` with a chest: a chest
+    past a wall the hero has to find is the reward for finding it, so
+    the secret at 3,2 counts as passable and nothing is reported.
+    """
+    plan = _floor(
+        ["##########", "#....u####", "###.###+##", "#........#", "##########"],
+        {"up": [5, 1], "down": [1, 3]},
+        [{"id": "test-alcove", "role": "special", "room": 0, "at": [6, 2],
+          "size": [3, 1], "orientation": 0, "socket": [7, 2],
+          "anchors": {"chest": [7, 3]}}],
         secrets=[[3, 2]])
     assert stamp_check.graph_findings(plan) == []
 
