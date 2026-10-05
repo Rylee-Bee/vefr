@@ -68,10 +68,12 @@ A future family key (`moves`, `wakes`) is format 2: a `read_v2` reader, fixtures
 
 **Placement.** A leader stands on a reachable tile at least 7 (`STAIR_CLEAR`) from both stairs, never in a vault, hall or secret room. Minions stand within Chebyshev 2 of the leader, in the same room or corridor region.
 
-**Draw order.** This is appended to the stage's numbered comment.
-1. Elite count. Then, per elite: family, affix, tile.
-2. Group count. Then, per group: minion count, leader family (and affix if the leader is elite), leader tile, then each minion's family (only when `same_family` is false) and tile.
-3. Randoms.
+**Draw order.** This is appended to the stage's numbered comment. It is the order of the DRAWS, and only of the draws: a tile is placed, not drawn, and the placement happens FIRST.
+1. Elite count. Then, per elite: the family, the affix, and the tile - the tile placed before the family and the affix, so a monster with nowhere to stand spends neither.
+2. Group count. Then, per group: the minion count, the leader's family, the leader's affix (only when the leader is elite), the leader's tile, then each minion's family (only when `same_family` is false) and its tile - both tiles placed before the draw that names the monster standing on them.
+3. Randoms. Then, per random: the family, then the tile, with the tile placed first on the same rule.
+
+A placement costs no draw, so a monster that is never placed costs nothing: no family, no affix, and every chest count and chest table after it stays where the floor key says they are. The three count draws are the exception and stay ahead of every tile in their own list - the elite count, the group count, and each group's minion count - because a count is a statement of its own: it is drawn whether or not the loop it opens goes on to place anything, so a pack that asks for a count and cannot place one of them still spends the count. A draw that never happens cannot be out of order.
 
 Monster ids are `m<n>` in draw order, and groups are `g<n>`.
 
