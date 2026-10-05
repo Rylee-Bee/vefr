@@ -11,6 +11,12 @@ ADR 0014, "Leash":
     until it is within one tile of home, then idles awake;
   - a lone monster and an elite keep today's behaviour exactly.
 
+And one monster the leash does not hold at all: the warden. ADR 0014's
+owner decision 2 makes it hunt the hero, and a spawn may carry a warden
+mark and a `group` at once. The warden rule wins there, which is what
+section 4 is for; without it a warded hall whose warden also belongs to a
+group sat at home and never came.
+
 The leash is measured by WALKING distance, not by the straight line,
 so the fixtures here use one big open room where the two agree and
 every number can be read off the map: 30x11, the hero in the corner
@@ -107,6 +113,31 @@ READS = [
     "VEFR_COMBAT.enemies.1.at", "VEFR_COMBAT.minds.1.awake",
     "VEFR_COMBAT.enemies.2.at", "VEFR_COMBAT.minds.2.awake",
     "text:#combat-live",
+]
+
+# A warden that ALSO carries a group, which is the one record the ADR
+# gives two rules at once. It is a warden (ADR 0014, owner decision 2 of
+# 2026-10-04: awake, and it hunts the hero) and it is a member (a group
+# id, so it has a home and a leash of three tiles from it). The two
+# answers are different and the fixture is built so one turn can only be
+# one of them:
+#
+#   hunts   -> walks WEST, one tile at the hero, out of its own home
+#   leashed -> walks HOME, which is the tile it already stands on, and
+#              holds there while the hero is out of its sight
+#
+# The group is "g3" and the warden is its only member, so home is the
+# lowest-sorted living id - its own spawn tile at [12, 1] - and the leash
+# is a real leash, exactly as it is for the groups above. The second
+# monster is an ordinary sleeper twelve tiles out: awake-on-nothing, and
+# the only thing a monster out of the hero's sight would otherwise drift
+# toward.
+WARDEN_IN_A_GROUP = [
+    {"id": "hall-warden", "name": "the hall warden", "at": [12, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat",
+     "warden": True, "group": "g3", "leash": LEASH},
+    {"id": "hall-guard", "name": "a hall guard", "at": [14, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat"},
 ]
 
 
@@ -310,3 +341,46 @@ def test_a_lone_monster_is_neither_leashed_nor_sent_home(tmp_path):
     assert reads["VEFR_COMBAT.minds.1.awake"] is True
     assert reads["VEFR_COMBAT.enemies.1.at"] == [23, 1], \
         "an awake monster with its ally in the way holds its tile"
+
+
+# ---- 4. the warden, which is not leashed ----
+
+def test_a_warden_that_carries_a_group_still_hunts_the_hero(tmp_path):
+    """The warden rule wins over the leash (ADR 0014, owner decision 2).
+
+    `enemyAct` used to ask the leash first, so a spawn carrying both a
+    `warden` mark and a `group` never hunted at all: the hero out of its
+    sight sent it home, and the hero inside it held it on the line. The
+    ADR gives those two rules one answer, and the warden is the one that
+    wins - it is the one thing on the floor with a hall to sit in and the
+    hero to find, and a leash is a promise about a wandering mob.
+
+    The hero ends at [2, 1], ten tiles from the warden: awake, because
+    ten is the default wake radius, and out of the warden's sight of six.
+    So the turn is either a step WEST at the hero, from [12, 1] to
+    [11, 1], or `stepHome` onto the tile the warden already stands on.
+    Four turns later the hero is at [5, 1] and the warden is four tiles
+    past its own home: a leash cannot be four tiles past its home, and
+    the guard beside it has not woken, so the drift toward a neighbour
+    cannot be what moved it either.
+    """
+    html = weave(open_room(tmp_path, WARDEN_IN_A_GROUP), tmp_path)
+    out = play(html, {"steps": ["begin", "walk:right"], "read": READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.hero.at"] == [2, 1]
+    assert reads["VEFR_COMBAT.minds.0.awake"] is True, \
+        "the warden is awake whatever else it is"
+    assert reads["VEFR_COMBAT.enemies.0.at"] == [11, 1], \
+        "a warden with a group walks at the hero, not home: it is already " \
+        "on its own home tile, so a leash would have it standing still"
+    assert reads["VEFR_COMBAT.minds.1.awake"] is False, \
+        "the guard is an ordinary sleeper and is not what moved the warden"
+    out = play(html, {"steps": ["begin", "walk:right", "walk:right",
+                                "walk:right", "walk:right"], "read": READS})
+    assert out["errors"] == []
+    reads = out["reads"]
+    assert reads["VEFR_COMBAT.hero.at"] == [5, 1]
+    assert reads["VEFR_COMBAT.enemies.0.at"] == [8, 1], \
+        "it keeps hunting: four tiles past its home, which no leash allows"
+    assert steps_from_home(reads["VEFR_COMBAT.enemies.0.at"], [12, 1]) == 4

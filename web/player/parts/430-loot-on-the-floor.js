@@ -225,9 +225,25 @@
   // A member of a group is held to its leash instead: it never steps
   // past its home's line, on the line it fights from where it stands,
   // and with the hero out of sight it walks home and idles there awake.
+  //
+  // The warden is asked BEFORE the leash, because a warden that also
+  // carries a `group` is a warden and a member at once, and the ADR
+  // gives the two rules one answer between them: it hunts. A leash
+  // member walks home when it loses the hero and holds on its line when
+  // it is badly hurt, and a warden does neither - it is the one thing on
+  // the floor with a hall to sit in and the hero to find. So the leash
+  // branch below is only ever reached by a monster that is not a warden,
+  // and a warden with a group walks out of its own home the same way it
+  // walks out of its hall.
   function enemyAct(e, maps) {
     var d = manhattan(e.at[0], e.at[1], hero[0], hero[1]);
     if (d === 1) return enemyAttack(e);
+    if (isWarden(e)) {
+      if (d <= e.sight && badlyHurt(e)) {
+        return stepAlong(e, distances(maps, hero[0], hero[1]), -1);
+      }
+      return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
+    }
     var leash = leashOf(e);
     if (leash) {
       if (d > e.sight) return stepHome(e, leash);
@@ -241,7 +257,6 @@
       if (badlyHurt(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), -1);
       return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
     }
-    if (isWarden(e)) return stepAlong(e, distances(maps, hero[0], hero[1]), 1);
     var ally = nearestAlly(e, maps);
     if (!ally) return false;
     return stepAlong(e, distances(maps, ally.at[0], ally.at[1]), 1);
