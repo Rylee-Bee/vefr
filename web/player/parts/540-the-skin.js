@@ -346,9 +346,12 @@ function applySkin() {
     // flex item: it would take a row of the head's own wrap instead of
     // drawing a line under it. A border-image never joins the flow, and the
     // player's own edge colour is under the picture in case it is missing.
+    // The slice gives the whole picture to the bottom edge (top, right and
+    // left slices 0, bottom 100%) and the width puts it in the 8 px border
+    // only, with no `fill`, so the picture never paints the head's face.
     css += 'header.game-head { border-bottom: 8px solid var(--card-edge);'
-      + ' border-image: url(' + divider.file + ') 0 fill'
-      + ' / 100% 100% / 0 stretch; }\n';
+      + ' border-image: url(' + divider.file + ') 0 0 100% 0'
+      + ' / 0 0 8px 0 / 0 stretch; }\n';
   }
   var banner = parts.banner;
   if (banner && banner.file) {

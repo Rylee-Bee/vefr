@@ -463,6 +463,21 @@ def test_the_divider_does_not_take_part_in_the_headers_flex_flow(ran):
                 f"{sel.strip()} draws the divider in the header's flex flow")
 
 
+def test_the_divider_is_drawn_in_the_bottom_border_only(ran):
+    """On the head itself, a border-image with `fill` (or a slice that gives
+    the picture to the middle) would paint the divider over the whole head.
+    The picture belongs to the bottom edge: no `fill`, and the border-image
+    width is the bottom one alone."""
+    uri = mk.picture_uri(mk.PARTS_SKIN["divider"]["file"])
+    rules = [body for sel, body in _rules(ran["parts"]["css"])
+             if uri in body and "game-head" in sel and "::" not in sel]
+    _need(rules, "the divider on header.game-head")
+    for body in rules:
+        assert " fill" not in body, "the divider fills the game head's face"
+        assert "0 0 100% 0" in body and "0 0 8px 0" in body, (
+            "the divider is not sliced to the head's bottom edge")
+
+
 def test_the_banner_paints_the_messages_and_leaves_the_map_alone(ran):
     """`banner` is the message panel. It is a picture behind the messages; it
     must not repaint the map canvas or the HUD frame that sit on the map."""
