@@ -62,6 +62,36 @@ packaged file both work offline from the first byte.
 - Declared for the workshop in `web/studio.css` (2026-09-25; before
   that the workshop never loaded it and fell back to Georgia).
 
+## Crimson Pro (the reading face a skin may choose)
+
+- Upstream project: The Crimson Pro Project Authors,
+  https://github.com/Fonthausen/CrimsonPro. That is the name written
+  into the font itself (name ID 0: "Copyright 2018 The Crimson Pro
+  Project Authors (https://github.com/Fonthausen/CrimsonPro)") and
+  into the license beside it.
+- Vendored from: Fontsource, npm `@fontsource-variable/crimson-pro`
+  version 5.3.0, file `files/crimson-pro-latin-wght-normal.woff2`,
+  2026-10-04. That file is byte-for-byte the one in this folder:
+  sha256 `20ce4189b9e41b3439a2a36dd63deff44b6d91182532202cb96b65521b4a3c23`
+  (48200 bytes). To re-vendor: `npm pack @fontsource-variable/crimson-pro@5.3.0`
+  and copy that one file.
+- License: SIL Open Font License 1.1, which is what Fontsource's
+  metadata declares (`OFL-1.1`) and what the bundled OFL text is.
+  Kept beside the file as `CrimsonPro-OFL.txt`: Fontsource's `LICENSE`
+  for the package, with its duplicated Italic copyright line removed.
+  The binary's name ID 14 also points at the license
+  (https://scripts.sil.org/OFL).
+- Web file needed: `CrimsonPro-Variable.woff2` (one variable file,
+  weights 200-900)
+- Family version in the file: 1.003, "Crimson Pro Regular"
+  (name IDs 5 and 6), 1000 upem, one `wght` axis 200-900.
+- Vendored: 2026-10-04.
+- Used by: the woven player (`src/vefr/cli.py`, `_PLAYER_FONTS`), so a
+  skin can name it and the type is there offline. Cinzel, Atkinson
+  Hyperlegible Next and Crimson Pro are the whole menu a skin may
+  choose from: `SKIN_FONTS` in `src/vefr/maplab.py` is the list the
+  validator checks against.
+
 ## Install
 
 The exact filenames above are what `web/index.html`'s

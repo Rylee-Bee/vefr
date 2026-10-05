@@ -5,11 +5,64 @@
 // has-skin class. No skin (null) means no element, no class, no change.
 // The whole sheet sits behind a media guard, so high contrast and forced
 // colours keep the plain flat player (rules 3 and 4).
+//
+// Two more optional things a skin may name, both from
+// docs/plans/interface/PLAN.md: `backdrop`, the seamless picture the ground
+// outside the drawn map takes (painted on the canvas, in 480, once the
+// picture has decoded), and `fonts`, the display and body families the
+// engine bundles. A skin with neither plays exactly as it did.
+var SKIN_FONT_STACKS = {
+  'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
+  'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  'Crimson Pro': "'Crimson Pro', Georgia, 'Times New Roman', serif"
+};
+
+// Whether this person asked for the plain flat style instead of a skin's
+// pictures (rule 4). Read when the ground is set, and again when the
+// setting changes while the game is open.
+function plainStyle() {
+  if (!window.matchMedia) return false;
+  return !!(window.matchMedia('(prefers-contrast: more)').matches
+    || window.matchMedia('(forced-colors: active)').matches);
+}
+// The map repaints itself on the next step, but a picture that arrives late
+// should not wait for one.
+function redrawGround() {
+  if (typeof window.VEFR_REDRAW === 'function') window.VEFR_REDRAW();
+}
+// The ground the skin asks for, or none: the picture only when the person
+// has not asked for the plain flat style. The map is redrawn when it lands.
+function loadBackdrop(skin) {
+  var url = (skin && skin.backdrop && !plainStyle()) ? skin.backdrop : null;
+  window.VEFR_BACKDROP_URL = url;
+  if (!url) { window.VEFR_BACKDROP = null; return; }
+  var probe = new Image();
+  probe.onload = function () { window.VEFR_BACKDROP = probe; redrawGround(); };
+  probe.onerror = function () { window.VEFR_BACKDROP = null; };   // the flat ground stays
+  probe.src = url;
+}
+// The setting can change while the game is open; the ground follows it.
+function watchPlainStyle(skin) {
+  ['(prefers-contrast: more)', '(forced-colors: active)'].forEach(function (q) {
+    var mq = window.matchMedia && window.matchMedia(q);
+    if (mq && mq.addEventListener) {
+      mq.addEventListener('change', function () { loadBackdrop(skin); redrawGround(); });
+    }
+  });
+}
+function skinFontStack(family) {
+  return (typeof family === 'string'
+    && Object.prototype.hasOwnProperty.call(SKIN_FONT_STACKS, family))
+    ? SKIN_FONT_STACKS[family] : null;
+}
+
 function applySkin() {
   var skin = window.VEFR_SKIN;
   if (!skin || typeof skin !== 'object') return;
   var parts = skin.parts || {};
   var ink = skin.ink || {};
+  loadBackdrop(skin);
+  watchPlainStyle(skin);
 
   // The flat ground behind a panel's own centre: dark ink wants a light
   // ground, so the words stay readable if the picture does not cover it.
@@ -48,6 +101,14 @@ function applySkin() {
   }
 
   var css = '';
+  // The type, when the skin chooses it: the player's own two variables, so
+  // every rule already written reaches the new family. Only a family the
+  // engine bundles has a stack here, and the same list is what the
+  // validator accepts (maplab.SKIN_FONTS).
+  var fonts = skin.fonts || {};
+  var show = skinFontStack(fonts.display), read = skinFontStack(fonts.body);
+  if (show) css += ':root { --display: ' + show + '; }\n';
+  if (read) css += ':root { --read: ' + read + '; }\n';
   var panel = parts.panel;
   if (panel && panel.file) {
     css += '.glass, #npc-box, #reader .reader-card, #trade .reader-card, #menu .carved {'
