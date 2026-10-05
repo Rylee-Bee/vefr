@@ -6,6 +6,7 @@ woven file as data URIs (`window.VEFR_SKIN`); a pack with no skin bakes `window.
 """
 
 import copy
+import hashlib
 import json
 import re
 import sys
@@ -60,6 +61,83 @@ def test_a_bad_skin_is_named(tmp_path, mutate, needles):
     assert has(errors(mk.build(tmp_path, skin=skin, files=files)), *needles), needles
 
 
+# ---- the backdrop (docs/plans/interface/PLAN.md, slice 2) ----
+# An optional top-level `"backdrop": "<picture>"`: the seamless picture the
+# ground outside the drawn map takes. A skin without one plays as before.
+
+
+def test_a_good_backdrop_validates_and_bakes_as_a_data_uri(tmp_path):
+    skin = copy.deepcopy(mk.SKIN)
+    skin["backdrop"] = "table.png"
+    files = dict(mk.FILES, **{"table.png": (128, 128)})
+    pack = mk.build(tmp_path, skin=skin, files=files)
+    assert errors(pack) == []
+    baked = json.loads(_baked(cli.weave_html(pack)))
+    assert baked["backdrop"].startswith("data:image/png;base64,")
+
+
+def test_a_skin_without_a_backdrop_is_untouched(tmp_path):
+    pack = mk.build(tmp_path)
+    assert errors(pack) == []
+    assert "backdrop" not in json.loads(_baked(cli.weave_html(pack)))
+
+
+@pytest.mark.parametrize("backdrop,needles", [
+    ("table.gif", ("backdrop", ".gif")),
+    ("table.png", ("backdrop",)),          # named, but not in the skin folder
+    ("", ("backdrop",)),
+    (7, ("backdrop",)),
+])
+def test_a_bad_backdrop_is_named(tmp_path, backdrop, needles):
+    """Every picture named is checked here, so the table the ground takes is
+    checked too: it has to be a real png or webp, in the skin folder."""
+    skin = copy.deepcopy(mk.SKIN)
+    skin["backdrop"] = backdrop
+    files = dict(mk.FILES)          # no table.png: the only pictures are the parts'
+    assert has(errors(mk.build(tmp_path, skin=skin, files=files)), *needles), backdrop
+
+
+def test_a_backdrop_of_the_right_suffix_but_the_wrong_size_is_named(tmp_path):
+    skin = copy.deepcopy(mk.SKIN)
+    skin["backdrop"] = "table.png"
+    files = dict(mk.FILES, **{"table.png": (128, 128)})
+    pack = mk.build(tmp_path, skin=skin, files=files)
+    (pack / "skins" / "test-skin" / "table.png").write_bytes(
+        b"\x89PNG\r\n\x1a\n" + b"0" * 400_000)
+    assert has(errors(pack), "table.png", "big")
+
+
+def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
+    skin = copy.deepcopy(mk.SKIN)
+    skin["backdrop"] = "../outside.png"
+    assert has(errors(mk.build(tmp_path, skin=skin)), "backdrop")
+
+
+# The digest rule 6 of docs/plans/interface/PLAN.md is about, pinned so a
+# skin change can never move a pack that names no skin. It moves when the
+# engine's own player code or the bundled fonts move - the player template is
+# woven into every pack, skinned or not - and never because of a skin. To
+# refresh it, and to say in the commit message why it moved:
+#   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
+#     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
+NO_SKIN_WEAVE_SHA256 = "9c0dc563270558cf6e45a1bdcb2faf4ac1bf132c0626ca453ba6b212c81799ba"
+
+
+def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():
+    """Rule 6: a pack with no skin carries no skin, backdrop or font data, and
+    weaves the same bytes every time (the digest is deterministic)."""
+    pack = ROOT / "worlds" / "sample-world"
+    first, second = cli.weave_html(pack), cli.weave_html(pack)
+    assert first == second, "the weave of a pack with no skin is not deterministic"
+    assert hashlib.sha256(first.encode()).hexdigest() == NO_SKIN_WEAVE_SHA256, (
+        "the weave of a pack with no skin changed; nothing in this slice may "
+        "change it, and the comment above the constant says how to refresh it")
+    assert _baked(first) == "null"
+    # Nothing the skin contract reads is baked for a pack that names no skin.
+    skin_line = re.search(r"window\.VEFR_SKIN = .*", first).group(0)
+    assert len(skin_line) < 40 and "data:" not in skin_line
+
+
 def test_a_missing_skin_json_or_folder(tmp_path):
     pack = mk.build(tmp_path)
     (pack / "skins" / "test-skin" / "skin.json").unlink()
@@ -105,3 +183,84 @@ def test_the_bake_carries_a_skin_as_data_uris(tmp_path):
 def test_a_pack_with_no_skin_bakes_null():
     html = cli.weave_html(ROOT / "worlds" / "sample-world")
     assert _baked(html) == "null"
+
+
+# ---- the type a skin chooses (docs/plans/interface/PLAN.md, slice 3) ----
+# An optional `"fonts": {"display": ..., "body": ...}`, each a family the
+# engine bundles. The engine ships the woff2, so a name a player cannot
+# render is a plain sentence, not a silent fallback.
+
+
+def test_a_good_font_choice_validates_and_bakes(tmp_path):
+    skin = copy.deepcopy(mk.SKIN)
+    skin["fonts"] = {"display": "Cinzel", "body": "Crimson Pro"}
+    pack = mk.build(tmp_path, skin=skin)
+    assert errors(pack) == []
+    woven = cli.weave_html(pack)
+    assert json.loads(_baked(woven))["fonts"] == skin["fonts"]
+    # The named family is inlined, so the chosen type is there offline.
+    assert "font-family: 'Crimson Pro'" in woven
+    # And a pack with no skin pays nothing for a font it cannot name: the
+    # two the player itself uses ride along, the third does not.
+    plain = cli.weave_html(ROOT / "worlds" / "sample-world")
+    assert "font-family: 'Crimson Pro'" not in plain
+    assert "font-family: 'Cinzel'" in plain
+    assert "font-family: 'Atkinson Hyperlegible Next'" in plain
+
+
+@pytest.mark.parametrize("fonts,needles", [
+    ({"display": "Papyrus"}, ("fonts", "display", "Papyrus")),
+    ({"body": "papyrus"}, ("fonts", "body", "papyrus")),
+    ({"title": "Cinzel"}, ("fonts", "title")),
+    ({"body": ""}, ("fonts", "body")),
+    ({"body": 4}, ("fonts", "body")),
+    ("Cinzel", ("fonts",)),
+])
+def test_a_bad_font_choice_is_named(tmp_path, fonts, needles):
+    skin = copy.deepcopy(mk.SKIN)
+    skin["fonts"] = fonts
+    assert has(errors(mk.build(tmp_path, skin=skin)), *needles), fonts
+
+
+def test_the_bundled_families_are_the_ones_the_player_can_draw():
+    """One list, kept in step: the validator's families, the player's font
+    stacks and the woff2 files the engine ships. A family in one and not the
+    others would validate and then draw in a fallback."""
+    from vefr import cli as _cli
+
+    parts = ROOT / "web" / "player" / "parts" / "540-the-skin.js"
+    stacks = re.search(r"var SKIN_FONT_STACKS = \{(.*?)\};", parts.read_text(encoding="utf-8"), re.S)
+    assert stacks, "no SKIN_FONT_STACKS in the player"
+    in_player = set(re.findall(r"^\s*'([^']+)':", stacks.group(1), re.M))
+    assert in_player == set(maplab.SKIN_FONTS)
+    shipped = {family for family, _name, _weight in _cli._PLAYER_FONTS}
+    assert set(maplab.SKIN_FONTS) <= shipped
+    for family, name, _weight in _cli._PLAYER_FONTS:
+        assert (ROOT / "web" / "fonts" / name).is_file(), name
+
+
+def test_the_skin_ink_still_clears_the_contrast_floor_with_a_new_type(tmp_path):
+    """A typeface changes the shape of a letter, not its colour: the ink the
+    skin declares still has to clear 4.5:1 on the panel it is read on
+    (design/ui-skin.md rule 2), whichever families the skin chooses."""
+    def _channel(c):
+        c /= 255
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+    def luminance(colour):
+        h = colour.lstrip("#")
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return 0.2126 * _channel(r) + 0.7152 * _channel(g) + 0.0722 * _channel(b)
+
+    def ratio(a, b):
+        hi, lo = sorted([(luminance(a) + 0.05) / 0.05, (luminance(b) + 0.05) / 0.05], reverse=True)
+        return hi / lo
+
+    panel = "#F4EEDD"          # the ground a light panel paints behind its text
+    for fonts in ({}, {"display": "Cinzel", "body": "Crimson Pro"}):
+        skin = copy.deepcopy(mk.SKIN)
+        skin["fonts"] = fonts
+        pack = mk.build(tmp_path, skin=skin)
+        assert errors(pack) == [], fonts
+        ink = skin["ink"]["on_panel"]
+        assert ratio(ink, panel) >= 4.5, (fonts, ratio(ink, panel))

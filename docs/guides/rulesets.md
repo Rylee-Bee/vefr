@@ -671,7 +671,8 @@ pack:
 ```
 
 The folder holds one `skin.json` and its pictures. `skin.json` has a
-`name`, a `credit`, a `parts` object and an optional `ink` object:
+`name`, a `credit`, a `parts` object and an optional `ink` object, plus
+two more optional keys — a `backdrop` and a `fonts` pair:
 
 ```json
 {
@@ -684,13 +685,29 @@ The folder holds one `skin.json` and its pictures. `skin.json` has a
     "bar":    {"frame": "bar-frame.webp", "fill": "bar-fill.webp"},
     "cursor": {"file": "cursor.webp", "hand": "cursor-hand.webp", "hotspot": [4, 4]}
   },
-  "ink": {"on_panel": "#2B2118", "on_panel_dim": "#5A4A38"}
+  "ink": {"on_panel": "#2B2118", "on_panel_dim": "#5A4A38"},
+  "backdrop": "table.webp",
+  "fonts": {"display": "Cinzel", "body": "Crimson Pro"}
 }
 ```
 
 The known parts are `panel`, `button`, `tab`, `toggle`, `bar`, `slot`,
 `speech`, `tooltip`, `gold-plate`, `divider`, `banner`, `corner` and
 `cursor`; each names its pictures under the keys that part uses.
+
+**The backdrop** is one seamless picture for the ground the drawn map
+does not cover inside the window — the table the game sits on. It is
+painted on the map canvas, not with CSS, and only where the map does not
+reach: a map that fills the window shows none of it. A skin without a
+`backdrop` gets today's flat dark ground, exactly as before.
+
+**The fonts** choose the type: `display` for titles and buttons, `body`
+for reading. The names come from the families the engine bundles and
+ships inside the woven file — `Cinzel`, `Atkinson Hyperlegible Next` and
+`Crimson Pro` — so there is no download at play time. Any other name is
+refused by the validator rather than left to fall back. Choosing a
+typeface does not change any colour, so the ink rules below still decide
+whether the words are readable.
 
 **The validator's rules.** `maplab.validate` (and so `norns validate`)
 reads the folder and refuses a bad skin with one plain sentence. The
@@ -699,25 +716,31 @@ a non-empty `name` and `credit`, and only known parts; an unknown part is
 a typo to fix, not something the player quietly ignores. Every named
 picture must exist, be a `.png` or `.webp`, and be under 300 KB. A
 `slice` must be a whole number of at least 1 and at most half the smaller
-side of its picture. `ink` colours must be `#RRGGBB`.
+side of its picture. `ink` colours must be `#RRGGBB`. A `backdrop` is
+checked like any other picture, and `fonts` may only name a bundled
+family for `display` or `body`.
 
 **How it is drawn.** The loader inlines every picture as a data URI, so
 the woven file stays one offline file. Panels and buttons use CSS
 `border-image` with the slice width (a nine-slice), so one small picture
 stretches to any size. Bars are a frame picture with a clipped fill
 picture. The cursor is a CSS `cursor: url(...)` with a hotspot, and a
-hand for things you can use.
+hand for things you can use. The backdrop is tiled on the map canvas
+under the whole stylesheet, and the fonts are the player's own `--display`
+and `--read` variables, so every rule already written reaches them.
 
 **Safety.** Text is never inside a picture: every word is real HTML, and
 pictures are only backgrounds, borders and icons. Focus is never removed.
 Targets stay at least 44 px. `prefers-contrast: more` and forced colours
 fall back to the plain flat look, so a skin never wins over a person's
-contrast setting. **No skin means no change**: a pack with no `skin`
+contrast setting — the backdrop goes with it, and the type returns to the
+player's own. **No skin means no change**: a pack with no `skin`
 field bakes byte-for-byte as before, and the baked value is `null`.
 
 Code: `src/vefr/maplab.py` (`skin_errors`) + `src/vefr/cli.py`
-(`_baked_skin`) + `web/packaged.html` (`applySkin`); tests:
-`tests/test_skin_validator.py` + `tests/test_skin_apply.py`.
+(`_baked_skin`) + `web/player/parts/540-the-skin.js` (`applySkin`),
+`440-the-camera.js` and `480-town-input-and-turns.js` (the ground);
+tests: `tests/test_skin_validator.py` + `tests/test_skin_apply.py`.
 
 ## Walk sheets (a character that walks)
 

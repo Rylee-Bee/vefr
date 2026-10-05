@@ -88,6 +88,44 @@
       else stage.classList.remove('stage--dock');
     }
   }
+  // The ground outside the drawn map (docs/plans/interface/PLAN.md, slice 2).
+  // Today that ground is one flat colour, and a skin with a `backdrop` puts
+  // its own seamless picture there instead. These are the rectangles the map
+  // does NOT cover, clipped to the window, in view pixels: pure maths, with
+  // `ready` saying whether the picture has decoded, and exposed read-only
+  // (precedent: window.VEFR_STAGE) so a test can read them without a canvas.
+  // A map that fills the window has no ground, so it returns no rectangles.
+  window.VEFR_BACKDROP_BANDS = function (ready, viewW, viewH, camX, camY, mapW, mapH) {
+    if (!ready) return [];
+    // `camX`/`camY` are the camera's offsets, as draw() has them: the map's
+    // own top-left on screen is -camX, -camY (it is negative when a map
+    // smaller than the window is centred).
+    var x0 = Math.max(0, -camX), y0 = Math.max(0, -camY);
+    var x1 = Math.min(viewW, -camX + mapW), y1 = Math.min(viewH, -camY + mapH);
+    if (x1 <= x0 || y1 <= y0) return [];
+    var out = [];
+    if (y0 > 0) out.push([0, 0, viewW, y0]);
+    if (y1 < viewH) out.push([0, y1, viewW, viewH - y1]);
+    if (x0 > 0) out.push([0, y0, x0, y1 - y0]);
+    if (x1 < viewW) out.push([x1, y0, viewW - x1, y1 - y0]);
+    return out;
+  };
+  var backdropBands = [], backdropDrawn = 0;
+  // The skin's picture, or nothing. A pack with no skin never paints a table:
+  // the picture only ever arrives through applySkin, and only for a skin that
+  // named one.
+  function skinBackdrop() {
+    var skin = window.VEFR_SKIN;
+    return (skin && typeof skin === 'object') ? (window.VEFR_BACKDROP || null) : null;
+  }
+  window.VEFR_BACKDROP_STATE = function () {
+    return { url: window.VEFR_BACKDROP_URL || null, ready: !!skinBackdrop(),
+             bands: backdropBands, drawn: backdropDrawn };
+  };
+  // Repaint the map on demand, for the parts outside this closure that have
+  // something new to draw (the skin's backdrop, once its picture has decoded).
+  // Precedent: window.refreshCombatSnapshot.
+  window.VEFR_REDRAW = function () { draw(); };
   function resize() {
     cols = town.map[0].length;
     rows = town.map.length;
