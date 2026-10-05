@@ -98,7 +98,7 @@ Monster ids are `m<n>` in draw order, and groups are `g<n>`.
 - When the hero is out of the member's `sight`, the member walks home until it is within 1 tile, then idles awake.
 - Lone monsters and elites keep today's behaviour.
 
-**Turn cost.** One shared flood from the hero, cut off at 24 steps; at most three cached home maps; one step per awake monster (37 at most). E0a's 45-monster measurement covers this.
+**Turn cost.** One shared flood from the hero, cut off at 24 steps; one cached home map per group, each cut off at `leash + 1` steps; one step per awake monster (37 at most). E0a's 45-monster measurement covers this. A cap of three maps was dropped: it did not make a turn cheaper, it made a fourth group's members walk unheld, and "a member never steps farther than `leash` from home" is a promise about every member.
 
 **Saves.** Only killed ids are saved; on reload, survivors are back on their spawn tiles, asleep.
 

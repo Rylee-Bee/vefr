@@ -43,6 +43,10 @@ fixture here is a real pack with the roster in its region's own
 contract, woven the shipped way. Nothing else about the player is
 touched.
 
+Every group on a floor is leashed, not the first three of them: the
+last fixture here puts four groups around the hero's lane, and the
+fourth is the one the player used to leave holding nothing.
+
 Every fixture is a fixed map with fixed numbers - no randomness, no
 wall-clock, no mocks. Run with:
 
@@ -115,6 +119,60 @@ READS = [
     "text:#combat-live",
 ]
 
+# Four groups, two north of the hero's lane and two south of it, and a
+# hero who walks the lane to the middle of the room. Every group is
+# inside the hero's wake radius where it ends, so all four are asked for
+# a home map in the same phase, in the order the contract lists them:
+# the first three are built and the fourth has to be built too, or its
+# members walk unheld.
+#
+# The leaders stand on the rows four tiles off the lane, so a leash of
+# three holds them a tile short of the hero's own row: the fixture can
+# then show a member pulled out of its home and held without the hero
+# ever being cornered by a monster it cannot walk past. Each kin starts
+# two tiles from its own leader and is inside the same leash already.
+#
+# `leash` is written on the leader only, which is the pack-side half of
+# the same "any member" rule the generator honours: the player asks every
+# member in turn, so one write has to be enough.
+FOUR = [
+    {"id": "a-leader", "name": "the first leader", "at": [10, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat",
+     "group": "ga", "leader": True, "leash": LEASH},
+    {"id": "a-kin", "name": "the first kin", "at": [10, 3],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat", "group": "ga"},
+    {"id": "b-leader", "name": "the second leader", "at": [16, 1],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat",
+     "group": "gb", "leader": True, "leash": LEASH},
+    {"id": "b-kin", "name": "the second kin", "at": [16, 3],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat", "group": "gb"},
+    {"id": "c-leader", "name": "the third leader", "at": [10, 9],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat",
+     "group": "gc", "leader": True, "leash": LEASH},
+    {"id": "c-kin", "name": "the third kin", "at": [10, 7],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat", "group": "gc"},
+    {"id": "d-leader", "name": "the fourth leader", "at": [16, 9],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat",
+     "group": "gd", "leader": True, "leash": LEASH},
+    {"id": "d-kin", "name": "the fourth kin", "at": [16, 7],
+     "hp": 4, "atk": 1, "sight": 6, "sprite": "rat", "group": "gd"},
+]
+
+# The home of each member above: the tile its leader is on. The map from
+# index to home is the whole of what a group is, for this fixture.
+FOUR_HOMES = {0: [10, 1], 1: [10, 1], 2: [16, 1], 3: [16, 1],
+              4: [10, 9], 5: [10, 9], 6: [16, 9], 7: [16, 9]}
+
+FOUR_READS = ["VEFR_COMBAT.hero.at", "VEFR_COMBAT.hero.hp"] + [
+    f"VEFR_COMBAT.enemies.{i}.at" for i in range(len(FOUR))
+]
+
+# The hero's walk: down to the middle row, then east along it to [15, 5],
+# which is inside the wake radius of all four groups and inside the
+# sight of the two leaders on the far side of the room.
+FOUR_STEPS = ["begin", "walk:" + ",".join(["down"] * 4),
+              "walk:" + ",".join(["right"] * 14)]
+
 # A warden that ALSO carries a group, which is the one record the ADR
 # gives two rules at once. It is a warden (ADR 0014, owner decision 2 of
 # 2026-10-04: awake, and it hunts the hero) and it is a member (a group
@@ -141,11 +199,12 @@ WARDEN_IN_A_GROUP = [
 ]
 
 
-def open_room(tmp_path, enemies):
+def open_room(tmp_path, enemies, hero_hp=None):
     """The combat fixture with its town swapped for the big open room.
     The act keeps its regions; only the town's map, contract and enemies
     are the test's own. The hero starts in the corner at [1, 1]."""
-    p = pack(tmp_path, "combat")
+    p = pack(tmp_path, "combat",
+             {"world.json": {"player": {"hp": hero_hp}}} if hero_hp else None)
     town = p / "acts" / "act-1" / "town"
     wall = "#" * WIDTH
     row = "#" + "." * (WIDTH - 2) + "#"
@@ -384,3 +443,50 @@ def test_a_warden_that_carries_a_group_still_hunts_the_hero(tmp_path):
     assert reads["VEFR_COMBAT.enemies.0.at"] == [8, 1], \
         "it keeps hunting: four tiles past its home, which no leash allows"
     assert steps_from_home(reads["VEFR_COMBAT.enemies.0.at"], [12, 1]) == 4
+
+
+# ---- 5. four groups, and the fourth one is leashed like the other three
+
+def test_a_fourth_group_is_leashed_like_any_other(tmp_path):
+    """ADR 0014 says "a member never steps farther than `leash` from
+    home", and it says it of every member. The player used to keep at
+    most three home maps a floor, so the FOURTH group was the one group
+    on the floor that walked unheld: its leader came at the hero out of
+    its own home and kept coming, and its kin never walked back.
+
+    The fixture puts four groups around the hero's lane, so all four
+    are awake by the time the hero reaches the middle and all four ask
+    for a home map in the same phase, in the order the contract lists
+    them. The three that come first are built; the fourth is the one
+    that used to be refused, so the sample below is the invariant
+    rather than one tile - a group with no map does not drift past its
+    leash by accident, it walks out of its home and stays out.
+    """
+    html = weave(open_room(tmp_path, FOUR, hero_hp=30), tmp_path)
+    # Thirty hit points because this hero walks through four groups on
+    # its way to the middle: the point of the fixture is where the
+    # monsters stand, and a hero that cozy-died halfway there would say
+    # nothing about any of them.
+    steps = FOUR_STEPS + ["walk:down", "walk:up"]
+    for count in range(1, len(steps) + 1):
+        out = play(html, {"steps": steps[:count], "read": FOUR_READS})
+        assert out["errors"] == []
+        reads = out["reads"]
+        for index, home in FOUR_HOMES.items():
+            at = reads[f"VEFR_COMBAT.enemies.{index}.at"]
+            steps_out = steps_from_home(at, home)
+            assert steps_out <= LEASH, (
+                f"turn {count - 1}: {FOUR[index]['name']} stands at {at}, "
+                f"{steps_out} tiles from its own home {home} - the leash is "
+                f"{LEASH} and it is not the only group on the floor"
+            )
+    # The fourth group's leader is not standing on its own home either,
+    # which is what makes the last turn say something: the hero is
+    # inside its sight, so it came out, and the line it stopped on is
+    # the leash and not the far wall.
+    reads = play(html, {"steps": steps, "read": FOUR_READS})["reads"]
+    out = steps_from_home(reads["VEFR_COMBAT.enemies.6.at"], [16, 9])
+    assert 0 < out <= LEASH, (
+        f"the fourth leader stands at {reads['VEFR_COMBAT.enemies.6.at']}, "
+        f"{out} tiles from its own home: it came out and it was held"
+    )

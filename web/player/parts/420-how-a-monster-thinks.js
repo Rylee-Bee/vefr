@@ -157,12 +157,21 @@
   // record per spawn, so a survivor is back on its spawn tile and
   // asleep the moment a region loads; the home maps below live in
   // memory for the length of the visit and are dropped with them.
-  var MIND_HOMES_MAX = 3;      // home maps kept per floor (ADR 0014)
+  //
+  // One map per group, and no ceiling on how many groups. There used to
+  // be a cap of three here, on the reading that a fourth map cost more
+  // than the turn budget allows. What the cap actually cost is a pack's
+  // fourth group walking unheld: ADR 0014 says a member never steps
+  // farther than `leash` from home, and it says it of every member, so a
+  // home map that is refused is a member that chases the hero across the
+  // floor and never walks home. The map is cut off at `leash + 1` steps
+  // and the leash is at most 12, so one of them is thirteen rings of a
+  // flood no wider than the group's own reach - a cost the three-group
+  // case already pays, and the one a fourth group was asking for.
   var LEASH_DEFAULT = 6;       // what a group walks on if it names none
   var LEASH_MIN = 3;           // the closed range a pack may write
   var LEASH_MAX = 12;
   var mindHomes = {};          // group id -> {leash, map}, in memory only
-  var mindHomeOrder = [];      // in the order the groups were asked for
   var mindRoster = null;       // the roster the fields below were set on
   var mindRegion = '';         // and the region it belongs to
 
@@ -186,7 +195,6 @@
     mindRoster = enemies;
     mindRegion = regionName;
     mindHomes = {};
-    mindHomeOrder = [];
     for (var i = 0; i < enemies.length; i++) {
       var e = enemies[i];
       if (!e) continue;
@@ -271,19 +279,16 @@
     return dist;
   }
   // The home map for this monster's group, built once and kept for the
-  // visit. At most three are kept: past that a group walks unheld
-  // rather than costing a fourth map, and a pack that writes more than
-  // three groups is asking for more than the turn budget allows.
+  // visit. Every group gets one: a group whose map is missing is a group
+  // that walks unheld, however many groups came before it.
   function homeMap(e) {
     if (!e || !e.group) return null;
     if (mindHomes[e.group]) return mindHomes[e.group];
-    if (mindHomeOrder.length >= MIND_HOMES_MAX) return null;
     var home = groupHome(e.group);
     if (!home) return null;
     var leash = groupLeash(e.group);
     var entry = { leash: leash, map: homeReach(home, leash + 1) };
     mindHomes[e.group] = entry;
-    mindHomeOrder.push(e.group);
     return entry;
   }
   // The leash as `stepAlong` wants it, or nothing for a monster with no
