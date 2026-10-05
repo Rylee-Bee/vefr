@@ -1,0 +1,32 @@
+{
+ "stamp": 1,
+ "id": "vault-cellar",
+ "role": "vault",
+ "tags": [
+  "cellar",
+  "crypt"
+ ],
+ "depth": [
+  1,
+  9
+ ],
+ "rows": [
+  "#######",
+  "#.....#",
+  "#.C.N.#",
+  "#.....#",
+  "#..H..#",
+  "###+###"
+ ],
+ "legend": {
+  "C": {
+   "anchor": "chest"
+  },
+  "N": {
+   "anchor": "note"
+  },
+  "H": {
+   "anchor": "home"
+  }
+ }
+}
