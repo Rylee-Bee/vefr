@@ -42,11 +42,23 @@ await new Promise((r) => w.setTimeout(r, 300));
 
 const cases = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
 const D = w.VEFR_DELVE;
+
+// The determinism check needs the stream names of a REAL floor key, because
+// that is what the check compares: `run_seed / section.id / floor_kind`, the
+// same three parts `tests/floor_v3_parity_cases.py:floor_key` builds. Asking
+// the twin for the streams of the literal 'seed/section/kind' could only ever
+// return that literal back, so the check could never be satisfied by a twin
+// that got the names right. The first case of the sweep carries the three
+// parts already: its seed, its kind, and its Section pack's id.
+const firstCase = cases.cases[0];
+const firstKey = firstCase
+  ? firstCase.seed + '/' + cases.packs[firstCase.pack].id + '/' + firstCase.kind
+  : 'seed/section/kind';
 const meta = {
   hasApi: !!(D && typeof D.v3Attempt === 'function'
     && typeof D.generateFloorV3 === 'function'),
   constants: D ? D.v3Constants : {},
-  streams: D ? D.v3Streams('seed/section/kind') : {},
+  streams: D ? D.v3Streams(firstKey) : {},
   perf: {},
 };
 
