@@ -21,19 +21,18 @@ add four things to E0d's sleeping monsters:
      dispatch (`web/player/parts/480-town-input-and-turns.js`) and the
      last section below proves each one through the real woven player.
      Breaking has no call site: the player has no break action to
-     attach it to, so `heardBreak` and `NOISE_BREAK` stay the tested-
-     but-uncalled reader they are.
+     attach it to, so the `break` row of the table is reached only by
+     calling `makeNoise('break')` directly, which is what the reader
+     test below does.
   4. **The warden** is awake and never sleeps, so it hunts before
      anything else on the floor does.
 
 The group ids, the leader mark, the leash and the warden mark are read
-by the player off the baked spawn records in `window.VEFR_ENEMIES`.
-The baker (`src/vefr/cli.py`) does not carry those keys yet - E7.2 owns
-that - so every fixture here weaves the pack the shipped way and then
-re-bakes the one `window.VEFR_ENEMIES` literal with the keys the
-player's reader already looks for. Nothing else about the player is
-touched: these are the real woven player, the real turn loop, the real
-flood.
+by the player off the baked spawn records in `window.VEFR_ENEMIES`, and
+the baker (`src/vefr/cli.py`) carries them through: every fixture here
+is a real pack, woven the shipped way, with the roster in the region's
+own contract. Nothing about the player is stubbed - these are the real
+woven player, the real turn loop, the real flood.
 
 Every fixture is a fixed map with fixed numbers - no randomness, no
 wall-clock, no mocks. Run with:
@@ -139,34 +138,83 @@ def open_room(tmp_path, enemies):
     return p
 
 
-def woven_with_minds(pack_dir, tmp_path, roster):
-    """Weave `pack_dir` and re-bake `window.VEFR_ENEMIES` with `roster`.
+def baked_enemies(html_path):
+    """The `window.VEFR_ENEMIES` a woven player carries, read back.
 
-    The pack is woven the shipped way. The one edit is the baked enemies
-    literal, so the group keys reach the player: the baker closes the
-    spawn record to the fields E7.1 wrote, and the player's group reader
-    looks for `group`, `leader`, `leash` and `warden` on that same
-    record. When the baker carries them (E7.2) this helper goes away and
-    the fixtures read as they are written.
+    The literal is JSON, so it is decoded the way it was written rather
+    than scraped with a regex: the first closing bracket the decoder
+    stops at is the end of the object, and everything after it is the
+    rest of the player.
     """
-    html = Path(weave(pack_dir, tmp_path)).read_text(encoding="utf-8")
+    html = Path(html_path).read_text(encoding="utf-8")
     marker = "window.VEFR_ENEMIES = "
     at = html.index(marker) + len(marker)
-    baked, end = json.JSONDecoder().raw_decode(html, at)
-    baked["town"] = roster
-    out = Path(tmp_path) / "minds.html"
-    out.write_text(html[:at] + json.dumps(baked) + html[end:], encoding="utf-8")
-    return out
+    return json.JSONDecoder().raw_decode(html, at)[0]
 
 
 def walk_right(n):
     return ["begin", "walk:" + ",".join(["right"] * n)]
 
 
+# ---- 0. the bake carries the keys ----
+
+def test_the_bake_carries_the_five_mind_keys(tmp_path):
+    """A pack that writes a group, a leash, an affix or a warden into
+    its contract's `enemies` gets all of it into the woven file.
+
+    The player reads `group`, `leader`, `leash` and `warden` off the
+    baked spawn record and nothing else tells it a spawn is an elite
+    (`prepareMinds` and `groupLeash`, part 420). The baker used to keep
+    only id/name/at/hp/atk/sprite/drops/sight/xp, so every one of those
+    was dropped on the way to the file: a shipped pack could name a
+    group and still get a floor where wake-all, the leash and the
+    warden could never fire, because the record that told the player
+    about them was never written.
+
+    Each of the five rides along only when the record names it, on the
+    same rule as `xp`, so a pack that names none bakes the exact bytes
+    it always did. The second half of this test is that half: `FIGHT`
+    names none of the five, and not one of them appears.
+    """
+    mind_keys = ("group", "leader", "leash", "elite", "warden")
+    # One roster that names all five: an elite leader of a group, a
+    # plain member, and the warden. Every key is on the record that
+    # would carry it in a real FloorPlan.
+    roster = [
+        {"id": "m0", "name": "a broad one", "at": [20, 1], "hp": 4, "atk": 1,
+         "sprite": "rat", "group": "g0", "leader": True, "leash": 7,
+         "elite": "big"},
+        {"id": "m1", "name": "a group kin", "at": [22, 1], "hp": 4, "atk": 1,
+         "sprite": "rat", "group": "g0"},
+        {"id": "m2", "name": "the hall warden", "at": [16, 1], "hp": 4,
+         "atk": 1, "sight": 6, "sprite": "rat", "warden": True},
+    ]
+    baked = baked_enemies(weave(open_room(tmp_path, roster), tmp_path))["town"]
+    assert [e["id"] for e in baked] == ["m0", "m1", "m2"]
+    assert baked[0]["group"] == "g0", "the group id rides in"
+    assert baked[0]["leader"] is True, "the leader mark rides in"
+    assert baked[0]["leash"] == 7, "the leash rides in"
+    assert baked[0]["elite"] == "big", "the elite's affix id rides in"
+    assert baked[1]["group"] == "g0", "a plain member carries its group too"
+    assert "leader" not in baked[1], "an absent key stays absent"
+    assert "leash" not in baked[1]
+    assert "elite" not in baked[1]
+    assert baked[2]["warden"] is True, "the warden mark rides in"
+    # The control: the same pack with a roster that names none of the
+    # five bakes none of them, so a pack written before E7 is byte for
+    # byte the player it always got.
+    plain = baked_enemies(weave(open_room(tmp_path, FIGHT), tmp_path))["town"]
+    assert [e["id"] for e in plain] == ["bump-target", "far-ear"]
+    for record in plain:
+        for key in mind_keys:
+            assert key not in record, \
+                f"{record['id']} gained {key!r} without naming it"
+
+
 # ---- 1. wake-all and the free turn ----
 
 def test_the_group_wakes_all_together(tmp_path):
-    html = woven_with_minds(open_room(tmp_path, GROUP), tmp_path, GROUP)
+    html = weave(open_room(tmp_path, GROUP), tmp_path)
     # Nine steps: the hero stands at [10, 1], ten tiles from the leader -
     # exactly its wake radius, so the leader is awake - and twelve and
     # thirteen tiles from the two kins, well outside both of their own
@@ -196,7 +244,7 @@ def test_the_group_wakes_all_together(tmp_path):
 
 
 def test_the_free_turn_is_spent_and_the_group_acts_next(tmp_path):
-    html = woven_with_minds(open_room(tmp_path, GROUP), tmp_path, GROUP)
+    html = weave(open_room(tmp_path, GROUP), tmp_path)
     # One step further: the hero is at [11, 1] and the free turn is
     # spent. Both kins are out of sight, so each walks one tile home -
     # the leader's spawn tile is [20, 1] and a member stops within one
@@ -225,7 +273,7 @@ def test_a_lone_monster_wakes_and_acts_on_the_same_turn(tmp_path):
         {"id": "solo-kin", "name": "a lone kin", "at": [22, 1],
          "hp": 4, "atk": 1, "sprite": "rat"},
     ]
-    html = woven_with_minds(open_room(tmp_path, alone), tmp_path, alone)
+    html = weave(open_room(tmp_path, alone), tmp_path)
     out = play(html, {"steps": walk_right(9), "read": READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -251,7 +299,7 @@ def test_fighting_wakes_a_sleeper_out_of_sight_and_out_of_range(tmp_path):
     tile past E0d's Manhattan wake radius of 10 and five past its own
     sight of 6 - wakes, and acts at once because the hero's turn is not
     a monster phase."""
-    html = woven_with_minds(open_room(tmp_path, FIGHT), tmp_path, FIGHT)
+    html = weave(open_room(tmp_path, FIGHT), tmp_path)
     out = play(html, {"steps": ["begin", "walk:right"], "read": READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -268,7 +316,7 @@ def test_walking_away_leaves_the_same_sleeper_asleep(tmp_path):
     hero, one turn spent - and no fight. The sleeper at [12, 1] is now
     Chebyshev 12 from a hero at [1, 2], so even the fighting radius does
     not reach it, and it stays exactly where it spawned."""
-    html = woven_with_minds(open_room(tmp_path, FIGHT), tmp_path, FIGHT)
+    html = weave(open_room(tmp_path, FIGHT), tmp_path)
     out = play(html, {"steps": ["begin", "walk:down"], "read": READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -462,8 +510,7 @@ def test_opening_a_door_wakes_the_sleeper_in_earshot(tmp_path):
     that alone - wakes, and `far-ear` at 7 does not. Opening the door
     spends no turn and the one step the run ends on cannot wake either
     of them, so nothing else is a candidate reason."""
-    html = woven_with_minds(loud_room(tmp_path, SIX_TILES, BEYOND),
-                            tmp_path, SIX_TILES)
+    html = weave(loud_room(tmp_path, SIX_TILES, BEYOND), tmp_path)
     out = play(html, {"steps": INTERACT + AFTER_NOISE, "read": LOUD_READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -487,7 +534,7 @@ def test_opening_a_chest_wakes_the_sleeper_in_earshot(tmp_path):
         "---\ntitle: A Side Cache\nfound: map\nat: [2, 1]\n"
         "chest: yes\ndrops: cloudy-potion\nkind: note\n---\n"
         "A note left beside the wall.\n", encoding="utf-8")
-    html = woven_with_minds(pack_dir, tmp_path, SIX_TILES)
+    html = weave(pack_dir, tmp_path)
     out = play(html, {"steps": INTERACT, "read": LOUD_READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -510,7 +557,7 @@ def test_using_stairs_wakes_the_sleeper_in_earshot(tmp_path):
     one - the same rule the player's own candidate list reads - and
     using it spends no turn either."""
     p = loud_room(tmp_path, EIGHT_TILES, BEYOND, {"2,1": "the stair down"})
-    html = woven_with_minds(p, tmp_path, EIGHT_TILES)
+    html = weave(p, tmp_path)
     out = play(html, {"steps": INTERACT + AFTER_NOISE, "read": LOUD_READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -542,7 +589,7 @@ def test_the_warden_is_awake_and_the_guard_beside_it_is_not(tmp_path):
     makes the warden's wake its own doing. Awake and out of the hero's
     sight, it drifts toward the nearest other living monster, the way
     any awake monster out of sight has always done."""
-    html = woven_with_minds(open_room(tmp_path, WARDEN), tmp_path, WARDEN)
+    html = weave(open_room(tmp_path, WARDEN), tmp_path)
     out = play(html, {"steps": ["begin", "walk:right"], "read": READS})
     assert out["errors"] == []
     reads = out["reads"]

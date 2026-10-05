@@ -1836,6 +1836,20 @@ def _baked_skin(pack: Path, world: dict) -> dict | None:
     return out
 
 
+# The E7 mind keys a region's `enemies` record may carry into the bake
+# (ADR 0014, "Monster AI"): which group a monster belongs to, whether it
+# leads that group, how far the group may walk from home, which affix
+# made it an elite, and whether it is the warden. The player's reader
+# (`prepareMinds`, part 420) asks the baked spawn record for `group`,
+# `leader` and `warden` and `groupLeash` asks any member for `leash`, so
+# a pack that wrote them into a contract's `enemies` and got them dropped
+# on the way to the file had a floor where wake-all, the leash and the
+# warden could never fire. Each rides along only when the record names
+# it, on the same rule as `xp`, so a pack that names none bakes the exact
+# bytes it always did.
+MIND_KEYS = ('group', 'leader', 'leash', 'elite', 'warden')
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -2006,6 +2020,16 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                 # exact bytes it always did.
                 if 'xp' in e:
                     entry['xp'] = e.get('xp')
+                # The five E7 mind keys, on the same rule as `xp` and
+                # for the same reason: the player reads `group`,
+                # `leader`, `leash` and `warden` off the baked spawn
+                # record (parts 410/420), and nothing else tells it a
+                # spawn is an elite. A pack that names none of them -
+                # every pack but an E7 one - bakes the exact bytes it
+                # always did, so a weave is unchanged by this loop.
+                for key in MIND_KEYS:
+                    if key in e:
+                        entry[key] = e.get(key)
                 out.append(entry)
             enemies_by_region[rname] = out
 

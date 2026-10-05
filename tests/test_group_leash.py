@@ -32,9 +32,9 @@ against a distance walked in this file, so a member that stepped
 through a wall or off the map would fail here too.
 
 The group ids, the leader mark and the leash ride on the baked spawn
-records in `window.VEFR_ENEMIES`. The baker does not carry those keys
-yet - E7.2 owns that - so each fixture weaves the pack the shipped way
-and then re-bakes that one literal; nothing else about the player is
+records in `window.VEFR_ENEMIES`, and the baker carries them there: a
+fixture here is a real pack with the roster in its region's own
+contract, woven the shipped way. Nothing else about the player is
 touched.
 
 Every fixture is a fixed map with fixed numbers - no randomness, no
@@ -46,7 +46,6 @@ wall-clock, no mocks. Run with:
 import json
 import shutil
 from collections import deque
-from pathlib import Path
 
 import pytest
 
@@ -132,24 +131,6 @@ def open_room(tmp_path, enemies):
     return p
 
 
-def woven_with_minds(pack_dir, tmp_path, roster):
-    """Weave `pack_dir` and re-bake `window.VEFR_ENEMIES` with `roster`.
-
-    The pack is woven the shipped way; the one edit is the baked enemies
-    literal, so the group keys reach the player. See the note in
-    tests/test_group_wake.py: this goes away when the baker carries
-    them.
-    """
-    html = Path(weave(pack_dir, tmp_path)).read_text(encoding="utf-8")
-    marker = "window.VEFR_ENEMIES = "
-    at = html.index(marker) + len(marker)
-    baked, end = json.JSONDecoder().raw_decode(html, at)
-    baked["town"] = roster
-    out = Path(tmp_path) / "minds.html"
-    out.write_text(html[:at] + json.dumps(baked) + html[end:], encoding="utf-8")
-    return out
-
-
 def walk_right(n):
     return ["begin", "walk:" + ",".join(["right"] * n)]
 
@@ -193,7 +174,7 @@ def assert_inside_leash(reads, ids, leash=LEASH):
 # ---- 1. the edge ----
 
 def test_a_member_stops_on_the_leash_and_holds_there(tmp_path):
-    html = woven_with_minds(open_room(tmp_path, GROUP), tmp_path, GROUP)
+    html = weave(open_room(tmp_path, GROUP), tmp_path)
     # Fifteen steps east: the leader has come three tiles west of home,
     # which is the leash, and the hero is next to it.
     walked = play(html, {"steps": walk_right(15), "read": READS})
@@ -224,7 +205,7 @@ def test_no_member_ever_stands_past_the_leash(tmp_path):
     """The invariant, sampled turn by turn across the whole approach and
     the walk away again. The leader is the one that wants to leave: it
     is woken, it can see the hero, and it is held."""
-    html = woven_with_minds(open_room(tmp_path, GROUP), tmp_path, GROUP)
+    html = weave(open_room(tmp_path, GROUP), tmp_path)
     steps = ["begin"]
     east = 15
     for _ in range(east):
@@ -243,7 +224,7 @@ def test_no_member_ever_stands_past_the_leash(tmp_path):
 # ---- 2. going home ----
 
 def test_the_group_walks_home_and_idles_awake(tmp_path):
-    html = woven_with_minds(open_room(tmp_path, GROUP), tmp_path, GROUP)
+    html = weave(open_room(tmp_path, GROUP), tmp_path)
     # Fifteen east and four south puts the hero at [16, 5], within the
     # leader's sight of 6 but not adjacent, and the leader is still on
     # the edge holding.
@@ -291,7 +272,7 @@ def test_a_group_with_no_leader_mark_uses_its_lowest_sorted_id(tmp_path):
     "kin-a" at [28, 1]. Its pack-mate starts two tiles west, comes up
     against the hero, and stops on the leash three tiles from that home
     with the hero two tiles away and well inside its sight."""
-    html = woven_with_minds(open_room(tmp_path, NO_LEADER), tmp_path, NO_LEADER)
+    html = weave(open_room(tmp_path, NO_LEADER), tmp_path)
     out = play(html, {"steps": walk_right(23), "read": READS})
     assert out["errors"] == []
     reads = out["reads"]
@@ -315,7 +296,7 @@ def test_a_lone_monster_is_neither_leashed_nor_sent_home(tmp_path):
     the other monster, because that is what an awake monster out of the
     hero's sight has always done. A group member would have turned
     around and gone home instead."""
-    html = woven_with_minds(open_room(tmp_path, LONE), tmp_path, LONE)
+    html = weave(open_room(tmp_path, LONE), tmp_path)
     out = play(html, {"steps": walk_right(14), "read": READS})
     assert out["errors"] == []
     reads = out["reads"]
