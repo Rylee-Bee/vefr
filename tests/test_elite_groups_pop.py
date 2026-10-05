@@ -386,6 +386,85 @@ def test_a_minion_that_is_never_placed_costs_no_draw(monkeypatch):
     )
 
 
+def test_a_leader_that_is_never_placed_costs_no_draw(monkeypatch):
+    """Same rule, one loop up: a leader's family is drawn when it is led.
+
+    The minion fix above settled the tile before the family. The two
+    loops that had not been changed are the group leader and the random,
+    and both drew before their tile: a leader's family (and its affix,
+    where the group is led by an elite) and a random's family. The leader
+    is the one that reaches it easily, because the leader pool is
+    `clear` less the vault, hall and secret rooms, and a minion standing
+    a tile or two from its own leader spends the same pool - so a floor
+    with three groups asked for and a leader pool of three tiles runs
+    out at `g1` and never gets there.
+
+    The floor below is that floor: `pop-18` at 22x15 asks for three
+    groups and is led once. The group's own minion count is still drawn
+    before its leader is placed - a count is a statement of its own, the
+    same way the elite count and the group count are, and ADR 0014 lists
+    it ahead of the leader's tile - so the group that never formed spent
+    exactly one draw and not one more.
+
+    What the wasted draw did is on the second half of the assertion. The
+    chest count comes off the same pop stream, so one family too many
+    made this floor carry THREE chests instead of two, and a hero found a
+    third one that the floor key does not put there. The draw count is
+    re-derived from the plan rather than read off the generator, so the
+    two have to agree.
+    """
+    section = pack(groups={"per_floor": [3, 3], "minions": [1, 1],
+                           "same_family": True})
+
+    real = delve_v3.prng
+    seen = 0
+
+    def counting(key: str):
+        nonlocal seen
+        seed = real(key)
+        if not key.endswith("|pop"):
+            return seed
+
+        def wrapped() -> float:
+            nonlocal seen
+            seen += 1
+            return seed()
+
+        return wrapped
+
+    monkeypatch.setattr(delve_v3, "prng", counting)
+    plan = delve_v3.generate_floor_v3(
+        "pop-18", (22, 15), copy.deepcopy(section), "normal")
+    assert plan["gen"] == 3, "the fixture is a v3 floor, or it proves nothing"
+
+    lone = _lone_elites(plan)
+    led = _groups(plan)
+    randoms = [s for s in _spawns(plan) if "group" not in s and "elite" not in s]
+    assert led == ["g0"], (
+        "the fixture needs groups the floor could not staff: the pack asks "
+        f"for 3 and the floor carries {led}"
+    )
+    expected = (1                      # the elite count, drawn before its loop
+                + 2 * len(lone)        # a family and an affix per elite placed
+                + 1                     # the group count, drawn before its loop
+                + 2                     # g0: its minion count, then its leader
+                + 1                     # g1: its minion count, and no leader
+                + len(randoms)         # a family per random placed
+                + 1 + len(plan["chests"]))
+    assert seen == expected, (
+        f"the pop stream spent {seen} draws and the floor accounts for "
+        f"{expected}: {1} elite count, {2 * len(lone)} for the {len(lone)} "
+        f"elite(s) placed, {1} group count, {2} for the minion count and the "
+        f"family of the one group that was led, {1} for the minion count of "
+        f"the group that was not, {len(randoms)} for the randoms placed, "
+        f"{1} chest count and {len(plan['chests'])} chest tables"
+    )
+    assert len(plan["chests"]) == 2, (
+        f"this floor carries {len(plan['chests'])} chests: a wasted leader "
+        "family draw moved the chest count and added one"
+    )
+
+
 # --------------------------------------------------------------- hard caps
 
 

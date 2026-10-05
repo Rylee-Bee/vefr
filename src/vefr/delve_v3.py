@@ -1015,10 +1015,7 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 #     `elite` and the pack names affixes), the leader's tile, and then
 #     per minion a family - only when `same_family` is false - and a
 #     tile within MINION_REACH (2, Chebyshev) of the leader and in the
-#     leader's own room or corridor region. The two are one draw and one
-#     placement, and the placement is settled first: a minion that has
-#     nowhere to stand spends no draw at all, so the stream after it is
-#     where the floor key says it is.
+#     leader's own room or corridor region.
 #  3. Randoms, last, filling the budget the elites and the groups left.
 #     For each, in order: a family by weight, then a tile. A pack that
 #     names no elite and no group therefore carries exactly the budget.
@@ -1029,6 +1026,19 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 #     table by index from CHEST_TABLES per chest. Every chest lands off
 #     the main path, so the whole of the floor's chest value is off it
 #     and exploring pays.
+#
+# The lists above are the ORDER THE DRAWS HAPPEN IN, and a placement is
+# not a draw: the tile is settled first, and a monster with nowhere to
+# stand spends NOTHING - no family, no affix. So a leader on a floor
+# whose stamp rooms leave no free tile, or a random on a floor whose
+# clear tiles run out, costs the stream no draw at all, and the chest
+# count and every chest table after it stay where the floor key says
+# they are. One rule, four places: elite, group leader, minion, random.
+# The count draws - the elite count, the group count and each group's
+# minion count - are the exception and stay where ADR 0014 lists them,
+# ahead of the tile: a count is a statement of its own, drawn whether or
+# not the loop it opens goes on to place anything. A draw that never
+# happens cannot be out of order.
 #
 # The ids follow the draws: a monster is `m<n>` in draw order, so the
 # first draw of the stage is `m0` and the counter never runs ahead of
@@ -1332,10 +1342,11 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
     # loop runs, and a pack with no table places nothing.
     #
     # Per elite, in the ADR's order: a family, an affix by index, then a
-    # tile. The tile is placed rather than drawn, so it costs no draw.
-    # LONE_ELITES_MAX stops the loop: a cap that is hit stops further
-    # draws of that kind, it does not raise and it does not fail the
-    # floor.
+    # tile. The tile is placed rather than drawn, so it costs no draw -
+    # and it is placed FIRST, so an elite whose floor has no clear tile
+    # left spends no family and no affix either. LONE_ELITES_MAX stops
+    # the loop: a cap that is hit stops further draws of that kind, it
+    # does not raise and it does not fail the floor.
     elite_lo, elite_hi, affix_ids = _read_elites(section)
     elite_count = _rand(rng, elite_lo, elite_hi)
     lone = 0
@@ -1344,11 +1355,11 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
             continue
         if lone >= LONE_ELITES_MAX or len(spawns) >= budget:
             break
-        family = _draw_family(rng, families)
-        affix = affix_ids[_pick(rng, len(affix_ids))]
         tile = take(clear)
         if tile is None:
             break
+        family = _draw_family(rng, families)
+        affix = affix_ids[_pick(rng, len(affix_ids))]
         place(tile, family, elite=affix)
         lone += 1
 
@@ -1357,7 +1368,11 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
     # the leader's family, the leader's affix when the group is led by
     # an elite, the leader's tile, and then per minion a family (only
     # when `same_family` is false) and a tile within MINION_REACH of the
-    # leader and in the leader's own room or corridor region.
+    # leader and in the leader's own room or corridor region. The
+    # leader's tile is placed before its two draws, for the elites' own
+    # reason: `leaders_clear` is `clear` less the vault, hall and secret
+    # rooms, so it is the pool most likely to run out, and a group that
+    # never got a leader must not spend a family and an affix on it.
     #
     # Two caps stop the loop, and both stop DRAWS rather than only
     # placement: GROUPS_MAX groups a floor, and one elite-led group per
@@ -1385,13 +1400,13 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
         if led_by == "elite" and elite_led >= elite_led_cap:
             break
         minion_count = min(_rand(rng, minion_lo, minion_hi), GROUP_MEMBERS_MAX - 1)
+        leader = take(leaders_clear)
+        if leader is None:
+            break
         leader_family = _draw_family(rng, families)
         leader_affix = None
         if led_by == "elite" and affix_ids:
             leader_affix = affix_ids[_pick(rng, len(affix_ids))]
-        leader = take(leaders_clear)
-        if leader is None:
-            break
         if canvas.owner[leader[1] * canvas.w + leader[0]] < 0 and corr_regions is None:
             corr_regions = _corridor_regions(canvas)
         group = f"g{number}"
@@ -1414,7 +1429,9 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
         # random's family and both chest tables are all one draw away
         # from where the floor key says they are. The ADR's order is the
         # order the DRAWS happen in, and a draw that never happens cannot
-        # be out of order.
+        # be out of order. Same rule as the elite's tile above and the
+        # random's below: the tile first, and only then what the monster
+        # standing on it is.
         for _ in range(minion_count):
             if len(spawns) >= budget:
                 break
@@ -1425,13 +1442,20 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
             place(tile, family, group=group)
 
     # 3. Randoms, filling the budget the elites and the groups left. Per
-    # random: a family, then a tile. A pack that names no elite and no
-    # group therefore carries exactly the budget and nothing else.
+    # random: a family, then a tile - and the tile is placed first, for
+    # the same reason as the three above. A cramped floor is the case
+    # that reaches it: `budget` clamps to four even where the walkable
+    # tiles are counted in dozens, and the seven-tile exclusion around
+    # each stair can take that many tiles away, so the last random can
+    # find nothing to stand on. It then costs the floor no family, and
+    # the chest count after it is where the floor key says it is.
+    # A pack that names no elite and no group therefore carries exactly
+    # the budget and nothing else.
     for _ in range(budget - len(spawns)):
-        family = _draw_family(rng, families)
         tile = take(clear)
         if tile is None:
             break
+        family = _draw_family(rng, families)
         place(tile, family)
 
     chests: list[dict] = []
