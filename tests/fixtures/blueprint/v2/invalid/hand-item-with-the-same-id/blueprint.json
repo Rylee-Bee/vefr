@@ -1,0 +1,9 @@
+{
+  "blueprint": 2,
+  "things": [
+    {
+      "id": "shell",
+      "name": "a spiral shell"
+    }
+  ]
+}

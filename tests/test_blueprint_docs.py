@@ -1,4 +1,4 @@
-"""Blueprint A11: the guide, glossary and command docs tell the truth about format 1."""
+"""Blueprint A11: the guide, glossary and command docs tell the truth about every format."""
 
 import re
 from pathlib import Path
@@ -12,10 +12,60 @@ def test_guide_field_tables_list_exactly_the_closed_sets():
     guide = (ROOT / "docs" / "guides" / "blueprint.md").read_text()
     for name, keys in (("TOP_KEYS", blueprint.TOP_KEYS), ("FAMILY_KEYS", blueprint.FAMILY_KEYS),
                        ("FIELD_KEYS", blueprint.FIELD_KEYS), ("REGION_KEYS", blueprint.REGION_KEYS),
-                       ("INSTANCE_KEYS", blueprint.INSTANCE_KEYS)):
+                       ("INSTANCE_KEYS", blueprint.INSTANCE_KEYS),
+                       ("THING_KEYS", blueprint.THING_KEYS)):
         listed = set(re.findall(rf"<!-- {name}: ([^>]*?) -->", guide))
         assert listed, f"guide is missing the {name} marker"
         assert set(re.split(r",\s*", listed.pop())) == set(keys)
+
+
+def test_the_format_one_top_keys_are_pinned_by_value():
+    """The set formats 1 and 3 close their top level on, pinned by value
+    because nothing else in the suite reads it: `TOP_KEYS` is the
+    format-2 set, so a file that only ever checked `TOP_KEYS` would
+    never notice format 1 start accepting `things`."""
+    from vefr import blueprint
+
+    assert blueprint.TOP_KEYS_V1 == {"blueprint", "families", "regions"}
+    assert "things" not in blueprint.TOP_KEYS_V1
+    assert "places" not in blueprint.TOP_KEYS_V1
+
+
+def test_the_guide_says_the_two_new_formats_cannot_be_combined():
+    """`tests/test_blueprint_things.py` and `test_blueprint_places.py`
+    each prove that one format refuses the other's key. A guide that
+    only said a format-3 file "never waits for format 2" left an author
+    guessing whether writing both was allowed."""
+    text = re.sub(r"\s+", " ", (ROOT / "docs" / "guides" / "blueprint.md").read_text())
+    assert "Formats 2 and 3 cannot be combined" in text
+    assert "`places` is format 3's key and is refused on `2`" in text
+    assert "`things` is format 2's key and is refused on `3`" in text
+
+
+def test_the_things_exit_ramp_says_what_the_code_does():
+    """`tests/test_blueprint_things.py` pins the behavior: deleting the
+    `things` list leaves the written item alone and takes the appended
+    drop back to what the source still says. A guide sentence claiming
+    the drop stays would send an author looking for a drop that is gone.
+    """
+    text = re.sub(r"\s+", " ", (ROOT / "docs" / "guides" / "blueprint.md").read_text())
+    assert "leaves every item and every drop in place" not in text
+    assert ("deleting only the `things` list leaves every written item in "
+            "place") in text
+    assert "the appended drop goes back to what the source still says" in text
+
+
+def test_the_library_return_type_change_is_written_down():
+    """B1 changed one library signature: `blueprint.plan()` returns a
+    `(regions, things)` pair where it returned the regions dict alone.
+    There is no shim, so the change has to be on the record - an
+    unrecorded return-type change is the kind a caller outside this
+    repo only finds out about from a traceback."""
+    adr = re.sub(r"\s+", " ", (ROOT / "docs" / "adr"
+                              / "0010-things-and-places.md").read_text())
+    assert "plan()" in adr
+    assert "(regions, things)" in adr
+    assert "no shim" in adr.lower()
 
 
 def test_glossary_and_command_docs_name_blueprint_and_normalize():

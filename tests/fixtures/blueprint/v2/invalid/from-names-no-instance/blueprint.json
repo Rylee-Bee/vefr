@@ -1,7 +1,7 @@
 {
-  "blueprint": 4,
+  "blueprint": 2,
   "families": {
-    "b": {
+    "beetle": {
       "defaults": {
         "name": "a beetle",
         "sprite": "beetle",
@@ -14,14 +14,21 @@
     "act-1/cave-2": {
       "enemies": [
         {
-          "id": "x1",
-          "family": "b",
+          "id": "b1",
+          "family": "beetle",
           "at": [
-            1,
-            1
+            3,
+            4
           ]
         }
       ]
     }
-  }
+  },
+  "things": [
+    {
+      "id": "pebble",
+      "from": "ghost",
+      "name": "a smooth pebble"
+    }
+  ]
 }
