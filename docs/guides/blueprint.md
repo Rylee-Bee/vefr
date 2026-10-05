@@ -304,16 +304,23 @@ sits beside `regions`, and a region on format 2 carries `enemies` only.
 | `id` | a unique id across the `things` (required) |
 | `name` | the name the bag shows (required) |
 | `from` | the enemy instance that drops it |
-| `sprite` | the picture key; defaults to the `id` |
-| `value` | what a shop pays and asks, a whole number |
-| `heal` | health restored on use, a whole number |
-| `use` | the verb that uses it, like `drink` |
-| `keep` | `true` when a used thing stays in the bag |
+| `sprite` | the picture key (a non-empty string); defaults to the `id` |
+| `value` | what a shop pays and asks, a positive whole number |
+| `heal` | health restored on use, a positive whole number |
+| `use` | the verb that uses it, a non-empty string, like `drink` |
+| `keep` | `true`, or nothing, when a used thing stays in the bag |
 | `slot` | where a worn thing sits: `hand`, `body`, `head`, `feet` or `charm` |
 | `mods` | the stats a worn thing changes: `atk` and `hp` |
 | `light` | a torch's `radius` and `turns`, or `{"reveal": true}` |
 
 <!-- THING_KEYS: id, from, name, sprite, value, heal, use, keep, slot, mods, light -->
+
+A `sprite`, `value`, `heal`, `use` or `keep` of the wrong type is
+refused, one sentence and the record's own pointer, rather than dropped
+at the weave: the item reader throws away a value it cannot use, and
+the author would only find out in a woven file. A broken `light`,
+`slot` or `mods` is caught by the pack validator instead, so those two
+rules do not overlap.
 
 `id` and `name` are always required. A thing with no name is refused
 rather than written, because an item entry with no name never reaches

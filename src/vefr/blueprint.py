@@ -247,6 +247,31 @@ def _check_things(things: object, base: str) -> None:
             raise BlueprintError(
                 "from must name one enemy instance (a non-empty string)",
                 f"{tbase}/from")
+        # The guide gives each of these a shape, and the item reader
+        # drops a value it cannot use with nothing said: a `value` of
+        # "4" or a `sprite` of 3 would bake an item that is quietly not
+        # what the author wrote, and the loss would only show at the
+        # weave. A broken `light`, `slot` or `mods` is named by the pack
+        # validator instead, so it needs no rule here. Refused at the
+        # reader, with the record's own pointer.
+        if "sprite" in thing and (not isinstance(thing["sprite"], str)
+                                  or not thing["sprite"]):
+            raise BlueprintError(
+                "sprite must name a picture key (a non-empty string)",
+                f"{tbase}/sprite")
+        for key in ("value", "heal"):
+            if key in thing and not (type(thing[key]) is int
+                                     and thing[key] > 0):
+                raise BlueprintError(
+                    f"{key} must be a positive whole number",
+                    f"{tbase}/{key}")
+        if "use" in thing and (not isinstance(thing["use"], str)
+                               or not thing["use"].strip()):
+            raise BlueprintError(
+                "use must be one verb (a non-empty string)", f"{tbase}/use")
+        if "keep" in thing and thing["keep"] is not True:
+            raise BlueprintError(
+                "keep is true or nothing (a bool)", f"{tbase}/keep")
 
 
 def _check_places(places: object, base: str) -> None:

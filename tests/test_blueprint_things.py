@@ -410,6 +410,66 @@ def test_a_from_that_names_no_instance_at_all_is_refused(tmp_path):
     assert "no instance" in str(err).lower()
 
 
+BAD_ITEM_FIELDS = [
+    ("sprite", 3, "picture key"),
+    ("sprite", "", "picture key"),
+    ("sprite", True, "picture key"),
+    ("value", "4", "positive whole number"),
+    ("value", 0, "positive whole number"),
+    ("value", -2, "positive whole number"),
+    ("value", 4.5, "positive whole number"),
+    ("value", True, "positive whole number"),
+    ("heal", "3", "positive whole number"),
+    ("heal", 0, "positive whole number"),
+    ("heal", None, "positive whole number"),
+    ("use", ["drink"], "one verb"),
+    ("use", "  ", "one verb"),
+    ("use", 7, "one verb"),
+    ("keep", "yes", "true or nothing"),
+    ("keep", 1, "true or nothing"),
+]
+
+
+@pytest.mark.parametrize("key,value,needle", BAD_ITEM_FIELDS,
+                         ids=[f"{k}-{v!r}" for k, v, _ in BAD_ITEM_FIELDS])
+def test_a_thing_field_of_the_wrong_type_is_refused(key, value, needle,
+                                                    tmp_path):
+    """The item reader drops a `value`, `heal`, `use`, `keep` or `sprite`
+    it cannot use, with nothing said: the pack bakes, the thing is
+    simply not what the author wrote. The guide documents a shape for
+    each of them, so the reader checks that shape and refuses with the
+    record's own pointer - before any pack is read."""
+    err = _refuse(tmp_path, {"id": "pebble", "name": "a smooth pebble",
+                             key: value})
+    assert err.pointer == f"/things/0/{key}"
+    assert needle in str(err).lower()
+    assert "\n" not in str(err)
+
+
+def test_a_bad_thing_field_never_reaches_a_woven_pack(tmp_path):
+    """The whole claim: `vefr normalize` refuses the source instead of
+    writing an item the weave would quietly thin out."""
+    pack = _pack(tmp_path, blueprint=_source([{"id": "pebble",
+                                               "name": "a smooth pebble",
+                                               "value": "4"}]))
+    before = (pack / "world.json").read_bytes()
+    rc, out = vefr("normalize", "--pack", pack, "--out", pack)
+    assert rc != 0
+    assert "value must be a positive whole number" in out
+    assert (pack / "world.json").read_bytes() == before
+
+
+def test_the_documented_shapes_are_the_ones_accepted(tmp_path):
+    """The other side of the refusals: every shape the guide documents
+    still expands, and the entry bakes whole."""
+    thing = {"id": "draught", "name": "a bitter draught", "sprite": "cup",
+             "value": 5, "heal": 3, "use": "drink", "keep": True}
+    pack = _normalized(tmp_path, _source([thing]))
+    assert _items(pack)["draught"] == {
+        "name": "a bitter draught", "sprite": "cup", "value": 5,
+        "heal": 3, "use": "drink", "keep": True}
+
+
 def test_a_from_naming_an_instance_in_two_owned_regions_is_refused(tmp_path):
     """An instance id is unique within a region, not across the whole
     source, so one `from` can be ambiguous. Appending the drop to the
