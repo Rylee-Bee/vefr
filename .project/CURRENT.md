@@ -20,7 +20,7 @@
 
 **Decided by Rylee (recorded in the ADRs and in DECISIONS):** the wake rule, noise ranges, the warden's behaviour, reload, affix style, six starting stamps and their rotation and rarity rules, the shortcut item and the final boss's region. See `.project/DECISIONS.md` (2026-10-04, late afternoon).
 
-**Running:** E7 elites and groups (foreman), B1 things (foreman). **Next, in Rylee's order:** E5 stamps, then E8 wardens and vaults.
+**Merged 2026-10-05:** E7 elites and groups (#299), E5 stamps (#301), the skin/HUD slice (#302) and B1 things (#297), each after its review findings were fixed and on green CI. **Next in Rylee's chosen dungeon order:** E8 wardens and vaults.
 
 **Known:** the 128x96 monster-turn bench was not rerun after E0d (the bench needs reworking for sleeping monsters); #269, #259, #260 still open. The orchestration tooling now lives in `Rylee-Bee/agent-platform` (the `agents` repo is archived).
 
