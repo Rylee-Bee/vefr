@@ -1010,6 +1010,111 @@ def sound_errors(w: dict) -> list[str]:
     return [p.sentence for p in shapes.check(shapes.BLOCKS['sound'], w['sound'])]
 
 
+# ADR 0014 keeps the affix list and the Section packs in files of their
+# own, beside the ones above rather than inside `world.json`: one
+# `affixes.json` at the pack root, shared by every Section, and one
+# `sections/<id>.json` per Section. Both are pack data, both are checked
+# by `shapes.py`, and this is the door `vefr check` opens onto them.
+AFFIX_FILE = 'affixes.json'
+SECTIONS_DIR = 'sections'
+
+
+def _pack_json(path: Path):
+    """One pack file's JSON, or the sentence that says it cannot be read."""
+    try:
+        return json.loads(path.read_text(encoding='utf-8')), None
+    except OSError as exc:
+        return None, f'{path.name} could not be read ({exc.strerror})'
+    except ValueError:
+        return None, f'{path.name} is not valid JSON'
+
+
+def _shape_sentences(rel: str, problems) -> list[str]:
+    """Every `shapes` problem as `file: pointer sentence`.
+
+    The pointer is half the sentence: ADR 0014's "Validator rejects"
+    asks for one plain sentence plus a JSON pointer each, and the
+    pointer is the only thing that says which record of a list is wrong.
+    """
+    return [f'{rel}: {p.pointer} {p.sentence}' for p in problems]
+
+
+def _family_resolver(pack: Path):
+    """A `resolve` callable for a Section's families, or None.
+
+    A Section names a Blueprint family by id and carries no record of its
+    own (ADR 0014), so the one question `shapes` cannot answer for itself
+    - does this family exist, and does it have `hp` and `atk`? - is asked
+    through `blueprint.resolve_family`. A pack with no Blueprint has no
+    families to resolve and the family checks are skipped rather than
+    answered wrongly, and so is one whose Blueprint cannot be read: the
+    Blueprint's own check already speaks for that pack.
+    """
+    from . import blueprint
+
+    source_path = pack / blueprint.BLUEPRINT_FILE
+    if not source_path.is_file():
+        return None
+    try:
+        source = blueprint.read(source_path)
+    except blueprint.BlueprintError:
+        return None
+
+    def resolve(family_id: str):
+        try:
+            return blueprint.resolve_family(source, family_id)
+        except blueprint.BlueprintError:
+            return None    # an unknown, cyclic or parentless family
+    return resolve
+
+
+def section_errors(pack_dir) -> list[str]:
+    """Every problem with a pack's affix list and its Section packs.
+
+    `shapes.check_section` is the engine's own read of both; this is the
+    only path that runs it, so an affix record that is not a record, an
+    id used twice, an affix a Section names and the pack never defines, a
+    group led by an elite in a Section that names no affix, and a family
+    the Blueprint does not have are all pack-authoring errors with a
+    sentence and a pointer - the ADR's "Validator rejects" list, said
+    where the author is already looking.
+
+    The affix list is read on its own first, before any Section: it is
+    one list for the whole pack whatever Sections name, so a duplicate id
+    is a problem with a pack that ships no Section at all too. A pack
+    with neither file gets nothing here and validates exactly as it did
+    before - both are E7 additions and neither is required.
+    """
+    pack = Path(pack_dir)
+    errors: list[str] = []
+
+    affixes = None
+    if (pack / AFFIX_FILE).is_file():
+        affixes, problem = _pack_json(pack / AFFIX_FILE)
+        if problem is not None:
+            return [problem]
+        errors.extend(_shape_sentences(
+            AFFIX_FILE, shapes.check_affixes({}, affixes)))
+
+    sections = pack / SECTIONS_DIR
+    paths = sorted(sections.glob('*.json')) if sections.is_dir() else []
+    if not paths:
+        return errors
+    resolve = _family_resolver(pack)
+    for path in paths:
+        rel = path.relative_to(pack).as_posix()
+        section, problem = _pack_json(path)
+        if problem is not None:
+            errors.append(f'{rel}: {problem}')
+            continue
+        if not isinstance(section, dict):
+            errors.append(f'{rel}: a Section pack must be a JSON object')
+            continue
+        errors.extend(_shape_sentences(
+            rel, shapes.check_section(section, affixes, resolve)))
+    return errors
+
+
 # The parts a skin may name (design/ui-skin.md). Anything else is a
 # typo the author should read about, not a part the player silently
 # ignores.
@@ -2109,6 +2214,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # checked beside the other optional catalogs. A pack that declares
     # none gets nothing here.
     errors.extend(sound_errors(w))
+    # The pack's optional affix list and Section packs (ADR 0014), read
+    # off the disk beside the blocks above: one `affixes.json` at the
+    # root and one `sections/<id>.json` per Section. `shapes` speaks for
+    # both, and this is the door that runs it. A pack that ships neither
+    # gets nothing here.
+    if pack_dir is not None:
+        errors.extend(section_errors(pack_dir))
     town = w['town']
     m = town['map']
     legend = town['legend']
