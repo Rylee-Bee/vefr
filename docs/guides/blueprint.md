@@ -332,6 +332,10 @@ same id fails, one sentence, with a pointer. An entry that holds exactly
 what the thing would write is not hand-declared, so deleting the `things`
 list and putting the identical list back is ordinary work.
 
+An instance id is unique within its region, not across the whole file,
+so a `from` that reaches two owned regions is refused with both region
+keys named rather than resolved to whichever came last.
+
 ### What one thing writes
 
 - the pack root `world.json` gets one entry at `/items/<id>`, holding

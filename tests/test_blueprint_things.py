@@ -391,6 +391,26 @@ def test_a_from_that_names_no_instance_at_all_is_refused(tmp_path):
     assert "no instance" in str(err).lower()
 
 
+def test_a_from_naming_an_instance_in_two_owned_regions_is_refused(tmp_path):
+    """An instance id is unique within a region, not across the whole
+    source, so one `from` can be ambiguous. Appending the drop to the
+    last one found would be a guess, so the source is refused instead,
+    naming both regions so the author can see which pair to rename."""
+    from vefr import blueprint
+
+    twice = dict(CAVE_2[0], at=[4, 2])
+    source = _source([PEBBLE])
+    source["regions"]["act-1/cave-3"] = {"enemies": [twice]}
+    pack = _pack(tmp_path, blueprint=source)
+    with pytest.raises(blueprint.BlueprintError) as err:
+        blueprint.expand(blueprint.read(pack / "blueprint.json"),
+                         pack_dir=pack)
+    assert err.value.pointer == "/things/0/from"
+    assert "two owned regions" in str(err.value)
+    assert "'act-1/cave-2'" in str(err.value)
+    assert "'act-1/cave-3'" in str(err.value)
+
+
 def test_a_hand_items_entry_with_the_same_id_is_refused(tmp_path):
     """`shell` is the item the built pack declares by hand. A thing may
     not take it over: the hand-written entry is the ordinary shape and no

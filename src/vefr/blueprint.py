@@ -971,13 +971,15 @@ def _expand_things(pack: Path, source: dict, listed: list,
     records, so a `from` may only reach an instance of a region this
     Blueprint owns - a Blueprint writes the regions it owns and nothing
     else, and a drop in a region it does not own would land in a file no
-    lock of its names.
+    lock of its names. An instance id is unique within its region and
+    not across the source, so a `from` that reaches two owned regions
+    is refused rather than resolved to whichever came last.
     """
-    carriers = {
-        record.get("id"): record
-        for records in expanded.values()
-        for record in records["enemies"]
-    }
+    carriers: dict = {}
+    for region_key, records in expanded.items():
+        for record in records["enemies"]:
+            carriers.setdefault(record.get("id"), []).append(
+                (region_key, record))
     out: list[dict] = []
     for i, thing in enumerate(listed):
         base = f"/things/{i}"
@@ -1003,9 +1005,15 @@ def _expand_things(pack: Path, source: dict, listed: list,
         record = {"id": tid, "source": base, "item": item, "pointer": pointer}
         carrier = thing.get("from")
         if carrier is not None:
-            target = carriers.get(carrier)
-            if target is None:
-                _refuse_carrier(pack, carrier, f"{base}/from")
+            found = carriers.get(carrier) or []
+            if len(found) > 1:
+                raise BlueprintError(
+                    f"the instance {carrier!r} is in two owned regions "
+                    f"({', '.join(repr(key) for key, _ in found)}), and a "
+                    f"from may name only one", f"{base}/from")
+            if not found:
+                _refuse_carrier(pack, expanded, carrier, f"{base}/from")
+            target = found[0][1]
             drops = target.setdefault("drops", [])
             if tid in drops:
                 raise BlueprintError(
@@ -1018,27 +1026,42 @@ def _expand_things(pack: Path, source: dict, listed: list,
     return out
 
 
-def _refuse_carrier(pack: Path, carrier: str, pointer: str) -> None:
-    """Name which of the two `from` refusals this is, because the author
-    has to know whether the instance is missing or merely out of reach."""
-    for record in _pack_enemies(pack):
-        if record.get("id") == carrier:
+def _refuse_carrier(pack: Path, expanded: dict, carrier: str,
+                    pointer: str) -> None:
+    """Name which of the `from` refusals this is, because the author has
+    to know whether the instance is missing, out of reach, or standing in
+    a region this source names without owning that region's `enemies` -
+    three different fixes, and the last one used to be told the first."""
+    on_disk = _pack_enemies(pack)
+    found = [region_key for region_key, records in on_disk.items()
+             if any(record.get("id") == carrier for record in records)]
+    for region_key in found:
+        entry = expanded.get(region_key)
+        if entry is not None and not entry["owns_enemies"]:
             raise BlueprintError(
-                f"this blueprint owns no region with the instance {carrier!r}",
-                pointer)
+                f"the region {region_key!r} is in this blueprint but "
+                f"declares no enemies, so the instance {carrier!r} is not "
+                f"one this blueprint writes", pointer)
+    if found:
+        raise BlueprintError(
+            f"this blueprint owns no region with the instance {carrier!r}",
+            pointer)
     raise BlueprintError(
         f"from names no instance {carrier!r} in any region of this pack",
         pointer)
 
 
-def _pack_enemies(pack: Path) -> list[dict]:
-    """Every enemy record the pack holds on disk, owned or not.
+def _pack_enemies(pack: Path) -> dict[str, list[dict]]:
+    """Every enemy record the pack holds on disk, per region key, owned
+    or not.
 
-    Read only to tell the two `from` refusals apart, so a carrier in a
+    Read only to tell the `from` refusals apart, so a carrier in a
     region this Blueprint does not own is named as that rather than as
-    an id nothing has.
+    an id nothing has - and a carrier in a region the source names
+    without owning its `enemies` is named as that rather than as one no
+    region has.
     """
-    out: list[dict] = []
+    out: dict[str, list[dict]] = {}
     acts = Path(_inside_pack(pack, "acts"))
     if not acts.is_dir():
         return out
@@ -1046,9 +1069,10 @@ def _pack_enemies(pack: Path) -> list[dict]:
         act_dir = _inside_pack(pack, f"acts/{act.name}")
         for region in sorted(p for p in Path(act_dir).iterdir() if p.is_dir()):
             region_dir = _inside_pack(pack, f"acts/{act.name}/{region.name}")
-            for record in _read_json(Path(region_dir) / "contract.json").get("enemies") or []:
-                if isinstance(record, dict):
-                    out.append(record)
+            records = _read_json(
+                Path(region_dir) / "contract.json").get("enemies") or []
+            out[f"{act.name}/{region.name}"] = [
+                record for record in records if isinstance(record, dict)]
     return out
 
 
