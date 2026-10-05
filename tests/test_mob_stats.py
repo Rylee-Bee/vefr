@@ -22,7 +22,7 @@ property is asserted with `type(v) is int` rather than `isinstance`, so
 a `bool` sneaking in would fail too.
 
 Determinism (PLAN.md section 2) is tested directly: the same inputs
-must return the same dict 200 times running, with no clock, no global
+must return the same dict on every repeat, with no clock, no global
 and no draw. The 200-seed matrix is what ADR 0014's Acceptance names
 ("the same whole numbers in both languages, for 200 seeds x curves x
 affixes x cycles 0-5"); the JavaScript twin and the parity case belong
@@ -43,6 +43,12 @@ from vefr.mob_stats import cycle_pct, curve_pct, mob_stats as stats, pct
 SEED_COUNT = 200
 SEEDS = [f"mobstats-{i}" for i in range(SEED_COUNT)]
 CYCLES = list(range(6))  # 0-5, and cycle 0 is the story
+
+# How many times the purity check calls `mob_stats` again on a case it
+# has already called. Three: the matrix itself is the wide sweep, this
+# is the repeat dimension of it, and 672k cases x 200 repeats was 134
+# million calls of a six-argument function.
+REPEATS = 3
 
 # The curves the matrix crosses. Each is a real Section `curve` block:
 # decimal multipliers, low then high, flat and sloped.
@@ -329,11 +335,18 @@ def test_matrix_is_whole_and_clamped():
 
 def test_matrix_is_a_pure_function_of_its_inputs():
     # The determinism rule of PLAN.md section 2, measured: the same
-    # inputs return the same dict 200 times running. No clock, no
+    # inputs return the same dict on every repeat. No clock, no
     # global, no draw, no dict iteration.
+    #
+    # Three repeats, not 200. The matrix already carries 672k cases, so
+    # 200 repeats ran 134 million calls of a function that reads six
+    # arguments and returns a dict - the fourth call already proves the
+    # same thing the 200th would, and the extra minutes bought no
+    # coverage. Purity has no warm-up: there is no cache to fill and no
+    # first call that differs from the rest.
     for _seed, base, affix, pack, k, c in _matrix_cases():
         first = stats(base, affix, pack, k, c)
-        for _ in range(200):
+        for _ in range(REPEATS):
             assert stats(base, affix, pack, k, c) == first
 
 
