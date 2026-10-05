@@ -682,7 +682,7 @@ def test_reading_a_format_1_blueprint_still_expands_unchanged(tmp_path):
     pack = mk.build(tmp_path)
     source = mk.STD_BLUEPRINT
     assert blueprint.expand(blueprint.read_v1(source), pack_dir=pack)
-    assert blueprint.plan(source, pack_dir=pack)["act-1/cave-2"]["owns_enemies"]
+    assert blueprint.plan(source, pack_dir=pack)[0]["act-1/cave-2"]["owns_enemies"]
     # The same family, read the new way, is the base record the old way
     # wrote into every record of that family.
     record = blueprint.resolve_family(source, "beetle")

@@ -1,0 +1,9 @@
+{
+  "blueprint": 2,
+  "things": [
+    {
+      "id": "pebble",
+      "name": "a smooth pebble"
+    }
+  ]
+}

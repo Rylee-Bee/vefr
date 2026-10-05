@@ -1,0 +1,21 @@
+{
+ "stamp": 1,
+ "id": "ash-closet",
+ "role": "filler",
+ "tags": [
+  "any"
+ ],
+ "depth": [
+  1,
+  99
+ ],
+ "rotate": true,
+ "mirror": true,
+ "max_per_floor": 3,
+ "rows": [
+  "####",
+  "#..#",
+  "+..#",
+  "####"
+ ]
+}
