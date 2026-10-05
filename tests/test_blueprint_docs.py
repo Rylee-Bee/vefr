@@ -55,6 +55,19 @@ def test_the_things_exit_ramp_says_what_the_code_does():
     assert "the appended drop goes back to what the source still says" in text
 
 
+def test_the_library_return_type_change_is_written_down():
+    """B1 changed one library signature: `blueprint.plan()` returns a
+    `(regions, things)` pair where it returned the regions dict alone.
+    There is no shim, so the change has to be on the record - an
+    unrecorded return-type change is the kind a caller outside this
+    repo only finds out about from a traceback."""
+    adr = re.sub(r"\s+", " ", (ROOT / "docs" / "adr"
+                              / "0010-things-and-places.md").read_text())
+    assert "plan()" in adr
+    assert "(regions, things)" in adr
+    assert "no shim" in adr.lower()
+
+
 def test_glossary_and_command_docs_name_blueprint_and_normalize():
     assert "Blueprint" in (ROOT / "docs" / "guides" / "glossary.md").read_text()
     assert "normalize" in (ROOT / "docs" / "guides" / "vefr-command.md").read_text()

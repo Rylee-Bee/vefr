@@ -30,3 +30,22 @@ Short source in, canonical files out, committed and read-only; `vefr check` reje
 ## Consequences
 
 A monster takes 2 edits (art and a family), gear 2, a door 1, a region 3. The risk is a second source of truth; the stale rule and the exit ramp are the mitigation, and each slice must show the Cottage trial passing the same threshold Blueprint did (every record equal, the woven player identical).
+
+## Amendment 2026-10-04: one library signature moved, with no shim
+
+B1 changed one return type in `vefr.blueprint`: `plan()` now returns a
+`(regions, things)` pair where it returned the regions dict alone,
+because a thing belongs to the pack rather than to one region and the
+writer needs both halves of the expansion in one resolution pass - a
+`from` has to be resolved before anything is written, or a refused
+carrier would leave half a pack rewritten.
+
+`expand()` did not move: it still returns `{region_key: [record]}`, so
+the path a pack author or a pack tool takes is unchanged, and `vefr
+check` and `vefr normalize` behave exactly as before. There is no shim.
+Every in-repo caller was updated in the same commit (`expand`,
+`check_errors`, and the in-place refresh), and nothing else in the
+repo calls `plan()`. A caller outside this repo that used `plan()`
+directly would take the first element of the pair and carry on; that
+is the whole cost of the change, and it is why the change is written
+down here rather than left in the diff.

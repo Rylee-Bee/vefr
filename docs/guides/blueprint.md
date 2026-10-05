@@ -446,4 +446,6 @@ drop goes back to what the source still says.
 - Hand-written enemy records stay fully supported.
 
 Format changes are an ADR amendment with a new reader and fixtures. See
-[ADR 0008](../adr/0008-blueprint-format.md).
+[ADR 0008](../adr/0008-blueprint-format.md) and
+[ADR 0010](../adr/0010-things-and-places.md) (formats 2 and 3, and the
+one library return type B1 moved, with no shim).
