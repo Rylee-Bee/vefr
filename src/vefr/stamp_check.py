@@ -10,7 +10,10 @@ ADR 0013's Validation section, in four parts:
 - **sweep** - lay the pack's floors and count how often each stamp came
   out. Required roles have to be on every floor they are eligible for;
   optional ones may be rare on purpose and have no minimum (owner
-  decision 4); the sweep only reports how often they place.
+  decision 4); the sweep only reports how often they place. A floor that
+  fell back to v2 over a stamp carries the role that would not place in
+  `stamp_defect`, and the sweep reports that too: a share says how often,
+  the defect says why.
 - **graph** - read a floor back and complain about a stamped room with
   no door in use, or with an anchor the hero cannot walk to.
 
@@ -436,7 +439,10 @@ def sweep(records: list[dict], sections: list[dict], seeds: int
     Returns the per-stamp stats, the graph findings, and how many floors
     were laid. A floor that came back as v2 is not a floor: it is
     counted in the stats as eligible and not placed, which is what makes
-    a room that cannot place show up as the 0% it is.
+    a room that cannot place show up as the 0% it is - and the floor
+    carries `stamp_defect` naming the role that would not place, so the
+    sweep reports that too (ADR 0013, Placement 4). A share on its own
+    says how often; the defect says why.
     """
     stats: dict[str, dict] = {}
     for record in records:
@@ -450,6 +456,8 @@ def sweep(records: list[dict], sections: list[dict], seeds: int
             "min_width": 0,
         }
     findings: list[str] = []
+    swept: dict[str, int] = {}
+    defects: dict[tuple[str, str], int] = {}
     laid = 0
     for number in range(max(0, int(seeds))):
         seed = f"{SEED_PREFIX}{number}"
@@ -471,6 +479,14 @@ def sweep(records: list[dict], sections: list[dict], seeds: int
                     plan = delve_v3.generate_floor_v3(
                         seed, small, section, kind, records, depth, trace=trace)
                     laid += 1
+                    swept[section_id] = swept.get(section_id, 0) + 1
+                    defect = str(plan.get("stamp_defect") or "")
+                    if defect:
+                        # A v2 floor that fell back over a stamp, counted by
+                        # the role it names: one sentence for the hundred
+                        # floors that all fell back the same way.
+                        key = (section_id, defect)
+                        defects[key] = defects.get(key, 0) + 1
                     # ADR 0013's eligibility is three things, and the
                     # third is "its role is wanted on the floor": a floor
                     # that drew no secret has no slot for a secret room,
@@ -493,6 +509,18 @@ def sweep(records: list[dict], sections: list[dict], seeds: int
                     for line in graph_findings(plan):
                         if line not in findings:
                             findings.append(line)
+    # The defects lead: they are the cause of the share findings the
+    # report prints after them, and a rate with no cause behind it is the
+    # complaint an author cannot act on.
+    findings[:0] = [
+        stamps.sentence(
+            defect.split(":", 1)[-1] or defect,
+            f"did not place on {count} of {swept.get(section_id, count)} "
+            f"{section_id} floors the sweep laid, so each of them fell back "
+            f"to v2 and carries no stamped room at all",
+            "/stamp_defect")
+        for (section_id, defect), count in sorted(defects.items())
+    ]
     return stats, findings, laid
 
 

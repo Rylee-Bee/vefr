@@ -264,6 +264,37 @@ def test_a_section_with_no_size_is_reported_and_skipped(tmp_path, out):
     assert "section cellar: no size" in out()
 
 
+# ------------------------------------------------------------ the defect
+
+
+def test_a_floor_that_fell_back_over_a_stamp_reports_the_defect(tmp_path, out):
+    """ADR 0013's Placement 4: the v2 floor carries the reason, so is it read.
+
+    A 21x21 warden-hall cannot fit a 24x16 floor at any orientation, so
+    every swept floor falls back to v2 and none of them carries a stamped
+    room. The share findings say how often; the defect is what says the
+    hall is the reason, and a check that counted those floors without
+    naming the cause was reporting a rate about its own sweep.
+    """
+    hall = ["##+##" + "#" * 16] + ["#" + "." * 19 + "#"] * 19 + ["#" * 10 + "+" + "#" * 10]
+    hall[1] = "#" + "W" + "." * 18 + "#"
+    record = {
+        "stamp": 1, "id": "too-big-hall", "role": "warden-hall", "tags": ["too-big"],
+        "legend": {"W": {"anchor": "warden"}}, "rows": hall,
+    }
+    section = dict(SECTION, size={"w": [24, 24], "h": [16, 16]},
+                   rooms=[6, 6], floors=1, stamps=["too-big"])
+    section.pop("vault")
+    rc = cli.cmd_stamp_check(_args(_pack(tmp_path, (record,), section), 1))
+    text = out()
+    assert rc == cli.EXIT_ERROR
+    assert ("stamp warden-hall: did not place on 4 of 4 cellar floors the "
+            "sweep laid, so each of them fell back to v2 and carries no "
+            "stamped room at all /stamp_defect") in text
+    # The share it explains is on the same report.
+    assert "placed on 0 of 4 cellar floors" in text
+
+
 # -------------------------------------------------------------- the graph
 
 
