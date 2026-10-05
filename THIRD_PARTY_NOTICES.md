@@ -32,7 +32,7 @@ full license text for the family added on 2026-10-04.
 | Atkinson Hyperlegible Next | SIL OFL 1.1 | https://www.brailleinstitute.org/freefont/ |
 | OpenDyslexic | SIL OFL 1.1 | https://opendyslexic.org/ |
 | Cinzel | SIL OFL 1.1 | https://github.com/NDISCOVER/Cinzel |
-| Crimson Pro | SIL OFL 1.1 | https://github.com/productiontype/CrimsonPro |
+| Crimson Pro | SIL OFL 1.1 | https://github.com/Fonthausen/CrimsonPro (vendored via npm `@fontsource-variable/crimson-pro` 5.3.0) |
 | Noto Sans Runic | SIL OFL 1.1 | https://fonts.google.com/noto/specimen/Noto+Sans+Runic |
 
 The SIL OFL 1.1 permits redistribution of the font files themselves

@@ -20,4 +20,6 @@ The web fonts under `web/fonts/` are a different kind of vendored: they DO
 ship, inlined into the woven single-file player so a game needs no network
 for its type. Cinzel, Atkinson Hyperlegible Next and Crimson Pro (added
 2026-10-04) are the three families a skin may name. All are SIL OFL 1.1;
-the table and the license files are in `THIRD_PARTY_NOTICES.md`.
+the table and the license files are in `THIRD_PARTY_NOTICES.md`, and
+each family's exact upstream source, version and file hash is in
+`web/fonts/README.md`.

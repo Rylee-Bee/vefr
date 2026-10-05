@@ -6,6 +6,7 @@ woven file as data URIs (`window.VEFR_SKIN`); a pack with no skin bakes `window.
 """
 
 import copy
+import hashlib
 import json
 import re
 import sys
@@ -112,12 +113,25 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
     assert has(errors(mk.build(tmp_path, skin=skin)), "backdrop")
 
 
+# The digest rule 6 of docs/plans/interface/PLAN.md is about, pinned so a
+# skin change can never move a pack that names no skin. It moves when the
+# engine's own player code or the bundled fonts move - the player template is
+# woven into every pack, skinned or not - and never because of a skin. To
+# refresh it, and to say in the commit message why it moved:
+#   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
+#     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
+NO_SKIN_WEAVE_SHA256 = "9c0dc563270558cf6e45a1bdcb2faf4ac1bf132c0626ca453ba6b212c81799ba"
+
+
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():
     """Rule 6: a pack with no skin carries no skin, backdrop or font data, and
     weaves the same bytes every time (the digest is deterministic)."""
     pack = ROOT / "worlds" / "sample-world"
     first, second = cli.weave_html(pack), cli.weave_html(pack)
     assert first == second, "the weave of a pack with no skin is not deterministic"
+    assert hashlib.sha256(first.encode()).hexdigest() == NO_SKIN_WEAVE_SHA256, (
+        "the weave of a pack with no skin changed; nothing in this slice may "
+        "change it, and the comment above the constant says how to refresh it")
     assert _baked(first) == "null"
     # Nothing the skin contract reads is baked for a pack that names no skin.
     skin_line = re.search(r"window\.VEFR_SKIN = .*", first).group(0)
