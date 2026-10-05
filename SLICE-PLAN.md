@@ -1,9 +1,13 @@
 # Slice E3 — the delve v3 JS twin (VEFR)
 
-You are the foreman for one slice of the VEFR game engine. Read
-`~/.agents/skills/offload/FOREMAN.md` first: it is the template and the rules.
-Workers are `offload agent` runs in this clone. You have Bash/Read/Glob/Grep only:
-all code comes from workers.
+You are the single build worker for one slice of the VEFR game engine, working alone
+in a throwaway clone: you read, write, edit, run shell commands and commit here. There is
+no foreman and no sub-workers — do every step yourself, in order, committing each finished
+step. Do not try to launch `offload` or any other agent; it does not exist here.
+
+Your sandbox may not have `uv` or `node` on PATH and has no network. If you cannot run the
+test suite, say so plainly in UNRESOLVED and still write the code and the tests; the
+coordinator runs the gate outside your sandbox and reports what it sees.
 
 ## Repo and rules (they are not optional)
 
@@ -104,11 +108,11 @@ over the same 200 seeds, so there is still real evidence.
    `web/player/parts/390-engine-delve-v2.js` and the current JS delve part, and writes the
    function-by-function porting table: stage, function, JS target, already present or missing.
    That table is the plan you then execute.
-2. A worker writes the FROZEN `tests/test_floor_v3_parity.py` (per-stage, 200 seeds, canonical
+2. Write the FROZEN `tests/test_floor_v3_parity.py` (per-stage, 200 seeds, canonical
    JSON, plus the perf budget case) and commits it alone.
-3. Workers port stage by stage in the order plan → layout → graph → populate → validate, keeping
+3. Port stage by stage in the order plan → layout → graph → populate → validate, keeping
    the numbered draw-order comments identical in meaning on both sides. Commit per stage.
-4. A worker runs the gate and fixes what it broke.
+4. Run whatever checks you can and fixes what it broke.
 5. Rebuild `web/packaged.html` with `uv run python scripts/build_player.py` and prove it with
    `uv run python scripts/weave_digest.py`.
 6. Update `ROADMAP.md` with exactly one entry for this landed change.
