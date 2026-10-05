@@ -1,19 +1,22 @@
-"""Blueprint formats 1 and 3 - expand a small source into enemy records
-and into places.
+"""Blueprint formats 1, 2 and 3 - expand a small source into enemy
+records, into things, and into places.
 
 A pack may carry a `blueprint.json` at its root: the edited truth for the
 regions it owns. This module is the library half of
-`docs/adr/0008-blueprint-format.md` (format 1) and `docs/adr/0010` (format
-3, `places`): the versioned readers, the closed key sets, the validator
-and the expander. It adds no runtime and no rule language - a pack word
-grants no authority.
+`docs/adr/0008-blueprint-format.md` (format 1), `docs/adr/0010` (format
+2, `things`; format 3, `places`): the versioned readers, the closed key
+sets, the validator and the expander. It adds no runtime and no rule
+language - a pack word grants no authority.
 
 Format 1 is acts-shape only. `expand` returns `{region_key: [record]}`
 in file order; each record's keys follow `FIELD_ORDER` and absent keys
 are skipped. Format 3 keeps that shape and adds `places`: a door, a
 stair or a sign, placed by a sentence that only `vefr normalize`
-resolves, and written into the region's own `map.md`. Nothing here reads
-the clock, the network or a model.
+resolves, and written into the region's own `map.md`. Format 2 keeps
+format 1's shape and adds `things`, a list at the top level rather than
+a region key: one thing is either in the pack from the start or carried
+by one enemy instance in any region the Blueprint owns. Nothing here
+reads the clock, the network or a model.
 """
 
 from __future__ import annotations
@@ -31,7 +34,15 @@ from .maplab import _map_tile_walkable, load_pack
 
 NORMALIZER_VERSION = 1
 
-TOP_KEYS = frozenset({"blueprint", "families", "regions"})
+# One sentence for a version this VEFR does not read, wherever it is
+# reached from, so the author reads the same refusal either way.
+VERSION_SENTENCE = "blueprint version must be the integer 1, 2 or 3"
+
+TOP_KEYS = frozenset({"blueprint", "families", "regions", "things"})
+# `things` is format 2's own top key, so the two formats beside it keep
+# their own set rather than borrowing the new one: a format-1 file that
+# brings one is a file asking for a format it is not.
+TOP_KEYS_V1 = frozenset({"blueprint", "families", "regions"})
 FAMILY_KEYS = frozenset({"defaults", "extends"})
 FIELD_KEYS = frozenset({"name", "sprite", "hp", "atk", "xp", "sight", "drops"})
 REGION_KEYS = frozenset({"enemies", "places"})
@@ -40,6 +51,15 @@ REGION_KEYS = frozenset({"enemies", "places"})
 # not, so read_v1 keeps its own set rather than borrowing the new one.
 REGION_KEYS_V1 = frozenset({"enemies"})
 INSTANCE_KEYS = frozenset({"id", "family", "at", "properties"})
+# `id` and `from` are the Blueprint's own; the rest are exactly the
+# fields `cli._player_items` reads off an `items` entry, in the order it
+# writes them, so a thing expands into the ordinary hand-written shape.
+THING_KEYS = frozenset({
+    "id", "from", "name", "sprite", "value", "heal", "use", "keep",
+    "slot", "mods", "light",
+})
+ITEM_ORDER = ("name", "sprite", "value", "heal", "use", "keep", "light",
+              "slot", "mods")
 PLACE_KEYS = frozenset({
     "id", "kind", "at", "glyph", "tile", "base", "label", "text",
     "to", "to_at", "needs", "locked_text",
@@ -107,6 +127,13 @@ def read_v1(source: dict) -> dict:
     return _read(source, 1)
 
 
+def read_v2(source: dict) -> dict:
+    """Validate a format-2 Blueprint: format 1's acts shape plus
+    `things`, a list at the top level rather than a region key, because
+    one thing is not in one place."""
+    return _read(source, 2)
+
+
 def read_v3(source: dict) -> dict:
     """Validate a format-3 Blueprint: format 1's acts shape plus
     `places`, whose records carry a placement sentence rather than a
@@ -115,16 +142,18 @@ def read_v3(source: dict) -> dict:
 
 
 def _read(source: dict, version: int) -> dict:
-    """The reader body both formats share, closed on their own key sets.
+    """The reader body the three formats share, closed on their own key
+    sets.
 
-    Only the version, the region keys and `places` differ, so one body
-    keeps the two readers from drifting into two dialects of one format.
+    Only the version, the top keys, the region keys and `places` or
+    `things` differ, so one body keeps the readers from drifting into
+    three dialects of one format.
     """
     if not isinstance(source, dict):
         raise BlueprintError("blueprint must be a JSON object", "")
     if type(source.get("blueprint")) is not int or source.get("blueprint") != version:
-        raise BlueprintError(f"blueprint version must be the integer {version}", "/blueprint")
-    _check_keys(source, TOP_KEYS, "")
+        raise BlueprintError(VERSION_SENTENCE, "/blueprint")
+    _check_keys(source, TOP_KEYS if version == 2 else TOP_KEYS_V1, "")
 
     families = source.get("families", {})
     if not isinstance(families, dict):
@@ -174,7 +203,75 @@ def _read(source: dict, version: int) -> dict:
             _check_keys(properties, FIELD_KEYS, f"{ibase}/properties")
         if version == 3:
             _check_places(region.get("places", []), f"{base}/places")
+    if version == 2:
+        _check_things(source.get("things", []), "/things")
     return source
+
+
+def _check_things(things: object, base: str) -> None:
+    """Every refusal a `things` list can draw, before any pack is read.
+
+    Shape only: what a thing says about itself. A `name` is required
+    rather than defaulted, because `cli._player_items` drops an item
+    entry with no name and the player would never meet the thing.
+    """
+    if not isinstance(things, list):
+        raise BlueprintError("things must be a list", base)
+    seen: set = set()
+    for i, thing in enumerate(things):
+        tbase = f"{base}/{i}"
+        if not isinstance(thing, dict):
+            raise BlueprintError("a thing must be an object", tbase)
+        _check_keys(thing, THING_KEYS, tbase)
+        for key in ("id", "name"):
+            if not isinstance(thing.get(key), str) or not thing[key]:
+                raise BlueprintError(
+                    f"thing is missing its {key} (a non-empty string)",
+                    f"{tbase}/{key}")
+        if thing["id"] in seen:
+            raise BlueprintError(
+                f"duplicate thing id {thing['id']!r}", f"{tbase}/id")
+        seen.add(thing["id"])
+        # The id is one token of the `/items/<id>` pointer that owns the
+        # written entry, and the writer stores the token as it stands
+        # rather than un-escaping it - so an id holding `/` or `~` would
+        # bake an entry under a name nothing reads back, and the next
+        # check would call the pack stale for good. Refused here, where
+        # the author is still editing a source.
+        if "/" in thing["id"] or "~" in thing["id"]:
+            raise BlueprintError(
+                f"thing id {thing['id']!r} may not hold / or ~ (it would "
+                f"be a pointer token)", f"{tbase}/id")
+        if "from" in thing and (
+                not isinstance(thing["from"], str) or not thing["from"]):
+            raise BlueprintError(
+                "from must name one enemy instance (a non-empty string)",
+                f"{tbase}/from")
+        # The guide gives each of these a shape, and the item reader
+        # drops a value it cannot use with nothing said: a `value` of
+        # "4" or a `sprite` of 3 would bake an item that is quietly not
+        # what the author wrote, and the loss would only show at the
+        # weave. A broken `light`, `slot` or `mods` is named by the pack
+        # validator instead, so it needs no rule here. Refused at the
+        # reader, with the record's own pointer.
+        if "sprite" in thing and (not isinstance(thing["sprite"], str)
+                                  or not thing["sprite"]):
+            raise BlueprintError(
+                "sprite must name a picture key (a non-empty string)",
+                f"{tbase}/sprite")
+        for key in ("value", "heal"):
+            if key in thing and not (type(thing[key]) is int
+                                     and thing[key] > 0):
+                raise BlueprintError(
+                    f"{key} must be a positive whole number",
+                    f"{tbase}/{key}")
+        if "use" in thing and (not isinstance(thing["use"], str)
+                               or not thing["use"].strip()):
+            raise BlueprintError(
+                "use must be one verb (a non-empty string)", f"{tbase}/use")
+        if "keep" in thing and thing["keep"] is not True:
+            raise BlueprintError(
+                "keep is true or nothing (a bool)", f"{tbase}/keep")
 
 
 def _check_places(places: object, base: str) -> None:
@@ -260,7 +357,7 @@ def _check_places(places: object, base: str) -> None:
                 f"{pbase}/base")
 
 
-READERS = {1: read_v1, 3: read_v3}
+READERS = {1: read_v1, 2: read_v2, 3: read_v3}
 
 
 # ------------------------------------------------- the placement sentences
@@ -699,6 +796,17 @@ def _declared_items(pack_dir: Path) -> set[str]:
     return set(items) if isinstance(items, dict) else set()
 
 
+def _pack_item(pack: Path, item_id: str):
+    """The `items` entry `world.json` holds under that id, or None.
+
+    The committed value, read from the same file the writer and the
+    stale check read, so "is this entry ours?" is one comparison
+    against what a thing would write.
+    """
+    items = _read_json(pack / "world.json").get("items")
+    return items.get(item_id) if isinstance(items, dict) else None
+
+
 def _region_dir(pack_dir: Path, region_key: str, pointer: str) -> str:
     """Resolve acts/<act>/<region> under `pack_dir`, guarded by `_inside`."""
     from .cli import _inside  # lazy: cli will import this module
@@ -771,31 +879,38 @@ def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
     """Validate `source`, then expand it into `{region_key: [records]}`.
 
     The enemy records are the whole return value, as format 1 defined
-    it. Format 3's places are expanded (and so refused when they cannot
-    be) on the way past, and picked up by the writer through `plan`.
+    it. Format 3's places and format 2's things are expanded (and so
+    refused when they cannot be) on the way past, and picked up by the
+    writer through `plan`.
     """
     return {key: entry["enemies"]
-            for key, entry in plan(source, pack_dir=pack_dir).items()}
+            for key, entry in plan(source, pack_dir=pack_dir)[0].items()}
 
 
-def plan(source: dict, *, pack_dir: str | Path) -> dict[str, dict]:
-    """What one Blueprint writes, per region: the enemy records, the
-    places they stand beside, and the pointers each owns.
+def plan(source: dict, *, pack_dir: str | Path) -> tuple[dict[str, dict], list[dict]]:
+    """What one Blueprint writes: per region the enemy records, the
+    places they stand beside and the pointers each owns, and then the
+    things, which belong to the pack rather than to one region.
 
     Everything is resolved before anything is written, so an impossible
-    sentence, an unknown item or a hand-written door in the way leaves
-    the pack exactly as it was found.
+    sentence, an unknown item, an unreachable carrier or a hand-written
+    door in the way leaves the pack exactly as it was found.
     """
     version = source.get("blueprint") if isinstance(source, dict) else None
     reader = READERS.get(version) if type(version) is int else None
     if reader is None:
-        raise BlueprintError("blueprint version must be 1 or 3", "/blueprint")
+        raise BlueprintError(VERSION_SENTENCE, "/blueprint")
     source = reader(source)
     pack = Path(pack_dir)
     families = source.get("families") or {}
     regions = source.get("regions") or {}
-    items = _declared_items(pack)
+    declared = _declared_items(pack)
     owned = _owned_pointers(pack)
+    listed = source.get("things") or []
+    # A thing's own id is an item this Blueprint declares, so a carrier
+    # in this same file may drop it without tripping the check that
+    # refuses an unknown item in `drops`.
+    items = declared | {thing["id"] for thing in listed}
 
     # Every family is resolved, used or not: an unused family with an
     # unknown parent or a cycle is still a broken Blueprint.
@@ -819,7 +934,8 @@ def plan(source: dict, *, pack_dir: str | Path) -> dict[str, dict]:
             entry["places"] = _expand_places(
                 pack, region_key, region, rbase, items, owned)
         out[region_key] = entry
-    return out
+    things = _expand_things(pack, source, listed, out, declared, owned)
+    return out, things
 
 
 def _expand_enemies(instances: list, rbase: str, families: dict,
@@ -868,6 +984,121 @@ def _expand_enemies(instances: list, rbase: str, families: dict,
 
         records.append({key: record[key] for key in FIELD_ORDER if key in record})
     return records
+
+
+def _expand_things(pack: Path, source: dict, listed: list,
+                   expanded: dict, declared: set, owned: dict) -> list[dict]:
+    """The `items` entries one source's things write, and the drops they
+    append to their carriers.
+
+    A thing reaches the pack two ways: the item entry always, and a drop
+    when it names a carrier. The carrier is looked up in the expanded
+    records, so a `from` may only reach an instance of a region this
+    Blueprint owns - a Blueprint writes the regions it owns and nothing
+    else, and a drop in a region it does not own would land in a file no
+    lock of its names. An instance id is unique within its region and
+    not across the source, so a `from` that reaches two owned regions
+    is refused rather than resolved to whichever came last.
+    """
+    carriers: dict = {}
+    for region_key, records in expanded.items():
+        for record in records["enemies"]:
+            carriers.setdefault(record.get("id"), []).append(
+                (region_key, record))
+    out: list[dict] = []
+    for i, thing in enumerate(listed):
+        base = f"/things/{i}"
+        tid = thing["id"]
+        pointer = f"/items/{_esc(tid)}"
+        item = {"name": copy.deepcopy(thing["name"]),
+                "sprite": thing.get("sprite") or tid}
+        for key in ITEM_ORDER[2:]:
+            if key in thing:
+                item[key] = copy.deepcopy(thing[key])
+        # A hand-written entry is the ordinary shape and no lock of ours
+        # names it, so a thing may not take one over; a pointer our own
+        # lock already owns is this Blueprint's from last time. An entry
+        # that holds exactly what this thing would write is neither: a
+        # lock that no longer names it only means the list was edited
+        # (deleting `things` and putting it back), and the round trip
+        # has to work.
+        if (tid in declared and pointer not in owned.get("world.json", set())
+                and _pack_item(pack, tid) != item):
+            raise BlueprintError(
+                f"the pack declares the item {tid!r} by hand, and a thing "
+                f"may not take it over", f"{base}/id")
+        record = {"id": tid, "source": base, "item": item, "pointer": pointer}
+        carrier = thing.get("from")
+        if carrier is not None:
+            found = carriers.get(carrier) or []
+            if len(found) > 1:
+                raise BlueprintError(
+                    f"the instance {carrier!r} is in two owned regions "
+                    f"({', '.join(repr(key) for key, _ in found)}), and a "
+                    f"from may name only one", f"{base}/from")
+            if not found:
+                _refuse_carrier(pack, expanded, carrier, f"{base}/from")
+            target = found[0][1]
+            drops = target.setdefault("drops", [])
+            if tid in drops:
+                raise BlueprintError(
+                    f"the carrier {carrier!r} already drops {tid!r}",
+                    f"{base}/from")
+            # Appended, not prepended: the hand wrote that list, and a
+            # thing is an arrival rather than a re-ordering of it.
+            drops.append(tid)
+        out.append(record)
+    return out
+
+
+def _refuse_carrier(pack: Path, expanded: dict, carrier: str,
+                    pointer: str) -> None:
+    """Name which of the `from` refusals this is, because the author has
+    to know whether the instance is missing, out of reach, or standing in
+    a region this source names without owning that region's `enemies` -
+    three different fixes, and the last one used to be told the first."""
+    on_disk = _pack_enemies(pack)
+    found = [region_key for region_key, records in on_disk.items()
+             if any(record.get("id") == carrier for record in records)]
+    for region_key in found:
+        entry = expanded.get(region_key)
+        if entry is not None and not entry["owns_enemies"]:
+            raise BlueprintError(
+                f"the region {region_key!r} is in this blueprint but "
+                f"declares no enemies, so the instance {carrier!r} is not "
+                f"one this blueprint writes", pointer)
+    if found:
+        raise BlueprintError(
+            f"this blueprint owns no region with the instance {carrier!r}",
+            pointer)
+    raise BlueprintError(
+        f"from names no instance {carrier!r} in any region of this pack",
+        pointer)
+
+
+def _pack_enemies(pack: Path) -> dict[str, list[dict]]:
+    """Every enemy record the pack holds on disk, per region key, owned
+    or not.
+
+    Read only to tell the `from` refusals apart, so a carrier in a
+    region this Blueprint does not own is named as that rather than as
+    an id nothing has - and a carrier in a region the source names
+    without owning its `enemies` is named as that rather than as one no
+    region has.
+    """
+    out: dict[str, list[dict]] = {}
+    acts = Path(_inside_pack(pack, "acts"))
+    if not acts.is_dir():
+        return out
+    for act in sorted(p for p in acts.iterdir() if p.is_dir()):
+        act_dir = _inside_pack(pack, f"acts/{act.name}")
+        for region in sorted(p for p in Path(act_dir).iterdir() if p.is_dir()):
+            region_dir = _inside_pack(pack, f"acts/{act.name}/{region.name}")
+            records = _read_json(
+                Path(region_dir) / "contract.json").get("enemies") or []
+            out[f"{act.name}/{region.name}"] = [
+                record for record in records if isinstance(record, dict)]
+    return out
 
 
 def _expand_places(pack: Path, region_key: str, region: dict, rbase: str,
@@ -1037,6 +1268,28 @@ def _lock_data(source: dict, expanded: dict) -> dict:
     }
 
 
+def _lock_data_things(source: dict, expanded: dict, things: list) -> dict:
+    """The lock body for a format-2 expansion: format 1's source hash
+    and enemy provenance, plus the `world.json` item entries and one
+    record per thing.
+
+    The pointers are format 1's, so a hand edit to a written item is
+    stale by the same rule as a hand edit to a generated enemy, and one
+    thing may share a carrier with another because the appended id is
+    part of the enemy record the `/enemies` check already compares.
+    """
+    lock = _lock_data(source, expanded)
+    lock["blueprint"] = 2
+    if things:
+        lock["outputs"].insert(0, {
+            "file": "world.json",
+            "pointers": [thing["pointer"] for thing in things],
+            "records": [{"source": thing["source"], "id": thing["id"]}
+                        for thing in things],
+        })
+    return lock
+
+
 def _lock_data_places(source: dict, expanded: dict, slots: dict) -> dict:
     """The lock body for a format-3 expansion: format 1's source hash
     and enemy provenance, plus one output per owned file naming every
@@ -1173,7 +1426,7 @@ def check_errors(pack_dir) -> list[str]:
 
     try:
         source = read(source_path)
-        expanded = plan(source, pack_dir=pack)
+        expanded, things = plan(source, pack_dir=pack)
     except BlueprintError as exc:
         return [f"blueprint: {exc} ({exc.pointer})"]
 
@@ -1212,7 +1465,26 @@ def check_errors(pack_dir) -> list[str]:
                       f"'vefr normalize --pack {pack} --out {pack}'")
     for sentence in _place_stale_errors(pack, expanded, lock):
         errors.append(sentence)
+    errors.extend(_thing_stale_errors(pack, things))
     return errors
+
+
+def _thing_stale_errors(pack: Path, things: list) -> list[str]:
+    """A stale sentence per written `items` entry that no longer holds
+    what the thing says it should.
+
+    Format 1's rule over the pointers a thing owns. The carrier's own
+    record is not read here: the appended drop is part of the enemy
+    record the `/enemies` check already compares, so naming the same
+    value twice would be one stale thing with two sentences.
+    """
+    if not things:
+        return []
+    items = _read_json(pack / "world.json").get("items")
+    items = items if isinstance(items, dict) else {}
+    return [_stale(pack, "world.json", thing["pointer"])
+            for thing in things
+            if items.get(thing["id"]) != thing["item"]]
 
 
 def _place_stale_errors(pack: Path, expanded: dict, lock: dict) -> list[str]:
@@ -1452,7 +1724,7 @@ def _refresh_in_place(pack: Path) -> NormalizeResult:
             False, [f"{source_path} does not exist - nothing to normalize"], {})
     try:
         source = read(source_path)
-        expanded = plan(source, pack_dir=pack)
+        expanded, things = plan(source, pack_dir=pack)
     except BlueprintError as exc:
         return NormalizeResult(False, [f"blueprint: {exc} ({exc.pointer})"], {})
     regions = _region_counts(expanded)
@@ -1464,6 +1736,8 @@ def _refresh_in_place(pack: Path) -> NormalizeResult:
     try:
         for region_key in expanded:
             touched.append(_contract_path(pack, region_key))
+        if version == 2 and things:
+            touched.append(pack / "world.json")
         if version == 3:
             for region_key, entry in expanded.items():
                 if entry["places"]:
@@ -1525,8 +1799,19 @@ def _refresh_in_place(pack: Path) -> NormalizeResult:
             listed[index] = transition
         data["transitions"] = listed
         _write_json(path, data)
+    if things:
+        # One `items` entry per thing, written where the pointer says and
+        # with nothing invented: a record that gave three keys gets three.
+        world = _read_json(pack / "world.json")
+        for thing in things:
+            _set_pointer(world, thing["pointer"], thing["item"])
+        _write_json(pack / "world.json", world)
     if version == 3:
         _write_json(lock_path, _lock_data_places(source, expanded, slots))
+    elif version == 2:
+        _write_json(lock_path, _lock_data_things(
+            source, {key: entry["enemies"] for key, entry in expanded.items()},
+            things))
     else:
         _write_json(lock_path, _lock_data(
             source, {key: entry["enemies"] for key, entry in expanded.items()}))
