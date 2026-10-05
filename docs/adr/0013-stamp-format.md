@@ -108,7 +108,7 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 - `tests/test_stamps_format.py`: every static rejection has a golden sentence, including "no connectable socket".
 - `tests/test_stamps_orient.py`: all 8 orientations of every fixture stamp match the goldens, and anchors keep their letters.
 - `tests/test_floor_v3_properties.py`, extended over 200 seeds x sizes x kinds: placement rates (95%, required 100%), unused sockets are walls, anchors reachable.
-- `tests/test_floor_v3_parity.py`, extended: per-stage layout parity holds with stamps in all 8 orientations.
+- `tests/test_floor_v3_parity.py`, extended: per-stage layout parity holds with stamps in all 8 orientations. **After E3** - the parity file needs the JavaScript twin, which does not exist yet, and E5a is the Python generator alone.
 - `tests/test_cli_stamp_check.py`: the exit codes and both example sentences.
 
 ## Open questions for Rylee
