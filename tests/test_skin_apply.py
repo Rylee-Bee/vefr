@@ -446,6 +446,23 @@ def test_the_divider_paints_the_rule_under_the_game_head(ran):
           "the divider picture on header.game-head's bottom edge")
 
 
+def test_the_divider_does_not_take_part_in_the_headers_flex_flow(ran):
+    """The game head is a wrapping flex box, so a pseudo-element drawn there is
+    a flex item: with `flex-basis: 100%` the divider took a row of the head's
+    own wrap instead of drawing a line under it. A border-image on the head is
+    out of the flow; a pseudo-element would have to be taken out of it."""
+    assert "flex-wrap: wrap" in PLAYER_CSS, "the game head no longer wraps"
+    uri = mk.picture_uri(mk.PARTS_SKIN["divider"]["file"])
+    rules = [(sel, body) for sel, body in _rules(ran["parts"]["css"]) if uri in body]
+    _need(rules, "the divider rule")
+    for sel, body in rules:
+        assert "flex-basis" not in body and "flex-wrap" not in body, (
+            f"{sel.strip()} puts the divider in the header's flex flow")
+        if "::" in sel:
+            assert "position: absolute" in body, (
+                f"{sel.strip()} draws the divider in the header's flex flow")
+
+
 def test_the_banner_paints_the_messages_and_leaves_the_map_alone(ran):
     """`banner` is the message panel. It is a picture behind the messages; it
     must not repaint the map canvas or the HUD frame that sit on the map."""

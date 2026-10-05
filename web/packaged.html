@@ -7152,9 +7152,13 @@ function applySkin() {
   }
   var divider = parts.divider;
   if (divider && divider.file) {
-    // The rule under the game head, on its own line of the head's own wrap.
-    css += 'header.game-head::after { content: ""; display: block; flex-basis: 100%;'
-      + ' margin-top: 8px; border-image: url(' + divider.file + ') 0 fill'
+    // The rule under the game head, drawn as the head's own bottom border.
+    // The head is a wrapping flex box, so a pseudo-element there would be a
+    // flex item: it would take a row of the head's own wrap instead of
+    // drawing a line under it. A border-image never joins the flow, and the
+    // player's own edge colour is under the picture in case it is missing.
+    css += 'header.game-head { border-bottom: 8px solid var(--card-edge);'
+      + ' border-image: url(' + divider.file + ') 0 fill'
       + ' / 100% 100% / 0 stretch; }\n';
   }
   var banner = parts.banner;
