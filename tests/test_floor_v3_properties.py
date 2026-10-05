@@ -24,11 +24,12 @@ import copy
 from collections import deque
 from functools import lru_cache
 import json
+from pathlib import Path
 from typing import NamedTuple
 
 import pytest
 
-from vefr import delve_v3
+from vefr import delve_v3, stamps
 
 
 # The four sizes of PLAN.md section 3, with the room quota each one carries.
@@ -677,6 +678,484 @@ def test_fallback_rate_under_half_a_percent():
             f"{fell_back} of {total} floors fell back to v2, a rate of {rate:.5f}, "
             "0.005 allowed"
         )
+
+
+# ------------------------------------------------------------- the stamped rooms
+# ADR 0013's Placement, exercised on the same sweep the properties above
+# run: the same 200 seeds, the same four sizes and the same four floor
+# kinds, drawn with the fixture stamp pack and a Section that asks for
+# stamps by tag. One pack and one Section, so the numbers below are about
+# the placer and not about a pack that happens to suit itself.
+#
+# A stamp is "eligible" on a floor when its tags match the Section's
+# `stamps` tags and `STAMP_DEPTH` is inside its own `depth` range; that is
+# the rule the placer filters on, and the rate a test is measured over is
+# a rate over the eligible floors, not over every floor of the sweep.
+STAMP_FIXTURES = Path(__file__).parent / "fixtures" / "stamps"
+# `k`, the floor's 1-based position in its Section. Every fixture stamp
+# carries `depth [1, 9]` or `[1, 99]`, so this is inside all of them.
+STAMP_DEPTH = 3
+STAMP_TAGS = ["cellar", "any"]
+
+
+@lru_cache(maxsize=None)
+def _stamp_pack() -> tuple:
+    """The fixture stamps, read by the real reader, in sorted id order."""
+    return tuple(stamps.load(STAMP_FIXTURES))
+
+
+def _stamped_section(kind: str, rooms: int) -> dict:
+    """The Section pack of `_pack`, asking for stamps by tag.
+
+    The vault is named, so the vault stamp is eligible: a Section with no
+    vault has none in the pool, and the sweep would then measure two
+    required roles instead of three.
+    """
+    pack = dict(_pack(kind, rooms))
+    pack["stamps"] = list(STAMP_TAGS)
+    return pack
+
+
+@lru_cache(maxsize=None)
+def _stamp_floor(seed: str, w: int, h: int, kind: str, rooms: int) -> dict:
+    """One stamped v3 floor, generated once per key like `_floor`."""
+    return delve_v3.generate_floor_v3(
+        seed, (w, h), copy.deepcopy(_stamped_section(kind, rooms)), kind,
+        list(_stamp_pack()), STAMP_DEPTH)
+
+
+def _stamped() -> list[dict]:
+    """Every v3 floor of the sweep that carries stamps, as (where, plan)."""
+    for w, h, rooms, kind in _cases():
+        for seed in SEEDS:
+            plan = _stamp_floor(seed, w, h, kind, rooms)
+            if plan["gen"] == 3:
+                yield _where(seed, w, h, kind), plan
+
+
+def _records_by_id() -> dict[str, dict]:
+    return {record["id"]: record for record in _stamp_pack()}
+
+
+# ------------------------------------------------------------------- rates
+
+
+def test_a_stamped_floor_carries_every_required_role():
+    """A required role places on 100% of the floors where it is eligible.
+
+    ADR 0013's Validation puts required stamps at 100% and the rest at
+    95%; this is the 100%. The rate is per role and not per stamp, because
+    two eligible stamps of one role share the floors between them by
+    weight - a Section with two landmarks cannot place either of them on
+    every floor, and requiring it to would be requiring the pack to ship
+    one landmark.
+
+    A floor that fell back to v2 placed nothing, so it counts against the
+    rate rather than being skipped: a Section whose floors cannot hold its
+    required stamps is exactly what this number is for.
+    """
+    wanted = set(stamps.REQUIRED_ROLES)
+    placed: dict[str, int] = {}
+    eligible = 0
+    fell_back = 0
+    misses: list[str] = []
+    for _where_, plan in _stamped():
+        eligible += 1
+        for role in wanted & {p["role"] for p in plan["stamps"]}:
+            placed[role] = placed.get(role, 0) + 1
+    for w, h, rooms, kind in _cases():
+        for seed in SEEDS:
+            plan = _stamp_floor(seed, w, h, kind, rooms)
+            if plan["gen"] == 3:
+                continue
+            fell_back += 1
+            if not eligible:
+                continue
+            if not misses or len(misses) < 5:
+                misses.append(f"{_where(seed, w, h, kind)}"
+                              f" ({plan.get('stamp_defect', 'no defect named')})")
+    for role in wanted:
+        rate = placed.get(role, 0) / eligible
+        if rate < 1.0:
+            pytest.fail(
+                f"the {role} role placed on {placed.get(role, 0)} of {eligible} "
+                f"eligible floors ({rate:.1%}); a required role places on every "
+                f"one. First floors: {'; '.join(misses)}"
+            )
+    assert fell_back < len(_cases()) * SEED_COUNT, "no floor should be v2 here"
+
+
+def test_every_required_stamp_is_placed_on_at_least_95_percent_of_its_floors():
+    """The 95% bar of ADR 0013's Validation, on the stamps it applies to.
+
+    Owner decision 4 keeps that bar for required stamps: an optional
+    stamp may be rare on purpose, so the test below holds it to nothing
+    but being placed at all. A required stamp with no rival in its role
+    is measured directly - the ADR's own example is `crypt-hall`, and it
+    is the shape of stamp the sentence is about. A required role with
+    several eligible stamps splits its floors by weight instead, because
+    a Section with two landmarks cannot put either of them on every
+    floor; there the rule that still means something is the split, and
+    the tolerance is a quarter of the share.
+    """
+    shares: dict[str, int] = {}
+    total = 0
+    for _where_, plan in _stamped():
+        total += 1
+        for stamp in plan["stamps"]:
+            shares[stamp["id"]] = shares.get(stamp["id"], 0) + 1
+    rivals: dict[str, list[dict]] = {}
+    for record in _stamp_pack():
+        rivals.setdefault(record["role"], []).append(record)
+    for record in _stamp_pack():
+        if record["role"] not in stamps.REQUIRED_ROLES:
+            continue
+        where = shares.get(record["id"], 0)
+        if len(rivals[record["role"]]) == 1:
+            rate = where / total
+            if rate < 0.95:
+                pytest.fail(
+                    f"stamp {record['id']}: placed on {where} of {total} eligible "
+                    f"floors ({rate:.1%}); it needs 95%"
+                )
+            continue
+        weight = sum(other["weight"] for other in rivals[record["role"]])
+        share = record["weight"] / weight
+        rate = where / total
+        if abs(rate - share) > 0.25:
+            pytest.fail(
+                f"stamp {record['id']}: {rate:.1%} of eligible floors, and it is "
+                f"{share:.1%} of the weight of its role; a weighted draw splits "
+                "the floors, and 25 points is the tolerance"
+            )
+
+
+def test_an_optional_stamp_may_be_rare_but_is_never_dead():
+    """Owner decision 4: optional stamps may be rare on purpose.
+
+    So there is no rate to hold them to. What they do have to clear is
+    zero: a pack that ships a stamp nothing ever places has shipped
+    nothing, and the failure a player sees is a room that was never there.
+    The rates are printed, because the number is the point of the report.
+    """
+    shares: dict[str, int] = {}
+    total = 0
+    for _where_, plan in _stamped():
+        total += 1
+        for stamp in plan["stamps"]:
+            shares[stamp["id"]] = shares.get(stamp["id"], 0) + 1
+    optional = [record for record in _stamp_pack()
+                if record["role"] in stamps.OPTIONAL_ROLES]
+    dead = [record["id"] for record in optional if not shares.get(record["id"])]
+    rates = ", ".join(
+        f"{record['id']} {shares.get(record['id'], 0)}/{total}"
+        for record in optional
+    )
+    print(f"\nstamps: {total} stamped floors; optional rates: {rates}")
+    assert not dead, f"optional stamps never placed: {', '.join(dead)}"
+
+
+def test_a_stamp_section_falls_back_under_half_a_percent():
+    """The plain sweep's 0.5% cap, with stamps on every floor.
+
+    A stamped floor has three more rooms in it than a plain one, and a
+    floor that cannot hold them falls back to v2 - so the cap has to hold
+    here too, or stamps are a cost the dungeon pays on every floor. The
+    failures name the size, because the smallest one is where it bites.
+    """
+    total = 0
+    by_size: dict[tuple[int, int], int] = {}
+    for w, h, rooms, kind in _cases():
+        for seed in SEEDS:
+            total += 1
+            if _stamp_floor(seed, w, h, kind, rooms)["gen"] != 3:
+                by_size[(w, h)] = by_size.get((w, h), 0) + 1
+    rate = sum(by_size.values()) / total
+    if rate >= 0.005:
+        worst = ", ".join(f"{w}x{h}: {n}" for (w, h), n in sorted(by_size.items()))
+        pytest.fail(
+            f"{sum(by_size.values())} of {total} stamped floors fell back to v2, "
+            f"a rate of {rate:.5f}, 0.005 allowed. By size: {worst}"
+        )
+
+
+# ------------------------------------------------------------ the stamped grid
+
+
+@pytest.mark.parametrize("w, h, rooms, kind", _cases())
+def test_a_stamped_floor_reads_back_as_rooms_and_corridors(w, h, rooms, kind):
+    """The plain coverage property, with stamped rooms in the floor.
+
+    A stamped room is a drawing, not a filled rectangle, so this is the
+    test that says the drawing did not leak a tile: every walkable tile
+    belongs to a room or to a corridor, the up-component is all of them,
+    the warden is off the main path, and the loops and the 40% rule hold.
+    """
+    skipped = 0
+    for seed in SEEDS:
+        plan = _stamp_floor(seed, w, h, kind, rooms)
+        if plan["gen"] != 3:
+            skipped += 1
+            continue
+        where = _where(seed, w, h, kind)
+        geom = _region_graph(plan)
+        if not geom.covers_walkable:
+            pytest.fail(f"{where}: a walkable tile belongs to no room and no corridor")
+        walkable = _walkable_tiles(plan)
+        seen = _flood(plan, tuple(plan["anchors"]["up"]))
+        if seen != walkable:
+            pytest.fail(
+                f"{where}: the up-component is missing {len(walkable - seen)} of "
+                f"{len(walkable)} walkable tiles; {skipped} earlier floors skipped"
+            )
+        warden = tuple(plan["anchors"]["warden"])
+        if geom.on_path.get(warden):
+            pytest.fail(f"{where}: the warden {warden} is on the main path")
+        if geom.room_count >= 12 and _loop_count(geom) < 2:
+            pytest.fail(f"{where}: {geom.room_count} rooms and {_loop_count(geom)} loops")
+        near = _within_one_step(geom)
+        if len(near) < 0.40 * geom.room_count:
+            pytest.fail(
+                f"{where}: {len(near)} of {geom.room_count} rooms are within one "
+                f"step of the main path; 40% is the floor"
+            )
+    STATS["skipped"] += skipped
+
+
+def test_a_stamp_reads_back_out_of_the_grid_it_was_painted_on():
+    """The room in `rows` is the drawing: same letters, same sockets.
+
+    Every tile of the placed rectangle in the floor's own rows is the
+    oriented stamp's own glyph, except that the socket the corridor came
+    in through is floor and every other socket is wall. Geometry that
+    cannot be read back off the grid is geometry the auto-map, the graph
+    checks and a twin all have to take on trust.
+    """
+    records = _records_by_id()
+    for where, plan in _stamped():
+        rows = plan["rows"]
+        for stamp in plan["stamps"]:
+            record = records.get(stamp["id"])
+            assert record is not None, f"{where}: placed an unknown stamp {stamp['id']}"
+            drawn = stamps.orient(record["rows"], stamp["orientation"])
+            x, y = stamp["at"]
+            width, height = stamp["size"]
+            if (len(drawn[0]), len(drawn)) != (width, height):
+                pytest.fail(
+                    f"{where}: {stamp['id']} says it is {width}x{height} and the "
+                    f"orientation drawn is {len(drawn[0])}x{len(drawn)}"
+                )
+            for dy, row in enumerate(drawn):
+                for dx, glyph in enumerate(row):
+                    if glyph in (stamps.WALL, stamps.OUTSIDE):
+                        want = delve_v3.WALL
+                    elif glyph in (stamps.DOOR, stamps.SECRET):
+                        want = (delve_v3.FLOOR
+                                if [x + dx, y + dy] == stamp["socket"]
+                                else delve_v3.WALL)
+                    else:
+                        want = delve_v3.FLOOR
+                    if rows[y + dy][x + dx] != want:
+                        pytest.fail(
+                            f"{where}: {stamp['id']} at {stamp['at']} drew "
+                            f"{glyph!r} and the floor has "
+                            f"{rows[y + dy][x + dx]!r} at {x + dx},{y + dy}"
+                        )
+
+
+def test_an_unused_socket_is_a_wall():
+    """The sockets a room did not use became wall, every one of them.
+
+    ADR 0013's Placement 3 says so outright, and it is the rule that
+    keeps a stamped room from being a room with three doors: a second
+    open socket would be a second way in, drawn by nobody.
+    """
+    records = _records_by_id()
+    for where, plan in _stamped():
+        rows = plan["rows"]
+        for stamp in plan["stamps"]:
+            drawn = stamps.orient(records[stamp["id"]]["rows"], stamp["orientation"])
+            x, y = stamp["at"]
+            unused = 0
+            for socket in stamps.sockets(drawn):
+                at = (x + socket["at"][0], y + socket["at"][1])
+                if [at[0], at[1]] == stamp["socket"]:
+                    if rows[at[1]][at[0]] != delve_v3.FLOOR:
+                        pytest.fail(f"{where}: {stamp['id']}'s used socket {at} is not floor")
+                    continue
+                unused += 1
+                if rows[at[1]][at[0]] != delve_v3.WALL:
+                    pytest.fail(
+                        f"{where}: {stamp['id']}'s unused socket {at} is "
+                        f"{rows[at[1]][at[0]]!r}, not wall"
+                    )
+            if not stamp["socket"]:
+                pytest.fail(f"{where}: {stamp['id']} was placed with no used socket")
+
+
+def test_every_anchor_of_a_stamp_is_standable_and_reachable():
+    """Every letter a stamp drew is a walkable tile in the up-component.
+
+    The anchor is the promise the drawing makes - the chest is there, the
+    warden stands there - and a promise made on a wall or in a room the
+    hero cannot walk to is not a promise.
+    """
+    for where, plan in _stamped():
+        walkable = _walkable_tiles(plan)
+        reach = _flood(plan, tuple(plan["anchors"]["up"]))
+        for stamp in plan["stamps"]:
+            for name, tile in stamp["anchors"].items():
+                at = (tile[0], tile[1])
+                if at not in walkable:
+                    pytest.fail(
+                        f"{where}: {stamp['id']}'s {name} anchor is at {at}, which "
+                        "is not walkable"
+                    )
+                if at not in reach:
+                    pytest.fail(
+                        f"{where}: {stamp['id']}'s {name} anchor at {at} is not "
+                        "reachable from the up-stair"
+                    )
+
+
+def test_a_used_secret_socket_is_a_secret_of_the_floor():
+    """A used `?` is in the floor's `secrets`, at the socket's own tile."""
+    secrets: list[list[int]] = []
+    for _where_, plan in _stamped():
+        secrets.extend(plan["secrets"])
+    found = 0
+    for where, plan in _stamped():
+        for stamp in plan["stamps"]:
+            if "secret" not in stamp:
+                continue
+            found += 1
+            if stamp["secret"] not in plan["secrets"]:
+                pytest.fail(
+                    f"{where}: {stamp['id']}'s secret socket {stamp['secret']} is "
+                    f"not in the floor's secrets {plan['secrets']}"
+                )
+    assert found, "no secret socket was ever used, so the rule went untested"
+    assert secrets
+
+
+def test_a_story_room_is_never_turned_or_mirrored():
+    """Owner decision 2, at the placement end: a story room is at `o = 0`.
+
+    The reader refuses `rotate` or `mirror` on a warden-hall, a vault or
+    a landmark at all, so a placement in any other orientation would be a
+    placer that ignored the reader.
+    """
+    seen = 0
+    for where, plan in _stamped():
+        for stamp in plan["stamps"]:
+            if stamp["role"] not in stamps.REQUIRED_ROLES:
+                continue
+            seen += 1
+            if stamp["orientation"] != 0:
+                pytest.fail(
+                    f"{where}: {stamp['id']} is a {stamp['role']} and was placed at "
+                    f"orientation {stamp['orientation']}; a story room is at 0"
+                )
+    assert seen, "no story room was ever placed, so the rule went untested"
+
+
+# --------------------------------------------------------- the streams around
+
+
+def test_a_section_with_no_stamp_tags_draws_the_floor_it_always_drew():
+    """No tags, no stamps, and not one tile moved.
+
+    The stamps are the last thing the layout stage carves, so a Section
+    that asks for none has to come out byte for byte as it did before ADR
+    0013 - the property every other floor in this file rests on.
+    """
+    for w, h, rooms in SIZES[:2]:
+        for kind in FLOOR_KINDS:
+            for seed in SEEDS[:10]:
+                pack = _stamped_section(kind, rooms)
+                pack.pop("stamps")
+                plain = delve_v3.generate_floor_v3(seed, (w, h), copy.deepcopy(pack), kind)
+                offered = delve_v3.generate_floor_v3(
+                    seed, (w, h), copy.deepcopy(pack), kind, list(_stamp_pack()),
+                    STAMP_DEPTH)
+                where = _where(seed, w, h, kind)
+                if plain != offered:
+                    pytest.fail(f"{where}: offering stamps moved a tile on a Section with no tags")
+                if "stamps" in offered:
+                    pytest.fail(f"{where}: a Section with no tags placed {offered['stamps']}")
+
+
+def test_the_same_seed_and_pack_draw_the_same_stamps():
+    """Determinism, on the stream the stamps are drawn from."""
+    for w, h, rooms in SIZES[:2]:
+        for kind in FLOOR_KINDS[:2]:
+            for seed in SEEDS[:5]:
+                first = _stamp_floor(seed, w, h, kind, rooms)
+                second = delve_v3.generate_floor_v3(
+                    seed, (w, h), copy.deepcopy(_stamped_section(kind, rooms)), kind,
+                    list(_stamp_pack()), STAMP_DEPTH)
+                where = _where(seed, w, h, kind)
+                if first != second:
+                    pytest.fail(f"{where}: the same seed drew two different stamped floors")
+                # A floor that fell back to v2 placed nothing and is the
+                # fallback test's business, not this one's.
+                assert first["gen"] == 3 or not first.get("stamps")
+
+
+def test_rewriting_the_pop_tables_moves_no_wall_of_a_stamped_floor():
+    """The sub-seed rule, with stamps in the floor: the affixes and loot
+    tables are rewritten, and every wall of every stamped room stays."""
+    skipped = 0
+    for w, h, rooms in SIZES[:2]:
+        for kind in FLOOR_KINDS[:2]:
+            for seed in SEEDS[:10]:
+                base = _stamp_floor(seed, w, h, kind, rooms)
+                if base["gen"] != 3:
+                    skipped += 1
+                    continue
+                mutated = _stamped_section(kind, rooms)
+                mutated["groups"] = {"per_floor": [2, 3], "minions": [4, 5]}
+                mutated["families"] = [
+                    {"family": "beetle", "weight": 9, "depth": [1, 9]},
+                    {"family": "rat", "weight": 1, "depth": [2, 6]},
+                ]
+                mutated["chest_values"] = {"t1": 7, "t2": 4}
+                after = delve_v3.generate_floor_v3(
+                    seed, (w, h), mutated, kind, list(_stamp_pack()), STAMP_DEPTH)
+                where = _where(seed, w, h, kind)
+                if after["rows"] != base["rows"]:
+                    pytest.fail(f"{where}: rewriting the tables moved a wall (rows differ)")
+                if after["stamps"] != base["stamps"]:
+                    pytest.fail(f"{where}: rewriting the tables moved a stamped room")
+                if after["anchors"] != base["anchors"]:
+                    pytest.fail(f"{where}: rewriting the tables moved an anchor")
+    STATS["skipped"] += skipped
+
+
+def test_a_required_stamp_that_cannot_place_falls_back_to_v2_and_says_why():
+    """The pinned try, and the defect it leaves behind.
+
+    A 21x21 warden-hall cannot fit a 24x16 floor at any orientation, so
+    the 24 attempts are not even taken and the floor cannot be built with
+    the hall the Section asked for. The caller gets v2 geometry - the
+    floor is still a floor - and the floor names the role that would not
+    place, which is what `vefr stamp check` reads.
+    """
+    middle = ["#" + "." * 19 + "#"] * 19
+    middle[0] = "#" + "W" + "." * 18 + "#"
+    hall = ["##+##" + "#" * 16] + middle + ["#" * 10 + "+" + "#" * 10]
+    assert len(hall) == 21 and all(len(row) == 21 for row in hall)
+    record = stamps.read_v1({
+        "stamp": 1, "id": "too-big-hall", "role": "warden-hall", "tags": ["too-big"],
+        "legend": {"W": {"anchor": "warden"}}, "rows": hall,
+    })
+    pack = _stamped_section("normal", 6)
+    pack["stamps"] = ["too-big"]
+    floor = delve_v3.generate_floor_v3("too-big", (24, 16), pack, "normal", [record], 1)
+    assert floor["gen"] == 2, "a stamp that cannot fit should fall back to v2"
+    assert floor.get("stamp_defect") == "stamp:warden-hall", (
+        f"the fallback names no defect: {floor.get('stamp_defect')!r}"
+    )
 
 
 def test_sweep_counters():

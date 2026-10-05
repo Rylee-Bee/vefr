@@ -72,14 +72,15 @@ The allowed orientations are `[0]`, plus `1..3` if `rotate` is set, plus `4` if 
 **Placement.** This happens in the layout stream, the same way in both languages.
 
 1. **Order.** Place the warden-hall, then the vault, then the landmark. Then place `special`, `secret` and `filler` stamps up to the plan quotas. Pick within a role by weight, walking ids in sorted order. A stamp that reaches `max_per_floor` drops out.
-2. **Attempts.** A stamp gets up to 24 attempts. Each attempt draws an orientation, then `x`, then `y`, and is accepted if it passes `_fits` (pad 1). An accepted stamp becomes a room whose `shape` is its role, and its non-space tiles are **locked**.
+2. **Attempts.** A stamp gets up to 24 attempts. Each attempt draws an orientation, then `x`, then `y`, and is accepted if it passes `_fits` (pad 1) **and** its whole rectangle is clear of carved tiles - a stamp never lands on a corridor, because overwriting one would strand whatever it served. A stamp too big for the floor at any orientation spends no attempt and gives its slot up at once. An accepted stamp becomes a room whose `shape` is its role, and its non-space tiles are **locked**.
 3. **Connection.** Corridors start only at socket mouths and never carve locked tiles.
    - Sockets are tried nearest mouth first. Ties go to the socket that comes first in row-major order.
-   - For each socket, try both of `_link`'s L-bends in order. The first route that crosses no locked tile wins.
-   - A used `+` becomes floor, and a used `?` becomes a FloorPlan `secrets` entry. An unused socket becomes wall.
+   - The corridor's far end is the nearest carved tile from that mouth, and then the next few nearest ones in the same order, until a bend lands: the ADR named where a corridor starts and not where it ends, and a room the stamp has not been placed next to yet is the only thing there is to end on. Four ends are tried, in a fixed order, with no draw.
+   - For each end, try both of `_link`'s L-bends in order. The first route that crosses no locked tile, no other carved tile and no wall of the stamp itself wins.
+   - A used `+` becomes floor, and a used `?` becomes a FloorPlan `secrets` entry. An unused socket becomes wall. A mouth that falls inside the room's own rectangle is the room's tile, not the corridor's, so the grid still reads as rooms plus corridors.
 4. **Pinned try.** When a required stamp fails, the floor retries with `|try{n}`.
-   - On the last try (`n = MAX_TRIES`), required stamps are pinned before any other room. The warden-hall goes at the far end of the spine, and the vault goes in the corner farthest from `up`. Each uses the first allowed orientation whose mouth faces the floor's centre.
-   - A failure even then falls back to v2, and `vefr check` reports it as a defect.
+   - On the last try (`n = MAX_TRIES`), required stamps are pinned before any other room. The warden-hall goes at the far end of the spine, and the vault goes in the corner farthest from `up`. Each uses the first allowed orientation whose mouth faces the floor's centre. The landmark has no named position here and keeps its 24 attempts, because inventing one would be a rule the twin does not have.
+   - A failure even then falls back to v2, and `vefr check` reports it as a defect: the v2 floor carries `stamp_defect: "stamp:<role>"`, and that is what the check reads.
 
 **Validation.** `vefr stamp check --pack PACK [--seeds 200]` runs four kinds of check.
 

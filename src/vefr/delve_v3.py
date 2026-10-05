@@ -243,6 +243,11 @@ class Canvas:
         # the stamps are laid rather than as `w * h` per room.
         self.locked: set[int] = set()
         self.owned = 0
+        # What the stamp stage placed, in placement order, one record per
+        # stamped room (ADR 0013, Placement). The graph stage reads it: a
+        # stamped room is the room its role names, and its letters are the
+        # anchors the floor plan carries.
+        self.stamps: list[dict] = []
 
     def carve_room(self, rect: tuple[int, int, int, int], index: int) -> None:
         """Fill a room rectangle with floor and claim every one of its tiles."""
@@ -305,14 +310,32 @@ class Canvas:
         if self.owner[here] < 0:
             self.corr.add(here)
 
-    def corridor(self, tiles: list[tuple[int, int]]) -> None:
-        """Carve one corridor route, tile by tile, in the order given.
+    def stamp_corridor(self, tiles: list[tuple[int, int]], index: int,
+                       rect: tuple[int, int, int, int]) -> None:
+        """Carve one corridor into a stamped room, from the outside in.
 
         A stamped room's corridor is routed rather than linked, so it is
         handed over as the tiles it runs through instead of as two rooms.
+        The route runs from the socket's mouth to the socket tile, and a
+        mouth may be a space inside the room's own rectangle. That tile
+        belongs to the room: it is inside the room's rectangle, so every
+        reader of `rooms` counts it as the room's, and the corridor region
+        starts at the next tile out. One tile, one owner - that is what
+        keeps the grid readable as rooms plus corridors, and what stops a
+        stamped room reading as a cut vertex with a corridor through it.
         """
-        for x, y in tiles:
-            self._carve(x, y)
+        x, y, width, height = rect
+        for tile_x, tile_y in tiles:
+            here = tile_y * self.w + tile_x
+            if not (x <= tile_x < x + width and y <= tile_y < y + height):
+                self._carve(tile_x, tile_y)
+                continue
+            if self.grid[tile_y][tile_x] == WALL:
+                self.grid[tile_y][tile_x] = FLOOR
+                self.walk.add(here)
+                self.owned += 1
+            self.owner[here] = index
+            self.corr.discard(here)
 
     def rows(self) -> list[str]:
         """The grid as the FloorPlan's `rows`: one string per row."""
@@ -532,6 +555,30 @@ def _plan_stage(rng, section: dict, floor_kind: str) -> dict:
 #     rooms joins all six pairs of those four, and the chain already
 #     has three of them, so one chord is three cycles: more than the
 #     two PLAN.md section 4 asks for, out of one corridor.
+#  7. the stamped rooms (ADR 0013, Placement), last, because a stamp may
+#     not land on carved ground. The slots are, in order, warden-hall,
+#     vault (only when the pack names one), landmark, then `special`,
+#     `secret` and `filler` up to the quotas below. A slot with no
+#     eligible stamp of its role takes no draw at all. Per slot:
+#       role = pick(total weight of that role's stamps)
+#     then, per attempt, up to ATTEMPTS (24) of them, in this order:
+#       o = pick(len(allowed))     the orientation, from the allowed set
+#       x = rand(1, w - width - 1)  and then
+#       y = rand(1, h - height - 1)
+#     An attempt that does not fit, or that cannot be reached from one
+#     of its own sockets, is spent like any other: the three draws
+#     happen, nothing is carved, and the next attempt is taken. A stamp
+#     too big for the floor at any orientation gives its slot up at
+#     once and takes no draw at all, so a 21x21 room cannot burn a
+#     floor's attempt budget on a 48x32 grid. The connection draws
+#     nothing: a corridor is routed from the socket mouth to the nearest
+#     carved tile, both L-bends tried in a fixed order, and the first
+#     route crossing no locked tile wins. A used `+` becomes floor and a
+#     used `?` becomes a `secrets` entry; an unused socket becomes wall.
+#     A required role still missing fails the floor, which the retry
+#     ladder redraws with `|try{n}`; on the LAST try the required roles
+#     are pinned to named spots instead, and a role that still fails
+#     falls back to v2 with the role reported as a defect.
 #
 # A chord's own pair is three rooms apart, not four, and its grid gap
 # is however wide the spine is. The plan's rule is kept in the order it
@@ -567,16 +614,25 @@ def _far_rows(band_slot: int, n_slots: int, side: int) -> list[int]:
     return list(range(band_slot + 1, n_slots))
 
 
-def _layout_stage(rng, canvas: Canvas, plan: dict) -> list[int]:
-    """The layout stage: the spine, accretion and the galleries.
+def _layout_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
+                  pinned: bool = False) -> tuple[list[int], list[str]]:
+    """The layout stage: the spine, accretion, the galleries, the stamps.
 
     Rooms are laid out along the long axis and across the short one, in
     "along, across" order, so a tall floor lays its spine down rather
     than across. A floor is square-free either way: the grid is always
     carved as rooms joined by corridors.
 
+    `pool` is the stamp set this floor may use - empty for a Section that
+    names no stamp tags, which is every floor of a pack without stamps,
+    and those floors are laid out exactly as they were before ADR 0013.
+    `pinned` is the last try's flag, and it only means anything when the
+    pool is not empty.
+
     Returns the spine, the rooms in chain order, so the graph stage can
-    put the two stairs at its ends.
+    put the two stairs at its ends, and the required roles that wanted a
+    stamped room and did not get one. An empty second list is a floor
+    that keeps.
     """
     width, height = canvas.w, canvas.h
     horizontal = width >= height
@@ -600,7 +656,7 @@ def _layout_stage(rng, canvas: Canvas, plan: dict) -> list[int]:
     band_slot = n_slots // 2
     band_lo = 1 + band_slot * row_h
     if n_slots < 1:
-        return []
+        return [], []
 
     # 3. the spine, one room after another down the long axis.
     spine: list[int] = []
@@ -616,7 +672,7 @@ def _layout_stage(rng, canvas: Canvas, plan: dict) -> list[int]:
         spine.append(index)
         cursor += along_size + 1
     if len(spine) < 2:
-        return []
+        return [], []
 
     # 4. accretion, every spine room grown into the free rows of one
     #    side, then into the free rows of the other if that was not
@@ -666,7 +722,13 @@ def _layout_stage(rng, canvas: Canvas, plan: dict) -> list[int]:
                 break
             _gallery_loop(canvas, horizontal, tuple(canvas.rooms[spine[i]][:4]),
                           tuple(canvas.rooms[spine[i + 3]][:4]), gallery)
-    return spine
+
+    # 7. the stamped rooms, once everything else has stopped carving.
+    missing: list[str] = []
+    if pool:
+        up = _center(tuple(canvas.rooms[spine[0]][:4]))
+        _placed, missing = _stamp_stage(rng, canvas, plan, pool, spine, up, pinned)
+    return spine, missing
 
 
 def _child_gallery(canvas: Canvas, horizontal: bool, children: list[int],
@@ -691,6 +753,15 @@ def _child_gallery(canvas: Canvas, horizontal: bool, children: list[int],
         return
     _gallery_loop(canvas, horizontal, tuple(canvas.rooms[same[0]][:4]),
                   tuple(canvas.rooms[same[-1]][:4]), row)
+
+
+# How many carved tiles a socket's corridor may end on, tried nearest
+# first. ADR 0013 says a corridor starts at a socket mouth and takes the
+# first bend that crosses no locked tile; it does not name the corridor's
+# far end, because a corridor's far end is a room this one has not been
+# placed next to yet. So the far end is the nearest carved tile, and the
+# next few nearest ones after that, in a fixed order and with no draw.
+STAMP_ROUTE_ENDS = 4
 
 
 # --------------------------------------------------------- the stamped rooms
@@ -725,6 +796,13 @@ def _stamp_pool(section: dict, pack: list[dict], depth: int) -> list[dict]:
     pool = []
     for record in pack:
         if stamps.ANY_TAG not in tags and not tags & set(record["tags"]):
+            continue
+        # A Section that names no vault has no vault to open, and a vault
+        # room is a locked door and a note rather than a place to walk
+        # into, so its stamp never enters the pool. The slot is still
+        # there and takes no draw, which is the rule the layout stage
+        # comment writes.
+        if record["role"] == "vault" and not section.get("vault"):
             continue
         low, high = record["depth"]
         if low <= depth <= high:
@@ -768,37 +846,47 @@ def _weighted_stamp(rng, pool: list[dict]) -> dict:
     return pool[-1]
 
 
-def _nearest_walkable(canvas: Canvas, tile: tuple[int, int], limit: int):
-    """The carved tile nearest `tile` in Manhattan steps, ties row-major.
+def _nearest_walkable(canvas: Canvas, tile: tuple[int, int], limit: int,
+                      count: int) -> list[tuple[int, int]]:
+    """The `count` carved tiles nearest `tile`, nearest first.
 
     Rings outward rather than scanning every carved tile, because a stamp
-    lands against open wall and the answer is usually a tile or two away.
-    `limit` is the floor's long axis, so the search cannot run away on a
-    floor where a room really is the far side.
+    lands against open wall and the answer is usually a tile or two away,
+    and a tile is found in the same order in every language: by Manhattan
+    steps first, then row-major. `limit` is the floor's long axis, so the
+    search cannot run away on a floor where a room really is the far side.
     """
     tx, ty = tile
+    found: list[tuple[int, int]] = []
     for radius in range(1, limit):
-        found = []
+        ring = []
         for dy in range(-radius, radius + 1):
             across = radius - abs(dy)
             for dx in ((-across, across) if across else (0,)):
                 x, y = tx + dx, ty + dy
                 if 0 <= x < canvas.w and 0 <= y < canvas.h:
                     if (y * canvas.w + x) in canvas.walk:
-                        found.append((y * canvas.w + x, x, y))
-        if found:
-            return min(found)[1:]
-    return None
+                        ring.append((y * canvas.w + x, x, y))
+        if ring:
+            found.extend(entry[1:] for entry in sorted(ring))
+            if len(found) >= count:
+                return found[:count]
+    return found
 
 
-def _run(lo: int, hi: int, fixed: int) -> list[tuple[int, int]]:
-    """Every tile of a straight run between two coordinates, both ends."""
+def _span(lo: int, hi: int) -> list[int]:
+    """Every whole number from `lo` to `hi`, both ends, either direction."""
     step = 1 if hi >= lo else -1
-    return [(value, fixed) for value in range(lo, hi + step, step)]
+    return list(range(lo, hi + step, step))
 
 
 def _bends(start: tuple[int, int], end: tuple[int, int]) -> list[list[tuple[int, int]]]:
     """The two L-shaped routes between two tiles, the long way round first.
+
+    The first runs along `start`'s row and then up `end`'s column; the
+    second runs along `start`'s column and then along `end`'s row. Both
+    are written out tile by tile, and both start and end where they are
+    asked to.
 
     No draw, unlike `_link`: ADR 0013 says the first bend that crosses no
     locked tile wins, and "first" has to mean the same thing in every
@@ -806,8 +894,8 @@ def _bends(start: tuple[int, int], end: tuple[int, int]) -> list[list[tuple[int,
     """
     (x0, y0), (x1, y1) = start, end
     return [
-        _run(x0, x1, y0) + _run(y0, y1, x1)[1:],
-        _run(y0, y1, x0) + _run(x0, x1, y1)[1:],
+        [(x, y0) for x in _span(x0, x1)] + [(x1, y) for y in _span(y0, y1)[1:]],
+        [(x0, y) for y in _span(y0, y1)] + [(x, y1) for x in _span(x0, x1)[1:]],
     ]
 
 
@@ -816,56 +904,62 @@ def _stamp_route(canvas: Canvas, rows: list[str], rect: tuple[int, int, int, int
 
     Sockets are tried nearest the floor first - the mouth's Manhattan
     distance to the nearest carved tile - and a tie goes to the socket that
-    comes first in row-major order. Each socket is tried as both L bends,
-    and the first route that crosses no locked tile and no wall of the
-    stamp itself wins. The route starts at the socket tile, because that
-    is the tile the corridor has to claim for the room to be reached.
+    comes first in row-major order, which is the order `stamps.sockets`
+    already hands them over in. Each socket is tried as both L bends, and
+    the first route that crosses no locked tile and no other carved tile
+    wins. The route ends on the socket tile, because that is the tile the
+    corridor has to claim for the room to be reached at all.
 
-    None means the room cannot be connected from anywhere, so the caller
+    None means the room cannot be connected from here, so the caller
     spends another attempt on a different spot.
     """
-    x, y, width, height = rect
+    x, y = rect[0], rect[1]
     choices = []
     for socket in stamps.sockets(rows):
         at = (socket["at"][0] + x, socket["at"][1] + y)
         mouth = (socket["mouth"][0] + x, socket["mouth"][1] + y)
-        target = _nearest_walkable(canvas, mouth, max(canvas.w, canvas.h))
-        if target is None:
+        ends = _nearest_walkable(canvas, mouth, max(canvas.w, canvas.h),
+                                 STAMP_ROUTE_ENDS)
+        if not ends:
             continue
-        walk = abs(mouth[0] - target[0]) + abs(mouth[1] - target[1])
-        choices.append((walk, socket["at"], socket, at, mouth, target))
-    for _walk, _at, socket, at, mouth, target in sorted(choices, key=lambda c: c[:2]):
-        for bend in _bends(mouth, target):
-            tiles = [at] + bend
-            if all(
-                0 <= x0 < canvas.w and 0 <= y0 < canvas.h
-                and (x <= x0 < x + width and y <= y0 < y + height) == (x0, y0 == at
-                                                                     and False or (x0, y0) == at)
-                for x0, y0 in tiles
-            ):
-                pass
-            if all(_route_clear(canvas, tiles, rect, at) for _ in (0,)):
-                return socket, tiles
+        # `socket["at"]` is the row-major tie-break; the record's own
+        # order is never sorted, so a twin walking the same list lands on
+        # the same socket.
+        walk = abs(mouth[0] - ends[0][0]) + abs(mouth[1] - ends[0][1])
+        choices.append((walk, socket["at"], socket, at, mouth, ends))
+    for _nearest, _row_major, socket, at, mouth, ends in sorted(choices, key=lambda c: c[:2]):
+        for target in ends:
+            for bend in _bends(mouth, target):
+                tiles = bend + [at]
+                if _route_clear(canvas, tiles, rect, at, target):
+                    return socket, tiles
     return None
 
 
 def _route_clear(canvas: Canvas, tiles: list[tuple[int, int]],
-                 rect: tuple[int, int, int, int], at: tuple[int, int]) -> bool:
-    """True when a route stays inside the grid and out of every locked tile.
+                 rect: tuple[int, int, int, int], at: tuple[int, int],
+                 target: tuple[int, int]) -> bool:
+    """True when a route stays inside the grid and out of everything carved.
 
-    The one tile of the stamp the route is allowed to touch is the socket
-    it comes in through: everything else of a painted room is off limits,
-    walls included, or a corridor would run through a hand-drawn wall.
+    Three rules, all of them the same rule seen from a different side: a
+    corridor does not cut through a room. It may not cross a tile a
+    stamped room locked (ADR 0013, Placement 3), it may not cross any
+    tile of the room it is being routed to except the socket it comes in
+    through - walls included, or a corridor would run through a hand-drawn
+    wall - and it may not cross a carved tile at all except the one carved
+    tile it ends on, which is the room it is joining.
     """
     x, y, width, height = rect
     for x0, y0 in tiles:
         if not (0 <= x0 < canvas.w and 0 <= y0 < canvas.h):
             return False
-        if (x0, y0) == at:
+        if (x0, y0) == at or (x0, y0) == target:
             continue
         if x <= x0 < x + width and y <= y0 < y + height:
             return False
         if (y0 * canvas.w + x0) in canvas.locked:
+            return False
+        if (y0 * canvas.w + x0) in canvas.walk:
             return False
     return True
 
@@ -887,7 +981,7 @@ def _lay_stamp(canvas: Canvas, rows: list[str], rect: tuple[int, int, int, int],
     index = len(canvas.rooms)
     canvas.rooms.append([rect[0], rect[1], width, height, record["role"]])
     canvas.carve_stamp(rows, rect, index, socket["at"])
-    canvas.corridor(tiles)
+    canvas.stamp_corridor(tiles, index, rect)
     named = stamps.anchors(rows, record["legend"])
     placement = {
         "id": record["id"],
@@ -901,10 +995,16 @@ def _lay_stamp(canvas: Canvas, rows: list[str], rect: tuple[int, int, int, int],
             for entry in named.values()
         },
     }
+    # The socket the corridor came in through, in floor coordinates. A
+    # room with no used socket is a room nothing can reach, so the record
+    # names the one that was used; the others became wall when the room
+    # was painted.
+    placement["socket"] = [socket["at"][0] + rect[0], socket["at"][1] + rect[1]]
     if socket["kind"] == "secret":
-        placement["secret"] = [socket["at"][0] + rect[0], socket["at"][1] + rect[1]]
+        placement["secret"] = placement["socket"]
     if record["poi"]:
         placement["poi"] = record["poi"]
+    canvas.stamps.append(placement)
     return placement
 
 
@@ -925,33 +1025,52 @@ def _try_stamp(rng, canvas: Canvas, record: dict) -> dict | None:
         if width + 2 > canvas.w or height + 2 > canvas.h:
             return None
         rect = (_rand(rng, 1, canvas.w - width - 1),
-                _rand(rng, 1, canvas.h - height - 1))
+                _rand(rng, 1, canvas.h - height - 1), width, height)
         placed = _lay_stamp(canvas, rows, rect, record, o)
         if placed is not None:
             return placed
     return None
 
 
+# The two required roles ADR 0013 names a position for, in the order it
+# names them: the warden-hall at the far end of the spine, the vault in
+# the corner farthest from `up`. The landmark is a required role and is
+# not in here, because the ADR gives it no position.
+_PINNED_ROLES = ("warden-hall", "vault")
+
+
 # The pinned try's two named positions, in the order ADR 0013 gives them.
 # The last try draws nothing at all, so these have to be named rather than
 # sampled: the warden-hall goes at the far end of the spine, the vault in
 # the corner farthest from `up`.
-def _pin_spots(canvas: Canvas, role: str, spine: list[int],
-               up: tuple[int, int]):
+def _ordered_spots(canvas: Canvas, around: tuple[int, int]) -> list[tuple[int, int]]:
+    """Every spot a stamp may be pinned to, `around` first.
+
+    Nearest by Manhattan steps, ties row-major, so the list is a fixed
+    order and not a draw: the same floor pins to the same spot in every
+    language. The border is left out because `_fits` needs a wall row
+    round every room.
+    """
+    return sorted(
+        ((x, y) for y in range(1, canvas.h - 1) for x in range(1, canvas.w - 1)),
+        key=lambda spot: (abs(spot[0] - around[0]) + abs(spot[1] - around[1]),
+                          spot[1], spot[0]),
+    )
+
+
+def _pin_spots(canvas: Canvas, role: str, spine: list[int], up: tuple[int, int]):
     """The spots a required stamp is pinned to on the last try, in order."""
     if spine and role == "warden-hall":
+        # The far end of the spine: the last spine room, and outward
+        # from it, so the hall is at the end of the walk rather than in
+        # the first free corner the sweep reaches.
         x, y, width, height = canvas.rooms[spine[-1]][:4]
-        for along in range(x + width + 1, canvas.w - 1):
-            for across in range(1, canvas.h - 1):
-                yield along, across
+        yield from _ordered_spots(canvas, (x + width - 1, y + height // 2))
         return
     corners = [(1, 1), (canvas.w - 2, 1), (1, canvas.h - 2), (canvas.w - 2, canvas.h - 2)]
     for corner in sorted(corners,
                          key=lambda c: (-(abs(c[0] - up[0]) + abs(c[1] - up[1])), c)):
-        cx, cy = corner
-        for dx in range(16):
-            for dy in range(16):
-                yield min(cx + dx, canvas.w - 2), min(cy + dy, canvas.h - 2)
+        yield from _ordered_spots(canvas, corner)
 
 
 def _faces_centre(rows: list[str], rect: tuple[int, int, int, int],
@@ -1009,12 +1128,20 @@ def _stamp_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
 
     The three required roles first, then the optional slots, each one
     drawing its stamp by weight and then spending up to 24 attempts on a
-    spot. Returns the placements and the required roles that wanted a
-    stamp and did not get one: the caller fails the floor over that, and
+    spot. A stamp that reaches `max_per_floor` drops out of its role's
+    choices, so the draw never picks one that is already on the floor.
+
+    Returns the placements and the required roles that wanted a stamped
+    room and did not get one: the caller fails the floor over that, and
     the retry ladder draws the same floor key again with `|try{n}`.
 
-    On the last try `pinned` is true and the required roles skip the
-    attempts and take their named positions instead.
+    On the last try `pinned` is true and the warden-hall and the vault -
+    the two roles ADR 0013 names spots for - skip the attempts and the
+    draw and take their named positions instead, before any other room.
+    The landmark keeps the ordinary 24 attempts: ADR 0013 gives no named
+    position for it, and inventing one here would be a rule the twin does
+    not have. The pinned roles take no weighted draw either, so the last
+    try's stream is its own.
     """
     groups: dict[str, list[dict]] = {}
     for record in pool:
@@ -1023,17 +1150,13 @@ def _stamp_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
     placed: list[dict] = []
     missing: list[str] = []
     for role in _stamp_slots(plan):
-        if pinned and role in stamps.REQUIRED_ROLES:
+        if pinned and role in _PINNED_ROLES:
             choices = groups.get(role, [])
+            got = _pin_stamp(canvas, choices[0], spine, up) if choices else None
         else:
             choices = [record for record in groups.get(role, [])
                        if used.get(record["id"], 0) < record["max_per_floor"]]
-        if not choices:
-            continue
-        if pinned and role in stamps.REQUIRED_ROLES:
-            got = _pin_stamp(canvas, choices[0], spine, up)
-        else:
-            got = _try_stamp(rng, canvas, _weighted_stamp(rng, choices))
+            got = _try_stamp(rng, canvas, _weighted_stamp(rng, choices)) if choices else None
         if got is None:
             if role in stamps.REQUIRED_ROLES:
                 missing.append(role)
@@ -1064,6 +1187,12 @@ def _stamp_stage(rng, canvas: Canvas, plan: dict, pool: list[dict],
 #     broken by the lower room index: the gates-and-guardians rule.
 #  6. The landmark goes in the next room off the path after that, and
 #     the vault in the one after it when the pack names a vault.
+#     A room a stamp was painted into is already the room its role
+#     names, so it is used instead of being chosen: the warden hall is
+#     the hall the author drew, the landmark is the one with the `poi`
+#     letter, and the anchors are those letters rather than the middle
+#     of the rectangle. A stamped room is left out of the off-path walk
+#     below, so no room is two things at once.
 
 
 def _bfs_path(adj: list[set[int]], start: int, goal: int) -> list[int] | None:
@@ -1193,6 +1322,43 @@ class Graph:
         self.depth: list[int] = []
 
 
+def _stand_in(canvas: Canvas, room: int, prefer: tuple[int, int] | None = None):
+    """A tile of `room` a thing can stand on.
+
+    The middle tile, as everywhere else in the file, unless the room is
+    a stamped one: a hand-drawn room is not a filled rectangle, so its
+    middle may be a drawn wall, and an anchor on a wall is an anchor
+    nothing can walk to. `prefer` is the room's own named anchor - the
+    warden letter of a stamped hall, the `poi` letter of a stamped
+    landmark - and it wins whenever it is walkable, which is what a
+    stamp is for.
+    """
+    x, y, width, height = canvas.rooms[room][:4]
+    middle = _center((x, y, width, height))
+    if prefer is not None and prefer[1] * canvas.w + prefer[0] in canvas.walk:
+        return prefer
+    if middle[1] * canvas.w + middle[0] in canvas.walk:
+        return middle
+    for yy in range(y, y + height):
+        for xx in range(x, x + width):
+            if (yy * canvas.w + xx) in canvas.walk:
+                return (xx, yy)
+    return middle
+
+
+def _stamped(canvas: Canvas, role: str) -> dict | None:
+    """The stamped room of a role, the first one placed, or None.
+
+    One per role is the rule the layout stage places by, so a floor with
+    two of a role takes the first and the rest are ordinary rooms with a
+    story-room shape.
+    """
+    for placement in canvas.stamps:
+        if placement["role"] == role:
+            return placement
+    return None
+
+
 def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
                  section: dict) -> tuple[Graph, dict, list[dict], list[list]]:
     """The graph stage: the stairs, the main path, the warden, the pois.
@@ -1200,6 +1366,12 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
     Nothing is drawn here. Everything below is read out of the grid the
     layout stage left, so the two stages cannot disagree about where a
     room is or which rooms the path runs through.
+
+    A stamped room is already the room its role names, so it is used
+    where a plain room would be chosen: the warden hall that was drawn
+    is the warden hall, and the warden anchor is the letter the author
+    drew. A stamped room is never also chosen out of `off_path`, or one
+    room would be two things at once.
     """
     up_room, down_room = spine[0], spine[-1]
     up = _center(tuple(canvas.rooms[up_room][:4]))
@@ -1217,34 +1389,44 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
     graph.depth = _bfs_depth(room_adj, up_room, graph.room_count)
 
     on_path = set(graph.main_rooms)
+    drawn = {placement["room"] for placement in canvas.stamps}
     # The farthest room off the path, then the next, then the next. The
     # warden takes the first, the landmark the second, the vault the
     # third, each sorted by hop count from the up-stair and then by room
     # index so a tie never depends on a draw.
     off_path = sorted(
-        (room for room in range(graph.room_count) if room not in on_path),
+        (room for room in range(graph.room_count)
+         if room not in on_path and room not in drawn),
         key=lambda room: (-graph.depth[room], room),
     )
-    warden_room = off_path[0] if off_path else up_room
-    landmark_room = off_path[1] if len(off_path) > 1 else warden_room
-    vault_room = off_path[2] if (len(off_path) > 2 and section.get("vault")) else None
+    hall = _stamped(canvas, "warden-hall")
+    landmark = _stamped(canvas, "landmark")
+    vault = _stamped(canvas, "vault")
+    warden_room = hall["room"] if hall else (off_path[0] if off_path else up_room)
+    landmark_room = landmark["room"] if landmark else (
+        off_path[1] if len(off_path) > 1 else warden_room)
+    vault_room = vault["room"] if vault else (
+        off_path[2] if (len(off_path) > 2 and section.get("vault")) else None)
 
     # A stamp reads as the room it sits in, so the room that holds the
     # warden hall, the landmark or the vault is named in `rooms`.
-    canvas.rooms[warden_room][4] = "hall"
-    canvas.rooms[landmark_room][4] = "landmark"
-    if vault_room is not None:
+    if hall is None:
+        canvas.rooms[warden_room][4] = "hall"
+    if landmark is None:
+        canvas.rooms[landmark_room][4] = "landmark"
+    if vault_room is not None and vault is None:
         canvas.rooms[vault_room][4] = "vault"
 
     names = _names(section.get("pois"), FALLBACK_POIS)
-    poi_at = _center(tuple(canvas.rooms[landmark_room][:4]))
+    poi_at = _stand_in(canvas, landmark_room, _at_of(landmark, "poi"))
     pois = [{
         "at": [poi_at[0], poi_at[1]],
-        "name": names[plan["flavour"] % len(names)],
-        "stamp": "landmark",
+        "name": (landmark["poi"] if landmark and landmark.get("poi")
+                 else names[plan["flavour"] % len(names)]),
+        "stamp": landmark["id"] if landmark else "landmark",
     }]
-    if vault_room is not None:
-        vault_at = _center(tuple(canvas.rooms[vault_room][:4]))
+    if vault_room is not None and vault is None:
+        vault_at = _stand_in(canvas, vault_room)
         pois.append({
             "at": [vault_at[0], vault_at[1]],
             "name": names[(plan["flavour"] + 1) % len(names)],
@@ -1265,6 +1447,12 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
     for room in leaves[:plan["secrets"]]:
         x, y = _center(tuple(canvas.rooms[room][:4]))
         secrets.append([x, y])
+    # A used `?` is the secret, wherever the room sits (ADR 0013,
+    # Placement 3). The stamped rooms are not leaves in this list - a
+    # secret room has no door at all - so nothing is counted twice.
+    for placement in canvas.stamps:
+        if "secret" in placement:
+            secrets.append(list(placement["secret"]))
 
     anchors = {
         "up": [up[0], up[1]],
@@ -1273,12 +1461,20 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
         "vault": None,
         "landmark": [poi_at[0], poi_at[1]],
     }
-    for name, room in (("warden", warden_room), ("vault", vault_room)):
-        if room is None:
-            continue
-        x, y = _center(tuple(canvas.rooms[room][:4]))
-        anchors[name] = [x, y]
+    warden_at = _stand_in(canvas, warden_room, _at_of(hall, "warden"))
+    anchors["warden"] = [warden_at[0], warden_at[1]]
+    if vault_room is not None:
+        x, y = _stand_in(canvas, vault_room)
+        anchors["vault"] = [x, y]
     return graph, anchors, pois, secrets
+
+
+def _at_of(placement: dict | None, name: str) -> tuple[int, int] | None:
+    """One named anchor of a placement as a tile, or None when it has none."""
+    if not placement:
+        return None
+    at = placement["anchors"].get(name)
+    return (at[0], at[1]) if at else None
 
 
 # ----------------------------------------------------------------- stage 4
@@ -1524,7 +1720,10 @@ def _validate(plan: dict, canvas: Canvas, graph: Graph, section: dict) -> bool:
     reach = _flood(canvas, up)
     if len(reach) != len(canvas.walk):
         return False
-    if sum(room[2] * room[3] for room in rooms) + len(canvas.corr) != len(canvas.walk):
+    # `canvas.owned` and not the rectangles: a stamped room is a drawing,
+    # so its walkable tiles are counted as they are laid rather than as
+    # `w * h`. For a floor of plain rooms the two are the same number.
+    if canvas.owned + len(canvas.corr) != len(canvas.walk):
         return False
 
     def room_of(tile: list[int]) -> int:
@@ -1589,14 +1788,22 @@ def _validate(plan: dict, canvas: Canvas, graph: Graph, section: dict) -> bool:
 # ----------------------------------------------------------------- the door
 
 
-def _attempt(floor_key: str, width: int, height: int,
-             section: dict, floor_kind: str) -> dict | None:
+def _attempt(floor_key: str, width: int, height: int, section: dict,
+             floor_kind: str, stamp_pack: list[dict], depth: int,
+             pinned: bool) -> tuple[dict | None, str]:
     """One draw of one floor: the five stages, or None when it fails.
 
     Three streams are opened, one for each stage that draws, and the
     graph and validate stages open none. Every stream name is the floor
     key and the stage name, exactly as PLAN.md section 2 writes them, so
     a JavaScript twin can replay a stage on its own.
+
+    The second half of the answer is the defect, or "" for a good floor
+    and for a floor that failed for an ordinary reason. A required stamp
+    that would not place is a defect and not a bad draw: the retry
+    ladder is meant to fix a bad draw, and a floor that fell back to v2
+    over a stamp is a floor the author has to hear about (ADR 0013,
+    Placement 4).
     """
     plan_rng = prng(f"v3|{floor_key}|plan")
     layout_rng = prng(f"v3|{floor_key}|layout")
@@ -1604,12 +1811,13 @@ def _attempt(floor_key: str, width: int, height: int,
 
     plan = _plan_stage(plan_rng, section, floor_kind)
     canvas = Canvas(width, height)
-    spine = _layout_stage(layout_rng, canvas, plan)
-    if len(spine) < 2:
-        return None
+    pool = _stamp_pool(section, stamp_pack, depth)
+    spine, missing = _layout_stage(layout_rng, canvas, plan, pool, pinned)
+    if len(spine) < 2 or missing:
+        return None, f"stamp:{missing[0]}" if missing else ""
     graph, anchors, pois, secrets = _graph_stage(canvas, spine, plan, section)
     if graph.room_count < ROOMS_FLOOR:
-        return None
+        return None, ""
     up = (anchors["up"][0], anchors["up"][1])
     down = (anchors["down"][0], anchors["down"][1])
     spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down)
@@ -1627,23 +1835,37 @@ def _attempt(floor_key: str, width: int, height: int,
         "chests": chests,
         "waypoint": plan["waypoint"],
     }
+    if canvas.stamps:
+        # The placements ride along on the floor: which stamp, which way
+        # up it is, and where each of its letters stands. `vefr stamp
+        # check` reads them, and a caller that wants to name the room
+        # the player is standing in has the id without a second lookup.
+        floor["stamps"] = canvas.stamps
     if not _validate(floor, canvas, graph, section):
-        return None
-    return floor
+        return None, ""
+    return floor, ""
 
 
-def _fallback(seed: str, width: int, height: int, section: dict) -> dict:
+def _fallback(seed: str, width: int, height: int, section: dict,
+              defect: str = "") -> dict:
     """The v2 floor of PLAN.md section 2's last resort, as a FloorPlan.
 
     v2 stays pinned by hash and stays the fallback, so a caller that
     cannot have a v3 floor still gets the shape it always had: the rows,
     the stairs, and the room rectangles v2 geometry can be read back
     into. No point of interest, no secret, no monster, no chest.
+
+    `defect` is the reason the v3 floor was not good enough, when the
+    reason is a stamp that would not place - `stamp:<role>` - and "" for
+    every other reason. ADR 0013's Placement 4 wants that floorback
+    reported rather than hidden, and the key on the floor is where
+    `vefr stamp check` reads it from; a v2 floor with no defect is the
+    ordinary kind and carries no key at all.
     """
     quota = _read_rooms(section)[0]
     rows = generate_floor_v2(f"{seed}/fallback", width, height, max(2, quota))
     rooms = _read_rectangles(rows, width, height)
-    return {
+    floor = {
         "gen": 2,
         "w": width,
         "h": height,
@@ -1662,6 +1884,9 @@ def _fallback(seed: str, width: int, height: int, section: dict) -> dict:
         "chests": [],
         "waypoint": False,
     }
+    if defect:
+        floor["stamp_defect"] = defect
+    return floor
 
 
 def _read_rectangles(rows: list[str], width: int, height: int) -> list[list]:
@@ -1707,14 +1932,24 @@ def _find(rows: list[str], glyph: str, width: int, height: int) -> list[int] | N
     return None
 
 
-def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str) -> dict:
+def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
+                      stamp_pack=None, depth: int = 1) -> dict:
     """Draw one v3 floor from `seed` and return its FloorPlan.
 
     `size_range` is the chosen `(w, h)` of the floor and nothing else.
     `section` is a Section pack; only `id`, `rooms`, `families`, `elites`,
-    `groups` and `pois` are read, every other key is defaulted, and a
-    missing key never raises. `floor_kind` is one of `normal`,
-    `treasure`, `infested` or `hub`.
+    `groups`, `pois`, `stamps` and `vault` are read, every other key is
+    defaulted, and a missing key never raises. `floor_kind` is one of
+    `normal`, `treasure`, `infested` or `hub`.
+
+    `stamp_pack` is the pack's stamp set as `stamps.load` hands it over:
+    a list of read records, already sorted by id. It is the stamped
+    rooms ADR 0013 places, and it is empty by default, so a call that
+    knows nothing about stamps is byte-for-byte the floor it always was.
+    The Section's own `stamps` tags say which of them this Section may
+    use, and `depth` is `k`, the floor's 1-based position in its
+    Section, which is what a stamp's own `depth` range is measured
+    against.
 
     The floor key is `f"{seed}/{section_id}/{floor_kind}"`, so the same
     seed, section and kind is the same floor, and two kinds of one
@@ -1722,7 +1957,9 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str) -> 
     from the same key with `|try{n}` appended, up to `MAX_TRIES` times;
     after that the caller gets v2 geometry with `gen: 2` and the same
     keys. The fallback rate is the fraction of calls that come back with
-    a `gen` other than 3.
+    a `gen` other than 3. The LAST try pins the required stamps
+    (ADR 0013, Placement 4), and a floor that falls back to v2 over a
+    stamp carries `stamp_defect` naming the role that would not place.
 
     Deterministic: `delve.prng` is the only source of randomness, so the
     same arguments always return the same plan. Raises `ValueError` for
@@ -1736,9 +1973,14 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str) -> 
     raw_id = pack.get("id", "")
     section_id = raw_id if isinstance(raw_id, str) else str(raw_id or "")
     base_key = f"{seed}/{section_id}/{floor_kind}"
+    records = [record for record in (stamp_pack or ()) if isinstance(record, dict)]
+    defect = ""
     for attempt in range(MAX_TRIES + 1):
         floor_key = base_key if attempt == 0 else f"{base_key}|try{attempt}"
-        floor = _attempt(floor_key, width, height, pack, floor_kind)
+        floor, failed = _attempt(floor_key, width, height, pack, floor_kind,
+                                 records, depth, pinned=attempt == MAX_TRIES)
         if floor is not None:
             return floor
-    return _fallback(str(seed), width, height, pack)
+        if failed:
+            defect = failed
+    return _fallback(str(seed), width, height, pack, defect)
