@@ -353,11 +353,14 @@ def test_a_thing_with_no_from_writes_the_item_and_no_drop(tmp_path):
 
 
 # ------------------------------------------------------------- the refusals
-def _refuse(tmp_path, thing, enemies=None):
+def _refuse(tmp_path, thing, enemies=None, extra_regions=None):
     """The one sentence and pointer a thing draws out of a real pack."""
     from vefr import blueprint
 
-    pack = _pack(tmp_path, blueprint=_source([thing], enemies=enemies))
+    source = _source([thing], enemies=enemies)
+    for region_key, region in (extra_regions or {}).items():
+        source["regions"][region_key] = dict(region)
+    pack = _pack(tmp_path, blueprint=source)
     with pytest.raises(blueprint.BlueprintError) as err:
         blueprint.expand(blueprint.read(pack / "blueprint.json"),
                          pack_dir=pack)
@@ -382,6 +385,22 @@ def test_a_from_in_a_region_this_blueprint_does_not_own_is_refused(tmp_path):
                              "name": "a smooth pebble"})
     assert err.pointer == "/things/0/from"
     assert "blueprint owns" in str(err).lower()
+
+
+def test_a_from_in_an_owned_region_that_declares_no_enemies_is_refused(
+        tmp_path):
+    """The region is named by this source but says nothing about
+    `enemies`, so its hand-written records are not this Blueprint's to
+    reach. Telling the author that no region owns the instance would be
+    false - the source does own a region with it - so the sentence names
+    the real reason and the region it is about."""
+    err = _refuse(tmp_path, {"id": "pebble", "from": "d1",
+                             "name": "a smooth pebble"},
+                  extra_regions={"act-1/cave-3": {}})
+    assert err.pointer == "/things/0/from"
+    assert "declares no enemies" in str(err).lower()
+    assert "'act-1/cave-3'" in str(err)
+    assert "owns no region" not in str(err)
 
 
 def test_a_from_that_names_no_instance_at_all_is_refused(tmp_path):

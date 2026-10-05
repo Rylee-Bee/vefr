@@ -336,6 +336,12 @@ An instance id is unique within its region, not across the whole file,
 so a `from` that reaches two owned regions is refused with both region
 keys named rather than resolved to whichever came last.
 
+A `from` may only reach an instance of a region this Blueprint owns,
+and owning a region means it says `enemies`: a region the source names
+but leaves without an `enemies` list keeps the hand's own records, so a
+`from` into it is refused with that reason and that region named, not
+with a sentence saying no region holds the instance.
+
 ### What one thing writes
 
 - the pack root `world.json` gets one entry at `/items/<id>`, holding
