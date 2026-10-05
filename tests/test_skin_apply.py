@@ -359,6 +359,34 @@ def test_the_toggle_paints_the_phase_rail_and_the_fog_switch(ran):
               f"the toggle-on picture on {element}[aria-pressed=true]")
 
 
+def test_each_toggle_picture_reaches_only_the_switches_in_its_own_state(ran):
+    """Read off the real DOM, not off the selector text. For each of the two
+    switches, every rule that carries one of the two pictures and reaches that
+    switch must reach it in the state that picture belongs to: the resting
+    picture only on a switch at rest, the pressed picture only on a switch
+    pressed. A state-blind rule paints both states the same, which is the bug."""
+    css = ran["parts"]["css"]
+    rules = _rules(css)
+    state = ran["parts"]["stateRules"]
+    hits = {p["name"]: p["hits"] for p in state["probes"]}
+    assert all(name in hits for name in
+               ("phase-resting", "phase-pressed", "fog-resting", "fog-pressed")), hits.keys()
+    pictures = {"off": mk.picture_uri("toggle-off.png"), "on": mk.picture_uri("toggle-on.png")}
+    for switch in ("phase", "fog"):
+        resting, pressed = hits[f"{switch}-resting"], hits[f"{switch}-pressed"]
+        for which, wanted, unwanted in (("off", resting, pressed), ("on", pressed, resting)):
+            mine = [i for i, (sel, body) in enumerate(rules)
+                    if pictures[which] in body and (resting[i] or pressed[i])]
+            _need(mine, f"the toggle-{which} picture on the {switch} switch")
+            for i in mine:
+                assert wanted[i] is True, (
+                    f"the toggle-{which} rule {state['rules'][i]!r} never reaches the "
+                    f"{switch} switch in its {which} state")
+                assert unwanted[i] is False, (
+                    f"the toggle-{which} rule {state['rules'][i]!r} reaches the {switch} "
+                    f"switch in the state it is not in")
+
+
 def test_the_tooltip_paints_the_tool_buttons_that_carry_a_title(ran):
     """`tooltip` is the small tool buttons' tooltip, on hover and on keyboard
     focus, so the keyboard sees what the pointer sees."""

@@ -9,7 +9,9 @@
    The report also carries interface slice 5: the five HUD icons (each of which
    must sit BESIDE the words, never inside them) and the speech box's portrait
    (which appears for a speaker the pack gave a picture, and not at all for one
-   it did not). */
+   it did not). It also reports which real control every rule in the skin sheet
+   reaches, so a rule about a switch can be read against the switch's own state
+   rather than off its selector text. */
 import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 
@@ -54,6 +56,48 @@ const SPEAKER_WITH = 'marta';
 const SPEAKER_WITHOUT = 'nobody';
 
 const text = (node) => (node ? (node.textContent || '') : null);
+
+/* Which real control each rule in the skin sheet actually reaches. The two
+   switches the toggle part paints are the probes: a resting phase button, a
+   pressed phase button, and the fog switch put into each of its two states in
+   turn. A rule that carries one of the two pictures has to reach exactly the
+   controls in the state that picture belongs to, so the python side can read
+   the state off the real DOM rather than off the selector text. */
+const GUARD = '@media (prefers-contrast: no-preference) and (not (forced-colors: active))';
+
+function stateReport(w, css) {
+  let text = css;
+  const at = css.indexOf(GUARD);
+  if (at !== -1) text = css.slice(css.indexOf('{', at) + 1, css.lastIndexOf('}'));
+  const sels = [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => m[1].trim());
+  const hitsFor = (el) => sels.map((sel) => {
+    if (!el) return false;
+    try { return el.matches(sel); } catch (e) { return false; }
+  });
+  const rail = [...w.document.querySelectorAll('.phase-rail button')];
+  const resting = rail.find((b) => b.getAttribute('aria-pressed') === 'false') || rail[0];
+  const pressed = rail.find((b) => b.getAttribute('aria-pressed') === 'true') || rail[1];
+  if (resting) resting.setAttribute('aria-pressed', 'false');
+  if (pressed) pressed.setAttribute('aria-pressed', 'true');
+  const fog = w.document.getElementById('fog-toggle');
+  let fogResting = null;
+  let fogPressed = null;
+  if (fog) {
+    fog.setAttribute('aria-pressed', 'false');
+    fogResting = hitsFor(fog);
+    fog.setAttribute('aria-pressed', 'true');
+    fogPressed = hitsFor(fog);
+  }
+  return {
+    rules: sels,
+    probes: [
+      { name: 'phase-resting', hits: hitsFor(resting) },
+      { name: 'phase-pressed', hits: hitsFor(pressed) },
+      { name: 'fog-resting', hits: fogResting },
+      { name: 'fog-pressed', hits: fogPressed },
+    ],
+  };
+}
 
 function iconReport(w) {
   const out = {};
@@ -182,6 +226,7 @@ async function report(path, contrastMore) {
     npc.error = String(e);
   }
   r.npcBox = npc;
+  r.stateRules = stateReport(w, r.css);
 
   w.close();
   return r;

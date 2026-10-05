@@ -7113,12 +7113,19 @@ function applySkin() {
   }
   // A switch is its two states: off is how it rests, on is what it is pressed
   // into. Both switches the player already draws (the phase rail and the fog
-  // one) take the same pair.
+  // one) take the same pair, and each picture is written against the state it
+  // belongs to - the pressed control is never reached by the resting rule, so
+  // neither picture can sit on a switch in the state it is not in.
   var toggle = parts.toggle;
   if (toggle && (toggle.off || toggle.on)) {
     ['.phase-rail button', '#fog-toggle'].forEach(function (sel) {
-      if (toggle.off) css += sel + ' {' + plate(toggle.off) + ' }\n';
-      if (toggle.on) css += sel + '[aria-pressed="true"] {' + plate(toggle.on) + ' }\n';
+      if (toggle.off) {
+        css += sel + '[aria-pressed="false"], ' + sel + ':not([aria-pressed]) {'
+          + plate(toggle.off) + ' }\n';
+      }
+      if (toggle.on) {
+        css += sel + '[aria-pressed="true"] {' + plate(toggle.on) + ' }\n';
+      }
     });
   }
   // The small tool buttons' tooltip. The words are the button's own and the
