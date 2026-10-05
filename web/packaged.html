@@ -4589,6 +4589,44 @@ function setupTown() {
       else stage.classList.remove('stage--dock');
     }
   }
+  // The ground outside the drawn map (docs/plans/interface/PLAN.md, slice 2).
+  // Today that ground is one flat colour, and a skin with a `backdrop` puts
+  // its own seamless picture there instead. These are the rectangles the map
+  // does NOT cover, clipped to the window, in view pixels: pure maths, with
+  // `ready` saying whether the picture has decoded, and exposed read-only
+  // (precedent: window.VEFR_STAGE) so a test can read them without a canvas.
+  // A map that fills the window has no ground, so it returns no rectangles.
+  window.VEFR_BACKDROP_BANDS = function (ready, viewW, viewH, camX, camY, mapW, mapH) {
+    if (!ready) return [];
+    // `camX`/`camY` are the camera's offsets, as draw() has them: the map's
+    // own top-left on screen is -camX, -camY (it is negative when a map
+    // smaller than the window is centred).
+    var x0 = Math.max(0, -camX), y0 = Math.max(0, -camY);
+    var x1 = Math.min(viewW, -camX + mapW), y1 = Math.min(viewH, -camY + mapH);
+    if (x1 <= x0 || y1 <= y0) return [];
+    var out = [];
+    if (y0 > 0) out.push([0, 0, viewW, y0]);
+    if (y1 < viewH) out.push([0, y1, viewW, viewH - y1]);
+    if (x0 > 0) out.push([0, y0, x0, y1 - y0]);
+    if (x1 < viewW) out.push([x1, y0, viewW - x1, y1 - y0]);
+    return out;
+  };
+  var backdropBands = [], backdropDrawn = 0;
+  // The skin's picture, or nothing. A pack with no skin never paints a table:
+  // the picture only ever arrives through applySkin, and only for a skin that
+  // named one.
+  function skinBackdrop() {
+    var skin = window.VEFR_SKIN;
+    return (skin && typeof skin === 'object') ? (window.VEFR_BACKDROP || null) : null;
+  }
+  window.VEFR_BACKDROP_STATE = function () {
+    return { url: window.VEFR_BACKDROP_URL || null, ready: !!skinBackdrop(),
+             bands: backdropBands, drawn: backdropDrawn };
+  };
+  // Repaint the map on demand, for the parts outside this closure that have
+  // something new to draw (the skin's backdrop, once its picture has decoded).
+  // Precedent: window.refreshCombatSnapshot.
+  window.VEFR_REDRAW = function () { draw(); };
   function resize() {
     cols = town.map[0].length;
     rows = town.map.length;
@@ -5605,6 +5643,31 @@ function setupTown() {
       : Math.min(Math.max(camHero[1] * T + T / 2 - viewH / 2, 0), mapH - viewH);
 
     ctx.fillStyle = town.bg; ctx.fillRect(0, 0, viewW, viewH);
+    // The ground the map does not cover takes the skin's table, when the skin
+    // has one and its picture has decoded (the bands come from the camera).
+    // Tiles are laid from the window's own origin, so the wood does not crawl
+    // when the map scrolls. No backdrop: the flat ground above stands.
+    var backdrop = skinBackdrop();
+    backdropBands = window.VEFR_BACKDROP_BANDS(!!backdrop, viewW, viewH, camX, camY, mapW, mapH);
+    backdropDrawn = 0;
+    if (backdropBands.length) {
+      var tableW = backdrop.naturalWidth || backdrop.width;
+      var tableH = backdrop.naturalHeight || backdrop.height;
+      if (tableW && tableH) {
+        backdropBands.forEach(function (band) {
+          for (var top = band[1]; top < band[1] + band[3]; top += tableH) {
+            for (var left = band[0]; left < band[0] + band[2]; left += tableW) {
+              ctx.drawImage(backdrop, left, top,
+                Math.min(tableW, band[0] + band[2] - left),
+                Math.min(tableH, band[1] + band[3] - top));
+              backdropDrawn++;
+            }
+          }
+        });
+      } else {
+        backdropBands = [];      // a picture with no size paints nothing
+      }
+    }
     ctx.save();
     ctx.translate(-camX, -camY);
     var litSet = fogOn ? litNow() : null;   // what is lit right now
@@ -7151,11 +7214,64 @@ function renderFacts() {
 // has-skin class. No skin (null) means no element, no class, no change.
 // The whole sheet sits behind a media guard, so high contrast and forced
 // colours keep the plain flat player (rules 3 and 4).
+//
+// Two more optional things a skin may name, both from
+// docs/plans/interface/PLAN.md: `backdrop`, the seamless picture the ground
+// outside the drawn map takes (painted on the canvas, in 480, once the
+// picture has decoded), and `fonts`, the display and body families the
+// engine bundles. A skin with neither plays exactly as it did.
+var SKIN_FONT_STACKS = {
+  'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
+  'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  'Crimson Pro': "'Crimson Pro', Georgia, 'Times New Roman', serif"
+};
+
+// Whether this person asked for the plain flat style instead of a skin's
+// pictures (rule 4). Read when the ground is set, and again when the
+// setting changes while the game is open.
+function plainStyle() {
+  if (!window.matchMedia) return false;
+  return !!(window.matchMedia('(prefers-contrast: more)').matches
+    || window.matchMedia('(forced-colors: active)').matches);
+}
+// The map repaints itself on the next step, but a picture that arrives late
+// should not wait for one.
+function redrawGround() {
+  if (typeof window.VEFR_REDRAW === 'function') window.VEFR_REDRAW();
+}
+// The ground the skin asks for, or none: the picture only when the person
+// has not asked for the plain flat style. The map is redrawn when it lands.
+function loadBackdrop(skin) {
+  var url = (skin && skin.backdrop && !plainStyle()) ? skin.backdrop : null;
+  window.VEFR_BACKDROP_URL = url;
+  if (!url) { window.VEFR_BACKDROP = null; return; }
+  var probe = new Image();
+  probe.onload = function () { window.VEFR_BACKDROP = probe; redrawGround(); };
+  probe.onerror = function () { window.VEFR_BACKDROP = null; };   // the flat ground stays
+  probe.src = url;
+}
+// The setting can change while the game is open; the ground follows it.
+function watchPlainStyle(skin) {
+  ['(prefers-contrast: more)', '(forced-colors: active)'].forEach(function (q) {
+    var mq = window.matchMedia && window.matchMedia(q);
+    if (mq && mq.addEventListener) {
+      mq.addEventListener('change', function () { loadBackdrop(skin); redrawGround(); });
+    }
+  });
+}
+function skinFontStack(family) {
+  return (typeof family === 'string'
+    && Object.prototype.hasOwnProperty.call(SKIN_FONT_STACKS, family))
+    ? SKIN_FONT_STACKS[family] : null;
+}
+
 function applySkin() {
   var skin = window.VEFR_SKIN;
   if (!skin || typeof skin !== 'object') return;
   var parts = skin.parts || {};
   var ink = skin.ink || {};
+  loadBackdrop(skin);
+  watchPlainStyle(skin);
 
   // The flat ground behind a panel's own centre: dark ink wants a light
   // ground, so the words stay readable if the picture does not cover it.
@@ -7194,6 +7310,14 @@ function applySkin() {
   }
 
   var css = '';
+  // The type, when the skin chooses it: the player's own two variables, so
+  // every rule already written reaches the new family. Only a family the
+  // engine bundles has a stack here, and the same list is what the
+  // validator accepts (maplab.SKIN_FONTS).
+  var fonts = skin.fonts || {};
+  var show = skinFontStack(fonts.display), read = skinFontStack(fonts.body);
+  if (show) css += ':root { --display: ' + show + '; }\n';
+  if (read) css += ':root { --read: ' + read + '; }\n';
   var panel = parts.panel;
   if (panel && panel.file) {
     css += '.glass, #npc-box, #reader .reader-card, #trade .reader-card, #menu .carved {'

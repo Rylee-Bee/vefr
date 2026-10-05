@@ -174,6 +174,31 @@
       : Math.min(Math.max(camHero[1] * T + T / 2 - viewH / 2, 0), mapH - viewH);
 
     ctx.fillStyle = town.bg; ctx.fillRect(0, 0, viewW, viewH);
+    // The ground the map does not cover takes the skin's table, when the skin
+    // has one and its picture has decoded (the bands come from the camera).
+    // Tiles are laid from the window's own origin, so the wood does not crawl
+    // when the map scrolls. No backdrop: the flat ground above stands.
+    var backdrop = skinBackdrop();
+    backdropBands = window.VEFR_BACKDROP_BANDS(!!backdrop, viewW, viewH, camX, camY, mapW, mapH);
+    backdropDrawn = 0;
+    if (backdropBands.length) {
+      var tableW = backdrop.naturalWidth || backdrop.width;
+      var tableH = backdrop.naturalHeight || backdrop.height;
+      if (tableW && tableH) {
+        backdropBands.forEach(function (band) {
+          for (var top = band[1]; top < band[1] + band[3]; top += tableH) {
+            for (var left = band[0]; left < band[0] + band[2]; left += tableW) {
+              ctx.drawImage(backdrop, left, top,
+                Math.min(tableW, band[0] + band[2] - left),
+                Math.min(tableH, band[1] + band[3] - top));
+              backdropDrawn++;
+            }
+          }
+        });
+      } else {
+        backdropBands = [];      // a picture with no size paints nothing
+      }
+    }
     ctx.save();
     ctx.translate(-camX, -camY);
     var litSet = fogOn ? litNow() : null;   // what is lit right now

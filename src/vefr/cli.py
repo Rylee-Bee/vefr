@@ -895,17 +895,35 @@ _PLAYER_FONTS = (
     ('Cinzel', 'Cinzel-Variable.woff2', '400 900'),
     ('Atkinson Hyperlegible Next', 'AtkinsonHyperlegibleNext-Regular.woff2', '400'),
     ('Atkinson Hyperlegible Next', 'AtkinsonHyperlegibleNext-Bold.woff2', '700'),
+    ('Crimson Pro', 'CrimsonPro-Variable.woff2', '200 900'),
 )
+
+# The families the player's own stylesheet asks for: every pack ships them,
+# skin or no skin. The rest of the list is there for a skin to choose from, and
+# a woff2 only rides along in the woven file when a skin asked for it - a pack
+# with no skin pays nothing for a font it cannot name.
+_PLAYER_BASE_FONTS = ('Cinzel', 'Atkinson Hyperlegible Next')
+
 _ART_TYPES = {'.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg'}
 
 
-def _player_fonts_css(web_dir: Path) -> str:
+def _player_fonts_css(web_dir: Path, fonts: dict | None = None) -> str:
     """@font-face rules with the studio fonts inlined, so the woven file
     looks the same with no internet. Missing files are skipped and the
-    player falls back to its system font stack."""
+    player falls back to its system font stack.
+
+    `fonts` is a skin's own `fonts` block: those families are inlined
+    alongside the player's own two, and nothing else is. Left as None every
+    bundled family is inlined (the studio's reading panel wants them all).
+    """
     import base64
+    wanted = None if fonts is None else {
+        f for f in fonts.values() if isinstance(f, str)}
     rules = []
     for family, name, weight in _PLAYER_FONTS:
+        if (wanted is not None and family not in _PLAYER_BASE_FONTS
+                and family not in wanted):
+            continue
         f = web_dir / 'fonts' / name
         if f.is_file():
             data = base64.b64encode(f.read_bytes()).decode('ascii')
@@ -1786,7 +1804,9 @@ def _baked_skin(pack: Path, world: dict) -> dict | None:
     `world["skin"]` names a folder inside the pack (design/ui-skin.md).
     Each picture a part names (`file`, `hover`, `pressed`, ...) becomes
     a data URI, so the woven file stays one offline file; `slice` and
-    `hotspot` are kept as written. A pack that names no skin - or whose
+    `hotspot` are kept as written. The optional `backdrop` is inlined the
+    same way, and the optional `fonts` (the families the engine bundles)
+    are carried through as written. A pack that names no skin - or whose
     skin cannot be read - bakes the literal `null` (rule 6: no skin, no
     change).
     """
@@ -1808,7 +1828,14 @@ def _baked_skin(pack: Path, world: dict) -> dict | None:
         return None
     if not isinstance(data, dict):
         return None
-    out: dict = {k: data[k] for k in ('name', 'credit', 'ink') if k in data}
+    out: dict = {k: data[k] for k in ('name', 'credit', 'ink', 'fonts') if k in data}
+    backdrop = data.get('backdrop')
+    if isinstance(backdrop, str) and backdrop.strip():
+        target = _inside(skin_dir, backdrop)
+        suffix = os.path.splitext(backdrop)[1].lower()
+        if target is not None and os.path.isfile(target) and suffix in _ART_TYPES:
+            blob = base64.b64encode(Path(target).read_bytes()).decode('ascii')
+            out['backdrop'] = f'data:{_ART_TYPES[suffix]};base64,{blob}'
     parts_in = data.get('parts')
     parts_out: dict = {}
     if isinstance(parts_in, dict):
@@ -2116,7 +2143,11 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
 
     tagline = world.get('creed') or 'the loom is strung; the world provides the thread.'
     out_html = template
-    out_html = out_html.replace('{{fonts_css}}', _player_fonts_css(template_path.parent))
+    # Read once: the skin decides which families the woven file carries, and
+    # the same object is what window.VEFR_SKIN gets below.
+    skin = _baked_skin(pack, world)
+    out_html = out_html.replace('{{fonts_css}}', _player_fonts_css(
+        template_path.parent, (skin or {}).get('fonts') or {}))
     out_html = out_html.replace('{{title_art_img}}', _player_title_art(pack, world, template_path.parent))
     out_html = out_html.replace('{{title}}', title)
     out_html = out_html.replace('{{tagline}}', tagline)
@@ -2204,8 +2235,7 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # as a data URI so the woven file stays one offline file. A pack
     # that names none bakes the literal `null`.
     out_html = out_html.replace('{{skin_json}}',
-                                _json.dumps(_baked_skin(pack, world),
-                                            ensure_ascii=False))
+                                _json.dumps(skin, ensure_ascii=False))
     # The optional growth block (design/growth.md) beside the hero. A
     # pack that declares none bakes the literal `null`.
     out_html = out_html.replace('{{growth_json}}',
