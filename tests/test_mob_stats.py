@@ -3,8 +3,9 @@
 These are the acceptance tests of ADR 0014's "Stats, in whole numbers
 only" section, written BEFORE `src/vefr/mob_stats.py`, on purpose: the
 formula is the contract and a test written after the code only records
-what the code happened to do. The module is not in the tree yet, so this
-file fails at import today. That is the expected state.
+what the code happened to do. The module is in the tree now and these
+tests pass against it, unchanged: the contract was written down first
+and the code was made to meet it, not the other way round.
 
 The formula, as ADR 0014 writes it:
 
