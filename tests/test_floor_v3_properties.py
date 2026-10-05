@@ -477,6 +477,68 @@ def test_every_anchor_spawn_and_chest_reachable(w, h, rooms, kind):
     STATS["skipped"] += skipped
 
 
+# The pop stage walks its pool in the order the floor's seed scatters it
+# (`_spread` in the generator), so a floor's monsters land over the
+# floor rather than in its top rows. These two are the numbers that
+# spread is measured by, both taken over the whole sweep and both
+# relative to the floor's own walkable rows rather than to its height:
+# a hub's rooms are laid in a band in the middle of a 96-row grid, and
+# a monster cannot stand in a wall.
+#
+# The thresholds are half of what the spread measures today (0.89 and
+# 0.44 over the sweep) and several times what the first-free row-major
+# walk measured (0.02 and 0.06 - every floor's monsters in one or two
+# rows). Nothing between the two is a spread; anything under the
+# threshold is the packing this replaced.
+SPREAD_SPAN_FLOOR = 0.5
+SPREAD_ROWS_FLOOR = 0.25
+
+
+@pytest.mark.parametrize("w, h, rooms, kind", _cases())
+def test_spawns_are_spread_over_the_floor(w, h, rooms, kind):
+    """A floor's monsters cover its rows, not just the first one or two.
+
+    A sweep average, deliberately, and not a per-floor floor: with ten
+    to thirty-six monsters on a floor with a couple of hundred walkable
+    tiles, a single unlucky seed will put several of them in one band,
+    and a per-floor threshold would either be loose enough to let the
+    packing back in or flaky enough to fail on a good draw. The mean
+    over 200 seeds is the shape of the rule, and the rule is about the
+    shape: a generator that packed into the top rows could not average
+    half the floor's height however the tails fell.
+    """
+    spans: list[float] = []
+    rows: list[float] = []
+    skipped = 0
+    for seed in SEEDS:
+        plan = _floor(seed, w, h, kind, rooms)
+        if plan["gen"] != 3:
+            skipped += 1
+            continue
+        spawns = [spawn["at"][1] for spawn in plan["spawns"]]
+        if not spawns:
+            continue
+        walkable_rows = {tile[1] for tile in _walkable_tiles(plan)}
+        height = max(walkable_rows) - min(walkable_rows)
+        if height <= 0:
+            continue
+        spans.append((max(spawns) - min(spawns)) / height)
+        rows.append(len(set(spawns)) / len(walkable_rows))
+    if not spans:
+        pytest.skip(f"no v3 floor drew a spawn for {_where('*', w, h, kind)}")
+    mean_span = sum(spans) / len(spans)
+    mean_rows = sum(rows) / len(rows)
+    if mean_span < SPREAD_SPAN_FLOOR or mean_rows < SPREAD_ROWS_FLOOR:
+        pytest.fail(
+            f"{_where(f'{len(spans)} seeds', w, h, kind)}: the spawns cover "
+            f"{mean_span:.2f} of the floor's walkable height and "
+            f"{mean_rows:.2f} of its walkable rows, against floors of "
+            f"{SPREAD_SPAN_FLOOR} and {SPREAD_ROWS_FLOOR}; "
+            f"{skipped} earlier floors were skipped as gen != 3"
+        )
+    STATS["skipped"] += skipped
+
+
 @pytest.mark.parametrize("w, h, rooms, kind", _cases())
 def test_warden_is_off_the_main_path(w, h, rooms, kind):
     """The warden's room is off the up -> down path: the gates-and-guardians rule."""

@@ -692,6 +692,16 @@
         // opens into (a declared region), then the arrival fires
         // `enters` as it always has.
         soundCue('door');
+        // A loud thing the hero just did, at their own tile and before
+        // the arrival has moved them off it (ADR 0014's noise table): a
+        // door opened carries 6 tiles, and a stair used - the same
+        // transition, told from a door by the region's own naming of the
+        // tile - carries 8.
+        if (t.kind === 'stairs') {
+          makeNoise('stair');
+        } else {
+          makeNoise('door');
+        }
         fireRule('opens', { what: trans.to });
         enterRegion(trans.to, trans.to_at);
       } else if (t.kind === 'chest') {
@@ -704,6 +714,10 @@
         // the player has. The chest's own identity is its book id;
         // its contents follow with their own `picks-up`.
         fireRule('opens', { what: book.id });
+        // A chest opened is 6 tiles of noise (ADR 0014's table), and it
+        // is a chest being opened whether the note inside it is a
+        // library book or only a cache.
+        makeNoise('chest');
         foundBook(book, 'map');
         giveChestDrops(book);
         combatSnapshot();

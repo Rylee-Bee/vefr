@@ -1010,6 +1010,185 @@ def sound_errors(w: dict) -> list[str]:
     return [p.sentence for p in shapes.check(shapes.BLOCKS['sound'], w['sound'])]
 
 
+# ADR 0014 keeps the affix list and the Section packs in files of their
+# own, beside the ones above rather than inside `world.json`: one
+# `affixes.json` at the pack root, shared by every Section, and one
+# `sections/<id>.json` per Section. Both are pack data, both are checked
+# by `shapes.py`, and this is the door `vefr check` opens onto them.
+AFFIX_FILE = 'affixes.json'
+SECTIONS_DIR = 'sections'
+
+
+def _pack_json(root: Path, name: str):
+    """One pack file's JSON, or the sentence that says it cannot be read.
+
+    The name is joined to the pack root, both are resolved, and the
+    result is asked whether it is inside that root BEFORE the read - all
+    of it here, in the one function that opens the file, so the read
+    cannot be reached by a path that has not been through the check.
+    That is also the shape the code scanner recognizes as a guard: a
+    resolved path, an `is_relative_to` test on it, and the file access
+    below the guard.
+
+    A name that escapes is refused and said out loud. `vefr check` is
+    pointed at a pack directory, and a pack directory is not a licence to
+    read the rest of the disk: `../../etc/passwd` and a plain
+    `/etc/passwd` both resolve outside the pack, and both are refused
+    rather than read or quietly turned into the pack root.
+    """
+    base = Path(root).resolve()
+    target = (base / name).resolve()
+    if not target.is_relative_to(base):
+        return None, 'not a file inside the pack'
+    try:
+        return json.loads(target.read_text(encoding='utf-8')), None
+    except OSError as exc:
+        return None, f'{target.name} could not be read ({exc.strerror})'
+    except ValueError:
+        return None, f'{target.name} is not valid JSON'
+
+
+def _shape_sentences(rel: str, problems) -> list[str]:
+    """Every `shapes` problem as `file: pointer sentence`.
+
+    The pointer is half the sentence: ADR 0014's "Validator rejects"
+    asks for one plain sentence plus a JSON pointer each, and the
+    pointer is the only thing that says which record of a list is wrong.
+    """
+    return [f'{rel}: {p.pointer} {p.sentence}' for p in problems]
+
+
+def _family_resolver(pack: Path):
+    """A `resolve` callable for a Section's families, or None.
+
+    A Section names a Blueprint family by id and carries no record of its
+    own (ADR 0014), so the one question `shapes` cannot answer for itself
+    - does this family exist, and does it have `hp` and `atk`? - is asked
+    through `blueprint.resolve_family`. A pack with no Blueprint has no
+    families to resolve and the family checks are skipped rather than
+    answered wrongly, and so is one whose Blueprint cannot be read: the
+    Blueprint's own check already speaks for that pack.
+    """
+    from . import blueprint
+
+    # Resolved, then checked against the pack root, then probed: the
+    # guard and the `is_file()` are in the same function on purpose, so
+    # the probe cannot be reached with an unchecked path.
+    root = Path(pack).resolve()
+    source_path = (root / blueprint.BLUEPRINT_FILE).resolve()
+    if not source_path.is_relative_to(root):
+        return None
+    if not source_path.is_file():
+        return None
+    try:
+        source = blueprint.read(source_path)
+    except blueprint.BlueprintError:
+        return None
+
+    def resolve(family_id: str):
+        try:
+            return blueprint.resolve_family(source, family_id)
+        except blueprint.BlueprintError:
+            return None    # an unknown, cyclic or parentless family
+    return resolve
+
+
+def _no_affix_list_sentences(rel: str, section: dict, affixes) -> list[str]:
+    """Every affix a Section names in a pack that has no `affixes.json`.
+
+    One sentence plus a JSON pointer each, like every other rejection
+    ADR 0014 lists, and the pointer is the entry in `elites.affixes` -
+    the same place `check_affixes` points for an id the pack never
+    defines, because the mistake is the same one seen from the other
+    side: an id nobody can resolve.
+
+    A pack that ships no affix list and names no affix says nothing: both
+    files are optional, and a pack that asks for no elite is not asking
+    for an affix. What is reported is the pack that wrote the ids and not
+    the file, which validated green and then drew a normal monster where
+    an elite should have stood, with no sentence anywhere saying so.
+    """
+    if affixes is not None:
+        return []
+    return [f'{rel}: /elites/affixes/{i} affix {aid!r} is named but this '
+            f'pack has no {AFFIX_FILE}'
+            for i, aid in enumerate(shapes.named_affix_ids(section))]
+
+
+def section_errors(pack_dir) -> list[str]:
+    """Every problem with a pack's affix list and its Section packs.
+
+    `shapes.check_section` is the engine's own read of both; this is the
+    only path that runs it, so an affix record that is not a record, an
+    id used twice, an affix a Section names and the pack never defines, a
+    group led by an elite in a Section that names no affix, and a family
+    the Blueprint does not have are all pack-authoring errors with a
+    sentence and a pointer - the ADR's "Validator rejects" list, said
+    where the author is already looking.
+
+    The affix list is read on its own first, before any Section: it is
+    one list for the whole pack whatever Sections name, so a duplicate id
+    is a problem with a pack that ships no Section at all too. A pack
+    with neither file gets nothing here and validates exactly as it did
+    before - both are E7 additions and neither is required.
+
+    A pack with Sections that NAME affixes and no list to name them in is
+    the third thing, and it is said here rather than in `shapes` because
+    it is a question about the pack's files: `check_section` skips its
+    affix checks when there is no list to read them against, which is
+    right for a pack that asks for no elite and wrong for one that asks
+    for one, and the difference is the file this module knows the name of.
+    """
+    pack = Path(pack_dir)
+    root = pack.resolve()
+    errors: list[str] = []
+
+    # Both of the two places below resolve a path out of the pack
+    # directory this function was handed and check it against the pack
+    # root before touching it - here for the affix list, and in
+    # `_pack_json` for each Section file - so a pack directory that is a
+    # name rather than a place cannot send the check outside itself. The
+    # check is written as `is_relative_to` on the resolved path and sits
+    # in the same function as the file access, which is the shape the
+    # code scanner recognizes as a guard. A name that escapes is REFUSED
+    # with a sentence rather than read: these two names are the module's
+    # own, so an escape is a mistake to say out loud, and quietly
+    # pointing at something outside the pack is how a `..` in a path
+    # becomes a file the author never wrote.
+    affixes = None
+    affix_path = (root / AFFIX_FILE).resolve()
+    if not affix_path.is_relative_to(root):
+        return [f'{AFFIX_FILE} is not a file inside the pack']
+    if affix_path.is_file():
+        affixes, problem = _pack_json(root, AFFIX_FILE)
+        if problem is not None:
+            return [problem]
+        errors.extend(_shape_sentences(
+            AFFIX_FILE, shapes.check_affixes({}, affixes)))
+
+    sections = (root / SECTIONS_DIR).resolve()
+    if not sections.is_relative_to(root):
+        errors.append(f'{SECTIONS_DIR} is not a directory inside the pack')
+        return errors
+    paths = sorted(sections.glob('*.json')) if sections.is_dir() else []
+    if not paths:
+        return errors
+    resolve = _family_resolver(pack)
+    for path in paths:
+        rel = path.relative_to(root).as_posix()
+        section, problem = _pack_json(root, rel)
+        if problem is not None:
+            errors.append(f'{rel}: {problem}')
+            continue
+        if not isinstance(section, dict):
+            errors.append(f'{rel}: a Section pack must be a JSON object')
+            continue
+        errors.extend(_shape_sentences(
+            rel, shapes.check_section(section, affixes, resolve)))
+        errors.extend(_no_affix_list_sentences(rel, section, affixes))
+    return errors
+
+
 # The parts a skin may name (design/ui-skin.md). Anything else is a
 # typo the author should read about, not a part the player silently
 # ignores.
@@ -2158,6 +2337,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # checked beside the other optional catalogs. A pack that declares
     # none gets nothing here.
     errors.extend(sound_errors(w))
+    # The pack's optional affix list and Section packs (ADR 0014), read
+    # off the disk beside the blocks above: one `affixes.json` at the
+    # root and one `sections/<id>.json` per Section. `shapes` speaks for
+    # both, and this is the door that runs it. A pack that ships neither
+    # gets nothing here.
+    if pack_dir is not None:
+        errors.extend(section_errors(pack_dir))
     town = w['town']
     m = town['map']
     legend = town['legend']

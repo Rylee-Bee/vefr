@@ -20,9 +20,12 @@ PLAN.md section 2. After `MAX_TRIES` retries the caller gets v2 geometry
 with `gen: 2`.
 
 PLAN.md section 2 also names a `loot` stream per mob and a `chest`
-stream per chest. Neither is drawn by this slice: a FloorPlan carries a
-chest's table id and a mob's family and affix, and what is inside either
-is the work of the elites and groups slice.
+stream per chest. Neither is drawn here: a FloorPlan carries a chest's
+table id, and a mob's family and affix and nothing else - ADR 0014
+closes the spawn keys at eight and a stat is not one of them. A mob's
+whole-number stats come out of `vefr.mob_stats`, which the balance
+report (E10) calls, rather than out of this stage. What is inside a
+chest or a corpse is the loot stream's business, not the pop stage's.
 
 Determinism: `delve.prng` and its 32-bit integer maths are the only
 source of randomness. No `random`, no clock, no global, no dictionary is
@@ -68,9 +71,56 @@ ROOMS_FLOOR = 6
 STAIR_CLEAR = 7
 
 # One floor tile this many times is one monster slot, before the clamps.
+# `MOBS_MAX` is twice a number: the top of the budget clamp, and ADR
+# 0014's hard cap of 36 monsters a floor. They are the same ceiling, so
+# they are the same constant.
 TILES_PER_MOB = 30
 MOBS_MIN = 4
 MOBS_MAX = 36
+
+# ADR 0014's hard caps, applied AFTER the omens would be, so the
+# "Crowded" omen of PLAN.md section 4 cannot break one. Every one of
+# them is a ceiling the pack may ask past: a cap that is hit stops
+# further draws of that kind, and it neither raises nor fails the
+# floor. THE OMEN HOOK GOES HERE - omens change the budget above and
+# these four numbers below, and the clamp is applied after they are
+# read, never before.
+#
+# Lone elites: the ones that lead no group. An elite that leads a group
+# is that group's leader and is counted by the two caps under this one.
+LONE_ELITES_MAX = 2
+# Groups on a floor.
+GROUPS_MAX = 3
+# Members of one group, its leader and its minions together.
+GROUP_MEMBERS_MAX = 4
+# One elite-led group per this many rooms, and never below one while the
+# Section's `groups.per_floor` still asks for a group at all.
+ROOMS_PER_ELITE_GROUP = 8
+
+# The two room shapes the graph stage names a stamp room by, in
+# `rooms[i][4]`: the warden's hall and the vault. ADR 0014 keeps a group
+# leader out of both, and out of any secret room. `landmark` is not on
+# the list - the ADR names a vault, a hall and a secret room, and the
+# landmark is none of the three.
+STAMP_ROOMS = ("hall", "vault")
+
+# How far a minion stands from its leader, Chebyshev. ADR 0014
+# "Placement" says 2, and the stage used to search 4: a group that wakes
+# as one is a fight the hero can see coming, and 2 is the radius that
+# keeps every member inside the room its leader holds. A wider search
+# also put minions through walls, which is the half of the rule the
+# straight line alone does not check.
+MINION_REACH = 2
+
+# The closed range a Section's `groups.leash` may write, and what a group
+# walks on when the Section names none. ADR 0014's "Section `groups`" line
+# says the same three numbers, and the player's own `LEASH_MIN`,
+# `LEASH_MAX` and `LEASH_DEFAULT` (part 420) are these three: the leash is
+# the player's to enforce, and it is the pack's to write, so the two ends
+# of it are named once per language and have to agree.
+LEASH_MIN = 3
+LEASH_MAX = 12
+LEASH_DEFAULT = 6
 
 # Chest tables. The value of a chest is `section["chest_values"][table]`,
 # or 1 when the table is unmapped, so these are ids and never amounts.
@@ -92,7 +142,8 @@ FALLBACK_POIS = ("the drowned well", "the ash alcove", "the rusted grate")
 DEFAULT_ROOMS = (12, 12)
 DEFAULT_FAMILIES = ({"family": "rat", "weight": 1},)
 DEFAULT_ELITES = {"per_floor": (0, 0), "affixes": ()}
-DEFAULT_GROUPS = {"per_floor": (0, 0), "minions": (2, 3)}
+DEFAULT_GROUPS = {"per_floor": (0, 0), "minions": (2, 3),
+                  "leader": "normal", "same_family": True}
 
 
 def _rand(rng, lo: int, hi: int) -> int:
@@ -127,6 +178,35 @@ def _pair(value, fallback: tuple[int, int]) -> tuple[int, int]:
     return fallback
 
 
+def _demand(value, fallback: tuple[int, int]) -> tuple[int, int]:
+    """A `[lo, hi]` count whose low bound is a DEMAND, not a suggestion.
+
+    `_pair` orders a reversed pair by swapping its halves, which is the
+    right thing for a range whose two ends are interchangeable - a room
+    quota, a minion count. It is the wrong thing for a count, because a
+    count's low bound is what the Section ASKS for: ADR 0014 says so out
+    loud in the cap list ("1 elite-led group per 8 rooms, but at least 1
+    when the Section's `per_floor` range asks for one"), and the low bound
+    of a reversed pair is the only half of it the author wrote twice.
+
+    So a reversed count is resolved to its low bound. `per_floor: [1, 0]`
+    - "at least one group a floor, and none" - is a pack that contradicts
+    itself, and the number both halves of it agree on is the one it
+    states most firmly. Read as `rand(1, 1)` the floor carries the group
+    the pack asked for and the cap above it is reachable; read as
+    `rand(0, 1)` the same pack loses half its groups, and the cap that
+    was written to protect them is never even consulted. The pack can
+    still ask for no groups at all, by writing `[0, 0]`.
+    """
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        try:
+            lo, hi = int(value[0]), int(value[1])
+        except (TypeError, ValueError):
+            return fallback
+        return (lo, hi) if lo <= hi else (lo, lo)
+    return fallback
+
+
 def _names(value, fallback) -> list[str]:
     """A list of non-empty strings, or `fallback` when it is not one."""
     if isinstance(value, (list, tuple)):
@@ -142,7 +222,17 @@ def _read_rooms(section: dict) -> tuple[int, int]:
 
 
 def _read_families(section: dict) -> list[dict]:
-    """The family table, each entry `{family, weight}`, weights positive."""
+    """The family table, each entry `{family, weight}`, weights positive.
+
+    The entry is kept WHOLE and only its weight is normalised. A Section
+    names a Blueprint family by id and carries no record of its own
+    (ADR 0014), so a pack that resolved one through
+    `vefr.blueprint.resolve_family` hands the pop stage the resolved base
+    on the entry - `hp`, `atk`, `xp`, `sight` - and this reader passes it
+    on untouched. An entry with no base stats still draws; its stats
+    come back at mob_stats' own floor of 1, which is the answer for a
+    base that says nothing.
+    """
     raw = section.get("families")
     if not isinstance(raw, (list, tuple)):
         return [dict(family) for family in DEFAULT_FAMILIES]
@@ -153,11 +243,13 @@ def _read_families(section: dict) -> list[dict]:
         name = str(item.get("family", ""))
         if not name:
             continue
+        entry = dict(item)
         try:
             weight = int(item.get("weight", 1))
         except (TypeError, ValueError):
             weight = 1
-        families.append({"family": name, "weight": max(0, weight)})
+        entry["weight"] = max(0, weight)
+        families.append(entry)
     if not any(family["weight"] for family in families):
         for family in families:
             family["weight"] = 1
@@ -165,21 +257,65 @@ def _read_families(section: dict) -> list[dict]:
 
 
 def _read_elites(section: dict) -> tuple[int, int, list[str]]:
-    """How many elites a floor carries, and their affix ids."""
+    """How many elites a floor carries, and their affix ids.
+
+    `per_floor` is read by `_demand` and not by `_pair`: a count's low
+    bound is what the Section asks for, so a reversed one is a count, not
+    a range to be re-ordered.
+    """
     raw = section.get("elites")
     if not isinstance(raw, dict):
         lo, hi = DEFAULT_ELITES["per_floor"]
         return lo, hi, list(DEFAULT_ELITES["affixes"])
-    lo, hi = _pair(raw.get("per_floor"), (0, 0))
+    lo, hi = _demand(raw.get("per_floor"), (0, 0))
     return lo, hi, _names(raw.get("affixes"), ())
 
 
-def _read_groups(section: dict) -> tuple[int, int, int, int]:
-    """How many groups a floor carries, and the minion count range."""
+def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool, int | None]:
+    """How many groups a floor carries, their size, their two flags, and
+    the leash their spawns carry.
+
+    `leader` is "elite" or "normal" and defaults to "normal". A Section
+    that leads its groups with an elite says so, and the neutral default
+    is the one a pack can be valid without: `vefr.shapes` refuses a pack
+    that asks for an elite-led group and names no affix at all.
+
+    `same_family` defaults to True, the value ADR 0014's own group record
+    shows. A linked group that wakes as one thing is one kind of thing,
+    and a pack that wants a mixed mob says `false` and pays a family
+    draw for every minion.
+
+    `per_floor` is read by `_demand` and not by `_pair`, for the reason
+    the cap below gives: ADR 0014's elite-led-group cap is phrased off
+    this range's LOW bound, so a low bound the draw does not honour is a
+    cap that is never reached. `minions` stays a range - two ends the
+    author can mean in either order, with no cap of its own reading
+    either end.
+
+    `leash` is `None` and not a number when the Section names none, and
+    the spawns then carry no `leash` key at all: the player's own
+    `LEASH_DEFAULT` is what a group walks on, so a pack that wrote
+    nothing gets exactly the same floor it always did. A leash the
+    Section does name is a whole number inside the closed range ADR 0014
+    writes - `vefr.shapes` refuses one outside it, and a Section that
+    somehow says 2 or 13 or True is treated as having said nothing here
+    rather than as a group that walks two tiles or thirteen.
+    """
     raw = section.get("groups")
     if not isinstance(raw, dict):
-        return DEFAULT_GROUPS["per_floor"] + DEFAULT_GROUPS["minions"]
-    return _pair(raw.get("per_floor"), (0, 0)) + _pair(raw.get("minions"), (2, 3))
+        return (DEFAULT_GROUPS["per_floor"] + DEFAULT_GROUPS["minions"]
+                + (DEFAULT_GROUPS["leader"], DEFAULT_GROUPS["same_family"])
+                + (None,))
+    leader = str(raw.get("leader", DEFAULT_GROUPS["leader"]))
+    if leader not in ("elite", "normal"):
+        leader = DEFAULT_GROUPS["leader"]
+    leash = raw.get("leash")
+    if type(leash) is not int or not LEASH_MIN <= leash <= LEASH_MAX:
+        leash = None
+    return (_demand(raw.get("per_floor"), (0, 0))
+            + _pair(raw.get("minions"), (2, 3))
+            + (leader, bool(raw.get("same_family", DEFAULT_GROUPS["same_family"])),
+               leash))
 
 
 def _draw_family(rng, families: list[dict]) -> str:
@@ -1505,30 +1641,79 @@ def _at_of(placement: dict | None, name: str) -> tuple[int, int] | None:
 # the pop stream - the exact order of draws. `rng()` is one call of
 # `prng("v3|" + floor_key + "|pop")`, `rand(lo, hi)` is
 # `lo + floor(rng() * (hi - lo + 1))` and `pick(n)` is `floor(rng() * n)`.
+# ADR 0014's "Draw order" is normative and this is the same list.
 #
-# The candidates are read off the grid, in row-major order, before the
-# first draw: every walkable tile at least STAIR_CLEAR (7) tiles
-# (Chebyshev) from both stairs. A tile is taken at most once.
+# The candidates are read off the grid, in row-major order, BEFORE the
+# first draw, and cost no draw: every walkable tile at least STAIR_CLEAR
+# (7) tiles (Chebyshev) from both stairs. A tile is taken at most once.
+# Two more lists come off the same read, likewise for free: the tiles a
+# group leader may stand on (`clear` less every vault, hall and secret
+# room, which the graph stage has already named) and, per leader, the
+# small box of tiles a minion of that group may stand on.
 #
-#  1. The plain monsters, by area budget, not by a draw:
-#       count = clamp(walkable // TILES_PER_MOB, MOBS_MIN, MOBS_MAX).
-#     For each, in order: a family drawn by weight, then a tile.
-#  2. Elites: count = rand(elite_lo, elite_hi) from
-#     `section["elites"]["per_floor"]` - a pack that names an elite
-#     count and no affix table draws the count and places nothing, so
-#     the stream does not move when only the table changes. For each,
-#     an affix by index from `["affixes"]`, then a tile.
-#  3. Groups: count = rand(group_lo, group_hi) from
-#     `section["groups"]["per_floor"]`; for each, a minion count
-#     `rand(minion_lo, minion_hi)`, a leader family, a leader tile, then
-#     per minion a family and the nearest free tile to the leader,
-#     falling back to the next free tile in the candidate list.
+# The budget is not a draw:
+#       budget = clamp(walkable // TILES_PER_MOB, MOBS_MIN, MOBS_MAX).
+# The hard caps are applied where the stage says and not before: 36
+# monsters a floor, 2 lone elites, 3 groups, 4 members to a group, and
+# one elite-led group per 8 rooms (never below 1 while the pack's
+# `groups.per_floor` still asks for a group). A cap that is hit stops
+# further DRAWS of that kind; it does not raise and it does not fail the
+# floor. The warden is outside the budget and outside every cap here -
+# ADR 0015 owns it, and no spawn carries a `warden` key until one does.
+#
+#  1. Elites, first. `elite_count = rand(elite_lo, elite_hi)` from
+#     `section["elites"]["per_floor"]`, drawn ONCE and before the loop.
+#     A pack that names a count and no affix table still draws that
+#     count and then places nothing, so the stream does not move when
+#     only the table changes. Then, per elite, in this order: a family
+#     by weight, an affix by index from `["affixes"]`, then a tile.
+#  2. Groups, next. `group_count = rand(group_lo, group_hi)` from
+#     `section["groups"]["per_floor"]`, drawn once before its loop, for
+#     the same reason. Then, per group, in this order: the minion count
+#     `rand(minion_lo, minion_hi)` capped to GROUP_MEMBERS_MAX - 1, the
+#     leader's family, the leader's affix (only when `groups.leader` is
+#     `elite` and the pack names affixes), the leader's tile, and then
+#     per minion a family - only when `same_family` is false - and a
+#     tile within MINION_REACH (2, Chebyshev) of the leader and in the
+#     leader's own room or corridor region. The leash is neither a draw
+#     nor a placement: `groups.leash` is a number the pack wrote, so it
+#     rides on every member's spawn the moment a group exists, and on
+#     none of them when the Section named none.
+#  3. Randoms, last, filling the budget the elites and the groups left.
+#     For each, in order: a family by weight, then a tile. A pack that
+#     names no elite and no group therefore carries exactly the budget.
 #  4. Chests: count = min(rand(2, 2 + quota // 8), the number of rooms
 #     off the main path no mob holds). Rooms off the main path first,
 #     farthest from the up-stair first; a room whose centre a monster,
-#     an elite or a minion already holds is dropped, and a table by index
-#     from CHEST_TABLES per chest. Every chest lands off the main path, so
-#     the whole of the floor's chest value is off it and exploring pays.
+#     an elite, a minion or a leader already holds is dropped, and a
+#     table by index from CHEST_TABLES per chest. Every chest lands off
+#     the main path, so the whole of the floor's chest value is off it
+#     and exploring pays.
+#
+# The lists above are the ORDER THE DRAWS HAPPEN IN, and a placement is
+# not a draw: the tile is settled first, and a monster with nowhere to
+# stand spends NOTHING - no family, no affix. So a leader on a floor
+# whose stamp rooms leave no free tile, or a random on a floor whose
+# clear tiles run out, costs the stream no draw at all, and the chest
+# count and every chest table after it stay where the floor key says
+# they are. One rule, four places: elite, group leader, minion, random.
+# The count draws - the elite count, the group count and each group's
+# minion count - are the exception and stay where ADR 0014 lists them,
+# ahead of the tile: a count is a statement of its own, drawn whether or
+# not the loop it opens goes on to place anything. A draw that never
+# happens cannot be out of order.
+#
+# The ids follow the draws: a monster is `m<n>` in draw order, so the
+# first draw of the stage is `m0` and the counter never runs ahead of
+# the stream. A group is `g<n>` in group order.
+#
+# A spawn carries the closed keys of ADR 0014 and no others: `id`,
+# `family`, `at`, then `elite`, `group`, `leader` and `leash` where they
+# apply (`leader` as `true` and as nothing else, `leash` on every member
+# of a group and only when the Section named one). The eight are the
+# whole set, so a spawn carries no `hp`, `atk` or `xp`: those are not in
+# the ADR's list, and a monster's stats are the balance report's to
+# compute off the same closed Section data rather than a FloorPlan field.
 #
 # The chest value of a table is `section["chest_values"][table]`, or 1
 # when the pack does not name it. No chest is placed by its value, so
@@ -1546,117 +1731,408 @@ def _eligible(canvas: Canvas, stairs: list[tuple[int, int]]) -> list[tuple[int, 
     return clear
 
 
-def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
-               section: dict, up: tuple[int, int], down: tuple[int, int]):
-    """The pop stage: monsters, elites, groups and chests."""
-    clear = _eligible(canvas, [up, down])
+# ---- the spread: which of those tiles a monster stands on ----
+#
+# The pool is walked in row-major order and the first free tile wins, so
+# without this every floor packed its monsters into its top rows: the
+# first spawn took (0, 0)-ish, the next the tile after it, and a floor
+# 96 rows deep never put a monster below row 2. Six goldens said the
+# same thing - spawn y 1..2 on four of them, a single row on the other
+# two - which is a floor where the whole population stands shoulder to
+# shoulder by the north wall and the rest of the map is empty.
+#
+# The fix costs no draw. The tiles are REORDERED, not chosen from: the
+# same pool of every walkable tile clear of the stairs, walked in an
+# order that scatters instead of packing, and the first free tile is
+# still the one that wins. A draw-free rule keeps the pop stream
+# reading the same in both languages, which is PLAN.md section 2's
+# sub-seed rule: a pack with an elite count and no affix table has to
+# consume exactly the same draw either way.
+#
+# The order is a rank per tile, lowest first, ties broken row-major. The
+# rank is a 32-bit mix of the floor key and the tile's own coordinates,
+# and both halves are plain integer arithmetic so a JavaScript twin can
+# write the same five lines and get the same floor. Python's `hash` is
+# not used and cannot be: it is salted per process, so two runs of the
+# same seed would stop being the same floor.
+
+
+def _key_salt(floor_key: str) -> int:
+    """The floor key as a 32-bit number: FNV-1a over its UTF-8 bytes.
+
+    FNV-1a, the same hash the v2 twin and the benches checksum with.
+    Every step is a mask or a shift, so `Math.imul` and `>>> 0` in
+    JavaScript are the same function.
+    """
+    h = 0x811C9DC5
+    for byte in floor_key.encode("utf-8"):
+        h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
+    return h
+
+
+def _tile_rank(salt: int, x: int, y: int) -> int:
+    """Where one tile falls in its floor's spread order, 0 to 2**32-1.
+
+    Two multiplies, two shifts, no table: the coordinates go in
+    through a multiply-shift of their own so that neighbouring tiles do
+    not land on neighbouring ranks, and the high bits are folded back
+    down so a rank is not read mostly out of the low half of the
+    multiply.
+    """
+    h = (salt ^ ((x + 1) * 0x9E3779B1)) & 0xFFFFFFFF
+    h = (h * 0x85EBCA6B + (y + 1) * 0xC2B2AE35) & 0xFFFFFFFF
+    h ^= h >> 15
+    h = (h * 0x2545F491) & 0xFFFFFFFF
+    return h ^ (h >> 13)
+
+
+def _spread(tiles: list[tuple[int, int]], salt: int) -> list[tuple[int, int]]:
+    """`tiles`, in the order this floor's seed scatters them.
+
+    The same list, permuted: no tile is added and none is dropped, so
+    the pool a floor can place on is exactly the pool it could place on
+    before. The `(y, x)` tail of the key makes the order total, so two
+    tiles that rank the same - a pair in a thousand, a million tiles
+    down - are still placed in a fixed order rather than in whatever
+    order the sort happened to find them.
+    """
+    return sorted(tiles, key=lambda tile: (_tile_rank(salt, tile[0], tile[1]),
+                                           tile[1], tile[0]))
+
+
+def _stamp_free(canvas: Canvas, clear: list[tuple[int, int]],
+                secrets: list[list[int]]) -> list[tuple[int, int]]:
+    """`clear` less every room a group leader may not stand in.
+
+    The graph stage has already named what is spoken for: the warden's
+    room and the vault are the two stamp shapes in `rooms[i][4]`, and a
+    secret room is a leaf room whose centre is in `secrets`. Both are
+    read off what stage 3 wrote, so the two stages cannot disagree about
+    which rooms a leader has to keep out of. The result is a filter of
+    `clear` and keeps whatever order `clear` is in, so a leader pool is
+    the same spread walk with fewer tiles in it - no second sort, and no
+    chance of the two pools disagreeing about which tile comes first.
+    """
+    spoken_for = {index for index, room in enumerate(canvas.rooms)
+                  if room[4] in STAMP_ROOMS}
+    for tile in secrets:
+        for index, room in enumerate(canvas.rooms):
+            if (room[0] <= tile[0] < room[0] + room[2]
+                    and room[1] <= tile[1] < room[1] + room[3]):
+                spoken_for.add(index)
+    blocked: set[tuple[int, int]] = set()
+    for index in sorted(spoken_for):
+        x, y, width, height = canvas.rooms[index][:4]
+        for yy in range(y, y + height):
+            for xx in range(x, x + width):
+                blocked.add((xx, yy))
+    return [tile for tile in clear if tile not in blocked]
+
+
+def _neighbourhood(tile: tuple[int, int], width: int, height: int,
+                   reach: int) -> list[tuple[int, int]]:
+    """The tiles within `reach` of `tile`, in row-major order.
+
+    Row-major, and NOT the spread order the pop stage walks its pools
+    in, and that difference is the point. A minion is placed within
+    `MINION_REACH` of its own leader: the box is twenty-five tiles at a
+    reach of 2, against a pool of thousands, and scattering those
+    twenty-five would scatter a group across the floor and break ADR
+    0014's "within 2 tiles of its leader" before it ever got measured.
+    Inside the box the order is a tie-break between tiles that are all
+    next to the same leader anyway, and row-major is the tie-break
+    every language can write without a hash.
+
+    Membership is the pop stage's business, not this box's: the caller
+    filters the box by the set of tiles the pop stage could place on, so
+    a minion can only stand where a random could have stood.
+    """
+    return [(xx, yy)
+            for yy in range(max(0, tile[1] - reach), min(height, tile[1] + reach + 1))
+            for xx in range(max(0, tile[0] - reach), min(width, tile[0] + reach + 1))]
+
+
+def _corridor_regions(canvas: Canvas) -> dict[int, int]:
+    """Each corridor tile's region, numbered in row-major first-tile order.
+
+    Built only when a group leader stands on a corridor, and kept for the
+    rest of the floor. `Canvas.owner` already answers the room half of
+    ADR 0014's "same room or corridor region"; this answers the corridor
+    half, and it numbers the regions by the row-major order of their
+    first tile so a number never depends on a hash seed.
+    """
+    width = canvas.w
+    regions: dict[int, int] = {}
+    number = 0
+    for start in sorted(canvas.corr):
+        if start in regions:
+            continue
+        regions[start] = number
+        stack = [start]
+        while stack:
+            here = stack.pop()
+            x, y = here % width, here // width
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if not (0 <= nx < width and 0 <= ny < canvas.h):
+                    continue
+                other = ny * width + nx
+                if other in canvas.corr and other not in regions:
+                    regions[other] = number
+                    stack.append(other)
+        number += 1
+    return regions
+
+
+def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
+               up: tuple[int, int], down: tuple[int, int],
+               secrets: list[list[int]], floor_key: str):
+    """The pop stage: elites, groups, randoms and chests."""
+    # The pool, in the order this floor's seed scatters it (see
+    # `_spread`). One sort, before the first draw, and no draw spent on
+    # it: the pool is the same set of tiles either way, only the order
+    # it is walked in changes, and a floor that packed its monsters into
+    # the top two rows is the thing being fixed.
+    clear = _spread(_eligible(canvas, [up, down]), _key_salt(floor_key))
+    # A leader's pool and a minion's box, both read off the grid before
+    # the first draw, so neither costs one. `_stamp_free` filters `clear`,
+    # so the leader pool is already in the spread order.
+    leaders_clear = _stamp_free(canvas, clear, secrets)
+    clear_set = set(clear)
     # Two different questions, so two different sets. `taken` holds the
-    # INDICES into `clear` that `take()` has handed out, and `occupied`
-    # holds the TILES that a monster, an elite, a minion or a chest holds.
-    # One set cannot answer both: a tuple is never a member of a set of
-    # ints, so a chest filter reading `taken` drops nothing.
-    taken: set[int] = set()
+    # TILES `take()` has handed out, and `occupied` holds every tile a
+    # monster, an elite, a minion or a chest holds. One set cannot answer
+    # both: a chest's tile is only ever added to `occupied`, so a chest
+    # filter reading `taken` would drop nothing.
+    taken: set[tuple[int, int]] = set()
     occupied: set[tuple[int, int]] = set()
     # The index of the first candidate not yet taken. Tiles only ever
     # leave the list, so this walks forward and never looks back unless
-    # a minion takes a tile out of order.
+    # a leader or a minion takes a tile out of order.
     cursor = 0
+    # The corridor regions, built the first time a leader stands on one.
+    corr_regions: dict[int, int] | None = None
 
-    def take(near: tuple[int, int] | None = None) -> tuple[int, int] | None:
-        """The next free tile, or the first one within 4 of `near`.
+    def take(pool: list[tuple[int, int]],
+             near: tuple[int, int] | None = None) -> tuple[int, int] | None:
+        """The first free tile of `pool`, in the order `pool` is in.
 
-        Both readings walk the candidate list in row-major order, which
-        is what makes the choice the same one in every language.
+        One routine, three pools. `clear` is every walkable tile clear of
+        the stairs, in this floor's spread order, and its cursor walks
+        forward because a tile only ever leaves the list; a leader's
+        pool is `clear` less the rooms that are spoken for, which is the
+        same order with fewer tiles; a minion's pool is the small box
+        around its leader, already filtered to `clear`, and the leader's
+        own region is applied on top of it.
+
+        Two orders, and both are fixed. `clear` and the leader's pool
+        are walked in the seed's spread order, so the monsters of a
+        floor are scattered over it instead of packed into its top
+        rows; the minion box is walked row-major, because a minion has
+        to stay within `MINION_REACH` of its own leader and there is no
+        room in a twenty-five tile box to spread anything. Neither order
+        is a draw, so the pop stream is the same either way and a
+        JavaScript twin can replay it from the floor key.
         """
         nonlocal cursor
-        if not clear:
-            return None
-        if near is not None:
-            for index, tile in enumerate(clear):
-                if index in taken or max(abs(tile[0] - near[0]),
-                                         abs(tile[1] - near[1])) > 4:
-                    continue
-                taken.add(index)
-                occupied.add(tile)
-                cursor = min(cursor, index + 1)
-                return tile
-        while cursor < len(clear) and cursor in taken:
+        if near is None and pool is clear:
+            while cursor < len(clear) and clear[cursor] in taken:
+                cursor += 1
+            if cursor >= len(clear):
+                return None
+            tile = clear[cursor]
             cursor += 1
-        if cursor >= len(clear):
-            return None
-        taken.add(cursor)
-        tile = clear[cursor]
+        else:
+            tile = None
+            for candidate in pool:
+                if candidate in taken:
+                    continue
+                if near is not None and not _same_region(canvas, near, candidate,
+                                                         corr_regions):
+                    continue
+                tile = candidate
+                break
+            if tile is None:
+                return None
+        taken.add(tile)
         occupied.add(tile)
-        cursor += 1
         return tile
 
     families = _read_families(section)
     spawns: list[dict] = []
+
+    def place(tile: tuple[int, int], family: str, elite: str | None = None,
+              group: str | None = None, leader: bool = False,
+              leash: int | None = None) -> None:
+        """One spawn, in the closed FloorPlan shape of ADR 0014.
+
+        The keys are the ADR's and the ADR's only: `id`, `family`, `at`,
+        then `elite`, `group`, `leader` and `leash` where they apply.
+        `leader` is written as `true` and as nothing else, and `warden` is
+        never written - ADR 0015 owns it and no warden exists yet.
+
+        `leash` rides along only when the Section named one, and on EVERY
+        member of the group rather than on the leader alone, because the
+        player reads it off a spawn record and asks any member for it
+        (part 420's `groupLeash`). A pack that wrote `groups.leash: 9` and
+        got spawns with no `leash` on them had a floor where every group
+        walked on the player's own default of 6, and nothing said so.
+
+        No stat is written. ADR 0014 closes the FloorPlan spawn keys at
+        those eight, so a spawn carries no `hp`, `atk` or `xp`, and the
+        `vefr.mob_stats` call is not made here at all: the numbers are
+        the balance report's to compute (E10), off the same closed
+        Section data, and a spawn that carried them would carry a key
+        the ADR does not list.
+        """
+        spawn = {
+            "id": f"m{len(spawns)}",
+            "family": family,
+            "at": [tile[0], tile[1]],
+        }
+        if elite is not None:
+            spawn["elite"] = elite
+        if group is not None:
+            spawn["group"] = group
+        if leader:
+            spawn["leader"] = True
+        if leash is not None:
+            spawn["leash"] = leash
+        spawns.append(spawn)
+
+    # The budget. `MOBS_MAX` is this clamp's ceiling and is also ADR
+    # 0014's cap of 36 monsters, so nothing below can pass it. The
+    # elites and the group members below are reserved out of it FIRST;
+    # the randoms fill whatever is left over.
     budget = min(MOBS_MAX, max(MOBS_MIN, len(canvas.walk) // TILES_PER_MOB))
-    for _ in range(budget):
-        tile = take()
-        if tile is None:
-            break
-        spawns.append({
-            "id": f"m{len(spawns)}",
-            "family": _draw_family(rng, families),
-            "elite": None,
-            "group": None,
-            "leader": False,
-            "at": [tile[0], tile[1]],
-        })
 
-    # A pack with an elite count and no affix table carries no elite: the
-    # count is still drawn, so the stream does not depend on the table.
-    # The count draw is a statement of its own, BEFORE the loop, so a pack
-    # with no affix table consumes exactly the same draw a pack with one
-    # does. A twin written from the stage comment above replays it in
-    # that place; a conditional inside `range()` would read as "the count
-    # is only drawn when there are affixes" and the streams would part.
-    elite_lo, elite_hi, affixes = _read_elites(section)
+    # 1. Elites, in the ADR's order and before anything else.
+    #
+    # The count draw is a statement of its own, made BEFORE the loop, and
+    # the stage above says why: a pack with an elite count and no affix
+    # table has to consume exactly the same draw a pack with one does. A
+    # count written inside the `range()` call would read as "the count is
+    # only drawn when there are affixes", and the two streams would part
+    # the first time a pack gained a table. So the count is drawn, the
+    # loop runs, and a pack with no table places nothing.
+    #
+    # Per elite, in the ADR's order: a family, an affix by index, then a
+    # tile. The tile is placed rather than drawn, so it costs no draw -
+    # and it is placed FIRST, so an elite whose floor has no clear tile
+    # left spends no family and no affix either. LONE_ELITES_MAX stops
+    # the loop: a cap that is hit stops further draws of that kind, it
+    # does not raise and it does not fail the floor.
+    elite_lo, elite_hi, affix_ids = _read_elites(section)
     elite_count = _rand(rng, elite_lo, elite_hi)
+    lone = 0
     for _ in range(elite_count):
-        if not affixes:
+        if not affix_ids:
             continue
-        affix = affixes[_pick(rng, len(affixes))]
-        tile = take()
+        if lone >= LONE_ELITES_MAX or len(spawns) >= budget:
+            break
+        tile = take(clear)
         if tile is None:
             break
-        spawns.append({
-            "id": f"m{len(spawns)}",
-            "family": _draw_family(rng, families),
-            "elite": affix,
-            "group": None,
-            "leader": False,
-            "at": [tile[0], tile[1]],
-        })
+        family = _draw_family(rng, families)
+        affix = affix_ids[_pick(rng, len(affix_ids))]
+        place(tile, family, elite=affix)
+        lone += 1
 
-    group_lo, group_hi, minion_lo, minion_hi = _read_groups(section)
-    for number in range(_rand(rng, group_lo, group_hi)):
-        leader = take()
+    # 2. Groups. The count draw is a statement of its own here too, for
+    # the same reason. Per group, in the ADR's order: the minion count,
+    # the leader's family, the leader's affix when the group is led by
+    # an elite, the leader's tile, and then per minion a family (only
+    # when `same_family` is false) and a tile within MINION_REACH of the
+    # leader and in the leader's own room or corridor region. The
+    # leader's tile is placed before its two draws, for the elites' own
+    # reason: `leaders_clear` is `clear` less the vault, hall and secret
+    # rooms, so it is the pool most likely to run out, and a group that
+    # never got a leader must not spend a family and an affix on it.
+    #
+    # Two caps stop the loop, and both stop DRAWS rather than only
+    # placement: GROUPS_MAX groups a floor, and one elite-led group per
+    # ROOMS_PER_ELITE_GROUP rooms - never below one, while the Section's
+    # own `groups.per_floor` still asks for a group at all.
+    group_lo, group_hi, minion_lo, minion_hi, led_by, same_family, leash = \
+        _read_groups(section)
+    # ADR 0014's own phrasing of the cap: "1 elite-led group per 8 rooms,
+    # but at least 1 when the Section's `per_floor` range asks for one",
+    # and the range asks for one whenever either of its ends says so. The
+    # question is asked of BOTH ends rather than of the high one alone,
+    # because the high bound is the end a pack writes to cap itself and
+    # the low bound is the end it writes to ask - and a Section that
+    # writes `per_floor: [1, 0]` is asking. `_demand` above is what makes
+    # that true of the draw as well as of the cap; before it, the same
+    # pack was read as `rand(0, 1)` and half its floors carried no group
+    # at all, with a cap of one waiting behind a count of zero.
+    asks_for_a_group = group_lo > 0 or group_hi > 0
+    elite_led_cap = (max(1, graph.room_count // ROOMS_PER_ELITE_GROUP)
+                     if asks_for_a_group else 0)
+    group_count = _rand(rng, group_lo, group_hi)
+    elite_led = 0
+    for number in range(group_count):
+        if number >= GROUPS_MAX or len(spawns) >= budget:
+            break
+        if led_by == "elite" and elite_led >= elite_led_cap:
+            break
+        minion_count = min(_rand(rng, minion_lo, minion_hi), GROUP_MEMBERS_MAX - 1)
+        leader = take(leaders_clear)
         if leader is None:
             break
+        leader_family = _draw_family(rng, families)
+        leader_affix = None
+        if led_by == "elite" and affix_ids:
+            leader_affix = affix_ids[_pick(rng, len(affix_ids))]
+        if canvas.owner[leader[1] * canvas.w + leader[0]] < 0 and corr_regions is None:
+            corr_regions = _corridor_regions(canvas)
         group = f"g{number}"
-        spawns.append({
-            "id": f"m{len(spawns)}",
-            "family": _draw_family(rng, families),
-            "elite": None,
-            "group": group,
-            "leader": True,
-            "at": [leader[0], leader[1]],
-        })
-        for _ in range(_rand(rng, minion_lo, minion_hi)):
-            tile = take(leader)
+        place(leader, leader_family, elite=leader_affix, group=group,
+              leader=True, leash=leash)
+        if led_by == "elite":
+            elite_led += 1
+        # The box is a property of the leader, not of the minion, so it
+        # is built once per group. `take` drops the tiles it hands out,
+        # so the second minion reads the same box and gets the next free
+        # tile in it.
+        box = [tile for tile
+               in _neighbourhood(leader, canvas.w, canvas.h, MINION_REACH)
+               if tile in clear_set]
+        # The tile is placed before the family is drawn, and that is the
+        # whole point of the order: a placement costs no draw, so a box
+        # with nowhere left to put a minion spends NOTHING on it. Draw
+        # the family first, as the ADR's draw order lists the two, and a
+        # minion that is never placed still takes a draw with it - one
+        # draw out of step, and then the next group's family, the next
+        # random's family and both chest tables are all one draw away
+        # from where the floor key says they are. The ADR's order is the
+        # order the DRAWS happen in, and a draw that never happens cannot
+        # be out of order. Same rule as the elite's tile above and the
+        # random's below: the tile first, and only then what the monster
+        # standing on it is.
+        for _ in range(minion_count):
+            if len(spawns) >= budget:
+                break
+            tile = take(box, near=leader)
             if tile is None:
                 break
-            spawns.append({
-                "id": f"m{len(spawns)}",
-                "family": _draw_family(rng, families),
-                "elite": None,
-                "group": group,
-                "leader": False,
-                "at": [tile[0], tile[1]],
-            })
+            family = leader_family if same_family else _draw_family(rng, families)
+            place(tile, family, group=group, leash=leash)
+
+    # 3. Randoms, filling the budget the elites and the groups left. Per
+    # random: a family, then a tile - and the tile is placed first, for
+    # the same reason as the three above. A cramped floor is the case
+    # that reaches it: `budget` clamps to four even where the walkable
+    # tiles are counted in dozens, and the seven-tile exclusion around
+    # each stair can take that many tiles away, so the last random can
+    # find nothing to stand on. It then costs the floor no family, and
+    # the chest count after it is where the floor key says it is.
+    # A pack that names no elite and no group therefore carries exactly
+    # the budget and nothing else.
+    for _ in range(budget - len(spawns)):
+        tile = take(clear)
+        if tile is None:
+            break
+        family = _draw_family(rng, families)
+        place(tile, family)
 
     chests: list[dict] = []
     off_path = sorted(
@@ -1674,6 +2150,26 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict,
             "table": CHEST_TABLES[_pick(rng, len(CHEST_TABLES))],
         })
     return spawns, chests
+
+
+def _same_region(canvas: Canvas, leader: tuple[int, int], tile: tuple[int, int],
+                 regions: dict[int, int] | None) -> bool:
+    """Is `tile` in the leader's own room, or its own corridor region?
+
+    ADR 0014 puts a minion "within Chebyshev 2 of the leader, in the same
+    room or corridor region". The straight line is half of that and the
+    region is the other half: two rooms are never laid closer than one
+    wall, so a radius of 2 can reach out of the leader's room and a
+    search on distance alone would put a minion through the wall into a
+    room the group does not belong to.
+    """
+    width = canvas.w
+    here = leader[1] * width + leader[0]
+    there = tile[1] * width + tile[0]
+    room = canvas.owner[here]
+    if room >= 0:
+        return canvas.owner[there] == room
+    return regions is not None and regions.get(there) == regions.get(here)
 
 
 # ----------------------------------------------------------------- stage 5
@@ -1854,7 +2350,8 @@ def _attempt(floor_key: str, width: int, height: int, section: dict,
         return None, ""
     up = (anchors["up"][0], anchors["up"][1])
     down = (anchors["down"][0], anchors["down"][1])
-    spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down)
+    spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down,
+                                secrets, floor_key)
 
     floor = {
         "gen": 3,

@@ -37,14 +37,6 @@
       ],
       "id": "c1",
       "table": "t2"
-    },
-    {
-      "at": [
-        33,
-        32
-      ],
-      "id": "c2",
-      "table": "t1"
     }
   ],
   "gen": 3,
@@ -312,355 +304,231 @@
   "spawns": [
     {
       "at": [
-        1,
-        1
+        37,
+        34
       ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m0",
-      "leader": false
-    },
-    {
-      "at": [
-        2,
-        1
-      ],
-      "elite": null,
+      "elite": "big",
       "family": "rat",
-      "group": null,
-      "id": "m1",
-      "leader": false
-    },
-    {
-      "at": [
-        3,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m2",
-      "leader": false
-    },
-    {
-      "at": [
-        7,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m3",
-      "leader": false
-    },
-    {
-      "at": [
-        8,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m4",
-      "leader": false
-    },
-    {
-      "at": [
-        9,
-        1
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m5",
-      "leader": false
-    },
-    {
-      "at": [
-        10,
-        1
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m6",
-      "leader": false
-    },
-    {
-      "at": [
-        14,
-        1
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m7",
-      "leader": false
-    },
-    {
-      "at": [
-        15,
-        1
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m8",
-      "leader": false
-    },
-    {
-      "at": [
-        16,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m9",
-      "leader": false
-    },
-    {
-      "at": [
-        20,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m10",
-      "leader": false
-    },
-    {
-      "at": [
-        21,
-        1
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m11",
-      "leader": false
+      "id": "m0"
     },
     {
       "at": [
         22,
-        1
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m12",
-      "leader": false
-    },
-    {
-      "at": [
-        23,
-        1
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m13",
-      "leader": false
-    },
-    {
-      "at": [
-        26,
-        1
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m14",
-      "leader": false
-    },
-    {
-      "at": [
-        27,
-        1
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m15",
-      "leader": false
-    },
-    {
-      "at": [
-        28,
-        1
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m16",
-      "leader": false
-    },
-    {
-      "at": [
-        29,
-        1
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m17",
-      "leader": false
-    },
-    {
-      "at": [
-        1,
-        2
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m18",
-      "leader": false
-    },
-    {
-      "at": [
-        2,
-        2
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m19",
-      "leader": false
-    },
-    {
-      "at": [
-        3,
-        2
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m20",
-      "leader": false
-    },
-    {
-      "at": [
-        7,
-        2
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m21",
-      "leader": false
-    },
-    {
-      "at": [
-        8,
-        2
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m22",
-      "leader": false
-    },
-    {
-      "at": [
-        9,
-        2
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m23",
-      "leader": false
-    },
-    {
-      "at": [
-        10,
-        2
-      ],
-      "elite": null,
-      "family": "moth",
-      "group": null,
-      "id": "m24",
-      "leader": false
-    },
-    {
-      "at": [
-        14,
-        2
-      ],
-      "elite": null,
-      "family": "beetle",
-      "group": null,
-      "id": "m25",
-      "leader": false
-    },
-    {
-      "at": [
-        15,
-        2
-      ],
-      "elite": null,
-      "family": "rat",
-      "group": null,
-      "id": "m26",
-      "leader": false
-    },
-    {
-      "at": [
-        16,
-        2
+        28
       ],
       "elite": "big",
-      "family": "moth",
-      "group": null,
-      "id": "m27",
-      "leader": false
+      "family": "rat",
+      "id": "m1"
     },
     {
       "at": [
-        20,
-        2
+        53,
+        31
       ],
-      "elite": null,
       "family": "beetle",
       "group": "g0",
-      "id": "m28",
+      "id": "m2",
       "leader": true
     },
     {
       "at": [
-        21,
+        51,
+        29
+      ],
+      "family": "beetle",
+      "group": "g0",
+      "id": "m3"
+    },
+    {
+      "at": [
+        52,
+        29
+      ],
+      "family": "beetle",
+      "group": "g0",
+      "id": "m4"
+    },
+    {
+      "at": [
+        53,
+        29
+      ],
+      "family": "beetle",
+      "group": "g0",
+      "id": "m5"
+    },
+    {
+      "at": [
+        34,
+        35
+      ],
+      "family": "rat",
+      "group": "g1",
+      "id": "m6",
+      "leader": true
+    },
+    {
+      "at": [
+        32,
+        35
+      ],
+      "family": "rat",
+      "group": "g1",
+      "id": "m7"
+    },
+    {
+      "at": [
+        33,
+        35
+      ],
+      "family": "rat",
+      "group": "g1",
+      "id": "m8"
+    },
+    {
+      "at": [
+        35,
+        35
+      ],
+      "family": "rat",
+      "group": "g1",
+      "id": "m9"
+    },
+    {
+      "at": [
+        1,
+        12
+      ],
+      "family": "rat",
+      "id": "m10"
+    },
+    {
+      "at": [
+        28,
         2
       ],
-      "elite": null,
+      "family": "moth",
+      "id": "m11"
+    },
+    {
+      "at": [
+        28,
+        15
+      ],
+      "family": "beetle",
+      "id": "m12"
+    },
+    {
+      "at": [
+        26,
+        33
+      ],
+      "family": "beetle",
+      "id": "m13"
+    },
+    {
+      "at": [
+        28,
+        34
+      ],
+      "family": "moth",
+      "id": "m14"
+    },
+    {
+      "at": [
+        11,
+        31
+      ],
+      "family": "beetle",
+      "id": "m15"
+    },
+    {
+      "at": [
+        7,
+        16
+      ],
+      "family": "moth",
+      "id": "m16"
+    },
+    {
+      "at": [
+        5,
+        9
+      ],
       "family": "rat",
-      "group": "g0",
-      "id": "m29",
-      "leader": false
+      "id": "m17"
+    },
+    {
+      "at": [
+        59,
+        30
+      ],
+      "family": "rat",
+      "id": "m18"
+    },
+    {
+      "at": [
+        9,
+        5
+      ],
+      "family": "moth",
+      "id": "m19"
+    },
+    {
+      "at": [
+        3,
+        20
+      ],
+      "family": "moth",
+      "id": "m20"
+    },
+    {
+      "at": [
+        14,
+        8
+      ],
+      "family": "beetle",
+      "id": "m21"
+    },
+    {
+      "at": [
+        28,
+        29
+      ],
+      "family": "rat",
+      "id": "m22"
+    },
+    {
+      "at": [
+        33,
+        25
+      ],
+      "family": "rat",
+      "id": "m23"
+    },
+    {
+      "at": [
+        28,
+        12
+      ],
+      "family": "moth",
+      "id": "m24"
+    },
+    {
+      "at": [
+        32,
+        8
+      ],
+      "family": "beetle",
+      "id": "m25"
     },
     {
       "at": [
         22,
-        2
+        23
       ],
-      "elite": null,
-      "family": "beetle",
-      "group": "g0",
-      "id": "m30",
-      "leader": false
-    },
-    {
-      "at": [
-        23,
-        2
-      ],
-      "elite": null,
       "family": "rat",
-      "group": "g0",
-      "id": "m31",
-      "leader": false
+      "id": "m26"
     }
   ],
   "w": 96,
