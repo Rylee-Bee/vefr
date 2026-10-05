@@ -1068,6 +1068,28 @@ def _family_resolver(pack: Path):
     return resolve
 
 
+def _no_affix_list_sentences(rel: str, section: dict, affixes) -> list[str]:
+    """Every affix a Section names in a pack that has no `affixes.json`.
+
+    One sentence plus a JSON pointer each, like every other rejection
+    ADR 0014 lists, and the pointer is the entry in `elites.affixes` -
+    the same place `check_affixes` points for an id the pack never
+    defines, because the mistake is the same one seen from the other
+    side: an id nobody can resolve.
+
+    A pack that ships no affix list and names no affix says nothing: both
+    files are optional, and a pack that asks for no elite is not asking
+    for an affix. What is reported is the pack that wrote the ids and not
+    the file, which validated green and then drew a normal monster where
+    an elite should have stood, with no sentence anywhere saying so.
+    """
+    if affixes is not None:
+        return []
+    return [f'{rel}: /elites/affixes/{i} affix {aid!r} is named but this '
+            f'pack has no {AFFIX_FILE}'
+            for i, aid in enumerate(shapes.named_affix_ids(section))]
+
+
 def section_errors(pack_dir) -> list[str]:
     """Every problem with a pack's affix list and its Section packs.
 
@@ -1084,6 +1106,13 @@ def section_errors(pack_dir) -> list[str]:
     is a problem with a pack that ships no Section at all too. A pack
     with neither file gets nothing here and validates exactly as it did
     before - both are E7 additions and neither is required.
+
+    A pack with Sections that NAME affixes and no list to name them in is
+    the third thing, and it is said here rather than in `shapes` because
+    it is a question about the pack's files: `check_section` skips its
+    affix checks when there is no list to read them against, which is
+    right for a pack that asks for no elite and wrong for one that asks
+    for one, and the difference is the file this module knows the name of.
     """
     pack = Path(pack_dir)
     errors: list[str] = []
@@ -1112,6 +1141,7 @@ def section_errors(pack_dir) -> list[str]:
             continue
         errors.extend(_shape_sentences(
             rel, shapes.check_section(section, affixes, resolve)))
+        errors.extend(_no_affix_list_sentences(rel, section, affixes))
     return errors
 
 

@@ -416,8 +416,17 @@ BLOCKS = {
 
 # ------------------------------------------------- the checks that span records
 
-def _used_affix_ids(section: dict) -> list[str]:
-    """The affix ids a Section's `elites` block names, in pack order."""
+def named_affix_ids(section: dict) -> list[str]:
+    """The affix ids a Section's `elites` block names, in pack order.
+
+    The rule the two affix checks share, and the one a caller needs on
+    its own: `vefr.maplab` has to say WHICH ids a Section names when the
+    pack has no affix list at all, which is a question about the pack's
+    files rather than about the list, and `shapes` cannot see the files.
+    Only ids that could name an affix are returned - a non-string or an
+    empty string is the `ids` kind's own sentence to speak, and naming it
+    here as well would say it twice.
+    """
     elites = section.get('elites')
     if not isinstance(elites, dict):
         return []
@@ -462,7 +471,7 @@ def check_affixes(section: dict, affixes) -> list[Problem]:
         seen.add(aid)
 
     defined = set(ids)
-    for i, aid in enumerate(_used_affix_ids(section)):
+    for i, aid in enumerate(named_affix_ids(section)):
         if aid not in defined:
             return [Problem('undefined-affix', f'/elites/affixes/{i}',
                              _DEFAULTS['undefined-affix'].format(id=aid))]
@@ -523,7 +532,7 @@ def _elite_leader_problems(section: dict) -> list[Problem]:
         return []
     if not isinstance(section.get('elites'), dict):
         return []
-    if _used_affix_ids(section):
+    if named_affix_ids(section):
         return []
     return [Problem('no-affix-for-elite', '/groups/leader',
                     _DEFAULTS['no-affix-for-elite'])]

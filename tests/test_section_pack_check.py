@@ -149,6 +149,45 @@ def test_an_affix_the_pack_never_defines_is_reported(tmp_path):
         "names must be defined by the pack, and 'vast' is not"]
 
 
+def test_an_affix_named_in_a_pack_with_no_affixes_json_is_reported(tmp_path):
+    """The Section names `broad` and `quick`; the pack has no list at all.
+
+    The same mistake one step further out: `check_section` skips its
+    affix checks when there is no list to read them against, which is
+    right for a pack that asks for no elite and wrong for one that asks
+    for two, and this pack validated green. It then drew plain monsters
+    where two elites should have stood, and nothing anywhere said why.
+
+    So the sentence names the file the author has to write, and the
+    pointer is the entry in `elites.affixes` - the same place the
+    undefined-id sentence points, because from here it is the same
+    mistake: an id nobody can resolve. One sentence per id, so an author
+    who wrote two is told about both.
+    """
+    built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION})
+    assert not (built / "affixes.json").exists(), "the fixture needs no list"
+    assert check(built) == [
+        "sections/cellar.json: /elites/affixes/0 affix 'broad' is named "
+        "but this pack has no affixes.json",
+        "sections/cellar.json: /elites/affixes/1 affix 'quick' is named "
+        "but this pack has no affixes.json",
+    ]
+
+
+def test_a_section_with_no_affixes_and_no_list_says_nothing(tmp_path):
+    """The other half, and the reason the check above is narrow.
+
+    Both E7 files are optional and neither is required, so a pack that
+    asks for no elite and ships no list is not missing anything. This
+    has to stay green: a check that complained about a file the pack
+    never wanted would refuse every pack in the tree.
+    """
+    section = dict(GOOD_SECTION, elites={"per_floor": [0, 0], "affixes": []},
+                   groups={"per_floor": [1, 2], "minions": [2, 3],
+                           "leader": "normal"})
+    assert check(a_pack(tmp_path, {"cellar.json": section})) == []
+
+
 def test_a_group_led_by_an_elite_with_no_affix_is_reported(tmp_path):
     """The pack asks for a monster it cannot build.
 
