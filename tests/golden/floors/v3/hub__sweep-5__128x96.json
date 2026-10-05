@@ -36,7 +36,7 @@
         57
       ],
       "id": "c1",
-      "table": "t1"
+      "table": "t2"
     },
     {
       "at": [
@@ -52,23 +52,7 @@
         56
       ],
       "id": "c3",
-      "table": "t2"
-    },
-    {
-      "at": [
-        33,
-        51
-      ],
-      "id": "c4",
-      "table": "t2"
-    },
-    {
-      "at": [
-        39,
-        50
-      ],
-      "id": "c5",
-      "table": "t2"
+      "table": "t1"
     }
   ],
   "gen": 3,
@@ -424,8 +408,8 @@
   "spawns": [
     {
       "at": [
-        10,
-        42
+        11,
+        44
       ],
       "elite": "big",
       "family": "moth",
@@ -433,8 +417,8 @@
     },
     {
       "at": [
-        11,
-        42
+        31,
+        50
       ],
       "family": "rat",
       "group": "g0",
@@ -443,8 +427,8 @@
     },
     {
       "at": [
-        12,
-        42
+        31,
+        49
       ],
       "family": "rat",
       "group": "g0",
@@ -452,8 +436,8 @@
     },
     {
       "at": [
-        13,
-        42
+        32,
+        49
       ],
       "family": "rat",
       "group": "g0",
@@ -461,27 +445,27 @@
     },
     {
       "at": [
-        14,
-        42
+        33,
+        49
+      ],
+      "family": "rat",
+      "group": "g0",
+      "id": "m4"
+    },
+    {
+      "at": [
+        20,
+        47
       ],
       "family": "rat",
       "group": "g1",
-      "id": "m4",
+      "id": "m5",
       "leader": true
     },
     {
       "at": [
-        15,
-        42
-      ],
-      "family": "rat",
-      "group": "g1",
-      "id": "m5"
-    },
-    {
-      "at": [
-        16,
-        42
+        18,
+        45
       ],
       "family": "rat",
       "group": "g1",
@@ -489,88 +473,89 @@
     },
     {
       "at": [
-        17,
-        42
+        19,
+        45
       ],
       "family": "rat",
+      "group": "g1",
       "id": "m7"
     },
     {
       "at": [
-        29,
-        42
+        2,
+        56
       ],
       "family": "rat",
       "id": "m8"
     },
     {
       "at": [
-        30,
-        42
+        71,
+        44
       ],
       "family": "rat",
       "id": "m9"
     },
     {
       "at": [
-        31,
-        42
+        19,
+        44
       ],
-      "family": "beetle",
+      "family": "rat",
       "id": "m10"
     },
     {
       "at": [
-        32,
-        42
+        24,
+        53
       ],
-      "family": "moth",
+      "family": "beetle",
       "id": "m11"
     },
     {
       "at": [
-        33,
-        42
+        67,
+        44
       ],
       "family": "moth",
       "id": "m12"
     },
     {
       "at": [
-        34,
-        42
+        13,
+        45
       ],
-      "family": "rat",
+      "family": "moth",
       "id": "m13"
     },
     {
       "at": [
-        35,
-        42
+        37,
+        43
       ],
       "family": "rat",
       "id": "m14"
     },
     {
       "at": [
-        36,
-        42
+        68,
+        45
       ],
-      "family": "beetle",
+      "family": "rat",
       "id": "m15"
     },
     {
       "at": [
-        37,
-        42
+        28,
+        47
       ],
-      "family": "moth",
+      "family": "beetle",
       "id": "m16"
     },
     {
       "at": [
-        38,
-        42
+        41,
+        44
       ],
       "family": "moth",
       "id": "m17"
@@ -578,39 +563,39 @@
     {
       "at": [
         39,
-        42
+        54
       ],
-      "family": "rat",
+      "family": "moth",
       "id": "m18"
     },
     {
       "at": [
-        40,
-        42
+        18,
+        46
       ],
       "family": "rat",
       "id": "m19"
     },
     {
       "at": [
-        41,
-        42
+        53,
+        46
       ],
-      "family": "beetle",
+      "family": "rat",
       "id": "m20"
     },
     {
       "at": [
-        42,
-        42
+        80,
+        47
       ],
-      "family": "moth",
+      "family": "beetle",
       "id": "m21"
     },
     {
       "at": [
-        43,
-        42
+        33,
+        50
       ],
       "family": "moth",
       "id": "m22"

@@ -24,18 +24,10 @@
   "chests": [
     {
       "at": [
-        33,
-        18
-      ],
-      "id": "c0",
-      "table": "t2"
-    },
-    {
-      "at": [
         38,
         18
       ],
-      "id": "c1",
+      "id": "c0",
       "table": "t1"
     },
     {
@@ -43,8 +35,24 @@
         10,
         3
       ],
+      "id": "c1",
+      "table": "t2"
+    },
+    {
+      "at": [
+        16,
+        2
+      ],
       "id": "c2",
       "table": "t2"
+    },
+    {
+      "at": [
+        27,
+        3
+      ],
+      "id": "c3",
+      "table": "t1"
     }
   ],
   "gen": 3,
@@ -219,8 +227,8 @@
   "spawns": [
     {
       "at": [
-        1,
-        1
+        33,
+        18
       ],
       "elite": "glowing",
       "family": "rat",
@@ -228,8 +236,8 @@
     },
     {
       "at": [
-        2,
-        1
+        16,
+        7
       ],
       "family": "moth",
       "group": "g0",
@@ -238,8 +246,8 @@
     },
     {
       "at": [
-        3,
-        1
+        16,
+        5
       ],
       "family": "moth",
       "group": "g0",
@@ -247,8 +255,8 @@
     },
     {
       "at": [
-        4,
-        1
+        16,
+        6
       ],
       "family": "moth",
       "group": "g0",
@@ -256,81 +264,80 @@
     },
     {
       "at": [
-        1,
-        2
+        26,
+        20
       ],
       "family": "moth",
-      "group": "g0",
       "id": "m4"
     },
     {
       "at": [
-        5,
-        1
+        28,
+        4
       ],
-      "family": "moth",
+      "family": "rat",
       "id": "m5"
     },
     {
       "at": [
-        8,
-        1
+        10,
+        15
       ],
-      "family": "rat",
+      "family": "moth",
       "id": "m6"
     },
     {
       "at": [
-        9,
-        1
+        24,
+        18
       ],
-      "family": "moth",
+      "family": "beetle",
       "id": "m7"
     },
     {
       "at": [
-        10,
-        1
+        4,
+        2
       ],
-      "family": "beetle",
+      "family": "moth",
       "id": "m8"
     },
     {
       "at": [
-        11,
-        1
+        29,
+        18
       ],
       "family": "moth",
       "id": "m9"
     },
     {
       "at": [
-        14,
-        1
+        3,
+        6
       ],
       "family": "moth",
       "id": "m10"
     },
     {
       "at": [
-        15,
-        1
+        8,
+        4
       ],
-      "family": "moth",
+      "family": "rat",
       "id": "m11"
     },
     {
       "at": [
-        16,
-        1
+        10,
+        4
       ],
-      "family": "rat",
+      "family": "moth",
       "id": "m12"
     },
     {
       "at": [
-        17,
-        1
+        16,
+        17
       ],
       "family": "moth",
       "id": "m13"

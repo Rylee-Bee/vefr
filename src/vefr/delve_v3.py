@@ -1013,6 +1013,75 @@ def _eligible(canvas: Canvas, stairs: list[tuple[int, int]]) -> list[tuple[int, 
     return clear
 
 
+# ---- the spread: which of those tiles a monster stands on ----
+#
+# The pool is walked in row-major order and the first free tile wins, so
+# without this every floor packed its monsters into its top rows: the
+# first spawn took (0, 0)-ish, the next the tile after it, and a floor
+# 96 rows deep never put a monster below row 2. Six goldens said the
+# same thing - spawn y 1..2 on four of them, a single row on the other
+# two - which is a floor where the whole population stands shoulder to
+# shoulder by the north wall and the rest of the map is empty.
+#
+# The fix costs no draw. The tiles are REORDERED, not chosen from: the
+# same pool of every walkable tile clear of the stairs, walked in an
+# order that scatters instead of packing, and the first free tile is
+# still the one that wins. A draw-free rule keeps the pop stream
+# reading the same in both languages, which is PLAN.md section 2's
+# sub-seed rule: a pack with an elite count and no affix table has to
+# consume exactly the same draw either way.
+#
+# The order is a rank per tile, lowest first, ties broken row-major. The
+# rank is a 32-bit mix of the floor key and the tile's own coordinates,
+# and both halves are plain integer arithmetic so a JavaScript twin can
+# write the same five lines and get the same floor. Python's `hash` is
+# not used and cannot be: it is salted per process, so two runs of the
+# same seed would stop being the same floor.
+
+
+def _key_salt(floor_key: str) -> int:
+    """The floor key as a 32-bit number: FNV-1a over its UTF-8 bytes.
+
+    FNV-1a, the same hash the v2 twin and the benches checksum with.
+    Every step is a mask or a shift, so `Math.imul` and `>>> 0` in
+    JavaScript are the same function.
+    """
+    h = 0x811C9DC5
+    for byte in floor_key.encode("utf-8"):
+        h = ((h ^ byte) * 0x01000193) & 0xFFFFFFFF
+    return h
+
+
+def _tile_rank(salt: int, x: int, y: int) -> int:
+    """Where one tile falls in its floor's spread order, 0 to 2**32-1.
+
+    Two multiplies, two shifts, no table: the coordinates go in
+    through a multiply-shift of their own so that neighbouring tiles do
+    not land on neighbouring ranks, and the high bits are folded back
+    down so a rank is not read mostly out of the low half of the
+    multiply.
+    """
+    h = (salt ^ ((x + 1) * 0x9E3779B1)) & 0xFFFFFFFF
+    h = (h * 0x85EBCA6B + (y + 1) * 0xC2B2AE35) & 0xFFFFFFFF
+    h ^= h >> 15
+    h = (h * 0x2545F491) & 0xFFFFFFFF
+    return h ^ (h >> 13)
+
+
+def _spread(tiles: list[tuple[int, int]], salt: int) -> list[tuple[int, int]]:
+    """`tiles`, in the order this floor's seed scatters them.
+
+    The same list, permuted: no tile is added and none is dropped, so
+    the pool a floor can place on is exactly the pool it could place on
+    before. The `(y, x)` tail of the key makes the order total, so two
+    tiles that rank the same - a pair in a thousand, a million tiles
+    down - are still placed in a fixed order rather than in whatever
+    order the sort happened to find them.
+    """
+    return sorted(tiles, key=lambda tile: (_tile_rank(salt, tile[0], tile[1]),
+                                           tile[1], tile[0]))
+
+
 def _stamp_free(canvas: Canvas, clear: list[tuple[int, int]],
                 secrets: list[list[int]]) -> list[tuple[int, int]]:
     """`clear` less every room a group leader may not stand in.
@@ -1022,7 +1091,9 @@ def _stamp_free(canvas: Canvas, clear: list[tuple[int, int]],
     secret room is a leaf room whose centre is in `secrets`. Both are
     read off what stage 3 wrote, so the two stages cannot disagree about
     which rooms a leader has to keep out of. The result is a filter of
-    `clear` and keeps its row-major order, so it is the same walk.
+    `clear` and keeps whatever order `clear` is in, so a leader pool is
+    the same spread walk with fewer tiles in it - no second sort, and no
+    chance of the two pools disagreeing about which tile comes first.
     """
     spoken_for = {index for index, room in enumerate(canvas.rooms)
                   if room[4] in STAMP_ROOMS}
@@ -1044,11 +1115,19 @@ def _neighbourhood(tile: tuple[int, int], width: int, height: int,
                    reach: int) -> list[tuple[int, int]]:
     """The tiles within `reach` of `tile`, in row-major order.
 
-    Row-major is the order `_eligible` is in, so a minion found in this
-    box and a minion found by scanning the whole candidate list are the
-    same tile: the box is a filter of that list, not a different walk of
-    it. Twenty-five tiles at `MINION_REACH` of 2, against a list of
-    thousands, is the whole reason the search is bounded this way.
+    Row-major, and NOT the spread order the pop stage walks its pools
+    in, and that difference is the point. A minion is placed within
+    `MINION_REACH` of its own leader: the box is twenty-five tiles at a
+    reach of 2, against a pool of thousands, and scattering those
+    twenty-five would scatter a group across the floor and break ADR
+    0014's "within 2 tiles of its leader" before it ever got measured.
+    Inside the box the order is a tie-break between tiles that are all
+    next to the same leader anyway, and row-major is the tie-break
+    every language can write without a hash.
+
+    Membership is the pop stage's business, not this box's: the caller
+    filters the box by the set of tiles the pop stage could place on, so
+    a minion can only stand where a random could have stood.
     """
     return [(xx, yy)
             for yy in range(max(0, tile[1] - reach), min(height, tile[1] + reach + 1))
@@ -1088,11 +1167,17 @@ def _corridor_regions(canvas: Canvas) -> dict[int, int]:
 
 def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
                up: tuple[int, int], down: tuple[int, int],
-               secrets: list[list[int]]):
+               secrets: list[list[int]], floor_key: str):
     """The pop stage: elites, groups, randoms and chests."""
-    clear = _eligible(canvas, [up, down])
+    # The pool, in the order this floor's seed scatters it (see
+    # `_spread`). One sort, before the first draw, and no draw spent on
+    # it: the pool is the same set of tiles either way, only the order
+    # it is walked in changes, and a floor that packed its monsters into
+    # the top two rows is the thing being fixed.
+    clear = _spread(_eligible(canvas, [up, down]), _key_salt(floor_key))
     # A leader's pool and a minion's box, both read off the grid before
-    # the first draw, so neither costs one.
+    # the first draw, so neither costs one. `_stamp_free` filters `clear`,
+    # so the leader pool is already in the spread order.
     leaders_clear = _stamp_free(canvas, clear, secrets)
     clear_set = set(clear)
     # Two different questions, so two different sets. `taken` holds the
@@ -1114,13 +1199,21 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
         """The first free tile of `pool`, in the order `pool` is in.
 
         One routine, three pools. `clear` is every walkable tile clear of
-        the stairs and its cursor walks forward, because a tile only
-        ever leaves the list; a leader's pool is `clear` less the rooms
-        that are spoken for; a minion's pool is the small box around its
-        leader, already filtered to `clear`, and the leader's own region
-        is applied on top of it. Every one of them is walked in
-        row-major order, which is what makes the choice the same one in
-        every language.
+        the stairs, in this floor's spread order, and its cursor walks
+        forward because a tile only ever leaves the list; a leader's
+        pool is `clear` less the rooms that are spoken for, which is the
+        same order with fewer tiles; a minion's pool is the small box
+        around its leader, already filtered to `clear`, and the leader's
+        own region is applied on top of it.
+
+        Two orders, and both are fixed. `clear` and the leader's pool
+        are walked in the seed's spread order, so the monsters of a
+        floor are scattered over it instead of packed into its top
+        rows; the minion box is walked row-major, because a minion has
+        to stay within `MINION_REACH` of its own leader and there is no
+        room in a twenty-five tile box to spread anything. Neither order
+        is a draw, so the pop stream is the same either way and a
+        JavaScript twin can replay it from the floor key.
         """
         nonlocal cursor
         if near is None and pool is clear:
@@ -1470,7 +1563,8 @@ def _attempt(floor_key: str, width: int, height: int,
         return None
     up = (anchors["up"][0], anchors["up"][1])
     down = (anchors["down"][0], anchors["down"][1])
-    spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down, secrets)
+    spawns, chests = _pop_stage(pop_rng, canvas, graph, plan, section, up, down,
+                                secrets, floor_key)
 
     floor = {
         "gen": 3,
