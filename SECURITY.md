@@ -31,9 +31,11 @@ Use one of these instead:
   `security: contact request` and a maintainer will reply with an
   address. (We deliberately do not print an email here to keep
   spam harvesters out of it.)
-- **GitHub Security Advisories** — the
-  `gh-advisories` workflow at `.github/workflows/security.yml`
-  is the supported intake when private reporting is enabled.
+- **GitHub Security Advisories** — the intake path is GitHub's
+  own private vulnerability reporting form above, not a workflow
+  in this repo. `.github/workflows/security.yml` is unrelated to
+  intake: it is a `workflow_dispatch`-only "public-surface guard"
+  that re-runs `scripts/check_public_surface.py` on demand.
 
 When you write in:
 

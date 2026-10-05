@@ -128,7 +128,16 @@ uv run ratatoskr weave --pool 5
 - Markdown: one idea per line, prose lines short.
 - JS in `web/`: no framework; `state.js` is a plain object + subscribers. Shipped JS tested via node-vm harnesses.
 - Engine voice: Norse-named, story-agnostic. Game-specific names belong in packs, never here.
-- Branch model: `main` ← PR ← `feat/*`. CI runs on every PR: lint+test+validate+public-surface guard (`ci.yml`), secret scan (`secret-scan.yml`), security advisory intake (`security.yml`). Image publish (`publish-image.yml`) and screenshot capture (`screenshots.yml`) run on push to `main`.
+- Branch model: `main` ← PR ← `feat/*`.
+- CI runs on every PR: lint+test+validate+public-surface guard
+  (`ci.yml`), secret scan (`secret-scan.yml`), and the tooling
+  guards (`dev-guards.yml`).
+- `security.yml` is **not** an intake path. It is a
+  `workflow_dispatch`-only "public-surface guard" that re-runs
+  `scripts/check_public_surface.py` on demand. Advisory intake is
+  GitHub private vulnerability reporting — see `SECURITY.md`.
+- Image publish (`publish-image.yml`) and screenshot capture
+  (`screenshots.yml`) run on push to `main`.
 
 ## Cross-repo boundaries
 
