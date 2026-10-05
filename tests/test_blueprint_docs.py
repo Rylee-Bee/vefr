@@ -31,6 +31,17 @@ def test_the_format_one_top_keys_are_pinned_by_value():
     assert "places" not in blueprint.TOP_KEYS_V1
 
 
+def test_the_guide_says_the_two_new_formats_cannot_be_combined():
+    """`tests/test_blueprint_things.py` and `test_blueprint_places.py`
+    each prove that one format refuses the other's key. A guide that
+    only said a format-3 file "never waits for format 2" left an author
+    guessing whether writing both was allowed."""
+    text = re.sub(r"\s+", " ", (ROOT / "docs" / "guides" / "blueprint.md").read_text())
+    assert "Formats 2 and 3 cannot be combined" in text
+    assert "`places` is format 3's key and is refused on `2`" in text
+    assert "`things` is format 2's key and is refused on `3`" in text
+
+
 def test_the_things_exit_ramp_says_what_the_code_does():
     """`tests/test_blueprint_things.py` pins the behavior: deleting the
     `things` list leaves the written item alone and takes the appended

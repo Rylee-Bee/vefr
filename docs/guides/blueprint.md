@@ -68,10 +68,16 @@ the integer `2` or the integer `3`.
 - `1` is enemies: `regions` carry `enemies` and nothing else.
 - `2` is things: the same `regions` as `1`, and a `things` list at the
   top level. `places` is format 3's key and is refused on `2`.
-- `3` is places: `regions` may also carry `places`.
+- `3` is places: `regions` may also carry `places`. `things` is format
+  2's key and is refused on `3`.
 
-A `"blueprint": 3` file is complete on its own and never waits for
-format 2, and a `"blueprint": 2` file never waits for format 3.
+**Formats 2 and 3 cannot be combined.** One file declares one version,
+and each format refuses the other format's key, with a pointer: a
+`"blueprint": 2` file carrying `places` is refused, and a
+`"blueprint": 3` file carrying `things` is refused. A format-2 file is
+complete on its own and a format-3 file is complete on its own; there
+is no version that takes both halves, and nothing in a file waits for
+another format to arrive.
 
 A pack on `1` expands exactly as it did before, byte for byte.
 
