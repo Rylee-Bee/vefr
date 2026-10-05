@@ -49,7 +49,7 @@ A future family key (`moves`, `wakes`) is format 2: a `read_v2` reader, fixtures
 
 `per_floor` `hi <= 3`; `minions` `lo >= 1`, `hi <= 3` (at most 4 members); `leader` is `elite` or `normal`; `same_family` boolean; `wake` only `all`; `leash` whole, in [3, 12].
 
-**FloorPlan spawn keys (closed).** `id, family, at, elite, group, leader, warden`. Only the first three are always present. `leader` appears only as `true`.
+**FloorPlan spawn keys (closed).** `id, family, at, elite, group, leader, leash, warden`. Only the first three are always present. `leader` appears only as `true`. `leash` appears on every member of a group, and only when the Section named one: the player asks any member for the leash, so a pack writes it once.
 
 ### Stats, in whole numbers only
 

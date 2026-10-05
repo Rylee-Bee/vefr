@@ -42,14 +42,14 @@ from vefr import delve_v3
 SIZES = [(48, 32, 16), (64, 48, 18)]
 SEEDS = [f"pop-{index}" for index in range(8)]
 
-# The closed spawn keys of ADR 0014, all seven and nothing else. The
+# The closed spawn keys of ADR 0014, all eight and nothing else. The
 # `hp`/`atk`/`xp` a brief once asked for are NOT in the set below: the
 # ADR closes the keys, and a spawn that carried one would pass this
 # check. `warden` is in the ADR's list and is deliberately NOT in the
 # set below either: ADR 0015 owns the warden and no spawn may carry
 # the key until one exists.
 SPAWN_KEYS = {
-    "id", "family", "at", "elite", "group", "leader", "warden",
+    "id", "family", "at", "elite", "group", "leader", "leash", "warden",
 }
 
 # The room shapes ADR 0014 names a stamp room by, as the graph stage
@@ -632,6 +632,65 @@ def test_spawn_keys_are_closed(w, h, rooms):
                 f"{seed}: leader is {spawn['leader']!r}, and is only ever true or absent"
             )
             assert "warden" not in keys, f"{seed}: {spawn} carries a warden key"
+
+
+# --------------------------------------------------------------- the leash
+
+
+@pytest.mark.parametrize("w, h, rooms", SIZES)
+def test_the_configured_leash_rides_on_every_group_member(w, h, rooms):
+    """ADR 0014's "Section `groups`" names a `leash`, and it has to reach
+    the spawn or the pack wrote it for nothing.
+
+    The player reads `leash` off a baked spawn record and asks any member
+    of a group for it (part 420's `groupLeash`), and a spawn that carries
+    no `leash` reads as the player's own default of 6. So a Section that
+    wrote `leash: 11` and got spawns without the key had eleven tiles of
+    leash asked for and six used, with nothing anywhere saying so.
+
+    Every member carries it, not just the leader: `groupLeash` falls back
+    to any member's record precisely so a pack that writes the leash once
+    is not asked to write it four times, and a key only on the leader
+    would make that fallback dead.
+    """
+    for seed in SEEDS:
+        plan = floor(seed, (w, h), **{
+            "rooms": [rooms, rooms],
+            "groups": {"per_floor": [2, 2], "minions": [2, 3], "leash": 11},
+        })
+        members = [spawn for spawn in _spawns(plan) if "group" in spawn]
+        assert members, f"{seed}: the floor carried no group to put a leash on"
+        assert len(_groups(plan)) == 2, f"{seed}: the floor carried one group, not two"
+        for spawn in members:
+            assert spawn.get("leash") == 11, (
+                f"{seed}: {spawn['id']} of group {spawn['group']} carries "
+                f"leash {spawn.get('leash')!r}, and the Section wrote 11"
+            )
+
+
+@pytest.mark.parametrize("w, h, rooms", SIZES)
+def test_a_section_that_names_no_leash_writes_none(w, h, rooms):
+    """The other half of the same clause, and the reason the key rides
+    along only when the Section named one: a pack that writes no leash
+    gets the player's own default, and baking the default onto every
+    spawn would change the exact bytes a pack that never asked for a
+    leash has always baked.
+
+    A leash outside the closed range ADR 0014 writes is treated the same
+    way - `vefr.shapes` refuses one at validation, and a generator handed
+    one anyway has no number to carry.
+    """
+    for leash in (None, 2, 13, 6.5, True, "6"):
+        for seed in SEEDS:
+            groups = {"per_floor": [1, 1], "minions": [2, 3]}
+            if leash is not None:
+                groups["leash"] = leash
+            plan = floor(seed, (w, h), **{"rooms": [rooms, rooms], "groups": groups})
+            for spawn in _spawns(plan):
+                assert "leash" not in spawn, (
+                    f"{seed}: a Section whose leash is {leash!r} put "
+                    f"{spawn.get('leash')!r} on {spawn['id']}"
+                )
 
 
 @pytest.mark.parametrize("w, h, rooms", SIZES)

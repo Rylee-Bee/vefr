@@ -100,8 +100,9 @@ STAIR_CLEAR = delve_v3.STAIR_CLEAR
 LEADER_REACH = 2
 
 # Every key a FloorPlan spawn may carry, closed by ADR 0014. A spawn that
-# grows an eighth key is a shape change, not a detail.
-SPAWN_KEYS = frozenset({"id", "family", "at", "elite", "group", "leader", "warden"})
+# grows a ninth key is a shape change, not a detail.
+SPAWN_KEYS = frozenset({"id", "family", "at", "elite", "group", "leader",
+                        "leash", "warden"})
 
 WALKABLE = frozenset(".ud")
 

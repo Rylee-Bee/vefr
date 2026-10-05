@@ -22,7 +22,7 @@ with `gen: 2`.
 PLAN.md section 2 also names a `loot` stream per mob and a `chest`
 stream per chest. Neither is drawn here: a FloorPlan carries a chest's
 table id, and a mob's family and affix and nothing else - ADR 0014
-closes the spawn keys at seven and a stat is not one of them. A mob's
+closes the spawn keys at eight and a stat is not one of them. A mob's
 whole-number stats come out of `vefr.mob_stats`, which the balance
 report (E10) calls, rather than out of this stage. What is inside a
 chest or a corpse is the loot stream's business, not the pop stage's.
@@ -110,6 +110,16 @@ STAMP_ROOMS = ("hall", "vault")
 # also put minions through walls, which is the half of the rule the
 # straight line alone does not check.
 MINION_REACH = 2
+
+# The closed range a Section's `groups.leash` may write, and what a group
+# walks on when the Section names none. ADR 0014's "Section `groups`" line
+# says the same three numbers, and the player's own `LEASH_MIN`,
+# `LEASH_MAX` and `LEASH_DEFAULT` (part 420) are these three: the leash is
+# the player's to enforce, and it is the pack's to write, so the two ends
+# of it are named once per language and have to agree.
+LEASH_MIN = 3
+LEASH_MAX = 12
+LEASH_DEFAULT = 6
 
 # Chest tables. The value of a chest is `section["chest_values"][table]`,
 # or 1 when the table is unmapped, so these are ids and never amounts.
@@ -260,8 +270,9 @@ def _read_elites(section: dict) -> tuple[int, int, list[str]]:
     return lo, hi, _names(raw.get("affixes"), ())
 
 
-def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool]:
-    """How many groups a floor carries, their size, and their two flags.
+def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool, int | None]:
+    """How many groups a floor carries, their size, their two flags, and
+    the leash their spawns carry.
 
     `leader` is "elite" or "normal" and defaults to "normal". A Section
     that leads its groups with an elite says so, and the neutral default
@@ -279,17 +290,31 @@ def _read_groups(section: dict) -> tuple[int, int, int, int, str, bool]:
     cap that is never reached. `minions` stays a range - two ends the
     author can mean in either order, with no cap of its own reading
     either end.
+
+    `leash` is `None` and not a number when the Section names none, and
+    the spawns then carry no `leash` key at all: the player's own
+    `LEASH_DEFAULT` is what a group walks on, so a pack that wrote
+    nothing gets exactly the same floor it always did. A leash the
+    Section does name is a whole number inside the closed range ADR 0014
+    writes - `vefr.shapes` refuses one outside it, and a Section that
+    somehow says 2 or 13 or True is treated as having said nothing here
+    rather than as a group that walks two tiles or thirteen.
     """
     raw = section.get("groups")
     if not isinstance(raw, dict):
         return (DEFAULT_GROUPS["per_floor"] + DEFAULT_GROUPS["minions"]
-                + (DEFAULT_GROUPS["leader"], DEFAULT_GROUPS["same_family"]))
+                + (DEFAULT_GROUPS["leader"], DEFAULT_GROUPS["same_family"])
+                + (None,))
     leader = str(raw.get("leader", DEFAULT_GROUPS["leader"]))
     if leader not in ("elite", "normal"):
         leader = DEFAULT_GROUPS["leader"]
+    leash = raw.get("leash")
+    if type(leash) is not int or not LEASH_MIN <= leash <= LEASH_MAX:
+        leash = None
     return (_demand(raw.get("per_floor"), (0, 0))
             + _pair(raw.get("minions"), (2, 3))
-            + (leader, bool(raw.get("same_family", DEFAULT_GROUPS["same_family"]))))
+            + (leader, bool(raw.get("same_family", DEFAULT_GROUPS["same_family"])),
+               leash))
 
 
 def _draw_family(rng, families: list[dict]) -> str:
@@ -1015,7 +1040,10 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 #     `elite` and the pack names affixes), the leader's tile, and then
 #     per minion a family - only when `same_family` is false - and a
 #     tile within MINION_REACH (2, Chebyshev) of the leader and in the
-#     leader's own room or corridor region.
+#     leader's own room or corridor region. The leash is neither a draw
+#     nor a placement: `groups.leash` is a number the pack wrote, so it
+#     rides on every member's spawn the moment a group exists, and on
+#     none of them when the Section named none.
 #  3. Randoms, last, filling the budget the elites and the groups left.
 #     For each, in order: a family by weight, then a tile. A pack that
 #     names no elite and no group therefore carries exactly the budget.
@@ -1045,11 +1073,12 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 # the stream. A group is `g<n>` in group order.
 #
 # A spawn carries the closed keys of ADR 0014 and no others: `id`,
-# `family`, `at`, then `elite`, `group` and `leader` where they apply
-# (`leader` as `true` and as nothing else). The seven are the whole set,
-# so a spawn carries no `hp`, `atk` or `xp`: those are not in the ADR's
-# list, and a monster's stats are the balance report's to compute off the
-# same closed Section data rather than a FloorPlan field.
+# `family`, `at`, then `elite`, `group`, `leader` and `leash` where they
+# apply (`leader` as `true` and as nothing else, `leash` on every member
+# of a group and only when the Section named one). The eight are the
+# whole set, so a spawn carries no `hp`, `atk` or `xp`: those are not in
+# the ADR's list, and a monster's stats are the balance report's to
+# compute off the same closed Section data rather than a FloorPlan field.
 #
 # The chest value of a table is `section["chest_values"][table]`, or 1
 # when the pack does not name it. No chest is placed by its value, so
@@ -1297,16 +1326,24 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
     spawns: list[dict] = []
 
     def place(tile: tuple[int, int], family: str, elite: str | None = None,
-              group: str | None = None, leader: bool = False) -> None:
+              group: str | None = None, leader: bool = False,
+              leash: int | None = None) -> None:
         """One spawn, in the closed FloorPlan shape of ADR 0014.
 
         The keys are the ADR's and the ADR's only: `id`, `family`, `at`,
-        then `elite`, `group` and `leader` where they apply. `leader` is
-        written as `true` and as nothing else, and `warden` is never
-        written - ADR 0015 owns it and no warden exists yet.
+        then `elite`, `group`, `leader` and `leash` where they apply.
+        `leader` is written as `true` and as nothing else, and `warden` is
+        never written - ADR 0015 owns it and no warden exists yet.
+
+        `leash` rides along only when the Section named one, and on EVERY
+        member of the group rather than on the leader alone, because the
+        player reads it off a spawn record and asks any member for it
+        (part 420's `groupLeash`). A pack that wrote `groups.leash: 9` and
+        got spawns with no `leash` on them had a floor where every group
+        walked on the player's own default of 6, and nothing said so.
 
         No stat is written. ADR 0014 closes the FloorPlan spawn keys at
-        those seven, so a spawn carries no `hp`, `atk` or `xp`, and the
+        those eight, so a spawn carries no `hp`, `atk` or `xp`, and the
         `vefr.mob_stats` call is not made here at all: the numbers are
         the balance report's to compute (E10), off the same closed
         Section data, and a spawn that carried them would carry a key
@@ -1323,6 +1360,8 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
             spawn["group"] = group
         if leader:
             spawn["leader"] = True
+        if leash is not None:
+            spawn["leash"] = leash
         spawns.append(spawn)
 
     # The budget. `MOBS_MAX` is this clamp's ceiling and is also ADR
@@ -1378,7 +1417,8 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
     # placement: GROUPS_MAX groups a floor, and one elite-led group per
     # ROOMS_PER_ELITE_GROUP rooms - never below one, while the Section's
     # own `groups.per_floor` still asks for a group at all.
-    group_lo, group_hi, minion_lo, minion_hi, led_by, same_family = _read_groups(section)
+    group_lo, group_hi, minion_lo, minion_hi, led_by, same_family, leash = \
+        _read_groups(section)
     # ADR 0014's own phrasing of the cap: "1 elite-led group per 8 rooms,
     # but at least 1 when the Section's `per_floor` range asks for one",
     # and the range asks for one whenever either of its ends says so. The
@@ -1410,7 +1450,8 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
         if canvas.owner[leader[1] * canvas.w + leader[0]] < 0 and corr_regions is None:
             corr_regions = _corridor_regions(canvas)
         group = f"g{number}"
-        place(leader, leader_family, elite=leader_affix, group=group, leader=True)
+        place(leader, leader_family, elite=leader_affix, group=group,
+              leader=True, leash=leash)
         if led_by == "elite":
             elite_led += 1
         # The box is a property of the leader, not of the minion, so it
@@ -1439,7 +1480,7 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
             if tile is None:
                 break
             family = leader_family if same_family else _draw_family(rng, families)
-            place(tile, family, group=group)
+            place(tile, family, group=group, leash=leash)
 
     # 3. Randoms, filling the budget the elites and the groups left. Per
     # random: a family, then a tile - and the tile is placed first, for
