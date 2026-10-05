@@ -1,0 +1,27 @@
+{
+ "stamp": 1,
+ "id": "wine-alcove",
+ "role": "landmark",
+ "tags": [
+  "cellar"
+ ],
+ "depth": [
+  1,
+  9
+ ],
+ "weight": 2,
+ "max_per_floor": 1,
+ "rows": [
+  "##+##",
+  "#...#",
+  "+.A.+",
+  "#...#",
+  "#####"
+ ],
+ "legend": {
+  "A": {
+   "anchor": "poi"
+  }
+ },
+ "poi": "the wine alcove"
+}

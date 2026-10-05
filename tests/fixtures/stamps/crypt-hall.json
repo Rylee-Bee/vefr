@@ -1,0 +1,25 @@
+{
+ "stamp": 1,
+ "id": "crypt-hall",
+ "role": "warden-hall",
+ "tags": [
+  "cellar",
+  "crypt"
+ ],
+ "depth": [
+  1,
+  9
+ ],
+ "rows": [
+  "#######",
+  "#.....#",
+  "#..W..#",
+  "#.....#",
+  "###+###"
+ ],
+ "legend": {
+  "W": {
+   "anchor": "warden"
+  }
+ }
+}

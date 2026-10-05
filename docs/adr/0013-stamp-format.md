@@ -41,7 +41,10 @@ Lowercase letters are reserved, because `u` and `d` are stairs. Any other charac
 
 **Shape rules.**
 
-- `rows` is a rectangle of at most 15x15.
+- `rows` is a rectangle of at most 21x21. (This line was written at
+  15x15; the owner's decision 1 below, "go bigger, 21x21" for the
+  throne-room redraw, is the cap. `stamps.MAX_SIDE` and
+  `tests/test_stamps_format.py` are the two places that hold it.)
 - The floor, anchor and socket tiles form one 4-connected component.
 - No space tile touches a floor or anchor tile orthogonally.
 - A socket has exactly one orthogonal neighbour that is floor or anchor. The tile opposite that neighbour must lie outside the rectangle or be a space; that tile is the socket's **mouth**.

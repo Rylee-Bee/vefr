@@ -1,0 +1,27 @@
+{
+  "stamp": 1,
+  "id": "cistern-nook",
+  "role": "secret",
+  "tags": [
+    "cellar",
+    "any"
+  ],
+  "depth": [
+    1,
+    9
+  ],
+  "rows": [
+    "#####",
+    "#...#",
+    "#.C.#",
+    "#...#",
+    "##?##"
+  ],
+  "legend": {
+    "C": {
+      "anchor": "chest"
+    }
+  },
+  "rotate": true,
+  "mirror": true
+}
