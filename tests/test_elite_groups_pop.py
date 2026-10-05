@@ -312,6 +312,80 @@ def test_elite_count_is_drawn_even_with_no_affix_table(monkeypatch):
     )
 
 
+def test_a_minion_that_is_never_placed_costs_no_draw(monkeypatch):
+    """A family is drawn when a minion is placed, not when one is asked for.
+
+    With `same_family: false` each minion draws its own family, and the
+    draw used to be taken BEFORE the tile was found. A leader whose box
+    has no free tile left - the box is Chebyshev 2 of the leader in its
+    own room or corridor region, so a leader standing in a corridor
+    between two rooms runs out early - then spent a family draw on a
+    minion that was never written to the plan, and every draw after it
+    landed one step out of place.
+
+    The floor below is that floor: seed `pop-12` at 64x48 draws three
+    minions for `g0` and places two of them, so one placement fails. The
+    draw count is then re-derived from the plan rather than read off the
+    generator - one elite count, one group count, the group's minion
+    count and the leader's family, one family per minion PLACED, one per
+    random placed, the chest count and one table per chest - and the two
+    have to agree.
+
+    The second half is what the wasted draw did to the floor, and it is
+    why this is a bug and not a curiosity: the chest count is drawn off
+    the same stream, so one family too many made this floor carry two
+    chests instead of four, and every chest table after it one step out.
+    A minion that could not be placed changed what a hero finds on the
+    other side of the floor.
+    """
+    section = pack(elites={"per_floor": [0, 0], "affixes": []},
+                   groups={"per_floor": [1, 1], "minions": [3, 3],
+                           "same_family": False})
+
+    real = delve_v3.prng
+    seen = 0
+
+    def counting(key: str):
+        nonlocal seen
+        seed = real(key)
+        if not key.endswith("|pop"):
+            return seed
+
+        def wrapped() -> float:
+            nonlocal seen
+            seen += 1
+            return seed()
+
+        return wrapped
+
+    monkeypatch.setattr(delve_v3, "prng", counting)
+    plan = delve_v3.generate_floor_v3(
+        "pop-12", (64, 48), copy.deepcopy(section), "normal")
+    assert plan["gen"] == 3, "the fixture is a v3 floor, or it proves nothing"
+
+    members = [s for s in _spawns(plan) if s.get("group") == "g0"]
+    placed = [m for m in members if not m.get("leader")]
+    randoms = [s for s in plan["spawns"]
+               if "group" not in s and "elite" not in s]
+    assert len(placed) == 2, (
+        "the fixture needs a minion that could not be placed: g0 asks for "
+        f"3 and placed {len(placed)}"
+    )
+    expected = 1 + 1 + 2 + len(placed) + len(randoms) + 1 + len(plan["chests"])
+    assert seen == expected, (
+        f"the pop stream spent {seen} draws and the floor accounts for "
+        f"{expected}: {1} elite count, {1} group count, "
+        f"{2} for the minion count and the leader's family, "
+        f"{len(placed)} for the minions placed, {len(randoms)} for the "
+        f"randoms placed, {1} chest count and {len(plan['chests'])} chest "
+        f"tables"
+    )
+    assert len(plan["chests"]) == 4, (
+        f"this floor carries {len(plan['chests'])} chests: a wasted family "
+        "draw moved the chest count and took two of them away"
+    )
+
+
 # --------------------------------------------------------------- hard caps
 
 

@@ -974,7 +974,10 @@ def _graph_stage(canvas: Canvas, spine: list[int], plan: dict,
 #     `elite` and the pack names affixes), the leader's tile, and then
 #     per minion a family - only when `same_family` is false - and a
 #     tile within MINION_REACH (2, Chebyshev) of the leader and in the
-#     leader's own room or corridor region.
+#     leader's own room or corridor region. The two are one draw and one
+#     placement, and the placement is settled first: a minion that has
+#     nowhere to stand spends no draw at all, so the stream after it is
+#     where the floor key says it is.
 #  3. Randoms, last, filling the budget the elites and the groups left.
 #     For each, in order: a family by weight, then a tile. A pack that
 #     names no elite and no group therefore carries exactly the budget.
@@ -1350,13 +1353,23 @@ def _pop_stage(rng, canvas: Canvas, graph: Graph, plan: dict, section: dict,
         box = [tile for tile
                in _neighbourhood(leader, canvas.w, canvas.h, MINION_REACH)
                if tile in clear_set]
+        # The tile is placed before the family is drawn, and that is the
+        # whole point of the order: a placement costs no draw, so a box
+        # with nowhere left to put a minion spends NOTHING on it. Draw
+        # the family first, as the ADR's draw order lists the two, and a
+        # minion that is never placed still takes a draw with it - one
+        # draw out of step, and then the next group's family, the next
+        # random's family and both chest tables are all one draw away
+        # from where the floor key says they are. The ADR's order is the
+        # order the DRAWS happen in, and a draw that never happens cannot
+        # be out of order.
         for _ in range(minion_count):
             if len(spawns) >= budget:
                 break
-            family = leader_family if same_family else _draw_family(rng, families)
             tile = take(box, near=leader)
             if tile is None:
                 break
+            family = leader_family if same_family else _draw_family(rng, families)
             place(tile, family, group=group)
 
     # 3. Randoms, filling the budget the elites and the groups left. Per
