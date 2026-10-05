@@ -62,6 +62,22 @@ packaged file both work offline from the first byte.
 - Declared for the workshop in `web/studio.css` (2026-09-25; before
   that the workshop never loaded it and fell back to Georgia).
 
+## Crimson Pro (the reading face a skin may choose)
+
+- Source: https://github.com/productiontype/CrimsonPro (Jacques Le
+  Bailly); the woff2 came from the `Crimson Pro` Google Fonts CSS2
+  endpoint with a browser UA, latin subset.
+- License: SIL Open Font License 1.1, kept beside the file as
+  `CrimsonPro-OFL.txt`
+- Web file needed: `CrimsonPro-Variable.woff2` (one variable file,
+  weights 200-900)
+- Vendored: 2026-10-04.
+- Used by: the woven player (`src/vefr/cli.py`, `_PLAYER_FONTS`), so a
+  skin can name it and the type is there offline. Cinzel, Atkinson
+  Hyperlegible Next and Crimson Pro are the whole menu a skin may
+  choose from: `SKIN_FONTS` in `src/vefr/maplab.py` is the list the
+  validator checks against.
+
 ## Install
 
 The exact filenames above are what `web/index.html`'s

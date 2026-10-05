@@ -23,7 +23,8 @@ rights to this project.
 All font files under `web/fonts/` are licensed under the
 [SIL Open Font License 1.1](https://openfontlicense.org/). Each
 file retains its upstream license and attribution in
-`web/fonts/README.md`.
+`web/fonts/README.md`; `web/fonts/CrimsonPro-OFL.txt` carries the
+full license text for the family added on 2026-10-04.
 
 | Family | License | Upstream |
 |---|---|---|
@@ -31,6 +32,7 @@ file retains its upstream license and attribution in
 | Atkinson Hyperlegible Next | SIL OFL 1.1 | https://www.brailleinstitute.org/freefont/ |
 | OpenDyslexic | SIL OFL 1.1 | https://opendyslexic.org/ |
 | Cinzel | SIL OFL 1.1 | https://github.com/NDISCOVER/Cinzel |
+| Crimson Pro | SIL OFL 1.1 | https://github.com/productiontype/CrimsonPro |
 | Noto Sans Runic | SIL OFL 1.1 | https://fonts.google.com/noto/specimen/Noto+Sans+Runic |
 
 The SIL OFL 1.1 permits redistribution of the font files themselves
