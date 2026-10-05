@@ -1,5 +1,7 @@
 # CURRENT — vefr
 
+> **Live state** (last commit, CI on main, open PRs, recent merges, missions): `lab enter` at session start, or `now-block --print .` from this repo. This file keeps only what a command cannot tell you.
+
 > **Live truth lives in `git log`, `gh pr list`, and the gate.** This
 > file is orientation, not a mirror of HEAD. Refresh it when the
 > *phase* changes; let Git tell you the SHA.

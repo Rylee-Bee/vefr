@@ -875,6 +875,36 @@ def _resolve_family(family: str, families: dict) -> tuple[list[str], dict]:
     return ordered, fields
 
 
+def resolve_family(source: dict, family_id: str) -> dict:
+    """The base record of one family: its merged defaults, root first.
+
+    A Section pack names families by id and carries no records of its
+    own (ADR 0014), so a Section that wants a family's `hp` and `atk`
+    asks for them here. This is the same resolution `plan` does - the
+    same chain, the same whole-value replacement, the same three
+    refusals with the same pointers (unknown family, cycle, unknown
+    parent) - returning the record instead of a list of records.
+
+    The returned dict is the caller's to keep and to scale: the values
+    are deep-copied out of `source`, so mutating what comes back cannot
+    reach back into the Blueprint. The keys are the closed enemy fields
+    `FIELD_KEYS` and no others; this function reads a Blueprint, it does
+    not widen one.
+    """
+    if not isinstance(source, dict):
+        raise BlueprintError("blueprint must be a JSON object", "")
+    families = source.get("families", {})
+    if not isinstance(families, dict):
+        raise BlueprintError("families must be an object", "/families")
+    if not isinstance(family_id, str):
+        raise BlueprintError("a family id must be a string", "/families")
+    if family_id not in families:
+        raise BlueprintError(
+            f"unknown family {family_id!r}", f"/families/{_esc(family_id)}")
+    _chain, fields = _resolve_family(family_id, families)
+    return {key: copy.deepcopy(value) for key, (value, _p) in fields.items()}
+
+
 def expand(source: dict, *, pack_dir: str | Path) -> dict[str, list[dict]]:
     """Validate `source`, then expand it into `{region_key: [records]}`.
 

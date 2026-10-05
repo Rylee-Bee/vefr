@@ -872,6 +872,38 @@ def cmd_delve(args) -> int:
     return EXIT_OK
 
 
+def cmd_stamp_check(args) -> int:
+    """`vefr stamp check` - ADR 0013's gate for a hand-drawn stamp pack.
+
+    Four kinds of check in one report, in the order an author can fix
+    them: what the reader refuses, what a Section cannot be swept for,
+    what is too big for the floor it lands on, and what the floors
+    actually did - how often each room placed, and whether every stamped
+    room on a floor has a door in use and walkable anchors.
+
+    The sweep is the slow half, so `--seeds` is the only thing that
+    makes a check quick, and the header says how many it used. Every
+    problem is one plain sentence with a JSON pointer; exit 1 when there
+    is one, exit 2 when there is no pack to check at all.
+    """
+    from . import stamp_check
+
+    if args.seeds < 0:
+        print('--seeds cannot be negative')
+        return EXIT_USAGE
+
+    p = Path(args.pack)
+    if p.is_absolute() or '/' in str(args.pack):
+        pack = p.resolve()
+    else:
+        pack = (pack_root() / 'worlds' / p).resolve()
+
+    code, lines = stamp_check.report(str(pack), seeds=args.seeds)
+    for line in lines:
+        print(line)
+    return code
+
+
 def _template_candidates() -> list[Path]:
     """Where web/packaged.html may live, in preference order.
 
@@ -1863,6 +1895,20 @@ def _baked_skin(pack: Path, world: dict) -> dict | None:
     return out
 
 
+# The E7 mind keys a region's `enemies` record may carry into the bake
+# (ADR 0014, "Monster AI"): which group a monster belongs to, whether it
+# leads that group, how far the group may walk from home, which affix
+# made it an elite, and whether it is the warden. The player's reader
+# (`prepareMinds`, part 420) asks the baked spawn record for `group`,
+# `leader` and `warden` and `groupLeash` asks any member for `leash`, so
+# a pack that wrote them into a contract's `enemies` and got them dropped
+# on the way to the file had a floor where wake-all, the leash and the
+# warden could never fire. Each rides along only when the record names
+# it, on the same rule as `xp`, so a pack that names none bakes the exact
+# bytes it always did.
+MIND_KEYS = ('group', 'leader', 'leash', 'elite', 'warden')
+
+
 def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     """Weave a pack into the single shareable HTML document.
 
@@ -2033,6 +2079,16 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                 # exact bytes it always did.
                 if 'xp' in e:
                     entry['xp'] = e.get('xp')
+                # The five E7 mind keys, on the same rule as `xp` and
+                # for the same reason: the player reads `group`,
+                # `leader`, `leash` and `warden` off the baked spawn
+                # record (parts 410/420), and nothing else tells it a
+                # spawn is an elite. A pack that names none of them -
+                # every pack but an E7 one - bakes the exact bytes it
+                # always did, so a weave is unchanged by this loop.
+                for key in MIND_KEYS:
+                    if key in e:
+                        entry[key] = e.get(key)
                 out.append(entry)
             enemies_by_region[rname] = out
 
@@ -4763,6 +4819,27 @@ def vefr_main() -> int:
     dl.add_argument('--force', action='store_true',
                     help='overwrite an existing generated region')
     dl.set_defaults(fn=cmd_delve)
+
+    st = sub.add_parser(
+        'stamp', help='hand-drawn rooms: check a pack before a floor uses it',
+        description='the stamped rooms of ADR 0013; `check` is the gate a '
+                    'stamp pack passes before a floor lays one out',
+        epilog='see: docs/adr/0013-stamp-format.md',
+    )
+    stamp_sub = st.add_subparsers(dest='stamp_verb', required=True)
+    stc = stamp_sub.add_parser(
+        'check',
+        help='static, fit, sweep and graph checks over a stamp pack',
+        description='four kinds of check over a stamp pack: what the reader '
+                    'refuses, what is too big for the floor it lands on, '
+                    'how often each room places, and whether every stamped '
+                    'room on a floor has a door in use and walkable anchors',
+    )
+    stc.add_argument('--pack', required=True,
+                     help='pack directory (stamps/ and sections/) or a path')
+    stc.add_argument('--seeds', type=int, default=200,
+                     help='how many check-<n> seeds to sweep (default: 200)')
+    stc.set_defaults(fn=cmd_stamp_check)
 
     _add_weave_parser(
         sub,

@@ -55,7 +55,7 @@ REQUIRED_VERBS = {
     "doctor", "check", "chat", "map", "delve", "weave", "spark",
     "test", "ferry", "handbok", "skipa", "norns", "ratatoskr",
 }
-VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features", "normalize", "art"}
+VEFR_VERBS = REQUIRED_VERBS | {"find", "publish", "look", "probe", "features", "normalize", "art", "stamp"}
 
 
 # ------------------------------------------------------------- harness
@@ -262,6 +262,7 @@ SANCTIONED_FNS = {
         "cmd_vefr_skipa", "cmd_vefr_doctor", "cmd_find",
         "cmd_publish", "cmd_look", "cmd_probe", "cmd_features", "cmd_normalize",
         "cmd_art_check", "cmd_art_credits", "cmd_art_kit",
+        "cmd_stamp_check",
     )
 }
 
@@ -283,6 +284,7 @@ EXPECTED_BOUND = {
     "chat": ("cmd_chat",),
     "map": ("cmd_map",),
     "delve": ("cmd_delve",),
+    "stamp": ("cmd_stamp_check",),
     "weave": ("cmd_build_web",),
     "spark": ("cmd_spark_install", "cmd_spark_status",
               "cmd_spark_task", "cmd_spark_smoke"),
@@ -356,6 +358,7 @@ DISPATCH_ARGV = {
     "map": ["map", "--segments", "X"],
     "delve": ["delve", "--pack", "p", "--seed", "s", "--from-region", "r",
               "--from-at", "1,2"],
+    "stamp": ["stamp", "check", "--pack", "p", "--seeds", "1"],
     "weave": ["weave"],
     "spark": ["spark", "status"],
     "test": ["test"],

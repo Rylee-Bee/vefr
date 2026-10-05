@@ -1,0 +1,23 @@
+{
+ "stamp": 1,
+ "id": "ash-shrine",
+ "role": "special",
+ "tags": [
+  "any"
+ ],
+ "depth": [
+  1,
+  9
+ ],
+ "weight": 1,
+ "rotate": true,
+ "mirror": true,
+ "max_per_floor": 2,
+ "rows": [
+  "#####",
+  "#...#",
+  "+...+",
+  "#...#",
+  "#####"
+ ]
+}

@@ -127,6 +127,16 @@
   .hud-level[hidden] { display: none; }
   /* the bag at the top of the screen: one small sprite per thing carried */
   .hud-bag { display: flex; align-items: center; gap: 4px; padding: 4px 6px; max-width: 40vw; flex-wrap: wrap; }
+  /* the small mark a skin sets beside a HUD line (docs/plans/interface/PLAN.md,
+     slice 5). Decoration only: the words beside it are the words, and the
+     mark is aria-hidden with no alt of its own. It sits BESIDE its line, so a
+     line the world does not use still has its mark and the words do not move
+     when the line appears; the mark goes away with the line. Painted in
+     currentColor, so it follows the words it sits beside and never brings a
+     colour of its own. */
+  .hud-mark { display: inline-flex; align-items: center; color: inherit; }
+  .hud-mark svg { width: 16px; height: 16px; flex: 0 0 auto; }
+  .hud [hidden] + .hud-mark { display: none; }
   .bag-pip { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
   .bag-pip--dot { display: inline-block; border-radius: 50%; background: #CBC6B6; }
   .bag-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
@@ -191,6 +201,14 @@
   .npc-line { margin: 0 0 10px; font-size: 1.15rem; line-height: 1.5; }
   .npc-note { margin: 0 0 8px; font-size: 0.85rem; color: #CFC5AE; }
   .npc-box #npc-close { background: transparent; color: #E2BC6E; border-color: rgba(216, 170, 78, 0.5); }
+  /* a speaker's picture, when the pack gave them one. It is decoration: the
+     speaker's name is already real text in .speaker, so the picture carries an
+     empty alt and is aria-hidden. It floats beside the line rather than in
+     front of it, and a speaker with no picture leaves the box as it was. */
+  .npc-face { float: left; width: 56px; height: 56px; margin: 0 14px 6px 0;
+    object-fit: cover; border-radius: 3px; background: var(--church); }
+  .npc-face + .npc-line { margin-top: 0; }
+  .npc-box::after { content: ""; display: block; clear: both; }
   /* the reader: the author's words, one page at a time, over the game.
      Matches the speech box (dark in both colour schemes), because it
      sits inside the always-dark stage. */
