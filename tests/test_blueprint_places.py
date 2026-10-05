@@ -341,14 +341,15 @@ def test_places_are_not_a_format_two_key(tmp_path):
     and brings a region of places is refused, one plain sentence and a
     pointer. Format 2 itself is `things`; see `test_blueprint_things.py`.
 
-    The corpus case at that path now declares a version nothing reads
-    (2 is a format now), so this test puts the version back to 2 to make
-    the claim the case is named for.
+    The corpus case at that path declares a version nothing reads (2 is
+    a format now, so the case is named `version-unknown` beside the one
+    in the v1 corpus), and this test puts the version back to 2 to make
+    the claim it used to be named for.
     """
     from vefr import blueprint
 
     source = json.loads(
-        (V3 / "invalid" / "version-two" / "blueprint.json").read_text(
+        (V3 / "invalid" / "version-unknown" / "blueprint.json").read_text(
             encoding="utf-8"))
     source["blueprint"] = 2
     pack = _pack(tmp_path, blueprint=source)
