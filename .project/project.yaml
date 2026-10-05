@@ -5,7 +5,7 @@ purpose_summary: >-
   The engine only (the bones). FastAPI + any OpenAI-compatible LLM backend;
   maplab validator; ratatoskr (ops) and norns (craft) CLIs. World packs
   live as data in separate repos (Emberfield ships here; burrito-journalism
-  and munr-story live in their own repos).
+  live in their own game repositories; Munr is one such game).
 ownership:
   human: rylee
   role: owner
