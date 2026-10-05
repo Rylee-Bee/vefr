@@ -1019,21 +1019,33 @@ AFFIX_FILE = 'affixes.json'
 SECTIONS_DIR = 'sections'
 
 
-def _inside(pack: Path, name: str) -> Path:
-    """`pack/name`, or the pack itself if the name would leave the pack."""
-    root = os.path.realpath(pack)
-    full = os.path.realpath(os.path.join(root, name))
-    return Path(full) if full.startswith(root + os.sep) else Path(root)
+def _pack_json(root: Path, name: str):
+    """One pack file's JSON, or the sentence that says it cannot be read.
 
+    The name is joined to the pack root, both are resolved, and the
+    result is asked whether it is inside that root BEFORE the read - all
+    of it here, in the one function that opens the file, so the read
+    cannot be reached by a path that has not been through the check.
+    That is also the shape the code scanner recognizes as a guard: a
+    resolved path, an `is_relative_to` test on it, and the file access
+    below the guard.
 
-def _pack_json(path: Path):
-    """One pack file's JSON, or the sentence that says it cannot be read."""
+    A name that escapes is refused and said out loud. `vefr check` is
+    pointed at a pack directory, and a pack directory is not a licence to
+    read the rest of the disk: `../../etc/passwd` and a plain
+    `/etc/passwd` both resolve outside the pack, and both are refused
+    rather than read or quietly turned into the pack root.
+    """
+    base = Path(root).resolve()
+    target = (base / name).resolve()
+    if not target.is_relative_to(base):
+        return None, 'not a file inside the pack'
     try:
-        return json.loads(path.read_text(encoding='utf-8')), None
+        return json.loads(target.read_text(encoding='utf-8')), None
     except OSError as exc:
-        return None, f'{path.name} could not be read ({exc.strerror})'
+        return None, f'{target.name} could not be read ({exc.strerror})'
     except ValueError:
-        return None, f'{path.name} is not valid JSON'
+        return None, f'{target.name} is not valid JSON'
 
 
 def _shape_sentences(rel: str, problems) -> list[str]:
@@ -1059,7 +1071,13 @@ def _family_resolver(pack: Path):
     """
     from . import blueprint
 
-    source_path = _inside(pack, blueprint.BLUEPRINT_FILE)
+    # Resolved, then checked against the pack root, then probed: the
+    # guard and the `is_file()` are in the same function on purpose, so
+    # the probe cannot be reached with an unchecked path.
+    root = Path(pack).resolve()
+    source_path = (root / blueprint.BLUEPRINT_FILE).resolve()
+    if not source_path.is_relative_to(root):
+        return None
     if not source_path.is_file():
         return None
     try:
@@ -1122,25 +1140,43 @@ def section_errors(pack_dir) -> list[str]:
     for one, and the difference is the file this module knows the name of.
     """
     pack = Path(pack_dir)
+    root = pack.resolve()
     errors: list[str] = []
 
+    # Both of the two places below resolve a path out of the pack
+    # directory this function was handed and check it against the pack
+    # root before touching it - here for the affix list, and in
+    # `_pack_json` for each Section file - so a pack directory that is a
+    # name rather than a place cannot send the check outside itself. The
+    # check is written as `is_relative_to` on the resolved path and sits
+    # in the same function as the file access, which is the shape the
+    # code scanner recognizes as a guard. A name that escapes is REFUSED
+    # with a sentence rather than read: these two names are the module's
+    # own, so an escape is a mistake to say out loud, and quietly
+    # pointing at something outside the pack is how a `..` in a path
+    # becomes a file the author never wrote.
     affixes = None
-    affix_path = _inside(pack, AFFIX_FILE)
+    affix_path = (root / AFFIX_FILE).resolve()
+    if not affix_path.is_relative_to(root):
+        return [f'{AFFIX_FILE} is not a file inside the pack']
     if affix_path.is_file():
-        affixes, problem = _pack_json(affix_path)
+        affixes, problem = _pack_json(root, AFFIX_FILE)
         if problem is not None:
             return [problem]
         errors.extend(_shape_sentences(
             AFFIX_FILE, shapes.check_affixes({}, affixes)))
 
-    sections = _inside(pack, SECTIONS_DIR)
+    sections = (root / SECTIONS_DIR).resolve()
+    if not sections.is_relative_to(root):
+        errors.append(f'{SECTIONS_DIR} is not a directory inside the pack')
+        return errors
     paths = sorted(sections.glob('*.json')) if sections.is_dir() else []
     if not paths:
         return errors
     resolve = _family_resolver(pack)
     for path in paths:
-        rel = path.relative_to(pack).as_posix()
-        section, problem = _pack_json(path)
+        rel = path.relative_to(root).as_posix()
+        section, problem = _pack_json(root, rel)
         if problem is not None:
             errors.append(f'{rel}: {problem}')
             continue

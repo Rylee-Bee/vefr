@@ -293,3 +293,84 @@ def test_vefr_check_passes_a_good_pack(tmp_path):
     built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION}, GOOD_AFFIXES)
     rc, out = vefr("check", "--pack", built)
     assert rc == 0, out
+
+
+# ---- the two names stay inside the pack ----
+
+def test_an_affix_name_that_leaves_the_pack_is_refused(tmp_path, monkeypatch):
+    """`vefr check` is pointed at a pack directory, not at a place it may
+    read. Both E7 file names are resolved and checked against the pack
+    root before anything is read, so a name that climbs out of the pack
+    is refused with a sentence and the file it named is never opened.
+
+    The refused file here is a real one, holding a real affix list with a
+    duplicate id in it, so a check that read it anyway would report the
+    duplicate. The sentence list is empty of it, which is the whole
+    assertion: the guard is a refusal, not a warning.
+    """
+    outside = tmp_path / "escape.json"
+    outside.write_text(json.dumps(
+        GOOD_AFFIXES + [{"id": "broad", "label": "Broad {name}"}]), encoding="utf-8")
+    built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION}, GOOD_AFFIXES)
+    monkeypatch.setattr(maplab, "AFFIX_FILE", "../escape.json")
+    errors = check(built)
+    assert errors == ["../escape.json is not a file inside the pack"]
+    assert "used twice" not in " ".join(errors), \
+        "the file it named was read, and a refusal is not a read"
+
+
+def test_an_absolute_affix_name_is_refused(tmp_path, monkeypatch):
+    """The same for a name that is not relative at all.
+
+    Joining a root with an absolute path gives the absolute path, so an
+    absolute name is the same escape with fewer steps - and it is the one
+    a pack author is likeliest to write by accident.
+    """
+    outside = tmp_path / "elsewhere" / "affixes.json"
+    outside.parent.mkdir()
+    outside.write_text(json.dumps(
+        GOOD_AFFIXES + [{"id": "broad", "label": "Broad {name}"}]), encoding="utf-8")
+    built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION}, GOOD_AFFIXES)
+    monkeypatch.setattr(maplab, "AFFIX_FILE", str(outside))
+    errors = check(built)
+    assert errors == [f"{outside} is not a file inside the pack"]
+
+
+def test_a_sections_directory_that_leaves_the_pack_is_refused(tmp_path, monkeypatch):
+    """And the directory, which is read with a glob rather than a read.
+
+    A `sections` name that resolves outside the pack is refused with its
+    own sentence and the directory is never listed, so the Section file
+    in it - one with a cap broken in it - is never read and never
+    reported.
+    """
+    outside = tmp_path / "escape-sections"
+    outside.mkdir()
+    (outside / "cellar.json").write_text(json.dumps(
+        dict(GOOD_SECTION, elites={"per_floor": [9, 9], "affixes": []})),
+        encoding="utf-8")
+    built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION}, GOOD_AFFIXES)
+    monkeypatch.setattr(maplab, "SECTIONS_DIR", "../escape-sections")
+    errors = check(built)
+    assert errors == ["../escape-sections is not a directory inside the pack"]
+    assert "per_floor" not in " ".join(errors)
+
+
+def test_a_section_file_name_that_leaves_the_pack_is_refused(tmp_path):
+    """The last door: the file inside the directory.
+
+    `sections/../escape.json` is a legal glob result only if nothing
+    checked it, so the same guard runs on every Section file, in the
+    function that reads it. A symlink is the honest way to ask the
+    question - a `..` in a name is one way to spell a file outside the
+    pack, and this one is asked through the same door.
+    """
+    outside = tmp_path / "escape.json"
+    outside.write_text(json.dumps(GOOD_SECTION), encoding="utf-8")
+    built = a_pack(tmp_path, {"cellar.json": GOOD_SECTION}, GOOD_AFFIXES)
+    (built / "sections" / "link.json").symlink_to(outside)
+    errors = check(built)
+    assert errors == ["sections/link.json: not a file inside the pack"]
+    # And the real file beside it is still read, so the guard refuses the
+    # escape rather than the directory.
+    assert "cellar" not in " ".join(errors)
