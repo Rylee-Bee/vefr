@@ -743,12 +743,12 @@ def _records_by_id() -> dict[str, dict]:
 def test_a_stamped_floor_carries_every_required_role():
     """A required role places on 100% of the floors where it is eligible.
 
-    ADR 0013's Validation puts required stamps at 100% and the rest at
-    95%; this is the 100%. The rate is per role and not per stamp, because
-    two eligible stamps of one role share the floors between them by
-    weight - a Section with two landmarks cannot place either of them on
-    every floor, and requiring it to would be requiring the pack to ship
-    one landmark.
+    ADR 0013's Validation puts required stamps at 100% and holds no bar
+    over the optional ones at all; this is the 100%. The rate is per role
+    and not per stamp, because two eligible stamps of one role share the
+    floors between them by weight - a Section with two landmarks cannot
+    place either of them on every floor, and requiring it to would be
+    requiring the pack to ship one landmark.
 
     A floor that fell back to v2 placed nothing, so it counts against the
     rate rather than being skipped: a Section whose floors cannot hold its
@@ -785,18 +785,21 @@ def test_a_stamped_floor_carries_every_required_role():
     assert fell_back < len(_cases()) * SEED_COUNT, "no floor should be v2 here"
 
 
-def test_every_required_stamp_is_placed_on_at_least_95_percent_of_its_floors():
-    """The 95% bar of ADR 0013's Validation, on the stamps it applies to.
+def test_every_required_stamp_is_placed_on_every_one_of_its_floors():
+    """The 100% bar of ADR 0013's Validation, on the stamps it applies to.
 
-    Owner decision 4 keeps that bar for required stamps: an optional
-    stamp may be rare on purpose, so the test below holds it to nothing
-    but being placed at all. A required stamp with no rival in its role
-    is measured directly - the ADR's own example is `crypt-hall`, and it
-    is the shape of stamp the sentence is about. A required role with
-    several eligible stamps splits its floors by weight instead, because
-    a Section with two landmarks cannot put either of them on every
-    floor; there the rule that still means something is the split, and
-    the tolerance is a quarter of the share.
+    A required stamp is on every floor it is eligible for: one floor in a
+    hundred that loses its warden hall is a floor the hero walks into an
+    empty hall, and a 95% bar let that floor through. Owner decision 4
+    is what leaves the required roles the only ones with a bar at all -
+    an optional stamp may be rare on purpose, so the test below holds it
+    to nothing. A required stamp with no rival in its role is measured
+    directly - the ADR's own example is `crypt-hall`, and it is the shape
+    of stamp the sentence is about. A required role with several
+    eligible stamps splits its floors by weight instead, because a
+    Section with two landmarks cannot put either of them on every floor;
+    there the rule that still means something is the split, and the
+    tolerance is a quarter of the share.
     """
     shares: dict[str, int] = {}
     total = 0
@@ -813,10 +816,10 @@ def test_every_required_stamp_is_placed_on_at_least_95_percent_of_its_floors():
         where = shares.get(record["id"], 0)
         if len(rivals[record["role"]]) == 1:
             rate = where / total
-            if rate < 0.95:
+            if rate < 1.0:
                 pytest.fail(
                     f"stamp {record['id']}: placed on {where} of {total} eligible "
-                    f"floors ({rate:.1%}); it needs 95%"
+                    f"floors ({rate:.1%}); it needs 100%"
                 )
             continue
         weight = sum(other["weight"] for other in rivals[record["role"]])
