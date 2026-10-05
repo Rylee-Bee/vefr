@@ -267,7 +267,7 @@ GOLDENS: list[tuple[str, dict, str]] = [
      "found, not stumbled on /legend"),
 ]
 
-SENTENCE = re.compile(r"^stamp [^:]+: .+( /(/[^ ]*)*)?$")
+SENTENCE = re.compile(r"^stamp [^:]+: .+( /[^ ]*)?$")
 
 
 @pytest.mark.parametrize("name, source, sentence", GOLDENS,
