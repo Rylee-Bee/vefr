@@ -58,9 +58,15 @@ TABS = """() => Array.from(document.querySelectorAll('#menu .pm button')).map((b
   const r = b.getBoundingClientRect();
   return {text: b.textContent.trim(), visible: cs.visibility === 'visible'
             && cs.opacity !== '0' && cs.display !== 'none',
+          onScreen: b.checkVisibility({checkOpacity: true, checkVisibilityCSS: true}),
+          hiddenBy: b.closest("[hidden]") ? (b.closest("[hidden]").id || b.closest("[hidden]").className) : null,
           size: cs.fontSize, color: cs.color, face: cs.backgroundColor,
           w: Math.round(r.width), h: Math.round(r.height)};
 })"""
+
+
+CORE_TABS = {"Journal", "Books", "Where next?", "Why did that happen?",
+             "Bag", "How to play", "Display", "Start over"}
 
 
 def _hex(colour: str) -> str:
@@ -124,11 +130,27 @@ def skinned_menu(request, browser, woven):
 
 
 def test_every_menu_tab_has_readable_words_on_it(skinned_menu):
-    """The reported symptom: every tab button showing no label at all."""
+    """The reported symptom: every tab button showing no label at all.
+
+    Only the tabs actually on screen are measured. A tab inside a hidden
+    section has no size because nobody can see it, and asking for 4.5:1 on
+    a box of zero pixels fails for a reason that has nothing to do with the
+    ink. The hidden ones are checked separately, below, so that skipping
+    them cannot quietly become skipping the check.
+    """
     tabs = skinned_menu.evaluate(TABS)
     assert tabs, "the open menu has no tabs"
-    for seen in tabs:
+    on_screen = [s for s in tabs if s["onScreen"]]
+    off_screen = [s for s in tabs if not s["onScreen"]]
+    assert on_screen, "the open menu shows no tabs at all"
+    assert CORE_TABS <= {s["text"] for s in on_screen}, (
+        "the core tabs are not all on screen: "
+        + str(sorted(CORE_TABS - {s["text"] for s in on_screen})))
+    for seen in on_screen:
         _readable(seen, f"the {seen['text'] or 'blank'} tab")
+    for seen in off_screen:
+        assert seen["hiddenBy"] is not None, (
+            "the tab " + seen["text"] + " is off screen but is not inside a [hidden] section: " + str(seen))
 
 
 def test_the_menu_content_panel_has_words_on_it(skinned_menu):
