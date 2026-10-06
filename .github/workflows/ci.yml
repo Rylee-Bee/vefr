@@ -6,10 +6,28 @@ on:
   pull_request:
     branches: [main]
 
+  # Weekly heartbeat for the Play-Nice pin. GitHub fires schedules only
+  # on the default branch. Monday 06:17 UTC matches personal-world's cadence.
+  schedule:
+    - cron: '17 6 * * 1'
 permissions:
   contents: read
 
 jobs:
+
+  # Play-Nice contract currency — enforced, not decorative. This repo declared
+  # adoption in .project/contracts/adoption.yaml; nothing was checking the pin, so it could silently
+  # fall behind the contracts it claims to be held to.
+  #
+  # Fails closed: green only on CURRENT. BEHIND/DIVERGED exit 1;
+  # UNREACHABLE/UNKNOWN exit 2. PRs warn so unrelated work is not blocked;
+  # the weekly schedule is the blocking heartbeat, and any push to the default
+  # branch is strict too. Harness-owned mechanics, repo-owned manifest path.
+  contract-freshness:
+    uses: Rylee-Bee/ci-harness/.github/workflows/reusable-contract-freshness.yml@561b1daa2314f5e902c5b1e4e2a24802a9ecdfaf
+    with:
+      manifest-path: ".project/contracts/adoption.yaml"
+      expect: ${{ github.event_name == 'pull_request' && 'warn' || 'current' }}
   gate:
     name: ruff + pytest + sample-world + public-surface guard
     runs-on: ubuntu-latest
