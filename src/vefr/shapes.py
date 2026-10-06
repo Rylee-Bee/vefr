@@ -13,7 +13,9 @@ and drifting).
 `check(block, value)` returns a list of `Problem(code, pointer,
 sentence)`. Emission order is stable: stop at `not-object`; then the
 value's unknown keys in the value's own order; then each table key in
-table order (a missing required key, else its wrong value).
+table order (a missing required key, else its wrong value, else the
+block that key holds - `Key.sub`, which the Section pack is the first
+user of).
 
 `known` is accepted and ignored: the id checks (`unknown-ref`) are
 spoken by the validators that own the pack, in their own author's
@@ -30,16 +32,31 @@ has a kind of its own:
   `groups.minions[1]` names the half that is out of range.
 - `ids` - a list of ids, every element checked.
 
-A wrong element of a `pair` or an `ids` is reported at that element's
-pointer, and the first wrong element is the one reported, so a key earns
-one sentence however wrong its value is.
+and E4 added five more, all of them because the Section pack of PLAN.md
+section 2 writes a value no earlier block had:
+
+- `obj` - a block in its own right, named by `Key.sub`. The sub-block's
+  sentences speak for it, so `size`, `fog`, `curve` and `loot` are typed
+  where they are read instead of being checked as dictionaries.
+- `enums` - a list drawn from a closed set, so a `pattern` entry that is
+  not one of the five slots is refused at that entry.
+- `glyphs` - the tile table of a Section, every glyph naming a tileset.
+- `hundredths-pair` - a `[lo, hi]` pair of multipliers, both halves whole
+  hundredths: the monster curve of a Section.
+- `list` - a plain list, which `Key.sub` then walks element by element.
+
+A wrong element of a `pair`, an `ids` or an `enums` is reported at that
+element's pointer, and the first wrong element is the one reported, so a
+key earns one sentence however wrong its value is.
 
 Three checks cannot live in that table, because each spans records
 rather than one value: an affix id the pack does not define, a repeated
 id, a family a Section names that the Blueprint does not have, and a
-group led by an elite in a Section that names no affix. They are
-`check_affixes` and `check_section`, and they return the same
-`list[Problem]` and speak the same plain sentences.
+group led by an elite in a Section that names no affix. E4 added four
+more of the same kind: a Section's pattern as long as its Section, ending
+in a warden floor, naming two landings, and asking for a special it does
+not name. They are `check_affixes` and `check_section`, and they return
+the same `list[Problem]` and speak the same plain sentences.
 
 The module is standard-library only: `shapes.py` must never import from
 `vefr`, or `maplab` would import itself into a cycle. So the one
@@ -61,11 +78,14 @@ class Key:
     name: str
     kind: str               # 'str' | 'int' | 'bool' | 'enum' | 'obj' | 'list' | 'ref'
                              # | 'hundredths' | 'pair' | 'ids' | 'name-label'
+                             # | 'enums' | 'glyphs' | 'hundredths-pair'
     choices: tuple = ()     # enum values, in sentence order
     lo: int | None = None   # int bounds, str length bounds, or hundredths
     hi: int | None = None
     ref: str | None = None  # unused in this slice
     required: bool = False
+    say: Mapping[str, str] = field(default_factory=dict)  # this key's own words
+    sub: 'Block | None' = None  # the block this value holds, if any
 
 
 @dataclass(frozen=True)
@@ -76,8 +96,11 @@ class Block:
     say: Mapping[str, str] = field(default_factory=dict)  # code -> sentence override
 
 
-# The default sentence per error code. A block's `say` overrides
-# individual codes; where it does not, these are the bytes.
+# The default sentence per error code. A key's `say`, then its block's,
+# overrides individual codes; where neither does, these are the bytes.
+# The last four are spoken by the checks that span records rather than by
+# the table, and they live here for the same reason: one place holds every
+# sentence a refusal can be spoken in.
 _DEFAULTS = {
     'not-object': '{name} must be an object such as {example}',
     'unknown-key': '{name} has an unknown key {key!r}; it may only hold {keys}',
@@ -97,16 +120,44 @@ _DEFAULTS = {
     'unknown-family': 'unknown family {id!r}',
     'no-stat': ('every family a section names needs an {stat} in the '
                 'blueprint, and {id!r} has none'),
+    'pattern-length': ("a section's pattern must have one entry for each of "
+                       'its {floors} floors, and it has {given}'),
+    'no-warden': ("a section's pattern must end with a warden floor, and "
+                  'its last entry is "{slot}"'),
+    'too-few-landings': ('every section needs a landing on its first floor '
+                         'and another by its fifth, and this pattern names '
+                         '{given}'),
+    'no-specials': ('a section\'s pattern asks for a special floor, and '
+                    'names no specials'),
 }
 
-# The kinds whose wrong values need a sentence of their own. A block's
-# `say` still wins over these.
+# The kinds whose wrong values need a sentence of their own. A key's `say`
+# wins over its block's, and a block's over these - `sections` above.
 _KIND_SAY = {
     'str': {'wrong-type': '{path} must be a string'},
     'int': {'wrong-type': '{path} must be a whole number'},
     'bool': {'wrong-type': '{path} must be a yes or a no'},
+    'obj': {'wrong-type': '{path} must be an object'},
+    'list': {'wrong-type': '{path} must be a list'},
+    'enums': {
+        'wrong-type': '{path} must be a list of {choices}',
+        'not-in-choices': '{path} must be {choices}',
+    },
+    'glyphs': {
+        # The example is a table, so its braces are doubled: every
+        # sentence in this table is a `str.format` template.
+        'wrong-type': ('{path} must be a table of glyphs, such as '
+                       '{{"#": "wall", ".": "floor"}}'),
+        'wrong-element': '{path} must name a tileset, such as "wall"',
+    },
     'hundredths': {
         'wrong-type': '{path} must be a number, such as 1.5',
+        'not-hundredths': ('{path} must be a whole number of hundredths, '
+                           'such as 1.25'),
+    },
+    'hundredths-pair': {
+        'wrong-type': ('{path} must be a [lo, hi] pair of numbers, such as '
+                       '[1.0, 1.4]'),
         'not-hundredths': ('{path} must be a whole number of hundredths, '
                            'such as 1.25'),
     },
@@ -125,6 +176,7 @@ _ELEMENT_NOUN = {
     'pair': 'a whole number',
     'ids': 'an affix id',
     'hundredths': 'a whole number',
+    'hundredths-pair': 'a whole number',
 }
 
 
@@ -140,16 +192,21 @@ def _join_keys(block) -> str:
 
 
 def _say(block, key, code) -> str:
-    """The sentence for one code about one key: the default, the kind's
-    own wording, then the block's. The block has the last word.
+    """The sentence for one code about one key: the key's own wording, the
+    block's, the kind's, then the default. The most specific has the last
+    word.
 
     Resolved per key rather than per block, because a block may hold
     two kinds that need different words for the same code - `sight` is
     a whole number and `hp` is a number in hundredths, and one block
-    saying both wrong ways would be one of them wrong.
+    saying both wrong ways would be one of them wrong. E4's `section`
+    block needs the key's own words for the same reason: `stamps` and
+    `pois` are both `ids`, and "a stamp id" is not "a point of interest".
     """
     kind = _KIND_SAY.get(key.kind, {}) if key is not None else {}
-    return block.say.get(code) or kind.get(code) or _DEFAULTS[code]
+    own = getattr(key, "say", None) or {} if key is not None else {}
+    return (own.get(code) or block.say.get(code)
+            or kind.get(code) or _DEFAULTS[code])
 
 
 def _as_hundredths(n) -> str:
@@ -168,8 +225,10 @@ def _type_ok(kind: str, value) -> bool:
         return isinstance(value, bool)
     if kind == 'obj':
         return isinstance(value, dict)
-    if kind in ('list', 'ids'):
+    if kind in ('list', 'ids', 'enums'):
         return isinstance(value, list)
+    if kind == 'glyphs':
+        return isinstance(value, dict)
     if kind == 'ref':
         return isinstance(value, str)
     if kind == 'hundredths':
@@ -178,6 +237,10 @@ def _type_ok(kind: str, value) -> bool:
     if kind == 'pair':
         return (isinstance(value, list) and len(value) == 2
                 and all(isinstance(n, int) and not isinstance(n, bool)
+                        for n in value))
+    if kind == 'hundredths-pair':
+        return (isinstance(value, list) and len(value) == 2
+                and all(isinstance(n, (int, float)) and not isinstance(n, bool)
                         for n in value))
     return True
 
@@ -192,9 +255,11 @@ def _out_of_range(key: Key, value) -> bool:
 
     A `pair` bounds each of its two halves rather than the pair as one
     number, so it answers for the list it is given and for either half
-    of it.
+    of it. A `hundredths-pair` bounds its halves the same way, but a
+    value that is out of range is reported at the PAIR: the two ends of a
+    curve are one sentence about the curve, not two about its halves.
     """
-    if key.kind == 'pair' and isinstance(value, (list, tuple)):
+    if key.kind in ('pair', 'hundredths-pair') and isinstance(value, (list, tuple)):
         return any(_out_of_range(key, n) for n in value)
     if key.kind in ('int', 'pair'):
         return ((key.lo is not None and value < key.lo)
@@ -206,12 +271,15 @@ def _out_of_range(key: Key, value) -> bool:
     if key.kind == 'hundredths':
         return ((key.lo is not None and value * 100 < key.lo)
                 or (key.hi is not None and value * 100 > key.hi))
+    if key.kind == 'hundredths-pair':
+        return ((key.lo is not None and value * 100 < key.lo)
+                or (key.hi is not None and value * 100 > key.hi))
     return False
 
 
 def _bounds(key: Key):
     """The two numbers an `out-of-range` sentence quotes for `key`."""
-    if key.kind == 'hundredths':
+    if key.kind in ('hundredths', 'hundredths-pair'):
         return _as_hundredths(key.lo), _as_hundredths(key.hi)
     return key.lo, key.hi
 
@@ -224,13 +292,22 @@ def _range_problem(block, key, value, path, pointer):
 
 
 def _element_problem(block, key, value, index, path):
-    """The one problem with element `index` of a `pair` or an `ids`."""
+    """The one problem with element `index` of a `pair`, an `ids` or an
+    `enums`."""
     pointer = f'/{block.name}/{key.name}/{index}'
     here = f'{path}[{index}]'
     if key.kind == 'pair':
         if _out_of_range(key, value):
             return _range_problem(block, key, value, here, pointer)
         return None
+    if key.kind == 'enums':
+        if value in key.choices:
+            return None
+        return Problem(
+            'not-in-choices', pointer,
+            _say(block, key, 'not-in-choices').format(
+                name=block.name, key=key.name, path=here,
+                choices=_render_choices(key.choices)))
     if isinstance(value, str) and value:
         return None
     return Problem('wrong-element', pointer,
@@ -238,22 +315,53 @@ def _element_problem(block, key, value, index, path):
                        path=here, noun=_ELEMENT_NOUN.get(key.kind, 'a value')))
 
 
+def _glyph_problem(block, key, value, path):
+    """The one glyph of a tile table that names no tileset.
+
+    The pointer carries the glyph itself rather than an index - `tiles`
+    is a table and a table has no order to point into - and the path
+    quotes the glyph the way a pack author wrote it.
+    """
+    for glyph, tileset in value.items():
+        if isinstance(tileset, str) and tileset:
+            continue
+        return Problem(
+            'wrong-element', f'/{block.name}/{key.name}/{glyph}',
+            _say(block, key, 'wrong-element').format(
+                path=f'{path}[{glyph!r}]'))
+    return None
+
+
 def _shape_problem(block, key, value, path):
     """The one problem with a value that is the right type and still
     cannot be read: a label that does not name its monster, a hundredth
-    that is not whole, a wrong pair half, or a wrong list element."""
+    that is not whole, a wrong pair half, a glyph with no tileset, or a
+    wrong list element."""
     pointer = f'/{block.name}/{key.name}'
     if key.kind == 'name-label':
         if '{name}' not in value:
             return Problem('no-name-slot', pointer,
                            _say(block, key, 'no-name-slot').format(path=path))
         return None
+    if key.kind == 'glyphs':
+        return _glyph_problem(block, key, value, path)
     if key.kind == 'hundredths':
         # Whole hundredths before range: a value that is not a hundredth
         # at all is reported as that, not as a bound it never met.
         if not _whole_hundredths(value):
             return Problem('not-hundredths', pointer,
                            _say(block, key, 'not-hundredths').format(path=path))
+        return None
+    if key.kind == 'hundredths-pair':
+        # The half that is not a whole hundredth is named; a half that is
+        # out of range is the pair's own `out-of-range` and says so.
+        for index, half in enumerate(value):
+            if _whole_hundredths(half):
+                continue
+            return Problem(
+                'not-hundredths', f'/{block.name}/{key.name}/{index}',
+                _say(block, key, 'not-hundredths').format(
+                    path=f'{path}[{index}]'))
         return None
     for index, element in enumerate(value):
         problem = _element_problem(block, key, element, index, path)
@@ -279,10 +387,19 @@ def _value_problem(block, key, value, path):
                 path=path, kind=key.kind))
     if key.kind == 'hundredths' and not _whole_hundredths(value):
         return _shape_problem(block, key, value, path)
-    if key.kind == 'pair':
+    if key.kind in ('pair', 'glyphs', 'enums'):
         # A pair always reports at the half that is wrong, so it never
         # answers as one value: `groups.minions[1]` names the problem.
+        # A tile table and a pattern are read the same way: the glyph
+        # and the entry, not the whole key.
         return _shape_problem(block, key, value, path)
+    if key.kind == 'hundredths-pair':
+        # The halves first - a curve end that is not a whole hundredth is
+        # not a bound it ever met - and then the pair's own range, which
+        # is one sentence about the curve rather than two about its ends.
+        problem = _shape_problem(block, key, value, path)
+        if problem is not None:
+            return problem
     if _out_of_range(key, value):
         return _range_problem(block, key, value, path, pointer)
     if key.kind in ('name-label', 'ids'):
@@ -290,13 +407,49 @@ def _value_problem(block, key, value, path):
     return None
 
 
-def check(block, value, known=None) -> list[Problem]:
+def _sub_problems(block, key, value, at='') -> list[Problem]:
+    """Every problem with the block a key's value holds, moved into place.
+
+    A sub-block's pointer and its sentences are written against the
+    sub-block's own name - `/size/w`, `size.w` - and this moves both to
+    where the value actually is: `/section/size/w` and `section.size.w`
+    for a sub-block of a key, `/section/families/0/weight` for one element
+    of a list of them. A pointer without its path moved would leave a
+    sentence naming one place and a pointer naming another.
+    """
+    sub = key.sub
+    stem = f'/{block.name}/{key.name}'
+    skip = len(sub.name) + 1        # '/size' - the sub-block's own root
+    out: list[Problem] = []
+    if key.kind == 'list':
+        for index, element in enumerate(value):
+            root = f'{at or block.name}.{key.name}[{index}]'
+            for problem in check(sub, element, None, root):
+                out.append(Problem(
+                    problem.code,
+                    f'{stem}/{index}{problem.pointer[skip:]}',
+                    problem.sentence))
+        return out
+    for problem in check(sub, value, None, f'{at or block.name}.{key.name}'):
+        out.append(Problem(problem.code,
+                           f'{stem}{problem.pointer[skip:]}',
+                           problem.sentence))
+    return out
+
+
+def check(block, value, known=None, at='') -> list[Problem]:
     """Every problem with `value` against `block`, in stable order.
 
     A non-object value stops at one `not-object` problem. Otherwise the
     value's unknown keys come first, in the value's own order, then
-    each table key in table order. `known` is accepted and ignored (the
-    id checks are the validators' own; see `EVENTS`).
+    each table key in table order: a missing required key, else the
+    value, else the block the key holds (`Key.sub`) in the same place in
+    the order. `known` is accepted and ignored (the id checks are the
+    validators' own; see `EVENTS`).
+
+    `at` is the dotted path of this block's own root, and only the
+    sub-block walk passes it: it is what makes a sentence inside a
+    sub-block name where in the pack the wrong value is.
     """
     if not isinstance(value, dict):
         return [Problem(
@@ -314,7 +467,7 @@ def check(block, value, known=None) -> list[Problem]:
                     name=block.name, key=name, keys=_join_keys(block))))
 
     for key in block.keys:
-        path = f'{block.name}.{key.name}'
+        path = f'{at or block.name}.{key.name}'
         if key.required and key.name not in value:
             problems.append(Problem(
                 'missing-key', f'/{block.name}/{key.name}',
@@ -326,6 +479,9 @@ def check(block, value, known=None) -> list[Problem]:
         problem = _value_problem(block, key, value[key.name], path)
         if problem is not None:
             problems.append(problem)
+            continue
+        if key.sub is not None:
+            problems.extend(_sub_problems(block, key, value[key.name], at))
     return problems
 
 
@@ -412,12 +568,122 @@ GROUPS = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# ------------------------------------------------ the Section pack (E4)
+#
+# PLAN.md section 2 writes the Section pack in one line, and this block is
+# that line, key for key and in its order: `section`, `id`, `floors`,
+# `size`, `rooms`, `tiles`, `fog`, `families`, `pattern`, `specials`,
+# `elites`, `groups`, `curve`, `loot`, `stamps`, `pois`, `warden`,
+# `vault`. Nothing here is invented and nothing is dropped.
+#
+# Only TWO keys are required: `id` and `families`. `id` is the floor key's
+# middle - a Section without one gives every floor of the pack the same
+# key - and `families` is what the pop stage draws from. Everything else
+# defaults in `vefr.sections`, and a Section that names none of it is the
+# floor it always was. A table that demanded the whole shape, or even the
+# five keys ADR 0014's fixtures carry, would refuse packs the generator
+# already reads: `test_a_section_that_names_no_elites_at_all_is_fine` is
+# frozen evidence that a Section may leave `elites` out.
+#
+# `elites` and `groups` are typed as objects HERE and read by their own
+# tables in `check_section`, because ADR 0014 pinned their pointers at
+# `/elites/per_floor` and a sub-block would have moved them under
+# `/section`.
+PATTERN_SLOTS = ('entry', 'n', 'special', 'landing', 'warden')
+SPECIAL_KINDS = ('treasure', 'infested', 'hub')
+
+SIZE = Block(
+    name='size',
+    example='{"w": [64, 80], "h": [44, 56]}',
+    keys=(
+        Key('w', 'pair', lo=32, hi=128, required=True),
+        Key('h', 'pair', lo=24, hi=96, required=True,
+            say={'wrong-type': ('{path} must be a [lo, hi] pair of whole '
+                                'numbers, such as [44, 56]')}),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+FOG = Block(
+    name='fog',
+    example='{"radius": 4}',
+    keys=(Key('radius', 'int', lo=2, hi=8, required=True),),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+FAMILY = Block(
+    name='family',
+    example='{"family": "rat", "weight": 5, "depth": [1, 6]}',
+    keys=(
+        Key('family', 'str', lo=1, hi=40, required=True),
+        Key('weight', 'int', lo=1, hi=99),
+        Key('depth', 'pair', lo=1, hi=99),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+CURVE = Block(
+    name='curve',
+    example='{"hp": [1.0, 1.4], "atk": [1.0, 1.3]}',
+    keys=(
+        Key('hp', 'hundredths-pair', lo=100, hi=300, required=True),
+        Key('atk', 'hundredths-pair', lo=100, hi=300, required=True),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+LOOT = Block(
+    name='loot',
+    example='{"tier": 1}',
+    keys=(Key('tier', 'int', lo=1, hi=9, required=True),),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+SECTION = Block(
+    name='section',
+    example='{"section": 1, "id": "cellar", "floors": 9, "rooms": [12, 18]}',
+    keys=(
+        Key('section', 'int', lo=1, hi=99),
+        Key('id', 'str', lo=1, hi=40, required=True),
+        Key('floors', 'int', lo=1, hi=11),
+        Key('size', 'obj', sub=SIZE),
+        Key('rooms', 'pair', lo=6, hi=40),
+        Key('tiles', 'glyphs'),
+        Key('fog', 'obj', sub=FOG),
+        Key('families', 'list', sub=FAMILY, required=True),
+        Key('pattern', 'enums', choices=PATTERN_SLOTS,
+            say={'wrong-type': ('{path} must be a list of "entry", "n", '
+                                '"special", "landing" and "warden"')}),
+        Key('specials', 'enums', choices=SPECIAL_KINDS,
+            say={'wrong-type': ('{path} must be a list of "treasure", '
+                                '"infested" and "hub"')}),
+        Key('elites', 'obj'),
+        Key('groups', 'obj'),
+        Key('curve', 'obj', sub=CURVE),
+        Key('loot', 'obj', sub=LOOT),
+        Key('stamps', 'ids',
+            say={'wrong-type': '{path} must be a list of stamp ids, such as '
+                               '["cellar"]',
+                 'wrong-element': '{path} must be a stamp id, such as '
+                                  '"cellar"'}),
+        Key('pois', 'ids',
+            say={'wrong-type': '{path} must be a list of point-of-interest '
+                               'names, such as ["the rusted grate"]',
+                 'wrong-element': '{path} must be a point of interest, such '
+                                  'as "the rusted grate"'}),
+        Key('warden', 'str', lo=1, hi=40),
+        Key('vault', 'str', lo=1, hi=40),
+    ),
+    say={'missing-key': '{name} must hold its {key}'},
+)
+
 BLOCKS = {
     'saves': SAVES,
     'sound': SOUND,
     'affix': AFFIX,
     'elites': ELITES,
     'groups': GROUPS,
+    'section': SECTION,
 }
 
 
@@ -525,7 +791,7 @@ def check_affixes(section: dict, affixes) -> list[Problem]:
 
 
 def check_section(section: dict, affixes=None, resolve=None) -> list[Problem]:
-    """Every problem with one Section pack's elites and groups.
+    """Every problem with one Section pack, in stable order.
 
     `section` is a Section pack, `affixes` its pack's affix list, and
     `resolve` a callable taking a family id and returning the base
@@ -533,8 +799,20 @@ def check_section(section: dict, affixes=None, resolve=None) -> list[Problem]:
     have (`vefr.blueprint.resolve_family` behind that one wrapper -
     `shapes` may not import it). A caller with no `resolve` gets the
     family checks skipped rather than wrong.
+
+    The order is the one ADR 0014's tests pinned, and the Section table
+    comes first without disturbing it: the whole Section, then the two
+    blocks it holds whose pointers are the Section's own (`elites`,
+    `groups`), then the affix list, then the families, then the groups an
+    elite leads, then the pattern.
     """
     problems: list[Problem] = []
+    problems.extend(check(SECTION, section))
+    if not isinstance(section, dict):
+        # A Section pack that is not an object is one `not-object`
+        # sentence and nothing else: the checks below all read it as a
+        # table and there is nothing to read.
+        return problems
     for name, block in (('elites', ELITES), ('groups', GROUPS)):
         if name in section:
             problems.extend(check(block, section[name]))
@@ -562,6 +840,52 @@ def check_section(section: dict, affixes=None, resolve=None) -> list[Problem]:
                     _DEFAULTS['no-stat'].format(stat=missing[0], id=family))]
 
     problems.extend(_elite_leader_problems(section))
+    problems.extend(_pattern_problems(section))
+    return problems
+
+
+def _pattern_problems(section: dict) -> list[Problem]:
+    """Every way one Section's pattern contradicts the Section around it.
+
+    A pattern is a list of slots, one for each floor, and three facts sit
+    beside it: how many floors there are, what the last slot is, and what
+    the specials list holds. None of those can be read off a single slot,
+    so all three checks live here rather than in the table - the same
+    reason the affix and family checks do.
+
+    A Section that names no pattern is not one of these: it takes the
+    default pattern in `vefr.sections`, which is the one PLAN.md section 4
+    writes, and a pack that writes nothing is not a pack that got it
+    wrong.
+    """
+    pattern = section.get('pattern')
+    if not isinstance(pattern, list) or not pattern:
+        return []
+    problems: list[Problem] = []
+
+    floors = section.get('floors')
+    if isinstance(floors, int) and not isinstance(floors, bool) \
+            and floors != len(pattern):
+        problems.append(Problem(
+            'pattern-length', '/pattern',
+            _DEFAULTS['pattern-length'].format(
+                floors=floors, given=len(pattern))))
+
+    last = pattern[-1]
+    if last != 'warden':
+        problems.append(Problem(
+            'no-warden', '/pattern',
+            _DEFAULTS['no-warden'].format(slot=last)))
+
+    named = sum(1 for slot in pattern if slot in ('entry', 'landing'))
+    if named < 2:
+        problems.append(Problem(
+            'too-few-landings', '/pattern',
+            _DEFAULTS['too-few-landings'].format(given=named)))
+
+    if 'special' in pattern and not section.get('specials'):
+        problems.append(Problem(
+            'no-specials', '/specials', _DEFAULTS['no-specials']))
     return problems
 
 

@@ -2950,5 +2950,4011 @@
   "errors": [
    "sticker 's1' when 'phase-changes' names unknown phase 'dusk'"
   ]
+ },
+ {
+  "block": "section",
+  "case": "the shape of plan section 2",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "a section pack that is not an object",
+  "section": [],
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section section must be an object such as {\"section\": 1, \"id\": \"cellar\", \"floors\": 9, \"rooms\": [12, 18]}"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "the five required keys and nothing else",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5
+    }
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "nothing at all is the two missing keys",
+  "section": {},
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/id section must hold its id",
+   "sections/cellar.json: /section/families section must hold its families"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an unknown key",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar",
+   "zeta": 1
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "two unknown keys and two wrong values",
+  "section": {
+   "section": 0,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    2,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar",
+   "zeta": 1,
+   "alpha": 2
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault",
+   "sections/cellar.json: /section/alpha section has an unknown key 'alpha'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault",
+   "sections/cellar.json: /section/section section.section must be between 1 and 99",
+   "sections/cellar.json: /section/rooms/0 section.rooms[0] must be between 6 and 40"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an id that is not a string",
+  "section": {
+   "section": 1,
+   "id": 3,
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/id section.id must be a string"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an id with nothing in it",
+  "section": {
+   "section": 1,
+   "id": "",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/id section.id must be between 1 and 40"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "more floors than a section may have",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 12,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/floors section.floors must be between 1 and 11",
+   "sections/cellar.json: /pattern a section's pattern must have one entry for each of its 12 floors, and it has 9"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a size that is not an object",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": 3,
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/size section.size must be an object"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a size with no width",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/size/w size must hold its w, such as {\"w\": [64, 80], \"h\": [44, 56]}"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a width half out of range",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     200
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/size/w/1 section.size.w[1] must be between 32 and 128"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a height that is a triple",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56,
+     60
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/size/h section.size.h must be a [lo, hi] pair of whole numbers, such as [44, 56]"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a fog with no radius",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {},
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/fog/radius fog must hold its radius, such as {\"radius\": 4}"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a fog radius out of range",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 9
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/fog/radius section.fog.radius must be between 2 and 8"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a tile table that is not a table",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": [],
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/tiles section.tiles must be a table of glyphs, such as {\"#\": \"wall\", \".\": \"floor\"}"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a glyph with no tileset",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": 3
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/tiles/. section.tiles['.'] must name a tileset, such as \"wall\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "families that are not a list",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": {},
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/families section.families must be a list"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a family with no family in it",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "weight": 5
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/families/0/family family must hold its family, such as {\"family\": \"rat\", \"weight\": 5, \"depth\": [1, 6]}"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a family weight of zero",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 0
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/families/0/weight section.families[0].weight must be between 1 and 99"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern that is not a list",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": "entry",
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/pattern section.pattern must be a list of \"entry\", \"n\", \"special\", \"landing\" and \"warden\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern slot that is not a slot",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "boss"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/pattern/8 section.pattern[8] must be \"entry\" or \"n\" or \"special\" or \"landing\" or \"warden\"",
+   "sections/cellar.json: /pattern a section's pattern must end with a warden floor, and its last entry is \"boss\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a special kind the dungeon does not have",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "maze"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/specials/0 section.specials[0] must be \"treasure\" or \"infested\" or \"hub\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "specials that are not a list",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": 3,
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/specials section.specials must be a list of \"treasure\", \"infested\" and \"hub\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a curve half that is not a whole hundredth",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.41
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "a curve out of range",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     9.0
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/curve/hp section.curve.hp must be between 1.0 and 3.0"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a loot tier of zero",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 0
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/loot/tier section.loot.tier must be between 1 and 9"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern shorter than its section",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /pattern a section's pattern must have one entry for each of its 9 floors, and it has 8"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern with no warden floor",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /pattern a section's pattern must end with a warden floor, and its last entry is \"n\"",
+   "sections/cellar.json: /pattern every section needs a landing on its first floor and another by its fifth, and this pattern names 0"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern with one landing",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /pattern every section needs a landing on its first floor and another by its fifth, and this pattern names 1"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a pattern asking for a special it does not name",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /specials a section's pattern asks for a special floor, and names no specials"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a stamp id that is not a string",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    3
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/stamps/1 section.stamps[1] must be a stamp id, such as \"cellar\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a point of interest that is not a name",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    3
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/pois/0 section.pois[0] must be a point of interest, such as \"the rusted grate\""
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a warden with nothing in it",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/warden section.warden must be between 1 and 40"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an affix the pack never defines",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "vast"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /elites/affixes/1 every affix a section names must be defined by the pack, and 'vast' is not"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an elite-led group with no affix to lead it",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": []
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "a family the blueprint does not have",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "ghost",
+     "weight": 1
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /families/0/family unknown family 'ghost'"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "affixes named in a pack with no affixes.json",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": null,
+  "errors": [
+   "sections/cellar.json: /elites/affixes/0 affix 'broad' is named but this pack has no affixes.json",
+   "sections/cellar.json: /elites/affixes/1 affix 'quick' is named but this pack has no affixes.json"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a slot, a family and a pattern wrong at once",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "ghost",
+     "weight": 1
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "boss"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar"
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/pattern/8 section.pattern[8] must be \"entry\" or \"n\" or \"special\" or \"landing\" or \"warden\"",
+   "sections/cellar.json: /families/0/family unknown family 'ghost'"
+  ]
  }
 ]

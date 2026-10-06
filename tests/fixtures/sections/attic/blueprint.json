@@ -1,0 +1,11 @@
+{
+ "blueprint": 1,
+ "families": {
+  "beetle": {"defaults": {"name": "a hard-shelled beetle",
+                           "sprite": "beetle", "hp": 5, "atk": 2, "xp": 3}},
+  "moth": {"extends": "beetle", "defaults": {"name": "a pale moth",
+                                             "sprite": "moth", "hp": 2,
+                                             "atk": 1, "xp": 1, "sight": 4}}
+ },
+ "regions": {}
+}

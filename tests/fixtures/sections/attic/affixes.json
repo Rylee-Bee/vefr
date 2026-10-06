@@ -1,0 +1,5 @@
+[
+ {"id": "broad", "label": "Broad {name}", "hp": 1.4, "atk": 1.0,
+  "scale": 1.2, "extra_drops": 1},
+ {"id": "quick", "label": "Quick {name}", "sight": 2, "atk": 1.1}
+]

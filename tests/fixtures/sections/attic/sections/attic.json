@@ -1,0 +1,26 @@
+{
+ "section": 2,
+ "id": "attic",
+ "floors": 11,
+ "size": {"w": [48, 56], "h": [32, 40]},
+ "rooms": [10, 14],
+ "tiles": {"#": "attic-wall", ".": "attic-floor", "u": "attic-stair-up",
+           "d": "attic-stair-down"},
+ "fog": {"radius": 3},
+ "families": [
+  {"family": "beetle", "weight": 1, "depth": [1, 11]},
+  {"family": "moth", "weight": 4, "depth": [4, 11]}
+ ],
+ "pattern": ["entry", "n", "special", "n", "landing", "n", "n", "special",
+             "n", "n", "warden"],
+ "specials": ["treasure"],
+ "elites": {"per_floor": [1, 1], "affixes": ["broad", "quick"]},
+ "groups": {"per_floor": [2, 3], "minions": [2, 2], "leader": "normal",
+            "same_family": false, "wake": "all", "leash": 4},
+ "curve": {"hp": [1.2, 1.6], "atk": [1.1, 1.4]},
+ "loot": {"tier": 2},
+ "stamps": ["attic"],
+ "pois": ["the boarded window", "the slipped slate"],
+ "warden": "ash-moth",
+ "vault": "vault-attic"
+}
