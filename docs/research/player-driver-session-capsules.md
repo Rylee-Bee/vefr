@@ -14,7 +14,7 @@ Yes, if VEFR builds one small player-driving seam and keeps the artifacts boring
 
 The proposal is:
 
-- one **Player Driver**: player-visible observation in, legal logical action out;
+- one **Player Driver**: legal logical action in, player-visible observation out;
 - one **Session Capsule**: a strict snapshot of VEFR-owned persistent state plus exact build identity;
 - one **Action Tape**: ordered logical player actions with optional input-source metadata and bounded checkpoints.
 
