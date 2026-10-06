@@ -460,30 +460,17 @@ RULE_SAY_LIMIT = 280
 # stack outweigh any single rule's worth.
 RULE_LIMIT = 40
 
-# The six events a rule may fire on became eleven: the first six are
-# the original vocabulary; the last five are facts the player already
-# performs (a fight won, a thing bought or sold, a book closed, the
-# watch turned) so the world can notice them. `says` is deliberately
-# absent: the woven player has nowhere to type words, so an event that
-# waited on typed speech could never fire.
-RULE_EVENTS = ('starts', 'enters', 'comes-near', 'opens', 'picks-up',
-               'uses-with', 'defeats', 'buys', 'sells', 'reads',
-               'phase-changes')
+# The event vocabulary is the schema table's, in the pack contract's
+# order: what an event is called, and the payload it carries. Both
+# names below are read from `shapes.EVENTS` - the one place either is
+# typed, which is what `vefr`'s pack contract, the two `when` validators
+# and the woven player's JS twin all have to agree on. S3 generates that
+# twin from the same table.
+RULE_EVENTS = tuple(shapes.EVENTS)
 
 # The payload each event carries, keyed by event name.
-RULE_EVENT_KEYS = {
-    'starts': (),
-    'enters': ('place',),
-    'comes-near': ('who', 'distance'),
-    'opens': ('what',),
-    'picks-up': ('what',),
-    'uses-with': ('item', 'with'),
-    'defeats': ('what',),
-    'buys': ('what',),
-    'sells': ('what',),
-    'reads': ('what',),
-    'phase-changes': ('to',),
-}
+RULE_EVENT_KEYS = {name: tuple(key.name for key in fields)
+                   for name, fields in shapes.EVENTS.items()}
 
 # The keys a condition may name. The `flag` form is the one condition
 # in the contract with two top-level keys: {"flag": ..., "is": ...}.
@@ -684,8 +671,23 @@ def _rule_payload_errors(rid: str, verb: str, val, fields, known: dict) -> list[
     return errors
 
 
+def _event_where(event: str, fields, key: str) -> str:
+    """Where one payload field is, as a sentence names it.
+
+    An event with a single field is named by the event alone; an event
+    with two is named by event and field, which is how both the rule
+    and the sticker sentences read today.
+    """
+    return f"when '{event}'" + (f' {key}' if len(fields) > 1 else '')
+
+
 def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
-    """The `when` of one rule: exactly one known event, right payload."""
+    """The `when` of one rule: exactly one known event, right payload.
+
+    Which events exist, what each one carries and what kind of pack id
+    each field names all come from `shapes.EVENTS`; this function only
+    decides whether the pack's own ids answer.
+    """
     if not isinstance(when, dict):
         return [f"rule '{rid}' when must be an event object"]
     if len(when) != 1:
@@ -697,6 +699,7 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
     payload = when[name]
     if not isinstance(payload, dict):
         return [f"rule '{rid}' when '{name}' carries an object payload"]
+    fields = shapes.EVENTS[name]
     want = RULE_EVENT_KEYS[name]
     errors: list[str] = []
     for k in payload:
@@ -707,42 +710,21 @@ def _rule_event_errors(rid: str, when, known: dict) -> list[str]:
             errors.append(f"rule '{rid}' when '{name}' needs key '{k}'")
     if errors:
         return errors
-    if name == 'starts':
-        return []
-    if name == 'enters':
-        return _rule_value_errors(rid, "when 'enters'", payload['place'], 'place', known)
-    if name == 'comes-near':
-        errors = _rule_value_errors(rid, "when 'comes-near' who", payload['who'],
-                                    'thing', known)
-        distance = payload['distance']
+    for field in fields:
+        where = _event_where(name, fields, field.name)
+        if field.ref is not None:
+            errors.extend(_rule_value_errors(rid, where, payload[field.name],
+                                             field.ref, known))
+            continue
+        distance = payload[field.name]
         # A bool is not an int: `true` must not pass as distance 1.
         # 0 is standing on the thing: the player fires tile contact at
         # distance 0, so the vocabulary accepts it.
         if isinstance(distance, bool) or not isinstance(distance, int) \
-                or not 0 <= distance <= 9:
-            errors.append(f"rule '{rid}' when 'comes-near' distance "
+                or not field.lo <= distance <= field.hi:
+            errors.append(f"rule '{rid}' {where} "
                           "must be an integer 0..9 (0 is standing on it)")
-        return errors
-    if name == 'opens':
-        return _rule_value_errors(rid, "when 'opens'", payload['what'], 'thing', known)
-    if name == 'picks-up':
-        return _rule_value_errors(rid, "when 'picks-up'", payload['what'], 'item', known)
-    if name == 'uses-with':
-        errors = _rule_value_errors(rid, "when 'uses-with' item", payload['item'],
-                                    'item', known)
-        errors += _rule_value_errors(rid, "when 'uses-with' with", payload['with'],
-                                     'thing', known)
-        return errors
-    if name == 'defeats':
-        return _rule_value_errors(rid, "when 'defeats'", payload['what'], 'enemy', known)
-    if name == 'buys':
-        return _rule_value_errors(rid, "when 'buys'", payload['what'], 'item', known)
-    if name == 'sells':
-        return _rule_value_errors(rid, "when 'sells'", payload['what'], 'item', known)
-    if name == 'reads':
-        return _rule_value_errors(rid, "when 'reads'", payload['what'], 'book', known)
-    return _rule_value_errors(rid, "when 'phase-changes'", payload['to'],
-                              'phase', known)
+    return errors
 
 
 def _rule_condition_errors(rid: str, cond, known: dict) -> list[str]:
@@ -1702,15 +1684,33 @@ def _album_name_errors(sid: str, where: str, val, known_set, noun: str) -> list[
     return []
 
 
+_KNOWN_FOR_REF = {
+    'item': 'items', 'place': 'places', 'thing': 'things',
+    'book': 'books', 'enemy': 'enemies', 'phase': 'phases',
+}
+
+
+def _known_ids(known: dict, ref: str) -> set:
+    """The pack's ids of one ref kind, as `_rule_known_ids` names them.
+
+    The one thing the table does not say: where a kind's ids are filed.
+    Spelled out rather than guessed at from the kind's name, because
+    not every plural is the name plus an `s`. A ref kind with no entry
+    raises here, on its first sticker, rather than resolving to nothing.
+    """
+    return known[_KNOWN_FOR_REF[ref]]
+
+
 def _album_when_errors(sid: str, when, known: dict) -> list[str]:
     """The `when` of one sticker: exactly one rules event, right payload.
 
-    The same vocabulary and identity model as a rule's `when` - a
-    sticker may name only what the pack declares (`_rule_known_ids`) -
-    but the wording is the sticker author's, never the rule
-    validator's, because an album is not a rule and the author has no
-    rule to look at. Each problem is one plain sentence naming the
-    sticker id, and the unknown thing when there is one.
+    The same vocabulary and identity model as a rule's `when` - both
+    read `shapes.EVENTS`, and a sticker may name only what the pack
+    declares (`_rule_known_ids`) - but the wording is the sticker
+    author's, never the rule validator's, because an album is not a
+    rule and the author has no rule to look at. Each problem is one
+    plain sentence naming the sticker id, and the unknown thing when
+    there is one.
     """
     if not isinstance(when, dict):
         return [f"sticker '{sid}' when must name one event"]
@@ -1722,6 +1722,7 @@ def _album_when_errors(sid: str, when, known: dict) -> list[str]:
     payload = when[event]
     if not isinstance(payload, dict):
         return [f"sticker '{sid}' when '{event}' carries an object payload"]
+    fields = shapes.EVENTS[event]
     want = RULE_EVENT_KEYS[event]
     errors: list[str] = []
     for key in payload:
@@ -1732,48 +1733,19 @@ def _album_when_errors(sid: str, when, known: dict) -> list[str]:
             errors.append(f"sticker '{sid}' when '{event}' needs key '{key}'")
     if errors:
         return errors
-    # The event's named thing is checked against the pack's own ids -
+    # Each field's named thing is checked against the pack's own ids -
     # the exact model a rule uses, so the two never drift.
-    if event == 'starts':
-        return []
-    if event == 'enters':
-        return _album_name_errors(sid, "when 'enters'", payload['place'],
-                                  known['places'], 'place')
-    if event == 'comes-near':
-        errors = _album_name_errors(sid, "when 'comes-near' who", payload['who'],
-                                    known['things'], 'thing')
-        distance = payload['distance']
+    for field in fields:
+        where = _event_where(event, fields, field.name)
+        if field.ref is not None:
+            errors.extend(_album_name_errors(sid, where, payload[field.name],
+                                             _known_ids(known, field.ref), field.ref))
+            continue
+        distance = payload[field.name]
         if isinstance(distance, bool) or not isinstance(distance, int) \
-                or not 0 <= distance <= 9:
-            errors.append(f"sticker '{sid}' when 'comes-near' distance "
-                          "must be an integer 0 to 9")
-        return errors
-    if event == 'opens':
-        return _album_name_errors(sid, "when 'opens'", payload['what'],
-                                  known['things'], 'thing')
-    if event == 'picks-up':
-        return _album_name_errors(sid, "when 'picks-up'", payload['what'],
-                                  known['items'], 'item')
-    if event == 'uses-with':
-        errors = _album_name_errors(sid, "when 'uses-with' item", payload['item'],
-                                    known['items'], 'item')
-        errors += _album_name_errors(sid, "when 'uses-with' with", payload['with'],
-                                     known['things'], 'thing')
-        return errors
-    if event == 'defeats':
-        return _album_name_errors(sid, "when 'defeats'", payload['what'],
-                                  known['enemies'], 'enemy')
-    if event == 'buys':
-        return _album_name_errors(sid, "when 'buys'", payload['what'],
-                                  known['items'], 'item')
-    if event == 'sells':
-        return _album_name_errors(sid, "when 'sells'", payload['what'],
-                                  known['items'], 'item')
-    if event == 'reads':
-        return _album_name_errors(sid, "when 'reads'", payload['what'],
-                                  known['books'], 'book')
-    return _album_name_errors(sid, "when 'phase-changes'", payload['to'],
-                              known['phases'], 'phase')
+                or not field.lo <= distance <= field.hi:
+            errors.append(f"sticker '{sid}' {where} must be an integer 0 to 9")
+    return errors
 
 
 def album_errors(w: dict, pack_dir: Path | None = None) -> list[str]:
