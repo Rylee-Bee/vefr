@@ -9,7 +9,9 @@ written after the port records whatever the port happens to do.
 The sweep is the cell count PLAN.md section 2 names: **200 seeds x every size x
 every floor kind**, plus a stamped half at the two smallest sizes, because the
 spec places stamped rooms (E5a) and a twin that cannot place them is not a
-twin. Every case is compared at four stage boundaries - plan, layout, graph,
+twin. Plus a small nonzero-cycle block, because `cycle` is a quarter of the
+floor key and a sweep of cycle-0 floors cannot tell a twin that reads the cycle
+apart from one that ignores it. Every case is compared at four stage boundaries - plan, layout, graph,
 pop - so a mismatch names the stage it starts in instead of only saying the
 floor differs. Then the public `generateFloorV3` is compared end to end, retry
 ladder and v2 fallback included.
@@ -28,6 +30,7 @@ where it can compare the floor.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import shutil
@@ -42,7 +45,7 @@ import floor_v3_parity_cases as cases
 
 ROOT = cases.ROOT
 HARNESS = ROOT / "tests" / "fixtures" / "floor_v3_parity_harness.mjs"
-TWIN_PART = ROOT / "web" / "player" / "parts" / "395-engine-delve-v3.js"
+TWIN_PART = ROOT / "web" / "player" / "parts" / "396-engine-delve-v3.js"
 
 # The constants the determinism rule names in both languages, read off the spec
 # rather than written out, so a change to `delve_v3` moves this list with it.
@@ -104,7 +107,7 @@ def replay(tmp_path_factory):
     """Draw the whole sweep through the woven player, and compare it here.
 
     The comparison happens inside the fixture, while the harness output streams
-    past, so a 4800-case sweep costs one line of memory rather than the whole
+    past, so the whole case file costs one line of memory rather than the
     result set - and so a mismatch is reported with the seed, the size, the
     floor kind and the stage it starts in, which is what a port needs.
     """
@@ -132,9 +135,11 @@ def replay(tmp_path_factory):
         f"{run.stderr[-4000:]}")
 
     index = cases.by_index()
+    stages = _read_jsonl(Path(f"{out}.stages.jsonl"))
     return {
         "meta": meta,
-        "stages": cases.compare_stages(_read_jsonl(Path(f"{out}.stages.jsonl")), index),
+        "records": stages,
+        "stages": cases.compare_stages(stages, index),
         "full": cases.compare_full(_read_jsonl(Path(f"{out}.e2e.jsonl")), index),
         "reached": cases.reached(),
     }
@@ -152,9 +157,10 @@ def test_the_twin_is_in_the_woven_player(replay):
 
 def test_the_whole_sweep_was_replayed(replay):
     """Every case ran, both halves. A comparison of nothing is not a pass."""
-    expected = replay["reached"]["cases"]
-    assert expected == cases.SEED_COUNT * (
-        len(cases.SIZES) + len(cases.STAMP_SIZES)) * len(cases.FLOOR_KINDS)
+    expected = cases.expected_case_count()
+    assert replay["reached"]["cases"] == expected, (
+        f"the spec reached {replay['reached']['cases']} cases and the sweep is "
+        f"meant to be {expected}: the sweep, then the nonzero-cycle block")
     assert replay["stages"]["cases"] == expected, (
         f"the harness replayed {replay['stages']['cases']} of {expected} cases")
     assert replay["full"]["compared"] == expected, (
@@ -164,6 +170,70 @@ def test_the_whole_sweep_was_replayed(replay):
         assert replay["stages"]["compared"][stage] == replay["reached"][stage], (
             f"{replay['stages']['compared'][stage]} cases reached the {stage} "
             f"stage and the spec took {replay['reached'][stage]} there")
+
+
+def test_the_cycle_segment_of_the_key_is_exercised(replay):
+    """The parity sweep really does compare nonzero cycles, in both languages.
+
+    `cycle` is a quarter of the floor key, so a sweep made only of cycle-0
+    cases would pass against a twin that read the cycle as 0, dropped it, or
+    formatted it differently - every case would still agree. This holds that
+    the file carries nonzero-cycle cases at all four sizes, both stamp
+    settings, that the harness replayed them, and that each one was compared
+    stage by stage and end to end rather than skipped.
+    """
+    by_cycle: dict[int, list[dict]] = {}
+    for case in cases.case_file()["cases"]:
+        by_cycle.setdefault(case["cycle"], []).append(case)
+    nonzero = sorted(c for c in by_cycle if c != 0)
+    assert nonzero, "the case file carries no nonzero-cycle case at all"
+    assert nonzero == list(cases.CYCLES), (
+        f"the case file carries cycles {nonzero}, the sweep defines "
+        f"{list(cases.CYCLES)}")
+    replayed = {got["i"] for got in replay["records"]}
+    for cycle in nonzero:
+        block = by_cycle[cycle]
+        sizes = {case["size"] for case in block}
+        assert sizes == {f"{w}x{h}" for w, h, _ in cases.SIZES}, (
+            f"cycle {cycle} covers sizes {sorted(sizes)}, not all four")
+        assert {case["stamped"] for case in block} == {False, True}, (
+            f"cycle {cycle} does not cover both the plain and stamped halves")
+        missing = [case["i"] for case in block if case["i"] not in replayed]
+        assert not missing, (
+            f"cycle {cycle}: {len(missing)} of {len(block)} cases were not "
+            f"replayed by the harness, first {missing[:5]}")
+    # And the comparison itself: a nonzero-cycle case has to have been
+    # compared at the plan stage, or the block exists and proves nothing.
+    compared = replay["stages"]["compared"]["plan"]
+    assert compared == replay["reached"]["cases"], (
+        f"{compared} cases reached the plan stage and the spec took "
+        f"{replay['reached']['cases']} there, so a case was never compared")
+
+
+def test_a_nonzero_cycle_moves_the_floor():
+    """The same seed at another cycle is another floor, on the spec side.
+
+    The half of the key a cycle-0 sweep cannot show: hold the seed, the size,
+    the kind and the depth, and change only the cycle. A generator that built
+    `run_seed/section.id/k` and left the cycle out would draw the same floor
+    for every cycle, and this is what catches it.
+    """
+    same = []
+    for w, h, rooms in cases.SIZES:
+        for kind in cases.CYCLE_KINDS:
+            pack = cases.section(kind, rooms)
+            zero = delve_v3.generate_floor_v3(
+                "sweep-0", (w, h), copy.deepcopy(pack), kind,
+                None, cases.STAMP_DEPTH, cycle=0)
+            for cycle in cases.CYCLES:
+                other = delve_v3.generate_floor_v3(
+                    "sweep-0", (w, h), copy.deepcopy(pack), kind,
+                    None, cases.STAMP_DEPTH, cycle=cycle)
+                if json.dumps(zero, sort_keys=True) == json.dumps(other, sort_keys=True):
+                    same.append(f"{w}x{h} {kind} cycle={cycle}")
+    assert not same, (
+        "the cycle is not reaching the floor key: cycle 0 and a nonzero "
+        f"cycle drew the same floor at {', '.join(same[:5])}")
 
 
 def test_every_stage_matches(replay):
@@ -224,12 +294,22 @@ def test_generation_stays_inside_the_budget(replay):
                        for label, cell in sorted(perf.items()))
     print(f"\nv3 twin budget (node/jsdom): {report}")
     assert perf, "the harness measured no generation time at all"
+    # How many cases land in one size cell: the sweep's seeds at every floor
+    # kind, plus the nonzero-cycle block's seeds at `CYCLE_KINDS`. Counted
+    # from the case file's own labels rather than from a formula here, so this
+    # assertion follows the sweep instead of restating it.
+    per_label: dict[str, int] = {}
+    for case in cases.case_file()["cases"]:
+        label = case["size"] + ("-stamped" if case["stamped"] else "")
+        per_label[label] = per_label.get(label, 0) + 1
+    assert set(perf) == set(per_label), (
+        f"the harness measured {sorted(perf)} and the case file has "
+        f"{sorted(per_label)}")
     for label, cell in sorted(perf.items()):
-        assert cell["seeds"] == cases.SEED_COUNT * len(cases.FLOOR_KINDS), (
-            f"{label}: {cell['seeds']} samples, "
-            f"{cases.SEED_COUNT * len(cases.FLOOR_KINDS)} expected")
+        assert cell["seeds"] == per_label[label], (
+            f"{label}: {cell['seeds']} samples, {per_label[label]} expected")
         if cell["ms_p95"] > cases.BUDGET_DESKTOP_MS:
             pytest.fail(
                 f"{label}: generate + validate p95 is {cell['ms_p95']:.2f} ms over "
-                f"{cases.SEED_COUNT * len(cases.FLOOR_KINDS)} seeds, and the budget "
+                f"{cell['seeds']} seeds, and the budget "
                 f"is {cases.BUDGET_DESKTOP_MS:.0f} ms (PLAN.md section 3)")

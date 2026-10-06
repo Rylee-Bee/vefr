@@ -400,7 +400,7 @@ def _as_tile(value) -> tuple[int, int] | None:
 # Section a depth is in; the floor for that depth is drawn here, from a
 # run seed and nothing else. Everything below is pure: the same depth
 # always draws the same floor, in Python and in the JavaScript twin
-# beside it (web/player/parts/395-the-descent.js).
+# beside it (web/player/parts/397-the-descent.js).
 
 # The generation this descent draws. It rides in every floor's identity,
 # in the save (so a save from a different generation is offered the
@@ -600,7 +600,7 @@ def _canonical(value) -> str:
     shortest round-trip form. Every key of a record is written, including
     one whose value is null - which is what makes two Sections that differ
     only in a null and an absent key hash differently, as they should.
-    The JavaScript twin (web/player/parts/395-the-descent.js) has the same
+    The JavaScript twin (web/player/parts/397-the-descent.js) has the same
     function, and the parity harness is what proves they agree.
     """
     if value is None:

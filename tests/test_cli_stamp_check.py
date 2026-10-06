@@ -485,7 +485,7 @@ def test_a_floor_reports_the_roles_it_wanted_a_stamped_room_for():
     trace: dict = {}
     delve_v3.generate_floor_v3("check-0", (64, 48), SECTION, "normal",
                                 records, 3, trace=trace)
-    assert trace["floor_key"] == "check-0/cellar/normal"
+    assert trace["floor_key"] == "check-0/cellar/0/3"
     assert set(stamps.REQUIRED_ROLES) <= trace["slots"]
 
 

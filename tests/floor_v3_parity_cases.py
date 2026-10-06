@@ -57,9 +57,24 @@ STAMP_TAGS = ["cellar", "any"]
 # stamp's own depth range.
 STAMP_DEPTH = 3
 
-# The descent cycle every case belongs to, the 0 of PLAN.md section 2's
-# `run_seed/section.id/cycle/k`. The sweep is one story, so it is 0 here too.
+# The descent cycle the sweep belongs to, the 0 of PLAN.md section 2's
+# `run_seed/section.id/cycle/k`. The sweep is one story, so it is 0 here.
 CYCLE = 0
+
+# The nonzero cycles. `cycle` is a quarter of the floor key, so a sweep that
+# only ever drew cycle 0 never showed that quarter: a twin that dropped it, or
+# read it as 0, or formatted it differently, would have matched every other
+# case in the file and broken only after the first endless descent. These
+# cases are drawn by BOTH languages - the spec here, the twin in the harness
+# and in Chromium - so the segment is compared rather than assumed.
+#
+# A small block, not a second sweep: the cycle is a string in a key, so what
+# has to be proved is that it reaches the streams on both sides, and a few
+# seeds at every size and both stamp settings do that.
+CYCLE_SEED_COUNT = 8
+CYCLE_SEEDS = SEEDS[:CYCLE_SEED_COUNT]
+CYCLE_KINDS = ("normal", "hub")
+CYCLES = (1, 2)
 
 STAMP_FIXTURES = Path(__file__).parent / "fixtures" / "stamps"
 
@@ -116,9 +131,9 @@ def _records(with_stamps: bool) -> tuple:
     return stamp_pack() if with_stamps else ()
 
 
-def floor_key(seed: str, kind: str) -> str:
+def floor_key(seed: str, kind: str, cycle: int = CYCLE) -> str:
     """The floor key the spec builds: `run_seed/section.id/cycle/k`."""
-    return f"{seed}/{_pack(kind, 12, False)['id']}/{CYCLE}/{STAMP_DEPTH}"
+    return f"{seed}/{_pack(kind, 12, False)['id']}/{cycle}/{STAMP_DEPTH}"
 
 
 def canonical(value) -> str:
@@ -132,14 +147,15 @@ def canonical(value) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
-# Bounded, not unbounded: a whole sweep is 4800 floors and every one of them
+# Bounded, not unbounded: the sweep is ~4800 floors and every one of them
 # keeps its rows, so an unbounded cache would hold a few hundred megabytes of
 # FloorPlan for the length of the session. A small cache still collapses the
 # three passes over the sweep (the stage comparison, the end-to-end one and
 # `reached`) into a handful of generations each.
 @lru_cache(maxsize=256)
 def staged(seed: str, width: int, height: int, kind: str,
-           with_stamps: bool = False, pinned: bool = False) -> dict:
+           with_stamps: bool = False, pinned: bool = False,
+           cycle: int = CYCLE) -> dict:
     """One attempt of one floor key, with every stage kept.
 
     `delve_v3._attempt` line for line, with the stage outputs kept instead of
@@ -153,7 +169,7 @@ def staged(seed: str, width: int, height: int, kind: str,
     """
     pack = copy.deepcopy(_pack(kind, _quota(width), with_stamps))
     records = list(_records(with_stamps))
-    key = f"{seed}/{pack['id']}/{CYCLE}/{STAMP_DEPTH}"
+    key = f"{seed}/{pack['id']}/{cycle}/{STAMP_DEPTH}"
 
     plan = delve_v3._plan_stage(delve_v3.prng(f"v3|{key}|plan"), pack, kind)
     canvas = delve_v3.Canvas(width, height)
@@ -225,12 +241,12 @@ def staged(seed: str, width: int, height: int, kind: str,
 
 @lru_cache(maxsize=256)
 def end_to_end(seed: str, width: int, height: int, kind: str,
-               with_stamps: bool = False) -> dict:
+               with_stamps: bool = False, cycle: int = CYCLE) -> dict:
     """`generate_floor_v3` itself: the retry ladder and the v2 fallback."""
     return delve_v3.generate_floor_v3(
         seed, (width, height),
         copy.deepcopy(_pack(kind, _quota(width), with_stamps)),
-        kind, list(_records(with_stamps)) or None, STAMP_DEPTH)
+        kind, list(_records(with_stamps)) or None, STAMP_DEPTH, cycle=cycle)
 
 
 def _quota(width: int) -> int:
@@ -256,22 +272,37 @@ def case_file() -> dict:
     """
     cases: list[dict] = []
     packs: dict[str, dict] = {}
+
+    def add(seed: str, width: int, height: int, kind: str,
+            with_stamps: bool, cycle: int) -> None:
+        key = pack_key(kind, width, with_stamps)
+        packs[key] = section(kind, _quota(width), with_stamps)
+        cases.append({
+            "i": len(cases),
+            "seed": seed,
+            "w": width,
+            "h": height,
+            "kind": kind,
+            "size": f"{width}x{height}",
+            "stamped": with_stamps,
+            "pack": key,
+            "cycle": cycle,
+        })
+
     for with_stamps, sizes in ((False, SIZES), (True, STAMP_SIZES)):
         for width, height, _rooms in sizes:
             for kind in FLOOR_KINDS:
-                key = pack_key(kind, width, with_stamps)
-                packs[key] = section(kind, _quota(width), with_stamps)
                 for seed in SEEDS:
-                    cases.append({
-                        "i": len(cases),
-                        "seed": seed,
-                        "w": width,
-                        "h": height,
-                        "kind": kind,
-                        "size": f"{width}x{height}",
-                        "stamped": with_stamps,
-                        "pack": key,
-                    })
+                    add(seed, width, height, kind, with_stamps, CYCLE)
+    # The nonzero-cycle block: the same sizes and the same seeds as the sweep,
+    # at every size and both stamp settings, so `cycle` reaches the streams in
+    # both languages rather than only ever being 0.
+    for cycle in CYCLES:
+        for with_stamps, sizes in ((False, SIZES), (True, STAMP_SIZES)):
+            for width, height, _rooms in sizes:
+                for kind in CYCLE_KINDS:
+                    for seed in CYCLE_SEEDS:
+                        add(seed, width, height, kind, with_stamps, cycle)
     return {
         "packs": packs,
         "stamps": [dict(record) for record in stamp_pack()],
@@ -281,10 +312,23 @@ def case_file() -> dict:
     }
 
 
+def expected_case_count() -> int:
+    """How many cases `case_file` is supposed to build, worked out here.
+
+    Written as arithmetic rather than read back off the file, so a case that
+    quietly stops being added is a failing count and not a smaller sweep that
+    nobody notices: the sweep, then the nonzero-cycle block.
+    """
+    sizes = len(SIZES) + len(STAMP_SIZES)
+    sweep = SEED_COUNT * sizes * len(FLOOR_KINDS)
+    cycles = len(CYCLES) * CYCLE_SEED_COUNT * len(CYCLE_KINDS) * sizes
+    return sweep + cycles
+
+
 def expected_stages(case: dict) -> dict[str, str]:
     """What the twin has to return for one case, stage by stage."""
     got = staged(case["seed"], case["w"], case["h"], case["kind"],
-                 case["stamped"])
+                 case["stamped"], cycle=case["cycle"])
     return {
         "plan": canonical(got["plan"]),
         "layout": canonical(got["layout"]),
@@ -296,9 +340,16 @@ def expected_stages(case: dict) -> dict[str, str]:
 
 
 def where(case: dict) -> str:
-    """The `(seed, size, kind, stamps)` stamp every failure message carries."""
+    """The `(seed, size, kind, stamps, cycle)` stamp every failure carries.
+
+    The cycle is in it because the nonzero-cycle cases are otherwise
+    indistinguishable from the sweep cases they sit next to: a mismatch at
+    `seed=sweep-0 size=48x32 kind=normal cycle=0` says one floor and nothing
+    about the cycle.
+    """
     stamp = " stamped" if case["stamped"] else ""
-    return f"seed={case['seed']} size={case['size']} kind={case['kind']}{stamp}"
+    return (f"seed={case['seed']} size={case['size']} kind={case['kind']}"
+            f"{stamp} cycle={case['cycle']}")
 
 
 def first_difference(want: str, got: str) -> str:
@@ -379,7 +430,7 @@ def compare_full(records: list[dict], by_index: dict[int, dict]) -> dict:
         case = by_index[got["i"]]
         compared += 1
         want = end_to_end(case["seed"], case["w"], case["h"], case["kind"],
-                          case["stamped"])
+                          case["stamped"], cycle=case["cycle"])
         if got["gen"] != want["gen"]:
             _note(gen_mismatches, f"{where(case)}: the twin returned gen "
                                  f"{got['gen']} and the spec returned gen "
@@ -412,7 +463,7 @@ def reached() -> dict:
         counts[stage] = 0
     for case in file["cases"]:
         got = staged(case["seed"], case["w"], case["h"], case["kind"],
-                     case["stamped"])
+                     case["stamped"], cycle=case["cycle"])
         counts["plan"] += 1
         counts["layout"] += 1
         if got["graph"] is not None:

@@ -269,7 +269,7 @@ def test_the_descent_part_draws_only_from_its_streams():
     from pathlib import Path
 
     part = Path(__file__).resolve().parent.parent / "web" / "player" / "parts" \
-        / "395-the-descent.js"
+        / "397-the-descent.js"
     text = part.read_text(encoding="utf-8")
     for banned in ("Math.random", "Date.now", "new Date", "performance.now",
                    "crypto.getRandomValues", "localStorage"):
