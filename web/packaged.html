@@ -4083,9 +4083,56 @@ window.VEFR_DESCENT = (function () {
 
   function floorBytes(record) { return bytesOf(record); }
 
+  // PLAN §3's other half: a visited floor may not carry more than
+  // FLOOR_BYTES, and nothing else in the save enforces that - forty floors
+  // at 1.5 KB is 60 KB, comfortably inside SAVE_BYTES, so a save of
+  // oversized records sails under the whole-save trim and the per-floor
+  // number is a claim rather than a contract.
+  //
+  // What a floor gives up, in this order:
+  //   1. the explored bitset. It is where the hero has walked, not what has
+  //      been done, and on a big floor it is the whole weight of the record;
+  //   2. the longest list of deltas, from its end, until it fits. Only a
+  //      pack whose floors carry more deltas than the budget allows gets
+  //      here, and it keeps as many as it can rather than being refused.
+  // The identity triple is never given up: a floor that is over budget is
+  // still the right floor, and its kills and chests stay true to it.
+  var FLOOR_LISTS = ['kills', 'chests', 'drops', 'secrets'];
+
+  function fitFloor(record) {
+    var out = copyRecord(record);
+    if (floorBytes(out) <= FLOOR_BYTES) return out;
+    out.fog = '';
+    while (floorBytes(out) > FLOOR_BYTES) {
+      var longest = '';
+      for (var i = 0; i < FLOOR_LISTS.length; i++) {
+        if (!longest || out[FLOOR_LISTS[i]].length > out[longest].length) {
+          longest = FLOOR_LISTS[i];
+        }
+      }
+      if (!out[longest].length) break;
+      out[longest].pop();
+    }
+    return out;
+  }
+
+  function fitFloors(doc) {
+    var names = Object.keys(isObj(doc.floors) ? doc.floors : {});
+    for (var i = 0; i < names.length; i++) {
+      if (isObj(doc.floors[names[i]])) doc.floors[names[i]] = fitFloor(doc.floors[names[i]]);
+    }
+    return doc;
+  }
+
   // The cap of PLAN §2: at most `FLOOR_CAP` floors, oldest first; and if
   // the save is still over its byte budget, the oldest bitsets go before
   // anything else, because a bitset is the whole weight of a floor.
+  //
+  // This is the whole-save half of the budget and nothing else: it is the
+  // frozen order of sacrifice, and it deliberately does not shrink a
+  // record to FLOOR_BYTES. The per-floor half is `fitFloors`, applied by
+  // `saveDoc` to what is about to be written, so a document that arrives
+  // oversized still reports exactly what the order of sacrifice leaves.
   function trimDoc(doc) {
     return fitDoc(doc).doc;
   }
@@ -4147,6 +4194,9 @@ window.VEFR_DESCENT = (function () {
   }
 
   function saveDoc(doc) {
+    // The whole-save trim first (its order of sacrifice is the frozen
+    // contract), then the per-floor budget on what survived it. Fitting a
+    // floor only ever makes the save smaller, so `fits` still holds.
     var fit = fitDoc(doc);
     if (!fit.fits) {
       refuse('This descent has grown too large to save, so what happened on '
@@ -4155,8 +4205,9 @@ window.VEFR_DESCENT = (function () {
       return null;
     }
     lastRefusal = '';
-    store.setJSON(docKey(), fit.doc);
-    return fit.doc;
+    var out = fitFloors(fit.doc);
+    store.setJSON(docKey(), out);
+    return out;
   }
 
   // ---- the floors a descent remembers ---------------------------------
@@ -4715,6 +4766,7 @@ window.VEFR_DESCENT = (function () {
   Object.defineProperty(api, 'floor', { get: floor });
   return api;
 })();
+
 function setupTown() {
   var world = window.VEFR_WORLD;
   var canvas = document.getElementById('town-canvas');
@@ -4726,8 +4778,15 @@ function setupTown() {
   // and `hero` stay `var`s so draw() and move() read the current
   // values instead of a stale capture.
   var regions = window.VEFR_REGIONS || {};
-  var transitions = window.VEFR_TRANSITIONS || [];
   var start = window.VEFR_START || {};
+
+  // The ways out of here, read at the moment they are asked for and never
+  // captured. The descent rebinds `window.VEFR_TRANSITIONS` when a new run
+  // clears the floors, so a `var` holding the list at boot went stale the
+  // moment the player pressed New descent: the new floor's stairs were
+  // wired into an array nobody read, and the hero was stranded. A captured
+  // list and a rebound one cannot drift if nothing captures.
+  function transitions() { return window.VEFR_TRANSITIONS || []; }
 
   // The current region's town data, from the baked regions (falling back
   // to the unified town when a pack baked no regions).
@@ -4803,6 +4862,8 @@ function setupTown() {
   }
   function saveSlain() {
     if (descentOn()) {
+      // The bare mob id, which is what `killKey` below matches a generated
+      // floor's kill on. The two are one shape, deliberately.
       var names = [];
       for (var i = 0; i < enemies.length; i++) {
         if (enemies[i] && !enemies[i].alive) names.push(enemies[i].id);
@@ -4820,6 +4881,24 @@ function setupTown() {
   function enemySig(raw) {
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
             raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
+  }
+  // How a kill is spelled in the save, which is the one thing the writer
+  // above and this matcher must agree on: the two shapes drifted and every
+  // slain monster on a generated floor came back on reload.
+  //
+  // The shape is the BARE MOB ID on a generated floor. A baked region is
+  // keyed by region name and can be rebuilt under that same name, so it
+  // needs the signature to tell one generation of a monster from the next.
+  // A generated floor is not: its record is already keyed by the floor's
+  // identity triple, and a floor the pack or the generator has moved on from
+  // is drawn again with an empty record (descent: `sweepIdentities`), so
+  // the id alone is enough - and the descent's save has a per-floor byte
+  // budget (PLAN §3) with no room for a signature on every monster.
+  //
+  // Not `slainKey`: that one is where a baked region's list is STORED, and
+  // this is what one of its entries is CALLED.
+  function killKey(e, sig) {
+    return descentOn() ? e.id : (e.id + '#' + sig);
   }
   function loadEnemies() {
     var dead = loadSlain();
@@ -4840,7 +4919,7 @@ function setupTown() {
         // A pack without it reads as zero: defeat still plays as before.
         xp: (typeof e.xp === 'number') ? e.xp : 0,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
-        alive: dead.indexOf(e.id + '#' + sig) === -1
+        alive: dead.indexOf(killKey(e, sig)) === -1
       };
     });
   }
@@ -6828,7 +6907,7 @@ function setupTown() {
     // Doors: every transition that leaves this region is drawn, so the
     // way to another map is visible underfoot.
     if (doorReady()) {
-      transitions.forEach(function (t) {
+      transitions().forEach(function (t) {
         if (!t || t.from !== regionName || !Array.isArray(t.at)) return;
         if (hideUnseen(t.at[0], t.at[1])) return;
         ctx.drawImage(doorImg, t.at[0] * T + T * 0.08, t.at[1] * T + T * 0.08,
@@ -6946,8 +7025,9 @@ function setupTown() {
 
   // A door on the current region's tile (nx,ny), if any.
   function transitionAt(nx, ny) {
-    for (var i = 0; i < transitions.length; i++) {
-      var t = transitions[i];
+    var list = transitions();
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i];
       if (t && t.from === regionName && Array.isArray(t.at)
           && t.at[0] === nx && t.at[1] === ny) return t;
     }
@@ -7179,7 +7259,7 @@ function setupTown() {
       candidates.push({ kind: 'chest', id: b.id, name: b.title || 'the chest',
                         at: [b.at[0], b.at[1]] });
     });
-    transitions.forEach(function (tr) {
+    transitions().forEach(function (tr) {
       if (!tr || tr.from !== regionName || !Array.isArray(tr.at)) return;
       if (typeof tr.at[0] !== 'number' || typeof tr.at[1] !== 'number') return;
       var key = tr.at[0] + ',' + tr.at[1];
@@ -7740,8 +7820,9 @@ function setupTown() {
   // way there still gets one honest line, without a direction.
   window.VEFR_RULES_POINT_TO = function (place) {
     var fromHere = null, entrance = null;
-    for (var i = 0; i < transitions.length; i++) {
-      var t = transitions[i];
+    var list = transitions();
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i];
       if (t.to === place && !entrance && Array.isArray(t.to_at)) entrance = t.to_at;
       if (t.from === regionName && t.to === place && Array.isArray(t.at)) {
         fromHere = t.at;

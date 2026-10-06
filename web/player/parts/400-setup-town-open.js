@@ -10,8 +10,15 @@ function setupTown() {
   // and `hero` stay `var`s so draw() and move() read the current
   // values instead of a stale capture.
   var regions = window.VEFR_REGIONS || {};
-  var transitions = window.VEFR_TRANSITIONS || [];
   var start = window.VEFR_START || {};
+
+  // The ways out of here, read at the moment they are asked for and never
+  // captured. The descent rebinds `window.VEFR_TRANSITIONS` when a new run
+  // clears the floors, so a `var` holding the list at boot went stale the
+  // moment the player pressed New descent: the new floor's stairs were
+  // wired into an array nobody read, and the hero was stranded. A captured
+  // list and a rebound one cannot drift if nothing captures.
+  function transitions() { return window.VEFR_TRANSITIONS || []; }
 
   // The current region's town data, from the baked regions (falling back
   // to the unified town when a pack baked no regions).

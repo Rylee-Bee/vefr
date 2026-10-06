@@ -24,6 +24,7 @@ This slice generates floors once, at build time, from a seed
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 
@@ -487,6 +488,11 @@ def descent_of(pack, pack_dir=None) -> dict:
     `sections/<id>.json` beside the pack (`pack_dir`); the named ones are
     read here so every caller - the validator, the bake, the tests - sees
     the same resolved list of records.
+
+    An id is pack data, so it goes through the same `_inside` guard
+    (`cli._inside`) every other name out of a pack goes through before it
+    touches the filesystem: an id like `../x` or `/etc/x` is refused in a
+    sentence rather than read and baked.
     """
     block = pack.get('descent') if isinstance(pack, dict) else None
     if not isinstance(block, dict):
@@ -494,20 +500,29 @@ def descent_of(pack, pack_dir=None) -> dict:
     listed = block.get('sections')
     if not isinstance(listed, list):
         return block
-    root = Path(pack_dir) if pack_dir is not None else None
+    from .cli import _inside  # here, not at the top: cli imports this module
+
+    base = os.path.realpath(str(pack_dir)) if pack_dir is not None else None
     sections = []
     for entry in listed:
         if not isinstance(entry, str):
             sections.append(entry)
             continue
-        path = (root / 'sections' / f'{entry}.json') if root else None
+        where = f'sections/{entry}.json'
+        if base is None:
+            raise ValueError(f"the Section {entry!r} is named but there is "
+                             f"no pack to read {where} from")
+        target = _inside(base, 'sections', f'{entry}.json')
+        if target is None:
+            raise ValueError(f"the Section {entry!r} is named but {where} "
+                             f"would leave the pack")
         try:
-            data = json.loads(path.read_text(encoding='utf-8'))
+            data = json.loads(Path(target).read_text(encoding='utf-8'))
         except (OSError, ValueError):
             raise ValueError(f"the Section {entry!r} is named but "
-                             f"sections/{entry}.json could not be read")
+                             f"{where} could not be read")
         if not isinstance(data, dict):
-            raise ValueError(f"sections/{entry}.json must be a Section record")
+            raise ValueError(f"{where} must be a Section record")
         sections.append({'id': entry, **data})
     return {**block, 'sections': sections}
 
@@ -580,11 +595,13 @@ def run_seed(base: str, run: int = 0) -> str:
 def _canonical(value) -> str:
     """A Section's content as the bytes both languages hash.
 
-    Keys in order, no spaces, `null` for what is not there, and a number
-    written the way both languages write one: a whole number as a whole
-    number, anything else in its shortest round-trip form. The JavaScript
-    twin (web/player/parts/395-the-descent.js) has the same function, and
-    the parity harness is what proves they agree.
+    Keys in order, no spaces, and a number written the way both languages
+    write one: a whole number as a whole number, anything else in its
+    shortest round-trip form. Every key of a record is written, including
+    one whose value is null - which is what makes two Sections that differ
+    only in a null and an absent key hash differently, as they should.
+    The JavaScript twin (web/player/parts/395-the-descent.js) has the same
+    function, and the parity harness is what proves they agree.
     """
     if value is None:
         return "null"
@@ -601,8 +618,6 @@ def _canonical(value) -> str:
     if isinstance(value, dict):
         parts = []
         for key in sorted(value, key=str):
-            if value[key] is None and key not in value:
-                continue
             parts.append(json.dumps(str(key), ensure_ascii=False) + ":"
                          + _canonical(value[key]))
         return "{" + ",".join(parts) + "}"

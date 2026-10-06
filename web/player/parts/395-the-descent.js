@@ -370,9 +370,56 @@ window.VEFR_DESCENT = (function () {
 
   function floorBytes(record) { return bytesOf(record); }
 
+  // PLAN §3's other half: a visited floor may not carry more than
+  // FLOOR_BYTES, and nothing else in the save enforces that - forty floors
+  // at 1.5 KB is 60 KB, comfortably inside SAVE_BYTES, so a save of
+  // oversized records sails under the whole-save trim and the per-floor
+  // number is a claim rather than a contract.
+  //
+  // What a floor gives up, in this order:
+  //   1. the explored bitset. It is where the hero has walked, not what has
+  //      been done, and on a big floor it is the whole weight of the record;
+  //   2. the longest list of deltas, from its end, until it fits. Only a
+  //      pack whose floors carry more deltas than the budget allows gets
+  //      here, and it keeps as many as it can rather than being refused.
+  // The identity triple is never given up: a floor that is over budget is
+  // still the right floor, and its kills and chests stay true to it.
+  var FLOOR_LISTS = ['kills', 'chests', 'drops', 'secrets'];
+
+  function fitFloor(record) {
+    var out = copyRecord(record);
+    if (floorBytes(out) <= FLOOR_BYTES) return out;
+    out.fog = '';
+    while (floorBytes(out) > FLOOR_BYTES) {
+      var longest = '';
+      for (var i = 0; i < FLOOR_LISTS.length; i++) {
+        if (!longest || out[FLOOR_LISTS[i]].length > out[longest].length) {
+          longest = FLOOR_LISTS[i];
+        }
+      }
+      if (!out[longest].length) break;
+      out[longest].pop();
+    }
+    return out;
+  }
+
+  function fitFloors(doc) {
+    var names = Object.keys(isObj(doc.floors) ? doc.floors : {});
+    for (var i = 0; i < names.length; i++) {
+      if (isObj(doc.floors[names[i]])) doc.floors[names[i]] = fitFloor(doc.floors[names[i]]);
+    }
+    return doc;
+  }
+
   // The cap of PLAN §2: at most `FLOOR_CAP` floors, oldest first; and if
   // the save is still over its byte budget, the oldest bitsets go before
   // anything else, because a bitset is the whole weight of a floor.
+  //
+  // This is the whole-save half of the budget and nothing else: it is the
+  // frozen order of sacrifice, and it deliberately does not shrink a
+  // record to FLOOR_BYTES. The per-floor half is `fitFloors`, applied by
+  // `saveDoc` to what is about to be written, so a document that arrives
+  // oversized still reports exactly what the order of sacrifice leaves.
   function trimDoc(doc) {
     return fitDoc(doc).doc;
   }
@@ -434,6 +481,9 @@ window.VEFR_DESCENT = (function () {
   }
 
   function saveDoc(doc) {
+    // The whole-save trim first (its order of sacrifice is the frozen
+    // contract), then the per-floor budget on what survived it. Fitting a
+    // floor only ever makes the save smaller, so `fits` still holds.
     var fit = fitDoc(doc);
     if (!fit.fits) {
       refuse('This descent has grown too large to save, so what happened on '
@@ -442,8 +492,9 @@ window.VEFR_DESCENT = (function () {
       return null;
     }
     lastRefusal = '';
-    store.setJSON(docKey(), fit.doc);
-    return fit.doc;
+    var out = fitFloors(fit.doc);
+    store.setJSON(docKey(), out);
+    return out;
   }
 
   // ---- the floors a descent remembers ---------------------------------

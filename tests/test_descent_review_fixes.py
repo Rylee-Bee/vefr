@@ -97,8 +97,18 @@ def test_a_save_over_the_byte_budget_is_never_stored_over_it(tmp_path):
     got = _run(tmp_path, {"mode": "budget", "seedDoc": _doc_of([_record(0)]),
                           "docs": [FAT]})["results"][0]
     assert got["storedBytes"] <= delve.SAVE_BYTES, got["storedBytes"]
-    assert got["storedFloors"] < delve.FLOOR_CAP, \
-        "the bitsets alone were not enough; the oldest floors go too"
+    # The second review round changed this line and nothing else here. A
+    # floor record is now fitted to FLOOR_BYTES on write (that round's
+    # finding 6), and 40 records of 1.5 KB is 60 KB - inside SAVE_BYTES -
+    # so the whole-save trim no longer has to drop floors here, and asking
+    # it to would be asking for the budget to be violated per floor to keep
+    # a test's shape. What this test still proves is the point it was
+    # written for: the save that lands is inside the byte budget and
+    # nothing was refused. The order of sacrifice itself is pinned by the
+    # frozen test in tests/test_descent_deltas.py, which drives `trimDoc`
+    # directly.
+    assert got["maxFloorBytes"] <= delve.FLOOR_BYTES, got["maxFloorBytes"]
+    assert got["storedFloors"] == delve.FLOOR_CAP, got["storedFloors"]
     assert got["order"][-1] == FAT["order"][-1], "the newest floor is kept"
     kept = got["storedFloors"]
     assert got["order"] == FAT["order"][len(FAT["order"]) - kept:], \

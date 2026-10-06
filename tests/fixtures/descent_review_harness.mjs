@@ -68,12 +68,19 @@ if (out.mode === 'budget' && out.hasApi) {
     const returned = D.saveDoc(JSON.parse(given));
     const stored = w.localStorage.getItem(key);
     const after = parsed(stored === null ? '' : stored);
+    // Every floor record as it was written, and the biggest one: PLAN §3's
+    // per-floor budget is about the record, not the whole save.
+    const floorSizes = Object.keys(after.floors || {})
+      .map((k) => JSON.stringify(after.floors[k]).length);
     out.results.push({
       given: given.length,
       storedBytes: stored === null ? -1 : stored.length,
       storedFloors: Object.keys(after.floors || {}).length,
       storedFlags: after.flags || {},
       order: after.order || [],
+      floors: after.floors || {},
+      floorSizes: floorSizes,
+      maxFloorBytes: floorSizes.length ? Math.max(...floorSizes) : 0,
       returnedBytes: returned ? JSON.stringify(returned).length : -1,
       refusal: typeof D.saveRefusal === 'function' ? D.saveRefusal() : null,
     });

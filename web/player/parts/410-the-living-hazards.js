@@ -24,6 +24,8 @@
   }
   function saveSlain() {
     if (descentOn()) {
+      // The bare mob id, which is what `killKey` below matches a generated
+      // floor's kill on. The two are one shape, deliberately.
       var names = [];
       for (var i = 0; i < enemies.length; i++) {
         if (enemies[i] && !enemies[i].alive) names.push(enemies[i].id);
@@ -41,6 +43,24 @@
   function enemySig(raw) {
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
             raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
+  }
+  // How a kill is spelled in the save, which is the one thing the writer
+  // above and this matcher must agree on: the two shapes drifted and every
+  // slain monster on a generated floor came back on reload.
+  //
+  // The shape is the BARE MOB ID on a generated floor. A baked region is
+  // keyed by region name and can be rebuilt under that same name, so it
+  // needs the signature to tell one generation of a monster from the next.
+  // A generated floor is not: its record is already keyed by the floor's
+  // identity triple, and a floor the pack or the generator has moved on from
+  // is drawn again with an empty record (descent: `sweepIdentities`), so
+  // the id alone is enough - and the descent's save has a per-floor byte
+  // budget (PLAN §3) with no room for a signature on every monster.
+  //
+  // Not `slainKey`: that one is where a baked region's list is STORED, and
+  // this is what one of its entries is CALLED.
+  function killKey(e, sig) {
+    return descentOn() ? e.id : (e.id + '#' + sig);
   }
   function loadEnemies() {
     var dead = loadSlain();
@@ -61,7 +81,7 @@
         // A pack without it reads as zero: defeat still plays as before.
         xp: (typeof e.xp === 'number') ? e.xp : 0,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
-        alive: dead.indexOf(e.id + '#' + sig) === -1
+        alive: dead.indexOf(killKey(e, sig)) === -1
       };
     });
   }

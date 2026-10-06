@@ -249,7 +249,7 @@
     // Doors: every transition that leaves this region is drawn, so the
     // way to another map is visible underfoot.
     if (doorReady()) {
-      transitions.forEach(function (t) {
+      transitions().forEach(function (t) {
         if (!t || t.from !== regionName || !Array.isArray(t.at)) return;
         if (hideUnseen(t.at[0], t.at[1])) return;
         ctx.drawImage(doorImg, t.at[0] * T + T * 0.08, t.at[1] * T + T * 0.08,
@@ -367,8 +367,9 @@
 
   // A door on the current region's tile (nx,ny), if any.
   function transitionAt(nx, ny) {
-    for (var i = 0; i < transitions.length; i++) {
-      var t = transitions[i];
+    var list = transitions();
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i];
       if (t && t.from === regionName && Array.isArray(t.at)
           && t.at[0] === nx && t.at[1] === ny) return t;
     }
@@ -600,7 +601,7 @@
       candidates.push({ kind: 'chest', id: b.id, name: b.title || 'the chest',
                         at: [b.at[0], b.at[1]] });
     });
-    transitions.forEach(function (tr) {
+    transitions().forEach(function (tr) {
       if (!tr || tr.from !== regionName || !Array.isArray(tr.at)) return;
       if (typeof tr.at[0] !== 'number' || typeof tr.at[1] !== 'number') return;
       var key = tr.at[0] + ',' + tr.at[1];

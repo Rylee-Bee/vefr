@@ -172,11 +172,22 @@ def test_the_same_seed_draws_the_same_floor_after_a_reload(page, woven):
 
 def test_a_third_floor_generates_on_its_own_seed(page, woven):
     open_woven(page, woven)
-    one = descend_to(page, 1)
-    two = delve.floor_plan(DESCENT, 2)
+    descend_to(page, 1)
     page.reload()
     open_woven(page, woven)
-    descend_to(page, 2)
+    descend_to(page, 3)
     got = read_floor(page)
-    assert got["name"] == two["name"]
-    assert got["rows"] != one["rows"], "a second floor is a different floor"
+    three = delve.floor_plan(DESCENT, 3)
+    # The floor the run key names, not merely a floor that differs from
+    # another one: a grid that merely differs from floor one's would pass
+    # even if every depth drew the same wrong floor.
+    assert got["name"] == three["name"], \
+        f"depth 3 is {got['name']}, not the floor depth 3 names"
+    assert got["key"] == three["key"], \
+        f"depth 3 is keyed {got['key']!r}, not {three['key']!r}"
+    assert got["rows"] == three["rows"], \
+        "the floor the key names is not the grid the key draws"
+    assert got["doc"]["floors"][three["name"]]["k"] == three["key"], \
+        "the save does not remember depth 3 as the floor that key names"
+    assert got["rows"] != delve.floor_plan(DESCENT, 1)["rows"], \
+        "a third floor is a different floor"
