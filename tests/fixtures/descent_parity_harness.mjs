@@ -4,7 +4,13 @@
    argv[2] = woven html, argv[3] = JSON cases made by pytest:
    {"descent": <the pack's descent block>, "depths": [1, 2, ...],
     "runs": [0, 1]}.
-   Prints {"hasApi": bool, "located": [...], "plans": [...]}. */
+   Prints {"hasApi": bool, "located": [...], "plans": [...]}.
+
+   A second descent may come with the cases as `blueprintDescent`, with
+   `blueprintDepths`: the same block plus the pack's Blueprint, which is
+   what a floor resolves its families through. It is planted exactly as
+   the first one is - the player reads the block at call time - and its
+   answers come back under `blueprint`. */
 import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 
@@ -35,6 +41,15 @@ if (out.hasApi) {
   }
   for (const run of cases.runs) {
     out.plans.push(D.floorPlan(1, run));
+  }
+}
+if (cases.blueprintDescent) {
+  w.VEFR_DESCENT_DEF = cases.blueprintDescent;
+  out.blueprint = { located: [], plans: [] };
+  for (const depth of cases.blueprintDepths) {
+    const at = D.locate(depth);
+    out.blueprint.located.push([at.cycle, at.section, at.k]);
+    out.blueprint.plans.push(D.floorPlan(depth));
   }
 }
 fs.writeSync(1, JSON.stringify(out) + '\n');

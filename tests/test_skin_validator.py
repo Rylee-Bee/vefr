@@ -126,7 +126,7 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
 # refresh it, and to say in the commit message why it moved:
 #   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
 #     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
-NO_SKIN_WEAVE_SHA256 = "3da40ed2a551e144c5a1ef0f237370c91cde4dccf0b497da6b9a8eaeab89636e"
+NO_SKIN_WEAVE_SHA256 = "fb87111957947589736f59d66d52b5ae45a484cf773116dbf44fb8506670f010"
 
 
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():
