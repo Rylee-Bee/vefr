@@ -277,6 +277,18 @@ def test_a_stamped_floor_draws_the_same_in_chromium(player, size):
     report = cases.compare_stages(stages, index)
     assert len(stages) == len(chunk), (
         f"Chromium drew {len(stages)} of {len(chunk)} stamped floors at {width}x{height}")
+    # Coverage, not just agreement. `compare_stages` skips a stage the twin left
+    # empty, so a twin that drew nothing would agree with the spec everywhere
+    # and this test would pass. The count it compared is held against the count
+    # the SPEC reaches on these very cases, which is what `expected_stages`
+    # already knows.
+    want = [cases.expected_stages(case) for case in chunk]
+    for stage in cases.STAGES:
+        reached_here = sum(1 for w in want if w.get(stage))
+        assert report["compared"][stage] == reached_here, (
+            f"Chromium compared {report['compared'][stage]} of the "
+            f"{reached_here} stamped {stage} stages the spec reaches at "
+            f"{width}x{height}, so a twin that drew nothing could pass")
     assert not report["mismatches"], (
         f"{len(report['mismatches'])} stamped mismatches in Chromium at "
         f"{width}x{height} (first {cases.REPORTED} shown):\n"
