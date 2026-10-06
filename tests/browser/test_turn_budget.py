@@ -75,7 +75,15 @@ WIDTH, HEIGHT, ROOMS = 128, 96, 40
 
 # One fixed seed, so the floor under test is the same floor every run
 # and a change in the number is a change in the AI, not a redraw.
-SEED = "budget-0"
+# `budget-1`, not `budget-0`: the floor-key change redrew every floor, and
+# `budget-0` no longer reaches the pop stage's cap - 34 monsters, where the
+# test needs 36. The seed was re-picked the way the two cramped fixtures in
+# `tests/test_elite_groups_pop.py` were: by drawing the sweep with the
+# Section THIS module builds (`section()`, 40 rooms, 128x96) and keeping the
+# floors that reach the cap. `budget-1` is the first of them; it draws 36
+# monsters and a warden, and the nearest of the 37 stands 16 tiles from the
+# stairs, so no sample can end on a first-monster attack.
+SEED = "budget-1"
 FLOOR_KIND = "normal"
 
 # 36 monsters plus the warden, which is ADR 0014's "37 at most" awake.
@@ -283,6 +291,26 @@ def _ai_source() -> str:
     return HARNESS.replace(
         "__PARTS__",
         "\n".join((PARTS / name).read_text(encoding="utf-8") for name in AI_PARTS))
+
+
+def test_the_fixture_reaches_the_warden_cap():
+    """The floor under test still carries 36 monsters and a warden.
+
+    The gate below needs a floor that is actually full: the budget is
+    `clamp(walkable // 30, 4, 36)`, and a floor that only reached 34 would
+    time a cheaper turn and call it a pass. That precondition is checked
+    here, in Python and without a browser, because the floor key is a
+    per-seed thing: a redraw of the seed is a broken fixture, and a broken
+    fixture is not a browser failure. When this fails, the seed is re-picked
+    by drawing the sweep with this module's own `section()` and keeping the
+    floors that reach the cap - never by lowering `AWAKE`.
+    """
+    plan = floor_plan()
+    roster_in = roster(plan)
+    assert len(roster_in) == AWAKE, (
+        f"seed {SEED} at {WIDTH}x{HEIGHT} drew {len(roster_in) - 1} monsters "
+        f"and a warden, not {AWAKE - 1} monsters and a warden; the budget is "
+        "clamp(walkable // 30, 4, 36) and this floor does not reach the cap")
 
 
 def test_turn_budget_with_37_awake_monsters(browser):
