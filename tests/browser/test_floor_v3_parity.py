@@ -37,7 +37,7 @@ from vefr import cli
 # `tests/` on the path for the node-side twin of the same comparison.
 _SPEC = importlib.util.spec_from_file_location(
     "floor_v3_parity_cases",
-    Path(__file__).resolve().parents[1] / "tests" / "floor_v3_parity_cases.py")
+    Path(__file__).resolve().parents[1] / "floor_v3_parity_cases.py")
 cases = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(cases)
 
@@ -66,7 +66,7 @@ __CANON__
 """
 
 DRAW_ONE = """
-(k) => {
+(ks) => ks.map((k) => {
   const D = window.VEFR_DELVE, C = window.__canon, P = window.__V3;
   const pack = P.packs[k.pack];
   const records = k.stamped ? P.stamps : [];
@@ -108,7 +108,7 @@ DRAW_ONE = """
     gen: gen,
     full: '',
   };
-}
+});
 """
 
 # One timed sample per seed, with the warm-up generation discarded: Chromium's
