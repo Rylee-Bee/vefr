@@ -4,13 +4,20 @@ One row per block: the keys it may hold, and the sentence each way a
 value can be wrong is spoken in. The validators in `maplab.py` call
 `check` and keep returning `list[str]`, so no caller changes.
 
+`EVENTS` is the same table for the rules vocabulary: one row per event
+a rule or a sticker may fire on, with the payload it carries and what
+kind of pack id each field names. Both `when` validators read it, so
+the vocabulary is typed here once (vefr #269 was it typed three times
+and drifting).
+
 `check(block, value)` returns a list of `Problem(code, pointer,
 sentence)`. Emission order is stable: stop at `not-object`; then the
 value's unknown keys in the value's own order; then each table key in
 table order (a missing required key, else its wrong value).
 
-`known` is reserved for slice S2's `unknown-ref`; it is accepted and
-ignored here.
+`known` is accepted and ignored: the id checks (`unknown-ref`) are
+spoken by the validators that own the pack, in their own author's
+words, and they read `EVENTS` below rather than `check`.
 
 Three of the values a block closes on are not plain scalars, and each
 has a kind of its own:
@@ -288,8 +295,8 @@ def check(block, value, known=None) -> list[Problem]:
 
     A non-object value stops at one `not-object` problem. Otherwise the
     value's unknown keys come first, in the value's own order, then
-    each table key in table order. `known` is accepted and ignored
-    (reserved for slice S2's `unknown-ref`).
+    each table key in table order. `known` is accepted and ignored (the
+    id checks are the validators' own; see `EVENTS`).
     """
     if not isinstance(value, dict):
         return [Problem(
@@ -480,6 +487,45 @@ BLOCKS = {
     'descent': DESCENT,
     'descent entry': DESCENT_ENTRY,
     'section': SECTION,
+}
+
+
+# ------------------------------------------------- the event vocabulary
+
+# One row per event a rule - and a sticker - may fire on: the name the
+# pack writes, the payload it carries, and for each field what kind of
+# pack id it names. A field with no `ref` is a number the table bounds
+# itself, and the bounds are the contract's.
+#
+# The six events a rule may fire on became eleven: the first six are
+# the original vocabulary; the last five are facts the player already
+# performs (a fight won, a thing bought or sold, a book closed, the
+# watch turned) so the world can notice them. `says` is deliberately
+# absent: the woven player has nowhere to type words, so an event that
+# waited on typed speech could never fire.
+#
+# This is the one place the vocabulary is typed on the Python side. The
+# woven player holds a JavaScript twin of it today (the `EVENTS` table
+# in the rules engine); slice S3 generates that block from here, and
+# until it does, `tests/test_event_table.py` fails if the two drift.
+#
+# The sentence each way of being wrong is spoken is NOT here: a rule's
+# `when` and a sticker's `when` are read by two validators that speak in
+# two different authors' words, and both read this table.
+EVENTS = {
+    'starts': (),
+    'enters': (Key('place', 'ref', ref='place'),),
+    'comes-near': (Key('who', 'ref', ref='thing'),
+                   Key('distance', 'int', lo=0, hi=9)),
+    'opens': (Key('what', 'ref', ref='thing'),),
+    'picks-up': (Key('what', 'ref', ref='item'),),
+    'uses-with': (Key('item', 'ref', ref='item'),
+                  Key('with', 'ref', ref='thing')),
+    'defeats': (Key('what', 'ref', ref='enemy'),),
+    'buys': (Key('what', 'ref', ref='item'),),
+    'sells': (Key('what', 'ref', ref='item'),),
+    'reads': (Key('what', 'ref', ref='book'),),
+    'phase-changes': (Key('to', 'ref', ref='phase'),),
 }
 
 
