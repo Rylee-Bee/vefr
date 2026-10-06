@@ -467,8 +467,14 @@ def test_the_special_floor_of_one_floor_is_the_same_every_time():
 def test_the_two_packs_draw_different_specials_because_they_name_different_ones():
     cellar, attic = fixture_pack("cellar"), fixture_pack("attic")
     assert sections.specials(attic) == ("treasure",)
+    assert sections.specials(cellar) == ("treasure", "infested", "hub")
     assert set(sections.floor_kind(attic, 3, f"check-{i}") for i in range(5)) \
         == {"treasure"}
+    # The same slot of the pattern in the other pack is not a treasure floor.
+    # This is the comparison the test name promises and the first version of it
+    # never made: it bound `cellar` and then only ever looked at `attic`.
+    assert set(sections.floor_kind(cellar, 3, f"check-{i}") for i in range(5)) \
+        != {"treasure"}
 
 
 # ------------------------------------------------------------------ landings
