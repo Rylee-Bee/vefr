@@ -389,13 +389,16 @@ def _named_tiles(plan: dict):
         yield "chest", (chest["at"][0], chest["at"][1])
 
 
-def _defect(plan: dict) -> str:
+def _defect(plan: dict, section: dict | None = None) -> str:
     """What is wrong with a floor that came back, or "".
 
     The properties of PLAN.md sections 2 and 4, read back out of the grid
-    rather than taken on the generator's word: one component, and every
-    named tile reachable from the up-stair. A v2 fallback floor has no
-    `pois` and no `spawns` and is caught by the `gen` check instead.
+    rather than taken on the generator's word: one component, every named
+    tile reachable from the up-stair, and - for a Section that names a
+    vault - a vault anchor, because an anchor is the Section's promise and
+    one that points at nothing is worse than no anchor at all. A v2
+    fallback floor has no `pois` and no `spawns` and is caught by the `gen`
+    check instead.
     """
     up = plan.get("anchors", {}).get("up")
     if up is None:
@@ -403,6 +406,9 @@ def _defect(plan: dict) -> str:
     reached = _reached(plan, (up[0], up[1]))
     if len(reached) != len(_walkable(plan)):
         return "the floor is in two pieces"
+    if isinstance(section, dict) and section.get("vault") \
+            and (plan.get("anchors") or {}).get("vault") is None:
+        return "the Section names a vault and the floor has no vault anchor"
     for what, tile in _named_tiles(plan):
         if tile not in reached:
             return f"the {what} at {tile[0]},{tile[1]} cannot be reached " \
@@ -446,7 +452,7 @@ def section_findings(pack_dir, seeds: int = SECTION_SEEDS) -> list[str]:
                 if plan.get("gen") != 3:
                     fell_back += 1
                     continue
-                defect = _defect(plan)
+                defect = _defect(plan, section)
                 if not defect:
                     continue
                 broken += 1
