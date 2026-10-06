@@ -220,25 +220,39 @@ def test_generation_stays_inside_the_budget_in_chromium(player):
     200 seeds at every size, timed in the page, at the desktop CPU rate and at
     `Emulation.setCPUThrottlingRate(4)` - the same throttle the E0a floor bench
     calls the phone proxy.
+
+    Every size is timed twice: once plain, and once carrying the fixture stamps.
+    A stamped floor is where the generator has the most to do - placement, a
+    rotation, a corridor routed round a locked tile - so a budget proved only on
+    the plain half is a budget proved on the easy half. The stamped half is the
+    two smallest sizes, which is the same scope the parity sweep uses.
     """
     page, context = player
     client = context.new_cdp_session(page)
     payload = _v3_payload()
     seeds = list(cases.SEEDS)
     kind = "normal"
+    stamped_sizes = {(w, h) for w, h, _ in cases.STAMP_SIZES}
     reported = []
     for width, height, _rooms in cases.SIZES:
-        pack = payload["packs"][cases.pack_key(kind, width, False)]
-        client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
-        desk = page.evaluate(PERF_ONE, [width, height, kind, pack, [], payload["depth"], seeds])
-        client.send("Emulation.setCPUThrottlingRate", {"rate": 4})
-        slow = page.evaluate(PERF_ONE, [width, height, kind, pack, [], payload["depth"], seeds])
-        client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
-        assert len(desk) == len(slow) == len(seeds), (
-            f"{width}x{height}: {len(desk)} desktop and {len(slow)} throttled "
-            f"samples, {len(seeds)} expected")
-        reported.append((f"{width}x{height}", percentile(desk, 0.50),
-                         percentile(desk, 0.95), percentile(slow, 0.95)))
+        halves = [("", False)]
+        if (width, height) in stamped_sizes:
+            halves.append(("-stamped", True))
+        for suffix, stamped in halves:
+            records = payload["stamps"] if stamped else []
+            pack = payload["packs"][cases.pack_key(kind, width, stamped)]
+            client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+            desk = page.evaluate(
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+            client.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+            slow = page.evaluate(
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+            client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+            assert len(desk) == len(slow) == len(seeds), (
+                f"{width}x{height}{suffix}: {len(desk)} desktop and {len(slow)} "
+                f"throttled samples, {len(seeds)} expected")
+            reported.append((f"{width}x{height}{suffix}", percentile(desk, 0.50),
+                             percentile(desk, 0.95), percentile(slow, 0.95)))
     for label, p50, p95, slow95 in reported:
         print(f"\nv3 {label}: desktop p50 {p50:.2f} ms, p95 {p95:.2f} ms; "
               f"phone proxy (4x) p95 {slow95:.2f} ms")
