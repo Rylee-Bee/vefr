@@ -17,8 +17,13 @@ feels like a walk. If a layout cannot satisfy that after many tries it
 relaxes to the widest pair it found rather than fail; the caller can
 measure the pair it got.
 
-This slice generates floors once, at build time, from a seed
-(`norns delve`). Per-playthrough generation is a later slice.
+Two ways in. `norns delve` still bakes floors once, at build time, from
+a seed. The descent (E1) draws floors at play time instead: a pack's
+`descent` block (`descent_of`) names its Sections, and `floor_plan` draws
+the floor at a given depth from the run seed, keyed by
+`floor_key(run_seed, section.id, cycle, k)` so each of its streams is
+independent and the same run always meets the same floor. The player's
+twin, web/player/parts/397-the-descent.js, draws the identical floor.
 """
 
 from __future__ import annotations
