@@ -9,13 +9,16 @@
     "store": {<key>: <value>, ...},     # planted before the page runs
     "seedDoc": <a document already in storage>,
     "docs": [<a document to hand to saveDoc>, ...],
-    "blockKey": "<the key a fake storage refuses to remove>"}
+    "blockKey": "<the key a fake storage refuses to remove>",
+    "failWrite": true}   # a browser that refuses to store a save at all
 
    budget:   for each document, put `seedDoc` in storage, call saveDoc,
              and report what storage holds afterwards.
    startover: enter the game so the card is offered, hand `store.raw()` a
              fake storage that refuses to remove `blockKey`, press Start
              over, and report what the card says and what is left.
+             `failWrite` makes every save throw, the way a full or
+             private-mode browser does.
 
    Every mode reports `bytes`: what the player's own `docBytes` and
    `floorBytes` make of a string of 100 U+2620, which is 100 UTF-16
@@ -110,6 +113,20 @@ if (out.mode === 'startover' && out.hasApi) {
   const line = w.document.getElementById('gen-card-line');
   out.offered = { cardHidden: card ? card.hidden : null, line: line ? line.textContent : null };
 
+  // What the player's own descent save holds, before anything is pressed:
+  // the save that has to survive a Start over that cannot write one.
+  out.before = { doc: w.localStorage.getItem(D.docKey()) };
+
+  // A browser that refuses to store anything at all: full, private mode,
+  // storage blocked. The shipped `store` gives up quietly on a write like
+  // this, which is the whole finding - a Start over that clears anyway
+  // leaves the player with no old save and no new one.
+  if (cases.failWrite) {
+    w.store.setJSON = function (key) {
+      throw new Error('QuotaExceededError: this browser would not store ' + key);
+    };
+  }
+
   // The storage the player has: every key the page really holds, and a
   // remove that refuses for one of them the way a full or private-mode
   // browser does. `store.raw()` is the only door into storage, so this is
@@ -135,9 +152,6 @@ if (out.mode === 'startover' && out.hasApi) {
   out.after = {
     cardHidden: card ? card.hidden : null,
     line: line ? line.textContent : null,
-    // What the page's own storage holds now, so "the save survived" can
-    // be asked of the save and not only of the key.
-    doc: w.localStorage.getItem(D.docKey()),
     left: names(),
     // What the page's own storage holds now, so "the save survived" can
     // be asked of the save and not only of the key.

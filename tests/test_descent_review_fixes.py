@@ -18,11 +18,10 @@ remove the way a full or private-mode browser does. The second is a
 walk, so it is played through the shared play kit the way the frozen
 lifecycle tests are.
 
-A second round of the same review (vefr#314) added one more, at the
-end of this file and proved the same way: the budgets counted UTF-16
-code units rather than the UTF-8 bytes the save is actually written as,
-so a floor carrying anything outside ASCII sailed under a budget it did
-not fit.
+A second round of the same review (vefr#314) added two more, at the end
+of this file and proved the same way: Start over erased the save when
+the browser would not store the new one, and the budgets counted UTF-16
+code units rather than the UTF-8 bytes the save is actually written as.
 """
 
 import json
@@ -242,6 +241,33 @@ def test_start_over_still_reloads_when_the_storage_lets_it(tmp_path):
                           "blockKey": None})
     assert got["returned"] is True
     assert got["after"]["left"] == [], "every vefr- key was removed"
+
+
+# ---- round 2: a Start over that cannot write does not erase ---------------
+
+def test_start_over_keeps_the_old_save_when_this_browser_cannot_store_a_new_one(tmp_path):
+    # `store.setJSON` gives up quietly when storage is full or blocked, so
+    # a browser like this one is not an error the player sees: it is a
+    # write that returns and leaves nothing behind. A Start over that
+    # clears on top of such a write destroys the only copy of the game
+    # and writes nothing in its place - a save gone, silently.
+    #
+    # So the old save must be here afterwards, whole, and the refusal
+    # must be said out loud rather than swallowed.
+    got = _run(tmp_path, {"mode": "startover", "store": _release_one_store(),
+                          "blockKey": None, "failWrite": True})
+    assert got["returned"] is False, \
+        "start over went through over a save this browser would not store"
+    after = got["after"]
+    assert after["cardHidden"] is False, "the card stays up: nothing was done"
+    assert DOC_KEY in after["left"], "the old save was cleared anyway"
+    assert OLD_SAVE_KEY in after["left"], "the old bag was cleared anyway"
+    # And the save itself, not only its key: the floors it remembers.
+    assert json.loads(after["doc"]) == json.loads(got["before"]["doc"]), \
+        "the old save was rewritten by a Start over that could not store one"
+    said = after["line"] or ""
+    assert "save" in said.lower() and "clear" in said.lower(), \
+        f"a Start over that stored nothing says so in plain words: {said!r}"
 
 
 # ---- round 2: the budgets are bytes, not UTF-16 code units ----------------

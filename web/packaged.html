@@ -7286,27 +7286,75 @@ window.VEFR_DESCENT = (function () {
     cardOpen = true;
   }
 
+  // A Start over clears every vefr- key on this site, and a clear cannot
+  // be taken back - so the browser is asked to STORE a save first, and
+  // the answer is read back rather than taken on trust. `store.setJSON`
+  // gives up quietly when storage is full or blocked, so a write that
+  // returned is not a write that happened; clearing on top of one of
+  // those erases the only copy of the game and leaves nothing behind,
+  // without a word to the player.
+  //
+  // The save written here is the new game's: this generation's mark, no
+  // floors, the same seed. It is the save the reload would write anyway;
+  // writing it first is what makes the clear safe.
+  function freshSave() {
+    var doc = freshDoc();
+    doc.card = GEN_VERSION;
+    return doc;
+  }
+
+  // Whether the new save is really in storage afterwards, not merely
+  // handed over to a store that swallowed it.
+  function storedSave(doc) {
+    var written = null;
+    try { written = saveDoc(doc); } catch (e) { return false; }
+    if (!isObj(written)) return false;
+    var back = store.getJSON(docKey(), null);
+    if (!isObj(back)) return false;
+    return JSON.stringify(back) === JSON.stringify(written);
+  }
+
   function startOver() {
+    var before = loadDoc();
+    if (!storedSave(freshSave())) {
+      sayStartOverFailed('Your saved game could not be cleared: this browser '
+        + 'would not store a new save, so clearing the old one would leave '
+        + 'you with nothing at all. Nothing has been cleared and nothing '
+        + 'has been lost. Free some space, or allow this site to store '
+        + 'data, then try Start over again.');
+      return false;
+    }
     var storage = store.raw();
     try { window.startoverKeys(storage); } catch (e) { /* read below says what is left */ }
     var left = vefrKeysIn(storage);
-    if (left === null) {
-      sayStartOverFailed('Your saved game could not be checked, so nothing has '
-        + 'been cleared and nothing has been lost. Clear this site\'s saved '
-        + 'game in your browser, then try Start over again.');
-      return false;
-    }
-    if (left.length) {
-      sayStartOverFailed('Your saved game could not be cleared: this browser '
-        + 'would not let the game remove ' + left.length
-        + (left.length === 1 ? ' save.' : ' saves.')
-        + ' Nothing has been lost. Clear this site\'s saved game in your '
-        + 'browser, then try Start over again.');
+    if (left === null || left.length) {
+      // The clear did not finish, so this was not a Start over: what was
+      // about to be erased goes back where it was, and the refusal is
+      // said. The message has always promised nothing was lost.
+      putBack(before);
+      if (left === null) {
+        sayStartOverFailed('Your saved game could not be checked, so nothing has '
+          + 'been cleared and nothing has been lost. Clear this site\'s saved '
+          + 'game in your browser, then try Start over again.');
+      } else {
+        sayStartOverFailed('Your saved game could not be cleared: this browser '
+          + 'would not let the game remove ' + left.length
+          + (left.length === 1 ? ' save.' : ' saves.')
+          + ' Nothing has been lost. Clear this site\'s saved game in your '
+          + 'browser, then try Start over again.');
+      }
       return false;
     }
     hideCard();
     window.location.reload();
     return true;
+  }
+
+  // The save that was there before a clear that did not finish. It goes
+  // back through `saveDoc`, so the documented order of sacrifice still
+  // decides what a too-large save keeps.
+  function putBack(doc) {
+    try { saveDoc(doc); } catch (e) { /* nothing left to say: the refusal above stands */ }
   }
 
   function offerCard() {
