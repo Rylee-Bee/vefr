@@ -17,6 +17,12 @@ storage, and Start over is proved against a storage that refuses one
 remove the way a full or private-mode browser does. The second is a
 walk, so it is played through the shared play kit the way the frozen
 lifecycle tests are.
+
+A second round of the same review (vefr#314) added one more, at the
+end of this file and proved the same way: the budgets counted UTF-16
+code units rather than the UTF-8 bytes the save is actually written as,
+so a floor carrying anything outside ASCII sailed under a budget it did
+not fit.
 """
 
 import json
@@ -66,8 +72,24 @@ def _doc_of(records, flags=None):
 
 
 def _bytes(value):
-    """The count `saveDoc` itself makes: `JSON.stringify(value).length`."""
-    return len(json.dumps(value, separators=(",", ":")))
+    """The count `saveDoc` itself made: `JSON.stringify(value).length`.
+
+    `ensure_ascii=False` because `JSON.stringify` does not escape a
+    character outside ASCII either - Python's default would count six
+    units where JavaScript counts one, and the two counts have to be the
+    same number for the same string for this helper to stand for it.
+    """
+    return len(json.dumps(value, separators=(",", ":"), ensure_ascii=False))
+
+
+def _utf8(value):
+    """The same document as the browser will hold it: UTF-8 bytes.
+
+    `_bytes` counts the way the code under review counted, so the two
+    together are the finding: on an ASCII save they are the same number,
+    and on a save carrying anything else they are not.
+    """
+    return len(json.dumps(value, separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
 
 
 def _run(tmp_path, cases):
@@ -220,3 +242,47 @@ def test_start_over_still_reloads_when_the_storage_lets_it(tmp_path):
                           "blockKey": None})
     assert got["returned"] is True
     assert got["after"]["left"] == [], "every vefr- key was removed"
+
+
+# ---- round 2: the budgets are bytes, not UTF-16 code units ----------------
+
+# A floor whose deltas carry a character outside ASCII. U+2620 is one
+# UTF-16 code unit and three UTF-8 bytes, so this record is under
+# FLOOR_BYTES by the old count and over it by the real one - the whole
+# finding in a single fixture.
+WIDE_ID = "☠"
+WIDE = _record(0)
+WIDE[1]["kills"] = [WIDE_ID + "x"] * 270
+
+
+def test_a_floor_over_the_byte_budget_is_saved_inside_it(tmp_path):
+    given = _doc_of([WIDE])
+    # The fixture is only a finding if the two counts disagree about it.
+    assert _bytes(WIDE[1]) <= delve.FLOOR_BYTES, \
+        "the fixture is over budget by string length too, so it proves nothing"
+    assert _utf8(WIDE[1]) > delve.FLOOR_BYTES, \
+        "the fixture is inside the budget by bytes too, so it proves nothing"
+
+    got = _run(tmp_path, {"mode": "budget", "seedDoc": _doc_of([_record(0)]),
+                          "docs": [given]})
+    floors = got["results"][0]["floors"]
+    assert floors, "the save was stored empty, so nothing is proved"
+    for name, record in floors.items():
+        assert _utf8(record) <= delve.FLOOR_BYTES, \
+            (f"floor {name} was stored at {_utf8(record)} bytes, over the "
+             f"{delve.FLOOR_BYTES} byte budget")
+        assert len(record["kills"]) < len(WIDE[1]["kills"]), \
+            "the record was stored whole: nothing was given up to the budget"
+
+
+def test_the_budgets_count_utf8_bytes(tmp_path):
+    # The counter itself, read off the running player. A hundred U+2620
+    # is 100 UTF-16 code units and 300 UTF-8 bytes; what the save stores
+    # is the JSON, so the quotes are counted too - 302 as a bare string,
+    # 308 inside a one-field record.
+    got = _run(tmp_path, {"mode": "budget", "seedDoc": _doc_of([_record(0)]),
+                          "docs": [_doc_of([_record(0)])]})
+    assert got["bytes"]["doc"] == 302, \
+        f"a hundred U+2620 weighs {got['bytes']['doc']}, not 302 bytes"
+    assert got["bytes"]["floor"] == 308, \
+        f"a record holding one weighs {got['bytes']['floor']}, not 308 bytes"

@@ -6779,7 +6779,15 @@ window.VEFR_DESCENT = (function () {
     return isWhole(run) && run >= 0 ? run : 0;
   }
 
-  function bytesOf(value) { return JSON.stringify(value).length; }
+  // PLAN §3's budgets are in BYTES, and the browser stores UTF-8, so
+  // they are counted in UTF-8 bytes. `String.length` counts UTF-16 code
+  // units, and one such unit is three bytes for most characters outside
+  // ASCII - so a floor whose Section id, flags or deltas carry an accent,
+  // an emoji or a skull weighed a third of what it weighs on disk and
+  // sailed under a budget it did not fit.
+  function bytesOf(value) { return utf8Length(JSON.stringify(value)); }
+
+  function utf8Length(text) { return new TextEncoder().encode(text).length; }
 
   function floorBytes(record) { return bytesOf(record); }
 

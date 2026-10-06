@@ -17,6 +17,10 @@
              fake storage that refuses to remove `blockKey`, press Start
              over, and report what the card says and what is left.
 
+   Every mode reports `bytes`: what the player's own `docBytes` and
+   `floorBytes` make of a string of 100 U+2620, which is 100 UTF-16
+   units and 300 UTF-8 bytes before the JSON quotes around it.
+
    Prints one line of JSON. */
 import fs from 'node:fs';
 import { JSDOM, VirtualConsole } from 'jsdom';
@@ -42,6 +46,14 @@ const w = dom.window;
 const wait = (ms) => new Promise((r) => w.setTimeout(r, ms));
 const D = w.VEFR_DESCENT;
 const out = { hasApi: !!(D && D.docKey), mode: cases.mode, errors };
+
+/* What the player's own byte counter makes of a hundred U+2620: one
+   hundred UTF-16 code units, three hundred UTF-8 bytes. A budget that
+   counts the first is not counting bytes. */
+if (D && D.docBytes && D.floorBytes) {
+  const wide = String.fromCharCode(0x2620).repeat(100);
+  out.bytes = { doc: D.docBytes(wide), floor: D.floorBytes({ s: wide }) };
+}
 
 /* The click into the game, the same one play.mjs's "begin" makes: the
    title screen's Enter, then the wait for the town to be up. */
@@ -115,12 +127,21 @@ if (out.mode === 'startover' && out.hasApi) {
     },
   });
 
-  out.returned = D.startOver();
+  let returned;
+  try { returned = D.startOver(); }
+  catch (e) { returned = 'threw: ' + String((e && e.message) || e); }
+  out.returned = returned;
   await wait(300);
   out.after = {
     cardHidden: card ? card.hidden : null,
     line: line ? line.textContent : null,
+    // What the page's own storage holds now, so "the save survived" can
+    // be asked of the save and not only of the key.
+    doc: w.localStorage.getItem(D.docKey()),
     left: names(),
+    // What the page's own storage holds now, so "the save survived" can
+    // be asked of the save and not only of the key.
+    doc: w.localStorage.getItem(D.docKey()),
     // Recorded, not asserted: jsdom does not navigate, so a reload shows
     // up only as its own "not implemented" on the console.
     reload: errors.some((m) => /not implemented/i.test(m) &&
