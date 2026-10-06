@@ -2465,7 +2465,7 @@ def _find(rows: list[str], glyph: str, width: int, height: int) -> list[int] | N
 
 def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
                       stamp_pack=None, depth: int = 1,
-                      trace: dict | None = None) -> dict:
+                      trace: dict | None = None, *, cycle: int = 0) -> dict:
     """Draw one v3 floor from `seed` and return its FloorPlan.
 
     `size_range` is the chosen `(w, h)` of the floor and nothing else.
@@ -2481,17 +2481,20 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
     The Section's own `stamps` tags say which of them this Section may
     use, and `depth` is `k`, the floor's 1-based position in its
     Section, which is what a stamp's own `depth` range is measured
-    against.
+    against. `cycle` is the descent cycle the floor belongs to and
+    defaults to 0, the story.
 
-    The floor key is `f"{seed}/{section_id}/{floor_kind}"`, so the same
-    seed, section and kind is the same floor, and two kinds of one
-    section are two floors. A floor that fails stage 5 is drawn again
-    from the same key with `|try{n}` appended, up to `MAX_TRIES` times;
-    after that the caller gets v2 geometry with `gen: 2` and the same
-    keys. The fallback rate is the fraction of calls that come back with
-    a `gen` other than 3. The LAST try pins the required stamps
-    (ADR 0013, Placement 4), and a floor that falls back to v2 over a
-    stamp carries `stamp_defect` naming the role that would not place.
+    The floor key is `f"{seed}/{section_id}/{cycle}/{depth}"` - the shape
+    PLAN.md section 2 writes, `run_seed/section.id/cycle/k` - so the same
+    seed, section, cycle and floor number is the same floor, and two
+    ordinary floors of one Section are two floors. A floor that fails
+    stage 5 is drawn again from the same key with `|try{n}` appended, up
+    to `MAX_TRIES` times; after that the caller gets v2 geometry with
+    `gen: 2` and the same keys. The fallback rate is the fraction of calls
+    that come back with a `gen` other than 3. The LAST try pins the
+    required stamps (ADR 0013, Placement 4), and a floor that falls back
+    to v2 over a stamp carries `stamp_defect` naming the role that would
+    not place.
 
     `trace`, when given, is a dict the floor writes its key and its
     wanted stamp roles into - what `vefr stamp check` measures a rate
@@ -2508,7 +2511,7 @@ def generate_floor_v3(seed: str, size_range, section: dict, floor_kind: str,
     pack = section if isinstance(section, dict) else {}
     raw_id = pack.get("id", "")
     section_id = raw_id if isinstance(raw_id, str) else str(raw_id or "")
-    base_key = f"{seed}/{section_id}/{floor_kind}"
+    base_key = f"{seed}/{section_id}/{cycle}/{depth}"
     records = [record for record in (stamp_pack or ()) if isinstance(record, dict)]
     defect = ""
     for attempt in range(MAX_TRIES + 1):

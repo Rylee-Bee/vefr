@@ -70,7 +70,7 @@ DRAW_ONE = """
   const D = window.VEFR_DELVE, C = window.__canon, P = window.__V3;
   const pack = P.packs[k.pack];
   const records = k.stamped ? P.stamps : [];
-  const key = k.seed + '/' + pack.id + '/' + k.kind;
+  const key = k.seed + '/' + pack.id + '/' + P.cycle + '/' + P.depth;
   const empty = { i: k.i, plan: '', layout: '', graph: '', pop: '', floor: '',
                   failed: '', gen: -1 };
   if (!D || typeof D.v3Attempt !== 'function') return empty;
@@ -82,7 +82,7 @@ DRAW_ONE = """
   }
   let gen = -1;
   try {
-    const full = D.generateFloorV3(k.seed, [k.w, k.h], pack, k.kind, records, P.depth);
+    const full = D.generateFloorV3(k.seed, [k.w, k.h], pack, k.kind, records, P.depth, P.cycle);
     gen = full.gen;
     // The whole floor comes back only where the stage comparison could not
     // already have covered it: a v2 fallback, or a floor whose first attempt
@@ -158,7 +158,8 @@ def player(browser, tmp_path_factory):
 
 def _v3_payload() -> dict:
     file = cases.case_file()
-    return {"packs": file["packs"], "stamps": file["stamps"], "depth": file["depth"]}
+    return {"packs": file["packs"], "stamps": file["stamps"],
+            "depth": file["depth"], "cycle": file["cycle"]}
 
 
 def _all_cases() -> list[dict]:
@@ -281,7 +282,7 @@ def test_a_stamped_floor_draws_the_same_in_chromium(player, size):
     width, height, _rooms = size
     index = cases.by_index()
     chunk = [case for case in _all_cases()
-             if case["stamped"] and case["w"] == width]
+             if case["stamped"] and case["w"] == width and case["h"] == height]
     assert chunk, f"no stamped cases at {width}x{height}"
     stages: list[dict] = []
     for start in range(0, len(chunk), CHUNK):

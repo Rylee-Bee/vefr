@@ -2604,22 +2604,25 @@
   // `stampPack` is the pack's stamp set as `vefr.stamps.load` hands it over: a
   // list of read records, already sorted by id. The Section's own `stamps`
   // tags say which of them this Section may use, and `depth` is `k`, the
-  // floor's 1-based position in its Section.
+  // floor's 1-based position in its Section. `cycle` is the descent cycle the
+  // floor belongs to and defaults to 0, the story.
   //
-  // The floor key is `seed/section.id/floor_kind`, so the same seed, section
-  // and kind is the same floor, and two kinds of one section are two floors.
-  // A floor that fails stage 5 is drawn again from the same key with `|try{n}`
-  // appended, up to MAX_TRIES times; after that the caller gets v2 geometry
-  // with `gen: 2` and the same keys. The fallback rate is the fraction of calls
-  // that come back with a `gen` other than 3. The LAST try pins the required
-  // stamps (ADR 0013, Placement 4), and a floor that falls back to v2 over a
-  // stamp carries `stamp_defect` naming the role that would not place.
+  // The floor key is `seed/section.id/cycle/depth` - the shape PLAN.md
+  // section 2 writes, `run_seed/section.id/cycle/k` - so the same seed,
+  // section, cycle and floor number is the same floor, and two ordinary floors
+  // of one Section are two floors. A floor that fails stage 5 is drawn again
+  // from the same key with `|try{n}` appended, up to MAX_TRIES times; after
+  // that the caller gets v2 geometry with `gen: 2` and the same keys. The
+  // fallback rate is the fraction of calls that come back with a `gen` other
+  // than 3. The LAST try pins the required stamps (ADR 0013, Placement 4), and
+  // a floor that falls back to v2 over a stamp carries `stamp_defect` naming
+  // the role that would not place.
   //
   // Deterministic: `prng` is the only source of randomness, so the same
   // arguments always return the same plan. Throws for a `size` that is not a
   // pair of whole numbers of 8 or more, and for a `floorKind` outside
   // FLOOR_KINDS.
-  function generateFloorV3(seed, size, section, floorKind, stampPack, depth) {
+  function generateFloorV3(seed, size, section, floorKind, stampPack, depth, cycle) {
     var sizeRange = readSize(size);
     if (FLOOR_KINDS.indexOf(floorKind) < 0) {
       throw new Error('floor_kind must be one of ' + FLOOR_KINDS.join(', '));
@@ -2627,11 +2630,12 @@
     var pack = isPlainObject(section) ? section : {};
     var rawId = pack.id;
     var sectionId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '');
-    var baseKey = seed + '/' + sectionId + '/' + floorKind;
+    if (depth === undefined || depth === null) depth = 1;
+    if (cycle === undefined || cycle === null) cycle = 0;
+    var baseKey = seed + '/' + sectionId + '/' + cycle + '/' + depth;
     var records = Array.isArray(stampPack)
       ? stampPack.filter(function (record) { return isPlainObject(record); })
       : [];
-    if (depth === undefined || depth === null) depth = 1;
     var defect = '';
     for (var attempt = 0; attempt <= MAX_TRIES; attempt++) {
       var floorKey = attempt === 0 ? baseKey : baseKey + '|try' + attempt;

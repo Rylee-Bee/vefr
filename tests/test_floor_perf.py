@@ -62,9 +62,11 @@ WALKABLE = frozenset(".ud")
 # The six goldens as (floor kind, seed, w, h). All four sizes of section 3
 # and all four floor kinds, so a size or a kind that stops drawing the same
 # plan is caught by one of the six. Two sizes carry a second kind, which is
-# what pins the floor key: same seed, same size, different kind, different
-# floor. The last one is the stress size on the only kind that can come back
-# `waypoint: true`.
+# what pins the section half of the floor key: same seed, same size, a pack
+# whose id is the other kind's, so a different key and a different floor. The
+# floor kind is not in the key - `run_seed/section.id/cycle/k` is - so it
+# reaches the floor through the plan and pop stages instead. The last one is
+# the stress size on the only kind that can come back `waypoint: true`.
 GOLDENS = [
     ("normal", "sweep-0", 48, 32),
     ("treasure", "sweep-1", 48, 32),
