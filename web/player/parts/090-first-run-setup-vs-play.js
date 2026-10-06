@@ -63,6 +63,13 @@ function bootstrap() {
   renderBagPanel();
   renderBagStrip();
   renderGold();
+  // Slice E1: the descent's own controls, once there is a town for them
+  // to sit in. A pack with no descent binds nothing and shows nothing.
+  if (window.VEFR_DESCENT) {
+    window.VEFR_DESCENT.wireEntry();
+    window.VEFR_DESCENT.bindDescent();
+    window.VEFR_DESCENT.offerCard();
+  }
   var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   var statusEl0 = document.getElementById('status');
   if (!tutorialDone()) {

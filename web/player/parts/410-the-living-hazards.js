@@ -11,11 +11,26 @@
     var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
     return 'vefr-slain-' + w + '-' + regionName;
   }
+  // A generated floor remembers its kills in the descent's own save,
+  // beside its explored bitset, because a floor that was never baked is
+  // not a region name anyone kept a key for.
+  function descentOn() {
+    return !!(window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName));
+  }
   function loadSlain() {
+    if (descentOn()) return window.VEFR_DESCENT.loadKills();
     var a = store.getJSON(slainKey(), []);
     return Array.isArray(a) ? a : [];
   }
   function saveSlain() {
+    if (descentOn()) {
+      var names = [];
+      for (var i = 0; i < enemies.length; i++) {
+        if (enemies[i] && !enemies[i].alive) names.push(enemies[i].id);
+      }
+      window.VEFR_DESCENT.saveKills(names);
+      return;
+    }
     var dead = enemies.filter(function (e) { return !e.alive; })
       .map(function (e) { return e.id + '#' + (e.sig || ''); });
     store.setJSON(slainKey(), dead);
@@ -23,12 +38,29 @@
   // A monster is remembered by what it *is*, not only by its name: move it,
   // restat it, or regenerate the floor, and it is a new monster again. So a
   // rebuild never leaves a floor mysteriously empty.
+  //
+  // That is what a BAKED region needs, because its kill list is a flat
+  // storage key with nothing else in it: the signature is the only thing
+  // there that can tell a rebuilt floor from the floor that was played.
+  //
+  // A generated floor already carries that answer, and carries it better:
+  // the descent's own record is keyed by the floor's identity triple - gen
+  // version, section content hash, floor key - and PLAN §2's per-floor save
+  // is "killed mob ids", nothing else. So on a generated floor the id IS
+  // the whole of the memory, and matching it against a signature compares
+  // "m0" with "m0#a pale moth|13,15|1|1|" and never matches: every kill on
+  // every floor that was never baked was forgotten the moment the page was
+  // reloaded, which is the one thing a kill list exists to stop.
+  function slainKeyFor(id, sig, generated) {
+    return generated ? id : id + '#' + sig;
+  }
   function enemySig(raw) {
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
             raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
   }
   function loadEnemies() {
     var dead = loadSlain();
+    var generated = descentOn();
     var list = enemiesByRegion[regionName] || [];
     enemies = list.map(function (e) {
       var sig = enemySig(e);
@@ -46,7 +78,7 @@
         // A pack without it reads as zero: defeat still plays as before.
         xp: (typeof e.xp === 'number') ? e.xp : 0,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
-        alive: dead.indexOf(e.id + '#' + sig) === -1
+        alive: dead.indexOf(slainKeyFor(e.id, sig, generated)) === -1
       };
     });
   }

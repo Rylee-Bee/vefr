@@ -2254,6 +2254,17 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
                                             ensure_ascii=False))
     out_html = out_html.replace('{{library_json}}', _json.dumps(books, ensure_ascii=False))
     out_html = out_html.replace('{{regions_json}}', _json.dumps(regions, ensure_ascii=False))
+    # The pack's descent block (slice E1), resolved and with the engine's
+    # own dungeon legend beside it, so the player draws a floor out of the
+    # same tiles the baked floors use without inventing any of its own. A
+    # pack that declares no descent bakes the literal `null`, and the
+    # player grows no regions.
+    from . import delve as delve_mod
+    descent = delve_mod.descent_of(world, pack)
+    if descent:
+        descent = {**descent, 'legend': delve_mod.LEGEND}
+    out_html = out_html.replace('{{descent_json}}',
+                                _json.dumps(descent or None, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
                                 _json.dumps(transitions, ensure_ascii=False))
     out_html = out_html.replace('{{speakers_json}}',

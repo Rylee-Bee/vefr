@@ -59,7 +59,8 @@ def load_pack(pack_dir: Path) -> dict:
     exactly as before. The optional `skin` field (design/ui-skin.md)
     is carried the same way: only when the pack declares it, so a pack
     without one loads exactly as before. The optional `saves` block
-    (docs/adr/0009-rule-saves.md) rides through the same way.
+    (docs/adr/0009-rule-saves.md) and the optional `descent` block
+    (slice E1) ride through the same way.
     """
     pack = Path(pack_dir)
     config = json.loads((pack / 'world.json').read_text(encoding='utf-8'))
@@ -172,6 +173,10 @@ def load_pack(pack_dir: Path) -> dict:
         # pack declares it (design/growth.md).
         if 'growth' in config:
             unified['growth'] = config['growth']
+        # The optional descent block (slice E1), carried through ONLY when
+        # the pack declares it: a pack with none loads exactly as before.
+        if 'descent' in config:
+            unified['descent'] = config['descent']
         # The optional saves block, carried through ONLY when the pack
         # declares it (docs/adr/0009-rule-saves.md): a pack with none
         # loads exactly as before.
@@ -990,6 +995,32 @@ def sound_errors(w: dict) -> list[str]:
     if 'sound' not in w:
         return []
     return [p.sentence for p in shapes.check(shapes.BLOCKS['sound'], w['sound'])]
+
+
+def descent_errors(w: dict, pack_dir=None) -> list[str]:
+    """Every problem with a pack's optional `descent` block (empty = good).
+
+    Slice E1: a descent is the run seed, the tile it starts from, and the
+    Sections it walks. A Section may be written out in the block or named
+    by id and kept in `sections/<id>.json`; the named ones are resolved
+    here, so the check sees the same records the bake will. `shapes`
+    speaks for the block, its entry tile and each Section in it. A pack
+    that declares no descent gets no output at all, exactly as before.
+    """
+    if 'descent' not in w:
+        return []
+    from . import delve as delve_mod
+
+    problems = list(shapes.check(shapes.BLOCKS['descent'], w['descent']))
+    entry = w['descent'].get('entry') if isinstance(w['descent'], dict) else None
+    if isinstance(entry, dict):
+        problems.extend(shapes.check(shapes.BLOCKS['descent entry'], entry))
+    try:
+        resolved = delve_mod.descent_of(w, pack_dir)
+    except ValueError as exc:
+        return _shape_sentences('world.json', problems) + [f'world.json: {exc}']
+    problems.extend(shapes.check_descent(resolved))
+    return _shape_sentences('world.json', problems)
 
 
 # ADR 0014 keeps the affix list and the Section packs in files of their
@@ -2309,6 +2340,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # checked beside the other optional catalogs. A pack that declares
     # none gets nothing here.
     errors.extend(sound_errors(w))
+    # The pack's optional descent block (slice E1): the run seed, the
+    # tile the descent starts from and its Sections. A pack that declares
+    # none gets nothing here.
+    errors.extend(descent_errors(w, pack_dir))
     # The pack's optional affix list and Section packs (ADR 0014), read
     # off the disk beside the blocks above: one `affixes.json` at the
     # root and one `sections/<id>.json` per Section. `shapes` speaks for
