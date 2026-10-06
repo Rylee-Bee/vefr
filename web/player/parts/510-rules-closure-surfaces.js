@@ -25,8 +25,9 @@
   // way there still gets one honest line, without a direction.
   window.VEFR_RULES_POINT_TO = function (place) {
     var fromHere = null, entrance = null;
-    for (var i = 0; i < transitions.length; i++) {
-      var t = transitions[i];
+    var list = transitions();
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i];
       if (t.to === place && !entrance && Array.isArray(t.to_at)) entrance = t.to_at;
       if (t.from === regionName && t.to === place && Array.isArray(t.at)) {
         fromHere = t.at;

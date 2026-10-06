@@ -56,8 +56,21 @@
       explored[(i % w) + ',' + ((i / w) | 0)] = 1;
     }
   }
+  // A generated floor has no baked region and no fog key of its own: its
+  // explored tiles are one field of the floor's delta record, so the cap
+  // on remembered floors bounds the memory as well as the map.
+  function descentFog() {
+    return !!(window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName));
+  }
   function loadFog() {
     explored = {};
+    if (descentFog()) {
+      var packedFloor = window.VEFR_DESCENT.loadFog();
+      if (packedFloor) {
+        try { decodeFog(packedFloor); } catch (e) { /* unreadable: start dark */ }
+      }
+      return;
+    }
     var packed = store.get(fog2Key());
     if (packed) {
       try { decodeFog(packed); } catch (e) { /* unreadable memory: start dark */ }
@@ -73,6 +86,11 @@
   }
   function saveFog() {
     if (!fogOn) return false;   // fog off, or no fog here: write nothing
+    if (descentFog()) {
+      try { window.VEFR_DESCENT.saveFog(encodeFog()); }
+      catch (e) { return false; }
+      return true;
+    }
     var value;
     // Encode first: a failure must leave the store untouched.
     try { value = encodeFog(); } catch (e) { return false; }

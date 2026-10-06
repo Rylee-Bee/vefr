@@ -11,6 +11,16 @@
     return 'vefr-floor-' + w;
   }
   function loadFloor() {
+    // A generated floor keeps its drops in its own delta record: with the
+    // tile they lie on, and never the floor they lie on.
+    if (window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName)) {
+      floor = window.VEFR_DESCENT.loadDrops();
+      floor = Array.isArray(floor) ? floor.filter(function (d) {
+        return d && typeof d.item === 'string' && Array.isArray(d.at)
+          && d.at.length === 2 && itemCatalog()[d.item];
+      }) : [];
+      return;
+    }
     var a = store.getJSON(floorKey(), []);
     floor = Array.isArray(a) ? a.filter(function (d) {
       return d && typeof d.item === 'string' && typeof d.region === 'string'
@@ -18,6 +28,12 @@
     }) : [];
   }
   function saveFloor() {
+    if (window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName)) {
+      window.VEFR_DESCENT.saveDrops(floor.map(function (d) {
+        return { region: regionName, at: d.at.slice(), item: d.item };
+      }));
+      return;
+    }
     store.setJSON(floorKey(), floor);
   }
   function dropsAt(x, y) {
