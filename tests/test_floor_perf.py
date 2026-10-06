@@ -62,9 +62,17 @@ WALKABLE = frozenset(".ud")
 # The six goldens as (floor kind, seed, w, h). All four sizes of section 3
 # and all four floor kinds, so a size or a kind that stops drawing the same
 # plan is caught by one of the six. Two sizes carry a second kind, which is
-# what pins the floor key: same seed, same size, different kind, different
-# floor. The last one is the stress size on the only kind that can come back
-# `waypoint: true`.
+# what a kind that stops drawing its own plan is caught by: the pair at one
+# size is two different floor keys and two different floors, so a kind, a
+# seed or a size that moves is caught by a diff in one of the six. What that
+# pair does NOT hold is the section half of the key on its own - the two
+# members differ in their seed as well as in their Section id, so the pair
+# cannot say which half of `run_seed/section.id/cycle/k` did it.
+# `test_the_section_half_of_the_key_alone_moves_the_floor` below is the test
+# that says it: one seed, one size, one kind, two Section ids. The floor kind
+# is not in the key - `run_seed/section.id/cycle/k` is - so a kind reaches the
+# floor through the plan and pop stages instead. The last golden is the stress
+# size on the only kind that can come back `waypoint: true`.
 GOLDENS = [
     ("normal", "sweep-0", 48, 32),
     ("treasure", "sweep-1", 48, 32),
@@ -251,6 +259,40 @@ def test_goldens_match_a_fresh_draw():
                 f"{path.name}: the plan matches, but the file is not the canonical "
                 f"golden form. {_difference(stored_text, drawn)}{REGENERATE_HINT}"
             )
+
+
+def test_the_section_half_of_the_key_alone_moves_the_floor():
+    """One seed, one size, one kind, two Section ids: two floors.
+
+    The floor key is `run_seed/section.id/cycle/k`, so the section id is one
+    of the four things that names a floor. This holds everything else fixed -
+    same seed, same size, same floor kind, same `depth` and `cycle` - and
+    changes only `id`, so the floor that moves can only be the key's section
+    half moving.
+
+    It is the half the golden pairs above cannot show: those differ in their
+    seed as well as in their Section id, so a diff there says "the key
+    changed" and not "the section half is in the key".
+
+    Pinned at one seed per size, and on both sides of the cap: the floors are
+    allowed to be equal here ONLY if a floor cannot be drawn at all, which
+    would be a broken fixture rather than a floor worth asserting about.
+    """
+    for w, h, rooms in SIZES:
+        seed = SEEDS[0]
+        cellar = delve_v3.generate_floor_v3(
+            seed, (w, h), section("cellar-normal", rooms), "normal")
+        vault = delve_v3.generate_floor_v3(
+            seed, (w, h), section("cellar-vault", rooms), "normal")
+        where = f"seed {seed} at {w}x{h}"
+        if cellar["gen"] != 3 or vault["gen"] != 3:
+            pytest.fail(f"{where}: one of the two fell back to v2 geometry, so "
+                        "the pair proves nothing about the section half")
+        if json.dumps(cellar, sort_keys=True) == json.dumps(vault, sort_keys=True):
+            pytest.fail(
+                f"{where}: `cellar-normal` and `cellar-vault` drew the same "
+                "floor from the same seed, so the section id is not reaching "
+                "the floor key")
 
 
 def test_goldens_are_well_formed():

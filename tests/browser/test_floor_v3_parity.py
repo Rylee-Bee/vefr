@@ -70,7 +70,10 @@ DRAW_ONE = """
   const D = window.VEFR_DELVE, C = window.__canon, P = window.__V3;
   const pack = P.packs[k.pack];
   const records = k.stamped ? P.stamps : [];
-  const key = k.seed + '/' + pack.id + '/' + k.kind;
+  // The cycle is per case: the file carries a nonzero-cycle block as well
+  // as the cycle-0 sweep, so `P.cycle` is only the default.
+  const cycle = k.cycle === undefined ? P.cycle : k.cycle;
+  const key = k.seed + '/' + pack.id + '/' + cycle + '/' + P.depth;
   const empty = { i: k.i, plan: '', layout: '', graph: '', pop: '', floor: '',
                   failed: '', gen: -1 };
   if (!D || typeof D.v3Attempt !== 'function') return empty;
@@ -82,12 +85,14 @@ DRAW_ONE = """
   }
   let gen = -1;
   try {
-    const full = D.generateFloorV3(k.seed, [k.w, k.h], pack, k.kind, records, P.depth);
+    const full = D.generateFloorV3(k.seed, [k.w, k.h], pack, k.kind, records, P.depth, cycle);
     gen = full.gen;
     // The whole floor comes back only where the stage comparison could not
     // already have covered it: a v2 fallback, or a floor whose first attempt
-    // gave up and the retry ladder then drew.
-    if (!(gen === 3 && got.failed === '')) return Object.assign(empty, {
+    // gave up and the retry ladder then drew. The nonzero-cycle cases always
+    // send it, because the stage comparison is handed a key this script built
+    // and so cannot see what generateFloorV3 does with its own cycle argument.
+    if (!(gen === 3 && got.failed === '' && cycle === P.cycle)) return Object.assign(empty, {
       plan: C(got.plan), layout: C(got.layout),
       graph: got.graph === null ? '' : C(got.graph),
       pop: got.pop === null ? '' : C(got.pop),
@@ -115,13 +120,13 @@ DRAW_ONE = """
 # `performance.now()` resolves about 0.1 ms, which is fine for a floor and not
 # fine for a first call that pays for a JIT.
 PERF_ONE = """
-([w, h, kind, pack, stamps, depth, seeds]) => {
+([w, h, kind, pack, stamps, depth, cycle, seeds]) => {
   const D = window.VEFR_DELVE;
   const times = [];
   for (const seed of seeds) {
-    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth);
+    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth, cycle);
     const t0 = performance.now();
-    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth);
+    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth, cycle);
     times.push(performance.now() - t0);
   }
   return times;
@@ -158,7 +163,8 @@ def player(browser, tmp_path_factory):
 
 def _v3_payload() -> dict:
     file = cases.case_file()
-    return {"packs": file["packs"], "stamps": file["stamps"], "depth": file["depth"]}
+    return {"packs": file["packs"], "stamps": file["stamps"],
+            "depth": file["depth"], "cycle": file["cycle"]}
 
 
 def _all_cases() -> list[dict]:
@@ -187,6 +193,9 @@ def test_the_twin_draws_the_same_floor_in_chromium(player):
 
     expected = len(every)
     reached = cases.reached()
+    assert expected == cases.expected_case_count(), (
+        f"the case file built {expected} cases and the sweep is meant to be "
+        f"{cases.expected_case_count()}")
     assert len(stages) == expected, f"drew {len(stages)} of {expected} cases"
     stage_report = cases.compare_stages(stages, index)
     assert stage_report["cases"] == expected, (
@@ -243,10 +252,10 @@ def test_generation_stays_inside_the_budget_in_chromium(player):
             pack = payload["packs"][cases.pack_key(kind, width, stamped)]
             client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
             desk = page.evaluate(
-                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], payload["cycle"], seeds])
             client.send("Emulation.setCPUThrottlingRate", {"rate": 4})
             slow = page.evaluate(
-                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], payload["cycle"], seeds])
             client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
             assert len(desk) == len(slow) == len(seeds), (
                 f"{width}x{height}{suffix}: {len(desk)} desktop and {len(slow)} "
@@ -267,6 +276,40 @@ def test_generation_stays_inside_the_budget_in_chromium(player):
             f"{BUDGET_PHONE_MS:.0f} ms")
 
 
+def test_a_nonzero_cycle_draws_the_same_in_chromium(player):
+    """The nonzero-cycle block, in the browser, so `cycle` is compared there too.
+
+    The whole-sweep test above replays these cases, so a mismatch would be
+    caught - but it would be caught as "a case at seed=sweep-0" without saying
+    the cycle was the thing under test. This is the block on its own, so a
+    twin that reads the cycle as 0 fails here, named as a cycle failure, and
+    not as an unexplained diff inside the sweep.
+    """
+    page, _context = player
+    index = cases.by_index()
+    chunk = [case for case in _all_cases() if case["cycle"] != cases.CYCLE]
+    assert chunk, "the case file carries no nonzero-cycle case to replay"
+    stages: list[dict] = []
+    for start in range(0, len(chunk), CHUNK):
+        for record in page.evaluate(DRAW_ONE, chunk[start:start + CHUNK]):
+            stages.append({k: record[k] for k in ("i", "plan", "layout", "graph",
+                                                  "pop", "floor", "failed")})
+    report = cases.compare_stages(stages, index)
+    assert len(stages) == len(chunk), (
+        f"Chromium drew {len(stages)} of {len(chunk)} nonzero-cycle floors")
+    want = [cases.expected_stages(case) for case in chunk]
+    for stage in cases.STAGES:
+        reached_here = sum(1 for one in want if one.get(stage))
+        assert report["compared"][stage] == reached_here, (
+            f"Chromium compared {report['compared'][stage]} of the "
+            f"{reached_here} nonzero-cycle {stage} stages the spec reaches, "
+            "so a twin that drew nothing could pass")
+    assert not report["mismatches"], (
+        f"{len(report['mismatches'])} nonzero-cycle mismatches in Chromium "
+        f"(first {cases.REPORTED} shown):\n"
+        + cases.as_lines(report["mismatches"]))
+
+
 @pytest.mark.parametrize("size", cases.STAMP_SIZES,
                          ids=[f"{w}x{h}" for w, h, _ in cases.STAMP_SIZES])
 def test_a_stamped_floor_draws_the_same_in_chromium(player, size):
@@ -281,7 +324,7 @@ def test_a_stamped_floor_draws_the_same_in_chromium(player, size):
     width, height, _rooms = size
     index = cases.by_index()
     chunk = [case for case in _all_cases()
-             if case["stamped"] and case["w"] == width]
+             if case["stamped"] and case["w"] == width and case["h"] == height]
     assert chunk, f"no stamped cases at {width}x{height}"
     stages: list[dict] = []
     for start in range(0, len(chunk), CHUNK):

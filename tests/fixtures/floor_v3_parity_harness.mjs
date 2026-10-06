@@ -5,7 +5,12 @@
 
    <cases.json> (written by pytest, from tests/floor_v3_parity_cases.py):
      {"packs": {"<key>": <section pack>}, "stamps": [<stamp record>...],
-      "depth": 3, "cases": [{i, seed, w, h, kind, size, stamped, pack}]}
+      "depth": 3, "cycle": 0,
+      "cases": [{i, seed, w, h, kind, size, stamped, pack, cycle}]}
+
+   `cycle` is per case, because the file carries a nonzero-cycle block as well
+   as the cycle-0 sweep: the file-level `cycle` is only the sweep's default
+   and what the determinism check below asks the twin for.
 
    The canonical form is `tests/fixtures/floor_plan_canon.mjs`, imported here
    and injected into the Chromium test, so both paths compare the same bytes.
@@ -44,16 +49,18 @@ const cases = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
 const D = w.VEFR_DELVE;
 
 // The determinism check needs the stream names of a REAL floor key, because
-// that is what the check compares: `run_seed / section.id / floor_kind`, the
-// same three parts `tests/floor_v3_parity_cases.py:floor_key` builds. Asking
-// the twin for the streams of the literal 'seed/section/kind' could only ever
+// that is what the check compares: `run_seed / section.id / cycle / k`, the
+// same four parts `tests/floor_v3_parity_cases.py:floor_key` builds. Asking
+// the twin for the streams of the literal 'seed/section/0/1' could only ever
 // return that literal back, so the check could never be satisfied by a twin
-// that got the names right. The first case of the sweep carries the three
-// parts already: its seed, its kind, and its Section pack's id.
+// that got the names right. The first case of the sweep carries the four
+// parts already: its seed, its kind, its Section pack's id, and the sweep's
+// own cycle and k.
 const firstCase = cases.cases[0];
 const firstKey = firstCase
-  ? firstCase.seed + '/' + cases.packs[firstCase.pack].id + '/' + firstCase.kind
-  : 'seed/section/kind';
+  ? firstCase.seed + '/' + cases.packs[firstCase.pack].id + '/'
+    + cases.cycle + '/' + cases.depth
+  : 'seed/section/0/1';
 const meta = {
   hasApi: !!(D && typeof D.v3Attempt === 'function'
     && typeof D.generateFloorV3 === 'function'),
@@ -101,7 +108,7 @@ for (let c = 0; c < cases.cases.length; c++) {
   const pack = cases.packs[kase.pack];
   if (!pack) throw new Error('no Section pack named ' + kase.pack);
   const records = kase.stamped ? cases.stamps : [];
-  const key = kase.seed + '/' + pack.id + '/' + kase.kind;
+  const key = kase.seed + '/' + pack.id + '/' + kase.cycle + '/' + cases.depth;
 
   // A twin that throws on one case is a mismatch, not a dead harness: the
   // case is written out as it went wrong and the run carries on, so the test
@@ -127,16 +134,24 @@ for (let c = 0; c < cases.cases.length; c++) {
     failed: got.failed,
   }) + '\n');
 
+  // The perf label is size and stamp setting only, so the nonzero-cycle
+  // cases land in the same cells as the sweep and the p95 covers both.
   const label = kase.size + (kase.stamped ? '-stamped' : '');
   const floor = measure(label, function () {
     return D.generateFloorV3(kase.seed, [kase.w, kase.h], pack, kase.kind,
-      records, cases.depth);
+      records, cases.depth, kase.cycle);
   });
   // The whole floor comes back only when the stage comparison could not
   // already have covered it: a v2 fallback, or a floor the first attempt
   // failed and the retry ladder then drew. Everything else was compared
   // stage by stage, and the ladder is proved by the `gen` and by these two.
-  const settled = floor.gen === 3 && got.failed === '';
+  //
+  // The nonzero-cycle cases are the exception: they always send the floor,
+  // because the stage comparison above is handed a key the HARNESS built, so
+  // it cannot see what `generateFloorV3` does with its own `cycle` argument.
+  // A twin whose public call dropped the cycle from the key would agree on
+  // every stage and only be caught here.
+  const settled = floor.gen === 3 && got.failed === '' && kase.cycle === cases.cycle;
   fs.writeSync(e2e, JSON.stringify({
     i: kase.i,
     gen: floor.gen,

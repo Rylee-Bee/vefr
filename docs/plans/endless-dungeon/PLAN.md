@@ -106,7 +106,7 @@ Only stat, scale and drop fields until status effects land (then `inflicts`, for
 
 - **Depth.** `depth` is a global integer. `locate(depth, pack)` returns `(cycle, section, k)`; it is pure and derived only from the pack's Section list. The story is cycle 0.
 - **Floor key.** `floor_key = run_seed/section.id/cycle/k`.
-- **Streams.** Each stream is `prng("v3|" + floor_key + "|layout")`, and likewise for `|plan`, `|pop`, `|loot|<mob id>` and `|chest|<chest id>`. Separate streams mean that changing an affix table never moves a wall (§8 sub-seed rule). Loot is seeded per mob, so kill order never changes a drop.
+- **Streams.** Each stream is `prng("v3|" + floor_key + "|layout")`, and likewise for `|plan`, `|pop`, `|size`, `|special`, `|loot|<mob id>` and `|chest|<chest id>`. Separate streams mean that changing an affix table never moves a wall (§8 sub-seed rule). Loot is seeded per mob, so kill order never changes a drop. `|size` draws the floor's width and then its height, so a pack editing its own room quota moves no wall; `|special` draws which of the Section's `specials` a special slot is.
 - **Floor identity.** A floor is identified by `(gen version, section content hash, floor_key)`.
 - **Forbidden:**
   - `Math.random`, the clock, and globals;
