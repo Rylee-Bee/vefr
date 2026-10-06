@@ -323,7 +323,7 @@ def test_a_minion_that_is_never_placed_costs_no_draw(monkeypatch):
     minion that was never written to the plan, and every draw after it
     landed one step out of place.
 
-    The floor below is that floor: seed `pop-12` at 64x48 draws three
+    The floor below is that floor: seed `pop-13` at 48x32 draws three
     minions for `g0` and places two of them, so one placement fails. The
     draw count is then re-derived from the plan rather than read off the
     generator - one elite count, one group count, the group's minion
@@ -405,7 +405,7 @@ def test_a_leader_that_is_never_placed_costs_no_draw(monkeypatch):
     with three groups asked for and a leader pool of three tiles runs
     out at `g1` and never gets there.
 
-    The floor below is that floor: `pop-18` at 22x15 asks for three
+    The floor below is that floor: `pop-45` at 22x15 asks for three
     groups and is led once. The group's own minion count is still drawn
     before its leader is placed - a count is a statement of its own, the
     same way the elite count and the group count are, and ADR 0014 lists
