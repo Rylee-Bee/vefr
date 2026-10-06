@@ -1143,7 +1143,16 @@ def test_a_section_with_no_stamp_tags_draws_the_floor_it_always_drew():
             for seed in SEEDS[:10]:
                 pack = _stamped_section(kind, rooms)
                 pack.pop("stamps")
-                plain = delve_v3.generate_floor_v3(seed, (w, h), copy.deepcopy(pack), kind)
+                # Both sides ask for the SAME floor. This used to be able to
+                # compare a depth-1 draw against a depth-3 one because the
+                # floor key did not name the depth; under the key PLAN.md
+                # section 2 writes - run_seed/section.id/cycle/k, where k IS
+                # the depth - those are two different floors and can differ
+                # for that reason alone. The property under test is "offering
+                # stamps does not move a tile", and that is only a question
+                # about one floor.
+                plain = delve_v3.generate_floor_v3(
+                    seed, (w, h), copy.deepcopy(pack), kind, None, STAMP_DEPTH)
                 offered = delve_v3.generate_floor_v3(
                     seed, (w, h), copy.deepcopy(pack), kind, list(_stamp_pack()),
                     STAMP_DEPTH)

@@ -57,6 +57,10 @@ STAMP_TAGS = ["cellar", "any"]
 # stamp's own depth range.
 STAMP_DEPTH = 3
 
+# The descent cycle every case belongs to, the 0 of PLAN.md section 2's
+# `run_seed/section.id/cycle/k`. The sweep is one story, so it is 0 here too.
+CYCLE = 0
+
 STAMP_FIXTURES = Path(__file__).parent / "fixtures" / "stamps"
 
 # The budget of PLAN.md section 3, per size cell: generate + validate, p95 over
@@ -113,8 +117,8 @@ def _records(with_stamps: bool) -> tuple:
 
 
 def floor_key(seed: str, kind: str) -> str:
-    """The floor key the spec builds: `seed/section.id/floor_kind`."""
-    return f"{seed}/{_pack(kind, 12, False)['id']}/{kind}"
+    """The floor key the spec builds: `run_seed/section.id/cycle/k`."""
+    return f"{seed}/{_pack(kind, 12, False)['id']}/{CYCLE}/{STAMP_DEPTH}"
 
 
 def canonical(value) -> str:
@@ -149,7 +153,7 @@ def staged(seed: str, width: int, height: int, kind: str,
     """
     pack = copy.deepcopy(_pack(kind, _quota(width), with_stamps))
     records = list(_records(with_stamps))
-    key = f"{seed}/{pack['id']}/{kind}"
+    key = f"{seed}/{pack['id']}/{CYCLE}/{STAMP_DEPTH}"
 
     plan = delve_v3._plan_stage(delve_v3.prng(f"v3|{key}|plan"), pack, kind)
     canvas = delve_v3.Canvas(width, height)
@@ -272,6 +276,7 @@ def case_file() -> dict:
         "packs": packs,
         "stamps": [dict(record) for record in stamp_pack()],
         "depth": STAMP_DEPTH,
+        "cycle": CYCLE,
         "cases": cases,
     }
 
