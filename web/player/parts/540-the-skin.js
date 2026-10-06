@@ -367,9 +367,15 @@ function applySkin() {
     // at two opposite corners and the two together make the four. Each is
     // spread over the panel (which is what takes them out of the flow) and
     // takes no pointer, so it never sits between a person and a control.
+    //
+    // The player's own dot rule paints these with the background shorthand, so
+    // the accent is still sitting in the background COLOUR underneath. A stud is
+    // panel-sized now, so without clearing it the accent floods the whole panel.
+    // The longhand, not the shorthand: the shorthand would take the picture too.
     function studs(one, two) {
       return 'content: ""; position: absolute; inset: 8px; width: auto; height: auto;'
         + ' border-radius: 0; opacity: 1; pointer-events: none;'
+        + ' background-color: transparent;'
         + ' background-image: url(' + corner.file + '), url(' + corner.file + ');'
         + ' background-position: ' + one + ', ' + two + ';'
         + ' background-size: ' + CORNER_STUD + 'px ' + CORNER_STUD + 'px,'
