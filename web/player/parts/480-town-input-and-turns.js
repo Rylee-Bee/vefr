@@ -390,6 +390,14 @@
   // Enter another region through a door: swap the current map,
   // speakers, and hero, then resize, draw, and refresh the POI line.
   function enterRegion(name, at) {
+    // The virtual region (slice E1): a floor that was never baked at
+    // weave time is drawn and inserted here, before the player is asked
+    // for it, so every path below - the map, the monsters, the stairs,
+    // the memory of what was killed - finds it waiting.
+    if (window.VEFR_DESCENT) {
+      window.VEFR_DESCENT.onEnter(name);
+      window.VEFR_DESCENT.ensureRegion(name);
+    }
     if (!regions[name]) return;
     fireRule('enters', { place: name });   // one `enters` per arrival
     regionName = name;
@@ -415,6 +423,10 @@
     renderFogToggle();
     sayArrivalWeather(name);
   }
+
+  // The one way into another region, for the parts outside this closure
+  // (the New-descent control walks straight into floor one).
+  window.VEFR_ENTER_REGION = enterRegion;
 
   // A chest gives the note it holds (the book reader) and anything its
   // `drops` names, added to the bag with one line. A chest is found

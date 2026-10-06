@@ -17,6 +17,7 @@ PLAY_MJS = Path(__file__).parent / "fixtures" / "play.mjs"
 sys.path.insert(0, str(Path(__file__).parent / "fixtures"))
 import make_blueprint_pack  # noqa: E402
 import make_combat_pack  # noqa: E402
+import make_descent_pack  # noqa: E402
 import make_desk_pack  # noqa: E402
 import make_equip_pack  # noqa: E402
 import make_events_pack  # noqa: E402
@@ -48,6 +49,7 @@ BASES = {
     "motion": make_motion_pack,
     "two_act": make_two_act_pack,
     "rules": make_rules_pack,
+    "descent": make_descent_pack,
 }
 
 _counter = itertools.count(1)

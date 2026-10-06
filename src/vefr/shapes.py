@@ -405,16 +405,110 @@ GROUPS = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# The descent block (slice E1): the run a descent is drawn from, the
+# tile in a baked region it starts at, and the Sections it walks. Only
+# the run seed and the Section list are the engine's business; `card`
+# is the pack's own sentence for the one-time start-over card.
+DESCENT = Block(
+    name='descent',
+    example='{"run_seed": "ember", "entry": {"region": "town", "at": [7, 5]},'
+            ' "sections": [{"id": "cellar", "floors": 9}]}',
+    keys=(
+        Key('run_seed', 'str', required=True, lo=1, hi=200),
+        Key('entry', 'obj', required=True),
+        Key('sections', 'list', required=True),
+        Key('card', 'obj'),
+    ),
+)
+
+# The tile the descent starts from: a baked region of this pack and one
+# tile in it.
+DESCENT_ENTRY = Block(
+    name='descent entry',
+    example='{"region": "town", "at": [7, 5]}',
+    keys=(
+        Key('region', 'str', required=True),
+        Key('at', 'pair', required=True, lo=0, hi=999),
+    ),
+    say={
+        'missing-key': '{name} must hold its {key}, such as {example}',
+        'wrong-type': '{path} must be a tile as [x, y], such as [7, 5]',
+    },
+)
+
+# One Section of a descent: how many floors it has, how big a floor in
+# it is, and what lives there. The keys ADR 0014 already writes into a
+# Section pack (`elites`, `groups`, `curve`, `loot`, `stamps`, `pois`,
+# `warden`, `vault`, `specials`, `tiles`) are accepted here untouched:
+# this table says a key is known, and the deeper slices say what it does.
+SECTION = Block(
+    name='section',
+    example='{"id": "cellar", "floors": 9, "size": {"w": [48, 64],'
+            ' "h": [32, 44]}, "rooms": [12, 18], "mobs": [2, 5]}',
+    keys=(
+        Key('id', 'str', required=True, lo=1, hi=64),
+        Key('floors', 'int', required=True, lo=1, hi=99),
+        Key('size', 'obj'),
+        Key('rooms', 'pair', lo=1, hi=40),
+        Key('mobs', 'pair', lo=0, hi=12),
+        Key('fog', 'obj'),
+        Key('pattern', 'list'),
+        Key('families', 'list'),
+        Key('title', 'str', lo=1, hi=120),
+        Key('section', 'int', lo=1, hi=99),
+        Key('tiles', 'obj'),
+        Key('elites', 'obj'),
+        Key('groups', 'obj'),
+        Key('curve', 'obj'),
+        Key('loot', 'obj'),
+        Key('stamps', 'list'),
+        Key('pois', 'list'),
+        Key('warden', 'str'),
+        Key('vault', 'str'),
+        Key('specials', 'list'),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+
 BLOCKS = {
     'saves': SAVES,
     'sound': SOUND,
     'affix': AFFIX,
     'elites': ELITES,
     'groups': GROUPS,
+    'descent': DESCENT,
+    'descent entry': DESCENT_ENTRY,
+    'section': SECTION,
 }
 
 
 # ------------------------------------------------- the checks that span records
+
+def check_descent(block: dict) -> list[Problem]:
+    """Every problem with a descent's own Sections, at their own pointers.
+
+    One question two records cannot answer between them, so it lives here
+    and not in the table: each Section is shaped like a Section. `block`
+    is the resolved `descent` block - the Sections already read out of
+    `sections/<id>.json` when the pack names them by id.
+    """
+    problems: list[Problem] = []
+    listed = block.get('sections') if isinstance(block, dict) else None
+    if not isinstance(listed, list):
+        return problems
+    for i, record in enumerate(listed):
+        if not isinstance(record, dict):
+            problems.append(Problem(
+                'wrong-type', f'/sections/{i}',
+                f'every Section must be a record, such as {SECTION.example}'))
+            continue
+        for problem in check(SECTION, record):
+            problems.append(Problem(
+                problem.code, f'/sections/{i}{problem.pointer[len("/section"):]}',
+                problem.sentence))
+    return problems
+
 
 def named_affix_ids(section: dict) -> list[str]:
     """The affix ids a Section's `elites` block names, in pack order.

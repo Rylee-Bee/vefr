@@ -11,11 +11,26 @@
     var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
     return 'vefr-slain-' + w + '-' + regionName;
   }
+  // A generated floor remembers its kills in the descent's own save,
+  // beside its explored bitset, because a floor that was never baked is
+  // not a region name anyone kept a key for.
+  function descentOn() {
+    return !!(window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName));
+  }
   function loadSlain() {
+    if (descentOn()) return window.VEFR_DESCENT.loadKills();
     var a = store.getJSON(slainKey(), []);
     return Array.isArray(a) ? a : [];
   }
   function saveSlain() {
+    if (descentOn()) {
+      var names = [];
+      for (var i = 0; i < enemies.length; i++) {
+        if (enemies[i] && !enemies[i].alive) names.push(enemies[i].id);
+      }
+      window.VEFR_DESCENT.saveKills(names);
+      return;
+    }
     var dead = enemies.filter(function (e) { return !e.alive; })
       .map(function (e) { return e.id + '#' + (e.sig || ''); });
     store.setJSON(slainKey(), dead);

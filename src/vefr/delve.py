@@ -23,7 +23,9 @@ This slice generates floors once, at build time, from a seed
 
 from __future__ import annotations
 
+import json
 import random
+from pathlib import Path
 
 # How far apart the two stairs should be, in Manhattan tiles. The
 # generator keeps the widest pair it can find when a layout is too
@@ -388,6 +390,403 @@ def _as_tile(value) -> tuple[int, int] | None:
             and all(isinstance(v, (int, float)) for v in value)):
         return int(value[0]), int(value[1])
     return None
+
+
+# ---- the descent: play-time floors (PLAN §2, rows E1) ----
+#
+# A descent is sized by minutes to play it, not by tiles. The pack's
+# `descent` block names the run and the Sections; `locate` says which
+# Section a depth is in; the floor for that depth is drawn here, from a
+# run seed and nothing else. Everything below is pure: the same depth
+# always draws the same floor, in Python and in the JavaScript twin
+# beside it (web/player/parts/395-the-descent.js).
+
+# The generation this descent draws. It rides in every floor's identity,
+# in the save (so a save from a different generation is offered the
+# start-over card once), and in the seed of every stream: `v3|<key>|...`.
+GEN_VERSION = 3
+STREAM_VERSION = "v3"
+
+# The save budgets of PLAN §3, and the cap that keeps them.
+FLOOR_CAP = 40
+FLOOR_BYTES = 1_500
+SAVE_BYTES = 250_000
+
+# What a Section gets when it says nothing. A floor defaults to a size a
+# person can play in one sitting (PLAN §1, item 1), and a pack that wants
+# a different number of minutes writes it.
+DEFAULT_SIZE = {"w": (48, 64), "h": (32, 44)}
+DEFAULT_ROOMS = (12, 18)
+DEFAULT_MOBS = (2, 5)
+DEFAULT_FOG_RADIUS = 5
+DEFAULT_FAMILY = "a stranger in the dark"
+
+# A monster stands at least this far from both stairs, so arriving and
+# leaving are never a fight the hero did not choose (the shipped spacing
+# rule).
+MOB_SPACING = 7
+
+
+def _range_of(section: dict, key: str, default: tuple[int, int]) -> tuple[int, int]:
+    """A Section's `[lo, hi]` pair for `key`, or the engine's default."""
+    value = section.get(key) if isinstance(section, dict) else None
+    if (isinstance(value, (list, tuple)) and len(value) == 2
+            and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
+            and value[0] <= value[1]):
+        return int(value[0]), int(value[1])
+    return default
+
+
+def _size_range(section: dict, axis: str) -> tuple[int, int]:
+    size = section.get('size')
+    value = size.get(axis) if isinstance(size, dict) else None
+    if (isinstance(value, (list, tuple)) and len(value) == 2
+            and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
+            and value[0] <= value[1] and value[0] >= 5):
+        return int(value[0]), int(value[1])
+    return DEFAULT_SIZE[axis]
+
+
+def _floors_of(section: dict) -> int:
+    value = section.get('floors') if isinstance(section, dict) else None
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return value
+    raise ValueError("every Section needs a whole number of floors, at least 1")
+
+
+def _sections(pack) -> list[dict]:
+    """The Section records a pack's descent carries, in pack order.
+
+    Accepts the pack itself (a dict with a `descent` block), the block on
+    its own, or the bare list of Sections, so a caller holding any of the
+    three gets the same answer. A Section named by id rather than written
+    out is refused: reading `sections/<id>.json` is the loader's job (the
+    weave does it), not this function's.
+    """
+    block = pack
+    if isinstance(pack, dict) and isinstance(pack.get('descent'), dict):
+        block = pack['descent']
+    listed = block.get('sections') if isinstance(block, dict) else block
+    if not isinstance(listed, list) or not listed:
+        raise ValueError("a descent needs a list of Sections")
+    sections: list[dict] = []
+    for entry in listed:
+        if not isinstance(entry, dict):
+            raise ValueError("every Section must be a record with an id and "
+                             "its number of floors")
+        if not isinstance(entry.get('id'), str) or not entry['id']:
+            raise ValueError("every Section needs an id")
+        sections.append(entry)
+    return sections
+
+
+def descent_of(pack, pack_dir=None) -> dict:
+    """The pack's `descent` block, or `{}` when it declares none.
+
+    A Section may be written out in the block or named by id and kept in
+    `sections/<id>.json` beside the pack (`pack_dir`); the named ones are
+    read here so every caller - the validator, the bake, the tests - sees
+    the same resolved list of records.
+    """
+    block = pack.get('descent') if isinstance(pack, dict) else None
+    if not isinstance(block, dict):
+        return {}
+    listed = block.get('sections')
+    if not isinstance(listed, list):
+        return block
+    root = Path(pack_dir) if pack_dir is not None else None
+    sections = []
+    for entry in listed:
+        if not isinstance(entry, str):
+            sections.append(entry)
+            continue
+        path = (root / 'sections' / f'{entry}.json') if root else None
+        try:
+            data = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            raise ValueError(f"the Section {entry!r} is named but "
+                             f"sections/{entry}.json could not be read")
+        if not isinstance(data, dict):
+            raise ValueError(f"sections/{entry}.json must be a Section record")
+        sections.append({'id': entry, **data})
+    return {**block, 'sections': sections}
+
+
+def locate(depth: int, pack) -> tuple[int, dict, int]:
+    """Where a depth leads: `(cycle, section, k)`, and nothing else.
+
+    The story is cycle 0: depth 1 is the first floor of the first Section,
+    and the Sections are walked in pack order. Past the last floor of the
+    last Section the descent begins again in cycle 1, the Sections in the
+    same order, so a descent is endless without any of it being special.
+
+    Pure: the answer is read off the pack's Section list and the depth
+    alone. A depth below 1, or a pack with no Sections, is refused rather
+    than guessed at.
+    """
+    if not isinstance(depth, int) or isinstance(depth, bool) or depth < 1:
+        raise ValueError("depth must be a whole number of at least 1")
+    sections = _sections(pack)
+    counts = [_floors_of(s) for s in sections]
+    cycle, within = divmod(depth - 1, sum(counts))
+    for section, count in zip(sections, counts):
+        if within < count:
+            return cycle, section, within + 1
+        within -= count
+    raise ValueError("depth is outside this descent")   # unreachable
+
+
+def floor_name(section_id: str, cycle: int, k: int) -> str:
+    """The region name a floor plays under: stable across reloads.
+
+    The name says where the floor is in the descent and nothing about
+    which run drew it, so two runs reuse the names and the identity
+    triple - not the name - is what tells their floors apart.
+    """
+    return f'{section_id}-{cycle}-{k}'
+
+
+def floor_key(run_seed: str, section_id: str, cycle: int, k: int) -> str:
+    """The key every one of a floor's streams is seeded from."""
+    return f'{run_seed}/{section_id}/{cycle}/{k}'
+
+
+def stream_seed(key: str, stream: str) -> str:
+    """One named stream of one floor: `v3|<floor key>|<stream>`.
+
+    A separate stream per stage, so changing what a floor carries - an
+    affix table, a loot roll, a chest - can never move a wall (PLAN §8's
+    sub-seed rule).
+    """
+    return f'{STREAM_VERSION}|{key}|{stream}'
+
+
+def loot_seed(key: str, mob_id: str) -> str:
+    """A monster's own loot stream: the kill order cannot change a drop."""
+    return stream_seed(key, f'loot|{mob_id}')
+
+
+def chest_seed(key: str, chest_id: str) -> str:
+    """A chest's own stream, for the day the chest is opened."""
+    return stream_seed(key, f'chest|{chest_id}')
+
+
+def run_seed(base: str, run: int = 0) -> str:
+    """The run seed of a run: the pack's own for the first, counted after."""
+    run = 0 if not isinstance(run, int) or isinstance(run, bool) else max(0, run)
+    return base if run == 0 else f'{base}/run-{run}'
+
+
+def _canonical(value) -> str:
+    """A Section's content as the bytes both languages hash.
+
+    Keys in order, no spaces, `null` for what is not there, and a number
+    written the way both languages write one: a whole number as a whole
+    number, anything else in its shortest round-trip form. The JavaScript
+    twin (web/player/parts/395-the-descent.js) has the same function, and
+    the parity harness is what proves they agree.
+    """
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return str(int(value)) if value.is_integer() else repr(value)
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, (list, tuple)):
+        return "[" + ",".join(_canonical(v) for v in value) + "]"
+    if isinstance(value, dict):
+        parts = []
+        for key in sorted(value, key=str):
+            if value[key] is None and key not in value:
+                continue
+            parts.append(json.dumps(str(key), ensure_ascii=False) + ":"
+                         + _canonical(value[key]))
+        return "{" + ",".join(parts) + "}"
+    return "null"
+
+
+def _hash12(text: str) -> str:
+    """Two 32-bit FNV-style lanes over the UTF-8 bytes, as twelve hex.
+
+    Small, exact and identical in both languages, which is all a digest
+    has to be: the only question asked of it is "is this the same Section
+    as last time?".
+    """
+    h1 = 2166136261
+    h2 = 3335557771
+    for i, byte in enumerate(text.encode("utf-8")):
+        h1 = ((h1 ^ byte) * 16777619) & 0xFFFFFFFF
+        h2 = ((h2 ^ ((byte + i) & 255)) * 2246822519) & 0xFFFFFFFF
+    return f"{h1:08x}{h2:08x}"[:12]
+
+
+def section_hash(section: dict) -> str:
+    """A short, stable digest of a Section's own content.
+
+    Half of a floor's identity. Editing a Section changes the hash, which
+    is how a save learns that the floor it remembers is no longer the
+    floor it would draw.
+    """
+    return _hash12(_canonical(section))
+
+
+def _run_seed_of(descent, run: int) -> str:
+    block = descent
+    if isinstance(descent, dict) and isinstance(descent.get('descent'), dict):
+        block = descent['descent']
+    base = block.get('run_seed') if isinstance(block, dict) else None
+    if not isinstance(base, str) or not base:
+        raise ValueError("a descent needs a run seed")
+    return run_seed(base, run)
+
+
+def floor_identity(descent, depth: int, run: int = 0) -> dict:
+    """`(gen, section hash, floor key)`: what makes this floor this floor."""
+    cycle, section, k = locate(depth, descent)
+    key = floor_key(_run_seed_of(descent, run), section['id'], cycle, k)
+    return {'gen': GEN_VERSION, 'hash': section_hash(section), 'key': key}
+
+
+def mob_drops(key: str, mob_id: str, table) -> list[str]:
+    """What one monster carries, drawn from that monster's own stream.
+
+    `table` is the monster family's list of drop ids. One draw off
+    `v3|<key>|loot|<mob id>`, so two monsters never share a roll and the
+    order monsters are killed in cannot change what they drop.
+    """
+    ids = [i for i in table if isinstance(i, str) and i] if isinstance(table, list) else []
+    if not ids:
+        return []
+    rng = prng(loot_seed(key, mob_id))
+    return [ids[int(rng() * len(ids))]]
+
+
+def plan_floor(key: str, section: dict, k: int) -> dict:
+    """The floor's plan: how big it is, and what kind of floor it is.
+
+    Draws from `v3|<key>|plan` only, in this order: width, height, rooms.
+    The kind is the Section's own pattern at position `k` - pack data,
+    not a draw - so the pattern may be edited without moving a wall.
+    """
+    w_lo, w_hi = _size_range(section, 'w')
+    h_lo, h_hi = _size_range(section, 'h')
+    r_lo, r_hi = _range_of(section, 'rooms', DEFAULT_ROOMS)
+    rng = prng(stream_seed(key, 'plan'))
+    w = _rand_range(rng, w_lo, w_hi)
+    h = _rand_range(rng, h_lo, h_hi)
+    rooms = _rand_range(rng, max(1, r_lo), max(1, r_hi))
+    pattern = section.get('pattern')
+    kind = 'n'
+    if isinstance(pattern, list) and 1 <= k <= len(pattern) \
+            and isinstance(pattern[k - 1], str):
+        kind = pattern[k - 1]
+    return {'kind': kind, 'w': w, 'h': h, 'rooms': rooms}
+
+
+def _stairs_of(rows: list[str]) -> tuple[tuple[int, int], tuple[int, int]]:
+    up = down = None
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch == 'u' and up is None:
+                up = (x, y)
+            elif ch == 'd' and down is None:
+                down = (x, y)
+    if up is None or down is None:
+        raise ValueError("the generator drew no stairs")
+    return up, down
+
+
+def _families_of(section: dict) -> list[dict]:
+    """The Section's families, sorted by id: a draw may not depend on
+    the order the pack happened to write them in."""
+    listed = section.get('families')
+    if not isinstance(listed, list):
+        return []
+    families = [f for f in listed if isinstance(f, dict) and f.get('id')]
+    return sorted(families, key=lambda f: f['id'])
+
+
+def mobs_at(key: str, section: dict, rows: list[str],
+            up: tuple[int, int], down: tuple[int, int]) -> list[dict]:
+    """Who lives on this floor, drawn from `v3|<key>|pop`.
+
+    A floor's monsters are placed on floor tiles at least `MOB_SPACING`
+    from both stairs, one per tile, in a fixed order: the count first,
+    then for each monster its tile, its family, its health, its reach and
+    its drops (the drops from that monster's own loot stream). A floor
+    too small to hold them all carries as many as fit, never fewer than
+    none.
+    """
+    rng = prng(stream_seed(key, 'pop'))
+    lo, hi = _range_of(section, 'mobs', DEFAULT_MOBS)
+    count = _rand_range(rng, max(0, lo), max(0, hi))
+    families = _families_of(section)
+    pool: list[dict] = []
+    for family in families:
+        weight = family.get('weight')
+        weight = weight if isinstance(weight, int) and not isinstance(weight, bool) \
+            and 0 < weight <= 99 else 1
+        pool.extend([family] * weight)
+    candidates = [(x, y) for y, row in enumerate(rows) for x, ch in enumerate(row)
+                  if ch == '.' and abs(x - up[0]) + abs(y - up[1]) >= MOB_SPACING
+                  and abs(x - down[0]) + abs(y - down[1]) >= MOB_SPACING]
+    mobs: list[dict] = []
+    for i in range(count):
+        if not candidates or not pool:
+            break
+        at = candidates.pop(int(rng() * len(candidates)))
+        family = pool[int(rng() * len(pool))]
+        hp_lo, hp_hi = _range_of(family, 'hp', (1, 1))
+        hp = _rand_range(rng, max(1, hp_lo), max(1, hp_hi))
+        atk = family.get('atk')
+        atk = atk if isinstance(atk, int) and not isinstance(atk, bool) else 1
+        sight = family.get('sight')
+        sight = sight if isinstance(sight, int) and not isinstance(sight, bool) else 6
+        drops = family.get('drops')
+        mobs.append({
+            'id': f'm{i}', 'family': family['id'],
+            'name': family.get('name') or DEFAULT_FAMILY,
+            'at': [at[0], at[1]], 'hp': max(1, hp), 'atk': max(1, atk),
+            'sight': max(1, sight),
+            'drops': mob_drops(key, f'm{i}', drops),
+        })
+    return mobs
+
+
+def floor_plan(descent, depth: int, run: int = 0) -> dict:
+    """The whole floor at `depth`, JSON-able and drawn from the run seed.
+
+    The plan stream says how big the floor is, the layout stream carves
+    it, and the pop stream fills it - three streams that never share a
+    draw. The identity triple rides along so the save can tell this floor
+    from the floor it drew last time.
+    """
+    cycle, section, k = locate(depth, descent)
+    key = floor_key(_run_seed_of(descent, run), section['id'], cycle, k)
+    plan = plan_floor(key, section, k)
+    rows = generate_floor_v2(stream_seed(key, 'layout'), plan['w'], plan['h'],
+                             plan['rooms'])
+    up, down = _stairs_of(rows)
+    fog = section.get('fog')
+    radius = fog.get('radius') if isinstance(fog, dict) else None
+    radius = radius if isinstance(radius, int) and not isinstance(radius, bool) \
+        else DEFAULT_FOG_RADIUS
+    return {
+        'name': floor_name(section['id'], cycle, k),
+        'key': key,
+        'identity': {'gen': GEN_VERSION, 'hash': section_hash(section),
+                     'key': key},
+        'depth': depth, 'cycle': cycle, 'section': section['id'], 'k': k,
+        'kind': plan['kind'], 'w': plan['w'], 'h': plan['h'],
+        'rooms': plan['rooms'], 'rows': rows,
+        'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]]},
+        'mobs': mobs_at(key, section, rows, up, down),
+        'fog': {'radius': max(1, radius)},
+    }
 
 
 def contract(width: int, height: int, hero_at,

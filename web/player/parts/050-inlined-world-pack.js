@@ -38,6 +38,11 @@ window.VEFR_REGIONS = {{regions_json}};
 // The act's doors: step on `at` in region `from` and land at `to_at`
 // in region `to`. Empty when the act declares none.
 window.VEFR_TRANSITIONS = {{transitions_json}};
+
+// The pack's descent block, when it declares one (slice E1): the run
+// seed, the tile the descent starts from, and the Sections. `null` for a
+// pack that declares none, which is every pack but a descent's.
+window.VEFR_DESCENT_DEF = {{descent_json}};
 // The act's speakers, grouped by the region they belong to (a speaker
 // with no `region` belongs to the act's first region).
 window.VEFR_SPEAKERS = {{speakers_json}};

@@ -103,6 +103,17 @@
           </div>
         </div>
       </div>
+      <div id="gen-card" role="dialog" aria-modal="true"
+           aria-labelledby="gen-card-title" tabindex="-1" hidden>
+        <div class="reader-card">
+          <p class="speaker" id="gen-card-title">The floors have changed</p>
+          <p class="reader-page" id="gen-card-line"></p>
+          <div class="reader-controls">
+            <button type="button" id="gen-card-keep" class="cta">Keep this world</button>
+            <button type="button" id="gen-card-over" class="cta cta--gold">Start over</button>
+          </div>
+        </div>
+      </div>
       <div id="trade" role="dialog" aria-modal="true"
            aria-labelledby="trade-title" tabindex="-1" hidden>
         <div class="reader-card">
@@ -174,6 +185,7 @@
       <li><button type="button" data-panel="help">How to play</button></li>
       <li><button type="button" data-panel="model">Model settings</button></li>
       <li><button type="button" data-panel="display">Display</button></li>
+      <li id="menu-descent-row" hidden><button type="button" id="menu-descent" data-panel="descent">Descent</button></li>
       <li><button type="button" data-panel="startover">Start over</button></li>
     </ul>
     <button type="button" id="menu-close" class="cta cta--gold">Resume</button>
@@ -243,6 +255,11 @@
       <h2 class="menu-sub">Time of day</h2>
       <p>The world's mood. What people say changes with it.</p>
       <div class="phase-rail" id="phase" role="group" aria-label="The world's mood"></div>
+    </div>
+    <div data-panel-body="descent" id="descent-body" hidden>
+      <h2>The descent</h2>
+      <p id="descent-line">A descent is the run of floors below this world.</p>
+      <button type="button" id="descent-new" class="cta cta--gold">Start a new descent</button>
     </div>
     <div data-panel-body="startover" id="startover-body" hidden>
       <h2>Start over</h2>
