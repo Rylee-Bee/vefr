@@ -266,7 +266,6 @@ def test_a_stamped_floor_draws_the_same_in_chromium(player, size):
     page, _context = player
     width, height, _rooms = size
     index = cases.by_index()
-    payload = _v3_payload()
     chunk = [case for case in _all_cases()
              if case["stamped"] and case["w"] == width]
     assert chunk, f"no stamped cases at {width}x{height}"
