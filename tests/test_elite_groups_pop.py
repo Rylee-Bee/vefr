@@ -359,8 +359,14 @@ def test_a_minion_that_is_never_placed_costs_no_draw(monkeypatch):
         return wrapped
 
     monkeypatch.setattr(delve_v3, "prng", counting)
+    # The floor key changed, every floor was redrawn, and pop-12 at 64x48 no
+    # longer has the shape this test is about. It needs two halves at once:
+    # two of g0's three minions placed and one that could not be, AND four
+    # chests - one wasted family draw would have taken two of them away. No
+    # seed at 64x48 has that shape any more; pop-13 at 48x32 does. Neither the
+    # assertions nor the pins move.
     plan = delve_v3.generate_floor_v3(
-        "pop-12", (64, 48), copy.deepcopy(section), "normal")
+        "pop-13", (48, 32), copy.deepcopy(section), "normal")
     assert plan["gen"] == 3, "the fixture is a v3 floor, or it proves nothing"
 
     members = [s for s in _spawns(plan) if s.get("group") == "g0"]
@@ -433,8 +439,11 @@ def test_a_leader_that_is_never_placed_costs_no_draw(monkeypatch):
         return wrapped
 
     monkeypatch.setattr(delve_v3, "prng", counting)
+    # pop-45, not pop-18: the redraw gave pop-18 a floor that staffs its second
+    # group, so there is no unstaffed group left to measure. At 22x15 this seed
+    # leaves exactly g0 led while the pack asks for three.
     plan = delve_v3.generate_floor_v3(
-        "pop-18", (22, 15), copy.deepcopy(section), "normal")
+        "pop-45", (22, 15), copy.deepcopy(section), "normal")
     assert plan["gen"] == 3, "the fixture is a v3 floor, or it proves nothing"
 
     lone = _lone_elites(plan)
@@ -459,7 +468,10 @@ def test_a_leader_that_is_never_placed_costs_no_draw(monkeypatch):
         f"the group that was not, {len(randoms)} for the randoms placed, "
         f"{1} chest count and {len(plan['chests'])} chest tables"
     )
-    assert len(plan["chests"]) == 2, (
+    # Three, not two: the seed moved with the floor after the key change and
+    # this floor carries one more chest. A real pin rather than decoration:
+    # chest term FROM the plan, so it cannot catch a wrong count by itself.
+    assert len(plan["chests"]) == 3, (
         f"this floor carries {len(plan['chests'])} chests: a wasted leader "
         "family draw moved the chest count and added one"
     )

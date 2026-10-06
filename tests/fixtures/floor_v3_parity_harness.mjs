@@ -5,7 +5,7 @@
 
    <cases.json> (written by pytest, from tests/floor_v3_parity_cases.py):
      {"packs": {"<key>": <section pack>}, "stamps": [<stamp record>...],
-      "depth": 3, "cases": [{i, seed, w, h, kind, size, stamped, pack}]}
+      "depth": 3, "cycle": 0, "cases": [{i, seed, w, h, kind, size, stamped, pack}]}
 
    The canonical form is `tests/fixtures/floor_plan_canon.mjs`, imported here
    and injected into the Chromium test, so both paths compare the same bytes.

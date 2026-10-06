@@ -115,13 +115,13 @@ DRAW_ONE = """
 # `performance.now()` resolves about 0.1 ms, which is fine for a floor and not
 # fine for a first call that pays for a JIT.
 PERF_ONE = """
-([w, h, kind, pack, stamps, depth, seeds]) => {
+([w, h, kind, pack, stamps, depth, cycle, seeds]) => {
   const D = window.VEFR_DELVE;
   const times = [];
   for (const seed of seeds) {
-    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth);
+    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth, cycle);
     const t0 = performance.now();
-    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth);
+    D.generateFloorV3(seed, [w, h], pack, kind, stamps, depth, cycle);
     times.push(performance.now() - t0);
   }
   return times;
@@ -244,10 +244,10 @@ def test_generation_stays_inside_the_budget_in_chromium(player):
             pack = payload["packs"][cases.pack_key(kind, width, stamped)]
             client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
             desk = page.evaluate(
-                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], payload["cycle"], seeds])
             client.send("Emulation.setCPUThrottlingRate", {"rate": 4})
             slow = page.evaluate(
-                PERF_ONE, [width, height, kind, pack, records, payload["depth"], seeds])
+                PERF_ONE, [width, height, kind, pack, records, payload["depth"], payload["cycle"], seeds])
             client.send("Emulation.setCPUThrottlingRate", {"rate": 1})
             assert len(desk) == len(slow) == len(seeds), (
                 f"{width}x{height}{suffix}: {len(desk)} desktop and {len(slow)} "
