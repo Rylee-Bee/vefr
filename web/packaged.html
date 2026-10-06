@@ -4087,6 +4087,15 @@ window.VEFR_DESCENT = (function () {
   // the save is still over its byte budget, the oldest bitsets go before
   // anything else, because a bitset is the whole weight of a floor.
   function trimDoc(doc) {
+    return fitDoc(doc).doc;
+  }
+
+  // The whole order a save gives things up in: the oldest bitsets first,
+  // then the oldest floors whole, and nothing after that - the story
+  // flags are the world's own memory and are never given up. So `fits`
+  // says whether what is left is inside the budget or whether the save
+  // can only be refused.
+  function fitDoc(doc) {
     var names = Array.isArray(doc.order) ? doc.order.slice() : [];
     var known = Object.keys(isObj(doc.floors) ? doc.floors : {});
     for (var i = 0; i < known.length; i++) {
@@ -4108,7 +4117,10 @@ window.VEFR_DESCENT = (function () {
       if (oldest && oldest.fog) oldest.fog = '';
       i2++;
     }
-    return out;
+    while (bytesOf(out) > SAVE_BYTES && out.order.length) {
+      delete out.floors[out.order.shift()];
+    }
+    return { doc: out, fits: bytesOf(out) <= SAVE_BYTES };
   }
 
   function copyRecord(record) {
@@ -4120,10 +4132,31 @@ window.VEFR_DESCENT = (function () {
              fog: typeof record.fog === 'string' ? record.fog : '' };
   }
 
+  // A save that cannot be stored is never stored, and says so in words
+  // the player can act on: the engine's own rule, not this part's
+  // invention. The refusal is kept until a save goes through, and the
+  // Descent panel shows it the next time it is opened.
+  var lastRefusal = '';
+
+  function saveRefusal() { return lastRefusal; }
+
+  function refuse(text) {
+    lastRefusal = text;
+    var line = document.getElementById('descent-line');
+    if (line) line.textContent = text;
+  }
+
   function saveDoc(doc) {
-    var trimmed = trimDoc(doc);
-    store.setJSON(docKey(), trimmed);
-    return trimmed;
+    var fit = fitDoc(doc);
+    if (!fit.fits) {
+      refuse('This descent has grown too large to save, so what happened on '
+        + 'these floors is not being remembered. Start a new descent, or '
+        + "clear this site's saved game in your browser, and try again.");
+      return null;
+    }
+    lastRefusal = '';
+    store.setJSON(docKey(), fit.doc);
+    return fit.doc;
   }
 
   // ---- the floors a descent remembers ---------------------------------
@@ -4304,9 +4337,9 @@ window.VEFR_DESCENT = (function () {
     }
   }
 
-  // Returning to town clears what was killed and taken on the Section's
-  // floors - the mines reset - and keeps the memory of where the hero
-  // has walked and what they found there.
+  // Returning to town clears what the Section's floors produced - what was
+  // killed, taken and dropped there, the mines reset all together - and
+  // keeps the memory of where the hero has walked and what they found.
   function returnToTown(name) {
     var doc = loadDoc();
     var changed = false;
@@ -4316,9 +4349,10 @@ window.VEFR_DESCENT = (function () {
       if (!isObj(record)) continue;
       var at = parseName(doc.order[i]);
       if (!at || at.section.id !== sectionIdOf(name)) continue;
-      if (record.kills.length || record.chests.length) {
+      if (record.kills.length || record.chests.length || record.drops.length) {
         record.kills = [];
         record.chests = [];
+        record.drops = [];
         changed = true;
       }
     }
@@ -4467,10 +4501,53 @@ window.VEFR_DESCENT = (function () {
     hideCard();
   }
 
+  // Every save this site still holds, or null when the storage cannot be
+  // asked at all. A storage that refused a remove leaves its key behind,
+  // and a player told their save is gone when it is not is worse off
+  // than one who is told the truth.
+  function vefrKeysIn(storage) {
+    if (!storage || typeof storage.length !== 'number' || typeof storage.key !== 'function') {
+      return null;
+    }
+    var left = [];
+    try {
+      for (var i = 0; i < storage.length; i++) {
+        var k = storage.key(i);
+        if (typeof k === 'string' && k.indexOf('vefr-') === 0) left.push(k);
+      }
+    } catch (e) { return null; }
+    return left;
+  }
+
+  function sayStartOverFailed(text) {
+    var line = document.getElementById('gen-card-line');
+    if (line) line.textContent = text;
+    var box = document.getElementById('gen-card');
+    if (box) box.hidden = false;
+    cardOpen = true;
+  }
+
   function startOver() {
+    var storage = store.raw();
+    try { window.startoverKeys(storage); } catch (e) { /* read below says what is left */ }
+    var left = vefrKeysIn(storage);
+    if (left === null) {
+      sayStartOverFailed('Your saved game could not be checked, so nothing has '
+        + 'been cleared and nothing has been lost. Clear this site\'s saved '
+        + 'game in your browser, then try Start over again.');
+      return false;
+    }
+    if (left.length) {
+      sayStartOverFailed('Your saved game could not be cleared: this browser '
+        + 'would not let the game remove ' + left.length
+        + (left.length === 1 ? ' save.' : ' saves.')
+        + ' Nothing has been lost. Clear this site\'s saved game in your '
+        + 'browser, then try Start over again.');
+      return false;
+    }
     hideCard();
-    try { window.startoverKeys(store.raw()); } catch (e) { /* blocked storage */ }
     window.location.reload();
+    return true;
   }
 
   function offerCard() {
@@ -4524,6 +4601,8 @@ window.VEFR_DESCENT = (function () {
       line.textContent = 'Run ' + (doc.run + 1) + ' of the descent (' + doc.seed +
         '). Deepest floor reached: ' + deepest + '. A new descent starts the '
         + 'same Sections over with a fresh seed.';
+      // A save that could not be stored is said first, while it is true.
+      if (lastRefusal) line.textContent = lastRefusal;
     };
     render();
     if (item) {
@@ -4613,7 +4692,8 @@ window.VEFR_DESCENT = (function () {
     planFloor: planFloor, mobsAt: mobsAt, mobDrops: mobDrops,
     ensureRegion: ensureRegion, onEnter: onEnter, entryHere: entryHere,
     wireEntry: wireEntry, docKey: docKey,
-    loadDoc: loadDoc, saveDoc: saveDoc, trimDoc: trimDoc,
+    loadDoc: loadDoc, saveDoc: saveDoc, trimDoc: trimDoc, fitDoc: fitDoc,
+    saveRefusal: saveRefusal,
     docBytes: bytesOf, floorBytes: floorBytes,
     loadKills: loadKills, saveKills: saveKills,
     loadChests: loadChests, saveChests: saveChests,
