@@ -2430,11 +2430,14 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # own dungeon legend beside it, so the player draws a floor out of the
     # same tiles the baked floors use without inventing any of its own. A
     # pack that declares no descent bakes the literal `null`, and the
-    # player grows no regions.
+    # player grows no regions. The pack's Blueprint goes in beside them
+    # too (ADR 0014): a Section names a family by id, so a floor that
+    # cannot reach the Blueprint cannot say what that family is.
     from . import delve as delve_mod
     descent = delve_mod.descent_of(world, pack)
     if descent:
-        descent = {**descent, 'legend': delve_mod.LEGEND}
+        descent = {**descent, 'legend': delve_mod.LEGEND,
+                   'blueprint': delve_mod.blueprint_of(pack)}
     out_html = out_html.replace('{{descent_json}}',
                                 _json.dumps(descent or None, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
