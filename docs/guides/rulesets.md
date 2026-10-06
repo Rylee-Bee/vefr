@@ -171,6 +171,43 @@ the generated floors are checked by the door rules (see
 "regions + transitions" below). Code: `src/vefr/delve.py` +
 `src/vefr/cli.py` (`cmd_delve`); tests: `tests/test_delve.py`.
 
+### delve --section (a whole Section)
+
+`--section <id>` bakes a Section instead of N floors. Everything above it
+still applies - the pack, the act, `--from-region`, `--from-at`,
+`--seed`, `--force` - and the floors come out of the pack's
+`sections/<id>.json` rather than out of `--width`/`--height`/`--rooms`:
+
+```sh
+uv run norns delve --pack worlds/<name> --seed <text> \
+    --section cellar --from-region town --from-at 4,5
+```
+
+One region per floor, named `<section id>-<k>`, drawn by the v3 generator
+(`src/vefr/delve_v3.py`) at the size and the floor kind the Section's own
+pattern asks for. Each floor is drawn from the key
+`run_seed/section.id/cycle/k`, which is what keeps two ordinary floors of
+one Section from being the same map.
+
+The wiring is the elevator rule. The `from-region`'s stair goes down
+into floor 1; each floor's down-stair goes to the floor below; the last
+floor is the bottom and keeps no down-stair. Every floor's up-stair
+climbs back to the floor above it, except on a **landing** - a Section's
+first floor and its fifth - where it goes straight back to `from-region`
+instead.
+
+Each written `contract.json` carries four keys a generated floor did not
+have before, all additive: `section`, `k`, `floor_kind` and `landing`,
+beside the `floor_key` the floor was drawn from. Otherwise it is the
+shape `delve.contract` has always written.
+
+A Section's own shape is checked by `vefr check` (`src/vefr/shapes.py`),
+and every floor of every Section is swept over 200 seeds there too: one
+component, and every anchor, point of interest, secret, monster and
+chest reachable from the up-stair. Code: `src/vefr/sections.py`,
+`src/vefr/locks.py` (`section_findings`), `src/vefr/cli.py`
+(`_bake_section`); tests: `tests/test_sections_e4.py`.
+
 ## regions + transitions (doors between maps)
 
 An act may declare several `regions`, each its own directory under

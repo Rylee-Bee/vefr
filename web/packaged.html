@@ -6447,7 +6447,6 @@ window.VEFR_DESCENT = (function () {
   var DEFAULT_SIZE_W = [48, 64];
   var DEFAULT_SIZE_H = [32, 44];
   var DEFAULT_ROOMS = [12, 18];
-  var DEFAULT_MOBS = [2, 5];
   var DEFAULT_FOG_RADIUS = 5;
   var DEFAULT_FAMILY = 'a stranger in the dark';
   var DOC_VERSION = 1;
@@ -6603,14 +6602,40 @@ window.VEFR_DESCENT = (function () {
 
   function sectionHash(section) { return hash12(canonical(section)); }
 
+  // How many randoms this floor's area asks for. The budget is not a
+  // draw: it is the same area budget the v3 pop stage clamps (PLAN.md
+  // section 2, step 4 - "randoms by area budget"), read off the floor's
+  // own walkable tiles. One tile TILES_PER_MOB times is one monster slot,
+  // clamped to the same two numbers, so a descent Section carries no
+  // `mobs` key at all - the count is generator policy, not pack data.
+  // The three numbers are `VEFR_DELVE.v3Constants`, part 396's own.
+  function mobBudget(rows) {
+    var C = (window.VEFR_DELVE && window.VEFR_DELVE.v3Constants) || {};
+    var per = C.TILES_PER_MOB, lo = C.MOBS_MIN, hi = C.MOBS_MAX;
+    var walkable = 0;
+    for (var y = 0; y < rows.length; y++) {
+      var row = rows[y], at = row.indexOf('.');
+      while (at !== -1) { walkable++; at = row.indexOf('.', at + 1); }
+    }
+    return Math.min(hi, Math.max(lo, Math.floor(walkable / per)));
+  }
+
+  // A Section names a Blueprint family by id and carries no record of
+  // its own (ADR 0014), so the entry is kept WHOLE: a caller that
+  // resolved the family through `blueprint.resolve_family` hands the base
+  // on the entry - hp, atk, sight, drops, name - and this passes it on
+  // untouched, exactly as delve_v3's `_read_families` does. An entry with
+  // no base still draws; its stats come back at this function's own floor
+  // of 1, which is the answer for a base that says nothing.
   function mobsAt(key, section, rows, up, down) {
-    var mr = rangeOf(section, 'mobs', DEFAULT_MOBS);
     var rng = window.VEFR_DELVE.prng(streamSeed(key, 'pop'));
-    var count = randRange(rng, Math.max(0, mr[0]), Math.max(0, mr[1]));
+    var count = mobBudget(rows);
     var families = (section && Array.isArray(section.families))
-      ? section.families.filter(function (f) { return f && typeof f.id === 'string'; })
+      ? section.families.filter(function (f) {
+          return f && typeof f.family === 'string' && f.family; })
       : [];
-    families = families.slice().sort(function (a, b) { return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); });
+    families = families.slice().sort(function (a, b) {
+      return a.family < b.family ? -1 : (a.family > b.family ? 1 : 0); });
     var pool = [];
     for (var f = 0; f < families.length; f++) {
       var weight = families[f].weight;
@@ -6637,7 +6662,7 @@ window.VEFR_DESCENT = (function () {
       var atk = isWhole(family.atk) ? family.atk : 1;
       var sight = isWhole(family.sight) ? family.sight : 6;
       mobs.push({
-        id: 'm' + i, family: family.id,
+        id: 'm' + i, family: family.family,
         name: (typeof family.name === 'string' && family.name) ? family.name : DEFAULT_FAMILY,
         at: [at[0], at[1]], hp: Math.max(1, hp), atk: Math.max(1, atk),
         sight: Math.max(1, sight), drops: mobDrops(key, 'm' + i, family.drops)

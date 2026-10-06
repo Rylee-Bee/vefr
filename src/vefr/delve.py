@@ -423,7 +423,6 @@ SAVE_BYTES = 250_000
 # a different number of minutes writes it.
 DEFAULT_SIZE = {"w": (48, 64), "h": (32, 44)}
 DEFAULT_ROOMS = (12, 18)
-DEFAULT_MOBS = (2, 5)
 DEFAULT_FOG_RADIUS = 5
 DEFAULT_FAMILY = "a stranger in the dark"
 
@@ -721,13 +720,40 @@ def _stairs_of(rows: list[str]) -> tuple[tuple[int, int], tuple[int, int]]:
 
 
 def _families_of(section: dict) -> list[dict]:
-    """The Section's families, sorted by id: a draw may not depend on
-    the order the pack happened to write them in."""
+    """The Section's families, sorted by family id: a draw may not depend
+    on the order the pack happened to write them in.
+
+    A Section names a Blueprint family by id and carries no record of its
+    own (ADR 0014), so the entry is kept WHOLE: a caller that resolved
+    the family through `vefr.blueprint.resolve_family` hands the base on
+    the entry - `hp`, `atk`, `sight`, `drops`, `name` - and this passes
+    it on untouched, exactly as `delve_v3._read_families` does. An entry
+    with no base still draws; its stats come back at `mobs_at`'s own
+    floor of 1, which is the answer for a base that says nothing.
+    """
     listed = section.get('families')
     if not isinstance(listed, list):
         return []
-    families = [f for f in listed if isinstance(f, dict) and f.get('id')]
-    return sorted(families, key=lambda f: f['id'])
+    families = [f for f in listed if isinstance(f, dict)
+                and isinstance(f.get('family'), str) and f['family']]
+    return sorted(families, key=lambda f: f['family'])
+
+
+def _mob_budget(rows: list[str]) -> int:
+    """How many randoms this floor's area asks for.
+
+    The budget is not a draw: it is the same area budget the v3 pop
+    stage clamps (PLAN.md section 2, step 4 - "randoms by area budget"),
+    read off the floor's own walkable tiles. One tile `TILES_PER_MOB`
+    times is one monster slot, clamped to the same two numbers, so a
+    descent Section carries no `mobs` key at all - the count is generator
+    policy, not pack data.
+    """
+    from . import delve_v3  # here, not at the top: delve_v3 imports this module
+
+    walkable = sum(row.count('.') for row in rows)
+    return min(delve_v3.MOBS_MAX,
+               max(delve_v3.MOBS_MIN, walkable // delve_v3.TILES_PER_MOB))
 
 
 def mobs_at(key: str, section: dict, rows: list[str],
@@ -737,13 +763,13 @@ def mobs_at(key: str, section: dict, rows: list[str],
     A floor's monsters are placed on floor tiles at least `MOB_SPACING`
     from both stairs, one per tile, in a fixed order: the count first,
     then for each monster its tile, its family, its health, its reach and
-    its drops (the drops from that monster's own loot stream). A floor
-    too small to hold them all carries as many as fit, never fewer than
-    none.
+    its drops (the drops from that monster's own loot stream). The count
+    is the area budget (`_mob_budget`) and costs no draw, so a floor's
+    size alone decides how full it is. A floor too small to hold them all
+    carries as many as fit, never fewer than none.
     """
     rng = prng(stream_seed(key, 'pop'))
-    lo, hi = _range_of(section, 'mobs', DEFAULT_MOBS)
-    count = _rand_range(rng, max(0, lo), max(0, hi))
+    count = _mob_budget(rows)
     families = _families_of(section)
     pool: list[dict] = []
     for family in families:
@@ -768,7 +794,7 @@ def mobs_at(key: str, section: dict, rows: list[str],
         sight = sight if isinstance(sight, int) and not isinstance(sight, bool) else 6
         drops = family.get('drops')
         mobs.append({
-            'id': f'm{i}', 'family': family['id'],
+            'id': f'm{i}', 'family': family['family'],
             'name': family.get('name') or DEFAULT_FAMILY,
             'at': [at[0], at[1]], 'hp': max(1, hp), 'atk': max(1, atk),
             'sight': max(1, sight),
