@@ -76,6 +76,11 @@ if (out.mode === 'budget' && out.hasApi) {
       given: given.length,
       storedBytes: stored === null ? -1 : stored.length,
       storedFloors: Object.keys(after.floors || {}).length,
+      // What every floor record in the stored save weighs, by the same
+      // count `floorBytes` makes, so the per-floor budget of PLAN §3 can
+      // be asserted on what actually landed and not recomputed in Python.
+      storedFloorBytes: Object.keys(after.floors || {})
+        .map((n) => JSON.stringify(after.floors[n]).length),
       storedFlags: after.flags || {},
       order: after.order || [],
       floors: after.floors || {},

@@ -4715,7 +4715,14 @@ window.VEFR_DESCENT = (function () {
       if (!at || !isObj(record)) continue;
       var depth = depthOfName(name);
       if (!depth) continue;
-      var key = floorKey(seedFor(doc.run), at.section, at.cycle, at.k);
+      // `at.section` is the section OBJECT (see parseName); floorKey
+      // concatenates its sectionId argument, so passing the object made
+      // this key `run-a/[object Object]/0/1`, which never matched the
+      // stored key and emptied every floor record on every load - the
+      // kill list, the chests, the drops and the explored bitset with
+      // it. The plan path takes `.id` (planFor, :251 area); so does
+      // sectionIdOf, :704. Same accessor, same reason.
+      var key = floorKey(seedFor(doc.run), at.section.id, at.cycle, at.k);
       if (record.h === sectionHash(at.section) && record.g === GEN_VERSION &&
           record.k === key) {
         continue;
@@ -4862,8 +4869,6 @@ function setupTown() {
   }
   function saveSlain() {
     if (descentOn()) {
-      // The bare mob id, which is what `killKey` below matches a generated
-      // floor's kill on. The two are one shape, deliberately.
       var names = [];
       for (var i = 0; i < enemies.length; i++) {
         if (enemies[i] && !enemies[i].alive) names.push(enemies[i].id);
@@ -4878,30 +4883,29 @@ function setupTown() {
   // A monster is remembered by what it *is*, not only by its name: move it,
   // restat it, or regenerate the floor, and it is a new monster again. So a
   // rebuild never leaves a floor mysteriously empty.
+  //
+  // That is what a BAKED region needs, because its kill list is a flat
+  // storage key with nothing else in it: the signature is the only thing
+  // there that can tell a rebuilt floor from the floor that was played.
+  //
+  // A generated floor already carries that answer, and carries it better:
+  // the descent's own record is keyed by the floor's identity triple - gen
+  // version, section content hash, floor key - and PLAN §2's per-floor save
+  // is "killed mob ids", nothing else. So on a generated floor the id IS
+  // the whole of the memory, and matching it against a signature compares
+  // "m0" with "m0#a pale moth|13,15|1|1|" and never matches: every kill on
+  // every floor that was never baked was forgotten the moment the page was
+  // reloaded, which is the one thing a kill list exists to stop.
+  function slainKeyFor(id, sig, generated) {
+    return generated ? id : id + '#' + sig;
+  }
   function enemySig(raw) {
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
             raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
   }
-  // How a kill is spelled in the save, which is the one thing the writer
-  // above and this matcher must agree on: the two shapes drifted and every
-  // slain monster on a generated floor came back on reload.
-  //
-  // The shape is the BARE MOB ID on a generated floor. A baked region is
-  // keyed by region name and can be rebuilt under that same name, so it
-  // needs the signature to tell one generation of a monster from the next.
-  // A generated floor is not: its record is already keyed by the floor's
-  // identity triple, and a floor the pack or the generator has moved on from
-  // is drawn again with an empty record (descent: `sweepIdentities`), so
-  // the id alone is enough - and the descent's save has a per-floor byte
-  // budget (PLAN §3) with no room for a signature on every monster.
-  //
-  // Not `slainKey`: that one is where a baked region's list is STORED, and
-  // this is what one of its entries is CALLED.
-  function killKey(e, sig) {
-    return descentOn() ? e.id : (e.id + '#' + sig);
-  }
   function loadEnemies() {
     var dead = loadSlain();
+    var generated = descentOn();
     var list = enemiesByRegion[regionName] || [];
     enemies = list.map(function (e) {
       var sig = enemySig(e);
@@ -4919,7 +4923,7 @@ function setupTown() {
         // A pack without it reads as zero: defeat still plays as before.
         xp: (typeof e.xp === 'number') ? e.xp : 0,
         drops: Array.isArray(e.drops) ? e.drops.slice() : [],
-        alive: dead.indexOf(killKey(e, sig)) === -1
+        alive: dead.indexOf(slainKeyFor(e.id, sig, generated)) === -1
       };
     });
   }

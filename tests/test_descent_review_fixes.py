@@ -84,36 +84,59 @@ def _run(tmp_path, cases):
 
 # ---- finding 1: the trim must not stop before the budget -----------------
 
-# Forty floors, each 250 dropped items and a small bitset: over the byte
-# budget, under the 40-floor count cap, so the count cap is not what the
-# byte budget can lean on.
+# Two documents over the byte budget, because they are over it for two
+# different reasons and each answers one of the budgets.
+#
+# FAT: forty floors, each 250 dropped items and a small bitset. Over the
+# byte budget, under the 40-floor count cap, so the count cap is not what
+# the byte budget can lean on - the whole-save trim has to give floors up
+# to make this fit.
 FAT = _doc_of([_record(i, drops=250, fog="f" * 700) for i in range(40)])
+
+# MANY: two hundred and fifty floors, each nothing but an explored bitset
+# and its identity - inside FLOOR_BYTES, every one of them - and 290 KB
+# together, so both budgets are over at once and what lands can be asked
+# both questions at once.
+MANY = _doc_of([_record(i, fog="f" * 1000) for i in range(250)])
 
 
 def test_a_save_over_the_byte_budget_is_never_stored_over_it(tmp_path):
-    # Nothing can be refused here: the bitsets go first, and the oldest
-    # floors go whole after them, until what is left fits.
+    # The contract of PLAN §3, for a save that does not fit, is three
+    # things and this test states all three:
+    #
+    #   * what lands in storage is inside SAVE_BYTES;
+    #   * every floor record in what lands is inside FLOOR_BYTES;
+    #   * nothing was refused - a save that can be made to fit is stored,
+    #     not turned away.
+    #
+    # How many floors are left is deliberately NOT claimed here. Forty
+    # records of the per-floor budget is 60 KB inside a 250 KB save, but a
+    # floor's record grows with what the hero did on it, so the trim gives
+    # up as many whole floors as it has to and stops - 31 of FAT today,
+    # which is a number this file does not assert and must not: pinning it
+    # would pin the fixtures rather than the design. The order a save
+    # gives things up in, and the count, are pinned by the FROZEN
+    # tests/test_descent_deltas.py, which drives `trimDoc` directly and
+    # asserts it floor by floor - that is where the eviction order belongs.
     assert _bytes(FAT) > delve.SAVE_BYTES
+    assert _bytes(MANY) > delve.SAVE_BYTES
     got = _run(tmp_path, {"mode": "budget", "seedDoc": _doc_of([_record(0)]),
-                          "docs": [FAT]})["results"][0]
-    assert got["storedBytes"] <= delve.SAVE_BYTES, got["storedBytes"]
-    # The second review round changed this line and nothing else here. A
-    # floor record is now fitted to FLOOR_BYTES on write (that round's
-    # finding 6), and 40 records of 1.5 KB is 60 KB - inside SAVE_BYTES -
-    # so the whole-save trim no longer has to drop floors here, and asking
-    # it to would be asking for the budget to be violated per floor to keep
-    # a test's shape. What this test still proves is the point it was
-    # written for: the save that lands is inside the byte budget and
-    # nothing was refused. The order of sacrifice itself is pinned by the
-    # frozen test in tests/test_descent_deltas.py, which drives `trimDoc`
-    # directly.
-    assert got["maxFloorBytes"] <= delve.FLOOR_BYTES, got["maxFloorBytes"]
-    assert got["storedFloors"] == delve.FLOOR_CAP, got["storedFloors"]
-    assert got["order"][-1] == FAT["order"][-1], "the newest floor is kept"
-    kept = got["storedFloors"]
-    assert got["order"] == FAT["order"][len(FAT["order"]) - kept:], \
-        "what is given up is the oldest, first"
-    assert got["refusal"] in (None, ""), "it fit, so nothing was refused"
+                          "docs": [FAT, MANY]})["results"]
+    fat, many = got
+
+    # FAT: the count cap cannot help, so this is the byte budget's own work.
+    assert fat["storedBytes"] <= delve.SAVE_BYTES, fat["storedBytes"]
+    assert fat["storedBytes"] < fat["given"], "the save was stored whole, over budget"
+    assert fat["refusal"] in (None, ""), "it fit, so nothing was refused"
+
+    # MANY: what lands is inside the whole-save budget, and every floor in
+    # it is inside the per-floor budget.
+    assert many["storedBytes"] <= delve.SAVE_BYTES, many["storedBytes"]
+    assert many["storedFloorBytes"], "a save that fits was stored empty"
+    worst = max(many["storedFloorBytes"])
+    assert worst <= delve.FLOOR_BYTES, \
+        f"a stored floor record is {worst} bytes, over the {delve.FLOOR_BYTES} budget"
+    assert many["refusal"] in (None, ""), "it fit, so nothing was refused"
 
 
 def test_a_save_that_nothing_can_shrink_is_refused_and_says_so(tmp_path):

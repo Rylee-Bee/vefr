@@ -1002,7 +1002,14 @@ window.VEFR_DESCENT = (function () {
       if (!at || !isObj(record)) continue;
       var depth = depthOfName(name);
       if (!depth) continue;
-      var key = floorKey(seedFor(doc.run), at.section, at.cycle, at.k);
+      // `at.section` is the section OBJECT (see parseName); floorKey
+      // concatenates its sectionId argument, so passing the object made
+      // this key `run-a/[object Object]/0/1`, which never matched the
+      // stored key and emptied every floor record on every load - the
+      // kill list, the chests, the drops and the explored bitset with
+      // it. The plan path takes `.id` (planFor, :251 area); so does
+      // sectionIdOf, :704. Same accessor, same reason.
+      var key = floorKey(seedFor(doc.run), at.section.id, at.cycle, at.k);
       if (record.h === sectionHash(at.section) && record.g === GEN_VERSION &&
           record.k === key) {
         continue;
