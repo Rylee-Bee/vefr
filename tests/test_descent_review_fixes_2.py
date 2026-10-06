@@ -112,11 +112,17 @@ def test_a_monster_killed_on_a_generated_floor_stays_killed_after_a_reload(tmp_p
     fought = _play(tmp_path, steps)
     assert fought["errors"] == [], fought["errors"]
     assert fought["reads"]["VEFR_COMBAT.region"] == "cellar-0-1"
-    dead = [e for e in fought["reads"]["VEFR_COMBAT.enemies"] if not e["alive"]]
-    assert [e["id"] for e in dead] == [MOB["id"]], \
+    dead = [e["id"] for e in fought["reads"]["VEFR_COMBAT.enemies"]
+            if not e["alive"]]
+    # How many live on a floor is the generator's area budget and not a
+    # pack key, so a walk up to one monster may bump another on the way;
+    # the monster the walk aimed at must be among the dead either way.
+    assert MOB["id"] in dead, \
         "the fight did not happen, so nothing after it is proved"
-    assert _doc(fought)["floors"]["cellar-0-1"]["kills"] == [MOB["id"]], \
+    kills = _doc(fought)["floors"]["cellar-0-1"]["kills"]
+    assert MOB["id"] in kills, \
         "the save does not remember the kill, so the next session cannot honour it"
+    assert set(kills) == set(dead)
 
     # The next session, with that save handed back in. The hero walks in
     # and stops on the up-stair; it does not go looking for a fight, so
@@ -131,5 +137,5 @@ def test_a_monster_killed_on_a_generated_floor_stays_killed_after_a_reload(tmp_p
     assert MOB["id"] in standing, "the floor does not hold the monster that was killed"
     assert standing[MOB["id"]]["alive"] is False, \
         "a monster killed on a generated floor is standing again after a reload"
-    assert _doc(again)["floors"]["cellar-0-1"]["kills"] == [MOB["id"]], \
+    assert _doc(again)["floors"]["cellar-0-1"]["kills"] == kills, \
         "the save forgot the kill on the way back in"

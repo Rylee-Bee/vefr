@@ -5,11 +5,13 @@ from a run seed. This fixture carries the pack's `descent` block - a run
 seed, the entry tile in the town, and two Sections - over the sample
 world's own town, so the generated floors are the only new thing in it.
 
-Deliberately small: the floors are 28x20 to 36x24 with five to eight rooms,
+Deliberately small: the floors are 32x24 to 36x26 with six to eight rooms,
 because the play tests walk them tile by tile through the real player
-and a 96x64 floor would take minutes per pass. The engine's own size
-choices are the pack's business, not the test's; the budgets are pinned
-with records built for the large sizes in test_descent_deltas.py.
+and a 96x64 floor would take minutes per pass. That is as small as the one
+Section contract allows - `SIZE` holds a width of 32 to 128 and a height
+of 24 to 96, and `rooms` starts at 6. The engine's own size choices are
+the pack's business, not the test's; the budgets are pinned with records
+built for the large sizes in test_descent_deltas.py.
 
 Neutral engine-test canon only: the hazards are named creatures and the
 places are a town and a cellar, exactly as the other fixtures are.
@@ -27,39 +29,39 @@ SAMPLE = ROOT / "worlds" / "sample-world"
 # walks four tiles to stand on it; the descent's entry is that tile.
 ENTRY_AT = [7, 5]
 
-# The two Sections of the fixture descent. `floors` is what `locate`
-# walks; `size` and `rooms` are the play-time floor the plan stream
-# draws from; `mobs` is how many live on it. Weights are on the family,
-# never on the draw order, so a pack may list them in any order.
+# The two Sections of the fixture descent, in the one Section contract
+# (E4): `floors` is what `locate` walks, `size` and `rooms` are the
+# play-time floor the plan stream draws from, and `families` names
+# Blueprint families by id with a weight and a depth range - the Section
+# carries no record of a family of its own, and how many monsters live on
+# a floor is the generator's area budget, not a `mobs` key. Weights are
+# on the family, never on the draw order, so a pack may list them in any
+# order.
 SECTIONS = [
     {
         "id": "cellar",
-        "title": "The Cellar",
         "floors": 3,
-        "size": {"w": [28, 36], "h": [20, 24]},
+        "size": {"w": [32, 36], "h": [24, 26]},
         "rooms": [6, 8],
-        "mobs": [1, 2],
         "fog": {"radius": 5},
-        "pattern": ["entry", "n", "warden"],
+        "pattern": ["entry", "landing", "warden"],
         "families": [
-            {"id": "rat", "name": "a cellar rat", "weight": 2,
-             "hp": [1, 2], "atk": 1, "sight": 4, "drops": ["pebble"]},
-            {"id": "moth", "name": "a pale moth", "weight": 1,
-             "hp": [1, 1], "atk": 1, "sight": 4, "drops": []},
+            {"family": "rat", "weight": 2, "depth": [1, 3]},
+            {"family": "moth", "weight": 1, "depth": [1, 3]},
         ],
     },
     {
         "id": "hollow",
-        "title": "The Hollow",
         "floors": 2,
-        "size": {"w": [28, 32], "h": [20, 22]},
-        "rooms": [5, 7],
-        "mobs": [1, 2],
+        "size": {"w": [32, 34], "h": [24, 26]},
+        "rooms": [6, 7],
         "fog": {"radius": 4},
-        "pattern": ["entry", "n"],
+        # No `pattern`: a Section that names none takes the engine's own,
+        # and every floor here is an ordinary one. Naming two would force
+        # three floors - two landings and a warden - on a Section the play
+        # tests reach in two steps.
         "families": [
-            {"id": "shade", "name": "a hollow shade", "weight": 1,
-             "hp": [1, 2], "atk": 1, "sight": 4, "drops": []},
+            {"family": "shade", "weight": 1, "depth": [1, 2]},
         ],
     },
 ]
