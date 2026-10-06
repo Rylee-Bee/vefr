@@ -25,7 +25,7 @@ echo "$LOG_PREFIX  Spark (Qwen3-0.6B) → :8083"
 llama-server \
     --model "$MODELS_DIR/spark.gguf" \
     --port 8083 --host 0.0.0.0 \
-    --ctx-size 2048 --threads $(nproc) --parallel 1 \
+    --ctx-size 2048 --threads "$(nproc)" --parallel 1 \
     --log-disable 2>/dev/null &
 
 # Start storyteller (Qwen3-1.7B) — narration
@@ -33,7 +33,7 @@ echo "$LOG_PREFIX  Storyteller (Qwen3-1.7B) → :8084"
 llama-server \
     --model "$MODELS_DIR/storyteller.gguf" \
     --port 8084 --host 0.0.0.0 \
-    --ctx-size 4096 --threads $(nproc) --parallel 1 \
+    --ctx-size 4096 --threads "$(nproc)" --parallel 1 \
     --log-disable 2>/dev/null &
 
 # Start vision (SmolVLM2-500M) — image understanding + its projector
@@ -42,7 +42,7 @@ llama-server \
     --model "$MODELS_DIR/vision.gguf" \
     --mmproj "$MODELS_DIR/vision-mmproj.gguf" \
     --port 8085 --host 0.0.0.0 \
-    --ctx-size 4096 --threads $(nproc) --parallel 1 \
+    --ctx-size 4096 --threads "$(nproc)" --parallel 1 \
     --log-disable 2>/dev/null &
 
 # Start embeddings (bge-m3) — lore retrieval
@@ -50,7 +50,7 @@ echo "$LOG_PREFIX  Embeddings (bge-m3) → :8086"
 llama-server \
     --model "$MODELS_DIR/embeddings.gguf" \
     --port 8086 --host 0.0.0.0 \
-    --ctx-size 512 --threads $(nproc) --parallel 1 \
+    --ctx-size 512 --threads "$(nproc)" --parallel 1 \
     --embedding --log-disable 2>/dev/null &
 
 # Wait for models to load (check /health on each port)
