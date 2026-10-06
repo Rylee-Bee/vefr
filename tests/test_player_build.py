@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "scripts" / "build_player.py"
 
@@ -48,6 +50,38 @@ def test_the_manifest_matches_the_parts_folder():
     on_disk = {p.name for p in parts.iterdir() if p.is_file()}
     assert len(manifest) == len(listed), "a part is listed twice"
     assert listed == on_disk, f"missing {listed - on_disk}, orphaned {on_disk - listed}"
+
+
+def test_no_two_parts_share_a_part_number():
+    """The number in front of a part's name is that part's number, for good.
+
+    `390-engine-delve-v2.js` is part 390 and `395-engine-delve-v3.js` is part
+    395: the number says where the part loads and which slice owns it. Two
+    parts under one number is a collision between two slices - the number
+    stops naming a part, and the weave order is decided by list position
+    rather than by the number a reader would look it up by.
+
+    Slices are built as separate PRs against the same folder, so the collision
+    is only visible when both are on disk at once. Claiming a number a slice
+    already owns is how it happens: this caught the v3 twin claiming 395 while
+    E1's `395-the-descent.js` was in flight in vefr#314. One number, one part,
+    and the numbers increase in manifest order.
+    """
+    manifest = json.loads((ROOT / "web" / "player" / "manifest.json").read_text(encoding="utf-8"))
+    numbers: dict[int, list[str]] = {}
+    for name in manifest:
+        head, _, _rest = name.partition("-")
+        if not head.isdigit():
+            pytest.fail(f"{name} has no leading part number")
+        numbers.setdefault(int(head), []).append(name)
+    shared = {n: names for n, names in numbers.items() if len(names) > 1}
+    assert not shared, (
+        "two parts share one number: "
+        + ", ".join(f"{n}: {sorted(names)}" for n, names in sorted(shared.items())))
+    order = [int(name.partition("-")[0]) for name in manifest]
+    assert order == sorted(order), (
+        "the part numbers do not increase in manifest order, so the weave "
+        f"order is not the numeric one: {order}")
 
 
 def test_the_parts_join_byte_for_byte():

@@ -42,7 +42,7 @@ import floor_v3_parity_cases as cases
 
 ROOT = cases.ROOT
 HARNESS = ROOT / "tests" / "fixtures" / "floor_v3_parity_harness.mjs"
-TWIN_PART = ROOT / "web" / "player" / "parts" / "395-engine-delve-v3.js"
+TWIN_PART = ROOT / "web" / "player" / "parts" / "396-engine-delve-v3.js"
 
 # The constants the determinism rule names in both languages, read off the spec
 # rather than written out, so a change to `delve_v3` moves this list with it.
