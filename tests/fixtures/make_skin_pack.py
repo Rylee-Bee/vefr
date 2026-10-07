@@ -137,5 +137,25 @@ def build_parts(dest: Path, name: str = "skin-parts") -> Path:
     return build(dest, skin=ALL_SKIN, files=ALL_FILES, name=name, colours=PARTS_COLOURS)
 
 
+# ---- a skin shaped like the soft-wood packs (Cottage's, and every pack that opts
+# into the themed interface): a dark wood panel picture and dark ink for the words
+# that sit on it. This is the shape the menu-labels check measures, because it is
+# the shape in which the panel's own face and the ink the skin declares for its
+# words can stop being readable together. The ink is the fixture skin's own
+# (#2B2118) so nothing here is a special case for one pack's colour.
+WOOD = (58, 42, 24)
+WOOD_SKIN = {**ALL_SKIN, "fonts": {"display": "Crimson Pro", "body": "Crimson Pro"}}
+WOOD_FILES = dict(ALL_FILES)
+WOOD_COLOURS = {**PARTS_COLOURS, **{f: WOOD for f in
+                                    ("panel.png", "bar-frame.png", "bar-fill.png",
+                                     "cursor.png", "button.png", "button-hover.png",
+                                     "button-pressed.png", "button-disabled.png")}}
+
+
+def build_wood(dest: Path, name: str = "skin-wood") -> Path:
+    """A pack carrying every part, with a dark wood panel picture and dark ink."""
+    return build(dest, skin=WOOD_SKIN, files=WOOD_FILES, name=name, colours=WOOD_COLOURS)
+
+
 if __name__ == "__main__":
     print(build(Path(sys.argv[1])))

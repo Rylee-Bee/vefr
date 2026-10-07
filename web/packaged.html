@@ -11201,6 +11201,24 @@ var THEMED_PARTS = ['slot', 'tab', 'toggle', 'tooltip', 'speech',
 // pointer and it never sizes a control.
 var CORNER_STUD = 18;
 
+// WCAG relative luminance and contrast for two `r, g, b` triples (0..255), and the
+// floor body text has to clear. The same maths, and the same 4.5, as
+// tests/test_teal_contrast.py: a face a skin's words are drawn on is only a face if
+// the words can be read on it.
+var BODY_FLOOR = 4.5;
+function faceLuma(r, g, b) {
+  var lin = function (c) {
+    c = c / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+function faceContrast(one, two) {
+  var a = faceLuma(one[0], one[1], one[2]);
+  var b = faceLuma(two[0], two[1], two[2]);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 var SKIN_FONT_STACKS = {
   'Cinzel': "'Cinzel', Georgia, 'Times New Roman', serif",
   'Atkinson Hyperlegible Next': "'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif",
@@ -11356,6 +11374,15 @@ function applySkin() {
   // across a wide panel and show the seams as stripes behind the text, so a panel keeps only
   // its carved border from the picture and paints its middle one flat colour taken from the
   // picture's own centre (measured in the browser; ground() is the fallback).
+  //
+  // The picture's middle is a NICER version of that fallback face, never a licence to paint
+  // words nobody can see. Every skinned surface - the panels, the menu tabs, the HUD boxes -
+  // takes this one colour as its face and the skin's own `ink.on_panel` as its words, so a
+  // picture whose middle does not carry that ink leaves the fallback standing, which does.
+  // Measured on a soft-wood skin wearing dark ink: 1.14:1, and every tab label, the whole
+  // content panel and every HUD value box went blank while the text stayed in the DOM,
+  // visible and opaque - so the accessibility checks, which ask whether the words EXIST,
+  // all passed.
   function sampleGround(file, slice) {
     var im = new Image();
     im.onload = function () {
@@ -11365,6 +11392,11 @@ function applySkin() {
         var sw = Math.max(1, w - 2 * sl), sh = Math.max(1, h - 2 * sl);
         var x = c.getContext('2d'); x.drawImage(im, sl, sl, sw, sh, 0, 0, 1, 1);
         var d = x.getImageData(0, 0, 1, 1).data;
+        var hex = /^#([0-9a-fA-F]{6})$/.exec(ink.on_panel || '');
+        if (!hex) return;                       // no declared ink, nothing to read against
+        var n = parseInt(hex[1], 16);
+        if (faceContrast([(n >> 16) & 255, (n >> 8) & 255, n & 255],
+                         [d[0], d[1], d[2]]) < BODY_FLOOR) return;   // keep the fallback
         document.documentElement.style.setProperty('--vefr-skin-ground',
           'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')');
       } catch (e) { /* no canvas: the fallback colour stays */ }
