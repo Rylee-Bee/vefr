@@ -68,6 +68,7 @@ to this repo.
 ```bash
 # The gate — run before claiming anything is done (mirrors ci.yml)
 uv sync --group test
+scripts/check             # the one command: --fast (pre-push), --full, --list, --merge-ready
 npm ci                    # jsdom for the node-vm harnesses; without it pytest errors
 uv run --group test ruff check src tests scripts
 uv run --group test pytest -q

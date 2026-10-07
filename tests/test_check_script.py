@@ -377,6 +377,10 @@ def test_merge_ready_without_origin_is_a_fail(fake_repo, tools):
     result = run_check(fake_repo, "--merge-ready", env=tools)
     assert result.returncode != 0
     assert "no origin/main to merge" in result.stdout
+    # The fast path is honest about it too, rather than reporting "no changed
+    # tests" as if the branch had simply not touched any.
+    fast = run_check(fake_repo, "--fast", env=tools)
+    assert "fetch the default branch" in fast.stdout
 
 
 def _assert_no_worktree_left(repo):

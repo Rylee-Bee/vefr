@@ -323,6 +323,10 @@ run_table() {
         fi
         ;;
       pytest-changed)
+        if [ -z "$BASE_SHA" ]; then
+          step "$id" "$blocking" "" "no $BASE_REF to compare against (fetch the default branch)"
+          continue
+        fi
         targets="$(changed_tests)"
         CHANGED_TESTS="$targets"
         if [ -z "$targets" ]; then
