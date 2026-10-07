@@ -30,7 +30,7 @@ from .export import export_story
 from .forge import ItemCard, forge_item, keep_item, list_vault
 from .generator import generate_rumor
 from .npc import generate_line
-from .paths import app_home, safe_pack_name, data_dir
+from .paths import app_home, safe_pack_name, data_dir, resolve_under
 from .world import load_world, current_act
 
 PURPOSE = "a rumor engine for playable worlds"
@@ -862,7 +862,7 @@ def features_report(pack: str | None = None):
             status_code=400,
             detail="pack must be a bare world name (letters, digits and dashes)",
         )
-    world = worlds_dir() / pack
+    world = resolve_under(worlds_dir(), pack)
     if not (world / "world.json").is_file():
         raise HTTPException(status_code=404, detail=f"no world named {pack!r}")
     return features.report(world)
@@ -1044,7 +1044,7 @@ def builder_worlds_create(req: BuilderWorldCreateRequest):
     name = _safe_world_name(req.name.strip())
     if not name:
         raise HTTPException(status_code=400, detail="world must be a bare pack name")
-    dest = worlds_dir() / name
+    dest = resolve_under(worlds_dir(), name)
     if dest.exists():
         raise HTTPException(status_code=409, detail=f"a world named {name!r} already lives here")
     scaffold = _sample_scaffold()
@@ -1084,9 +1084,9 @@ def builder_worlds_active(req: BuilderWorldActiveRequest):
     name = _safe_world_name(req.name.strip())
     if not name:
         raise HTTPException(status_code=400, detail="world must be a bare pack name")
-    pack = worlds_dir() / name
+    pack = resolve_under(worlds_dir(), name)
     if not (pack / "world.json").is_file():
-        pack = template_dir() / name
+        pack = resolve_under(template_dir(), name)
     if not (pack / "world.json").is_file():
         raise HTTPException(status_code=404, detail=f"no world named {name!r}")
     pinned = os.environ.get("VEFR_WORLD")
