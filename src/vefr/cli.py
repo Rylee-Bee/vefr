@@ -650,6 +650,23 @@ def _tile_walkable(rows: list[str], legend: dict, x: int, y: int) -> bool:
     return rows[y][x] not in BLOCKED_FALLBACK
 
 
+def _take_the_down_stair(rows: list[str], at: tuple[int, int]) -> list[str]:
+    """The rows of a bottom floor: its down-stair glyph taken back out.
+
+    Only the tile the generator put the down anchor on becomes floor.
+    `d` is a map tile like any other - a stamped room may draw one of
+    its own, and a future generator may - so a blanket `replace('d', '.')`
+    would erase those too. The stair goes back out at the coordinate it
+    was placed at, which is the one thing that is certainly a stair.
+    """
+    from . import delve_v3
+
+    x, y = at
+    out = list(rows)
+    out[y] = out[y][:x] + delve_v3.FLOOR + out[y][x + 1:]
+    return out
+
+
 def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
     """A generated floor's contract, named from the pack's grammar.
 
@@ -745,9 +762,12 @@ def _bake_section(args, pack: Path, act_dir: Path, act: dict, act_path: Path,
             # stair that goes home from it is E8's, not this slice's. The
             # generator draws a down anchor on every floor it lays, so the
             # glyph and the anchor are taken back out here rather than
-            # leaving a stair on a floor with nothing under it.
+            # leaving a stair on a floor with nothing under it. Only the
+            # tile the generator put the anchor on is a stair - a `d`
+            # anywhere else on the map is some other tile and is left be.
+            if down:
+                rows = _take_the_down_stair(rows, (down[0], down[1]))
             down = None
-            rows = [row.replace('d', '.') for row in rows]
         contract = delve_mod.contract(plan['w'], plan['h'], up,
                                       down_at=down if down else None)
         contract.update({
