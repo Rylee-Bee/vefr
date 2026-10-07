@@ -5,9 +5,12 @@ the behaviour a human leans on:
 
 - every step reports PASS / FAIL / SKIP, and a blocking FAIL exits non-zero;
 - a tool that is not installed is a SKIP with a reason, never a silent pass;
-- --list names every CI step and which ones are CI-only;
+- --list names every CI step and which ones are CI-only, under a column
+  header that sits where the values do;
 - the step table carries the CI commands, so CI and the script cannot drift
   apart silently;
+- CONTRIBUTING names exactly the flags the script takes, so the docs
+  describe this tool and not a smaller one;
 - --merge-ready answers on the MERGED tree, in a worktree that leaves no
   commit on the branch and nothing behind.
 
