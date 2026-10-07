@@ -123,6 +123,38 @@ def test_list_output_marks_ci_only_steps():
     assert "--merge-ready" in result.stdout
 
 
+def test_list_output_has_a_column_header(step_table):
+    """--list names its columns, above the rows that use them.
+
+    The header is output, not decoration: a reader who cannot tell `phase`
+    from `speed` cannot read the table, and the columns only line up if
+    both lines come out of the same format string. So the header must be
+    there, above the first step, and sit where the values sit - a refactor
+    that drops it fails here instead of quietly shipping it.
+    """
+    result = run_check(ROOT, "--list")
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.splitlines()
+
+    header = next((n for n, line in enumerate(lines)
+                   if line.split()[:3] == ["step", "speed", "phase"]), None)
+    assert header is not None, f"--list prints no column header:\n{result.stdout}"
+    assert lines[header].rstrip().endswith("what it does"), lines[header]
+
+    first_step = step_table[0]
+    first_row = next((n for n in range(header + 1, len(lines))
+                      if lines[n].split() and lines[n].split()[0] == first_step["id"]), None)
+    assert first_row is not None, f"no row for {first_step['id']}:\n{result.stdout}"
+
+    # The labels sit exactly where that row's values do, so the two lines
+    # are read as one table instead of two guesses.
+    row = lines[first_row]
+    speed_at = row.index(first_step["speed"])
+    phase_at = row.index(first_step["phase"], speed_at + len(first_step["speed"]))
+    assert lines[header].index("speed") == speed_at, lines[header]
+    assert lines[header].index("phase") == phase_at, lines[header]
+
+
 # ------------------------------------------------------------- fake repo
 
 
