@@ -261,6 +261,7 @@ list_mode() {
   say "repo: $ROOT"
   say "base: $BASE_REF${BASE_SHA:+ (merge-base ${BASE_SHA:0:12})}"
   say ""
+  printf '%-20s %-8s %-7s %s\n' "step" "speed" "phase" "what it does"
   while IFS='|' read -r id phase blocking speed title command hint; do
     printf '%-20s %-8s %-7s %s\n' "$id" "$speed" "$phase" "$title"
     printf '%-20s %-8s %-7s   $ %s\n' "" "" "" "$command"
