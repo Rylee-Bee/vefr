@@ -40,14 +40,17 @@ surface, read the accessibility matrix first.
 4. Run the gate (must match CI exactly):
    ```sh
    uv sync --group test
-   scripts/check
-   ```
-   Or the gate one command at a time:
-   ```sh
    uv run --group test ruff check src tests scripts
    uv run --group test pytest -q
    python3 scripts/check_public_surface.py
    ```
+   Or let one runner do the looking-up (see [Test gate](#test-gate-every-pr-must-pass)):
+   ```sh
+   scripts/check
+   ```
+   A step the runner has no tool for comes back `SKIP` and does not fail
+   the run, so read the SKIP lines: a green `scripts/check` is not proof
+   the gate passed.
 5. Known pre-existing failures (do not treat as regressions):
    - `test_face_roll_is_honest_without_a_model`, `test_map_propose_is_honest_without_a_model` — model-dependent; fail when no LLM endpoint is reachable.
 
@@ -76,12 +79,11 @@ main ← PR ← feat/*
 ## Test gate (every PR must pass)
 
 ```sh
-scripts/check                 # everything CI runs that can run locally
+scripts/check                 # the CI commands below, run as one table
 ```
 
-`scripts/check` is the one command for the gate. It carries the CI
-commands as a step table and runs them locally, so a PR is known to be
-mergeable before it is sent:
+`scripts/check` carries the CI commands as a step table and runs them
+locally, so most of the gate is answered before the PR is sent:
 
 ```sh
 scripts/check --list         # every CI step: what runs here, what is CI-only
@@ -99,6 +101,13 @@ Each step prints `PASS`, `FAIL`, or `SKIP` with the reason; a blocking
 install hint, never a silent pass. With `uv` present the script runs the
 command CI runs; without it, it falls back to the shared CI venv and
 prints which one it used.
+
+**It is a runner, not the gate.** A SKIP is not a pass: a step this
+machine has no tool for is skipped, not checked, and the run still exits
+0. So exit 0 means "no blocking step that could run here failed" — on a
+machine with no toolchain that is every step SKIPped and nothing checked.
+Read the `SKIP` lines and the summary's skip count, and let CI be the
+gate that decides the PR.
 
 | Step | Speed | Runs here? |
 |---|---|---|

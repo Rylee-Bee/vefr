@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# scripts/check - the one command that answers "will this PR merge?".
+# scripts/check - one command that runs the CI gate steps this machine can
+# run. It is a local runner for CI's commands, not CI and not the merge
+# decision: what it cannot run here it prints as SKIP, and CI still decides.
 #
 #   scripts/check --fast         what a pre-push hook can run in seconds:
 #                                 lint, tests of the changed code, gitleaks on
@@ -14,8 +16,10 @@
 #
 # Every step prints PASS / FAIL / SKIP-with-a-reason. The exit status is
 # non-zero if any blocking step FAILs. A tool that is not installed is a SKIP
-# with an install hint, never a silent pass. Nothing here echoes the
-# environment; the secret scan runs with --redact.
+# with an install hint, never a silent pass. A SKIP is not a pass: an exit 0
+# means no blocking step that could run here failed, and on a machine with no
+# toolchain that is every step SKIPped and nothing run. Nothing here echoes
+# the environment; the secret scan runs with --redact.
 #
 # The commands in the step table are the CI commands, copied from
 # .github/workflows/. If CI changes, this table changes with it -
@@ -80,7 +84,15 @@ security-manual|never|yes|ci-only|public-surface guard (manual dispatch)|python3
 # --------------------------------------------------------------------------
 have() { command -v "$1" >/dev/null 2>&1; }
 
-report() { printf '%-6s %-20s %s\n' "$1" "$2" "${3:-}"; }
+# Verdicts are kept as well as printed, so the summary can say how many
+# steps this machine could not run: a run that skipped everything is not
+# the same evidence as a run that passed everything.
+VERDICTS=""
+
+report() {
+  printf '%-6s %-20s %s\n' "$1" "$2" "${3:-}"
+  VERDICTS+="$1 $2"$'\n'
+}
 say() { printf '%s\n' "$*"; }
 
 json_escape() {
@@ -238,6 +250,10 @@ usage: scripts/check [--fast | --full | --list | --merge-ready] [--json]
   --merge-ready  merge origin/<default> into HEAD in a throwaway worktree and
                  run the full check on the merged tree
   --json         with --list, print the step table as JSON
+
+exit 0 means no blocking step that could run here failed.
+A SKIP is not a pass: a tool this machine does not have is skipped, not
+checked - read the SKIP lines. CI is the gate that decides the PR.
 USAGE
 }
 
@@ -412,12 +428,14 @@ exit $failed'
 }
 
 summary() {
+  local skipped
+  skipped="$(grep -c '^SKIP ' <<< "$VERDICTS" || true)"
   say ""
   if [ "$STEP_FAILED" -eq 1 ]; then
     report FAIL "check" "at least one step failed - see above"
     return 1
   fi
-  report PASS "check" "every step that could run here passed"
+  report PASS "check" "no blocking step that could run here failed${skipped:+ ($skipped SKIPped: not checked)}"
   return 0
 }
 

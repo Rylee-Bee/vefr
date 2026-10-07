@@ -11,6 +11,9 @@ the behaviour a human leans on:
   apart silently;
 - CONTRIBUTING names exactly the flags the script takes, so the docs
   describe this tool and not a smaller one;
+- a run that skipped every step exits 0 and says so, and every doc that
+  sends a reader to this tool says the same thing, so no doc sells a
+  SKIPped step as a gate that passed;
 - --merge-ready answers on the MERGED tree, in a worktree that leaves no
   commit on the branch and nothing behind.
 
@@ -169,8 +172,7 @@ def _documented_check_flags():
     Only lines that talk about `scripts/check` count, so the `uv run ...`
     commands in the same section are not read as modes of the tool.
     """
-    gate = CONTRIBUTING.read_text().split("## Test gate", 1)[1]
-    gate = gate.split("\n## ", 1)[0]
+    gate = _gate_section()
     flags = set()
     for line in gate.splitlines():
         if "scripts/check" in line and "check_public_surface" not in line:
@@ -197,6 +199,101 @@ def test_documented_flags_are_the_scripts_flags():
         f"and no others: documented {sorted(_documented_check_flags())}, "
         f"script {sorted(script_flags)}"
     )
+
+
+# A doc may send a reader to this tool; it may not promise more than the tool
+# does. These are the phrases a review of this branch rejected, kept as the
+# tripwire: a doc that calls the runner the gate, or says a local run knows a
+# PR will merge, is a claim the exit code does not back.
+OVERCLAIMS = (
+    "the one command for the gate",
+    "the one command that answers",
+    "known to be mergeable",
+    "will this PR merge?",
+)
+
+
+def _docs_pointing_at_the_runner():
+    """Every tracked markdown file, plus the script's own header, that names
+    `scripts/check`. `check_public_surface.py` is a different tool."""
+    docs = []
+    for path in sorted(ROOT.rglob("*.md")):
+        if ".git" in path.parts:
+            continue
+        text = path.read_text(errors="replace")
+        mentions_runner = any(
+            "scripts/check" in line and "check_public_surface" not in line
+            for line in text.splitlines()
+        )
+        if mentions_runner:
+            docs.append((path.relative_to(ROOT), text))
+    header = "\n".join(
+        line for line in CHECK.read_text().splitlines()
+        if line.startswith("#") and not line.startswith("#!")
+    )
+    return docs + [("scripts/check header", header)]
+
+
+def test_docs_say_a_skip_is_not_a_pass():
+    """A doc that points at the runner must say what a SKIP means for it.
+
+    The tool skips what this machine has no tool for and still exits 0, so a
+    green run is not a green gate. Every doc that tells a reader to run it -
+    CONTRIBUTING, AGENTS.md, ROADMAP.md and the script's own header - has to
+    say that, or the reader is sold a gate that never ran.
+    """
+    docs = _docs_pointing_at_the_runner()
+    assert {str(name) for name, _ in docs} >= {
+        "AGENTS.md", "CONTRIBUTING.md", "ROADMAP.md", "scripts/check header",
+    }, f"the docs stopped naming the runner: {[str(n) for n, _ in docs]}"
+
+    for name, text in docs:
+        skip_lines = [line for line in text.splitlines() if "skip" in line.lower()]
+        assert any("pass" in line.lower() for line in skip_lines), (
+            f"{name} sends a reader to scripts/check without saying that a "
+            f"SKIPped step is not a pass"
+        )
+        for phrase in OVERCLAIMS:
+            assert phrase not in text, f"{name} still claims: {phrase!r}"
+
+    # And the same rule for the tool's own usage text, which is what a reader
+    # who typed --help saw first.
+    usage = run_check(ROOT, "--help").stdout
+    assert "A SKIP is not a pass" in usage, usage
+    for phrase in OVERCLAIMS:
+        assert phrase not in usage, f"--help still claims: {phrase!r}"
+
+
+def test_a_run_that_skipped_everything_says_so(feature_branch, fake_home):
+    """Exit 0 with nothing checked is reported as nothing checked.
+
+    This is the behaviour the doc claim above has to match: a bare machine
+    skips every tool step and the run still succeeds, so the summary carries
+    the skip count, and CONTRIBUTING's gate section states the same
+    condition in the same words.
+    """
+    result = run_check(feature_branch, "--full",
+                       env={"PATH": BARE_PATH, "HOME": str(fake_home)})
+    assert result.returncode == 0, result.stdout
+    skipped = [line for line in result.stdout.splitlines() if line.startswith("SKIP")]
+    assert skipped, "the bare machine skipped nothing, so this proves nothing"
+
+    summary = verdict(result.stdout, "check")
+    assert summary.startswith("PASS"), summary
+    assert "no blocking step that could run here failed" in summary, summary
+    assert f"({len(skipped)} SKIPped: not checked)" in summary, summary
+
+    gate = _gate_section()
+    assert "no blocking step that could run here failed" in gate, (
+        "CONTRIBUTING's gate section must say what a zero exit means here"
+    )
+    assert "SKIP" in gate and "not a pass" in gate, gate
+
+
+def _gate_section():
+    """CONTRIBUTING's Test gate section - the block the flags come from too."""
+    gate = CONTRIBUTING.read_text().split("## Test gate", 1)[1]
+    return gate.split("\n## ", 1)[0]
 
 
 # ------------------------------------------------------------- fake repo
