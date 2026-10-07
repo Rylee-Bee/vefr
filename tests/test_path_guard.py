@@ -22,9 +22,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from vefr import journal
+from vefr import journal, saga
 from vefr.main import app
-from vefr.paths import pack_dir, resolve_under, worlds_dir
+from vefr.paths import pack_dir, pack_file, resolve_under, worlds_dir
 from vefr.sessions import derive
 
 BASE = Path("/srv/vefr/worlds")
@@ -121,6 +121,61 @@ def test_pack_dir_still_takes_a_bare_name_and_an_absolute_path(fixture_vefr_home
     elsewhere = tmp_path / "elsewhere-pack"
     shutil.copytree(fixture_vefr_home / "worlds" / "four-phase-pack", elsewhere)
     assert pack_dir(str(elsewhere)) == elsewhere
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "../evil.md",                 # out of the pack, one level
+        "../../evil.md",              # out of the pack, two levels
+        "..",                         # the pack's own parent
+        "voices/../../evil.md",       # up through a segment we just joined
+        "/etc/passwd",                # absolute, ignoring the pack entirely
+        "voices/../../../../evil.md", # far enough up to leave the tree
+    ],
+)
+def test_pack_file_refuses_a_rel_that_walks_out_of_the_pack(fixture_vefr_home, rel):
+    """The pack *name* is guarded by _pack_path(); `rel` is the second
+    join of the same shape and gets the same guard."""
+    with pytest.raises(ValueError, match="escapes its base"):
+        pack_file(rel, "four-phase-pack")
+
+    assert sorted(p.name for p in fixture_vefr_home.iterdir()) == ["worlds"]
+    assert sorted(p.name for p in worlds_dir().iterdir()) == ["four-phase-pack"]
+
+
+def test_pack_file_still_joins_a_plain_or_nested_rel(fixture_vefr_home, monkeypatch):
+    """The guard is a second layer over the join, not a new rule: the
+    downward joins callers make today still resolve to the same path."""
+    pack = worlds_dir() / "four-phase-pack"
+
+    assert pack_file("world.json", "four-phase-pack") == pack / "world.json"
+    assert pack_file("voices", "four-phase-pack") == pack / "voices"
+    assert pack_file("voices/npc.md", "four-phase-pack") == pack / "voices" / "npc.md"
+
+    monkeypatch.setenv("VEFR_WORLD", "four-phase-pack")  # the no-name default
+    assert pack_file("world.json") == pack / "world.json"
+
+
+def test_pack_file_still_follows_an_absolute_pack(fixture_vefr_home, tmp_path):
+    """The CLI resolves `--pack /srv/packs/mine` to an absolute path, so
+    `rel` is guarded against *that* directory, not against worlds/."""
+    elsewhere = tmp_path / "elsewhere-pack"
+    shutil.copytree(fixture_vefr_home / "worlds" / "four-phase-pack", elsewhere)
+
+    assert pack_file("world.json", str(elsewhere)) == elsewhere / "world.json"
+    with pytest.raises(ValueError, match="escapes its base"):
+        pack_file("../evil.md", str(elsewhere))
+
+
+def test_logbok_still_reads_through_the_guarded_pack_file(fixture_vefr_home):
+    """The one real caller, end to end: saga.logbok() must not have
+    lost the pack it reads."""
+    (worlds_dir() / "four-phase-pack" / "logbok.md").write_text(
+        "the canon line", encoding="utf-8"
+    )
+
+    assert saga.logbok("four-phase-pack") == "the canon line"
 
 
 def test_derive_keeps_every_id_that_works_today(tmp_path):

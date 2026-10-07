@@ -235,7 +235,20 @@ def pack_dir(name: str | None = None) -> Path:
 
 
 def pack_file(rel: str, name: str | None = None) -> Path:
-    return pack_dir(name) / rel
+    """A file inside a pack: pack_dir(), then `rel` under it.
+
+    The pack *name* is guarded by _pack_path(); `rel` is the second
+    join of the same shape, so it gets the same guard. It is a
+    caller-supplied value too, and a pack-root join is exactly the
+    place a "../" must not walk out of - the callers today pass
+    literals ("logbok.md"), but the builder this function is has to
+    hold whatever the next one passes.
+
+    Downward segments still join as they always have
+    ("voices/npc.md"); an absolute `rel`, or one that climbs out of
+    the pack, raises instead of resolving.
+    """
+    return resolve_under(pack_dir(name), rel)
 
 
 # The world whose play history lives in the unscoped files (journal.json,
