@@ -14,6 +14,15 @@
     --danger: #D4644C; --church: #2A2E33;
     --glass: rgba(17, 19, 23, 0.86); --glass-edge: rgba(216, 170, 78, 0.45);
     --glass-ink: #F4EEDD;
+    /* The OS-drawn chrome a phone keeps clear of its content: the home
+       indicator on the bottom, the notch or status bar on the top, the
+       rounded corners on the sides. `viewport-fit=cover` (in 010-head.html)
+       is what makes env() report a value at all. The fallback is 0 for
+       desktop browsers and older WebViews. */
+    --sai-top: env(safe-area-inset-top, 0px);
+    --sai-bottom: env(safe-area-inset-bottom, 0px);
+    --sai-left: env(safe-area-inset-left, 0px);
+    --sai-right: env(safe-area-inset-right, 0px);
     --display: 'Cinzel', Georgia, 'Times New Roman', serif;
     --read: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif;
     color-scheme: dark;
@@ -102,7 +111,7 @@
   .hud-frame { position: absolute; left: var(--stage-x); top: var(--stage-y);
     width: var(--stage-w); height: var(--stage-h); pointer-events: none; container-type: size; }
   .hud-frame > * { pointer-events: auto; }
-  .hud { position: absolute; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hud { position: absolute; top: calc(12px + var(--sai-top)); z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* leave room for the Menu button (about 88 px) so the health/level/gold row wraps instead of running under it */
   .hud--tl { left: 12px; max-width: calc(100% - 124px); }
   .hud--tr { right: 12px; justify-content: flex-end; max-width: 60%; }
@@ -165,7 +174,7 @@
   .gbtn { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.5); }
   .gbtn--gold, .stage button.primary { background: #D8AA4E; color: #1B1206; border-color: transparent; }
   .gbtn--dim { opacity: 0.55; }   /* Interact with nothing in reach: dimmed, never hidden or disabled */
-  .acts { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 10px; align-items: flex-end; }
+  .acts { position: absolute; right: 16px; bottom: calc(16px + var(--sai-bottom)); z-index: 2; display: flex; gap: 10px; align-items: flex-end; }
   /* Interact is the one big button; Talk, Whisper, Bag and Explore are small icon buttons that keep
      their words (for a screen reader and the tooltip) and their key letter. */
   .gbtn--tool { position: relative; width: 46px; height: 46px; min-height: 44px; padding: 0; border-radius: 12px;
@@ -184,7 +193,7 @@
   /* Visually hidden, still read aloud: the quiet way to keep a line for a screen reader. */
   .sr-only, .quiet, .toasts.is-collapsed p { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0 !important; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0 !important; }
   /* The messages live in a small corner panel (top left, under the health bar), never over the map. */
-  .toasts { position: absolute; left: 12px; top: 64px; z-index: 2; display: grid; gap: 6px; justify-items: start; width: min(210px, 36%); pointer-events: none; }
+  .toasts { position: absolute; left: 12px; top: calc(64px + var(--sai-top)); z-index: 2; display: grid; gap: 6px; justify-items: start; width: min(210px, 36%); pointer-events: none; }
   .toasts p { margin: 0; padding: 5px 10px; text-align: left; font-size: 0.82rem; }
   .toasts p:empty { display: none; }
   .toasts-toggle { pointer-events: auto; font: 700 0.7rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; min-height: 44px; background: var(--glass); color: var(--glass-ink); border: 1px solid var(--glass-edge); border-radius: 4px; cursor: pointer; }
@@ -232,44 +241,44 @@
   .trade-row .trade-price { color: rgba(244, 238, 221, 0.75); font-size: 0.9rem; white-space: nowrap; }
   .trade-row button { min-height: 44px; }
   /* choices */
-  .verb-row { position: absolute; left: 16px; bottom: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
+  .verb-row { position: absolute; left: 16px; bottom: calc(16px + var(--sai-bottom)); z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; max-width: 45%; }
   .verb-row[hidden] { display: none; }
   .verb-row button { background: var(--glass); color: var(--glass-ink); border-color: rgba(242, 236, 221, 0.4); text-transform: none; letter-spacing: 0.02em; font: 700 0.9rem var(--read); }
   .verb-row button::before { content: '\25B6'; color: #D8AA4E; font-size: 0.7rem; }
   body[data-surface="plain"] .verb-row,
   body[data-surface="investigation"] .verb-row { display: none; }
-  #combat-log { position: absolute; left: 16px; bottom: 70px; z-index: 2; margin: 0; max-width: 45%; font-size: 0.85rem; }
+  #combat-log { position: absolute; left: 16px; bottom: calc(70px + var(--sai-bottom)); z-index: 2; margin: 0; max-width: 45%; font-size: 0.85rem; }
   #combat-log:empty { display: none; }
   /* move pad: phones and touch */
-  .dpad { position: absolute; left: 12px; bottom: 76px; z-index: 2; display: none;
+  .dpad { position: absolute; left: 12px; bottom: calc(76px + var(--sai-bottom)); z-index: 2; display: none;
     grid-template-areas: ". u ." "l . r" ". d ."; grid-template-columns: repeat(3, 52px); gap: 4px; }
   .dpad button { width: 52px; height: 52px; padding: 0; border-radius: 50%; background: rgba(17, 19, 23, 0.6); color: #F4EEDD; border-color: rgba(242, 236, 221, 0.45); font: 1.1rem var(--read); }
   @media (pointer: coarse), (max-width: 700px) {
     .dpad { display: grid; }
-    .verb-row { left: auto; right: 12px; bottom: 196px; flex-direction: column; align-items: flex-end; max-width: 60%; }
-    .acts { flex-direction: column; align-items: center; right: 12px; bottom: 16px; }
+    .verb-row { left: auto; right: 12px; bottom: calc(196px + var(--sai-bottom)); flex-direction: column; align-items: flex-end; max-width: 60%; }
+    .acts { flex-direction: column; align-items: center; right: 12px; bottom: calc(16px + var(--sai-bottom)); }
     .acts .gbtn--main { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 0.66rem; }
     .acts .gbtn--tool { width: 48px; height: 48px; border-radius: 50%; }
     .acts kbd { display: none; }
-    .npc-box { left: 10px; right: 10px; bottom: 12px; }
-    .toasts { top: 108px; bottom: auto; width: min(210px, 60%); }   /* below the health/level/gold row, which can wrap to two lines */
+    .npc-box { left: 10px; right: 10px; bottom: calc(12px + var(--sai-bottom)); }
+    .toasts { top: calc(108px + var(--sai-top)); bottom: auto; width: min(210px, 60%); }   /* below the health/level/gold row, which can wrap to two lines */
     .hud-hp-bar { width: 56px; }
     .hud-hp-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .hud--tr { max-width: 70%; }
   }
   /* very narrow phones: the health, level and gold row can wrap to three lines */
-  @media (max-width: 400px) { .toasts { top: 150px; } }
+  @media (max-width: 400px) { .toasts { top: calc(150px + var(--sai-top)); } }
   /* A short frame (a small letterboxed map on a phone, where the drawn map is
      only a few hundred pixels tall): the window-sized phone layout is far
      taller than the map, so the pieces tuck into the frame's own corners and
      the action row lies flat. Targets stay at the 44px floor. */
   @container (max-height: 480px) {
-    .hud--tl { top: 6px; left: 6px; max-width: 64%; }
-    .hud--tr { top: 6px; right: 6px; max-width: 42%; }
-    .toasts { top: 54px; left: auto; right: 6px; width: min(200px, 58%); }
-    .dpad { left: 6px; bottom: 6px; grid-template-columns: repeat(3, 44px); gap: 2px; }
+    .hud--tl { top: calc(6px + var(--sai-top)); left: 6px; max-width: 64%; }
+    .hud--tr { top: calc(6px + var(--sai-top)); right: 6px; max-width: 42%; }
+    .toasts { top: calc(54px + var(--sai-top)); left: auto; right: 6px; width: min(200px, 58%); }
+    .dpad { left: 6px; bottom: calc(6px + var(--sai-bottom)); grid-template-columns: repeat(3, 44px); gap: 2px; }
     .dpad button { width: 44px; height: 44px; }
-    .acts { flex-direction: row; align-items: flex-end; right: 6px; bottom: 6px; gap: 2px; }
+    .acts { flex-direction: row; align-items: flex-end; right: 6px; bottom: calc(6px + var(--sai-bottom)); gap: 2px; }
     .acts .gbtn--main { width: 52px; height: 52px; border-radius: 50%; padding: 0; font-size: 0.6rem; }
     .acts .gbtn--tool { width: 44px; height: 44px; border-radius: 50%; }
     .acts kbd { display: none; }
@@ -277,8 +286,8 @@
   /* The narrowest frames cannot hold the action row beside the d-pad: shave the
      gaps and the Interact circle to the 44px floor so the two sit side by side. */
   @container (max-width: 380px) {
-    .dpad { left: 4px; gap: 0; }
-    .acts { right: 4px; gap: 0; }
+    .dpad { left: 4px; gap: 0; bottom: calc(8px + var(--sai-bottom)); }
+    .acts { right: 4px; gap: 0; bottom: calc(8px + var(--sai-bottom)); }
     .acts .gbtn--main { width: 44px; height: 44px; }
   }
   /* The phone dock (I2, docs/plans/interface/PLAN.md). On a narrow portrait
@@ -291,10 +300,10 @@
      window and no longer describe the map. Targets keep the 44px floor and no
      piece crosses the map. The ground stays the existing dark #stage. */
   #stage.stage--dock .hud--tl {
-    top: 8px; left: 8px; max-width: calc(58% - 8px);
+    top: calc(8px + var(--sai-top)); left: 8px; max-width: calc(58% - 8px);
     flex-direction: column; align-items: flex-start;
   }
-  #stage.stage--dock .hud--tr { top: 8px; right: 8px; max-width: none; }
+  #stage.stage--dock .hud--tr { top: calc(8px + var(--sai-top)); right: 8px; max-width: none; }
   /* Anchor the messages to the map's own top edge (published as --map-y) so
      they grow up into the spare room instead of down over the map; the HUD
      row and the map top are the two fixed things in the dock. */
@@ -303,12 +312,12 @@
     width: calc(42% - 8px);
   }
   #stage.stage--dock .acts {
-    left: auto; right: 8px; top: auto; bottom: 8px;
+    left: auto; right: 8px; top: auto; bottom: calc(8px + var(--sai-bottom));
     flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end;
     gap: 2px; max-width: calc(100% - 164px);
   }
   #stage.stage--dock .dpad {
-    display: grid; left: 8px; right: auto; top: auto; bottom: 8px;
+    display: grid; left: 8px; right: auto; top: auto; bottom: calc(8px + var(--sai-bottom));
     grid-template-columns: repeat(3, 44px); gap: 2px;
   }
   #stage.stage--dock .dpad button { width: 44px; height: 44px; }
