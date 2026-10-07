@@ -1,0 +1,527 @@
+#!/usr/bin/env bash
+# scripts/check - one command that runs the CI gate steps this machine can
+# run. It is a local runner for CI's commands, not CI and not the merge
+# decision: what it cannot run here it prints as SKIP, and CI still decides.
+#
+#   scripts/check --fast         what a pre-push hook can run in seconds:
+#                                 lint, tests of the changed code, gitleaks on
+#                                 the branch diff
+#   scripts/check [--full]       every CI step that can run locally (default)
+#   scripts/check --list         the step table: what runs where, what is
+#                                 CI-only and why
+#   scripts/check --merge-ready  merge origin/<default> into HEAD inside a
+#                                 throwaway worktree and run the full check on
+#                                 the MERGED tree. No commit on your branch, no
+#                                 push, worktree removed on the way out.
+#
+# Every step prints PASS / FAIL / SKIP-with-a-reason. The exit status is
+# non-zero if any blocking step FAILs. A tool that is not installed is a SKIP
+# with an install hint, never a silent pass. A SKIP is not a pass: an exit 0
+# means no blocking step that could run here failed, and on a machine with no
+# toolchain that is every step SKIPped and nothing run. Nothing here echoes
+# the environment; the secret scan runs with --redact.
+#
+# The commands in the step table are the CI commands, copied from
+# .github/workflows/. If CI changes, this table changes with it -
+# tests/test_check_script.py pins the ci.yml command strings into this file.
+#
+# Do not add Dagger, act, or a workflow edit to this file: CI still runs the
+# commands below unchanged.
+
+set -euo pipefail
+
+SELF_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+if ! ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  echo "scripts/check: not inside a git repository (run it from a clone)" >&2
+  exit 2
+fi
+cd "$ROOT"
+
+if [ -f .gitleaks.toml ]; then
+  export GITLEAKS_CONFIG=.gitleaks.toml
+fi
+
+# --------------------------------------------------------------------------
+# Step table. Fields, pipe-separated:
+#   id | phase | blocking | speed | title | canonical CI command | skip hint
+#
+# phase    fast  = runs in --fast and --full
+#          full  = runs in --full only
+#          never = listed for honesty, never run locally
+# speed    fast (< ~2 min) | slow | ci-only
+# blocking yes = a FAIL exits non-zero
+#
+# A command must not contain '|'. Placeholders expanded at run time:
+#   {changed_tests}   the changed test modules (fast mode only)
+#   {gitleaks_base}   merge-base of origin/<default> and HEAD
+# --------------------------------------------------------------------------
+STEP_TABLE='ruff|fast|yes|fast|Ruff lint on src, tests and scripts|uv run --group test ruff check src tests scripts|
+pytest-changed|fast|yes|fast|pytest on the tests this branch changed|pytest -q {changed_tests}|no changed tests found against origin/<default>
+pytest|full|yes|slow|pytest, the whole suite|uv run --group test pytest -q|
+public-surface|fast|yes|fast|public-surface guard (no private data in tracked files)|python3 scripts/check_public_surface.py|
+sample-world|fast|yes|fast|validate the shipped sample pack|uv run --group test norns validate --pack worlds/sample-world|
+gitleaks|fast|yes|fast|secret scan of the branch diff|gitleaks detect --source . --no-banner --redact --no-color --log-opts={gitleaks_base}..HEAD|needs origin/<default> to diff against
+packs-validate|full|yes|slow|validate every shipped pack (Gitea mirror parity)|uv run --group test norns validate --pack <pack>|console scripts need the uv env
+npm-ci|full|yes|slow|dev node deps (jsdom) for the node-vm harnesses|npm ci|needs npm
+actionlint|full|yes|fast|actionlint on .github/workflows/*.yml|actionlint .github/workflows/*.yml|needs the actionlint binary
+zizmor|full|yes|slow|zizmor on .github/|uv tool run zizmor==1.30.1 .github/|needs uv and network
+vulture|full|yes|slow|dead code (config in pyproject.toml)|uv tool run vulture==2.16|needs uv and network
+deptry|full|yes|slow|dependency hygiene (config in pyproject.toml)|uv tool run deptry==0.25.1 .|needs uv and network
+axe-a11y|never|yes|ci-only|axe-core gate over the woven players|uv run python scripts/a11y_check.py <woven html>|needs Playwright + Chromium
+browser-tests|never|yes|ci-only|browser tests (studio as a person uses it)|VEFR_BROWSER_REQUIRED=1 uv run pytest -q tests/browser|needs Playwright + Chromium
+visual-regression|never|yes|ci-only|visual regression on the woven sample|uv run python scripts/visual_regress.py <html> <baseline.png>|needs Playwright + Chromium
+lychee|never|yes|ci-only|markdown links (offline)|lychee --offline --no-progress ./**/*.md|runs as a GitHub action, no local binary
+vale|never|no|ci-only|house voice, advisory (never blocks a PR)|vale|runs as a GitHub action, no local binary
+claims-policy|never|yes|ci-only|honest-claims policy (a strong claim ships its command)|ci-harness reusable workflow|reusable workflow, GitHub only
+contract-freshness|never|yes|ci-only|Play-Nice contract pin currency|ci-harness reusable workflow|reusable workflow, GitHub only
+publish-image|never|yes|ci-only|container image build and push|docker buildx build --push|main pushes only, never a pull request
+screenshots|never|yes|ci-only|screenshot gallery artifact|uv run python scripts/capture-screenshots.py|main push on web/**, never a pull request
+security-manual|never|yes|ci-only|public-surface guard (manual dispatch)|python3 scripts/check_public_surface.py|workflow_dispatch only'
+
+# --------------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------------
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# Verdicts are kept as well as printed, so the summary can say how many
+# steps this machine could not run: a run that skipped everything is not
+# the same evidence as a run that passed everything.
+VERDICTS=""
+
+report() {
+  printf '%-6s %-20s %s\n' "$1" "$2" "${3:-}"
+  VERDICTS+="$1 $2"$'\n'
+}
+say() { printf '%s\n' "$*"; }
+
+json_escape() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g'
+}
+
+default_branch() {
+  local ref candidate
+  if ref="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)"; then
+    printf '%s\n' "${ref#origin/}"
+    return 0
+  fi
+  for candidate in main master; do
+    if git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  printf 'main\n'
+}
+
+DEFAULT_BRANCH="$(default_branch)"
+BASE_REF="origin/$DEFAULT_BRANCH"
+BASE_SHA="$(git merge-base "$BASE_REF" HEAD 2>/dev/null || true)"
+
+# Changed files: committed on this branch since the merge-base, plus
+# whatever is uncommitted in the working tree.
+changed_files() {
+  {
+    if [ -n "$BASE_SHA" ]; then
+      git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || true
+    fi
+    git status --porcelain 2>/dev/null | awk '{print $NF}' || true
+  } | sed '/^$/d' | sort -u
+}
+
+# Test modules for this branch: the changed tests, plus the test module beside
+# each changed src module (src/vefr/x.py -> tests/test_x.py).
+changed_tests() {
+  local f base
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      tests/test_*.py)
+        printf '%s\n' "$f"
+        ;;
+      src/vefr/*.py)
+        base="$(basename "$f" .py)"
+        if [ -f "tests/test_${base}.py" ]; then
+          printf 'tests/test_%s.py\n' "$base"
+        fi
+        ;;
+    esac
+  done < <(changed_files) | sort -u
+}
+
+# --------------------------------------------------------------------------
+# Runner ladders
+#
+# The CI commands run under uv, so uv is the first rung: when it is here the
+# script runs the command CI runs. Where it is not (Bazzite), the shared CI
+# venv runs the same module, then a system python that already has it.
+# VEFR_CHECK_PYTEST_RUNNER forces a rung: auto|uv|uv-with|ci-venv|python.
+#
+# pick_runner prints "<command>|<label>"; an empty command means nothing
+# here can run the step, which the caller turns into a SKIP with a reason.
+# --------------------------------------------------------------------------
+CIVEN_PY="$HOME/.local/share/ci-venv/bin/python"
+RUNNER_OVERRIDE="${VEFR_CHECK_PYTEST_RUNNER:-auto}"
+
+has_module() { "$1" -c "import $2" >/dev/null 2>&1; }
+
+pick_runner() {
+  local tool="$1"
+  shift
+  local tail="$*"
+  local rung
+  local -a rungs
+  if [ "$RUNNER_OVERRIDE" != "auto" ]; then
+    rungs=("$RUNNER_OVERRIDE")
+  elif [ "$tool" = "ruff" ]; then
+    rungs=(uv ci-venv python path)
+  else
+    rungs=(uv ci-venv python)
+  fi
+  for rung in "${rungs[@]}"; do
+    case "$rung" in
+      uv)
+        if have uv; then
+          printf 'uv run --group test %s|uv (the CI command)' "$tail"
+          return 0
+        fi
+        ;;
+      uv-with)
+        if have uv; then
+          printf 'uv run --with %s|uv --with %s (not CI parity)' "$tail" "$tool"
+          return 0
+        fi
+        ;;
+      ci-venv)
+        if [ -x "$CIVEN_PY" ] && has_module "$CIVEN_PY" "$tool"; then
+          printf '%s -m %s|ci-venv (not CI parity)' "$CIVEN_PY" "$tail"
+          return 0
+        fi
+        ;;
+      python)
+        if have python3 && has_module python3 "$tool"; then
+          printf 'python3 -m %s|system python3 (not CI parity)' "$tail"
+          return 0
+        fi
+        ;;
+      path)
+        if have "$tool"; then
+          printf '%s|%s from PATH (not CI parity)' "$tail" "$tool"
+          return 0
+        fi
+        ;;
+    esac
+  done
+  return 0
+}
+
+pytest_cmd() { pick_runner pytest "pytest -q $1"; }
+ruff_cmd() { pick_runner ruff "ruff check $1"; }
+
+# Console scripts (norns) only exist inside the synced uv environment.
+console_cmd() {
+  if have uv; then
+    printf 'uv run --group test %s|uv (the CI command)' "$1"
+  fi
+}
+
+CHANGED_TESTS=""
+
+expand() {
+  local cmd="$1"
+  cmd="${cmd//\{changed_tests\}/$CHANGED_TESTS}"
+  cmd="${cmd//\{gitleaks_base\}/${BASE_SHA:-$BASE_REF}}"
+  printf '%s' "$cmd"
+}
+
+# --------------------------------------------------------------------------
+# Modes
+# --------------------------------------------------------------------------
+MODE="full"
+JSON=0
+
+usage() {
+  cat <<'USAGE'
+usage: scripts/check [--fast | --full | --list | --merge-ready] [--json]
+
+  --fast         lint, tests of the changed code, gitleaks on the branch diff
+  --full         every CI step that can run locally (the default)
+  --list         print the step table and which steps are CI-only
+  --merge-ready  merge origin/<default> into HEAD in a throwaway worktree and
+                 run the full check on the merged tree
+  --json         with --list, print the step table as JSON
+
+exit 0 means no blocking step that could run here failed.
+A SKIP is not a pass: a tool this machine does not have is skipped, not
+checked - read the SKIP lines. CI is the gate that decides the PR.
+USAGE
+}
+
+list_mode() {
+  local id phase blocking speed title command hint first
+  if [ "$JSON" -eq 1 ]; then
+    first=1
+    printf '['
+    while IFS='|' read -r id phase blocking speed title command hint; do
+      if [ "$first" -eq 1 ]; then first=0; else printf ','; fi
+      printf '{"id":"%s","phase":"%s","blocking":%s,"speed":"%s","title":"%s","command":"%s","skip_hint":"%s"}' \
+        "$(json_escape "$id")" "$(json_escape "$phase")" \
+        "$([ "$blocking" = yes ] && echo true || echo false)" \
+        "$(json_escape "$speed")" "$(json_escape "$title")" \
+        "$(json_escape "$command")" "$(json_escape "$hint")"
+    done <<< "$STEP_TABLE"
+    printf ']\n'
+    return 0
+  fi
+  say "vefr check - CI steps, and where each one runs"
+  say "repo: $ROOT"
+  say "base: $BASE_REF${BASE_SHA:+ (merge-base ${BASE_SHA:0:12})}"
+  say ""
+  printf '%-20s %-8s %-7s %s\n' "step" "speed" "phase" "what it does"
+  while IFS='|' read -r id phase blocking speed title command hint; do
+    printf '%-20s %-8s %-7s %s\n' "$id" "$speed" "$phase" "$title"
+    printf '%-20s %-8s %-7s   $ %s\n' "" "" "" "$command"
+    if [ -n "$hint" ]; then
+      printf '%-20s %-8s %-7s   SKIP when: %s\n' "" "" "" "$hint"
+    fi
+    if [ "$blocking" = "no" ]; then
+      printf '%-20s %-8s %-7s   advisory: never fails the run\n' "" "" ""
+    fi
+    say ""
+  done <<< "$STEP_TABLE"
+  say "Modes: --fast (pre-push subset), --full (default), --list, --merge-ready."
+}
+
+STEP_FAILED=0
+
+# One step. Streams its output so a failure shows why; never prints the
+# environment.
+step() {
+  local id="$1" blocking="$2" cmd="$3" hint="$4" runner="${5:-}" rc=0
+  say ""
+  say "--- $id"
+  if [ -z "$cmd" ]; then
+    report SKIP "$id" "${hint:-tool not available}"
+    return 0
+  fi
+  say "\$ $cmd"
+  [ -n "$runner" ] && say "    runner: $runner"
+  bash -c "$cmd" || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    report PASS "$id" ""
+    return 0
+  fi
+  STEP_FAILED=1
+  if [ "$blocking" = "no" ]; then
+    report FAIL "$id" "(advisory - does not fail the run)"
+  else
+    report FAIL "$id" "exit $rc"
+  fi
+  return 0
+}
+
+run_table() {
+  local phase_wanted="$1"
+  local id phase blocking speed title command hint cmd runner targets
+  while IFS='|' read -r id phase blocking speed title command hint; do
+    [ -n "$id" ] || continue
+    [ "$phase" = "never" ] && continue
+    if [ "$phase" != "$phase_wanted" ]; then
+      continue
+    fi
+    cmd="$(expand "$command")"
+    runner=""
+    case "$id" in
+      ruff)
+        IFS='|' read -r cmd runner <<< "$(ruff_cmd "src tests scripts")"
+        if [ -z "$cmd" ]; then
+          step "$id" "$blocking" "" "ruff is not installed: uv sync --group test (or pip install ruff)"
+          continue
+        fi
+        ;;
+      pytest-changed)
+        if [ -z "$BASE_SHA" ]; then
+          step "$id" "$blocking" "" "no $BASE_REF to compare against (fetch the default branch)"
+          continue
+        fi
+        targets="$(changed_tests)"
+        CHANGED_TESTS="$targets"
+        if [ -z "$targets" ]; then
+          step "$id" "$blocking" "" "no changed tests found against $BASE_REF"
+          continue
+        fi
+        IFS='|' read -r cmd runner <<< "$(pytest_cmd "$targets")"
+        if [ -z "$cmd" ]; then
+          step "$id" "$blocking" "" "no pytest runner found: uv sync --group test"
+          continue
+        fi
+        ;;
+      pytest)
+        IFS='|' read -r cmd runner <<< "$(pytest_cmd "")"
+        if [ -z "$cmd" ]; then
+          step "$id" "$blocking" "" "no pytest runner found: uv sync --group test"
+          continue
+        fi
+        ;;
+      sample-world)
+        IFS='|' read -r cmd runner <<< "$(console_cmd "norns validate --pack worlds/sample-world")"
+        if [ -z "$cmd" ]; then
+          step "$id" "$blocking" "" "console scripts need the synced env: uv sync --group test"
+          continue
+        fi
+        ;;
+      packs-validate)
+        if ! have uv; then
+          step "$id" "$blocking" "" "console scripts need the synced env: uv sync --group test"
+          continue
+        fi
+        cmd='failed=0
+for manifest in worlds/*/world.json; do
+  [ -e "$manifest" ] || continue
+  printf "\n=== pack: %s ===\n" "$(dirname "$manifest")"
+  uv run --group test norns validate --pack "$(dirname "$manifest")" || failed=1
+done
+exit $failed'
+        runner="uv (the CI command)"
+        ;;
+      npm-ci)
+        if ! have npm; then
+          step "$id" "$blocking" "" "npm is not installed"
+          continue
+        fi
+        if [ -d node_modules ]; then
+          step "$id" "$blocking" "" "node_modules present; CI runs npm ci as an install step"
+          continue
+        fi
+        runner="npm (needs network)"
+        ;;
+      zizmor | vulture | deptry)
+        if ! have uv; then
+          step "$id" "$blocking" "" "needs uv and network: uv tool run <the CI command>"
+          continue
+        fi
+        runner="uv tool run (needs network)"
+        ;;
+      actionlint)
+        if have actionlint; then
+          cmd="actionlint .github/workflows/*.yml"
+        elif [ -x ./actionlint ]; then
+          cmd="./actionlint .github/workflows/*.yml"
+        else
+          step "$id" "$blocking" "" "actionlint is not installed (dev-guards.yml downloads the pinned release binary)"
+          continue
+        fi
+        ;;
+      gitleaks)
+        if ! have gitleaks; then
+          step "$id" "$blocking" "" "gitleaks is not installed (see secret-scan.yml for the pinned release)"
+          continue
+        fi
+        if [ -z "$BASE_SHA" ]; then
+          step "$id" "$blocking" "" "no $BASE_REF to diff against (fetch the default branch first)"
+          continue
+        fi
+        ;;
+    esac
+    step "$id" "$blocking" "$cmd" "$hint" "$runner"
+  done <<< "$STEP_TABLE"
+}
+
+summary() {
+  local skipped
+  skipped="$(grep -c '^SKIP ' <<< "$VERDICTS" || true)"
+  say ""
+  if [ "$STEP_FAILED" -eq 1 ]; then
+    report FAIL "check" "at least one step failed - see above"
+    return 1
+  fi
+  report PASS "check" "no blocking step that could run here failed${skipped:+ ($skipped SKIPped: not checked)}"
+  return 0
+}
+
+merge_ready() {
+  local wt self_in_wt rc=0 merge_rc=0 check_rc=0
+  if [ -z "$BASE_SHA" ]; then
+    report FAIL "merge-ready" "no $BASE_REF to merge (fetch the default branch first)"
+    return 1
+  fi
+  wt="$(mktemp -d "${TMPDIR:-/tmp}/vefr-check-merge.XXXXXX")"
+  rmdir "$wt"
+  say "merge-ready: merging $BASE_REF into HEAD in a throwaway worktree"
+  say "  worktree: $wt"
+  say "  nothing is committed on your branch and nothing is pushed"
+
+  git worktree add --detach --quiet "$wt" HEAD || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    report FAIL "merge-ready" "could not create the worktree"
+    return 1
+  fi
+
+  git -C "$wt" merge --no-commit --no-ff --quiet "$BASE_REF" || merge_rc=$?
+  if [ "$merge_rc" -ne 0 ]; then
+    say ""
+    say "merge conflicts with $BASE_REF:"
+    git -C "$wt" diff --name-only --diff-filter=U | sed 's/^/  /'
+    git worktree remove --force "$wt" >/dev/null 2>&1 || rm -rf "$wt"
+    git worktree prune >/dev/null 2>&1 || true
+    report FAIL "merge-ready" "the branch does not merge cleanly"
+    return 1
+  fi
+  say ""
+  say "  merged cleanly; running the full check on the merged tree"
+
+  self_in_wt="$wt/scripts/check"
+  [ -x "$self_in_wt" ] || self_in_wt="$SELF_PATH"
+  ( cd "$wt" && "$self_in_wt" --full ) || check_rc=$?
+
+  git worktree remove --force "$wt" >/dev/null 2>&1 || rm -rf "$wt"
+  git worktree prune >/dev/null 2>&1 || true
+
+  say ""
+  if [ "$check_rc" -ne 0 ]; then
+    report FAIL "merge-ready" "the merged tree fails the full check"
+    return 1
+  fi
+  report PASS "merge-ready" "the merged tree passes everything that runs locally"
+  return 0
+}
+
+# --------------------------------------------------------------------------
+# Arguments
+# --------------------------------------------------------------------------
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --fast) MODE="fast" ;;
+    --full) MODE="full" ;;
+    --list) MODE="list" ;;
+    --merge-ready) MODE="merge-ready" ;;
+    --json) JSON=1 ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      say "scripts/check: unknown argument: $1"
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+case "$MODE" in
+  list) list_mode; exit 0 ;;
+  merge-ready)
+    merge_ready || exit $?
+    exit 0
+    ;;
+esac
+
+say "vefr check: $MODE (repo $ROOT, base $BASE_REF)"
+if [ "$MODE" = "full" ]; then
+  run_table "fast"
+  run_table "full"
+else
+  run_table "$MODE"
+fi
+summary
