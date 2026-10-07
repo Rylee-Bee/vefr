@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from vefr import delve
+from vefr import delve, delve_v3
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "fixtures"))
 from make_descent_pack import ENTRY_AT, SECTIONS  # noqa: E402
@@ -223,9 +223,19 @@ def test_the_mobs_stand_far_enough_from_both_stairs():
 def test_the_mob_roster_is_within_the_packs_bounds_and_ids_by_index():
     for depth in DEPTHS:
         plan = delve.floor_plan(DESCENT, depth)
-        _, section, _ = delve.locate(depth, DESCENT)
-        lo, hi = section["mobs"]
-        assert lo <= len(plan["mobs"]) <= hi
+        walkable = sum(row.count('.') for row in plan["rows"])
+        lo = max(delve_v3.MOBS_MIN, walkable // delve_v3.TILES_PER_MOB)
+        lo = min(lo, delve_v3.MOBS_MAX)
+        # How many live on a floor is the generator's area budget, not a
+        # pack key: one tile every TILES_PER_MOB is one slot, clamped to
+        # the same two numbers the v3 pop stage clamps.
+        assert len(plan["mobs"]) == min(lo, len([
+            1 for y, row in enumerate(plan["rows"]) for x, ch in enumerate(row)
+            if ch == '.'
+            and abs(x - plan["anchors"]["up"][0])
+                + abs(y - plan["anchors"]["up"][1]) >= delve.MOB_SPACING
+            and abs(x - plan["anchors"]["down"][0])
+                + abs(y - plan["anchors"]["down"][1]) >= delve.MOB_SPACING]))
         assert [m["id"] for m in plan["mobs"]] == \
             ["m%d" % i for i in range(len(plan["mobs"]))]
         for mob in plan["mobs"]:
@@ -234,10 +244,13 @@ def test_the_mob_roster_is_within_the_packs_bounds_and_ids_by_index():
 
 
 def test_a_floor_of_the_hollow_section_carries_only_its_own_families():
-    # depth 4 is the hollow Section's first floor
+    # depth 4 is the hollow Section's first floor. A Section names its
+    # families by id and carries no record of a family of its own
+    # (ADR 0014), so a family the Blueprint never resolved draws at the
+    # engine's own floor of 1 and keeps the id the Section gave it.
     plan = delve.floor_plan(DESCENT, 4)
-    names = {m["name"] for m in plan["mobs"]}
-    assert names <= {"a hollow shade"}
+    assert {m["family"] for m in plan["mobs"]} <= {"shade"}
+    assert plan["mobs"], "the hollow Section's first floor drew no monsters"
 
 
 def test_a_mobs_drops_come_from_that_mobs_own_stream():

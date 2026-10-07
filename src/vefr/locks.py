@@ -5,12 +5,24 @@ cannot be reached before it; an empty list means every item-locked door
 can be opened with a key the hero can obtain first. A pack with no
 `requires` at all produces no findings.
 
+`section_findings(pack_dir, seeds)` is the second half, and it came with
+the Sections (E4, PLAN.md section 5 row E4): the PLAN.md section 7
+property proof run over Sections rather than over one floor kind. Every
+Section in the pack is swept over `seeds` check seeds - every floor of
+it, at the Section's own size, drawn from its own floor key - and each
+floor has to hold: one component, every anchor, point of interest,
+secret, monster and chest reachable from the up-stair, and a vault anchor
+on a Section that names a vault. A floor that fell back to v2 geometry is
+counted and reported as a rate, because a Section whose floors fall back
+is a Section that validated green and then drew v2.
+
 The model is the pack's own data, read through the loaders the rest of
 the engine already uses: the acts tree (`maplab.load_pack`), the
-Library's books (`library.load_library`), and the item catalog. A key
-can be obtained from an enemy's `drops`, a book/chest's `drops` on the
-map, a shop's `stock`, or a rule that `give`s it (rules are not
-regional). Reachability and obtainability are grown to a fixpoint.
+Library's books (`library.load_library`), the item catalog, and the
+Section packs (`vefr.sections`). A key can be obtained from an enemy's
+`drops`, a book/chest's `drops` on the map, a shop's `stock`, or a rule
+that `give`s it (rules are not regional). Reachability and obtainability
+are grown to a fixpoint.
 
 Flag locks (`requires: {"flag": ...}`) are out of scope: a rule may set
 the flag, so they are treated as always open and never reported. No
@@ -21,8 +33,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import library
+from . import delve_v3, library, sections, stamps
 from .maplab import load_pack
+
+# How many check seeds the Section sweep draws, and what it calls them. The
+# same `check-<n>` names `vefr stamp check` sweeps, so a floor that fails
+# here can be looked at with the tool that sweeps floors.
+SECTION_SEEDS = 200
+SECTION_SEED_PREFIX = 'check-'
 
 
 def _item_ids(value) -> list[str]:
@@ -250,6 +268,16 @@ def findings(pack_dir) -> list[str]:
             emit(f"the key '{key}' is unreachable: it cannot be obtained in "
                  f"any region reached before the door {where}")
 
+    # A Section's own entry door is a door like any other, so its key
+    # joins the reachability work above and the unsellable rule below. The
+    # reachability is already done - the transition that requires it is in
+    # `locks` - but the value rule below only walks the keys the
+    # transitions named, and a Section door the author wrote is one of
+    # them however far down the list it was found.
+    for key in section_key_items(pack):
+        if key not in key_items:
+            key_items.append(key)
+
     for key in key_items:
         spec = items.get(key)
         value = spec.get("value") if isinstance(spec, dict) else None
@@ -257,3 +285,183 @@ def findings(pack_dir) -> list[str]:
             emit(f"the key item '{key}' has a value, so it can be sold to a "
                  f"trader - a sold key would break the pack")
     return out
+
+
+# ------------------------------------------------------------- the Sections
+
+
+def section_key_items(pack_dir) -> list[str]:
+    """Every item a Section's own entry door is locked behind.
+
+    A Section's key is the item its door into the Section requires, and
+    the door is a transition like any other: `vefr delve --section` wires
+    the town's stair into the Section's first floor, and the author gates
+    it with `requires`. So the two rules `findings` already follows apply
+    to a Section exactly as they apply to a hand-written region - the key
+    must be obtainable before its own door, and it must carry no `value`,
+    because a key a trader will buy is a way past a whole Section.
+
+    Read off the transitions rather than off the Section pack, because the
+    Section pack does not name a key: PLAN.md section 2 gives the warden
+    one (ADR 0015's), and that is E8's record, not E4's. A Section with
+    no entry door contributes nothing, which is the same answer a region
+    with no lock gets.
+    """
+    pack = Path(pack_dir)
+    if not (pack / "world.json").is_file():
+        return []
+    try:
+        world = load_pack(pack)
+    except (OSError, ValueError, KeyError, SystemExit):
+        return []
+    entries = {sections.floor_region(section, 1)
+               for section in sections.load(pack)}
+    out: list[str] = []
+    for act in _acts(world):
+        for transition in (act.get("transitions") or []):
+            if not isinstance(transition, dict):
+                continue
+            if transition.get("to") not in entries:
+                continue
+            requires = transition.get("requires")
+            if isinstance(requires, dict):
+                item = requires.get("item")
+                if isinstance(item, str) and item and item not in out:
+                    out.append(item)
+    return out
+
+
+def _stamp_pack(pack: Path) -> list[dict]:
+    """The pack's stamps, already sorted by id, or none.
+
+    `stamps.load` refuses rather than returning half a set, which is right
+    for a floor and wrong for a check: a pack with one broken stamp should
+    still have its other rooms swept, and `vefr stamp check` is what says
+    the broken one out loud.
+    """
+    directory = pack / "stamps"
+    if not directory.is_dir():
+        return []
+    records: list[dict] = []
+    for path in sorted(directory.glob("*.json")):
+        try:
+            records.append(stamps.read_v1(stamps.read(path), name=path.stem))
+        except (stamps.StampError, OSError, ValueError):
+            continue
+    records.sort(key=lambda record: record["id"])
+    return records
+
+
+def _walkable(plan: dict) -> set[tuple[int, int]]:
+    return {(x, y)
+            for y in range(plan["h"])
+            for x in range(plan["w"])
+            if plan["rows"][y][x] in ".ud"}
+
+
+def _reached(plan: dict, start: tuple[int, int]) -> set[tuple[int, int]]:
+    """Every walkable tile 4-connected to `start`."""
+    rows, width, height = plan["rows"], plan["w"], plan["h"]
+    seen = {start}
+    stack = [start]
+    while stack:
+        x, y = stack.pop()
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < width and 0 <= ny < height \
+                    and rows[ny][nx] in ".ud" and (nx, ny) not in seen:
+                seen.add((nx, ny))
+                stack.append((nx, ny))
+    return seen
+
+
+def _named_tiles(plan: dict):
+    """Every tile the plan names, as `(what, tile)` - the reachability set."""
+    for name, at in (plan.get("anchors") or {}).items():
+        if at is not None:
+            yield name, (at[0], at[1])
+    for poi in plan.get("pois") or []:
+        yield "point of interest", (poi["at"][0], poi["at"][1])
+    for tile in plan.get("secrets") or []:
+        yield "secret", (tile[0], tile[1])
+    for spawn in plan.get("spawns") or []:
+        yield "monster", (spawn["at"][0], spawn["at"][1])
+    for chest in plan.get("chests") or []:
+        yield "chest", (chest["at"][0], chest["at"][1])
+
+
+def _defect(plan: dict, section: dict | None = None) -> str:
+    """What is wrong with a floor that came back, or "".
+
+    The properties of PLAN.md sections 2 and 4, read back out of the grid
+    rather than taken on the generator's word: one component, every named
+    tile reachable from the up-stair, and - for a Section that names a
+    vault - a vault anchor, because an anchor is the Section's promise and
+    one that points at nothing is worse than no anchor at all. A v2
+    fallback floor has no `pois` and no `spawns` and is caught by the `gen`
+    check instead.
+    """
+    up = plan.get("anchors", {}).get("up")
+    if up is None:
+        return "the floor has no up-stair"
+    reached = _reached(plan, (up[0], up[1]))
+    if len(reached) != len(_walkable(plan)):
+        return "the floor is in two pieces"
+    if isinstance(section, dict) and section.get("vault") \
+            and (plan.get("anchors") or {}).get("vault") is None:
+        return "the Section names a vault and the floor has no vault anchor"
+    for what, tile in _named_tiles(plan):
+        if tile not in reached:
+            return f"the {what} at {tile[0]},{tile[1]} cannot be reached " \
+                   "from the up-stair"
+    return ""
+
+
+def section_findings(pack_dir, seeds: int = SECTION_SEEDS) -> list[str]:
+    """Every property a Section's floors break, as plain sentences.
+
+    Empty when the pack ships no Sections, which is every pack in the tree
+    today, and when every floor of every Section holds over `seeds` check
+    seeds.
+
+    The sweep is the slow half of `vefr check` and it is the half PLAN.md
+    section 5 row E4 asks for: every Section, every floor, every seed. A
+    Section's own `size` range draws the floor's `w` and `h`, its pattern
+    draws the floor kind, and the floor key is the Section's - so two
+    floors of one Section are two floors, and a pack that edits its
+    Section data sweeps a different set of floors than it did before.
+    """
+    pack = Path(pack_dir)
+    loaded = sections.load(pack)
+    if not loaded:
+        return []
+    records = _stamp_pack(pack)
+    findings: list[str] = []
+    for section in loaded:
+        name = sections.section_id(section) or "?"
+        swept = 0
+        fell_back = 0
+        broken = 0
+        for number in range(max(0, int(seeds))):
+            run_seed = f"{SECTION_SEED_PREFIX}{number}"
+            for k in range(1, sections.floors(section) + 1):
+                key = sections.floor_key(run_seed, section, 0, k)
+                plan = delve_v3.generate_floor_v3(
+                    run_seed, sections.floor_size(section, key), section,
+                    sections.floor_kind(section, k, run_seed, 0), records, k)
+                swept += 1
+                if plan.get("gen") != 3:
+                    fell_back += 1
+                    continue
+                defect = _defect(plan, section)
+                if not defect:
+                    continue
+                broken += 1
+                if broken == 1:
+                    findings.append(
+                        f"section {name}: floor {k} at seed {run_seed} does "
+                        f"not hold - {defect}")
+        if fell_back:
+            findings.append(
+                f"section {name}: {fell_back} of {swept} floors fell back to "
+                f"v2 geometry instead of being drawn as v3")
+    return findings

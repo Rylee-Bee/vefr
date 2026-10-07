@@ -67,13 +67,24 @@ def test_an_entry_that_is_not_a_tile_is_named(tmp_path):
     assert any("at" in e for e in _errors(pack)), _errors(pack)
 
 
-def test_a_section_without_floors_is_named(tmp_path):
+def test_a_section_without_a_family_is_named(tmp_path):
+    # `floors` is optional under the one Section contract - a Section that
+    # says nothing about it takes the engine's own nine - but `families` is
+    # required, because a descent floor with no family table has nothing to
+    # draw its monsters from.
     def mutate(world):
-        world["descent"]["sections"][0].pop("floors")
+        world["descent"]["sections"][0].pop("families")
     pack = _with(tmp_path, mutate)
     errors = _errors(pack)
-    assert any("floors" in e for e in errors), errors
+    assert any("families" in e for e in errors), errors
     assert any("/sections/0" in e for e in errors), errors
+
+
+def test_a_section_without_floors_is_still_green(tmp_path):
+    # The other half of the same contract: `floors` defaults rather than
+    # being refused, so dropping it says nothing at all.
+    pack = _with(tmp_path, lambda w: w["descent"]["sections"][0].pop("floors"))
+    assert _errors(pack) == []
 
 
 def test_a_section_named_by_id_must_exist_beside_the_pack(tmp_path):

@@ -1128,16 +1128,34 @@ def _no_affix_list_sentences(rel: str, section: dict, affixes) -> list[str]:
             for i, aid in enumerate(shapes.named_affix_ids(section))]
 
 
+def section_block_errors(section: dict, affixes=None, resolve=None,
+                         rel: str = f'{SECTIONS_DIR}/<id>.json') -> list[str]:
+    """Every sentence `vefr check` prints for one Section pack.
+
+    The Section block of `shapes.py` is the engine's own read of a Section
+    (PLAN.md section 2), and this is the one function that turns that read
+    into lines: `file: pointer sentence` each, in the order `shapes` emits
+    them. `section_errors` below is the only caller in the engine, and
+    `tests/golden/validator/cases.json` pins the sentences through here,
+    so a change to any of them is a deliberate act.
+    """
+    sentences = _shape_sentences(rel, shapes.check_section(section, affixes,
+                                                           resolve))
+    sentences.extend(_no_affix_list_sentences(rel, section, affixes))
+    return sentences
+
+
 def section_errors(pack_dir) -> list[str]:
     """Every problem with a pack's affix list and its Section packs.
 
     `shapes.check_section` is the engine's own read of both; this is the
     only path that runs it, so an affix record that is not a record, an
     id used twice, an affix a Section names and the pack never defines, a
-    group led by an elite in a Section that names no affix, and a family
-    the Blueprint does not have are all pack-authoring errors with a
-    sentence and a pointer - the ADR's "Validator rejects" list, said
-    where the author is already looking.
+    group led by an elite in a Section that names no affix, a family the
+    Blueprint does not have, and a Section pack whose own shape is wrong
+    are all pack-authoring errors with a sentence and a pointer - the
+    ADR's "Validator rejects" list, said where the author is already
+    looking.
 
     The affix list is read on its own first, before any Section: it is
     one list for the whole pack whatever Sections name, so a duplicate id
@@ -1196,9 +1214,7 @@ def section_errors(pack_dir) -> list[str]:
         if not isinstance(section, dict):
             errors.append(f'{rel}: a Section pack must be a JSON object')
             continue
-        errors.extend(_shape_sentences(
-            rel, shapes.check_section(section, affixes, resolve)))
-        errors.extend(_no_affix_list_sentences(rel, section, affixes))
+        errors.extend(section_block_errors(section, affixes, resolve, rel))
     return errors
 
 

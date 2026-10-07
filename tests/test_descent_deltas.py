@@ -240,13 +240,12 @@ def test_a_save_over_the_byte_budget_loses_the_oldest_bitsets_first(tmp_path):
 
 # ---- the lifecycle ------------------------------------------------------
 
-# One creature per floor for the fight this test stages: a second monster
-# would walk into the way home, and a bumped monster is a fight, not a
-# step, so the walk back would no longer be the walk the plan says.
-ONE_MOB = copy.deepcopy(DESCENT)
-for _section in ONE_MOB["sections"]:
-    _section["mobs"] = [1, 1]
-ONE_MOB_PATCH = {"world.json": {"descent": ONE_MOB}}
+# How many live on a floor is the generator's area budget and not a pack
+# key, so a pack cannot ask for a floor to hold exactly one. The fight
+# this test stages is therefore staged against the roster the generator
+# drew: the hero walks up to the monster it picked, and a monster it
+# bumps on the way is a fight too - which is the game, not a fault.
+DESCENT_PATCH = {"world.json": {"descent": copy.deepcopy(DESCENT)}}
 
 
 def test_returning_to_town_clears_the_kills_and_keeps_the_memory(tmp_path):
@@ -261,14 +260,18 @@ def test_returning_to_town_clears_the_kills_and_keeps_the_memory(tmp_path):
     fight.append(_go(plan, plan["anchors"]["up"], mob["at"],
                      [m["at"] for m in plan["mobs"] if m["at"] != mob["at"]]))
     fight += ["wait:100"] * 6
-    killed = _play(tmp_path, fight, patch=ONE_MOB_PATCH)
+    killed = _play(tmp_path, fight, patch=DESCENT_PATCH)
     assert killed["errors"] == [], killed["errors"]
-    assert _doc(killed)["floors"]["cellar-0-1"]["kills"] == ["m0"]
+    record = _doc(killed)["floors"]["cellar-0-1"]
+    # The monster the walk aimed at is dead, and nothing outside the floor
+    # the generator drew is: a bump kills what it touched, never more.
+    assert mob["id"] in record["kills"], record["kills"]
+    assert set(record["kills"]) <= {m["id"] for m in plan["mobs"]}
     assert killed["reads"]["VEFR_COMBAT.hero"]["hp"] > 0
 
     # Now walk home: into the town, on the stair the descent put there.
     home = _play(tmp_path, _descend(1) + ["click:#interact", "wait:200"],
-                 store=killed["store"], patch=ONE_MOB_PATCH)
+                 store=killed["store"], patch=DESCENT_PATCH)
     assert home["reads"]["VEFR_COMBAT.region"] == "town"
     record = _doc(home)["floors"]["cellar-0-1"]
     assert record["kills"] == [], "returning to town resets the Section"

@@ -1,0 +1,27 @@
+{
+ "section": 1,
+ "id": "cellar",
+ "floors": 9,
+ "size": {"w": [64, 80], "h": [48, 56]},
+ "rooms": [12, 18],
+ "tiles": {"#": "cellar-wall", ".": "cellar-floor", "u": "cellar-stair-up",
+           "d": "cellar-stair-down"},
+ "fog": {"radius": 4},
+ "families": [
+  {"family": "rat", "weight": 5, "depth": [1, 6]},
+  {"family": "moth", "weight": 3, "depth": [1, 9]},
+  {"family": "beetle", "weight": 2, "depth": [3, 9]}
+ ],
+ "pattern": ["entry", "n", "n", "special", "landing", "n", "special", "n",
+             "warden"],
+ "specials": ["treasure", "infested", "hub"],
+ "elites": {"per_floor": [1, 2], "affixes": ["broad", "quick", "lit"]},
+ "groups": {"per_floor": [1, 3], "minions": [2, 3], "leader": "elite",
+            "same_family": true, "wake": "all", "leash": 6},
+ "curve": {"hp": [1.0, 1.4], "atk": [1.0, 1.3]},
+ "loot": {"tier": 1},
+ "stamps": ["cellar", "any"],
+ "pois": ["the rusted grate", "the ash alcove", "the drowned well"],
+ "warden": "ashwing",
+ "vault": "vault-cellar"
+}
