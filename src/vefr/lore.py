@@ -90,8 +90,8 @@ def list_lore() -> list[LoreListEntry]:
 
 def _read_pack_file(name: str, filename: str, req: LorePreviewRequest) -> str:
     """Read a lore pack file; fail helpfully if missing."""
-    from .paths import app_home
-    pack_dir = app_home() / "worlds" / "lore" / name
+    from .paths import app_home, resolve_under
+    pack_dir = resolve_under(app_home() / "worlds" / "lore", name)
     path = pack_dir / filename
     if not path.exists():
         raise FileNotFoundError(

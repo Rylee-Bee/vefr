@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from .library import load_shelf, studio_shelf_dir
-from .paths import app_home
+from .paths import app_home, resolve_under
 from .replies import RoomCard, RoomDescriptor
 
 router = APIRouter()
@@ -255,16 +255,27 @@ def stickers_view() -> JSONResponse:
 
 @router.get("/room/art/{name}.webp", dependencies=guard)
 def art(name: str):
+    # `name` is a request value that becomes a path segment. Both
+    # allow-lists below already refuse an unknown id, and resolve_under
+    # is the second layer over the join itself: a sticker's id is
+    # pasted into a filename, so a "../" in it must not walk out of
+    # web/art/ even if the membership test were ever removed.
     if name.startswith("stickers-"):          # a sticker's art, only for ids the book defines
         from . import achievements
         sid = name[len("stickers-"):]
         known = {d["id"] for d in achievements.definitions()}
-        path = app_home() / "web" / "art" / "stickers" / f"{sid}.webp"
-        if sid in known and path.is_file():
+        try:
+            path = resolve_under(app_home() / "web" / "art" / "stickers", f"{sid}.webp")
+        except ValueError:
+            path = None
+        if sid in known and path is not None and path.is_file():
             return FileResponse(path, media_type="image/webp", headers={"Cache-Control": "private, max-age=3600"})
         return JSONResponse({"error": "No such picture."}, status_code=404)
     rel = ART.get(name)
-    path = app_home() / "web" / "art" / rel if rel else None
+    try:
+        path = resolve_under(app_home() / "web" / "art", rel) if rel else None
+    except ValueError:
+        path = None
     if not path or not path.is_file():
         return JSONResponse({"error": "No such picture."}, status_code=404)
     return FileResponse(path, media_type="image/webp", headers={"Cache-Control": "private, max-age=3600"})
