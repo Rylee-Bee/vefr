@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +29,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "scripts" / "check"
+CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 
 # A PATH that contains no uv, npm or gitleaks even on a machine that has
 # them, so "tool missing -> SKIP" is a fact of the test, not of the host.
@@ -153,6 +155,45 @@ def test_list_output_has_a_column_header(step_table):
     phase_at = row.index(first_step["phase"], speed_at + len(first_step["speed"]))
     assert lines[header].index("speed") == speed_at, lines[header]
     assert lines[header].index("phase") == phase_at, lines[header]
+
+
+# ----------------------------------------------------------- the docs
+
+
+def _documented_check_flags():
+    """The flags CONTRIBUTING's gate section attributes to scripts/check.
+
+    Only lines that talk about `scripts/check` count, so the `uv run ...`
+    commands in the same section are not read as modes of the tool.
+    """
+    gate = CONTRIBUTING.read_text().split("## Test gate", 1)[1]
+    gate = gate.split("\n## ", 1)[0]
+    flags = set()
+    for line in gate.splitlines():
+        if "scripts/check" in line and "check_public_surface" not in line:
+            flags |= set(re.findall(r"--[a-z][a-z-]*", line))
+    return flags
+
+
+def test_documented_flags_are_the_scripts_flags():
+    """CONTRIBUTING's gate section takes scripts/check's flags, and all of them.
+
+    This branch adds the tool, so what the docs say about it has to be true:
+    no flag the script does not have, and no flag it has that the docs leave
+    out. A change described as a smaller thing than it is - a docs tweak on
+    top of a 500-line script - is what a reviewer is asked to take on faith.
+    """
+    helped = run_check(ROOT, "--help")
+    assert helped.returncode == 0, helped.stderr
+    script_flags = set(re.findall(r"--[a-z][a-z-]*", helped.stdout))
+    assert script_flags == {"--fast", "--full", "--list", "--merge-ready", "--json"}, (
+        "scripts/check grew or lost a flag; say so in CONTRIBUTING's gate section"
+    )
+    assert _documented_check_flags() == script_flags, (
+        "CONTRIBUTING's gate section must name every flag scripts/check takes, "
+        f"and no others: documented {sorted(_documented_check_flags())}, "
+        f"script {sorted(script_flags)}"
+    )
 
 
 # ------------------------------------------------------------- fake repo

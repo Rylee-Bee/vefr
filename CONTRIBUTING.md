@@ -85,8 +85,11 @@ mergeable before it is sent:
 
 ```sh
 scripts/check --list         # every CI step: what runs here, what is CI-only
+scripts/check --json         # with --list, the same step table as JSON
 scripts/check --fast         # the pre-push subset: lint, tests of the changed
                              # code, gitleaks on the branch diff
+scripts/check --full         # the default, spelled out: every step that runs
+                             # here, fast ones and slow ones
 scripts/check --merge-ready  # merge origin/main into HEAD in a throwaway
                              # worktree and run the full check on the merged tree
 ```
