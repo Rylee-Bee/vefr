@@ -68,8 +68,11 @@ def test_the_small_buttons_meet_the_44px_floor_on_desktop_and_phone():
 
 
 def test_the_left_hud_leaves_room_for_the_menu_button():
-    """On a phone the health, level and gold row ran under the Menu button (8-38 px, measured)."""
-    assert re.search(r"\.hud--tl \{[^}]*max-width: calc\(100% - 124px\)", HTML)
+    """On a phone the health, level and gold row ran under the Menu button (8-38 px, measured).
+    The --sai-left/--sai-right come off the width too, so the rounded corners
+    the OS keeps at the sides are given back to the row as well."""
+    assert re.search(
+        r"\.hud--tl \{[^}]*max-width: calc\(100% - 124px - var\(--sai-left\) - var\(--sai-right\)\)", HTML)
 
 
 def test_a_screen_reader_only_line_takes_no_room():
