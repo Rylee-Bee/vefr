@@ -830,12 +830,22 @@ def test_a_section_with_no_entry_door_says_nothing_about_keys(tmp_path):
     assert locks.findings(built) == []
 
 
-def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(tmp_path):
+def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(
+        tmp_path, monkeypatch):
     """The sweep reads what is on disk, so a broken Section must not stop it.
 
     A Section the validator has already refused is still a Section on
-    disk. The sweep reads `sections.floors` and `sections.slot`, both of
-    which default, so the sweep reports floors rather than raising.
+    disk. `pattern` here is a bare string where a list of slots belongs,
+    and `size` names a width rather than a `[lo, hi]` pair, so both fall
+    back to the engine's own defaults: the Section keeps its nine floors
+    and draws its default pattern and size. The sweep has to read that
+    defaulted Section and report on it rather than raising.
+
+    The empty findings alone would not say so - a sweep that swept
+    nothing returns an empty list too. So the draws are counted: the
+    sweep must have drawn every floor of the defaulted Section on every
+    seed, and the empty list then means those floors all held rather
+    than that nothing was checked.
     """
     built = a_pack(tmp_path, "cellar")
     path = built / "sections" / "cellar.json"
@@ -843,7 +853,31 @@ def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(tmp_p
     section["pattern"] = "entry"
     section["size"] = {"w": 3}
     path.write_text(json.dumps(section), encoding="utf-8")
-    assert locks.section_findings(built, seeds=2) == []
+
+    # Both keys are the malformed ones, and both default rather than raise:
+    # a bare string is not a list of slots, and `3` is not a `[lo, hi]` pair.
+    assert section["pattern"] == "entry"
+    assert sections.pattern(section) == sections.DEFAULT_PATTERN
+    assert sections.size_range(section) == (
+        sections.DEFAULT_SIZE[0][0], sections.DEFAULT_SIZE[0][0],
+        sections.DEFAULT_SIZE[1][0], sections.DEFAULT_SIZE[1][0])
+
+    drawn: list[tuple[str, int]] = []
+    real = delve_v3.generate_floor_v3
+
+    def counted(seed, size_range, pack, floor_kind, stamp_pack=None, depth=1,
+                trace=None, **kwargs):
+        drawn.append((seed, depth))
+        return real(seed, size_range, pack, floor_kind, stamp_pack, depth,
+                    trace, **kwargs)
+
+    monkeypatch.setattr(delve_v3, "generate_floor_v3", counted)
+
+    seeds = 2
+    assert locks.section_findings(built, seeds=seeds) == []
+    floors = sections.floors(json.loads(path.read_text(encoding="utf-8")))
+    assert drawn == [(f"{locks.SECTION_SEED_PREFIX}{n}", k)
+                     for n in range(seeds) for k in range(1, floors + 1)]
 
 
 # -------------------------------------------------------------------- two packs
