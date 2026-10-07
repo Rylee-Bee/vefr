@@ -15,6 +15,21 @@ permissions:
 
 jobs:
 
+  # Honest-claims gate. A strong claim (a count, a pass/fail, a "nothing
+  # found") must ship the command that produced it and the observed output.
+  # The policy is owned by ci-harness and fetched at the revision pinned here,
+  # so there is exactly one copy of it in the estate rather than one per repo.
+  #
+  # policy-revision MUST equal the SHA in the uses: line below. There is no
+  # context property that exposes a reusable workflow's own ref, so the SHA is
+  # stated twice; the template verifies after checkout that the tree it fetched
+  # really is this commit, and prints both.
+  claims:
+    uses: Rylee-Bee/ci-harness/.github/workflows/reusable-claims-policy.yml@a0c82129374ab551cd4dee7efd7b46c04f1be5eb
+    with:
+      policy-revision: a0c82129374ab551cd4dee7efd7b46c04f1be5eb
+      runs-on: ${{ vars.CI_RUNNER_LIGHT || vars.CI_RUNNER || 'ubuntu-latest' }}
+
   # Play-Nice contract currency — enforced, not decorative. This repo declared
   # adoption in .project/contracts/adoption.yaml; nothing was checking the pin, so it could silently
   # fall behind the contracts it claims to be held to.
