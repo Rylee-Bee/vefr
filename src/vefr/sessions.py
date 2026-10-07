@@ -18,6 +18,7 @@ label on a playthrough, nothing more.
 """
 
 import json
+import os
 import re
 import secrets
 import time
@@ -25,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from .paths import data_dir
+from .paths import data_dir, resolve_under
 
 DEFAULT = "default"
 UNDO_WINDOW_S = 60
@@ -117,10 +118,20 @@ def derive(base: Path, sid: str | None) -> Path:
     journal.json -> journal-<sid>.json, sitting beside it. Explicit
     VEFR_* env paths derive the same way, so the quadlet's mounted
     data dir keeps holding every session.
+
+    clean() is what keeps an id a filename - anything with a
+    separator, a dot or over 64 chars falls back to the default
+    session. resolve_under() is the second layer over the join
+    itself: a bare relative base ("journal.json", relative cwd) has
+    no directory to check against and no separator to climb out
+    with, so it keeps with_name's answer.
     """
     if is_default(sid):
         return base
-    return base.with_name(f"{base.stem}-{clean(sid)}{base.suffix}")
+    name = f"{base.stem}-{clean(sid)}{base.suffix}"
+    if base.parent == Path() and not os.path.isabs(base):
+        return base.with_name(name)
+    return resolve_under(base.parent, name)
 
 
 def sessions_dir() -> Path:
@@ -129,7 +140,7 @@ def sessions_dir() -> Path:
 
 
 def meta_path(sid: str) -> Path:
-    return sessions_dir() / f"{clean(sid)}.meta.json"
+    return resolve_under(data_dir(), "sessions", f"{clean(sid)}.meta.json")
 
 
 def write_meta(sid: str, meta: dict) -> None:

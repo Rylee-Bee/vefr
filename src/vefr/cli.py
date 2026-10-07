@@ -29,6 +29,7 @@ whose story they're serving.
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -145,8 +146,31 @@ def git_quiet(*args):
                           cwd=str(r)).stdout.strip()
 
 
+# The userinfo of a URL - `scheme://user:secret@host`. Printing one is
+# how a token ends up in a scrollback, a CI log, or a bug report, so
+# sh() shows the shape and hides the secret. The command itself is
+# untouched: only the echo is redacted.
+_URL_USERINFO = re.compile(r'([a-zA-Z][a-zA-Z0-9+.\-]*://)([^/\s@]+)@')
+
+
+def redact_arg(c) -> str:
+    """The argument as it may be printed - a URL's password or token
+    becomes `***`. `user:secret@host` keeps the user (who you are),
+    `secret@host` (token only) keeps nothing."""
+    s = str(c)
+
+    def _swap(m):
+        scheme, userinfo = m.group(1), m.group(2)
+        user, sep, _secret = userinfo.partition(':')
+        if not sep:
+            return f'{scheme}***@'
+        return f'{scheme}{user}:***@'
+
+    return _URL_USERINFO.sub(_swap, s)
+
+
 def sh(cmd, **kw):
-    print(f'+ {" ".join(str(c) for c in cmd)}')
+    print(f'+ {" ".join(redact_arg(c) for c in cmd)}')
     return subprocess.run([str(c) for c in cmd], **kw)
 
 
@@ -3244,8 +3268,9 @@ def _add_ferry_verbs(ferry_sub) -> None:
     fs.add_argument('--name', default=None,
                     help='the pack to export (default: the resolved world)')
     fs.add_argument('--push', action='store_true',
-                    help='create a private Gitea repo and push, using this '
-                         "checkout's origin credentials")
+                    help='accepted and ignored: the by-hand push commands '
+                         'are always printed, and vefr never uses your '
+                         'origin credentials')
     fs.set_defaults(fn=cmd_scaffold)
 
 
@@ -3567,9 +3592,10 @@ def cmd_scaffold(args) -> int:
     pack's files as-is (canon, voices, map, ledger - the author's
     content), a README explaining what vefr is and which files are
     meant to be replaced with real art, and a fresh git history so
-    their work starts at commit one. --push creates the Gitea repo
-    and pushes, reusing whatever credentials the engine checkout's
-    own origin carries.
+    their work starts at commit one. The repo is left unpushed: the
+    command prints the two commands that send it, because putting a
+    credential in the new repo's remote URL writes that credential to
+    .git/config and echoes it to the terminal.
     """
     dest = Path(args.dest).resolve()
     if dest.exists() and any(dest.iterdir()):
@@ -3679,55 +3705,14 @@ reads whatever the pack gives it.
         print('commit failed - files are staged; commit by hand')
         return 1
 
-    if not args.push:
-        print(f'scaffold ready: {dest} (git main, 1 commit)')
-        return 0
-
-    # --push: create the Gitea repo from the engine checkout's own
-    # credentials, then push the new repo's main there.
-    origin = subprocess.run(
-        ('git', '-C', str(need_repo()), 'remote', 'get-url', 'origin'),
-        capture_output=True, text=True,
-    ).stdout.strip()
-    creds = urllib.parse.urlparse(origin)
-    if not creds.username:
-        print(f'no credentials in {origin}; push by hand:')
-        print(f'  git -C {dest} remote add origin <your repo url>')
-        print(f'  git -C {dest} push -u origin main')
-        return 1
-    base = f'{creds.scheme}://{creds.netloc.rsplit("@", 1)[1]}'
-    owner = creds.path.strip('/').split('/')[0]
-    token = creds.password or ''
-    dest_name = dest.name
-    import urllib.error
-    import urllib.parse
-
-    req = urllib.request.Request(
-        f'{base}/api/v1/repos/{owner}',
-        data=json.dumps({'name': dest_name, 'private': True}).encode(),
-        headers={'Content-Type': 'application/json'},
-        method='POST',
-    )
-    import base64 as _b64
-    req.add_header('Authorization', 'Basic ' + _b64.b64encode(
-        f'{creds.username}:{token}'.encode()).decode())
-    try:
-        with urllib.request.urlopen(req) as resp:
-            body = json.loads(resp.read().decode())
-        print(f'gitea repo created: {body.get("full_name", dest_name)}')
-    except urllib.error.HTTPError as e:
-        if e.code == 409:
-            print(f'repo {owner}/{dest_name} already exists - pushing to it')
-        else:
-            print(f'repo create failed: HTTP {e.code}')
-            return 1
-    remote = f'{creds.scheme}://{creds.username}:{token}@{creds.netloc.rsplit("@", 1)[1]}/{owner}/{dest_name}.git'
-    if sh(('git', '-C', str(dest), 'remote', 'add', 'origin', remote)).returncode:
-        sh(('git', '-C', str(dest), 'remote', 'set-url', 'origin', remote))
-    if sh(('git', '-C', str(dest), 'push', '-u', 'origin', 'main')).returncode:
-        print('push failed - the commit exists locally; push by hand')
-        return 1
-    print(f'pushed: {owner}/{dest_name}')
+    # The push is the author's, by hand. vefr never reads the engine
+    # checkout's origin credentials, never calls a forge API with
+    # them, and never writes one into the new repo's config - a token
+    # in a remote URL is a token in a log, a backup, and a clone.
+    print(f'scaffold ready: {dest} (git main, 1 commit)')
+    print('push it yourself:')
+    print(f'  git -C {dest} remote add origin <your repo url>')
+    print(f'  git -C {dest} push -u origin main')
     return 0
 
 

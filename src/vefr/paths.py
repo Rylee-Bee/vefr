@@ -26,6 +26,29 @@ def safe_pack_name(name: str | None) -> str | None:
     return name
 
 
+def resolve_under(base, *parts) -> Path:
+    """Join `parts` onto `base` and refuse anything that leaves it.
+
+    The second layer, under safe_pack_name()/sessions.clean(): those
+    say a *name* must be a bare segment, this one refuses the *join*
+    itself. A name can be valid by the first rule and still walk out
+    (or a caller can skip the first rule entirely), so every place a
+    caller-supplied value becomes a path segment goes through here.
+
+    Written in the shape CodeQL's py/path-injection recognises as a
+    sanitiser - os.path.normpath of the joined path, then a direct
+    startswith(base + os.sep) whose failing branch raises - because a
+    regex guard is not a barrier to that query and a normpath+prefix
+    test is. normpath, not realpath: this refuses "..", not an
+    operator's own symlinks, and stays inside the tree it was handed.
+    """
+    base_s = os.path.normpath(os.fspath(base))
+    p = os.path.normpath(os.path.join(base_s, *map(str, parts)))
+    if not (p == base_s or p.startswith(base_s + os.sep)):
+        raise ValueError("path escapes its base")
+    return Path(p)
+
+
 def app_home() -> Path:
     """Where web/ and worlds/ live.
 
@@ -126,8 +149,8 @@ def set_active_world(name: str) -> None:
 
 def _pack_exists(name: str) -> bool:
     return (
-        (worlds_dir() / name / "world.json").is_file()
-        or (template_dir() / name / "world.json").is_file()
+        _pack_path(worlds_dir(), name).joinpath("world.json").is_file()
+        or _pack_path(template_dir(), name).joinpath("world.json").is_file()
     )
 
 
@@ -170,18 +193,38 @@ def world_name() -> str:
     return 'sample-world'
 
 
+def _pack_path(root: Path, name) -> Path:
+    """A pack `name` under one of the two pack roots.
+
+    Everything a request can carry, and every bare pack name, goes
+    through resolve_under(): the guard that refuses a name which walks
+    out of the root, whatever the caller's own validator said. An
+    already-absolute path keeps the plain join it has always had - the
+    CLI resolves its `--pack` argument to one (`vefr validate
+    /srv/packs/mine`) and `load_world(str(pack))` passes one, both at
+    the operator's own terminal.
+    """
+    s = os.fspath(name)
+    if os.path.isabs(s):
+        return root / s
+    return resolve_under(root, s)
+
+
 def pack_dir(name: str | None = None) -> Path:
     """The world pack directory: logbok, ledger, map, voices, config.
 
     The author canon wins: pack_dir() resolves to the rw mount if
     the pack is there, falling back to the ro template if not. This
     is the *write* path - the loader's *read* path walks both.
+
+    A pack *name* is joined through _pack_path(), so a caller that
+    skipped safe_pack_name() still cannot walk out of either root.
     """
     name = name or world_name()
-    rw = worlds_dir() / name
+    rw = _pack_path(worlds_dir(), name)
     if rw.is_dir():
         return rw
-    ro = template_dir() / name
+    ro = _pack_path(template_dir(), name)
     if ro.is_dir():
         return ro
     # Fall back to the rw path even if it doesn't exist; callers
@@ -192,7 +235,20 @@ def pack_dir(name: str | None = None) -> Path:
 
 
 def pack_file(rel: str, name: str | None = None) -> Path:
-    return pack_dir(name) / rel
+    """A file inside a pack: pack_dir(), then `rel` under it.
+
+    The pack *name* is guarded by _pack_path(); `rel` is the second
+    join of the same shape, so it gets the same guard. It is a
+    caller-supplied value too, and a pack-root join is exactly the
+    place a "../" must not walk out of - the callers today pass
+    literals ("logbok.md"), but the builder this function is has to
+    hold whatever the next one passes.
+
+    Downward segments still join as they always have
+    ("voices/npc.md"); an absolute `rel`, or one that climbs out of
+    the pack, raises instead of resolving.
+    """
+    return resolve_under(pack_dir(name), rel)
 
 
 # The world whose play history lives in the unscoped files (journal.json,
