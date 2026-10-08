@@ -959,7 +959,6 @@ def cmd_delve(args) -> int:
     import re
 
     from . import delve as delve_mod
-    from .maplab import load_pack, validate
 
     if args.floors < 1:
         print('--floors must be at least 1')
