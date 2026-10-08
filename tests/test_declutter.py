@@ -68,8 +68,11 @@ def test_the_small_buttons_meet_the_44px_floor_on_desktop_and_phone():
 
 
 def test_the_left_hud_leaves_room_for_the_menu_button():
-    """On a phone the health, level and gold row ran under the Menu button (8-38 px, measured)."""
-    assert re.search(r"\.hud--tl \{[^}]*max-width: calc\(100% - 124px\)", HTML)
+    """On a phone the health, level and gold row ran under the Menu button (8-38 px, measured).
+    The --sai-left/--sai-right come off the width too, so the rounded corners
+    the OS keeps at the sides are given back to the row as well."""
+    assert re.search(
+        r"\.hud--tl \{[^}]*max-width: calc\(100% - 124px - var\(--sai-left\) - var\(--sai-right\)\)", HTML)
 
 
 def test_a_screen_reader_only_line_takes_no_room():
@@ -79,11 +82,15 @@ def test_a_screen_reader_only_line_takes_no_room():
 
 def test_on_a_phone_the_messages_panel_starts_below_the_wrapped_hud():
     block = HTML[HTML.index("@media (pointer: coarse), (max-width: 700px)"):]
-    assert re.search(r"\.toasts \{ top: 108px", block[:2500])
+    # The 108 px is the "wrapped HUD" floor; --sai-top is added on top
+    # of it so the panel keeps clear of the status bar on phones.
+    assert re.search(r"\.toasts \{ top: calc\(108px \+ var\(--sai-top\)\)", block[:2500])
 
 
 def test_on_the_narrowest_phones_the_messages_panel_makes_room_for_three_hud_rows():
-    assert re.search(r"@media \(max-width: 400px\) \{ \.toasts \{ top: 150px; \} \}", HTML)
+    # The 150 px is the "three HUD rows" floor; --sai-top is added on
+    # top of it so the panel keeps clear of the status bar on phones.
+    assert re.search(r"@media \(max-width: 400px\) \{ \.toasts \{ top: calc\(150px \+ var\(--sai-top\)\); \} \}", HTML)
 
 
 def test_the_in_app_help_matches_the_controls():
