@@ -261,18 +261,16 @@ def test_delve_naming_is_seeded_not_drawn(tmp_path):
     assert read(first) == read(second)
 
 
-def test_a_broken_name_grammar_leaves_the_floor_unnamed(tmp_path, capsys):
-    """A grammar that refuses writes no name at all, never half a one -
-    and the pack that carries it fails validation at the end of the
-    run, so the author hears about it from the tool."""
+def test_a_broken_name_grammar_fails_the_run_and_leaves_no_floor(tmp_path, capsys):
+    """A grammar that refuses writes no name at all, never half a one, and
+    the run fails so the author hears about it from the tool. Since
+    vefr#336 a failed bake leaves the pack exactly as it was, so the
+    floor it was building is not left behind, named or unnamed."""
     pack = _pack_with(tmp_path, "broken-name",
                       grammars={"name": {"origin": ["#missing#"]}})
     assert cli.cmd_delve(_delve_args(pack)) != 0
     assert "missing" in capsys.readouterr().out
-    contract = json.loads(
-        (pack / "acts" / "act-1" / "floor-2" / "contract.json")
-        .read_text(encoding="utf-8"))
-    assert "name" not in contract
+    assert not (pack / "acts" / "act-1" / "floor-2").exists()
 
 
 # ------------------------------------------------------------------ helpers

@@ -711,6 +711,84 @@ def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
     return {**contract_obj, 'name': drawn, 'title': drawn}
 
 
+def _lay_floors(pack, act_dir, act, act_path, staged, names, announce) -> int:
+    """Lay a batch of floors into the act, or leave the pack exactly as it was.
+
+    A bake is ONE change. Either every floor of the Section lands and the pack
+    still validates green, or the pack is byte-for-byte what it was before.
+
+    It used not to be one change: `norns delve` wrote every floor and rewrote
+    the act's world.json, and only THEN asked the validator - so a pack that
+    failed left the floors and the rewritten act behind while exiting non-zero,
+    which reads like "nothing was kept" and is the opposite. Here the act's
+    bytes and the floors about to be replaced are set aside first, the write
+    happens inside a try, and any failure OR exception puts both back before
+    the error is returned. The floors are announced only once they are kept.
+    """
+    saved_act = act_path.read_bytes() if act_path.exists() else None
+    saved_regions = {}
+    for name in names:
+        region = act_dir / name
+        kept = None
+        if region.is_dir():
+            kept = {f.name: f.read_bytes()
+                    for f in sorted(region.iterdir()) if f.is_file()}
+        saved_regions[name] = kept
+
+    def restore():
+        for name in names:
+            region = act_dir / name
+            kept = saved_regions[name]
+            if region.is_dir():
+                for child in sorted(region.iterdir()):
+                    if kept is None or child.name not in kept:
+                        if child.is_dir():
+                            shutil.rmtree(child, ignore_errors=True)
+                        else:
+                            child.unlink()
+            if kept is None:
+                if region.is_dir():
+                    shutil.rmtree(region, ignore_errors=True)
+            else:
+                region.mkdir(parents=True, exist_ok=True)
+                for child_name, data in kept.items():
+                    (region / child_name).write_bytes(data)
+        if saved_act is None:
+            if act_path.exists():
+                act_path.unlink()
+        else:
+            act_path.write_bytes(saved_act)
+
+    try:
+        for name, map_text, contract_text in staged:
+            region = act_dir / name
+            region.mkdir(parents=True, exist_ok=True)
+            (region / 'map.md').write_text(map_text, encoding='utf-8')
+            (region / 'contract.json').write_text(contract_text,
+                                                   encoding='utf-8')
+        act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False)
+                            + '\n', encoding='utf-8')
+        errors = validate(load_pack(pack), pack_dir=pack)
+    except Exception as exc:
+        restore()
+        print('nothing was kept: the Section was rolled back and the pack '
+              'is as it was')
+        print(f'  the bake raised: {type(exc).__name__}: {exc}')
+        raise
+
+    if errors:
+        restore()
+        print('nothing was kept: the Section was rolled back and the pack '
+              'is as it was')
+        print('the pack does not validate:')
+        for e in errors:
+            print(f'  FAIL: {e}')
+        return EXIT_ERROR
+
+    announce()
+    print('the pack validates green')
+    return EXIT_OK
+
 def _bake_section(args, pack: Path, act_dir: Path, act: dict, act_path: Path,
                   from_region: str, from_at: tuple[int, int]) -> int:
     """`norns delve --section <id>`: lay a whole Section and wire its doors.
@@ -827,49 +905,39 @@ def _bake_section(args, pack: Path, act_dir: Path, act: dict, act_path: Path,
         wired.append({'from': floor['name'], 'at': list(floor['up']),
                       'to': target, 'to_at': to_at})
 
-    for floor in planned:
-        region = act_dir / floor['name']
-        region.mkdir(parents=True, exist_ok=True)
-        (region / 'map.md').write_text(
-            '\n'.join(floor['rows']) + '\n', encoding='utf-8')
-        (region / 'contract.json').write_text(
-            json.dumps(floor['contract'], indent=2, ensure_ascii=False) + '\n',
-            encoding='utf-8')
-
     kept = [t for t in (act.get('transitions') or [])
             if isinstance(t, dict)
             and (t.get('from') not in names or t.get('to') not in names)]
     act['regions'] = [r for r in existing if r not in names] + names
     act['transitions'] = kept + wired
-    act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False) + '\n',
-                        encoding='utf-8')
 
-    loaded = sections.load(pack)
-    for floor in planned:
-        contract = floor['contract']
-        where = 'depth {0}'.format(
-            sections.depth(section, contract['k'], loaded))
-        where += ', up {0},{1}'.format(*floor['up'])
-        where += ' down {0},{1}'.format(*floor['down']) \
-            if floor['down'] else ' bottom'
-        where += f", {contract['floor_kind']}"
-        if contract['landing']:
-            where += f", a landing (sets {sections.landing_flag(section, contract['k'])})"
-        print(f"  wrote acts/{act_dir.name}/{floor['name']}/ ({where})")
-    lands = sections.landings(section)
-    print(f"generated {count} floor(s) for section {section_id!r} from seed "
-          f"{args.seed!r}; wired {len(wired)} transition(s)")
-    print(f"  landings on floor(s) {', '.join(str(k) for k in lands)}"
-          if lands else '  this Section has no landing floor')
+    staged = [(floor['name'],
+               '\n'.join(floor['rows']) + '\n',
+               json.dumps(floor['contract'], indent=2, ensure_ascii=False)
+               + '\n')
+              for floor in planned]
 
-    errors = validate(load_pack(pack), pack_dir=pack)
-    if errors:
-        print('the pack does not validate after the write:')
-        for e in errors:
-            print(f'  FAIL: {e}')
-        return EXIT_ERROR
-    print('the pack validates green')
-    return EXIT_OK
+    def announce():
+        loaded = sections.load(pack)
+        for floor in planned:
+            contract = floor['contract']
+            where = 'depth {0}'.format(
+                sections.depth(section, contract['k'], loaded))
+            where += ', up {0},{1}'.format(*floor['up'])
+            where += ' down {0},{1}'.format(*floor['down']) \
+                if floor['down'] else ' bottom'
+            where += f", {contract['floor_kind']}"
+            if contract['landing']:
+                where += (f", a landing (sets "
+                          f"{sections.landing_flag(section, contract['k'])})")
+            print(f"  wrote acts/{act_dir.name}/{floor['name']}/ ({where})")
+        lands = sections.landings(section)
+        print(f"generated {count} floor(s) for section {section_id!r} "
+              f"from seed {args.seed!r}; wired {len(wired)} transition(s)")
+        print(f"  landings on floor(s) {', '.join(str(k) for k in lands)}"
+              if lands else '  this Section has no landing floor')
+
+    return _lay_floors(pack, act_dir, act, act_path, staged, names, announce)
 
 
 def cmd_delve(args) -> int:
@@ -891,7 +959,6 @@ def cmd_delve(args) -> int:
     import re
 
     from . import delve as delve_mod
-    from .maplab import load_pack, validate
 
     if args.floors < 1:
         print('--floors must be at least 1')
@@ -1047,15 +1114,6 @@ def cmd_delve(args) -> int:
         wired.append({'from': name, 'at': list(up),
                       'to': target, 'to_at': to_at})
 
-    for name, floor_rows, _up, _down, contract_obj in planned:
-        region = act_dir / name
-        region.mkdir(parents=True, exist_ok=True)
-        (region / 'map.md').write_text(
-            '\n'.join(floor_rows) + '\n', encoding='utf-8')
-        (region / 'contract.json').write_text(
-            json.dumps(contract_obj, indent=2, ensure_ascii=False) + '\n',
-            encoding='utf-8')
-
     # Merge into the act contract: keep every existing region in order
     # (the first stays first), drop only stale doors touching the names
     # being (re)written, then append the new regions and doors.
@@ -1064,28 +1122,24 @@ def cmd_delve(args) -> int:
                     and (t.get('from') in names or t.get('to') in names))]
     act['regions'] = [r for r in region_names if r not in names] + names
     act['transitions'] = kept + wired
-    act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False) + '\n',
-                        encoding='utf-8')
 
-    for name, _rows, up, down, contract_obj in planned:
-        where = 'up {0},{1}'.format(*up)
-        where += ' down {0},{1}'.format(*down) if down else ' bottom'
-        drawn = contract_obj.get('name')
-        if drawn:
-            where += f', named "{drawn}"'
-        print(f'  wrote acts/{act_dir.name}/{name}/ ({where})')
-    print(f'generated {len(names)} floor(s) for {pack.name} from seed '
-          f'{args.seed!r}; wired {len(wired)} transition(s)')
-    print(f'  {names[-1]} is the bottom for now (no stair down)')
+    staged = [(name, '\n'.join(floor_rows) + '\n',
+               json.dumps(contract_obj, indent=2, ensure_ascii=False) + '\n')
+              for name, floor_rows, _up, _down, contract_obj in planned]
 
-    errors = validate(load_pack(pack), pack_dir=pack)
-    if errors:
-        print('the pack does not validate after the write:')
-        for e in errors:
-            print(f'  FAIL: {e}')
-        return EXIT_ERROR
-    print('the pack validates green')
-    return EXIT_OK
+    def announce():
+        for name, _rows, up, down, contract_obj in planned:
+            where = 'up {0},{1}'.format(*up)
+            where += ' down {0},{1}'.format(*down) if down else ' bottom'
+            drawn = contract_obj.get('name')
+            if drawn:
+                where += f', named "{drawn}"'
+            print(f'  wrote acts/{act_dir.name}/{name}/ ({where})')
+        print(f'generated {len(names)} floor(s) for {pack.name} from seed '
+              f'{args.seed!r}; wired {len(wired)} transition(s)')
+        print(f'  {names[-1]} is the bottom for now (no stair down)')
+
+    return _lay_floors(pack, act_dir, act, act_path, staged, names, announce)
 
 
 def cmd_stamp_check(args) -> int:
