@@ -44,6 +44,13 @@ surface, read the accessibility matrix first.
    uv run --group test pytest -q
    python3 scripts/check_public_surface.py
    ```
+   Or let one runner do the looking-up (see [Test gate](#test-gate-every-pr-must-pass)):
+   ```sh
+   scripts/check
+   ```
+   A step the runner has no tool for comes back `SKIP` and does not fail
+   the run, so read the SKIP lines: a green `scripts/check` is not proof
+   the gate passed.
 5. Known pre-existing failures (do not treat as regressions):
    - `test_face_roll_is_honest_without_a_model`, `test_map_propose_is_honest_without_a_model` — model-dependent; fail when no LLM endpoint is reachable.
 
@@ -70,6 +77,59 @@ main ← PR ← feat/*
 - Rebase before requesting review if your branch is behind.
 
 ## Test gate (every PR must pass)
+
+```sh
+scripts/check                 # the CI commands below, run as one table
+```
+
+`scripts/check` carries the CI commands as a step table and runs them
+locally, so most of the gate is answered before the PR is sent:
+
+```sh
+scripts/check --list         # every CI step: what runs here, what is CI-only
+scripts/check --json         # with --list, the same step table as JSON
+scripts/check --fast         # the pre-push subset: lint, tests of the changed
+                             # code, gitleaks on the branch diff
+scripts/check --full         # the default, spelled out: every step that runs
+                             # here, fast ones and slow ones
+scripts/check --merge-ready  # merge origin/main into HEAD in a throwaway
+                             # worktree and run the full check on the merged tree
+```
+
+Each step prints `PASS`, `FAIL`, or `SKIP` with the reason; a blocking
+`FAIL` exits non-zero. A tool that is not installed is a `SKIP` with an
+install hint, never a silent pass. With `uv` present the script runs the
+command CI runs; without it, it falls back to the shared CI venv and
+prints which one it used.
+
+**It is a runner, not the gate.** A SKIP is not a pass: a step this
+machine has no tool for is skipped, not checked, and the run still exits
+0. So exit 0 means "no blocking step that could run here failed" — on a
+machine with no toolchain that is every step SKIPped and nothing checked.
+Read the `SKIP` lines and the summary's skip count, and let CI be the
+gate that decides the PR.
+
+| Step | Speed | Runs here? |
+|---|---|---|
+| `ruff check src tests scripts` | fast | yes |
+| pytest on the tests this branch changed | fast | yes |
+| public-surface guard | fast | yes |
+| `norns validate --pack worlds/sample-world` | fast | yes, with the synced `uv` env |
+| gitleaks over `origin/main..HEAD` | fast | yes, with the gitleaks binary |
+| `npm ci` (jsdom, for the node-vm harnesses) | slow | yes, with npm |
+| pytest, whole suite | slow | yes |
+| `norns validate` on every shipped pack | slow | yes (matches the Gitea mirror) |
+| actionlint, zizmor, vulture, deptry | fast / slow | when the tool is installed |
+| axe-core a11y, browser tests, visual regression | — | **CI-only** (Playwright + Chromium) |
+| lychee link check, Vale prose | — | **CI-only** (GitHub actions) |
+| honest-claims policy, contract freshness | — | **CI-only** (ci-harness reusable workflows) |
+
+**What it does not cover:** everything marked CI-only above; GitHub's own
+mergeability, reviews and branch protection; and the image publish and
+screenshot jobs, which only run on `main`. It is the commands, not the
+decision to merge.
+
+The same gate, one command at a time:
 
 ```sh
 uv run --group test ruff check src tests scripts    # lint (scripts/ too — CI checks it)

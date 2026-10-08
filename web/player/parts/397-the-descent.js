@@ -34,7 +34,6 @@ window.VEFR_DESCENT = (function () {
   var DEFAULT_SIZE_W = [48, 64];
   var DEFAULT_SIZE_H = [32, 44];
   var DEFAULT_ROOMS = [12, 18];
-  var DEFAULT_MOBS = [2, 5];
   var DEFAULT_FOG_RADIUS = 5;
   var DEFAULT_FAMILY = 'a stranger in the dark';
   var DOC_VERSION = 1;
@@ -118,6 +117,59 @@ window.VEFR_DESCENT = (function () {
     return null;
   }
 
+  // ---- the families (the twin of `delve._families_of`) -----------------
+
+  function has(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  // One Blueprint family's base record by id, or null: the twin of
+  // `vefr.blueprint.resolve_family`. The `extends` chain is walked to its
+  // root, then each family's own `defaults` are merged over them, a later
+  // value replacing an earlier one whole. A family the Blueprint does not
+  // have, one whose parent is missing and one caught in a cycle all come
+  // back with no base - the validator says those out loud (`vefr check`,
+  // `/families/0/family`), and a floor lays itself rather than refusing
+  // to be walked.
+  function familyBase(id) {
+    var source = def();
+    var families = (source && source.blueprint &&
+                    typeof source.blueprint.families === 'object' &&
+                    source.blueprint.families)
+      ? source.blueprint.families : null;
+    if (!families || typeof id !== 'string' || !has(families, id)) return null;
+    var chain = [], seen = {}, current = id;
+    while (true) {
+      if (has(seen, current)) return null;          // a cycle has no root
+      seen[current] = true;
+      chain.push(current);
+      var record = families[current];
+      var parent = (record && typeof record === 'object') ? record.extends : null;
+      if (parent === undefined || parent === null) break;
+      if (!has(families, parent)) return null;     // an unknown parent
+      current = parent;
+    }
+    var base = null;
+    for (var i = chain.length - 1; i >= 0; i--) {   // the root first
+      var defaults = families[chain[i]] ? families[chain[i]].defaults : null;
+      if (!defaults || typeof defaults !== 'object') continue;
+      if (!base) base = {};
+      for (var key in defaults) {
+        if (has(defaults, key)) base[key] = defaults[key];
+      }
+    }
+    return base;
+  }
+
+  // A family's health as a range, for the one draw that spends it: a
+  // Blueprint base is one whole number - `hp: 4` is four hit points,
+  // every floor - and a pair is a Section's or a test's own range.
+  function hpRange(family) {
+    var value = family ? family.hp : null;
+    if (isWhole(value)) return [value, value];
+    return rangeOf(family, 'hp', [1, 1]);
+  }
+
   // ---- where a depth leads (the twin of `locate`) ----------------------
   function locate(depth) {
     var list = sections();
@@ -190,14 +242,59 @@ window.VEFR_DESCENT = (function () {
 
   function sectionHash(section) { return hash12(canonical(section)); }
 
+  // How many randoms this floor's area asks for. The budget is not a
+  // draw: it is the same area budget the v3 pop stage clamps (PLAN.md
+  // section 2, step 4 - "randoms by area budget"), read off the floor's
+  // own walkable tiles. One tile TILES_PER_MOB times is one monster slot,
+  // clamped to the same two numbers, so a descent Section carries no
+  // `mobs` key at all - the count is generator policy, not pack data.
+  // The three numbers are `VEFR_DELVE.v3Constants`, part 396's own.
+  function mobBudget(rows) {
+    var C = (window.VEFR_DELVE && window.VEFR_DELVE.v3Constants) || {};
+    var per = C.TILES_PER_MOB, lo = C.MOBS_MIN, hi = C.MOBS_MAX;
+    var walkable = 0;
+    for (var y = 0; y < rows.length; y++) {
+      var row = rows[y], at = row.indexOf('.');
+      while (at !== -1) { walkable++; at = row.indexOf('.', at + 1); }
+    }
+    return Math.min(hi, Math.max(lo, Math.floor(walkable / per)));
+  }
+
+  // A Section names a Blueprint family by id and carries no record of
+  // its own (ADR 0014), so the base - hp, atk, sight, drops, name - is
+  // resolved out of the pack's Blueprint, which the bake writes into the
+  // descent block beside the Sections, and the Section's own keys win
+  // over it. That is `vefr.sections.families`, the merge the validator
+  // and the generator already share, so a monster here cannot come out
+  // with a family the check would not have accepted. An entry with no
+  // base still draws; its stats come back at this function's own floor
+  // of 1, which is the answer for a base that says nothing.
+  function familiesOf(section) {
+    var listed = (section && Array.isArray(section.families))
+      ? section.families : [];
+    var out = [];
+    for (var i = 0; i < listed.length; i++) {
+      var entry = listed[i];
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+      var name = entry.family;
+      var base = (typeof name === 'string' && name) ? familyBase(name) : null;
+      var merged = {};
+      if (base) {
+        for (var b in base) if (has(base, b)) merged[b] = base[b];
+      }
+      for (var e in entry) if (has(entry, e)) merged[e] = entry[e];
+      out.push(merged);
+    }
+    return out.filter(function (f) {
+      return typeof f.family === 'string' && f.family; })
+      .sort(function (a, b) {
+        return a.family < b.family ? -1 : (a.family > b.family ? 1 : 0); });
+  }
+
   function mobsAt(key, section, rows, up, down) {
-    var mr = rangeOf(section, 'mobs', DEFAULT_MOBS);
     var rng = window.VEFR_DELVE.prng(streamSeed(key, 'pop'));
-    var count = randRange(rng, Math.max(0, mr[0]), Math.max(0, mr[1]));
-    var families = (section && Array.isArray(section.families))
-      ? section.families.filter(function (f) { return f && typeof f.id === 'string'; })
-      : [];
-    families = families.slice().sort(function (a, b) { return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); });
+    var count = mobBudget(rows);
+    var families = familiesOf(section);
     var pool = [];
     for (var f = 0; f < families.length; f++) {
       var weight = families[f].weight;
@@ -219,12 +316,12 @@ window.VEFR_DESCENT = (function () {
       var pick = Math.floor(rng() * candidates.length);
       var at = candidates.splice(pick, 1)[0];
       var family = pool[Math.floor(rng() * pool.length)];
-      var hr = rangeOf(family, 'hp', [1, 1]);
+      var hr = hpRange(family);
       var hp = randRange(rng, Math.max(1, hr[0]), Math.max(1, hr[1]));
       var atk = isWhole(family.atk) ? family.atk : 1;
       var sight = isWhole(family.sight) ? family.sight : 6;
       mobs.push({
-        id: 'm' + i, family: family.id,
+        id: 'm' + i, family: family.family,
         name: (typeof family.name === 'string' && family.name) ? family.name : DEFAULT_FAMILY,
         at: [at[0], at[1]], hp: Math.max(1, hp), atk: Math.max(1, atk),
         sight: Math.max(1, sight), drops: mobDrops(key, 'm' + i, family.drops)

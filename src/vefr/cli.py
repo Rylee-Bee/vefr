@@ -29,6 +29,7 @@ whose story they're serving.
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -145,8 +146,31 @@ def git_quiet(*args):
                           cwd=str(r)).stdout.strip()
 
 
+# The userinfo of a URL - `scheme://user:secret@host`. Printing one is
+# how a token ends up in a scrollback, a CI log, or a bug report, so
+# sh() shows the shape and hides the secret. The command itself is
+# untouched: only the echo is redacted.
+_URL_USERINFO = re.compile(r'([a-zA-Z][a-zA-Z0-9+.\-]*://)([^/\s@]+)@')
+
+
+def redact_arg(c) -> str:
+    """The argument as it may be printed - a URL's password or token
+    becomes `***`. `user:secret@host` keeps the user (who you are),
+    `secret@host` (token only) keeps nothing."""
+    s = str(c)
+
+    def _swap(m):
+        scheme, userinfo = m.group(1), m.group(2)
+        user, sep, _secret = userinfo.partition(':')
+        if not sep:
+            return f'{scheme}***@'
+        return f'{scheme}{user}:***@'
+
+    return _URL_USERINFO.sub(_swap, s)
+
+
 def sh(cmd, **kw):
-    print(f'+ {" ".join(str(c) for c in cmd)}')
+    print(f'+ {" ".join(redact_arg(c) for c in cmd)}')
     return subprocess.run([str(c) for c in cmd], **kw)
 
 
@@ -606,7 +630,12 @@ def cmd_map(args) -> int:
     # lock (or no `requires` at all) prints nothing and is unchanged.
     if args.map_cmd == 'validate' and getattr(args, 'pack', None):
         from . import locks
-        lock_findings = locks.findings(Path(str(args.pack)))
+        pack_dir = Path(str(args.pack))
+        lock_findings = locks.findings(pack_dir)
+        # ...and sweeps every Section of the pack, which is the E4 half:
+        # every floor of every Section, over the section sweep's seeds.
+        # A pack that ships no Sections sweeps nothing and is unchanged.
+        lock_findings += locks.section_findings(pack_dir)
         for finding in lock_findings:
             print(finding)
         if lock_findings:
@@ -645,6 +674,23 @@ def _tile_walkable(rows: list[str], legend: dict, x: int, y: int) -> bool:
     return rows[y][x] not in BLOCKED_FALLBACK
 
 
+def _take_the_down_stair(rows: list[str], at: tuple[int, int]) -> list[str]:
+    """The rows of a bottom floor: its down-stair glyph taken back out.
+
+    Only the tile the generator put the down anchor on becomes floor.
+    `d` is a map tile like any other - a stamped room may draw one of
+    its own, and a future generator may - so a blanket `replace('d', '.')`
+    would erase those too. The stair goes back out at the coordinate it
+    was placed at, which is the one thing that is certainly a stair.
+    """
+    from . import delve_v3
+
+    x, y = at
+    out = list(rows)
+    out[y] = out[y][:x] + delve_v3.FLOOR + out[y][x + 1:]
+    return out
+
+
 def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
     """A generated floor's contract, named from the pack's grammar.
 
@@ -663,6 +709,167 @@ def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
     if not drawn:
         return contract_obj
     return {**contract_obj, 'name': drawn, 'title': drawn}
+
+
+def _bake_section(args, pack: Path, act_dir: Path, act: dict, act_path: Path,
+                  from_region: str, from_at: tuple[int, int]) -> int:
+    """`norns delve --section <id>`: lay a whole Section and wire its doors.
+
+    The v3 path, and the one PLAN.md section 2's floor key exists for.
+    Each floor is drawn by `generate_floor_v3` from the run seed, the
+    Section and the floor number `k`, and the generator builds the floor
+    key `run_seed/section.id/cycle/k` itself - the same string
+    `sections.floor_key(args.seed, section, 0, k)` returns, and the key the
+    floor is salted with and recorded under - so floors 2 and 3 of one
+    Section, both `normal`, are two maps rather than one drawn twice.
+
+    The doors are the elevator rule of PLAN.md section 4, as wiring:
+
+    - the town (or wherever the descent starts) goes down into floor 1;
+    - every floor's down-stair goes to the floor below, and the last floor
+      has no down-stair at all;
+    - a floor's up-stair climbs to the floor above it, EXCEPT on a landing,
+      where it goes straight back to where the descent started. A Section's
+      two landings are its first floor and its fifth (Stardew's every-five),
+      and the engine offers them because the pack's data says so.
+
+    Every written contract carries four additive keys - `section`, `k`,
+    `floor_kind` and `landing` - plus the `floor_key` it was drawn from, so
+    the player's descent menu and a stair-time regeneration both have
+    something to name. Nothing an authored region carries is touched.
+    """
+    from . import delve as delve_mod
+    from . import delve_v3, sections
+
+    section_id = str(args.section)
+    directory = pack / sections.SECTIONS_DIR
+    path = directory / f'{section_id}.json'
+    if not path.is_file():
+        shipped = sorted(item.stem for item in directory.glob('*.json')) \
+            if directory.is_dir() else []
+        print(f"the pack has no section {section_id!r}"
+              + (f' - it ships: {", ".join(shipped)}' if shipped
+                 else ' - it ships no sections/ at all'))
+        return EXIT_ERROR
+    try:
+        section = json.loads(path.read_text(encoding='utf-8'))
+    except ValueError:
+        print(f'{sections.SECTIONS_DIR}/{section_id}.json is not valid JSON')
+        return EXIT_ERROR
+    if not isinstance(section, dict):
+        print(f'{sections.SECTIONS_DIR}/{section_id}.json must be an object')
+        return EXIT_ERROR
+
+    count = sections.floors(section)
+    names = [sections.floor_region(section, k) for k in range(1, count + 1)]
+    existing = list(act.get('regions') or [])
+    collisions = [name for name in names
+                  if name in existing or (act_dir / name).exists()]
+    if collisions and not args.force:
+        print('refusing to overwrite existing region(s): '
+              + ', '.join(collisions))
+        print('pass --force to overwrite them.')
+        return EXIT_ERROR
+
+    # Draw every floor in memory first, so a bad draw writes nothing.
+    planned: list[dict] = []
+    for k in range(1, count + 1):
+        key = sections.floor_key(args.seed, section, 0, k)
+        plan = delve_v3.generate_floor_v3(
+            args.seed, sections.floor_size(section, key), section,
+            sections.floor_kind(section, k, args.seed, 0), depth=k)
+        up = plan['anchors']['up']
+        down = plan['anchors']['down']
+        rows = list(plan['rows'])
+        if k == count:
+            # The last floor of a Section is the bottom for now: the vault
+            # stair that goes home from it is E8's, not this slice's. The
+            # generator draws a down anchor on every floor it lays, so the
+            # glyph and the anchor are taken back out here rather than
+            # leaving a stair on a floor with nothing under it. Only the
+            # tile the generator put the anchor on is a stair - a `d`
+            # anywhere else on the map is some other tile and is left be.
+            if down:
+                rows = _take_the_down_stair(rows, (down[0], down[1]))
+            down = None
+        contract = delve_mod.contract(plan['w'], plan['h'], up,
+                                      down_at=down if down else None)
+        contract.update({
+            'section': sections.section_id(section) or section_id,
+            'k': k,
+            'floor_kind': sections.floor_kind(section, k, args.seed, 0),
+            'landing': sections.is_landing(section, k),
+            'floor_key': key,
+        })
+        planned.append({'name': names[k - 1], 'rows': rows, 'up': up,
+                        'down': down, 'contract': contract})
+
+    wired: list[dict] = [{
+        'from': from_region, 'at': list(from_at),
+        'to': planned[0]['name'], 'to_at': list(planned[0]['up']),
+    }]
+    for index in range(len(planned) - 1):
+        if planned[index]['down'] is None:
+            continue
+        wired.append({
+            'from': planned[index]['name'], 'at': list(planned[index]['down']),
+            'to': planned[index + 1]['name'],
+            'to_at': list(planned[index + 1]['up']),
+        })
+    for index, floor in enumerate(planned):
+        k = index + 1
+        # A landing climbs to where the descent started; every other floor
+        # climbs to the floor above it.
+        if k == 1 or sections.is_landing(section, k):
+            target, to_at = from_region, list(from_at)
+        else:
+            target, to_at = names[k - 2], list(planned[k - 2]['down'])
+        wired.append({'from': floor['name'], 'at': list(floor['up']),
+                      'to': target, 'to_at': to_at})
+
+    for floor in planned:
+        region = act_dir / floor['name']
+        region.mkdir(parents=True, exist_ok=True)
+        (region / 'map.md').write_text(
+            '\n'.join(floor['rows']) + '\n', encoding='utf-8')
+        (region / 'contract.json').write_text(
+            json.dumps(floor['contract'], indent=2, ensure_ascii=False) + '\n',
+            encoding='utf-8')
+
+    kept = [t for t in (act.get('transitions') or [])
+            if isinstance(t, dict)
+            and (t.get('from') not in names or t.get('to') not in names)]
+    act['regions'] = [r for r in existing if r not in names] + names
+    act['transitions'] = kept + wired
+    act_path.write_text(json.dumps(act, indent=2, ensure_ascii=False) + '\n',
+                        encoding='utf-8')
+
+    loaded = sections.load(pack)
+    for floor in planned:
+        contract = floor['contract']
+        where = 'depth {0}'.format(
+            sections.depth(section, contract['k'], loaded))
+        where += ', up {0},{1}'.format(*floor['up'])
+        where += ' down {0},{1}'.format(*floor['down']) \
+            if floor['down'] else ' bottom'
+        where += f", {contract['floor_kind']}"
+        if contract['landing']:
+            where += f", a landing (sets {sections.landing_flag(section, contract['k'])})"
+        print(f"  wrote acts/{act_dir.name}/{floor['name']}/ ({where})")
+    lands = sections.landings(section)
+    print(f"generated {count} floor(s) for section {section_id!r} from seed "
+          f"{args.seed!r}; wired {len(wired)} transition(s)")
+    print(f"  landings on floor(s) {', '.join(str(k) for k in lands)}"
+          if lands else '  this Section has no landing floor')
+
+    errors = validate(load_pack(pack), pack_dir=pack)
+    if errors:
+        print('the pack does not validate after the write:')
+        for e in errors:
+            print(f'  FAIL: {e}')
+        return EXIT_ERROR
+    print('the pack validates green')
+    return EXIT_OK
 
 
 def cmd_delve(args) -> int:
@@ -746,6 +953,15 @@ def cmd_delve(args) -> int:
         print(f'--from-at ({fx},{fy}) is not a walkable tile in region '
               f"'{args.from_region}' - the author places the down-stair there")
         return EXIT_ERROR
+
+    # A Section is baked whole, by its own id: its floors, its sizes, its
+    # kinds and its landings come out of `sections/<id>.json` rather than
+    # out of the flags below, which are the v2 generator's. Everything
+    # above this point - the pack, the act, --from-region, --from-at - is
+    # shared, so a Section is baked from the same stair a single floor is.
+    if getattr(args, 'section', None):
+        return _bake_section(args, pack, act_dir, act, act_path,
+                             args.from_region, (fx, fy))
 
     # Names: an explicit --first-name wins; otherwise continue the
     # floor-N numbering after whatever the pack already has (a tool the
@@ -2258,11 +2474,14 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     # own dungeon legend beside it, so the player draws a floor out of the
     # same tiles the baked floors use without inventing any of its own. A
     # pack that declares no descent bakes the literal `null`, and the
-    # player grows no regions.
+    # player grows no regions. The pack's Blueprint goes in beside them
+    # too (ADR 0014): a Section names a family by id, so a floor that
+    # cannot reach the Blueprint cannot say what that family is.
     from . import delve as delve_mod
     descent = delve_mod.descent_of(world, pack)
     if descent:
-        descent = {**descent, 'legend': delve_mod.LEGEND}
+        descent = {**descent, 'legend': delve_mod.LEGEND,
+                   'blueprint': delve_mod.blueprint_of(pack)}
     out_html = out_html.replace('{{descent_json}}',
                                 _json.dumps(descent or None, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
@@ -3049,8 +3268,9 @@ def _add_ferry_verbs(ferry_sub) -> None:
     fs.add_argument('--name', default=None,
                     help='the pack to export (default: the resolved world)')
     fs.add_argument('--push', action='store_true',
-                    help='create a private Gitea repo and push, using this '
-                         "checkout's origin credentials")
+                    help='accepted and ignored: the by-hand push commands '
+                         'are always printed, and vefr never uses your '
+                         'origin credentials')
     fs.set_defaults(fn=cmd_scaffold)
 
 
@@ -3372,9 +3592,10 @@ def cmd_scaffold(args) -> int:
     pack's files as-is (canon, voices, map, ledger - the author's
     content), a README explaining what vefr is and which files are
     meant to be replaced with real art, and a fresh git history so
-    their work starts at commit one. --push creates the Gitea repo
-    and pushes, reusing whatever credentials the engine checkout's
-    own origin carries.
+    their work starts at commit one. The repo is left unpushed: the
+    command prints the two commands that send it, because putting a
+    credential in the new repo's remote URL writes that credential to
+    .git/config and echoes it to the terminal.
     """
     dest = Path(args.dest).resolve()
     if dest.exists() and any(dest.iterdir()):
@@ -3484,55 +3705,14 @@ reads whatever the pack gives it.
         print('commit failed - files are staged; commit by hand')
         return 1
 
-    if not args.push:
-        print(f'scaffold ready: {dest} (git main, 1 commit)')
-        return 0
-
-    # --push: create the Gitea repo from the engine checkout's own
-    # credentials, then push the new repo's main there.
-    origin = subprocess.run(
-        ('git', '-C', str(need_repo()), 'remote', 'get-url', 'origin'),
-        capture_output=True, text=True,
-    ).stdout.strip()
-    creds = urllib.parse.urlparse(origin)
-    if not creds.username:
-        print(f'no credentials in {origin}; push by hand:')
-        print(f'  git -C {dest} remote add origin <your repo url>')
-        print(f'  git -C {dest} push -u origin main')
-        return 1
-    base = f'{creds.scheme}://{creds.netloc.rsplit("@", 1)[1]}'
-    owner = creds.path.strip('/').split('/')[0]
-    token = creds.password or ''
-    dest_name = dest.name
-    import urllib.error
-    import urllib.parse
-
-    req = urllib.request.Request(
-        f'{base}/api/v1/repos/{owner}',
-        data=json.dumps({'name': dest_name, 'private': True}).encode(),
-        headers={'Content-Type': 'application/json'},
-        method='POST',
-    )
-    import base64 as _b64
-    req.add_header('Authorization', 'Basic ' + _b64.b64encode(
-        f'{creds.username}:{token}'.encode()).decode())
-    try:
-        with urllib.request.urlopen(req) as resp:
-            body = json.loads(resp.read().decode())
-        print(f'gitea repo created: {body.get("full_name", dest_name)}')
-    except urllib.error.HTTPError as e:
-        if e.code == 409:
-            print(f'repo {owner}/{dest_name} already exists - pushing to it')
-        else:
-            print(f'repo create failed: HTTP {e.code}')
-            return 1
-    remote = f'{creds.scheme}://{creds.username}:{token}@{creds.netloc.rsplit("@", 1)[1]}/{owner}/{dest_name}.git'
-    if sh(('git', '-C', str(dest), 'remote', 'add', 'origin', remote)).returncode:
-        sh(('git', '-C', str(dest), 'remote', 'set-url', 'origin', remote))
-    if sh(('git', '-C', str(dest), 'push', '-u', 'origin', 'main')).returncode:
-        print('push failed - the commit exists locally; push by hand')
-        return 1
-    print(f'pushed: {owner}/{dest_name}')
+    # The push is the author's, by hand. vefr never reads the engine
+    # checkout's origin credentials, never calls a forge API with
+    # them, and never writes one into the new repo's config - a token
+    # in a remote URL is a token in a log, a backup, and a clone.
+    print(f'scaffold ready: {dest} (git main, 1 commit)')
+    print('push it yourself:')
+    print(f'  git -C {dest} remote add origin <your repo url>')
+    print(f'  git -C {dest} push -u origin main')
     return 0
 
 
@@ -4318,6 +4498,10 @@ def norns_main() -> int:
     mdl.add_argument('--first-name', default=None,
                      help='first generated region name (default: floor-2, or '
                           'the next free floor-N after existing regions)')
+    mdl.add_argument('--section', default=None,
+                     help='bake a whole Section from sections/<id>.json: one '
+                          'region per floor, its own size and kind per floor, '
+                          'and the landings wired back to --from-region')
     mdl.add_argument('--force', action='store_true',
                      help='overwrite an existing generated region')
     mdl.set_defaults(fn=cmd_delve)
@@ -4827,6 +5011,10 @@ def vefr_main() -> int:
     dl.add_argument('--first-name', default=None,
                     help='first generated region name (default: floor-2, or '
                          'the next free floor-N after existing regions)')
+    dl.add_argument('--section', default=None,
+                    help='bake a whole Section from sections/<id>.json: one '
+                         'region per floor, its own size and kind per floor, '
+                         'and the landings wired back to --from-region')
     dl.add_argument('--force', action='store_true',
                     help='overwrite an existing generated region')
     dl.set_defaults(fn=cmd_delve)

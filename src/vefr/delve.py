@@ -423,7 +423,6 @@ SAVE_BYTES = 250_000
 # a different number of minutes writes it.
 DEFAULT_SIZE = {"w": (48, 64), "h": (32, 44)}
 DEFAULT_ROOMS = (12, 18)
-DEFAULT_MOBS = (2, 5)
 DEFAULT_FOG_RADIUS = 5
 DEFAULT_FAMILY = "a stranger in the dark"
 
@@ -720,31 +719,127 @@ def _stairs_of(rows: list[str]) -> tuple[tuple[int, int], tuple[int, int]]:
     return up, down
 
 
-def _families_of(section: dict) -> list[dict]:
-    """The Section's families, sorted by id: a draw may not depend on
-    the order the pack happened to write them in."""
-    listed = section.get('families')
-    if not isinstance(listed, list):
-        return []
-    families = [f for f in listed if isinstance(f, dict) and f.get('id')]
-    return sorted(families, key=lambda f: f['id'])
+def family_base(source, family_id) -> dict | None:
+    """One Blueprint family's base record by id, or None.
+
+    A Section names a Blueprint family by id and carries no record of its
+    own (ADR 0014), so a play-time floor asks the Blueprint for the base
+    rather than inventing one at the engine's floor of 1. The work is
+    `vefr.blueprint.resolve_family`'s - the `extends` chain, the
+    whole-value merge, the three refusals - and every refusal is None here:
+    a family the Blueprint does not have is the validator's sentence
+    (`/families/0/family`), so a floor that met one lays the floor anyway
+    with no base rather than raising from inside a play-time sweep.
+    """
+    if not isinstance(source, dict) or not isinstance(family_id, str):
+        return None
+    from . import blueprint  # here, not at the top: blueprint imports cli
+
+    try:
+        return blueprint.resolve_family(source, family_id)
+    except blueprint.BlueprintError:
+        return None
 
 
-def mobs_at(key: str, section: dict, rows: list[str],
-            up: tuple[int, int], down: tuple[int, int]) -> list[dict]:
+def blueprint_of(pack_dir) -> dict:
+    """The pack's Blueprint family declarations, or `{}`.
+
+    The slice the descent reads and the bake writes into the descent
+    block: the `families` object and nothing else, because a family's
+    `extends` chain is the whole of what a floor resolves and a
+    Blueprint's regions and things are none of its business. A pack with
+    no `blueprint.json` has no families to resolve and its floors draw at
+    the engine's own floor of 1, which is the same answer the validator's
+    "this pack has no Blueprint" gives. The name is the module's own
+    constant, not pack data, so there is nothing here to guard.
+    """
+    if pack_dir is None:
+        return {}
+    from . import blueprint
+
+    path = Path(str(pack_dir)) / blueprint.BLUEPRINT_FILE
+    if not path.is_file():
+        return {}
+    try:
+        source = blueprint.read(path)
+    except blueprint.BlueprintError:
+        return {}
+    families = source.get('families') if isinstance(source, dict) else None
+    return {'families': families} if isinstance(families, dict) else {}
+
+
+def _families_of(section: dict, source=None) -> list[dict]:
+    """The Section's families with each family's base attached, sorted by
+    family id: a draw may not depend on the order the pack wrote them in.
+
+    A Section names a Blueprint family by id and carries no record of its
+    own (ADR 0014), so the base - `hp`, `atk`, `sight`, `drops`, `name` -
+    is resolved through `vefr.blueprint.resolve_family` and the Section's
+    own keys win over it. That merge is `vefr.sections.families`'s, the
+    one the validator and the generator already share, so a floor cannot
+    come out with a family the check would not have accepted. An entry
+    with no base still draws; its stats come back at `mobs_at`'s own floor
+    of 1, which is the answer for a base that says nothing.
+    """
+    from . import sections  # here, not at the top: sections imports this module
+
+    def resolve(family_id):
+        return family_base(source, family_id) if source else None
+
+    families = [f for f in sections.families(section, resolve)
+                if isinstance(f.get('family'), str) and f['family']]
+    return sorted(families, key=lambda f: f['family'])
+
+
+def _hp_range(family: dict) -> tuple[int, int]:
+    """A family's health as a range, for the one draw that spends it.
+
+    A Blueprint base is one whole number - `hp: 4` is four hit points,
+    every floor - while a Section or a hand-built descent may write a
+    `[lo, hi]` pair. Either way the range is closed and the draw happens,
+    because the stream's shape is the floor key's, not a family's.
+    """
+    value = family.get('hp')
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value, value
+    return _range_of(family, 'hp', (1, 1))
+
+
+def _mob_budget(rows: list[str]) -> int:
+    """How many randoms this floor's area asks for.
+
+    The budget is not a draw: it is the same area budget the v3 pop
+    stage clamps (PLAN.md section 2, step 4 - "randoms by area budget"),
+    read off the floor's own walkable tiles. One tile `TILES_PER_MOB`
+    times is one monster slot, clamped to the same two numbers, so a
+    descent Section carries no `mobs` key at all - the count is generator
+    policy, not pack data.
+    """
+    from . import delve_v3  # here, not at the top: delve_v3 imports this module
+
+    walkable = sum(row.count('.') for row in rows)
+    return min(delve_v3.MOBS_MAX,
+               max(delve_v3.MOBS_MIN, walkable // delve_v3.TILES_PER_MOB))
+
+
+def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
+            down: tuple[int, int], source=None) -> list[dict]:
     """Who lives on this floor, drawn from `v3|<key>|pop`.
 
     A floor's monsters are placed on floor tiles at least `MOB_SPACING`
     from both stairs, one per tile, in a fixed order: the count first,
     then for each monster its tile, its family, its health, its reach and
-    its drops (the drops from that monster's own loot stream). A floor
-    too small to hold them all carries as many as fit, never fewer than
-    none.
+    its drops (the drops from that monster's own loot stream). The count
+    is the area budget (`_mob_budget`) and costs no draw, so a floor's
+    size alone decides how full it is. A floor too small to hold them all
+    carries as many as fit, never fewer than none. `source` is the
+    descent's Blueprint: the families are resolved through it, so a
+    monster carries the stats its family id names rather than the floor of
+    1 a bare Section entry gives.
     """
     rng = prng(stream_seed(key, 'pop'))
-    lo, hi = _range_of(section, 'mobs', DEFAULT_MOBS)
-    count = _rand_range(rng, max(0, lo), max(0, hi))
-    families = _families_of(section)
+    count = _mob_budget(rows)
+    families = _families_of(section, source)
     pool: list[dict] = []
     for family in families:
         weight = family.get('weight')
@@ -760,7 +855,7 @@ def mobs_at(key: str, section: dict, rows: list[str],
             break
         at = candidates.pop(int(rng() * len(candidates)))
         family = pool[int(rng() * len(pool))]
-        hp_lo, hp_hi = _range_of(family, 'hp', (1, 1))
+        hp_lo, hp_hi = _hp_range(family)
         hp = _rand_range(rng, max(1, hp_lo), max(1, hp_hi))
         atk = family.get('atk')
         atk = atk if isinstance(atk, int) and not isinstance(atk, bool) else 1
@@ -768,7 +863,7 @@ def mobs_at(key: str, section: dict, rows: list[str],
         sight = sight if isinstance(sight, int) and not isinstance(sight, bool) else 6
         drops = family.get('drops')
         mobs.append({
-            'id': f'm{i}', 'family': family['id'],
+            'id': f'm{i}', 'family': family['family'],
             'name': family.get('name') or DEFAULT_FAMILY,
             'at': [at[0], at[1]], 'hp': max(1, hp), 'atk': max(1, atk),
             'sight': max(1, sight),
@@ -783,7 +878,9 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     The plan stream says how big the floor is, the layout stream carves
     it, and the pop stream fills it - three streams that never share a
     draw. The identity triple rides along so the save can tell this floor
-    from the floor it drew last time.
+    from the floor it drew last time. The descent's `blueprint` is the
+    families' own records, so the monsters it fills the floor with carry
+    the stats their ids name.
     """
     cycle, section, k = locate(depth, descent)
     key = floor_key(_run_seed_of(descent, run), section['id'], cycle, k)
@@ -795,6 +892,10 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     radius = fog.get('radius') if isinstance(fog, dict) else None
     radius = radius if isinstance(radius, int) and not isinstance(radius, bool) \
         else DEFAULT_FOG_RADIUS
+    block = descent
+    if isinstance(descent, dict) and isinstance(descent.get('descent'), dict):
+        block = descent['descent']
+    source = block.get('blueprint') if isinstance(block, dict) else None
     return {
         'name': floor_name(section['id'], cycle, k),
         'key': key,
@@ -804,7 +905,7 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
         'kind': plan['kind'], 'w': plan['w'], 'h': plan['h'],
         'rooms': plan['rooms'], 'rows': rows,
         'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]]},
-        'mobs': mobs_at(key, section, rows, up, down),
+        'mobs': mobs_at(key, section, rows, up, down, source),
         'fog': {'radius': max(1, radius)},
     }
 
