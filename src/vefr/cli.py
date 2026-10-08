@@ -29,6 +29,7 @@ whose story they're serving.
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -145,8 +146,31 @@ def git_quiet(*args):
                           cwd=str(r)).stdout.strip()
 
 
+# The userinfo of a URL - `scheme://user:secret@host`. Printing one is
+# how a token ends up in a scrollback, a CI log, or a bug report, so
+# sh() shows the shape and hides the secret. The command itself is
+# untouched: only the echo is redacted.
+_URL_USERINFO = re.compile(r'([a-zA-Z][a-zA-Z0-9+.\-]*://)([^/\s@]+)@')
+
+
+def redact_arg(c) -> str:
+    """The argument as it may be printed - a URL's password or token
+    becomes `***`. `user:secret@host` keeps the user (who you are),
+    `secret@host` (token only) keeps nothing."""
+    s = str(c)
+
+    def _swap(m):
+        scheme, userinfo = m.group(1), m.group(2)
+        user, sep, _secret = userinfo.partition(':')
+        if not sep:
+            return f'{scheme}***@'
+        return f'{scheme}{user}:***@'
+
+    return _URL_USERINFO.sub(_swap, s)
+
+
 def sh(cmd, **kw):
-    print(f'+ {" ".join(str(c) for c in cmd)}')
+    print(f'+ {" ".join(redact_arg(c) for c in cmd)}')
     return subprocess.run([str(c) for c in cmd], **kw)
 
 
@@ -650,6 +674,23 @@ def _tile_walkable(rows: list[str], legend: dict, x: int, y: int) -> bool:
     return rows[y][x] not in BLOCKED_FALLBACK
 
 
+def _take_the_down_stair(rows: list[str], at: tuple[int, int]) -> list[str]:
+    """The rows of a bottom floor: its down-stair glyph taken back out.
+
+    Only the tile the generator put the down anchor on becomes floor.
+    `d` is a map tile like any other - a stamped room may draw one of
+    its own, and a future generator may - so a blanket `replace('d', '.')`
+    would erase those too. The stair goes back out at the coordinate it
+    was placed at, which is the one thing that is certainly a stair.
+    """
+    from . import delve_v3
+
+    x, y = at
+    out = list(rows)
+    out[y] = out[y][:x] + delve_v3.FLOOR + out[y][x + 1:]
+    return out
+
+
 def _named_floor_contract(contract_obj: dict, name_grammar, seed: str) -> dict:
     """A generated floor's contract, named from the pack's grammar.
 
@@ -745,9 +786,12 @@ def _bake_section(args, pack: Path, act_dir: Path, act: dict, act_path: Path,
             # stair that goes home from it is E8's, not this slice's. The
             # generator draws a down anchor on every floor it lays, so the
             # glyph and the anchor are taken back out here rather than
-            # leaving a stair on a floor with nothing under it.
+            # leaving a stair on a floor with nothing under it. Only the
+            # tile the generator put the anchor on is a stair - a `d`
+            # anywhere else on the map is some other tile and is left be.
+            if down:
+                rows = _take_the_down_stair(rows, (down[0], down[1]))
             down = None
-            rows = [row.replace('d', '.') for row in rows]
         contract = delve_mod.contract(plan['w'], plan['h'], up,
                                       down_at=down if down else None)
         contract.update({
@@ -3224,8 +3268,9 @@ def _add_ferry_verbs(ferry_sub) -> None:
     fs.add_argument('--name', default=None,
                     help='the pack to export (default: the resolved world)')
     fs.add_argument('--push', action='store_true',
-                    help='create a private Gitea repo and push, using this '
-                         "checkout's origin credentials")
+                    help='accepted and ignored: the by-hand push commands '
+                         'are always printed, and vefr never uses your '
+                         'origin credentials')
     fs.set_defaults(fn=cmd_scaffold)
 
 
@@ -3547,9 +3592,10 @@ def cmd_scaffold(args) -> int:
     pack's files as-is (canon, voices, map, ledger - the author's
     content), a README explaining what vefr is and which files are
     meant to be replaced with real art, and a fresh git history so
-    their work starts at commit one. --push creates the Gitea repo
-    and pushes, reusing whatever credentials the engine checkout's
-    own origin carries.
+    their work starts at commit one. The repo is left unpushed: the
+    command prints the two commands that send it, because putting a
+    credential in the new repo's remote URL writes that credential to
+    .git/config and echoes it to the terminal.
     """
     dest = Path(args.dest).resolve()
     if dest.exists() and any(dest.iterdir()):
@@ -3659,55 +3705,14 @@ reads whatever the pack gives it.
         print('commit failed - files are staged; commit by hand')
         return 1
 
-    if not args.push:
-        print(f'scaffold ready: {dest} (git main, 1 commit)')
-        return 0
-
-    # --push: create the Gitea repo from the engine checkout's own
-    # credentials, then push the new repo's main there.
-    origin = subprocess.run(
-        ('git', '-C', str(need_repo()), 'remote', 'get-url', 'origin'),
-        capture_output=True, text=True,
-    ).stdout.strip()
-    creds = urllib.parse.urlparse(origin)
-    if not creds.username:
-        print(f'no credentials in {origin}; push by hand:')
-        print(f'  git -C {dest} remote add origin <your repo url>')
-        print(f'  git -C {dest} push -u origin main')
-        return 1
-    base = f'{creds.scheme}://{creds.netloc.rsplit("@", 1)[1]}'
-    owner = creds.path.strip('/').split('/')[0]
-    token = creds.password or ''
-    dest_name = dest.name
-    import urllib.error
-    import urllib.parse
-
-    req = urllib.request.Request(
-        f'{base}/api/v1/repos/{owner}',
-        data=json.dumps({'name': dest_name, 'private': True}).encode(),
-        headers={'Content-Type': 'application/json'},
-        method='POST',
-    )
-    import base64 as _b64
-    req.add_header('Authorization', 'Basic ' + _b64.b64encode(
-        f'{creds.username}:{token}'.encode()).decode())
-    try:
-        with urllib.request.urlopen(req) as resp:
-            body = json.loads(resp.read().decode())
-        print(f'gitea repo created: {body.get("full_name", dest_name)}')
-    except urllib.error.HTTPError as e:
-        if e.code == 409:
-            print(f'repo {owner}/{dest_name} already exists - pushing to it')
-        else:
-            print(f'repo create failed: HTTP {e.code}')
-            return 1
-    remote = f'{creds.scheme}://{creds.username}:{token}@{creds.netloc.rsplit("@", 1)[1]}/{owner}/{dest_name}.git'
-    if sh(('git', '-C', str(dest), 'remote', 'add', 'origin', remote)).returncode:
-        sh(('git', '-C', str(dest), 'remote', 'set-url', 'origin', remote))
-    if sh(('git', '-C', str(dest), 'push', '-u', 'origin', 'main')).returncode:
-        print('push failed - the commit exists locally; push by hand')
-        return 1
-    print(f'pushed: {owner}/{dest_name}')
+    # The push is the author's, by hand. vefr never reads the engine
+    # checkout's origin credentials, never calls a forge API with
+    # them, and never writes one into the new repo's config - a token
+    # in a remote URL is a token in a log, a backup, and a clone.
+    print(f'scaffold ready: {dest} (git main, 1 commit)')
+    print('push it yourself:')
+    print(f'  git -C {dest} remote add origin <your repo url>')
+    print(f'  git -C {dest} push -u origin main')
     return 0
 
 

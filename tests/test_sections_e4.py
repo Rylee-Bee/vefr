@@ -59,7 +59,7 @@ import pytest
 
 from blueprint_helpers import normalized_pack, vefr
 
-from vefr import blueprint, delve_v3, locks, maplab, sections, shapes
+from vefr import blueprint, cli, delve_v3, locks, maplab, sections, shapes
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "sections"
 PACKS = ("cellar", "attic")
@@ -830,12 +830,22 @@ def test_a_section_with_no_entry_door_says_nothing_about_keys(tmp_path):
     assert locks.findings(built) == []
 
 
-def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(tmp_path):
+def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(
+        tmp_path, monkeypatch):
     """The sweep reads what is on disk, so a broken Section must not stop it.
 
     A Section the validator has already refused is still a Section on
-    disk. The sweep reads `sections.floors` and `sections.slot`, both of
-    which default, so the sweep reports floors rather than raising.
+    disk. `pattern` here is a bare string where a list of slots belongs,
+    and `size` names a width rather than a `[lo, hi]` pair, so both fall
+    back to the engine's own defaults: the Section keeps its nine floors
+    and draws its default pattern and size. The sweep has to read that
+    defaulted Section and report on it rather than raising.
+
+    The empty findings alone would not say so - a sweep that swept
+    nothing returns an empty list too. So the draws are counted: the
+    sweep must have drawn every floor of the defaulted Section on every
+    seed, and the empty list then means those floors all held rather
+    than that nothing was checked.
     """
     built = a_pack(tmp_path, "cellar")
     path = built / "sections" / "cellar.json"
@@ -843,7 +853,31 @@ def test_a_section_pack_with_a_broken_pattern_is_a_finding_and_not_a_crash(tmp_p
     section["pattern"] = "entry"
     section["size"] = {"w": 3}
     path.write_text(json.dumps(section), encoding="utf-8")
-    assert locks.section_findings(built, seeds=2) == []
+
+    # Both keys are the malformed ones, and both default rather than raise:
+    # a bare string is not a list of slots, and `3` is not a `[lo, hi]` pair.
+    assert section["pattern"] == "entry"
+    assert sections.pattern(section) == sections.DEFAULT_PATTERN
+    assert sections.size_range(section) == (
+        sections.DEFAULT_SIZE[0][0], sections.DEFAULT_SIZE[0][0],
+        sections.DEFAULT_SIZE[1][0], sections.DEFAULT_SIZE[1][0])
+
+    drawn: list[tuple[str, int]] = []
+    real = delve_v3.generate_floor_v3
+
+    def counted(seed, size_range, pack, floor_kind, stamp_pack=None, depth=1,
+                trace=None, **kwargs):
+        drawn.append((seed, depth))
+        return real(seed, size_range, pack, floor_kind, stamp_pack, depth,
+                    trace, **kwargs)
+
+    monkeypatch.setattr(delve_v3, "generate_floor_v3", counted)
+
+    seeds = 2
+    assert locks.section_findings(built, seeds=seeds) == []
+    floors = sections.floors(json.loads(path.read_text(encoding="utf-8")))
+    assert drawn == [(f"{locks.SECTION_SEED_PREFIX}{n}", k)
+                     for n in range(seeds) for k in range(1, floors + 1)]
 
 
 # -------------------------------------------------------------------- two packs
@@ -972,3 +1006,58 @@ def test_the_bake_refuses_a_section_the_pack_does_not_have(tmp_path):
                    "--section", "attic")
     assert rc != 0
     assert "attic" in out
+
+
+def test_taking_the_down_stair_leaves_every_other_d_alone():
+    """The bottom-floor stair removal is a coordinate, not a character.
+
+    `d` is a tile in the map alphabet, not a reserved word: the take-back
+    has to clear the one tile the generator put the down anchor on and
+    nothing else. A blanket `replace('d', '.')` over the row would also
+    take out any other `d` on the map, so this pins the tile and leaves a
+    second `d` sitting right next to it.
+    """
+    rows = ['#####', '#d.d#', '#.u.#', '#####']
+    # (3, 1) is the second `d`; the first one at (1, 1) is left standing.
+    assert cli._take_the_down_stair(rows, (3, 1)) == ['#####', '#d..#',
+                                                      '#.u.#', '#####']
+    # A copy, so the caller's own rows are not edited underneath them.
+    assert rows == ['#####', '#d.d#', '#.u.#', '#####']
+
+
+def test_the_bottom_floor_loses_its_stair_tile_and_the_rest_of_the_map(tmp_path):
+    """The end of the bake, as geometry: exactly one tile differs.
+
+    Every floor but the last keeps its down-stair, and the last one has
+    the tile the generator placed its down anchor on changed to floor,
+    with every other tile byte-identical to what the generator drew.
+
+    Today's generator only ever draws one `d` per floor, so this passes
+    for the old blanket `replace` as well - the unit test above is what
+    catches that. What this pins is the written shape of the rule: the
+    bottom floor is the drawn floor minus its anchor tile and nothing
+    else, and every floor above it is the drawn floor untouched.
+    """
+    built = a_pack(tmp_path, "cellar")
+    section = fixture_pack("cellar")
+    rc, out = vefr("delve", "--pack", built, "--seed", "run-1",
+                   "--from-region", "town", "--from-at", "2,2",
+                   "--section", "cellar")
+    assert rc == 0, out
+    last = sections.floors(section)
+    for k in range(1, last):
+        drawn = a_floor(section, k, "run-1")
+        written = (built / "acts" / "act-1" / f"cellar-{k}"
+                   / "map.md").read_text(encoding="utf-8").splitlines()
+        assert written == drawn["rows"], f"floor {k} was rewritten"
+
+    plan = a_floor(section, last, "run-1")
+    written = (built / "acts" / "act-1" / f"cellar-{last}"
+               / "map.md").read_text(encoding="utf-8").splitlines()
+    down = tuple(plan["anchors"]["down"])
+    assert plan["rows"][down[1]][down[0]] == delve_v3.DOWN
+    assert written[down[1]][down[0]] == delve_v3.FLOOR
+    differing = [(x, y)
+                 for y in range(plan["h"]) for x in range(plan["w"])
+                 if written[y][x] != plan["rows"][y][x]]
+    assert differing == [down], differing
