@@ -8527,7 +8527,7 @@ function setupTown() {
     // A hit that reaches the hero is one practice count.
     sayGrowth(practiceSuffix(growBump('hits-taken')));
     soundCue('hurt');
-    if (HERO_HP <= 0) { cozyDeath(); return true; }
+    if (HERO_HP <= 0) { cozyDeath(e); return true; }
     return false;
   }
   // The turn's flood is cut off here however far the pack's sights
@@ -8755,19 +8755,34 @@ function setupTown() {
   }
   // Death is Cozy: health back to max, one plain line, and a wake at
   // the hero's baked wake point. Nothing is lost.
-  function cozyDeath() {
+  //
+  // Two events leave this function, both in `shapes.EVENTS` beside the
+  // other eleven: `falls` says the hero's health reached zero, and `wakes`
+  // says where the hero woke up. Both are facts, not places - a pack
+  // cannot tell the difference between a death and an ordinary
+  // arrival, and `enters` fires on both. `falls` is raised BEFORE the
+  // hero moves, so it carries the region the hero fell in; `wakes`
+  // after, so it carries the region they woke in. The killer is named
+  // when there is one (an enemy called this) and left empty when there
+  // is not, so the `defeats` mirror has nothing to pretend.
+  function cozyDeath(killer) {
     combatSay(DEATH_LINE);
+    fireRule('falls', { what: (killer && killer.id) || '',
+                        where: regionName });
     HERO_HP = heroMax();
     saveHeroHp();
     renderHp();
     var wake = (window.VEFR_HERO && window.VEFR_HERO.wake) || {};
+    var woke = regionName;
     if (wake.region && regions[wake.region]) {
       enterRegion(wake.region, wake.at);
+      woke = wake.region;
     } else {
       hero = (town.hero_start || [1, 1]).slice();
       loadEnemies();
       draw();
     }
+    fireRule('wakes', { where: woke });
     combatSnapshot();
   }
   // The mind state of every monster, in the same order as `enemies` and
@@ -8995,11 +9010,12 @@ function setupTown() {
   // bare node vm context with nothing but the built-ins.
   //
   // A rule is { id, on?, when, if?, then, once? }, the same shape
-  // src/vefr/maplab.py's rules_errors checks at authoring time. The six
-  // events are `starts`, `enters`, `comes-near`, `opens`, `picks-up`,
-  // `uses-with`. There is deliberately no `says` event: the woven
-  // player has no place for the player to type words, so an event
-  // waiting on typed speech could never fire.
+  // src/vefr/maplab.py's rules_errors checks at authoring time. The
+  // events are the EVENTS table below, a twin of src/vefr/shapes.py's -
+  // `tests/test_event_table.py` fails if the two drift. There is
+  // deliberately no `says` event: the woven player has no place for the
+  // player to type words, so an event waiting on typed speech could
+  // never fire.
   //
   // The limits kept on purpose: a rule fires at most once per event,
   // the actions a rule returns are never fed back in as new events
@@ -9022,7 +9038,9 @@ function setupTown() {
       'buys': { keys: ['what'], target: 'what' },
       'sells': { keys: ['what'], target: 'what' },
       'reads': { keys: ['what'], target: 'what' },
-      'phase-changes': { keys: ['to'], target: 'to' }
+      'phase-changes': { keys: ['to'], target: 'to' },
+      'falls': { keys: ['what', 'where'], target: 'what' },
+      'wakes': { keys: ['where'], target: 'where' }
     };
 
     function isObj(v) {
@@ -9303,6 +9321,13 @@ function setupTown() {
         phrase = 'the hero closed ' + data.what + ' having read it';
       } else if (event === 'phase-changes') {
         phrase = 'the watch turned to ' + data.to;
+      } else if (event === 'falls') {
+        // `what` is empty when nothing but the floor did it, so the
+        // killer is named only when there is one to name.
+        phrase = 'the hero fell in ' + data.where
+          + (data.what ? ' to ' + data.what : '');
+      } else if (event === 'wakes') {
+        phrase = 'the hero woke in ' + data.where;
       } else {
         phrase = 'the hero used ' + data.item + ' with ' + data.with;
       }

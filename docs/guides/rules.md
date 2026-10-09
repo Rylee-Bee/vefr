@@ -21,7 +21,7 @@ is always the same. The design note behind them is
 }
 ```
 
-## The eleven events
+## The thirteen events
 
 Each fires from something the player already does. A pack may name
 at most **40 rules** (see `docs/adr/0004-scoped-rules.md` for why).
@@ -39,6 +39,24 @@ at most **40 rules** (see `docs/adr/0004-scoped-rules.md` for why).
 | `{"sells": {"what": "X"}}` | the player sells an item | the shop's Sell |
 | `{"reads": {"what": "X"}}` | a book is closed having been read | the reader's Close |
 | `{"phase-changes": {"to": "X"}}` | the watch turns to a phase | the Dusk/Dawn buttons (Menu > Display) |
+| `{"falls": {"what": "X", "where": "Y"}}` | the hero's health reached zero; `what` is what did it, `where` the region it happened in | the blow that empties the health bar |
+| `{"wakes": {"where": "X"}}` | the hero wakes after a fall, in region X | the Cozy wake, at the pack's wake point |
+
+`falls` and `wakes` are the hero's own two facts, and they are why a
+death is not the same as an arrival. `enters` fires on every door the
+hero walks through AND on the Cozy wake itself, so a pack faking a
+death with it says "you wake up in the cottage again" to everyone who
+merely popped home. `falls` is raised before the hero moves, so its
+`where` is the region the hero fell in; `wakes` after, so its `where`
+is where they woke. On a descent floor the region id is the floor's
+name (`<section>-<cycle>-<floor>`), so the place says which floor of
+which cycle it happened on - the depth, in the one id.
+
+`what` is `""` when nothing in the pack did it - a rule naming a
+specific enemy simply does not fire on that death. So a `falls` rule is
+written per enemy the story has a line for (each one a better line than
+a generic one would be), and the one line every death shares is the
+`wakes` rule. Write one `say` on each and one `set` for a toast.
 
 ## One identity model
 
@@ -49,10 +67,10 @@ pack declares is nameable:
 |---|---|---|
 | item ids | `world.json` `items` | `has`, `give`, `takes`, `picks-up`… |
 | speaker keys | the act's `speakers` | `who`, `say`'s voice |
-| region names | the act's `regions` | `enters`, `point-to`, a door's `opens` |
+| region names | the act's `regions` | `enters`, `point-to`, a door's `opens`, `falls`/`wakes`' `where` |
 | **POI labels** | the region contract's `pois` | `comes-near`, `uses-with` — the label *is* the id |
 | **book ids** | `library/<id>.md` file names | `opens` (a chest), `reads` |
-| **enemy ids** | the region contract's `enemies` | `defeats` |
+| **enemy ids** | the region contract's `enemies` | `defeats`, `falls`' `what` |
 | phase names | `world.json` `phases` | `phase-changes` |
 | flags / claims | `world.json` `flags` / `claims` | `set`, `believes`… |
 

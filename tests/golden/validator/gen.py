@@ -6,7 +6,13 @@ reason in tests/test_event_table.py: S0 captured `saves` and `sound` only, so th
 slice moves onto one table were never pinned, and the sentence the plan expected to regenerate
 ("the six events") had already been corrected on main by c364adb. Nothing was regenerated or
 edited after the migration: the added cases are the proof that moving the vocabulary onto
-`shapes.EVENTS` changed no sentence and no order."""
+`shapes.EVENTS` changed no sentence and no order.
+
+One sentence changed on purpose a second time, for #365 (`falls` and `wakes`): an unknown event now
+lists thirteen, not eleven. That is the same one-time regeneration the table earned when the
+vocabulary moved, written down here because this file says a change needs a reason. Four `when`
+cases were added beside it - two events, an accepted shape and a refused one each - and nothing
+else in the capture moved: the diff is that one line and the eight new cases."""
 import json
 from pathlib import Path
 
@@ -56,6 +62,17 @@ WHENS = [
     {"reads": {"what": "ghost"}},
     {"phase-changes": {"to": "dawn"}},
     {"phase-changes": {"to": "dusk"}},
+    # #365 added `falls` and `wakes` to shapes.EVENTS, and the sentence the
+    # two `when` validators speak for them changed with the table: an unknown
+    # event now lists thirteen, and `falls` - the first two-field event whose
+    # second field is not a distance - has to name `where` beside `what`. There
+    # is no pack directory here, so `enemies` is empty and every enemy id in a
+    # `falls` payload is refused by name; the accepted shape is pinned where a
+    # pack exists (tests/test_event_table.py GOOD, tests/test_death_events.py).
+    {"falls": {"what": "rat", "where": "town"}},
+    {"falls": {"what": "rat"}},
+    {"wakes": {"where": "town"}},
+    {"wakes": {"where": "nowhere"}},
 ]
 BASE = {
     "regions": {"town": {"name": "Town"}},
