@@ -29,7 +29,6 @@ comparison covers it, and says what the legend has to be.
 import copy
 import json
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
