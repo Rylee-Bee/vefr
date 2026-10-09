@@ -7727,7 +7727,10 @@ window.VEFR_DESCENT = (function () {
     var regions = window.VEFR_REGIONS;
     if (!regions) return false;
     regions[name] = regionEntry(plan);
-    wireRegionTiles(name, at ? at.section : '');
+    // `at.section` is the section OBJECT (see parseName), so the id the
+    // picture table is keyed by is `at.section.id` -- `sectionIdOf` is that,
+    // and passing the object itself keys nothing and wires no pictures.
+    wireRegionTiles(name, at ? at.section.id : '');
     pinBooks(name, plan);
     var enemies = window.VEFR_ENEMIES;
     if (!enemies) enemies = window.VEFR_ENEMIES = {};
