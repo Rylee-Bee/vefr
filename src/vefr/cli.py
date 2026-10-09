@@ -2540,6 +2540,14 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
     if descent:
         descent = {**descent, 'legend': delve_mod.LEGEND,
                    'blueprint': delve_mod.blueprint_of(pack)}
+        # The pack's stamps (ADR 0013), the same records `vefr check` sweeps
+        # with, so a play floor carries the stamped rooms - the warden hall and
+        # the vault among them - that the check walked. No stamps directory,
+        # no key: such a pack weaves exactly as it did.
+        stamp_dir = Path(pack) / 'stamps'
+        if stamp_dir.is_dir():
+            from . import stamps as stamps_mod
+            descent['stamps'] = stamps_mod.load(stamp_dir)
     out_html = out_html.replace('{{descent_json}}',
                                 _json.dumps(descent or None, ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',

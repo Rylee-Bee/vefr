@@ -25,6 +25,7 @@ from pathlib import Path
 import pytest
 
 from vefr import cli, delve
+from vefr import stamps as stamps_mod
 from test_descent_floors import DESCENT
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +69,12 @@ BLUEPRINT_DESCENT["sections"][0]["families"] = [
 BLUEPRINT_DESCENT["sections"][0]["pattern"] = ["entry", "n", "warden"]
 # The record form (ADR 0015): its own id and the key it carries reach the plan in both languages.
 BLUEPRINT_DESCENT["sections"][0]["warden"] = {"family": "gutter-rat", "id": "rat-king", "carries": "rat-key"}
+# Stamps in play (2026-10-09): the fixture stamps ride in the descent block as the weave carries
+# them, and the cellar uses them, so both languages draw the same stamped rooms and the same vault.
+BLUEPRINT_DESCENT["stamps"] = json.loads(json.dumps(
+    stamps_mod.load(Path(__file__).resolve().parent / "fixtures" / "stamps")))
+BLUEPRINT_DESCENT["sections"][0]["stamps"] = ["cellar"]
+BLUEPRINT_DESCENT["sections"][0]["vault"] = "vault-cellar"
 
 
 @pytest.fixture(scope="module")
