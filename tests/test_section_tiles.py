@@ -14,7 +14,12 @@ reviews:
    `VEFR_REGION_TILES` is populated for each;
 2. a pack with no `tiles` draws exactly what it draws today;
 3. a Section naming a sprite nothing has is a validation error that names the
-   Section and the sprite.
+   Section and the sprite;
+4. the bake resolves each Section's pictures on its own, so the two Sections
+   stop sharing one set before the player ever runs.
+
+The first two boot the player in jsdom and are marked `needs_node`; the
+last two are pure Python and run everywhere.
 
 The legend parity between Python and JavaScript is not here: the floor plan
 already carries it, so `tests/test_descent_parity.py`'s field-for-field
@@ -35,7 +40,12 @@ from vefr import delve, maplab
 from test_descent_deltas import _descend
 from test_descent_floors import DESCENT
 
-pytestmark = pytest.mark.skipif(shutil.which("node") is None,
+# Only the tests that BOOT THE PLAYER need node. Marking the whole file would
+# skip the two that do not - `vefr check`'s refusal of a tileset nothing has,
+# and the bake's own resolution of each Section's pictures - on a machine
+# without it, which is exactly where they are cheapest to run. So the guard
+# sits on the two that call `play_kit.play`, not on the module.
+needs_node = pytest.mark.skipif(shutil.which("node") is None,
                                 reason="node not installed")
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,6 +88,7 @@ def _played(tmp_path, descent, depth):
     })
 
 
+@needs_node
 def test_two_sections_in_one_descent_draw_different_ground(tmp_path):
     """Acceptance 1: the two floors are drawn from their own Sections.
 
@@ -109,6 +120,7 @@ def test_two_sections_in_one_descent_draw_different_ground(tmp_path):
         "two Sections' ground is one picture"
 
 
+@needs_node
 def test_a_section_naming_no_tiles_draws_exactly_what_it_drew_today(tmp_path):
     """Acceptance 3: the no-breaking-change half.
 
@@ -185,7 +197,10 @@ def test_the_weave_resolves_each_sections_pictures_its_own_way(tmp_path):
     """
     pack = play_kit.pack(tmp_path, "descent",
                         patch={"world.json": {"descent": _descent_with_tiles()}})
-    baked = _baked_descent(play_kit.weave(pack, tmp_path))
+    # `play_kit.weave` writes the file and returns its PATH; `_baked_descent`
+    # reads the woven TEXT, so the file is read here. (It took the Path
+    # straight through before, and every run died on `.splitlines`.)
+    baked = _baked_descent(play_kit.weave(pack, tmp_path).read_text(encoding="utf-8"))
     table = baked["section_tiles"]
     assert set(table) == set(TILES), table
     for section_id, named in TILES.items():
