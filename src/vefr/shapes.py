@@ -708,6 +708,37 @@ SECTION = Block(
     say={'missing-key': '{name} must hold its {key}'},
 )
 
+# A scenario is one pack file, `scenarios/<name>.json`: a named game state
+# the dev tools open the woven game in (ADR 0016's Player Driver, slice P2).
+# It is an authored Session Capsule - the same VEFR-owned save keys a
+# capture would hold, written by hand - plus the place the hero stands.
+# These rows speak for its shape; `vefr.scenarios` checks it against the
+# pack (the region, the tile, the items) and writes the save keys.
+SCENARIO_START = Block(
+    name='scenario start',
+    example='{"region": "town", "at": [4, 6]} or {"depth": 5}',
+    keys=(
+        Key('region', 'str', lo=1, hi=64),
+        Key('at', 'pair', lo=0, hi=999,
+            say={'wrong-type': '{path} must be an [x, y] tile, such as [4, 6]'}),
+        Key('depth', 'int', lo=1, hi=9999),
+    ),
+)
+
+SCENARIO = Block(
+    name='scenario',
+    example='{"start": {"depth": 5}, "gold": 120, "bag": ["potion"]}',
+    keys=(
+        Key('start', 'obj', required=True, sub=SCENARIO_START),
+        Key('note', 'str', lo=1, hi=200),
+        Key('gold', 'int', lo=0, hi=1_000_000_000),
+        Key('bag', 'list'),
+        Key('equipped', 'obj'),
+        Key('xp', 'int', lo=0, hi=1_000_000_000),
+        Key('hp', 'int', lo=1, hi=1_000_000),
+    ),
+)
+
 BLOCKS = {
     'saves': SAVES,
     'sound': SOUND,
@@ -717,6 +748,8 @@ BLOCKS = {
     'descent': DESCENT,
     'descent entry': DESCENT_ENTRY,
     'section': SECTION,
+    'scenario': SCENARIO,
+    'scenario start': SCENARIO_START,
 }
 
 

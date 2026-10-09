@@ -4735,7 +4735,8 @@ def cmd_look(args) -> int:
 
     pack = None if args.html else _devtools_pack(args.pack)
     return devtools.look(html=args.html, pack=pack, out=args.out,
-                         steps=args.steps, json_out=args.json)
+                         steps=args.steps, json_out=args.json,
+                         scenario=args.scenario)
 
 
 def cmd_probe(args) -> int:
@@ -4748,7 +4749,7 @@ def cmd_probe(args) -> int:
 
     pack = None if args.html else _devtools_pack(args.pack)
     return devtools.probe(html=args.html, pack=pack, fire=args.fire or (),
-                          json_out=args.json)
+                          json_out=args.json, scenario=args.scenario)
 
 
 def cmd_features(args) -> int:
@@ -4947,6 +4948,9 @@ def vefr_main() -> int:
                     help='screenshot path (default: look.png)')
     lk.add_argument('--steps', default='',
                     help='comma-separated keys to press after Begin')
+    lk.add_argument('--scenario', default=None, metavar='NAME',
+                    help="open the game in the pack's scenarios/NAME.json "
+                         'state first (needs --pack)')
     lk.add_argument('--json', action='store_true', help='print the report as JSON')
     lk.set_defaults(fn=cmd_look)
 
@@ -4963,6 +4967,9 @@ def vefr_main() -> int:
     pr.add_argument('--fire', action='append', default=None,
                     metavar='EVENT:KEY=VALUE',
                     help='fire this rule event (repeatable)')
+    pr.add_argument('--scenario', default=None, metavar='NAME',
+                    help="fire in the pack's scenarios/NAME.json state "
+                         '(needs --pack)')
     pr.add_argument('--json', action='store_true', help='print the report as JSON')
     pr.set_defaults(fn=cmd_probe)
 
