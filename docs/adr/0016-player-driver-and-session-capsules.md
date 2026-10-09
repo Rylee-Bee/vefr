@@ -8,6 +8,8 @@ Date: 2026-10-06
 
 Tracks [#317](https://github.com/Rylee-Bee/vefr/issues/317).
 
+**Progress (2026-10-09).** P2's scenario half is implemented ahead of P1: a scenario is a session capsule written by hand, stored in the player's own save keys, with the hero walked in through the player's existing arrival paths (`VEFR_ENTER_REGION`, the descent's `enterDescentFloor`). Nothing in the player changed. The status stays Proposed: acceptance remains with the first slice that proves keyboard and touch play unchanged (P1). When P1's observation facade exists, scenarios read the hero's place through it instead of the harness's `VEFR_COMBAT` snapshot.
+
 ## Decision
 
 Rylee and Sol developed this direction together in chat on 2026-10-06.
