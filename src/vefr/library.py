@@ -82,13 +82,14 @@ def parse_book(text: str, book_id: str) -> dict:
         at = [int(am.group(1)), int(am.group(2))] if am else at
 
     pages = [p.strip() for p in re.split(r"(?m)^\s*\*\s\*\s\*\s*$", body)]
-    known = {"title", "found", "at", "region", "speaker", "when", "kind", "act"}
+    known = {"title", "found", "at", "region", "speaker", "when", "kind", "act", "place"}
     return {
         "id": book_id,
         "title": str(meta.get("title", "")).strip(),
         "found": str(meta.get("found", "shelf")).strip() or "shelf",
         "at": at,
         "region": str(meta.get("region", "town")).strip() or "town",
+        "place": str(meta.get("place", "")).strip(),
         "act": str(meta.get("act", "")).strip(),
         "speaker": str(meta.get("speaker", "")).strip(),
         "when": str(meta.get("when", "")).strip(),
@@ -139,10 +140,12 @@ def validate_books(books: list[dict], *, town: dict | None = None,
     2026-10-08 Cottage removed its authored cellar and six books went on
     naming regions that no longer existed: nothing could find them, and
     every check stayed green. A map book now names a declared region or a
-    floor of the generated descent (`<section>-<cycle>-<floor>`), and on a
-    generated floor its tile must be ground the hero can reach from the
-    stairs on the floor a new game draws. Without `regions` the region is
-    not checked, as before.
+    floor of the generated descent (`<section>-<cycle>-<floor>`). A generated
+    floor is redrawn every run and whenever its Section changes, so a book on
+    one names `place: near-up | near-down | anywhere` instead of a tile, and
+    the floor chooses the tile each run (`delve.place_books`); every pinned
+    book must find a free tile in each of `PIN_RUNS` runs. Without `regions`
+    the region is not checked, as before.
     """
     errors: list[str] = []
     ids = {b["id"] for b in books}
@@ -153,6 +156,7 @@ def validate_books(books: list[dict], *, town: dict | None = None,
     else:
         speaker_names = set()
 
+    pinned: dict[str, tuple[int, list]] = {}
     for b in books:
         where = f"library book '{b['id']}'"
         if not _ID_RE.match(b["id"]):
@@ -167,14 +171,25 @@ def validate_books(books: list[dict], *, town: dict | None = None,
         if found not in FOUND_KINDS:
             errors.append(f"{where}: found must be one of {', '.join(FOUND_KINDS)}")
             continue
+        if b.get("place") and found != "map":
+            errors.append(f"{where}: place goes with found: map, on a generated floor")
         if found == "map":
             at = b["at"]
-            if not (isinstance(at, list) and len(at) == 2):
-                errors.append(f"{where}: a map book needs at: [x, y]")
-            elif b["region"] == "town" and town is not None and not _walkable(town, at[0], at[1]):
+            region = b["region"] or "town"
+            floor = _generated_floor(region, descent) if regions is not None else None
+            if b.get("place"):
+                problems = _place_problems(where, b, region, floor, regions, descent)
+                errors.extend(problems)
+                if not problems and floor is not None:
+                    pinned.setdefault(region, (floor, []))[1].append(b)
+            elif not (isinstance(at, list) and len(at) == 2):
+                errors.append(f"{where}: a map book needs at: [x, y]"
+                              + (", or on a generated floor place: near-up, near-down or anywhere"
+                                 if floor is not None else ""))
+            elif region == "town" and town is not None and not _walkable(town, at[0], at[1]):
                 errors.append(f"{where}: at {at} is off the map or not walkable ground")
             elif regions is not None:
-                errors.extend(_region_problems(where, b["region"] or "town", at, regions, descent))
+                errors.extend(_region_problems(where, region, at, regions, descent))
         elif found == "resident":
             if not b["speaker"]:
                 errors.append(f"{where}: a given book needs speaker: <who hands it over>")
@@ -188,6 +203,8 @@ def validate_books(books: list[dict], *, town: dict | None = None,
             elif when not in EARNED_EVENTS:
                 errors.append(
                     f"{where}: when must be one of {', '.join(EARNED_EVENTS)} or book:<id>")
+    for region, (depth, here) in sorted(pinned.items()):
+        errors.extend(_sweep_pins(region, depth, here, descent))
     return errors
 
 
@@ -225,16 +242,9 @@ def _region_problems(where: str, region: str, at, regions: set,
         if sections and isinstance(sections[0], dict) and sections[0].get("id"):
             example = f", or a generated floor such as {sections[0]['id']}-0-1"
         return [f"{where}: region '{region}' is not a region of this pack; it has {have}{example}"]
-    if not (isinstance(at, list) and len(at) == 2):
-        return []
-    from . import delve
-    plan = delve.floor_plan(descent, floor)
-    rows = plan["rows"]
-    x, y = at
-    if not _reachable(rows, tuple(plan["anchors"]["up"]), (x, y)):
-        return [f"{where}: at {at} on {region} is not ground the hero can reach from the stairs "
-                f"on that floor as a new game draws it; move the book to a reachable tile"]
-    return []
+    return [f"{where}: {region} is a generated floor, redrawn every run (New descent) and whenever its "
+            f"Section changes, so a fixed tile can land in a wall; give place: near-up, near-down or "
+            f"anywhere instead of at"]
 
 
 def _generated_floor(region: str, descent: dict | None) -> int | None:
@@ -254,22 +264,34 @@ def _generated_floor(region: str, descent: dict | None) -> int | None:
     return None
 
 
-def _reachable(rows: list, start: tuple, goal: tuple) -> bool:
-    """Whether `goal` is floor joined to `start` by floor, on a generated floor's rows."""
-    h, w = len(rows), len(rows[0]) if rows else 0
+PIN_RUNS = 200      # the runs `vefr check` draws for each floor that holds a pinned book
 
-    def open_(x, y):
-        return 0 <= y < h and 0 <= x < w and rows[y][x] not in "# "
 
-    if not open_(*goal):
-        return False
-    seen, stack = {start}, [start]
-    while stack:
-        x, y = stack.pop()
-        if (x, y) == goal:
-            return True
-        for nxt in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-            if nxt not in seen and open_(*nxt):
-                seen.add(nxt)
-                stack.append(nxt)
-    return False
+def _place_problems(where: str, b: dict, region: str, floor: int | None, regions: set | None,
+                    descent: dict | None) -> list[str]:
+    """Why a book's `place` cannot be used as written (empty = fine)."""
+    from . import delve
+    if regions is not None and floor is None:
+        if region in regions:
+            return [f"{where}: place is for a book on a generated floor; {region} is drawn by hand, "
+                    f"so give at: [x, y]"]
+        return _region_problems(where, region, None, regions, descent)
+    if b["place"] not in delve.BOOK_PLACES:
+        return [f"{where}: place must be {', '.join(delve.BOOK_PLACES[:-1])} or {delve.BOOK_PLACES[-1]}"]
+    if b["at"] is not None:
+        return [f"{where}: a book with place takes no at; the floor chooses its tile each run"]
+    return []
+
+
+def _sweep_pins(region: str, depth: int, books: list, descent: dict) -> list[str]:
+    """Every pinned book on `region` finds a free tile in each of PIN_RUNS runs."""
+    from . import delve
+    wanted = [{"id": b["id"], "place": b["place"]} for b in books]
+    missing: dict[str, int] = {}
+    for run in range(PIN_RUNS):
+        got = delve.place_books(delve.floor_plan(descent, depth, run), wanted)
+        for b in wanted:
+            if b["id"] not in got:
+                missing.setdefault(b["id"], run)
+    return [f"library book '{book_id}': {region} has no free tile for it in run {run}"
+            for book_id, run in sorted(missing.items())]

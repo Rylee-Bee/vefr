@@ -2253,6 +2253,10 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         extra = b.get('extra') if isinstance(b.get('extra'), dict) else {}
         entry = {k: b.get(k) for k in
                  ("id", "title", "kind", "found", "at", "speaker", "when", "pages", "region")}
+        # A book pinned to a generated floor names where on it to lie; the
+        # descent part chooses the tile each run (delve.place_books).
+        if b.get('place'):
+            entry['place'] = b['place']
         # `chest: yes` in a book's front matter puts it in a chest: the
         # player opens the chest rather than stepping on the book.
         entry['chest'] = str(extra.get('chest', '')).strip().lower() in ('yes', 'true', '1')

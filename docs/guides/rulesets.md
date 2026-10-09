@@ -81,7 +81,8 @@ carry `library/*.md`, one authored book per file:
 ---
 title: A Miner's Note
 found: map        # shelf (default) | map | resident | earned
-at: [7, 4]        # map: the tile it lies on (walkable, in the town)
+at: [7, 4]        # map: the tile it lies on (walkable), on a region drawn by hand
+region: town      # map: the region it lies in (default town)
 speaker: keeper   # resident: the act voice that hands it over
 when: bell        # earned: bell | first-visit | act-complete | rumor-verified | book:<id>
 kind: note        # book (default) | note | terminal
@@ -111,6 +112,32 @@ Books panel reopens anything found. Code: `src/vefr/library.py` +
 `src/vefr/cli.py` (bake) + `web/packaged.html` (reader); tests:
 `tests/test_library.py` + `tests/test_builder_weave.py` +
 `tests/fixtures/make_library_pack.py`.
+
+**Every map book names a region the pack has** (`vefr check` refuses one
+that does not, with the regions it does have). A book can also lie on a
+floor of the generated descent, named `<section>-<cycle>-<floor>`
+(`cellar-0-3` is the third floor of the `cellar` Section, first cycle).
+A generated floor is redrawn every run ("New descent") and whenever its
+Section changes, so such a book names **where** on the floor to lie
+instead of a tile:
+
+```markdown
+---
+title: A Letter, Folded Small
+found: map
+region: cellar-0-1
+place: near-up    # near-up | near-down (2 to 6 steps from that stair) | anywhere
+chest: yes
+---
+```
+
+The floor chooses the tile each run: reachable ground, off the stairs and
+the monsters, one book per tile, from the floor's own `book|<id>` stream,
+so a run always shows the book in the same place and a new run moves it
+(`delve.place_books`, and `placeBooks` in the descent part, held equal by
+`tests/test_pinned_books.py`). A fixed `at` on a generated floor is
+refused, and `vefr check` proves every pinned book finds a tile in each
+of 200 runs.
 
 ## delve (generated floors)
 

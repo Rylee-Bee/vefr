@@ -743,6 +743,80 @@ window.VEFR_DESCENT = (function () {
     window.VEFR_TRANSITIONS = list;
   }
 
+  // ---- books pinned to a generated floor (the twin of `place_books`) --
+  // A library book on a generated floor names where on it to lie, not a
+  // tile: the floor is redrawn every run, so the tile is chosen from the
+  // floor itself - reachable ground, off the stairs and the monsters, one
+  // book per tile - from the floor's own `book|<id>` stream. The same run
+  // always shows a book in the same place; a new run moves it.
+  var BOOK_NEAR = [2, 6];
+
+  function floorDistances(rows, start) {
+    var dist = {};
+    dist[start[0] + ',' + start[1]] = 0;
+    var queue = [[start[0], start[1]]];
+    for (var i = 0; i < queue.length; i++) {
+      var x = queue[i][0], y = queue[i][1], d = dist[x + ',' + y];
+      var steps = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+      for (var s = 0; s < 4; s++) {
+        var nx = steps[s][0], ny = steps[s][1];
+        if (ny < 0 || ny >= rows.length || nx < 0 || nx >= rows[0].length) continue;
+        if (rows[ny].charAt(nx) === '#' || has(dist, nx + ',' + ny)) continue;
+        dist[nx + ',' + ny] = d + 1;
+        queue.push([nx, ny]);
+      }
+    }
+    return dist;
+  }
+
+  function placeBooks(plan, books) {
+    var rows = plan.rows, up = plan.anchors.up, down = plan.anchors.down;
+    var fromUp = floorDistances(rows, up), fromDown = floorDistances(rows, down);
+    var taken = {};
+    taken[up[0] + ',' + up[1]] = true;
+    taken[down[0] + ',' + down[1]] = true;
+    (plan.mobs || []).forEach(function (m) { taken[m.at[0] + ',' + m.at[1]] = true; });
+    var out = {};
+    function xy(k) { var p = k.split(','); return [Number(p[0]), Number(p[1])]; }
+    function free(k) {
+      var t = xy(k);
+      return !taken[k] && has(fromUp, k) && rows[t[1]].charAt(t[0]) === '.';
+    }
+    function within(dist, lo, hi) {
+      return Object.keys(dist).filter(function (k) {
+        return dist[k] >= lo && (hi === null || dist[k] <= hi) && free(k);
+      });
+    }
+    books.slice().sort(function (a, b) { return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); })
+      .forEach(function (book) {
+        var tiles = book.place === 'near-up' ? within(fromUp, BOOK_NEAR[0], BOOK_NEAR[1])
+          : (book.place === 'near-down' ? within(fromDown, BOOK_NEAR[0], BOOK_NEAR[1]) : []);
+        if (!tiles.length) tiles = within(fromUp, BOOK_NEAR[0], null);
+        if (!tiles.length) tiles = within(fromUp, 0, null);
+        if (!tiles.length) return;
+        tiles.sort(function (a, b) {
+          var p = xy(a), q = xy(b);
+          return p[1] - q[1] || p[0] - q[0];
+        });
+        var rng = window.VEFR_DELVE.prng(streamSeed(plan.key, 'book|' + book.id));
+        var pick = tiles[Math.floor(rng() * tiles.length)];
+        taken[pick] = true;
+        out[book.id] = xy(pick);
+      });
+    return out;
+  }
+
+  // The library's books pinned to this floor get their tile for this run,
+  // so finding, drawing and chests read `at` exactly as for any map book.
+  function pinBooks(name, plan) {
+    var pinned = (window.VEFR_LIBRARY || []).filter(function (b) {
+      return b && b.found === 'map' && b.region === name && typeof b.place === 'string';
+    });
+    if (!pinned.length) return;
+    var at = placeBooks(plan, pinned.map(function (b) { return { id: b.id, place: b.place }; }));
+    pinned.forEach(function (b) { if (at[b.id]) b.at = at[b.id]; });
+  }
+
   function ensureRegion(name) {
     if (!on() || wired[name]) return false;
     var depth = depthOfName(name);
@@ -752,6 +826,7 @@ window.VEFR_DESCENT = (function () {
     var regions = window.VEFR_REGIONS;
     if (!regions) return false;
     regions[name] = regionEntry(plan);
+    pinBooks(name, plan);
     var enemies = window.VEFR_ENEMIES;
     if (!enemies) enemies = window.VEFR_ENEMIES = {};
     enemies[name] = plan.mobs.map(enemyEntry);
@@ -1187,7 +1262,7 @@ window.VEFR_DESCENT = (function () {
     streamSeed: streamSeed, lootSeed: lootSeed, chestSeed: chestSeed,
     runSeed: runSeed, sectionHash: sectionHash, parseName: parseName,
     isGenerated: isGenerated, depthOfName: depthOfName, floorPlan: floorPlan,
-    planFloor: planFloor, mobsAt: mobsAt, mobDrops: mobDrops,
+    planFloor: planFloor, mobsAt: mobsAt, mobDrops: mobDrops, placeBooks: placeBooks,
     ensureRegion: ensureRegion, onEnter: onEnter, entryHere: entryHere,
     wireEntry: wireEntry, docKey: docKey,
     loadDoc: loadDoc, saveDoc: saveDoc, trimDoc: trimDoc, fitDoc: fitDoc,
