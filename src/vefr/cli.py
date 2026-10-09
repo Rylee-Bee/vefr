@@ -4736,7 +4736,7 @@ def cmd_look(args) -> int:
     pack = None if args.html else _devtools_pack(args.pack)
     return devtools.look(html=args.html, pack=pack, out=args.out,
                          steps=args.steps, json_out=args.json,
-                         scenario=args.scenario)
+                         scenario=getattr(args, "scenario", None))
 
 
 def cmd_probe(args) -> int:
@@ -4749,7 +4749,7 @@ def cmd_probe(args) -> int:
 
     pack = None if args.html else _devtools_pack(args.pack)
     return devtools.probe(html=args.html, pack=pack, fire=args.fire or (),
-                          json_out=args.json, scenario=args.scenario)
+                          json_out=args.json, scenario=getattr(args, "scenario", None))
 
 
 def cmd_features(args) -> int:
