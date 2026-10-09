@@ -76,7 +76,7 @@ def test_the_warden_is_outside_the_budget_and_moves_no_other_monster():
 
 
 def test_the_warden_has_its_familys_stats():
-    plan = delve.floor_plan(_descent(warden="gutter-rat", blueprint=BLUEPRINT), 3)
+    plan = delve.floor_plan(_descent(warden={"family": "gutter-rat"}, blueprint=BLUEPRINT), 3)
     (warden,) = _wardens(plan)
     # gutter-rat extends rat and overrides only hp
     assert (warden["name"], warden["hp"], warden["atk"], warden["sight"]) == ("a grey rat", 9, 2, 5)
@@ -127,3 +127,76 @@ def test_beating_the_warden_sets_its_flag_and_it_stays_beaten(tmp_path):
     control = play_kit.play(html, {"steps": _down_to(3), "store": store,
                                    "read": ["VEFR_ENEMIES"]})
     assert any(e["id"] == "w" for e in control["reads"]["VEFR_ENEMIES"][plan["name"]])
+
+
+# ---- part 2: the record form and the key it carries (ADR 0015 check 3) -----
+
+from vefr import maplab, shapes  # noqa: E402
+
+KEY = "cellar-key"
+RECORD = {"family": WARDEN, "id": "the-old-king", "carries": KEY}
+
+
+def test_a_record_warden_names_its_own_id_and_its_key():
+    plan = delve.floor_plan(_descent(warden=RECORD), 3)
+    (warden,) = _wardens(plan)
+    assert warden["family"] == WARDEN
+    assert plan["warden"] == {"id": "the-old-king", "flag": "warden:the-old-king:c0", "carries": KEY}
+
+
+def test_the_record_shape_is_closed():
+    def sentences(warden):
+        return [p.sentence for p in shapes.check_section({"id": "c", "families": [], "warden": warden})]
+    assert sentences(RECORD) == [] and sentences(WARDEN) == []
+    assert any("must hold its family" in s for s in sentences({"carries": KEY}))
+    assert any("unknown key 'hp'" in s for s in sentences({"family": WARDEN, "hp": 2}))
+    assert any("family id" in s for s in sentences(7))
+
+
+def test_a_record_wardens_family_must_resolve():
+    def problems(warden):
+        return [(p.pointer, p.code) for p in
+                shapes.check_section({"id": "c", "families": [], "warden": warden}, None,
+                                     lambda f: {} if f == WARDEN else None)]
+    assert problems(WARDEN) == [] and problems(RECORD) == []
+    assert problems("ghost") == []          # a bare string may be a warden id (ADR 0015's "ashwing")
+    assert problems({"family": "ghost"}) == [("/warden/family", "unknown-family")]
+
+
+def _pack(where, item, drops=None):
+    """A pack with just the files the key rule reads: world.json's items and the Blueprint's families."""
+    where.mkdir()
+    (where / "world.json").write_text(json.dumps({"items": {KEY: item} if item else {}}))
+    families = {"rat": {"defaults": {"hp": 1, "atk": 1, **({"drops": drops} if drops else {})}}}
+    (where / "blueprint.json").write_text(json.dumps({"blueprint": 1, "families": families, "regions": {}}))
+    return where.resolve()
+
+
+def test_the_key_must_be_kept_valueless_and_only_the_wardens(tmp_path):
+    section = {"id": "c", "warden": RECORD}
+    ok = _pack(tmp_path / "ok", {"name": "a wax key", "keep": True})
+    assert maplab._warden_key_errors(ok, section, "s") == []
+    assert maplab._warden_key_errors(ok, {"id": "c", "warden": WARDEN}, "s") == []
+    missing = _pack(tmp_path / "missing", None)
+    assert "is not an item world.json declares" in maplab._warden_key_errors(missing, section, "s")[0]
+    loose = " ".join(maplab._warden_key_errors(_pack(tmp_path / "loose", {"name": "k", "value": 5}), section, "s"))
+    assert '"keep": true' in loose and "no shop buys or sells it" in loose
+    dropped = _pack(tmp_path / "dropped", {"name": "k", "keep": True}, drops=[KEY])
+    assert "dropped by family 'rat'" in maplab._warden_key_errors(dropped, section, "s")[0]
+
+
+@pytestmark_play
+def test_beating_a_warden_puts_its_key_in_the_bag(tmp_path):
+    quiet = _descent(warden=RECORD, families=[])
+    patch = {"world.json": {"descent": quiet, "items": {KEY: {"name": "a wax key", "keep": True}}}}
+    plan = delve.floor_plan(quiet, 3)
+    (warden,) = _wardens(plan)
+    steps = ["begin", _go(TOWN, TOWN_HERO, quiet["entry"]["at"]), "click:#interact", "wait:150"]
+    for d in (1, 2):
+        p = delve.floor_plan(quiet, d)
+        steps += [_go(p, p["anchors"]["up"], p["anchors"]["down"]), "click:#interact", "wait:150"]
+    fought = _play(tmp_path, steps + [_go_fight(plan, warden)] + ["wait:100"] * 6, patch=patch)
+    assert fought["errors"] == [], fought["errors"]
+    bag = json.loads(fought["store"].get("vefr-bag-descent-test") or "[]")
+    assert KEY in bag, bag
+    assert _doc(fought)["flags"].get("warden:the-old-king:c0") is True

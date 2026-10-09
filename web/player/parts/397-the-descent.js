@@ -373,7 +373,15 @@ window.VEFR_DESCENT = (function () {
   var WARDEN_MOB = 'w';
   function wardenOf(section) {
     var raw = section ? section.warden : null;
-    return (typeof raw === 'string' && raw) ? { id: raw, family: raw } : null;
+    if (typeof raw === 'string' && raw) return { id: raw, family: raw };
+    if (raw && typeof raw === 'object' && !Array.isArray(raw) &&
+        typeof raw.family === 'string' && raw.family) {
+      var out = { id: (typeof raw.id === 'string' && raw.id) ? raw.id : raw.family,
+                  family: raw.family };
+      if (typeof raw.carries === 'string' && raw.carries) out.carries = raw.carries;
+      return out;
+    }
+    return null;
   }
   function wardenFlag(id, cycle) { return 'warden:' + id + ':c' + cycle; }
   function wardenRecord(section, k, cycle, at) {
@@ -381,7 +389,9 @@ window.VEFR_DESCENT = (function () {
     var slots = sectionPattern(section);
     var slot = (isWhole(k) && k >= 1 && k <= slots.length) ? slots[k - 1] : 'n';
     if (!warden || !at || slot !== 'warden') return null;
-    return { id: warden.id, flag: wardenFlag(warden.id, cycle) };
+    var record = { id: warden.id, flag: wardenFlag(warden.id, cycle) };
+    if (warden.carries) record.carries = warden.carries;
+    return record;
   }
   function withWarden(mobs, key, section, k, at) {
     if (!wardenRecord(section, k, 0, at)) return mobs;
@@ -968,14 +978,15 @@ window.VEFR_DESCENT = (function () {
   }
 
   // A monster fell on `name`. The warden's defeat is a permanent story
-  // flag, kept through town returns, identity mismatches and evictions.
+  // flag, kept through town returns, identity mismatches and evictions;
+  // the record it returns names the key the warden carries, if any.
   function defeated(name, enemy) {
     if (!on() || !enemy || enemy.warden !== true) return false;
     var depth = depthOfName(name);
     var plan = depth ? floorPlan(depth) : null;
     if (!plan || !plan.warden) return false;
     setFlag(plan.warden.flag, true);
-    return true;
+    return plan.warden;
   }
 
   // ---- the story flags, which outlive every floor ---------------------

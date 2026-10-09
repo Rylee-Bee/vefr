@@ -912,15 +912,26 @@ def place_books(plan: dict, books: list) -> dict:
 # the warden floor (the pattern's `warden` slot) puts it on the v3 warden anchor
 # as monster `w`, outside the area budget. Defeating it sets the permanent story
 # flag `warden:<id>:c<cycle>`; a warden whose flag is set is not spawned again,
-# so a town return cannot revive it. ADR 0015's record form (`carries`, the key
-# that goes into the bag, and `yields`) is part 2.
+# so a town return cannot revive it. A record-form warden (ADR 0015) may name the
+# key it `carries` into the bag when beaten; `yields` is E8d's.
 WARDEN_MOB = 'w'
 
 
 def warden_of(section: dict) -> dict | None:
-    """The Section's warden as `{id, family}`, or None when it names none."""
+    """The Section's warden as `{id, family}` (plus `carries`), or None when it names none.
+
+    A Section writes its warden as the family id (`"cellar-king"`), or as a record (ADR 0015) naming the
+    family, optionally its own `id` (the flag's middle, defaulting to the family) and the key it `carries`."""
     raw = section.get('warden') if isinstance(section, dict) else None
-    return {'id': raw, 'family': raw} if isinstance(raw, str) and raw else None
+    if isinstance(raw, str) and raw:
+        return {'id': raw, 'family': raw}
+    if isinstance(raw, dict) and isinstance(raw.get('family'), str) and raw['family']:
+        rid = raw.get('id')
+        out = {'id': rid if isinstance(rid, str) and rid else raw['family'], 'family': raw['family']}
+        if isinstance(raw.get('carries'), str) and raw['carries']:
+            out['carries'] = raw['carries']
+        return out
+    return None
 
 
 def warden_flag(warden_id: str, cycle: int) -> str:
@@ -934,7 +945,10 @@ def _warden_record(section: dict, k: int, cycle: int, at) -> dict | None:
     warden = warden_of(section)
     if warden is None or at is None or sections.slot(section, k) != 'warden':
         return None
-    return {'id': warden['id'], 'flag': warden_flag(warden['id'], cycle)}
+    record = {'id': warden['id'], 'flag': warden_flag(warden['id'], cycle)}
+    if 'carries' in warden:
+        record['carries'] = warden['carries']
+    return record
 
 
 def _with_warden(mobs: list, key: str, section: dict, k: int, at, source) -> list:

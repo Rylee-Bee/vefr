@@ -93,13 +93,16 @@
     if (e.hp <= 0) {
       e.alive = false;
       saveSlain();
-      if (window.VEFR_DESCENT && window.VEFR_DESCENT.defeated) {
-        window.VEFR_DESCENT.defeated(regionName, e);
-      }
+      var beaten = (window.VEFR_DESCENT && window.VEFR_DESCENT.defeated)
+        ? window.VEFR_DESCENT.defeated(regionName, e) : false;
+      // A warden's key goes straight into the bag, so it cannot be lost
+      // on the floor (ADR 0015).
+      var keyLine = (beaten && beaten.carries && bagAdd(beaten.carries))
+        ? ' You take ' + itemName(beaten.carries) + '; it is in your bag.' : '';
       soundCue('defeat');
       placeDrops(e.at, e.drops);
       fireRule('defeats', { what: e.id });
-      said += ' ' + e.name + ' falls.';
+      said += ' ' + e.name + ' falls.' + keyLine;
       // The defeat line first, then the xp it was worth, then any level.
       var r = growAward(e.xp);
       if (typeof e.xp === 'number' && e.xp > 0) {

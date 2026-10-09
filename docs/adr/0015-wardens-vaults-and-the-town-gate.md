@@ -6,6 +6,12 @@ Date: 2026-10-04
 
 Proposed. Becomes Accepted when slice E8 merges. Plan: `docs/plans/endless-dungeon/PLAN.md` sections 1, 2, 4 and 5.
 
+**Progress (2026-10-09).** E8a has landed the warden, in two parts:
+- **Spawn and flag:** the Section's warden stands on the v3 warden anchor as `w`, and its defeat sets `warden:<id>:c<c>`, which keeps it beaten.
+- **The key:** a Section's `warden` is either a name (spawned as that family; Cottage writes family ids such as `"cellar-king"`) or a record `{"family", "id"?, "carries"?}`. `carries` goes straight into the bag on defeat, and `vefr check` holds it to check 3: declared, `keep`, no `value`, dropped by no family.
+
+The record's other keys (`hp`, `atk`, `scale`, `hall`, `placement`, `endless`) and Amendment 1's `challenge`, `yields` and `fightable` are refused as unknown until their slices (E8d for the amendment) add them.
+
 This ADR amends **ADR 0006**: "act advance" becomes **town states**. The edit to 0006 and the roadmap's NEXT entry land in E8's PR.
 
 Rylee's calls:

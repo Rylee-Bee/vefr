@@ -79,6 +79,7 @@ class Key:
     kind: str               # 'str' | 'int' | 'bool' | 'enum' | 'obj' | 'list' | 'ref'
                              # | 'hundredths' | 'pair' | 'ids' | 'name-label'
                              # | 'enums' | 'glyphs' | 'hundredths-pair'
+                             # | 'str-or-obj' (a string, or an object checked by `sub`)
     choices: tuple = ()     # enum values, in sentence order
     lo: int | None = None   # int bounds, str length bounds, or hundredths
     hi: int | None = None
@@ -218,6 +219,8 @@ def _as_hundredths(n) -> str:
 def _type_ok(kind: str, value) -> bool:
     if kind in ('str', 'name-label'):
         return isinstance(value, str)
+    if kind == 'str-or-obj':
+        return isinstance(value, (str, dict))
     if kind == 'int':
         # bool is not an int here, and vice versa.
         return isinstance(value, int) and not isinstance(value, bool)
@@ -264,7 +267,7 @@ def _out_of_range(key: Key, value) -> bool:
     if key.kind in ('int', 'pair'):
         return ((key.lo is not None and value < key.lo)
                 or (key.hi is not None and value > key.hi))
-    if key.kind in ('str', 'name-label'):
+    if key.kind in ('str', 'name-label') or (key.kind == 'str-or-obj' and isinstance(value, str)):
         n = len(value)
         return ((key.lo is not None and n < key.lo)
                 or (key.hi is not None and n > key.hi))
@@ -480,7 +483,8 @@ def check(block, value, known=None, at='') -> list[Problem]:
         if problem is not None:
             problems.append(problem)
             continue
-        if key.sub is not None:
+        if key.sub is not None and not (key.kind == 'str-or-obj'
+                                        and not isinstance(value[key.name], dict)):
             problems.extend(_sub_problems(block, key, value[key.name], at))
     return problems
 
@@ -670,6 +674,21 @@ LOOT = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# A Section's warden (ADR 0015): the Blueprint family it is, by id, or a
+# record naming that family and, optionally, the warden's own id (its flag is
+# `warden:<id>:c<cycle>`) and the key it `carries` into the bag when beaten.
+# `yields`, `challenge` and `fightable` (ADR 0015 Amendment 1) are E8d's.
+WARDEN = Block(
+    name='warden',
+    example='{"family": "cellar-king", "carries": "cellar-key"}',
+    keys=(
+        Key('family', 'str', lo=1, hi=40, required=True),
+        Key('id', 'str', lo=1, hi=40),
+        Key('carries', 'str', lo=1, hi=40),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
 SECTION = Block(
     name='section',
     example='{"section": 1, "id": "cellar", "floors": 9, "rooms": [12, 18]}',
@@ -702,7 +721,10 @@ SECTION = Block(
                                'names, such as ["the rusted grate"]',
                  'wrong-element': '{path} must be a point of interest, such '
                                   'as "the rusted grate"'}),
-        Key('warden', 'str', lo=1, hi=40),
+        Key('warden', 'str-or-obj', lo=1, hi=40, sub=WARDEN,
+            say={'wrong-type': ('{path} must be a family id, such as '
+                                '"cellar-king", or a record, such as '
+                                '{{"family": "cellar-king", "carries": "cellar-key"}}')}),
         Key('vault', 'str', lo=1, hi=40),
     ),
     say={'missing-key': '{name} must hold its {key}'},
@@ -929,6 +951,18 @@ def check_section(section: dict, affixes=None, resolve=None) -> list[Problem]:
                 return problems + [Problem(
                     'no-stat', f'/families/{i}/family',
                     _DEFAULTS['no-stat'].format(stat=missing[0], id=family))]
+
+    # A record names its family outright, so that family must resolve. A bare
+    # string is checked by nothing here: packs write it both as a family id
+    # (Cottage's "cellar-king") and as ADR 0015's warden id ("ashwing"), and
+    # refusing either would break a pack that validates today.
+    warden = section.get('warden')
+    family = warden.get('family') if isinstance(warden, dict) else None
+    if resolve is not None and isinstance(family, str) and family \
+            and resolve(family) is None:
+        problems.append(Problem(
+            'unknown-family', '/warden/family',
+            _DEFAULTS['unknown-family'].format(id=family)))
 
     problems.extend(_elite_leader_problems(section))
     problems.extend(_pattern_problems(section))
