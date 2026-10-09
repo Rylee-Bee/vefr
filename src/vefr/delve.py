@@ -630,14 +630,26 @@ def _hash12(text: str) -> str:
     return f"{h1:08x}{h2:08x}"[:12]
 
 
-def section_hash(section: dict) -> str:
-    """A short, stable digest of a Section's own content.
+def section_hash(section: dict, stamps=None) -> str:
+    """A short, stable digest of a Section's own content, and of the pack's stamps.
 
     Half of a floor's identity. Editing a Section changes the hash, which
     is how a save learns that the floor it remembers is no longer the
-    floor it would draw.
+    floor it would draw. Since stamps reach play (2026-10-09) a stamp edit
+    redraws floors too, so a pack that has stamps hashes them with the
+    Section; a pack with none hashes exactly as it always did.
     """
+    if stamps:
+        return _hash12(_canonical({'section': section, 'stamps': stamps}))
     return _hash12(_canonical(section))
+
+
+def stamps_of(descent) -> list:
+    """The pack's stamp records the weave carries in the descent block, or []."""
+    block = descent.get('descent') if isinstance(descent, dict) and isinstance(descent.get('descent'), dict) \
+        else descent
+    found = block.get('stamps') if isinstance(block, dict) else None
+    return [r for r in found if isinstance(r, dict)] if isinstance(found, list) else []
 
 
 def _run_seed_of(descent, run: int) -> str:
@@ -654,7 +666,7 @@ def floor_identity(descent, depth: int, run: int = 0) -> dict:
     """`(gen, section hash, floor key)`: what makes this floor this floor."""
     cycle, section, k = locate(depth, descent)
     key = floor_key(_run_seed_of(descent, run), section['id'], cycle, k)
-    return {'gen': GEN_VERSION, 'hash': section_hash(section), 'key': key}
+    return {'gen': GEN_VERSION, 'hash': section_hash(section, stamps_of(descent)), 'key': key}
 
 
 def mob_drops(key: str, mob_id: str, table) -> list[str]:
@@ -983,18 +995,19 @@ def _tile_or_none(value):
     return [int(value[0]), int(value[1])] if isinstance(value, (list, tuple)) and len(value) == 2 else None
 
 
-def _v3_floor(run_seed: str, section: dict, cycle: int, k: int, key: str) -> dict:
+def _v3_floor(run_seed: str, section: dict, cycle: int, k: int, key: str, stamps=()) -> dict:
     """The v3 floor play draws: the same call `vefr check` sweeps (locks.py), so every floor a player
     can reach is one the check has walked. Size and kind come from the Section (`sections.floor_size`,
     `sections.floor_kind`); a kind outside the generator's four is drawn as `normal` rather than
-    raising mid-descent (the check refuses such a pack). No stamps yet: the woven pack carries none.
+    raising mid-descent (the check refuses such a pack). `stamps` are the pack's records, as the weave
+    carries them in the descent block (`stamps_of`) and as `vefr check` loads them.
     Python and the descent part's twin must agree (tests/fixtures/descent_parity_harness.mjs)."""
     from vefr import delve_v3, sections   # both import this module
     size = sections.floor_size(section, key)
     kind = sections.floor_kind(section, k, run_seed, cycle)
     if kind not in delve_v3.FLOOR_KINDS:
         kind = 'normal'
-    floor = delve_v3.generate_floor_v3(run_seed, size, section, kind, [], k, cycle=cycle)
+    floor = delve_v3.generate_floor_v3(run_seed, size, section, kind, list(stamps), k, cycle=cycle)
     return {**floor, 'kind': kind}
 
 
@@ -1011,7 +1024,8 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     cycle, section, k = locate(depth, descent)
     run_seed = _run_seed_of(descent, run)
     key = floor_key(run_seed, section['id'], cycle, k)
-    floor = _v3_floor(run_seed, section, cycle, k, key)
+    stamps = stamps_of(descent)
+    floor = _v3_floor(run_seed, section, cycle, k, key, stamps)
     rows = list(floor['rows'])
     up, down = _stairs_of(rows)
     fog = section.get('fog')
@@ -1025,7 +1039,7 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     return {
         'name': floor_name(section['id'], cycle, k),
         'key': key,
-        'identity': {'gen': GEN_VERSION, 'hash': section_hash(section),
+        'identity': {'gen': GEN_VERSION, 'hash': section_hash(section, stamps),
                      'key': key},
         'depth': depth, 'cycle': cycle, 'section': section['id'], 'k': k,
         'kind': floor['kind'], 'gen': floor['gen'], 'w': floor['w'], 'h': floor['h'],

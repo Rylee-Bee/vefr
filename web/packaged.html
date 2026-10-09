@@ -6702,7 +6702,21 @@ window.VEFR_DESCENT = (function () {
     return (Array.isArray(value) && value.length === 2) ? [value[0], value[1]] : null;
   }
 
-  function sectionHash(section) { return hash12(canonical(section)); }
+  // The pack's stamps, as the weave carries them in the descent block (the
+  // twin of delve.py `stamps_of`): the records `vefr check` sweeps with.
+  function stampsOf() {
+    var d = def();
+    var found = d ? d.stamps : null;
+    return Array.isArray(found)
+      ? found.filter(function (r) { return r && typeof r === 'object' && !Array.isArray(r); })
+      : [];
+  }
+  // Half of a floor's identity: the Section, and the pack's stamps when it
+  // has any, so a stamp edit redraws floors too (twin of `section_hash`).
+  function sectionHash(section) {
+    var stamps = stampsOf();
+    return hash12(canonical(stamps.length ? { section: section, stamps: stamps } : section));
+  }
 
   // How many randoms this floor's area asks for. The budget is not a
   // draw: it is the same area budget the v3 pop stage clamps (PLAN.md
@@ -6860,7 +6874,7 @@ window.VEFR_DESCENT = (function () {
     var kind = floorKindOf(section, at.k, seed, at.cycle);
     var D = window.VEFR_DELVE;
     if (D.v3Constants.FLOOR_KINDS.indexOf(kind) < 0) kind = 'normal';
-    var floor = D.generateFloorV3(seed, size, section, kind, [], at.k, at.cycle);
+    var floor = D.generateFloorV3(seed, size, section, kind, stampsOf(), at.k, at.cycle);
     var rows = floor.rows.slice();
     var up = null, down = null;
     for (var y = 0; y < rows.length && (!up || !down); y++) {
