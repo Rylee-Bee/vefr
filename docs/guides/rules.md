@@ -48,9 +48,14 @@ hero walks through AND on the Cozy wake itself, so a pack faking a
 death with it says "you wake up in the cottage again" to everyone who
 merely popped home. `falls` is raised before the hero moves, so its
 `where` is the region the hero fell in; `wakes` after, so its `where`
-is where they woke. On a descent floor the region id is the floor's
-name (`<section>-<cycle>-<floor>`), so the place says which floor of
-which cycle it happened on - the depth, in the one id.
+is where they woke. On a descent floor the region id IS the floor's
+name (`<section>-<cycle>-<floor>`), so the place the event carries
+says which floor of which cycle it happened on - the depth, in the one
+id. A rule cannot *name* that id, though: `vefr check` resolves a
+place against the regions the pack declares, and a generated floor is
+redrawn every run, so a `falls`/`wakes` rule sticks to declared regions
+and hears the floor through `say` instead. (Library books are the one
+place a floor may be named; see `docs/guides/rulesets.md`.)
 
 `what` is `""` when nothing in the pack did it - a rule naming a
 specific enemy simply does not fire on that death. So a `falls` rule is
