@@ -19,6 +19,7 @@ is touched. No model call anywhere.
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -150,6 +151,59 @@ def test_an_unknown_status_in_a_book_front_matter_names_the_book_file(tmp_path):
         encoding='utf-8')
     errors = _errors(pack)
     assert [e for e in errors if e.startswith('library/a-confused-book.md: ')], errors
+
+
+# --- the file:line really is where that record's status is written ----------
+
+def _status_line(pack: Path, draft) -> str:
+    """The line the gate named, as a human would see it opening the file."""
+    return (pack / draft.file).read_text(
+        encoding='utf-8').splitlines()[draft.line - 1].strip()
+
+
+def test_a_voice_and_a_speaker_of_the_same_id_report_their_own_lines(tmp_path):
+    """The bug that made this worth a test: a pack that names a voice
+    after its speaker writes `"keeper":` twice. Both records used to
+    anchor on the first one, so the voice reported the speaker's line -
+    and a `file:line` a human opens to find the wrong key is worse than
+    no line at all."""
+    pack = _good(tmp_path)
+    world = pack / 'world.json'
+    data = json.loads(world.read_text(encoding='utf-8'))
+    data['voices']['keeper']['status'] = 'draft'
+    data['speakers'] = {'keeper': {'voice_file': 'voices/keeper.md',
+                                   'seeds': ['Sit.'],
+                                   'status': 'draft'}}
+    world.write_text(json.dumps(data, indent=2) + "\n", encoding='utf-8')
+
+    found = {(d.surface, d.label.split()[0]): d
+             for d in story_status.drafts(pack)}
+    assert {k[0] for k in found} == {'voice', 'speaker'}
+    for draft in found.values():
+        assert 'status' in _status_line(pack, draft), draft
+    # Two different records, so two different lines.
+    assert len({d.line for d in found.values()}) == 2, found
+
+
+def test_a_record_with_no_id_still_names_its_own_line(tmp_path):
+    """A rule or sticker need not carry an `id` at all, and then there is
+    no anchor to search for. Counting the list's top-level braces finds
+    the record anyway, so the line names the record rather than line 1."""
+    pack = _good(tmp_path)
+    world = pack / 'world.json'
+    data = json.loads(world.read_text(encoding='utf-8'))
+    data['album'].append({'name': 'An Anonymous Stamp', 'kind': 'open',
+                          'status': 'draft'})
+    data['rules'].append({'when': {'enters': {'place': 'town'}},
+                          'status': 'draft',
+                          'then': [{'say': 'Nobody has read this.'}]})
+    world.write_text(json.dumps(data, indent=2) + "\n", encoding='utf-8')
+
+    drafts = story_status.drafts(pack)
+    assert {d.surface for d in drafts} == {'rule', 'sticker'}
+    for draft in drafts:
+        assert draft.line != 1, draft
+        assert 'status' in _status_line(pack, draft), draft
 
 
 # --- the gate is a gate, not a mode -----------------------------------------
