@@ -52,6 +52,13 @@ if (cases.blueprintDescent) {
     out.blueprint.plans.push(D.floorPlan(depth));
   }
 }
+// Books pinned to a generated floor: `pins` is [{"depth", "run", "books"}], and
+// each answer is the twin's `placeBooks` on that floor (descent block planted
+// first, exactly as above).
+if (cases.pins) {
+  w.VEFR_DESCENT_DEF = cases.descent;
+  out.pins = cases.pins.map((p) => D.placeBooks(D.floorPlan(p.depth, p.run), p.books));
+}
 fs.writeSync(1, JSON.stringify(out) + '\n');
 w.close();
 process.exit(0);

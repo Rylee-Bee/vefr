@@ -872,6 +872,76 @@ def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
     return mobs
 
 
+# A library book pinned to a generated floor names WHERE on it to lie, not a
+# tile: the floor is redrawn every run ("New descent") and whenever its
+# Section changes, so a fixed tile can land in a wall. `place_books` chooses
+# the tile from the floor itself - reachable ground, off the stairs and the
+# monsters, one book per tile - from the floor's own `book|<id>` stream, so a
+# run always shows a book in the same place and a new run moves it. The
+# JavaScript twin is `placeBooks` in the descent part; the parity harness
+# holds them equal.
+BOOK_PLACES = ("near-up", "near-down", "anywhere")
+BOOK_NEAR = (2, 6)          # steps from the stair: near, but never on it
+
+
+def _floor_distances(rows: list, start) -> dict:
+    """Steps from `start` to every tile joined to it by floor (4-neighbour)."""
+    h, w = len(rows), len(rows[0]) if rows else 0
+    start = (start[0], start[1])
+    dist = {start: 0}
+    queue = [start]
+    i = 0
+    while i < len(queue):
+        x, y = queue[i]
+        i += 1
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= ny < h and 0 <= nx < w and rows[ny][nx] != "#" and (nx, ny) not in dist:
+                dist[(nx, ny)] = dist[(x, y)] + 1
+                queue.append((nx, ny))
+    return dist
+
+
+def place_books(plan: dict, books: list) -> dict:
+    """`{book id: [x, y]}` for the books pinned to this floor, this run.
+
+    `books` is `[{"id", "place"}]`. Books are placed in id order, each on a
+    tile no earlier book, stair or monster holds. `near-up` and `near-down`
+    want 2 to 6 steps from that stair; `anywhere` wants at least 2 from the
+    up stair. A floor with no such tile falls back to anywhere reachable,
+    and a book with no tile at all is left out (the validator says so).
+    """
+    rows = plan["rows"]
+    up = tuple(plan["anchors"]["up"])
+    down = tuple(plan["anchors"]["down"])
+    from_up = _floor_distances(rows, up)
+    from_down = _floor_distances(rows, down)
+    taken = {up, down} | {tuple(m["at"]) for m in plan.get("mobs") or []}
+    lo, hi = BOOK_NEAR
+    out = {}
+    for book in sorted(books, key=lambda b: b["id"]):
+        def free(t):
+            return t not in taken and t in from_up and rows[t[1]][t[0]] == "."
+
+        def within(dist, low, high):
+            return [t for t, n in dist.items() if n >= low and (high is None or n <= high) and free(t)]
+
+        place = book.get("place")
+        tiles = (within(from_up, lo, hi) if place == "near-up"
+                 else within(from_down, lo, hi) if place == "near-down" else [])
+        if not tiles:
+            tiles = within(from_up, lo, None)
+        if not tiles:
+            tiles = within(from_up, 0, None)
+        if not tiles:
+            continue
+        tiles.sort(key=lambda t: (t[1], t[0]))
+        rng = prng(stream_seed(plan["key"], "book|" + book["id"]))
+        pick = tiles[int(rng() * len(tiles))]
+        taken.add(pick)
+        out[book["id"]] = [pick[0], pick[1]]
+    return out
+
+
 def floor_plan(descent, depth: int, run: int = 0) -> dict:
     """The whole floor at `depth`, JSON-able and drawn from the run seed.
 

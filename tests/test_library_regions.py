@@ -50,18 +50,14 @@ def test_a_book_on_a_region_the_pack_lost_is_refused_with_a_sentence(pack):
                      "it has town, or a generated floor such as cellar-0-1"]
 
 
-def test_a_book_on_a_generated_floor_at_reachable_ground_is_fine(pack):
+def test_a_fixed_tile_on_a_generated_floor_is_refused_even_when_it_is_reachable_today(pack):
+    # The floor is redrawn every run (New descent) and whenever its Section changes: a
+    # tile that is floor in this run can be wall in the next. Pinned books name a place.
     plan = floor(pack, 2)
     book(pack, "deep-note", plan["name"], plan["anchors"]["up"])
-    assert region_errors(pack) == []
-
-
-def test_a_book_in_a_generated_floors_wall_is_refused(pack):
-    plan = floor(pack, 2)
-    wall = next([x, y] for y, row in enumerate(plan["rows"]) for x, ch in enumerate(row) if ch == "#")
-    book(pack, "walled-note", plan["name"], wall)
     found = region_errors(pack)
-    assert len(found) == 1 and "is not ground the hero can reach from the stairs" in found[0]
+    assert len(found) == 1 and "is a generated floor, redrawn every run" in found[0]
+    assert "give place: near-up, near-down or anywhere instead of at" in found[0]
 
 
 def test_a_floor_past_the_end_of_its_section_is_not_a_region(pack):
