@@ -99,18 +99,20 @@ def _read(path: Path):
 def _records(data: dict):
     """Every record in one pack file that may carry `status`.
 
-    Each is `(surface, anchors, label, value)`: the anchors are the
-    texts that locate the record in the file - its own id, as JSON
-    writes it - so the gate can name a line as well as a file, and the
-    label is what a human reads. More than one anchor per record
-    because a hand-written pack spaces its JSON differently: the keyed
-    form first, then the bare id.
+    Each is `(surface, scope, anchors, label, value)`: the scope is the
+    catalog the record sits in (`items`, `voices`, `speakers`) or None
+    for the two top-level lists, the anchors are the texts that locate
+    the record inside that scope - its own id, as JSON writes it - so
+    the gate can name a line as well as a file, and the label is what a
+    human reads. More than one anchor per record because a hand-written
+    pack spaces its JSON differently: the keyed form first, then the
+    bare id.
     """
     items = data.get('items')
     if isinstance(items, dict):
         for iid, spec in items.items():
             if isinstance(spec, dict) and 'status' in spec:
-                yield ('item', _anchors(iid),
+                yield ('item', 'items', _anchors(iid), None,
                        f"item {str(iid)!r}{_titled(spec.get('name'))}",
                        spec['status'])
 
@@ -118,7 +120,7 @@ def _records(data: dict):
     if isinstance(voices, dict):
         for vkey, voice in voices.items():
             if isinstance(voice, dict) and 'status' in voice:
-                yield ('voice', _anchors(vkey),
+                yield ('voice', 'voices', _anchors(vkey), None,
                        f"voice {str(vkey)!r}{_titled(voice.get('file'))}",
                        voice['status'])
 
@@ -128,25 +130,32 @@ def _records(data: dict):
             if isinstance(speaker, dict) and 'status' in speaker:
                 # A speaker's words are its `voice_file` and its
                 # `seeds`, so the file is named when there is one.
-                yield ('speaker', _anchors(name),
+                yield ('speaker', 'speakers', _anchors(name), None,
                        f"speaker {str(name)!r}{_titled(speaker.get('voice_file'))}",
                        speaker['status'])
 
     rules = data.get('rules')
     if isinstance(rules, list):
-        for rule in rules:
+        for index, rule in enumerate(rules):
             if isinstance(rule, dict) and 'status' in rule:
                 rid = rule.get('id')
-                yield ('rule', _anchors(rid),
-                       f"rule {str(rid)!r}", rule['status'])
+                # A rule with no id is already refused by `rules_errors`,
+                # so this label names it the way that message does
+                # rather than printing `None` as though it were a name.
+                named = rid if isinstance(rid, str) and rid else \
+                    f'at position {index}'
+                yield ('rule', 'rules', _anchors(rid), index,
+                       f"rule {named!r}", rule['status'])
 
     album = data.get('album')
     if isinstance(album, list):
-        for sticker in album:
+        for index, sticker in enumerate(album):
             if isinstance(sticker, dict) and 'status' in sticker:
                 sid = sticker.get('id')
-                yield ('sticker', _anchors(sid),
-                       f"sticker {str(sid)!r}{_titled(sticker.get('name'))}",
+                named = sid if isinstance(sid, str) and sid else \
+                    f'at position {index}'
+                yield ('sticker', 'album', _anchors(sid), index,
+                       f"sticker {named!r}{_titled(sticker.get('name'))}",
                        sticker['status'])
 
 
@@ -207,17 +216,80 @@ def _line_of(text: str, index: int) -> int:
     return text.count('\n', 0, index) + 1
 
 
-def _start(text: str, anchors: tuple) -> int:
+def _start(text: str, scope, anchors: tuple, index=None) -> int:
     """Where a record begins in the file: the first anchor that is there.
 
-    -1 when none of them is, which happens only for a record whose id
-    the file does not spell the way JSON would (an author who wrote
-    the id by hand in an odd encoding).
+    The search starts at the record's own catalog, so the same id in two
+    catalogs (`voices.keeper` and `speakers.keeper`) finds its own
+    record rather than whichever was written first. Without that scope a
+    pack that names a voice after its speaker would have one of the two
+    report the other's line.
+
+    A record with no anchors at all (a rule or sticker with no `id`)
+    is found by its position in its list instead.
+
+    -1 when neither is there, which happens only for a record whose id
+    the file does not spell the way JSON would (an author who wrote the
+    id by hand in an odd encoding).
     """
+    floor = 0
+    if isinstance(scope, str):
+        # The catalog's own key. Absent (a hand-written pack that got
+        # the catalog's key wrong) costs nothing: the search just runs
+        # from the top, as it did before.
+        at = text.find(f'{json.dumps(scope)}:')
+        if at >= 0:
+            floor = at
     for anchor in anchors:
-        at = text.find(anchor)
+        at = text.find(anchor, floor)
         if at >= 0:
             return at
+    return _element_start(text, scope, index) if index is not None else -1
+
+
+def _element_start(text: str, container, index: int) -> int:
+    """Where the `index`th element of a JSON list begins, or -1.
+
+    A rule or a sticker need not carry an `id` at all, and then there is
+    no anchor to search for. Counting the list's own top-level `{`
+    braces finds it anyway, so the line names the record instead of the
+    top of the file. Braces inside strings are skipped, so a `say` line
+    that spells one does not throw the count out.
+    """
+    if not isinstance(container, str) or index < 0:
+        return -1
+    key = text.find(f'{json.dumps(container)}:')
+    if key < 0:
+        return -1
+    at = text.find('[', key)
+    if at < 0:
+        return -1
+    depth = 0
+    seen = 0
+    in_string = False
+    escaped = False
+    for pos in range(at, len(text)):
+        char = text[pos]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == '\\':
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == '{':
+            if depth == 0:
+                if seen == index:
+                    return pos
+                seen += 1
+            depth += 1
+        elif char == '}':
+            depth = max(0, depth - 1)
+        elif char == ']' and depth == 0:
+            return -1
     return -1
 
 
@@ -245,8 +317,9 @@ def _stops(text: str, records) -> list[int]:
     record sit a few characters apart, and the later one would cut the
     earlier record's own search off at its own first line.
     """
-    return sorted(at for at in (_start(text, anchors)
-                                for _, anchors, _, _ in records) if at >= 0)
+    return sorted(at for at in (_start(text, scope, anchors, index)
+                                for _, scope, anchors, index, _, _ in records)
+                  if at >= 0)
 
 
 # ------------------------------------------------- the two questions
@@ -267,10 +340,12 @@ def _scan(pack):
         rel = str(path.relative_to(root))
         records = list(_records(data))
         stops = _stops(text, records)
-        for surface, anchors, label, value in records:
+        for surface, scope, anchors, index, label, value in records:
             if value == 'draft':
                 yield Draft(surface, rel,
-                            _locate(text, _start(text, anchors), stops), label)
+                            _locate(text, _start(text, scope, anchors, index),
+                                    stops),
+                            label)
             elif value not in STATUSES:
                 yield f"{rel}: {label} status must be {_CHOICES}, not {value!r}"
 
