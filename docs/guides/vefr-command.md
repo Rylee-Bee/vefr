@@ -70,6 +70,44 @@ work, and `2` when the arguments are wrong or a tool they need
 (Chromium, the gallery CLI) is missing. A missing tool is a report, not
 a failed check, and never changes `vefr doctor`'s exit code.
 
+### Scenarios: open the game in a named state
+
+A scenario is a pack file, `scenarios/<name>.json`, that names a game
+state: where the hero stands and what they carry. `vefr look` and
+`vefr probe` open the woven game in it, so a deep floor can be seen and
+tested without playing the way down to it.
+
+```json
+{
+  "note": "the second floor down, with a purse and a staff",
+  "start": {"depth": 2},
+  "gold": 120,
+  "bag": ["potion", "potion"],
+  "equipped": {"hand": "oak-staff"},
+  "xp": 40,
+  "hp": 12
+}
+```
+
+`start` is required and names either an authored region,
+`{"region": "town", "at": [4, 6]}` (`at` is optional; the region's own
+start is used without it), or a floor of the generated descent,
+`{"depth": 5}`, entered at its stairs the way the hero arrives. The rest
+is optional. `vefr check` checks every scenario against the pack: the
+region and the tile, that a depth has a descent, and that every item is
+one the pack defines and fits the slot it is worn in.
+
+```sh
+uv run vefr look --pack path/to/your-pack --scenario floor-two
+uv run vefr probe --pack path/to/your-pack --scenario floor-two --fire "enters:place=town"
+```
+
+A scenario is the Player Driver's session capsule written by hand
+(ADR 0016): the values go into the player's own save keys before the
+page loads, so the woven game is unchanged, and the hero is walked in
+through the same paths a player takes. The command then checks the hero
+arrived where the scenario says, and exits `1` with a sentence if not.
+
 ## `vefr features`
 
 `vefr features` prints the engine's feature catalog from

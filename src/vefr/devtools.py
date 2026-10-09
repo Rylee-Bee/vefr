@@ -109,13 +109,18 @@ def _no_browser() -> None:
 
 
 @contextlib.contextmanager
-def _session(html, pack, wait_ms):
+def _session(html, pack, wait_ms, plant=None):
     """Open `html` (or weave `pack`) in headless Chromium and press Begin.
 
     Yields the page once the game is up, or None when Playwright/Chromium
     is missing (the install hint goes to STDERR and the caller returns 2).
     A pack is woven into a temp file that is always removed afterwards.
     Playwright is imported here, lazily - nothing imports it at module load.
+
+    `plant` is a scenario's save keys (`vefr.scenarios.storage`): written
+    into the page's storage before any of the game's scripts run, so the
+    player reads them as its own save. Only those keys are written; no
+    other storage is read, cleared or enumerated.
     """
     try:
         from playwright.sync_api import sync_playwright
@@ -142,6 +147,8 @@ def _session(html, pack, wait_ms):
                 yield None
                 return
             page = browser.new_page(viewport={'width': 1280, 'height': 800})
+            if plant:
+                page.add_init_script(_PLANT_JS % json.dumps(plant))
             page.goto(Path(html).resolve().as_uri())
             page.click('#ts-enter')
             page.wait_for_timeout(wait_ms)
@@ -152,6 +159,93 @@ def _session(html, pack, wait_ms):
     finally:
         if temp is not None:
             temp.unlink(missing_ok=True)
+
+
+# A scenario's save keys, written before the game's own scripts run. A
+# browser that blocks storage leaves the game to start fresh; the arrival
+# check below then says the scenario did not take.
+_PLANT_JS = """(() => {
+  const keys = %s;
+  try { for (const k of Object.keys(keys)) localStorage.setItem(k, keys[k]); }
+  catch (e) {}
+})();"""
+
+# Walk the hero in through the player's own arrival paths, then read the
+# harness's window onto play back: where the hero is, and the world name the
+# planted keys had to match.
+_ARRIVE_JS = """(s) => {
+  let entered = false;
+  if (s.depth) {
+    entered = !!(window.VEFR_DESCENT && window.VEFR_DESCENT.enterDescentFloor(s.depth));
+  } else if (typeof window.VEFR_ENTER_REGION === 'function') {
+    window.VEFR_ENTER_REGION(s.region, s.at || null);
+    entered = true;
+  }
+  const c = window.VEFR_COMBAT || {};
+  const floor = window.VEFR_DESCENT ? window.VEFR_DESCENT.floor : null;
+  return {
+    entered: entered,
+    world: (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world',
+    region: c.region || null,
+    at: (c.hero && c.hero.at) || null,
+    hp: (c.hero && c.hero.hp) || null,
+    gold: (typeof c.gold === 'number') ? c.gold : null,
+    depth: floor ? floor.depth : null,
+    card: !!(window.VEFR_DESCENT && window.VEFR_DESCENT.cardShown && window.VEFR_DESCENT.cardShown()),
+  };
+}"""
+
+
+def scenario_boot(pack, name):
+    """`(boot, None)` for a pack's scenario, or `(None, sentences)`.
+
+    `boot` holds what a session needs: the save keys to plant, the start
+    to walk the hero to, and the world name those keys were written for.
+    An invalid scenario is refused with the same sentences `vefr check`
+    speaks, before any browser opens.
+    """
+    from . import maplab, scenarios
+
+    w = maplab.load_pack(Path(pack))
+    data, why = scenarios.load(pack, name)
+    if why is not None:
+        return None, [why]
+    problems = scenarios.check(w, data)
+    if problems:
+        return None, [f'scenarios/{name}.json: {p}' for p in problems]
+    return {'name': name, 'storage': scenarios.storage(w, data),
+            'start': data['start'], 'world': scenarios.world_name(w),
+            'gold': data.get('gold')}, None
+
+
+def _arrive(page, boot):
+    """Walk the hero to the scenario's start; `(report, problem or None)`."""
+    page.wait_for_timeout(200)
+    report = page.evaluate(_ARRIVE_JS, boot['start'])
+    page.wait_for_timeout(300)
+    start = boot['start']
+    if report['world'] != boot['world']:
+        return report, (f"the woven game names this world {report['world']!r}, "
+                        f"but the scenario's keys were written for "
+                        f"{boot['world']!r}")
+    if report['card']:
+        return report, (f"scenario {boot['name']!r}: the game took the planted "
+                        'state for a Release 1 save and opened its generation card')
+    if boot.get('gold') is not None and report['gold'] != boot['gold']:
+        return report, (f"scenario {boot['name']!r} planted {boot['gold']} gold "
+                        f"and the game holds {report['gold']}")
+    if not report['entered']:
+        return report, f"scenario {boot['name']!r}: the game would not enter its start"
+    if 'depth' in start and report['depth'] != start['depth']:
+        return report, (f"scenario {boot['name']!r} asked for depth "
+                        f"{start['depth']} and the hero is at depth {report['depth']}")
+    if 'region' in start and report['region'] != start['region']:
+        return report, (f"scenario {boot['name']!r} asked for {start['region']} "
+                        f"and the hero is in {report['region']}")
+    if start.get('at') and report['at'] != list(start['at']):
+        return report, (f"scenario {boot['name']!r} asked for {list(start['at'])} "
+                        f"and the hero stands at {report['at']}")
+    return report, None
 
 
 # Visible leaves whose top is in the lower 40% of the viewport, or that
@@ -180,7 +274,25 @@ _LEAF_JS = """() => {
 }"""
 
 
-def look(html=None, pack=None, out=None, steps='', json_out=False) -> int:
+def _scenario_or_refusal(verb, pack, scenario):
+    """`(boot or None, exit code or None)`: a scenario needs `--pack`, and
+    an invalid one is refused with its sentences before a browser opens."""
+    if scenario is None:
+        return None, None
+    if pack is None:
+        print(f'vefr {verb} --scenario needs --pack: a scenario lives in its '
+              'pack', file=sys.stderr)
+        return None, 2
+    boot, problems = scenario_boot(pack, scenario)
+    if problems:
+        for sentence in problems:
+            print(sentence, file=sys.stderr)
+        return None, 2
+    return boot, None
+
+
+def look(html=None, pack=None, out=None, steps='', json_out=False,
+         scenario=None) -> int:
     """Screenshot the woven player and list the text standing over the map.
 
     Opens `html` (or weaves `pack`), presses Begin, replays the comma-
@@ -188,15 +300,27 @@ def look(html=None, pack=None, out=None, steps='', json_out=False) -> int:
     and reports every visible leaf in the lower 40% of the viewport or in
     the toasts strip: `{id, cls, tag, y, text}`. The tool for catching
     text that has drifted onto the map.
+
+    With `scenario` (a name in the pack's `scenarios/`), the game opens in
+    that state first: its save keys planted, the hero walked to its start.
     """
     if html is None and pack is None:
         print('vefr look needs --html or --pack', file=sys.stderr)
         return 2
+    boot, refused = _scenario_or_refusal('look', pack, scenario)
+    if refused is not None:
+        return refused
 
     out = Path(out or 'look.png')
-    with _session(html, pack, 800) as page:
+    arrival = None
+    with _session(html, pack, 800, plant=boot and boot['storage']) as page:
         if page is None:
             return 2
+        if boot is not None:
+            arrival, problem = _arrive(page, boot)
+            if problem is not None:
+                print(problem, file=sys.stderr)
+                return 1
         for key in (k.strip() for k in steps.split(',') if k.strip()):
             page.keyboard.press(key)
             page.wait_for_timeout(250)
@@ -205,8 +329,15 @@ def look(html=None, pack=None, out=None, steps='', json_out=False) -> int:
         leaves = page.evaluate(_LEAF_JS)
 
     if json_out:
-        print(json.dumps({'screenshot': str(out), 'overlay_text': leaves}))
+        report = {'screenshot': str(out), 'overlay_text': leaves}
+        if arrival is not None:
+            report['scenario'] = {'name': boot['name'], **arrival}
+        print(json.dumps(report))
         return 0
+    if arrival is not None:
+        where = (f"depth {arrival['depth']}" if arrival['depth']
+                 else arrival['region'])
+        print(f"scenario: {boot['name']} - {where} at {arrival['at']}")
     print(f'screenshot: {out}')
     print(f'{"y":>6}  {"tag":<6} {"id":<18} text')
     for e in leaves:
@@ -241,13 +372,14 @@ _READ_JS = """() => ({
 })"""
 
 
-def probe(html=None, pack=None, fire=(), json_out=False) -> int:
+def probe(html=None, pack=None, fire=(), json_out=False, scenario=None) -> int:
     """Fire rule events at the woven player and read its why-log back.
 
     Each `event:key=value[,key=value]` spec calls the player's global
     `window.fireRule`; afterwards `window.VEFR_WHY` and the engine's
     flags are read out. A malformed spec is a usage error, refused before
-    any browser is launched.
+    any browser is launched. With `scenario`, the events are fired in that
+    scenario's state (see `look`).
     """
     parsed = []
     for spec in fire:
@@ -260,10 +392,19 @@ def probe(html=None, pack=None, fire=(), json_out=False) -> int:
     if html is None and pack is None:
         print('vefr probe needs --html or --pack', file=sys.stderr)
         return 2
+    boot, refused = _scenario_or_refusal('probe', pack, scenario)
+    if refused is not None:
+        return refused
 
-    with _session(html, pack, 300) as page:
+    arrival = None
+    with _session(html, pack, 300, plant=boot and boot['storage']) as page:
         if page is None:
             return 2
+        if boot is not None:
+            arrival, problem = _arrive(page, boot)
+            if problem is not None:
+                print(problem, file=sys.stderr)
+                return 1
         for event, data in parsed:
             page.evaluate(_FIRE_JS, {'event': event, 'data': data})
             page.wait_for_timeout(50)
@@ -271,6 +412,8 @@ def probe(html=None, pack=None, fire=(), json_out=False) -> int:
 
     fired = [{'event': e, 'data': d} for e, d in parsed]
     result = {'fired': fired, 'why': report['why'], 'flags': report['flags']}
+    if arrival is not None:
+        result['scenario'] = {'name': boot['name'], **arrival}
     if json_out:
         print(json.dumps(result))
         return 0
