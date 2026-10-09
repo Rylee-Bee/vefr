@@ -139,7 +139,7 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
 # documented command above. Nothing about this pack's own bytes moved -
 # `worlds/sample-world` declares no skin, so every new bake lands the literal
 # null here exactly as `window.VEFR_SKIN` does.
-NO_SKIN_WEAVE_SHA256 = "c6ff681f7f388380daefa18e197c88cd3fdcef1d67829a0b8f045fa496ab658d"
+NO_SKIN_WEAVE_SHA256 = "b9c4c3dae1f7a007c60401bc0d2037ac4a5dca84da600e5c5a56e6588f18b9b4"
 
 
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():
