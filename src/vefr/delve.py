@@ -907,6 +907,64 @@ def place_books(plan: dict, books: list) -> dict:
     return out
 
 
+# ---- the Section's warden (ADR 0015, E8a part 1) ---------------------------
+# A Section names its warden's Blueprint family (`"warden": "cellar-king"`), and
+# the warden floor (the pattern's `warden` slot) puts it on the v3 warden anchor
+# as monster `w`, outside the area budget. Defeating it sets the permanent story
+# flag `warden:<id>:c<cycle>`; a warden whose flag is set is not spawned again,
+# so a town return cannot revive it. ADR 0015's record form (`carries`, the key
+# that goes into the bag, and `yields`) is part 2.
+WARDEN_MOB = 'w'
+
+
+def warden_of(section: dict) -> dict | None:
+    """The Section's warden as `{id, family}`, or None when it names none."""
+    raw = section.get('warden') if isinstance(section, dict) else None
+    return {'id': raw, 'family': raw} if isinstance(raw, str) and raw else None
+
+
+def warden_flag(warden_id: str, cycle: int) -> str:
+    """The story flag a defeated warden sets: `warden:<id>:c<cycle>` (ADR 0015)."""
+    return f'warden:{warden_id}:c{cycle}'
+
+
+def _warden_record(section: dict, k: int, cycle: int, at) -> dict | None:
+    from . import sections  # here, not at the top: sections imports this module
+
+    warden = warden_of(section)
+    if warden is None or at is None or sections.slot(section, k) != 'warden':
+        return None
+    return {'id': warden['id'], 'flag': warden_flag(warden['id'], cycle)}
+
+
+def _with_warden(mobs: list, key: str, section: dict, k: int, at, source) -> list:
+    """The floor's monsters, plus its warden on the warden anchor when this is the warden floor.
+
+    The warden's stats are its family's, its health drawn on its own `warden` stream and its drops on
+    its own loot stream, so adding it moves no other monster; a random monster that drew the anchor tile
+    gives it up."""
+    if _warden_record(section, k, 0, at) is None:
+        return mobs
+    family = warden_of(section)['family']
+    base = family_base(source, family) if source else None
+    base = base if isinstance(base, dict) else {}
+    rng = prng(stream_seed(key, 'warden'))
+    hp_lo, hp_hi = _hp_range(base)
+    hp = _rand_range(rng, max(1, hp_lo), max(1, hp_hi))
+    atk = base.get('atk')
+    atk = atk if isinstance(atk, int) and not isinstance(atk, bool) else 1
+    sight = base.get('sight')
+    sight = sight if isinstance(sight, int) and not isinstance(sight, bool) else 6
+    tile = [int(at[0]), int(at[1])]
+    kept = [m for m in mobs if m['at'] != tile]
+    return kept + [{
+        'id': WARDEN_MOB, 'family': family,
+        'name': base.get('name') or DEFAULT_FAMILY,
+        'at': tile, 'hp': max(1, hp), 'atk': max(1, atk), 'sight': max(1, sight),
+        'drops': mob_drops(key, WARDEN_MOB, base.get('drops')), 'warden': True,
+    }]
+
+
 def _tile_or_none(value):
     return [int(value[0]), int(value[1])] if isinstance(value, (list, tuple)) and len(value) == 2 else None
 
@@ -961,7 +1019,9 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
         'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]],
                     'warden': _tile_or_none(floor['anchors'].get('warden')),
                     'vault': _tile_or_none(floor['anchors'].get('vault'))},
-        'mobs': mobs_at(key, section, rows, up, down, source),
+        'mobs': _with_warden(mobs_at(key, section, rows, up, down, source),
+                             key, section, k, floor['anchors'].get('warden'), source),
+        'warden': _warden_record(section, k, cycle, floor['anchors'].get('warden')),
         'fog': {'radius': max(1, radius)},
     }
 

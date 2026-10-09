@@ -63,6 +63,10 @@ BLUEPRINT_DESCENT["sections"][0]["families"] = [
     {"family": "moth", "weight": 1, "depth": [1, 3]},
     {"family": "ghost", "weight": 1, "depth": [1, 3]},
 ]
+# E8a: the cellar ends on a warden floor, so the third floor carries monster
+# `w` on the v3 warden anchor and the plan's warden record in both languages.
+BLUEPRINT_DESCENT["sections"][0]["pattern"] = ["entry", "n", "warden"]
+BLUEPRINT_DESCENT["sections"][0]["warden"] = "gutter-rat"
 
 
 @pytest.fixture(scope="module")
