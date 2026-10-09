@@ -49,7 +49,7 @@ def _python(code: str, *args) -> subprocess.CompletedProcess:
 
 
 def _look(pack, name, tmp_path):
-    r = _python("import sys; from vefr.cli import vefr_main; sys.argv = ['vefr', *sys.argv[1:]]; vefr_main()",
+    r = _python("import sys; from vefr.cli import vefr_main; sys.argv = ['vefr', *sys.argv[1:]]; sys.exit(vefr_main())",
                 "look", "--pack", str(pack), "--scenario", name, "--json",
                 "--out", str(tmp_path / f"{name}.png"))
     assert r.returncode == 0, r.stderr
