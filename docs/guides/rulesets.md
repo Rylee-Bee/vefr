@@ -897,6 +897,11 @@ before the non-zero exit. A pack with no drafts prints one line
 (`no drafts - every word in this pack is approved`) and exits 0 under
 both spellings.
 
+The `file:line` is the line the `status` is written on. A rule or
+sticker with no `id` has nothing to name itself by, so it is listed as
+`the rule at position N` - the same words `vefr check` uses when it
+refuses that rule for having no id.
+
 This is a release gate, not a mode: **a draft word plays exactly as an
 approved one does.** Nothing in `web/` reads the key, and no surface
 reads it outside the gate. Code: `src/vefr/story_status.py`
