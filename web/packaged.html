@@ -6464,7 +6464,8 @@ window.VEFR_DESCENT = (function () {
     '#': { base: ['#20242b'], solid: true, tile: 'dungeon-wall' },
     '.': { base: ['#1a1d22'], tile: 'dungeon-floor' },
     u: { base: ['#2b2f38'], tile: 'dungeon-stairs-up' },
-    d: { base: ['#2b2f38'], tile: 'dungeon-stairs-down' }
+    d: { base: ['#2b2f38'], tile: 'dungeon-stairs-down' },
+    '+': { base: ['#3a2f24'], solid: true, tile: 'dungeon-door' }
   };
 
   // ---- the pack's block ------------------------------------------------
@@ -6833,6 +6834,28 @@ window.VEFR_DESCENT = (function () {
     if (warden.carries) record.carries = warden.carries;
     return record;
   }
+  // The warden floor's vault (ADR 0015; twin of delve.py `_vault_record`):
+  // the placed vault stamp's door - the socket its corridor came in by -
+  // its note, chest and home, and the warden flag that opens the door.
+  function vaultRecord(floor, section, k, cycle) {
+    var slots = sectionPattern(section);
+    var slot = (isWhole(k) && k >= 1 && k <= slots.length) ? slots[k - 1] : 'n';
+    if (slot !== 'warden') return null;
+    var placed = (floor.stamps || []).filter(function (p) { return p && p.role === 'vault'; })[0];
+    if (!placed) return null;
+    var anchors = placed.anchors || {};
+    var warden = wardenOf(section);
+    return { stamp: placed.id, door: tileOrNull(placed.socket),
+             note: tileOrNull(anchors.note), chest: tileOrNull(anchors.chest),
+             home: tileOrNull(anchors.home),
+             flag: warden ? wardenFlag(warden.id, cycle) : null };
+  }
+  function doorShut(plan) {
+    return !!(plan && plan.vault && plan.vault.door && plan.vault.flag &&
+              flags()[plan.vault.flag] !== true);
+  }
+  function withChar(row, x, ch) { return row.slice(0, x) + ch + row.slice(x + 1); }
+
   function withWarden(mobs, key, section, k, at) {
     if (!wardenRecord(section, k, 0, at)) return mobs;
     var family = wardenOf(section).family;
@@ -6897,6 +6920,7 @@ window.VEFR_DESCENT = (function () {
       mobs: withWarden(mobsAt(key, section, rows, up, down), key, section, at.k,
                        tileOrNull(floor.anchors.warden)),
       warden: wardenRecord(section, at.k, at.cycle, tileOrNull(floor.anchors.warden)),
+      vault: vaultRecord(floor, section, at.k, at.cycle),
       fog: { radius: Math.max(1, radius) }
     };
   }
@@ -7191,8 +7215,15 @@ window.VEFR_DESCENT = (function () {
     poiText[upKey] = 'Steps climb back toward the day.';
     pois[downKey] = 'the stair down';
     poiText[downKey] = 'Steps drop into the dark.';
+    var map = plan.rows.slice();
+    // The vault door is shut until the warden falls (painted over the
+    // plan's floor tile; `defeated` opens it in place).
+    if (doorShut(plan)) {
+      var door = plan.vault.door;
+      map[door[1]] = withChar(map[door[1]], door[0], '+');
+    }
     return {
-      map: plan.rows.slice(), legend: legend, pois: pois, poi_text: poiText,
+      map: map, legend: legend, pois: pois, poi_text: poiText,
       hero_start: plan.anchors.up.slice(), sanctuary_tiles: [],
       watch: {}, water_by_phase: {}, flood_tiles: [], tile: 32,
       fog: plan.fog, bg: '#0d0f12', hero_color: '#e8e5df',
@@ -7426,7 +7457,27 @@ window.VEFR_DESCENT = (function () {
     var plan = depth ? floorPlan(depth) : null;
     if (!plan || !plan.warden) return false;
     setFlag(plan.warden.flag, true);
+    // Its vault door opens now, in place: the same array the player is
+    // walking, so no re-entry (which would respawn the floor's monsters).
+    var region = (window.VEFR_REGIONS || {})[name];
+    if (plan.vault && plan.vault.door && plan.vault.flag === plan.warden.flag && region &&
+        Array.isArray(region.map)) {
+      var door = plan.vault.door;
+      if ((region.map[door[1]] || '')[door[0]] === '+') {
+        region.map[door[1]] = withChar(region.map[door[1]], door[0], '.');
+      }
+    }
     return plan.warden;
+  }
+
+  // What a bump into the shut vault door on `name` says, or '' for any
+  // other tile: the door names who holds its key.
+  function shutDoorLine(name, x, y) {
+    var depth = on() ? depthOfName(name) : 0;
+    var plan = depth ? floorPlan(depth) : null;
+    if (!doorShut(plan) || plan.vault.door[0] !== x || plan.vault.door[1] !== y) return '';
+    var warden = (plan.mobs || []).filter(function (m) { return m.warden; })[0];
+    return 'The vault door is locked. ' + (warden ? warden.name : 'The warden') + ' holds the key.';
   }
 
   // ---- the story flags, which outlive every floor ---------------------
@@ -7804,7 +7855,7 @@ window.VEFR_DESCENT = (function () {
 
   var api = {
     on: on, GEN_VERSION: GEN_VERSION, FLOOR_CAP: FLOOR_CAP,
-    defeated: defeated, wardenFlag: wardenFlag,
+    defeated: defeated, wardenFlag: wardenFlag, shutDoorLine: shutDoorLine,
     FLOOR_BYTES: FLOOR_BYTES, SAVE_BYTES: SAVE_BYTES,
     locate: locate, floorName: floorName, floorKey: floorKey,
     streamSeed: streamSeed, lootSeed: lootSeed, chestSeed: chestSeed,
@@ -10584,6 +10635,9 @@ function setupTown() {
       return;
     }
     if ((town.legend[town.map[ny][nx]] || {}).solid) {
+      var shut = (window.VEFR_DESCENT && window.VEFR_DESCENT.shutDoorLine)
+        ? window.VEFR_DESCENT.shutDoorLine(regionName, nx, ny) : '';
+      if (shut) combatSay(shut);
       heroSettleSoon();
       return;
     }
