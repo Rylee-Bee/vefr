@@ -85,7 +85,11 @@ def build(dest: Path, descent=None) -> Path:
 
     world_json = pack / "world.json"
     world = json.loads(world_json.read_text(encoding="utf-8"))
-    world["items"] = ITEMS
+    # The sample world's own items stay beside the fixture's: the pack
+    # still carries the sample's demo chest book, and a chest that drops
+    # ids the catalog does not declare opens on nothing - which
+    # `vefr check` now says out loud.
+    world["items"] = {**(world.get("items") or {}), **ITEMS}
     world["player"] = dict(PLAYER, wake={"region": "town", "at": [3, 4]})
     if descent is None:
         descent = {

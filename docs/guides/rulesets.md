@@ -433,6 +433,13 @@ A chest book (`chest: yes` in its front matter) may also hold items:
 `drops: cloudy-potion, brass-ring` - a comma-separated list of catalog
 ids, read from `extra` like `chest` already is.
 
+`vefr check` reads a chest's `drops` against the catalog, because the bag
+refuses an id the catalog does not hold: a `drops` line that names no id,
+or ids no declared item answers for, is refused by name (an item declared
+with no `name` is no item - `weave` drops it from the catalog it bakes). A
+chest with no `drops` line at all holds its note and nothing else, and is
+left alone.
+
 **The drop.** A killed enemy's drops are left on the tile it died on, as
 a small item marker (the item's sprite, or a dot). Fog rules apply: a
 drop is drawn only where the light reaches. **Walking onto a drop takes

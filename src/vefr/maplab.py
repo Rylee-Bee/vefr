@@ -1256,6 +1256,12 @@ def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     `value` (so no shop buys or sells it), and no Blueprint family drops it:
     the only way to get it is to beat the warden. Without these a key could be
     sold, lost, or found elsewhere and open the vault early.
+
+    An item the pack declares with no `name` is refused here too, and it is
+    the same refusal the chest drops get: `weave` drops such an entry from the
+    catalog it bakes (`cli._player_items`) and `bagAdd` refuses an id that
+    catalog does not hold, so beating the warden would hand over a key the bag
+    will not take - an empty chest with a monster standing next to it.
     """
     warden = section.get('warden')
     item = warden.get('carries') if isinstance(warden, dict) else None
@@ -1267,6 +1273,9 @@ def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     where = f'{rel}: /warden/carries'
     if not isinstance(spec, dict):
         return [f'{where} {item!r} is not an item world.json declares']
+    if not str(spec.get('name', '')).strip():
+        return [f'{where} {item!r} is declared with no name, so it is not an '
+                'item the bag can hold; give it a name']
     out = []
     if spec.get('keep') is not True:
         out.append(f'{where} {item!r} must be kept, not used up: give it "keep": true')
@@ -2774,7 +2783,8 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             descent = None          # descent_errors() above has already said why
         errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
                                      speakers=w.get('speakers'),
-                                     regions=declared, descent=descent))
+                                     regions=declared, descent=descent,
+                                     items=w.get('items', {})))
 
     return errors
 
