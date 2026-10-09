@@ -115,7 +115,9 @@ These hold for every Section, for seeds `check-0..199`, in cycles 0 and 1:
 5. **Decided: its own region behind the final boss's door.** *(Per game since Amendment 1: a pack may end its story without a final boss.)*
 6. What are the town lines, residents and shop stock for each state?
 
-## Amendment 1 (proposed 2026-10-08; awaiting Rylee's approval)
+## Amendment 1 (approved by Rylee, 2026-10-08)
+
+Rylee, 2026-10-08: *"I approve the proposed amendment to ADR 0015."* Her boundary: *"Do not treat this approval as permission for a broader engine redesign."*
 
 Cottage of the Breeze, Rylee's decisions of 2026-10-08: **"No final boss"** (the story ends in a quiet room you reach and return from) and **"Different kinds of guardian encounters"** (a fight, a way past, an interaction). Her guidance: *"The engine should retain the ability to support final bosses in other games"* and *"I do not want a Cottage-specific workaround or three separate engine systems if an existing encounter contract can support these differences."* E8 is not built yet, so this amends design text only. Everything above stands except where this section says otherwise.
 
@@ -135,5 +137,7 @@ Cottage of the Breeze, Rylee's decisions of 2026-10-08: **"No final boss"** (the
    - a `"fightable": false` warden cannot be attacked;
    - a list-form `town_states` loads per region;
    - a pack whose `story_end` is set by entering a region opens endless mode with no boss.
+
+**Compatibility.** Every key this amendment adds is optional, and its default is today's behaviour: `story_end` defaults to `king-slain`, `challenge` to `defeat`, and the single-block `town_states` stays valid. Existing saves and content keep working, and rising danger is unchanged.
 
 **Order.** A `"rule"` warden needs rules that can name things on a generated floor. That comes from VEFR's pinned-placement work (books, chests and named things at a depth), which E8's vault notes also use. E8 may therefore ship `"defeat"` first and add `"rule"` once that work lands. Nothing here changes ADR 0010, 0013, 0014 or 0016.
