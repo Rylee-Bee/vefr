@@ -246,9 +246,12 @@ def test_the_size_block_bounds_each_half_of_each_pair():
 
 
 def test_the_fog_radius_is_a_whole_number_in_its_range():
+    """The low end moves with the ceiling but does not move: still 2, and
+    the same pointer. vefr #364 raised `hi` and left this sentence's shape
+    alone; `tests/test_fog_radius.py` holds the ceiling itself."""
     section = dict(base(), fog={"radius": 0})
     assert only(shapes.check(shapes.SECTION, section)) == (
-        "/section/fog/radius", "section.fog.radius must be between 2 and 8")
+        "/section/fog/radius", "section.fog.radius must be between 2 and 32")
 
 
 def test_a_tile_table_names_a_tileset_for_every_glyph():

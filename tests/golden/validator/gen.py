@@ -153,7 +153,10 @@ def sections():
         ("a width half out of range", {"size": {"w": [64, 200], "h": [44, 56]}}),
         ("a height that is a triple", {"size": {"w": [64, 80], "h": [44, 56, 60]}}),
         ("a fog with no radius", {"fog": {}}),
-        ("a fog radius out of range", {"fog": {"radius": 9}}),
+        # 33, not 9: vefr #364 raised the ceiling on a Section's fog radius
+        # from 8 to a quarter of the widest floor `SIZE` allows (32), so the
+        # case that pins the refusal moves with it. See tests/test_fog_radius.py.
+        ("a fog radius out of range", {"fog": {"radius": 33}}),
         ("a tile table that is not a table", {"tiles": []}),
         ("a glyph with no tileset", {"tiles": {"#": "cellar-wall", ".": 3}}),
         ("families that are not a list", {"families": {}}),
