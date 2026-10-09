@@ -1245,7 +1245,45 @@ def section_errors(pack_dir) -> list[str]:
             errors.append(f'{rel}: a Section pack must be a JSON object')
             continue
         errors.extend(section_block_errors(section, affixes, resolve, rel))
+        errors.extend(_warden_key_errors(root, section, rel))
     return errors
+
+
+def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
+    """ADR 0015 check 3 for the key a Section's warden `carries`.
+
+    The key is a declared item that is `keep` (used, never used up) and has no
+    `value` (so no shop buys or sells it), and no Blueprint family drops it:
+    the only way to get it is to beat the warden. Without these a key could be
+    sold, lost, or found elsewhere and open the vault early.
+    """
+    warden = section.get('warden')
+    item = warden.get('carries') if isinstance(warden, dict) else None
+    if not isinstance(item, str) or not item:
+        return []
+    world, problem = _pack_json(root, 'world.json')
+    items = world.get('items') if isinstance(world, dict) else None
+    spec = items.get(item) if isinstance(items, dict) else None
+    where = f'{rel}: /warden/carries'
+    if not isinstance(spec, dict):
+        return [f'{where} {item!r} is not an item world.json declares']
+    out = []
+    if spec.get('keep') is not True:
+        out.append(f'{where} {item!r} must be kept, not used up: give it "keep": true')
+    value = spec.get('value')
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0:
+        out.append(f'{where} {item!r} must have no value, so no shop buys or sells it')
+    from . import blueprint
+    source, _ = (_pack_json(root, blueprint.BLUEPRINT_FILE)
+                 if (root / blueprint.BLUEPRINT_FILE).is_file() else (None, None))
+    families = source.get('families') if isinstance(source, dict) else None
+    for fid, record in sorted(families.items()) if isinstance(families, dict) else ():
+        defaults = record.get('defaults') if isinstance(record, dict) else None
+        drops = defaults.get('drops') if isinstance(defaults, dict) else None
+        if isinstance(drops, list) and item in drops:
+            out.append(f'{where} {item!r} is dropped by family {fid!r}; '
+                       'the warden must be the only way to get it')
+    return out
 
 
 # The parts a skin may name (design/ui-skin.md). Anything else is a

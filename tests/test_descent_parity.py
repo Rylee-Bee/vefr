@@ -66,7 +66,8 @@ BLUEPRINT_DESCENT["sections"][0]["families"] = [
 # E8a: the cellar ends on a warden floor, so the third floor carries monster
 # `w` on the v3 warden anchor and the plan's warden record in both languages.
 BLUEPRINT_DESCENT["sections"][0]["pattern"] = ["entry", "n", "warden"]
-BLUEPRINT_DESCENT["sections"][0]["warden"] = "gutter-rat"
+# The record form (ADR 0015): its own id and the key it carries reach the plan in both languages.
+BLUEPRINT_DESCENT["sections"][0]["warden"] = {"family": "gutter-rat", "id": "rat-king", "carries": "rat-key"}
 
 
 @pytest.fixture(scope="module")
