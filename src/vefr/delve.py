@@ -860,7 +860,10 @@ def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
 # run always shows a book in the same place and a new run moves it. The
 # JavaScript twin is `placeBooks` in the descent part; the parity harness
 # holds them equal.
-BOOK_PLACES = ("near-up", "near-down", "anywhere")
+# `vault-note` and `vault-chest` pin a book to the warden floor's vault (ADR 0015, E8b): the note and the
+# chest the vault stamp names, a fixed tile rather than a draw, so they move no other book.
+VAULT_PLACES = {"vault-note": "note", "vault-chest": "chest"}
+BOOK_PLACES = ("near-up", "near-down", "anywhere", "vault-note", "vault-chest")
 BOOK_NEAR = (2, 6)          # steps from the stair: near, but never on it
 
 
@@ -896,6 +899,10 @@ def place_books(plan: dict, books: list) -> dict:
     from_up = _floor_distances(rows, up)
     from_down = _floor_distances(rows, down)
     taken = {up, down} | {tuple(m["at"]) for m in plan.get("mobs") or []}
+    # The vault's own tiles are never a drawn book's, so a vault book (or none) moves no other book.
+    vault = plan.get("vault") or {}
+    reserved = {tuple(vault[k]) for k in ("door", "note", "chest", "home") if vault.get(k)}
+    taken |= reserved
     lo, hi = BOOK_NEAR
     out = {}
     for book in sorted(books, key=lambda b: b["id"]):
@@ -906,6 +913,12 @@ def place_books(plan: dict, books: list) -> dict:
             return [t for t, n in dist.items() if n >= low and (high is None or n <= high) and free(t)]
 
         place = book.get("place")
+        if place in VAULT_PLACES:
+            spot = vault.get(VAULT_PLACES[place])
+            if spot and tuple(spot) in reserved:
+                reserved.discard(tuple(spot))          # one book per vault tile
+                out[book["id"]] = [spot[0], spot[1]]
+            continue
         tiles = (within(from_up, lo, hi) if place == "near-up"
                  else within(from_down, lo, hi) if place == "near-down" else [])
         if not tiles:

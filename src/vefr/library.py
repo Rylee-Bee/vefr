@@ -287,6 +287,9 @@ def _sweep_pins(region: str, depth: int, books: list, descent: dict) -> list[str
     """Every pinned book on `region` finds a free tile in each of PIN_RUNS runs."""
     from . import delve
     wanted = [{"id": b["id"], "place": b["place"]} for b in books]
+    if any(b["place"] in delve.VAULT_PLACES for b in wanted) and not delve.floor_plan(descent, depth, 0).get("vault"):
+        return [f"library book '{b['id']}': place {b['place']} needs the vault on its Section's warden floor, "
+                f"and {region} has none" for b in wanted if b["place"] in delve.VAULT_PLACES]
     missing: dict[str, int] = {}
     for run in range(PIN_RUNS):
         got = delve.place_books(delve.floor_plan(descent, depth, run), wanted)
