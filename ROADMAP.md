@@ -59,6 +59,7 @@ gameplay features over new core machinery.
 
 ### NOW (small, high leverage, straight from real use)
 1. [authoring + QA] **Story status**: a pack can say which words are draft and which Rylee approved; `vefr check --release` lists drafts. (finding 1, new)
+   - **Landed (2026-10-09, #339):** optional `status: draft | approved` (default `approved`) as a sibling key on books' front matter, voice files, `say` rules, album sticker names and item names; `vefr check --release` lists every draft with file and line and exits 0, `--strict` prints the same list and exits non-zero. No player-facing change: nothing under `web/` reads the key.
 2. [authoring + QA] **Scenarios**: open the game, `vefr look` and the bot in any named state; generalises #260. (finding 2, new)
    - **Scenario half landed (2026-10-09):** `scenarios/<name>.json` in a pack, checked by `vefr check`; `vefr look|probe --pack P --scenario NAME` open the woven game in that state (ADR 0016 P2). Next: the capsule's capture and import, and the Cottage bot reading scenarios.
 3. [QA] **Stage containment and panel accessibility**: every control inside the stage at many sizes, and every menu panel walked with axe. (finding 3, new; the containment and no-overlap tests are written and drive the interface slices; the panel walk is still to do)

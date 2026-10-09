@@ -2405,6 +2405,14 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # beside the rules it names events from. A pack that declares no
     # album gets nothing here.
     errors.extend(album_errors(w, pack_dir))
+    # The pack's optional story status (vefr #339): the one place a
+    # pack says which of its words are still drafts. A `status` written
+    # as anything but `draft`/`approved` is a pack-authoring error, read
+    # off the pack's own files because the key lives on five different
+    # surfaces. A pack that writes no `status` says nothing here.
+    if pack_dir is not None:
+        from . import story_status
+        errors.extend(story_status.errors(pack_dir))
     # The pack's optional skin (design/ui-skin.md), checked beside the
     # other optional catalogs. A pack that declares none gets nothing.
     errors.extend(skin_errors(w, pack_dir))
