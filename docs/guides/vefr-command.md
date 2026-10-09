@@ -21,7 +21,7 @@ order `vefr --help` prints them in, too.
 | `vefr chat` | interview a new world into existence | `norns chat` |
 | `vefr map` | rebuild the map from run-length rows | `norns build-map` |
 | `vefr delve` | generate dungeon floors from a seed, or a whole Section, and wire the stairs | `norns delve` |
-| `vefr check` | validate the pack geometry; `--live URL` validates a running deployment | `norns validate` / `norns verify` |
+| `vefr check` | validate the pack geometry; `--release` lists every draft word (`--strict` to fail on one); `--live URL` validates a running deployment | `norns validate` / `norns verify` |
 | `vefr weave` | package a world into one self-contained HTML file | `ratatoskr weave` |
 | `vefr handbok` | write the mechanics manual from real play | `norns handbok` |
 | `vefr spark` | the resident small brain: `install`, `status`, `smoke`, `task` | `ratatoskr spark` |
