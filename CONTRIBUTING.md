@@ -129,6 +129,32 @@ mergeability, reviews and branch protection; and the image publish and
 screenshot jobs, which only run on `main`. It is the commands, not the
 decision to merge.
 
+### What blocks a merge (required checks)
+
+Branch protection on `main` requires these four checks, each bound to
+GitHub Actions (app 15368):
+
+| Check | Workflow |
+| --- | --- |
+| `ruff + pytest + sample-world + public-surface guard` | `ci.yml` |
+| `claims / honest-claims policy` | `ci.yml` (ci-harness reusable workflow) |
+| `gitleaks full-history scan` | `ci.yml` |
+| `browser tests (studio as a person uses it)` | `dev-guards.yml`, with `VEFR_BROWSER_REQUIRED=1` |
+
+**The browser check is required since 2026-10-09** (Rylee: *"Approved: make
+VEFR's existing browser test job a required check."*). It runs
+`pytest tests/browser` in Chromium on every pull request to `main`, with no
+path filter, so a PR cannot avoid it. A required check that **fails**, is
+**cancelled**, or never reports (**missing**) blocks the merge. Only success
+lets it through. The `main` ruleset additionally requires the first and third
+checks with its own strict up-to-date policy.
+
+To see the list as GitHub holds it:
+
+```sh
+gh api repos/Rylee-Bee/vefr/branches/main/protection --jq '.required_status_checks.checks'
+```
+
 The same gate, one command at a time:
 
 ```sh
