@@ -351,13 +351,23 @@
   }
   // Death is Cozy: health back to max, one plain line, and a wake at
   // the hero's baked wake point. Nothing is lost.
+  //
+  // A floor of the descent is the one place that wake point is not: the
+  // descent answers for its own floors (the up-stair of the floor the
+  // hero fell on, whole, with the run intact), and every other region -
+  // the town, a baked one - wakes exactly where the pack says it does.
   function cozyDeath() {
     combatSay(DEATH_LINE);
     HERO_HP = heroMax();
     saveHeroHp();
     renderHp();
     var wake = (window.VEFR_HERO && window.VEFR_HERO.wake) || {};
-    if (wake.region && regions[wake.region]) {
+    var D = window.VEFR_DESCENT;
+    var back = (D && typeof D.deathResume === 'function')
+      ? D.deathResume(regionName) : null;
+    if (back) {
+      enterRegion(back.region, back.at);
+    } else if (wake.region && regions[wake.region]) {
       enterRegion(wake.region, wake.at);
     } else {
       hero = (town.hero_start || [1, 1]).slice();
