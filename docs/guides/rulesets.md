@@ -776,7 +776,8 @@ field bakes byte-for-byte as before, and the baked value is `null`.
 
 Code: `src/vefr/maplab.py` (`skin_errors`) + `src/vefr/cli.py`
 (`_baked_skin`) + `web/player/parts/540-the-skin.js` (`applySkin`),
-`440-the-camera.js` and `480-town-input-and-turns.js` (the ground);
+`440-the-camera.js`, `448-asset-loaders.js` (the ground's pictures) and
+`480-town-input-and-turns.js` (the ground);
 tests: `tests/test_skin_validator.py` + `tests/test_skin_apply.py`.
 
 ## Walk sheets (a character that walks)
