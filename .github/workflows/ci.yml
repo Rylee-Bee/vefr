@@ -25,9 +25,9 @@ jobs:
   # stated twice; the template verifies after checkout that the tree it fetched
   # really is this commit, and prints both.
   claims:
-    uses: Rylee-Bee/ci-harness/.github/workflows/reusable-claims-policy.yml@a0c82129374ab551cd4dee7efd7b46c04f1be5eb
+    uses: Rylee-Bee/ci-harness/.github/workflows/reusable-claims-policy.yml@85bbb32d5437b8e20caa465a6f4fb517823c6ec3
     with:
-      policy-revision: a0c82129374ab551cd4dee7efd7b46c04f1be5eb
+      policy-revision: 85bbb32d5437b8e20caa465a6f4fb517823c6ec3
       runs-on: ${{ vars.CI_RUNNER_LIGHT || vars.CI_RUNNER || 'ubuntu-latest' }}
 
   # Play-Nice contract currency — enforced, not decorative. This repo declared
