@@ -93,6 +93,9 @@
     if (e.hp <= 0) {
       e.alive = false;
       saveSlain();
+      if (window.VEFR_DESCENT && window.VEFR_DESCENT.defeated) {
+        window.VEFR_DESCENT.defeated(regionName, e);
+      }
       soundCue('defeat');
       placeDrops(e.at, e.drops);
       fireRule('defeats', { what: e.id });
