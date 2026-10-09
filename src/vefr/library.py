@@ -127,11 +127,22 @@ def _walkable(town: dict, x: int, y: int) -> bool:
 
 
 def validate_books(books: list[dict], *, town: dict | None = None,
-                   speakers: object = None) -> list[str]:
+                   speakers: object = None, regions: set | None = None,
+                   descent: dict | None = None) -> list[str]:
     """Every contract check for a shelf. Returns problems (empty = good).
 
     `town` is the validator's town block (map + legend) for map books;
     `speakers` is the act's speakers (a dict or a list of names).
+
+    `regions` (every region the pack's acts declare) and `descent` (its
+    resolved descent block) make a map book's region a checked fact. On
+    2026-10-08 Cottage removed its authored cellar and six books went on
+    naming regions that no longer existed: nothing could find them, and
+    every check stayed green. A map book now names a declared region or a
+    floor of the generated descent (`<section>-<cycle>-<floor>`), and on a
+    generated floor its tile must be ground the hero can reach from the
+    stairs on the floor a new game draws. Without `regions` the region is
+    not checked, as before.
     """
     errors: list[str] = []
     ids = {b["id"] for b in books}
@@ -162,6 +173,8 @@ def validate_books(books: list[dict], *, town: dict | None = None,
                 errors.append(f"{where}: a map book needs at: [x, y]")
             elif b["region"] == "town" and town is not None and not _walkable(town, at[0], at[1]):
                 errors.append(f"{where}: at {at} is off the map or not walkable ground")
+            elif regions is not None:
+                errors.extend(_region_problems(where, b["region"] or "town", at, regions, descent))
         elif found == "resident":
             if not b["speaker"]:
                 errors.append(f"{where}: a given book needs speaker: <who hands it over>")
@@ -194,3 +207,69 @@ def found_words(book: dict) -> str:
                 "act-complete": "earned when the act is done",
                 "rumor-verified": "earned when a rumor is proven true"}.get(when, "earned")
     return "on the shelf from the start"
+
+
+_FLOOR_NAME = re.compile(r"^(.*)-(\d+)-(\d+)$")
+
+
+def _region_problems(where: str, region: str, at, regions: set,
+                     descent: dict | None) -> list[str]:
+    """Why a map book's region or tile cannot be found in play (empty = fine)."""
+    if region in regions:
+        return []
+    floor = _generated_floor(region, descent)
+    if floor is None:
+        have = ", ".join(sorted(regions)) or "none"
+        example = ""
+        sections = (descent or {}).get("sections") or []
+        if sections and isinstance(sections[0], dict) and sections[0].get("id"):
+            example = f", or a generated floor such as {sections[0]['id']}-0-1"
+        return [f"{where}: region '{region}' is not a region of this pack; it has {have}{example}"]
+    if not (isinstance(at, list) and len(at) == 2):
+        return []
+    from . import delve
+    plan = delve.floor_plan(descent, floor)
+    rows = plan["rows"]
+    x, y = at
+    if not _reachable(rows, tuple(plan["anchors"]["up"]), (x, y)):
+        return [f"{where}: at {at} on {region} is not ground the hero can reach from the stairs "
+                f"on that floor as a new game draws it; move the book to a reachable tile"]
+    return []
+
+
+def _generated_floor(region: str, descent: dict | None) -> int | None:
+    """The depth a generated floor name plays at, or None if it is not one of the descent's."""
+    m = _FLOOR_NAME.match(region)
+    if not m or not isinstance(descent, dict):
+        return None
+    sections = [s for s in (descent.get("sections") or []) if isinstance(s, dict)]
+    counts = [s.get("floors") if isinstance(s.get("floors"), int) else 0 for s in sections]
+    total = sum(counts)
+    cycle, k = int(m.group(2)), int(m.group(3))
+    before = 0
+    for section, count in zip(sections, counts):
+        if section.get("id") == m.group(1):
+            return cycle * total + before + k if 1 <= k <= count else None
+        before += count
+    return None
+
+
+def _reachable(rows: list, start: tuple, goal: tuple) -> bool:
+    """Whether `goal` is floor joined to `start` by floor, on a generated floor's rows."""
+    h, w = len(rows), len(rows[0]) if rows else 0
+
+    def open_(x, y):
+        return 0 <= y < h and 0 <= x < w and rows[y][x] not in "# "
+
+    if not open_(*goal):
+        return False
+    seen, stack = {start}, [start]
+    while stack:
+        x, y = stack.pop()
+        if (x, y) == goal:
+            return True
+        for nxt in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if nxt not in seen and open_(*nxt):
+                seen.add(nxt)
+                stack.append(nxt)
+    return False

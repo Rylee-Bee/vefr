@@ -252,6 +252,36 @@ def walkable(w: dict, x: int, y: int, flooded: set | None = None) -> bool:
     return m[y][x] not in BLOCKED_FALLBACK
 
 
+def region_geometry(w: dict) -> dict:
+    """Every region the first act plays in: `{name: {map, legend, enemies}}`.
+
+    The validator's unified shape carries `regions` for an acts-shape
+    pack; an act read straight off the loader carries `map_text` and a
+    contract instead; and a flat pack has one implicit region, named so
+    a door or a scenario written against it can still be checked. One
+    reading, shared by the transition checks and `vefr.scenarios`.
+    """
+    region_geo = w.get('regions')
+    if not isinstance(region_geo, dict) and w.get('acts'):
+        region_geo = {}
+        for rname, rdata in (w['acts'][0].get('regions') or {}).items():
+            contract = rdata.get('contract') or {}
+            rows = [ln for ln in (rdata.get('map_text') or '').splitlines()
+                    if ln.strip()]
+            region_geo[rname] = {'map': rows,
+                                 'legend': contract.get('legend', {}),
+                                 'enemies': contract.get('enemies', [])}
+    if not isinstance(region_geo, dict):
+        region_geo = {}
+    if not region_geo and isinstance(w.get('town'), dict):
+        region_geo = {w.get('_region') or 'town': {
+            'map': w['town'].get('map', []),
+            'legend': w['town'].get('legend', {}),
+            'enemies': w['town'].get('enemies', []),
+        }}
+    return region_geo
+
+
 def _map_tile_walkable(map_rows: list, legend: dict,
                        x: int, y: int) -> bool | None:
     """Walkability of one tile on a named region's map. Mirrors
@@ -2367,6 +2397,13 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # gets nothing here.
     if pack_dir is not None:
         errors.extend(section_errors(pack_dir))
+    # The pack's optional scenarios (ADR 0016, slice P2): one
+    # `scenarios/<name>.json` per named game state, checked against this
+    # pack's regions, descent and items. A pack that ships none gets
+    # nothing here.
+    if pack_dir is not None:
+        from . import scenarios
+        errors.extend(scenarios.errors(w, pack_dir))
     town = w['town']
     m = town['map']
     legend = town['legend']
@@ -2563,26 +2600,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     if transitions is None and w.get('acts'):
         transitions = w['acts'][0].get('transitions', [])
     transitions = transitions or []
-    region_geo = w.get('regions')
-    if not isinstance(region_geo, dict) and w.get('acts'):
-        region_geo = {}
-        for rname, rdata in (w['acts'][0].get('regions') or {}).items():
-            contract = rdata.get('contract') or {}
-            rows = [ln for ln in (rdata.get('map_text') or '').splitlines()
-                    if ln.strip()]
-            region_geo[rname] = {'map': rows,
-                                 'legend': contract.get('legend', {}),
-                                 'enemies': contract.get('enemies', [])}
-    if not isinstance(region_geo, dict):
-        region_geo = {}
-    if not region_geo and isinstance(w.get('town'), dict):
-        # A flat shape has one implicit region; name it so a door
-        # written against it can still be checked.
-        region_geo = {w.get('_region') or 'town': {
-            'map': w['town'].get('map', []),
-            'legend': w['town'].get('legend', {}),
-            'enemies': w['town'].get('enemies', []),
-        }}
+    region_geo = region_geometry(w)
 
     # A pack may bring its own ground pictures under each region's
     # tiles/. That is on-disk data, so it is only checked when the pack
@@ -2708,8 +2726,17 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # pack on disk; in-memory validation (chat drafts) has no books yet.
     if pack_dir is not None:
         from .library import load_library, validate_books
+        declared = set(region_geo)
+        for act in (w.get('acts') or []):
+            declared |= set((act.get('region_geo') or act.get('regions') or {}) if isinstance(act, dict) else ())
+        try:
+            from . import delve
+            descent = delve.descent_of(w, pack_dir) or None
+        except ValueError:
+            descent = None          # descent_errors() above has already said why
         errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
-                                     speakers=w.get('speakers')))
+                                     speakers=w.get('speakers'),
+                                     regions=declared, descent=descent))
 
     return errors
 
