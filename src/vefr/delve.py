@@ -410,7 +410,7 @@ def _as_tile(value) -> tuple[int, int] | None:
 # The generation this descent draws. It rides in every floor's identity,
 # in the save (so a save from a different generation is offered the
 # start-over card once), and in the seed of every stream: `v3|<key>|...`.
-GEN_VERSION = 3
+GEN_VERSION = 4   # 4: play floors are v3 geometry (E8-0, 2026-10-09); 3 was v2 geometry
 STREAM_VERSION = "v3"
 
 # The save budgets of PLAN §3, and the cap that keeps them.
@@ -418,11 +418,8 @@ FLOOR_CAP = 40
 FLOOR_BYTES = 1_500
 SAVE_BYTES = 250_000
 
-# What a Section gets when it says nothing. A floor defaults to a size a
-# person can play in one sitting (PLAN §1, item 1), and a pack that wants
-# a different number of minutes writes it.
-DEFAULT_SIZE = {"w": (48, 64), "h": (32, 44)}
-DEFAULT_ROOMS = (12, 18)
+# What a Section gets when it says nothing. Its floor size and kind come
+# from `vefr.sections` (`_v3_floor`), the same numbers `vefr check` sweeps.
 DEFAULT_FOG_RADIUS = 5
 DEFAULT_FAMILY = "a stranger in the dark"
 
@@ -440,16 +437,6 @@ def _range_of(section: dict, key: str, default: tuple[int, int]) -> tuple[int, i
             and value[0] <= value[1]):
         return int(value[0]), int(value[1])
     return default
-
-
-def _size_range(section: dict, axis: str) -> tuple[int, int]:
-    size = section.get('size')
-    value = size.get(axis) if isinstance(size, dict) else None
-    if (isinstance(value, (list, tuple)) and len(value) == 2
-            and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
-            and value[0] <= value[1] and value[0] >= 5):
-        return int(value[0]), int(value[1])
-    return DEFAULT_SIZE[axis]
 
 
 def _floors_of(section: dict) -> int:
@@ -682,28 +669,6 @@ def mob_drops(key: str, mob_id: str, table) -> list[str]:
         return []
     rng = prng(loot_seed(key, mob_id))
     return [ids[int(rng() * len(ids))]]
-
-
-def plan_floor(key: str, section: dict, k: int) -> dict:
-    """The floor's plan: how big it is, and what kind of floor it is.
-
-    Draws from `v3|<key>|plan` only, in this order: width, height, rooms.
-    The kind is the Section's own pattern at position `k` - pack data,
-    not a draw - so the pattern may be edited without moving a wall.
-    """
-    w_lo, w_hi = _size_range(section, 'w')
-    h_lo, h_hi = _size_range(section, 'h')
-    r_lo, r_hi = _range_of(section, 'rooms', DEFAULT_ROOMS)
-    rng = prng(stream_seed(key, 'plan'))
-    w = _rand_range(rng, w_lo, w_hi)
-    h = _rand_range(rng, h_lo, h_hi)
-    rooms = _rand_range(rng, max(1, r_lo), max(1, r_hi))
-    pattern = section.get('pattern')
-    kind = 'n'
-    if isinstance(pattern, list) and 1 <= k <= len(pattern) \
-            and isinstance(pattern[k - 1], str):
-        kind = pattern[k - 1]
-    return {'kind': kind, 'w': w, 'h': h, 'rooms': rooms}
 
 
 def _stairs_of(rows: list[str]) -> tuple[tuple[int, int], tuple[int, int]]:
@@ -942,6 +907,25 @@ def place_books(plan: dict, books: list) -> dict:
     return out
 
 
+def _tile_or_none(value):
+    return [int(value[0]), int(value[1])] if isinstance(value, (list, tuple)) and len(value) == 2 else None
+
+
+def _v3_floor(run_seed: str, section: dict, cycle: int, k: int, key: str) -> dict:
+    """The v3 floor play draws: the same call `vefr check` sweeps (locks.py), so every floor a player
+    can reach is one the check has walked. Size and kind come from the Section (`sections.floor_size`,
+    `sections.floor_kind`); a kind outside the generator's four is drawn as `normal` rather than
+    raising mid-descent (the check refuses such a pack). No stamps yet: the woven pack carries none.
+    Python and the descent part's twin must agree (tests/fixtures/descent_parity_harness.mjs)."""
+    from vefr import delve_v3, sections   # both import this module
+    size = sections.floor_size(section, key)
+    kind = sections.floor_kind(section, k, run_seed, cycle)
+    if kind not in delve_v3.FLOOR_KINDS:
+        kind = 'normal'
+    floor = delve_v3.generate_floor_v3(run_seed, size, section, kind, [], k, cycle=cycle)
+    return {**floor, 'kind': kind}
+
+
 def floor_plan(descent, depth: int, run: int = 0) -> dict:
     """The whole floor at `depth`, JSON-able and drawn from the run seed.
 
@@ -953,10 +937,10 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     the stats their ids name.
     """
     cycle, section, k = locate(depth, descent)
-    key = floor_key(_run_seed_of(descent, run), section['id'], cycle, k)
-    plan = plan_floor(key, section, k)
-    rows = generate_floor_v2(stream_seed(key, 'layout'), plan['w'], plan['h'],
-                             plan['rooms'])
+    run_seed = _run_seed_of(descent, run)
+    key = floor_key(run_seed, section['id'], cycle, k)
+    floor = _v3_floor(run_seed, section, cycle, k, key)
+    rows = list(floor['rows'])
     up, down = _stairs_of(rows)
     fog = section.get('fog')
     radius = fog.get('radius') if isinstance(fog, dict) else None
@@ -972,9 +956,11 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
         'identity': {'gen': GEN_VERSION, 'hash': section_hash(section),
                      'key': key},
         'depth': depth, 'cycle': cycle, 'section': section['id'], 'k': k,
-        'kind': plan['kind'], 'w': plan['w'], 'h': plan['h'],
-        'rooms': plan['rooms'], 'rows': rows,
-        'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]]},
+        'kind': floor['kind'], 'gen': floor['gen'], 'w': floor['w'], 'h': floor['h'],
+        'rooms': len(floor['rooms']), 'rows': rows,
+        'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]],
+                    'warden': _tile_or_none(floor['anchors'].get('warden')),
+                    'vault': _tile_or_none(floor['anchors'].get('vault'))},
         'mobs': mobs_at(key, section, rows, up, down, source),
         'fog': {'radius': max(1, radius)},
     }

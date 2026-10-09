@@ -33,7 +33,7 @@ import pytest
 import play_kit
 from vefr import delve
 
-from test_descent_deltas import TOWN, TOWN_HERO, _doc, _go
+from test_descent_deltas import TOWN, TOWN_HERO, _doc, _go, _go_fight, _reachable_mob
 from test_descent_floors import DESCENT
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
@@ -45,7 +45,7 @@ READS = ["VEFR_COMBAT.region", "VEFR_COMBAT.enemies",
          "VEFR_DESCENT.floor", "VEFR_DESCENT.doc", "store"]
 
 PLAN = delve.floor_plan(DESCENT, 1)
-MOB = PLAN["mobs"][0]
+MOB = _reachable_mob(PLAN)
 
 
 def _play(tmp_path, steps, store=None):
@@ -106,8 +106,7 @@ def test_a_monster_killed_on_a_generated_floor_stays_killed_after_a_reload(tmp_p
     # one hit point, so the bump is the whole fight.
     steps = ["begin", _go(TOWN, TOWN_HERO, DESCENT["entry"]["at"]),
              "click:#interact", "wait:150",
-             _go(PLAN, PLAN["anchors"]["up"], MOB["at"],
-                 [m["at"] for m in PLAN["mobs"] if m["at"] != MOB["at"]])]
+             _go_fight(PLAN, MOB)]
     steps += ["wait:100"] * 8
     fought = _play(tmp_path, steps)
     assert fought["errors"] == [], fought["errors"]

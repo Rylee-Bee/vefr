@@ -33,7 +33,10 @@ def _quiet_descent():
     """The fixture's own descent with nothing living on the floors."""
     descent = copy.deepcopy(DESCENT)
     for section in descent["sections"]:
-        section["mobs"] = [0, 0]
+        # No family, no monster: the count is generator policy, so the old
+        # `mobs: [0, 0]` here was never read, and the walk passed only because
+        # no v2 monster stood on it (a v3 floor put one there, 2026-10-09).
+        section["families"] = []
     return descent
 
 
