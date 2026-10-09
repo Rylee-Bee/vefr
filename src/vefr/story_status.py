@@ -99,14 +99,16 @@ def _read(path: Path):
 def _records(data: dict):
     """Every record in one pack file that may carry `status`.
 
-    Each is `(surface, scope, anchors, label, value)`: the scope is the
-    catalog the record sits in (`items`, `voices`, `speakers`) or None
-    for the two top-level lists, the anchors are the texts that locate
-    the record inside that scope - its own id, as JSON writes it - so
-    the gate can name a line as well as a file, and the label is what a
-    human reads. More than one anchor per record because a hand-written
-    pack spaces its JSON differently: the keyed form first, then the
-    bare id.
+    Each is `(surface, scope, anchors, index, label, value)`. The scope
+    is the JSON container the record sits in - `items`, `voices`,
+    `speakers`, `rules`, `album` - so the same id in two catalogs finds
+    its own record. The anchors are the texts that locate the record
+    inside that scope (its own id, as JSON writes it) and the index is
+    its position in the list, which is all an id-less rule or sticker
+    has. Between them the gate can name a line as well as a file, and
+    the label is what a human reads. More than one anchor per record
+    because a hand-written pack spaces its JSON differently: the keyed
+    form first, then the bare id.
     """
     items = data.get('items')
     if isinstance(items, dict):
@@ -140,22 +142,23 @@ def _records(data: dict):
             if isinstance(rule, dict) and 'status' in rule:
                 rid = rule.get('id')
                 # A rule with no id is already refused by `rules_errors`,
-                # so this label names it the way that message does
-                # rather than printing `None` as though it were a name.
-                named = rid if isinstance(rid, str) and rid else \
-                    f'at position {index}'
+                # so name it the way that message does - "the rule at
+                # position 1" - rather than printing `None` as though it
+                # were a name.
+                named = f"rule {rid!r}" if isinstance(rid, str) and rid \
+                    else f'the rule at position {index}'
                 yield ('rule', 'rules', _anchors(rid), index,
-                       f"rule {named!r}", rule['status'])
+                       named, rule['status'])
 
     album = data.get('album')
     if isinstance(album, list):
         for index, sticker in enumerate(album):
             if isinstance(sticker, dict) and 'status' in sticker:
                 sid = sticker.get('id')
-                named = sid if isinstance(sid, str) and sid else \
-                    f'at position {index}'
+                named = f"sticker {sid!r}" if isinstance(sid, str) and sid \
+                    else f'the sticker at position {index}'
                 yield ('sticker', 'album', _anchors(sid), index,
-                       f"sticker {named!r}{_titled(sticker.get('name'))}",
+                       f"{named}{_titled(sticker.get('name'))}",
                        sticker['status'])
 
 
