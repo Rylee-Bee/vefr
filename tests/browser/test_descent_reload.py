@@ -37,7 +37,10 @@ def _quiet(descent):
     """
     out = copy.deepcopy(descent)
     for section in out["sections"]:
-        section["mobs"] = [0, 0]
+        # No family, no monster: the count is generator policy, so `mobs` is
+        # never read; this walk passed on v2 only because no monster stood on
+        # it (E8-0, 2026-10-09).
+        section["families"] = []
     return out
 
 

@@ -25,15 +25,12 @@ window.VEFR_DESCENT = (function () {
 
   // The same numbers as `src/vefr/delve.py`; the parity harness is what
   // proves the two agree.
-  var GEN_VERSION = 3;
+  var GEN_VERSION = 4;   // 4: play floors are v3 geometry (E8-0); 3 was v2
   var STREAM_VERSION = 'v3';
   var MOB_SPACING = 7;
   var FLOOR_CAP = 40;
   var FLOOR_BYTES = 1500;
   var SAVE_BYTES = 250000;
-  var DEFAULT_SIZE_W = [48, 64];
-  var DEFAULT_SIZE_H = [32, 44];
-  var DEFAULT_ROOMS = [12, 18];
   var DEFAULT_FOG_RADIUS = 5;
   var DEFAULT_FAMILY = 'a stranger in the dark';
   var DOC_VERSION = 1;
@@ -100,16 +97,7 @@ window.VEFR_DESCENT = (function () {
     return fallback;
   }
 
-  function sizeRange(section, axis, fallback) {
-    var size = section ? section.size : null;
-    var value = (size && typeof size === 'object') ? size[axis] : null;
-    if (Array.isArray(value) && value.length === 2 &&
-        isWhole(value[0]) && isWhole(value[1]) &&
-        value[0] <= value[1] && value[0] >= 5) {
-      return [value[0], value[1]];
-    }
-    return fallback;
-  }
+
 
   function floorsOf(section) {
     var value = section ? section.floors : null;
@@ -223,21 +211,69 @@ window.VEFR_DESCENT = (function () {
   // ---- a floor, drawn (the twin of `floor_plan`) ----------------------
   function seedFor(run) { return runSeed(baseSeed(), run); }
 
-  function planFloor(key, section, k) {
-    var wr = sizeRange(section, 'w', DEFAULT_SIZE_W);
-    var hr = sizeRange(section, 'h', DEFAULT_SIZE_H);
-    var rr = rangeOf(section, 'rooms', DEFAULT_ROOMS);
-    var rng = window.VEFR_DELVE.prng(streamSeed(key, 'plan'));
-    var w = randRange(rng, wr[0], wr[1]);
-    var h = randRange(rng, hr[0], hr[1]);
-    var rooms = randRange(rng, Math.max(1, rr[0]), Math.max(1, rr[1]));
-    var kind = 'n';
-    var pattern = section ? section.pattern : null;
-    if (Array.isArray(pattern) && k >= 1 && k <= pattern.length &&
-        typeof pattern[k - 1] === 'string') {
-      kind = pattern[k - 1];
+  // ---- the Section's own floor size and kind (twins of `vefr.sections`) --
+  // Play draws exactly the floor `vefr check` sweeps (E8-0, 2026-10-09):
+  // `floor_size` on the `v3|<key>|size` stream, `floor_kind` on the
+  // `v3|<key>|special` stream, the same numbers in both languages.
+  var SECTION_SIZE = [[64, 64], [48, 48]];
+  var SIZE_BOUNDS = [[32, 128], [24, 96]];
+  var SECTION_FLOORS = 9;
+  var DEFAULT_PATTERN = ['entry', 'n', 'n', 'special', 'landing', 'n',
+                         'special', 'n', 'warden'];
+  var PATTERN_SLOTS = ['entry', 'n', 'special', 'landing', 'warden'];
+  var DEFAULT_SPECIALS = ['treasure', 'infested', 'hub'];
+
+  function wholePair(value, fallback) {
+    if (Array.isArray(value) && value.length === 2 &&
+        isWhole(value[0]) && isWhole(value[1])) {
+      return [Math.min(value[0], value[1]), Math.max(value[0], value[1])];
     }
-    return { kind: kind, w: w, h: h, rooms: rooms };
+    return fallback;
+  }
+  function clampTo(value, bounds) { return Math.max(bounds[0], Math.min(bounds[1], value)); }
+  function sectionFloors(section) {
+    var v = section ? section.floors : null;
+    return (isWhole(v) && v > 0) ? v : SECTION_FLOORS;
+  }
+  function sectionPattern(section) {
+    var raw = section ? section.pattern : null;
+    var slots = Array.isArray(raw)
+      ? raw.filter(function (x) { return typeof x === 'string' && PATTERN_SLOTS.indexOf(x) >= 0; })
+      : DEFAULT_PATTERN.slice();
+    while (slots.length < sectionFloors(section)) slots.push('n');
+    return slots;
+  }
+  function sectionSpecials(section) {
+    var raw = section ? section.specials : null;
+    if (Array.isArray(raw)) {
+      var named = raw.filter(function (x) { return typeof x === 'string' && x; });
+      if (named.length) return named;
+    }
+    return DEFAULT_SPECIALS;
+  }
+  function floorSize(section, key) {
+    var raw = (section && section.size && typeof section.size === 'object' &&
+               !Array.isArray(section.size)) ? section.size : null;
+    var w = wholePair(raw ? raw.w : null, SECTION_SIZE[0]);
+    var h = wholePair(raw ? raw.h : null, SECTION_SIZE[1]);
+    var wl = clampTo(w[0], SIZE_BOUNDS[0]), wh = clampTo(w[1], SIZE_BOUNDS[0]);
+    var hl = clampTo(h[0], SIZE_BOUNDS[1]), hh = clampTo(h[1], SIZE_BOUNDS[1]);
+    var rng = window.VEFR_DELVE.prng('v3|' + key + '|size');
+    var width = wl + Math.floor(rng() * (wh - wl + 1));
+    var height = hl + Math.floor(rng() * (hh - hl + 1));
+    return [width, height];
+  }
+  function floorKindOf(section, k, seed, cycle) {
+    var slots = sectionPattern(section);
+    var slot = (isWhole(k) && k >= 1 && k <= slots.length) ? slots[k - 1] : 'n';
+    if (slot !== 'special') return 'normal';
+    var kinds = sectionSpecials(section);
+    var id = (section && typeof section.id === 'string') ? section.id : '';
+    var rng = window.VEFR_DELVE.prng('v3|' + floorKey(seed, id, cycle, k) + '|special');
+    return kinds[Math.floor(rng() * kinds.length)];
+  }
+  function tileOrNull(value) {
+    return (Array.isArray(value) && value.length === 2) ? [value[0], value[1]] : null;
   }
 
   function sectionHash(section) { return hash12(canonical(section)); }
@@ -345,10 +381,15 @@ window.VEFR_DESCENT = (function () {
     if (!at) return null;
     var section = sections()[at.sectionIndex];
     var run0 = isWhole(run) ? run : currentRun();
-    var key = floorKey(seedFor(run0), at.section, at.cycle, at.k);
-    var plan = planFloor(key, section, at.k);
-    var rows = window.VEFR_DELVE.generateFloorV2(streamSeed(key, 'layout'),
-                                                  plan.w, plan.h, plan.rooms);
+    var seed = seedFor(run0);
+    var key = floorKey(seed, at.section, at.cycle, at.k);
+    // the floor `vefr check` sweeps: the twin of delve.py `_v3_floor`
+    var size = floorSize(section, key);
+    var kind = floorKindOf(section, at.k, seed, at.cycle);
+    var D = window.VEFR_DELVE;
+    if (D.v3Constants.FLOOR_KINDS.indexOf(kind) < 0) kind = 'normal';
+    var floor = D.generateFloorV3(seed, size, section, kind, [], at.k, at.cycle);
+    var rows = floor.rows.slice();
     var up = null, down = null;
     for (var y = 0; y < rows.length && (!up || !down); y++) {
       for (var x = 0; x < rows[y].length; x++) {
@@ -363,8 +404,10 @@ window.VEFR_DESCENT = (function () {
       name: floorName(at.section, at.cycle, at.k), key: key,
       identity: { gen: GEN_VERSION, hash: sectionHash(section), key: key },
       depth: depth, cycle: at.cycle, section: at.section, k: at.k,
-      kind: plan.kind, w: plan.w, h: plan.h, rooms: plan.rooms, rows: rows,
-      anchors: { up: up, down: down },
+      kind: kind, gen: floor.gen, w: floor.w, h: floor.h,
+      rooms: floor.rooms.length, rows: rows,
+      anchors: { up: up, down: down, warden: tileOrNull(floor.anchors.warden),
+                 vault: tileOrNull(floor.anchors.vault) },
       mobs: mobsAt(key, section, rows, up, down),
       fog: { radius: Math.max(1, radius) }
     };
@@ -1262,7 +1305,7 @@ window.VEFR_DESCENT = (function () {
     streamSeed: streamSeed, lootSeed: lootSeed, chestSeed: chestSeed,
     runSeed: runSeed, sectionHash: sectionHash, parseName: parseName,
     isGenerated: isGenerated, depthOfName: depthOfName, floorPlan: floorPlan,
-    planFloor: planFloor, mobsAt: mobsAt, mobDrops: mobDrops, placeBooks: placeBooks,
+    floorSize: floorSize, floorKindOf: floorKindOf, mobsAt: mobsAt, mobDrops: mobDrops, placeBooks: placeBooks,
     ensureRegion: ensureRegion, onEnter: onEnter, entryHere: entryHere,
     wireEntry: wireEntry, docKey: docKey,
     loadDoc: loadDoc, saveDoc: saveDoc, trimDoc: trimDoc, fitDoc: fitDoc,

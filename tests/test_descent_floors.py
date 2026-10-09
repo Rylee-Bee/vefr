@@ -153,18 +153,25 @@ def test_a_floor_is_sized_by_the_packs_play_time_bounds():
         assert len(plan["rows"]) == plan["h"]
 
 
-def test_the_plan_stream_decides_the_kind_and_the_layout_stream_the_walls():
+def test_play_draws_the_floor_vefr_check_sweeps():
+    # E8-0 (2026-10-09): a play floor is the v3 floor `locks.py` sweeps for
+    # the same run seed, Section, cycle and k - so every floor a player can
+    # reach is one the check has walked. Size and kind are the Section's own
+    # (`sections.floor_size` / `floor_kind`), drawn on their own streams.
+    from vefr import delve_v3, sections
     for depth in DEPTHS:
         plan = delve.floor_plan(DESCENT, depth)
-        _, section, k = delve.locate(depth, DESCENT)
-        pattern = section.get("pattern")
-        assert plan["kind"] == (pattern[k - 1] if pattern else "n")
-        # Draw the layout by hand from the layout stream alone: the rows
-        # are the generator's, with no plan and no pack read anywhere.
-        rows = delve.generate_floor_v2(
-            delve.stream_seed(plan["key"], "layout"), plan["w"], plan["h"],
-            plan["rooms"])
-        assert rows == plan["rows"], depth
+        cycle, section, k = delve.locate(depth, DESCENT)
+        seed = DESCENT["run_seed"]
+        size = sections.floor_size(section, plan["key"])
+        kind = sections.floor_kind(section, k, seed, cycle)
+        swept = delve_v3.generate_floor_v3(seed, size, section, kind, [], k, cycle=cycle)
+        assert (plan["kind"], plan["w"], plan["h"]) == (kind, size[0], size[1]), depth
+        assert plan["rows"] == list(swept["rows"]), depth
+        assert plan["gen"] == swept["gen"] == 3, depth
+        assert plan["anchors"]["up"] == list(swept["anchors"]["up"]), depth
+        assert plan["anchors"]["warden"] == (list(swept["anchors"]["warden"])
+                                             if swept["anchors"]["warden"] else None), depth
 
 
 def test_the_plan_is_json_able_and_carries_no_grid_in_the_identity():

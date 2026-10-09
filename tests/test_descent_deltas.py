@@ -89,6 +89,28 @@ def _go(plan, start, goal, avoid=()):
     return "walk:" + ",".join(_path(plan, start, goal, avoid))
 
 
+def _go_fight(plan, mob):
+    """Walk from the up stair to `mob` around the others, then keep pressing the
+    last direction: a monster that saw the hero coming may have stepped a tile
+    up its corridor, and a bump is what starts a fight."""
+    others = [m["at"] for m in plan["mobs"] if m["at"] != mob["at"]]
+    path = _path(plan, plan["anchors"]["up"], mob["at"], others)
+    return "walk:" + ",".join(path + [path[-1]] * 3)
+
+
+def _reachable_mob(plan):
+    """The first monster the hero can walk to from the up stair without bumping another.
+
+    A v3 floor (E8-0) joins its rooms with corridors, so the first monster in
+    the list may sit behind another one; a fight test needs one it can reach.
+    """
+    for mob in plan["mobs"]:
+        others = [m["at"] for m in plan["mobs"] if m["at"] != mob["at"]]
+        if _path(plan, plan["anchors"]["up"], mob["at"], others):
+            return mob
+    raise AssertionError("no monster on this floor can be reached cleanly")
+
+
 TOWN = {"rows": (ROOT / "worlds" / "sample-world" / "acts" / "act-1" / "town"
                  / "map.md").read_text(encoding="utf-8").splitlines(),
         "w": 12, "h": 10}
@@ -254,11 +276,10 @@ def test_returning_to_town_clears_the_kills_and_keeps_the_memory(tmp_path):
     # stood, so the second session walks in on the dead monster - which is
     # exactly why the walk home is a clean one.
     plan = delve.floor_plan(DESCENT, 1)
-    mob = plan["mobs"][0]
+    mob = _reachable_mob(plan)
     fight = ["begin", _go(TOWN, TOWN_HERO, DESCENT["entry"]["at"]),
              "click:#interact", "wait:150"]
-    fight.append(_go(plan, plan["anchors"]["up"], mob["at"],
-                     [m["at"] for m in plan["mobs"] if m["at"] != mob["at"]]))
+    fight.append(_go_fight(plan, mob))
     fight += ["wait:100"] * 6
     killed = _play(tmp_path, fight, patch=DESCENT_PATCH)
     assert killed["errors"] == [], killed["errors"]
