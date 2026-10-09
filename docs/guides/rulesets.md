@@ -235,6 +235,19 @@ chest reachable from the up-stair. Code: `src/vefr/sections.py`,
 `src/vefr/locks.py` (`section_findings`), `src/vefr/cli.py`
 (`_bake_section`); tests: `tests/test_sections_e4.py`.
 
+A Section's `fog` is how far it sees: `{"radius": N}`, a whole number
+from 2 to 32, and the lit area around the arrival tile is a disc `N`
+tiles in radius. The ceiling is a quarter of the widest floor `size`
+allows (`size.w` tops out at 128), so a Section says its sight as a
+fraction of the floor it declares rather than against a fixed number -
+read it at the table as `shapes.FOG_RADIUS_MAX`, which is `SIZE`'s
+largest `w` over four. A Section that leaves `fog` out gets the engine's
+default (5) and plays exactly as before; this range bounds what a pack
+may ask for, and changes nothing a pack left out. The lit area is a
+disc, which a floor of rooms is not: what else to draw, and whether
+sight should grow with what the hero has seen, is #364's open question
+rather than this table's.
+
 ## regions + transitions (doors between maps)
 
 An act may declare several `regions`, each its own directory under
