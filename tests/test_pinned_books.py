@@ -99,7 +99,7 @@ def test_pinned_books_on_generated_floors_check_clean(pack):
 
 @pytest.mark.parametrize("front, says", [
     ({"region": "town", "place": "near-up"}, "place is for a book on a generated floor; town is drawn by hand, so give at: [x, y]"),
-    ({"region": "cellar-0-1", "place": "somewhere"}, "place must be near-up, near-down or anywhere"),
+    ({"region": "cellar-0-1", "place": "somewhere"}, "place must be near-up, near-down, anywhere, vault-note or vault-chest"),
     ({"region": "cellar-0-1", "place": "near-up", "at": "[3, 4]"}, "a book with place takes no at"),
     ({"region": "cellar-0-9", "place": "near-up"}, "region 'cellar-0-9' is not a region of this pack"),
 ])

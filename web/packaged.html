@@ -7222,6 +7222,12 @@ window.VEFR_DESCENT = (function () {
       var door = plan.vault.door;
       map[door[1]] = withChar(map[door[1]], door[0], '+');
     }
+    if (plan.vault && plan.vault.home) {
+      var home = plan.vault.home, homeKey = home[0] + ',' + home[1];
+      map[home[1]] = withChar(map[home[1]], home[0], 'u');
+      pois[homeKey] = 'the stair home';
+      poiText[homeKey] = 'Steps climb out of the vault, all the way home.';
+    }
     return {
       map: map, legend: legend, pois: pois, poi_text: poiText,
       hero_start: plan.anchors.up.slice(), sanctuary_tiles: [],
@@ -7274,6 +7280,13 @@ window.VEFR_DESCENT = (function () {
                                to: entry.region, to_at: entry.at.slice() });
       }
     }
+    // The vault's stair home (ADR 0015): inside the vault, so it is only
+    // reached through the door the warden's defeat opens.
+    var home = plan.vault ? plan.vault.home : null;
+    var way = entryHere();
+    if (home && way) {
+      pushTransition(list, { from: name, at: home.slice(), to: way.region, to_at: way.at.slice() });
+    }
     window.VEFR_TRANSITIONS = list;
   }
 
@@ -7312,6 +7325,7 @@ window.VEFR_DESCENT = (function () {
   // book per tile - from the floor's own `book|<id>` stream. The same run
   // always shows a book in the same place; a new run moves it.
   var BOOK_NEAR = [2, 6];
+  var VAULT_PLACES = { 'vault-note': 'note', 'vault-chest': 'chest' };   // twin of delve.VAULT_PLACES
 
   function floorDistances(rows, start) {
     var dist = {};
@@ -7338,6 +7352,11 @@ window.VEFR_DESCENT = (function () {
     taken[up[0] + ',' + up[1]] = true;
     taken[down[0] + ',' + down[1]] = true;
     (plan.mobs || []).forEach(function (m) { taken[m.at[0] + ',' + m.at[1]] = true; });
+    // The vault's own tiles are never a drawn book's (twin of place_books).
+    var vault = plan.vault || {}, reserved = {};
+    ['door', 'note', 'chest', 'home'].forEach(function (k) {
+      if (vault[k]) { reserved[vault[k][0] + ',' + vault[k][1]] = true; taken[vault[k][0] + ',' + vault[k][1]] = true; }
+    });
     var out = {};
     function xy(k) { var p = k.split(','); return [Number(p[0]), Number(p[1])]; }
     function free(k) {
@@ -7351,6 +7370,15 @@ window.VEFR_DESCENT = (function () {
     }
     books.slice().sort(function (a, b) { return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); })
       .forEach(function (book) {
+        // A vault book is pinned to the vault's note or chest, not drawn.
+        if (has(VAULT_PLACES, book.place)) {
+          var spot = vault[VAULT_PLACES[book.place]];
+          if (spot && reserved[spot[0] + ',' + spot[1]]) {
+            delete reserved[spot[0] + ',' + spot[1]];   // one book per vault tile
+            out[book.id] = [spot[0], spot[1]];
+          }
+          return;
+        }
         var tiles = book.place === 'near-up' ? within(fromUp, BOOK_NEAR[0], BOOK_NEAR[1])
           : (book.place === 'near-down' ? within(fromDown, BOOK_NEAR[0], BOOK_NEAR[1]) : []);
         if (!tiles.length) tiles = within(fromUp, BOOK_NEAR[0], null);
