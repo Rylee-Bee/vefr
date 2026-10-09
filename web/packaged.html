@@ -6720,6 +6720,31 @@ window.VEFR_DESCENT = (function () {
   // ---- a floor, drawn (the twin of `floor_plan`) ----------------------
   function seedFor(run) { return runSeed(baseSeed(), run); }
 
+  // ---- a floor's legend (the twin of `delve.section_legend`) -----------
+  // The shared `LEGEND` with the Section's own `tiles` laid on top, which is
+  // what makes two Sections in one descent draw different ground. Only a glyph
+  // the generator already draws is overridden, and only its `tile`: the base
+  // colours and the `solid` flag are the engine's. A Section with no `tiles`
+  // gets exactly the legend every generated floor has always had.
+  function sectionLegend(section) {
+    var legend = {};
+    Object.keys(LEGEND_FALLBACK).forEach(function (glyph) {
+      var spec = LEGEND_FALLBACK[glyph], copy = {};
+      Object.keys(spec).forEach(function (field) { copy[field] = spec[field]; });
+      legend[glyph] = copy;
+    });
+    var tiles = (section && typeof section.tiles === 'object' &&
+                 section.tiles && !Array.isArray(section.tiles)) ? section.tiles : null;
+    if (!tiles) return legend;
+    Object.keys(tiles).sort().forEach(function (glyph) {
+      var name = tiles[glyph];
+      if (typeof name === 'string' && name && isObj(legend[glyph])) {
+        legend[glyph].tile = name;
+      }
+    });
+    return legend;
+  }
+
   // ---- the Section's own floor size and kind (twins of `vefr.sections`) --
   // Play draws exactly the floor `vefr check` sweeps (E8-0, 2026-10-09):
   // `floor_size` on the `v3|<key>|size` stream, `floor_kind` on the
@@ -6850,10 +6875,26 @@ window.VEFR_DESCENT = (function () {
         return a.family < b.family ? -1 : (a.family > b.family ? 1 : 0); });
   }
 
-  function mobsAt(key, section, rows, up, down) {
+  // A Section's family entry may name a `depth` range - `[7, 9]` for a family
+  // meant for the last three floors of a nine-floor Section - and a range that
+  // is not read is a family on every floor of the Section, which is what the
+  // range was written to stop. `k` is the floor's own 1-based position inside
+  // its Section, not the global depth: the range is the Section's, and each
+  // Section counts from its own first floor. An entry with no range, or one
+  // that is not a `[lo, hi]` pair of whole numbers, is on every floor -
+  // `vefr check` says such a range out loud. The twin of `delve._family_on_floor`.
+  var FLOOR_SPAN = 99;
+  function familyOnFloor(family, k) {
+    var range = rangeOf(family, 'depth', [1, FLOOR_SPAN]);
+    return range[0] <= k && k <= range[1];
+  }
+
+  function mobsAt(key, section, rows, up, down, k) {
     var rng = window.VEFR_DELVE.prng(streamSeed(key, 'pop'));
     var count = mobBudget(rows);
-    var families = familiesOf(section);
+    var families = familiesOf(section).filter(function (f) {
+      return familyOnFloor(f, k);
+    });
     var pool = [];
     for (var f = 0; f < families.length; f++) {
       var weight = families[f].weight;
@@ -7120,10 +7161,11 @@ window.VEFR_DESCENT = (function () {
       rooms: floor.rooms.length, rows: rows,
       anchors: { up: up, down: down, warden: tileOrNull(floor.anchors.warden),
                  vault: tileOrNull(floor.anchors.vault) },
-      mobs: withWarden(mobsAt(key, section, rows, up, down), key, section, at.k,
-                       tileOrNull(floor.anchors.warden)),
+      mobs: withWarden(mobsAt(key, section, rows, up, down, at.k), key, section,
+                       at.k, tileOrNull(floor.anchors.warden)),
       warden: wardenRecord(section, at.k, at.cycle, tileOrNull(floor.anchors.warden)),
       vault: vaultRecord(floor, section, at.k, at.cycle),
+      legend: sectionLegend(section),
       fog: { radius: Math.max(1, radius) }
     };
   }
@@ -7410,7 +7452,11 @@ window.VEFR_DESCENT = (function () {
   var wired = {};
 
   function regionEntry(plan) {
-    var legend = (def() && isObj(def().legend)) ? def().legend : LEGEND_FALLBACK;
+    // The floor's own legend, which is its own Section's `tiles` over the
+    // shared one: two Sections in one descent draw different ground. The
+    // weave's shared legend is the floor for a plan that carries none.
+    var legend = isObj(plan.legend) ? plan.legend
+      : ((def() && isObj(def().legend)) ? def().legend : LEGEND_FALLBACK);
     var upKey = plan.anchors.up[0] + ',' + plan.anchors.up[1];
     var downKey = plan.anchors.down[0] + ',' + plan.anchors.down[1];
     var pois = {}, poiText = {};
@@ -7650,15 +7696,38 @@ window.VEFR_DESCENT = (function () {
     pinned.forEach(function (b) { if (at[b.id]) b.at = at[b.id]; });
   }
 
+  // The pictures a generated floor is drawn with, for this Section alone.
+  // The weave resolves each Section's `tiles` into real pictures and bakes
+  // them beside the Sections (`section_tiles`), so the two Sections of one
+  // descent carry different ground rather than both falling back to the
+  // pack's global tile set, which is the town's grass.
+  //
+  // A Section that names no `tiles` is given nothing here: its floors keep
+  // drawing whatever `window.VEFR_TILES` holds, which is exactly what they
+  // drew before any of this.
+  function wireRegionTiles(name, sectionId) {
+    var d = def();
+    var perSection = (d && isObj(d.section_tiles)) ? d.section_tiles : null;
+    var pictures = perSection && typeof sectionId === 'string'
+      ? perSection[sectionId] : null;
+    if (!isObj(pictures)) return false;
+    var table = window.VEFR_REGION_TILES;
+    if (!table) table = window.VEFR_REGION_TILES = {};
+    table[name] = pictures;
+    return true;
+  }
+
   function ensureRegion(name) {
     if (!on() || wired[name]) return false;
     var depth = depthOfName(name);
     if (!depth) return false;
+    var at = parseName(name);
     var plan = floorPlan(depth);
     if (!plan) return false;
     var regions = window.VEFR_REGIONS;
     if (!regions) return false;
     regions[name] = regionEntry(plan);
+    wireRegionTiles(name, at ? at.section : '');
     pinBooks(name, plan);
     var enemies = window.VEFR_ENEMIES;
     if (!enemies) enemies = window.VEFR_ENEMIES = {};
@@ -7831,11 +7900,13 @@ window.VEFR_DESCENT = (function () {
   function resetRegions() {
     var regions = window.VEFR_REGIONS;
     var enemies = window.VEFR_ENEMIES;
+    var regionTiles = window.VEFR_REGION_TILES;
     var names = Object.keys(isObj(regions) ? regions : {});
     for (var i = 0; i < names.length; i++) {
       if (!isGenerated(names[i])) continue;
       delete regions[names[i]];
       if (enemies) delete enemies[names[i]];
+      if (regionTiles) delete regionTiles[names[i]];
     }
     var list = window.VEFR_TRANSITIONS || [];
     var kept = [];

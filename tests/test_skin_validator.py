@@ -126,14 +126,20 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
 # refresh it, and to say in the commit message why it moved:
 #   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
 #     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
-# Last moved 2026-10-10, on the E8c tree. E8c changed the player: it adds
-# the town gate, the state a region shows and the descent's story-end
-# handling. The player template is woven into every pack, so the digest had
-# to be recomputed rather than carried over. Nothing about this pack's own
-# bytes moved - `worlds/sample-world` declares no skin, so the new
-# `window.VEFR_TOWN_STATES` bakes the literal null here exactly as
-# `window.VEFR_SKIN` does, and E8c did not touch the pack at all.
-NO_SKIN_WEAVE_SHA256 = "7ef6d4411e8a6f2661346fe6701d4a741173f33aaa94ec4085925c2649258dfe"
+# Last moved 2026-10-10, rebasing the S349 Section-tiles stack onto E8c.
+# Two player changes reach the woven pack from opposite sides of that rebase:
+# E8c adds the town gate, the state a region shows and the descent's
+# story-end handling, and S349 adds the per-Section tiles and the descent
+# lines that name them. Both land in the player template, which is woven into
+# every pack skinned or not, so neither side's digest could be carried over
+# and the two could not be composed: the digest is over the whole weave, not
+# a sum. Both sides were self-consistent before the rebase (E8c's tree
+# computed `7ef6d441...` and the S349 tip computed `86311d4c...`), so this
+# value is the digest of the merged tree and nothing else. Recomputed by the
+# documented command above. Nothing about this pack's own bytes moved -
+# `worlds/sample-world` declares no skin, so every new bake lands the literal
+# null here exactly as `window.VEFR_SKIN` does.
+NO_SKIN_WEAVE_SHA256 = "c6ff681f7f388380daefa18e197c88cd3fdcef1d67829a0b8f045fa496ab658d"
 
 
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():

@@ -12,7 +12,12 @@
    the first one is - the player reads the block at call time - and its
    answers come back under `blueprint`.
 
-   A third may come as `rolled`: `{descent, depths, items}`. The catalog
+   A third may come as `depthDescent` with `depthDepths`: a Section that
+   names its own `tiles` and whose families carry `depth` ranges. Each
+   answer is that floor's k, the families that drew on it and its legend,
+   under `depth`.
+
+   A fourth may come as `rolled`: `{descent, depths, items}`. The catalog
    is planted on `window.VEFR_ITEMS` for the duration of that block only -
    the same global the weave writes, read at call time - so the rolled
    draws (ADR 0017) are compared in both languages against a Python floor
@@ -56,6 +61,20 @@ if (cases.blueprintDescent) {
     const at = D.locate(depth);
     out.blueprint.located.push([at.cycle, at.section, at.k]);
     out.blueprint.plans.push(D.floorPlan(depth));
+  }
+}
+// The two keys the shape has to say something about and the floor has to
+// honour: a Section's `tiles` (its own ground) and a family's `depth` (which
+// of the Section's floors it lives on). Planted exactly as above; the answers
+// come back under `depth`.
+if (cases.depthDescent) {
+  w.VEFR_DESCENT_DEF = cases.depthDescent;
+  out.depth = [];
+  for (const depth of cases.depthDepths) {
+    const plan = D.floorPlan(depth);
+    const families = [...new Set((plan ? plan.mobs : []).map((m) => m.family))].sort();
+    out.depth.push({ depth, k: plan ? plan.k : null, families,
+                     legend: plan ? plan.legend : null });
   }
 }
 // Books pinned to a generated floor: `pins` is [{"depth", "run", "books"}], and

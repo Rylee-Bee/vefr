@@ -52,6 +52,32 @@ LEGEND = {
     "+": {"base": ["#3a2f24"], "solid": True, "tile": "dungeon-door"},
 }
 
+def section_legend(section) -> dict:
+    """The legend of one Section's floors: the shared `LEGEND` with its `tiles` laid on top.
+
+    A Section's `tiles` says which tileset each of the generator's own glyphs is
+    drawn with (`{".": "ember-flagstone"}`), which is what makes two Sections in
+    one descent draw different ground. Only a glyph the generator already draws
+    is overridden, and only its `tile` is: the base colours and the `solid` flag
+    are the engine's, because a floor that walked through its own wall would be
+    a different generator.
+
+    Pure, and a copy: `LEGEND` itself is never touched, so a Section with no
+    `tiles` gets exactly the legend every generated floor has always had. The
+    JavaScript twin is `sectionLegend` in web/player/parts/397-the-descent.js.
+    """
+    legend = {glyph: dict(spec) for glyph, spec in LEGEND.items()}
+    tiles = section.get('tiles') if isinstance(section, dict) else None
+    if not isinstance(tiles, dict):
+        return legend
+    for glyph in sorted(tiles, key=str):
+        name = tiles[glyph]
+        spec = legend.get(glyph)
+        if isinstance(name, str) and name and isinstance(spec, dict):
+            spec['tile'] = name
+    return legend
+
+
 # A generated floor is deep ground: near-black, lit only by the stairs.
 BG = "#0d0f12"
 HERO_COLOR = "#e8e5df"
@@ -436,6 +462,12 @@ DEFAULT_FAMILY = "a stranger in the dark"
 # leaving are never a fight the hero did not choose (the shipped spacing
 # rule).
 MOB_SPACING = 7
+
+# The high end of "every floor", used where a family names no `depth` range.
+# The Section contract caps `floors` at 11, so this covers any floor a Section
+# may have; it is a default and never a bound, since a range the pack wrote is
+# read exactly as written.
+_FLOOR_SPAN = 99
 
 
 def _range_of(section: dict, key: str, default: tuple[int, int]) -> tuple[int, int]:
@@ -958,8 +990,27 @@ def _mob_budget(rows: list[str]) -> int:
                max(delve_v3.MOBS_MIN, walkable // delve_v3.TILES_PER_MOB))
 
 
+def _family_on_floor(family: dict, k: int) -> bool:
+    """Whether a Section's family entry is drawn on floor `k` of its Section.
+
+    A family may write a `depth` range - `[7, 9]` for a family meant for the
+    last three floors of a nine-floor Section - and a range that is not read
+    is a family on every floor of the Section, which is what the range was
+    written to stop. `k` is the floor's own 1-based position inside the
+    Section, not the global depth: the range is the Section's, and the two
+    Sections of a descent each count from their own first floor.
+
+    An entry with no `depth`, or one that is not a `[lo, hi]` pair of whole
+    numbers, is on every floor: `vefr check` is what says such a range out
+    loud. No draw is spent either way, so honouring it moves no other monster.
+    """
+    lo, hi = _range_of(family, 'depth', (1, _FLOOR_SPAN))
+    return lo <= k <= hi
+
+
 def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
-            down: tuple[int, int], source=None, catalog=None) -> list[dict]:
+            down: tuple[int, int], source=None, catalog=None,
+            k: int = 1) -> list[dict]:
     """Who lives on this floor, drawn from `v3|<key>|pop`.
 
     A floor's monsters are placed on floor tiles at least `MOB_SPACING`
@@ -971,13 +1022,16 @@ def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
     carries as many as fit, never fewer than none. `source` is the
     descent's Blueprint: the families are resolved through it, so a
     monster carries the stats its family id names rather than the floor of
-    1 a bare Section entry gives. `catalog` is the pack's item catalog,
-    where an item's `roll` is read from (ADR 0017); with none, every drop
-    is the bare id it was before this argument existed.
+    1 a bare Section entry gives. `k` is this floor's position inside its
+    Section, and it is what a family's `depth` range is read against.
+    `catalog` is the pack's item catalog, where an item's `roll` is read
+    from (ADR 0017); with none, every drop is the bare id it was before
+    this argument existed.
     """
     rng = prng(stream_seed(key, 'pop'))
     count = _mob_budget(rows)
-    families = _families_of(section, source)
+    families = [f for f in _families_of(section, source)
+                if _family_on_floor(f, k)]
     pool: list[dict] = []
     for family in families:
         weight = family.get('weight')
@@ -1296,7 +1350,8 @@ def floor_plan(descent, depth: int, run: int = 0, catalog=None) -> dict:
     draw. The identity triple rides along so the save can tell this floor
     from the floor it drew last time. The descent's `blueprint` is the
     families' own records, so the monsters it fills the floor with carry
-    the stats their ids name.
+    the stats their ids name. The floor's `legend` is its own Section's
+    (`section_legend`), so two Sections in one descent draw different ground.
 
     `catalog` is the pack's `items` map, which is where a drop's `roll`
     is read from (ADR 0017). It is optional and defaults to None, so every
@@ -1329,11 +1384,12 @@ def floor_plan(descent, depth: int, run: int = 0, catalog=None) -> dict:
         'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]],
                     'warden': _tile_or_none(floor['anchors'].get('warden')),
                     'vault': _tile_or_none(floor['anchors'].get('vault'))},
-        'mobs': _with_warden(mobs_at(key, section, rows, up, down, source, catalog),
+        'mobs': _with_warden(mobs_at(key, section, rows, up, down, source, catalog, k),
                              key, section, k, floor['anchors'].get('warden'),
                              source, catalog),
         'warden': _warden_record(section, k, cycle, floor['anchors'].get('warden')),
         'vault': _vault_record(floor, section, k, cycle),
+        'legend': section_legend(section),
         'fog': {'radius': max(1, radius)},
     }
 
