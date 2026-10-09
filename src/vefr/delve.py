@@ -47,6 +47,9 @@ LEGEND = {
     ".": {"base": ["#1a1d22"], "tile": "dungeon-floor"},
     "u": {"base": ["#2b2f38"], "tile": "dungeon-stairs-up"},
     "d": {"base": ["#2b2f38"], "tile": "dungeon-stairs-down"},
+    # The vault door (ADR 0015) while it is shut; it opens to `.` when the
+    # warden falls. Never in a plan's rows - play paints it over the door tile.
+    "+": {"base": ["#3a2f24"], "solid": True, "tile": "dungeon-door"},
 }
 
 # A generated floor is deep ground: near-black, lit only by the stairs.
@@ -991,6 +994,27 @@ def _with_warden(mobs: list, key: str, section: dict, k: int, at, source) -> lis
     }]
 
 
+def _vault_record(floor: dict, section: dict, k: int, cycle: int) -> dict | None:
+    """The warden floor's vault (ADR 0015), or None: the placed vault stamp's door - the socket its
+    corridor came in through - and its note, chest and home anchors, with the flag that opens the door.
+
+    The door is shut until the Section's warden is beaten (`flag`); a Section with no warden has an open
+    vault (`flag` None). Only the warden floor's vault is the vault; a vault stamp elsewhere is a room."""
+    from . import sections  # here, not at the top: sections imports this module
+
+    if sections.slot(section, k) != 'warden':
+        return None
+    placement = next((p for p in floor.get('stamps') or [] if p.get('role') == 'vault'), None)
+    if placement is None:
+        return None
+    anchors = placement.get('anchors') or {}
+    warden = warden_of(section)
+    return {'stamp': placement['id'], 'door': _tile_or_none(placement.get('socket')),
+            'note': _tile_or_none(anchors.get('note')), 'chest': _tile_or_none(anchors.get('chest')),
+            'home': _tile_or_none(anchors.get('home')),
+            'flag': warden_flag(warden['id'], cycle) if warden else None}
+
+
 def _tile_or_none(value):
     return [int(value[0]), int(value[1])] if isinstance(value, (list, tuple)) and len(value) == 2 else None
 
@@ -1050,6 +1074,7 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
         'mobs': _with_warden(mobs_at(key, section, rows, up, down, source),
                              key, section, k, floor['anchors'].get('warden'), source),
         'warden': _warden_record(section, k, cycle, floor['anchors'].get('warden')),
+        'vault': _vault_record(floor, section, k, cycle),
         'fog': {'radius': max(1, radius)},
     }
 

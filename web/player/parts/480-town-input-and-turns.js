@@ -853,6 +853,9 @@
       return;
     }
     if ((town.legend[town.map[ny][nx]] || {}).solid) {
+      var shut = (window.VEFR_DESCENT && window.VEFR_DESCENT.shutDoorLine)
+        ? window.VEFR_DESCENT.shutDoorLine(regionName, nx, ny) : '';
+      if (shut) combatSay(shut);
       heroSettleSoon();
       return;
     }

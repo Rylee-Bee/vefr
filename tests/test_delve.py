@@ -175,8 +175,9 @@ def test_contract_names_the_stairs_and_the_legend():
     c = delve.contract(len(rows[0]), len(rows), up, down)
     assert c["hero_start"] == list(up)
     assert c["tile"] == 32
-    assert set(c["legend"]) == set("#.ud")
-    assert c["legend"]["#"]["solid"] is True
+    # `+` is the vault door while it is shut (ADR 0015, E8b): solid, and only ever painted in play.
+    assert set(c["legend"]) == set("#.ud+")
+    assert c["legend"]["#"]["solid"] is True and c["legend"]["+"]["solid"] is True
     assert f"{up[0]},{up[1]}" in c["pois"]
     assert f"{down[0]},{down[1]}" in c["pois"]
     assert set(c["poi_text"]) == set(c["pois"])
