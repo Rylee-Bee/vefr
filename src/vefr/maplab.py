@@ -2708,8 +2708,17 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # pack on disk; in-memory validation (chat drafts) has no books yet.
     if pack_dir is not None:
         from .library import load_library, validate_books
+        declared = set(region_geo)
+        for act in (w.get('acts') or []):
+            declared |= set((act.get('region_geo') or act.get('regions') or {}) if isinstance(act, dict) else ())
+        try:
+            from . import delve
+            descent = delve.descent_of(w, pack_dir) or None
+        except ValueError:
+            descent = None          # descent_errors() above has already said why
         errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
-                                     speakers=w.get('speakers')))
+                                     speakers=w.get('speakers'),
+                                     regions=declared, descent=descent))
 
     return errors
 
