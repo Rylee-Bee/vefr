@@ -153,14 +153,22 @@ def test_the_hero_dies_in_the_town_and_wakes_in_the_cellar(death):
 
 def test_both_events_fired_once_each_and_no_others(death):
     # Before the fatal step neither had happened; the whole death is the
-    # one step to the west.
-    assert death['flags-before'] == {}
+    # one step to the west. The engine seeds every DECLARED flag to false
+    # at boot (`newState`, web/player/parts/445-rules-engine.js:56-58), so
+    # "nothing had happened yet" is three falses, not an empty dict - and
+    # it says anything at all only because the harness copies the live
+    # flags object when it notes it.
+    assert death['flags-before'] == {'fell': False, 'awoke': False,
+                                     'arrived': False}
     after = death['flags-after']
     assert after['fell'] is True
     assert after['awoke'] is True
     # The control: a hero who dies where they stand walked through no
     # door, so `enters` never fired. This is the faked death ruled out.
-    assert after.get('arrived') is None
+    # `arrived` is declared, so it exists from boot and reads false; the
+    # bite is that nothing flipped it true, which is why this reads the
+    # flag itself rather than asking whether the key is there.
+    assert after['arrived'] is False
 
 
 def test_the_two_lines_reached_the_screen_in_order(death):
@@ -174,6 +182,16 @@ def test_the_two_lines_reached_the_screen_in_order(death):
 
 
 def test_each_event_carried_its_own_place(death):
+    # The engine writes every `why` line in one established shape - the
+    # rule id that fired, then the phrase the event builds
+    # (`"rule '" + rule.id + "' fired: " + phrase`, then a full stop,
+    # web/player/parts/445-rules-engine.js:333-335) - so this pins the
+    # whole line as it stands. The two lines are the point: `falls`
+    # carries the region the hero fell in and `wakes` the region they
+    # woke in, so "town" and "cellar" must each appear on their own
+    # line and neither may stand in for the other.
     why = {i: w for i, w in death['why']}
-    assert why['the-hero-fell'] == "the hero fell in town to pit-rat"
-    assert why['the-hero-woke'] == "the hero woke in cellar"
+    assert why['the-hero-fell'] == \
+        "rule 'the-hero-fell' fired: the hero fell in town to pit-rat."
+    assert why['the-hero-woke'] == \
+        "rule 'the-hero-woke' fired: the hero woke in cellar."

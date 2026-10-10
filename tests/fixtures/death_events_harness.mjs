@@ -46,6 +46,12 @@ const document = window.document;
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
 const snap = () => window.VEFR_COMBAT;
 const flags = () => ((window.VEFR_RULES_STATE || {}).flags) || {};
+/* The rules engine keeps ONE live flags object for the whole game and
+   writes into it, so a note that kept the reference would drift with the
+   game: a snapshot taken before the death would read out after it. Every
+   flags note is therefore a copy, taken when it is noted. (`why()` is
+   already a copy, because `.slice()` makes one.) */
+const flagsNow = () => Object.assign({}, flags());
 const why = () => (window.VEFR_WHY || []).slice();
 const sayLine = () => {
   const el = document.getElementById('combat-live');
@@ -85,7 +91,7 @@ try {
     return realSay(msg);
   };
 
-  note('flags-before', flags());
+  note('flags-before', flagsNow());
   note('why-before', why().map((e) => e.id));
 
   // ---- One step west: the bump that empties the health bar ----
@@ -94,7 +100,7 @@ try {
   await until(() => flags()['awoke'] === true, 'the wakes rule');
 
   const end = snap();
-  note('flags-after', flags());
+  note('flags-after', flagsNow());
   note('said', said);
   note('said-line', sayLine());
   note('end-region', end.region);
