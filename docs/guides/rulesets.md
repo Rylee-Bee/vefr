@@ -261,9 +261,9 @@ engine's, because a floor that walked through its own wall would be a
 different generator. A Section that names no `tiles` draws exactly what it
 drew before, so a pack with no `tiles` anywhere is unchanged.
 
-Of the 18 keys `shapes.SECTION` validates, the play-time descent reads 12:
+Of the keys `shapes.SECTION` validates, these reach the play-time descent:
 `id`, `floors`, `size`, `rooms`, `tiles`, `fog`, `families`, `pattern`,
-`specials`, `stamps`, `warden` and `vault`. The other **6 are validated but
+`specials`, `stamps`, `warden` and `vault`. The rest **are validated but
 not read at play**, and the shape says so on each one rather than letting
 them look live:
 
