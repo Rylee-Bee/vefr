@@ -28,7 +28,6 @@ import re
 import sys
 from pathlib import Path
 
-import pytest
 
 from vefr import cli, delve, maplab, shapes
 
