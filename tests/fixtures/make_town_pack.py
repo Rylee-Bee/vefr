@@ -155,7 +155,14 @@ def build(dest: Path, town_states=None, sections=None, descent=None,
 
     world_json = pack / "world.json"
     world = json.loads(world_json.read_text(encoding="utf-8"))
+    # This catalog replaces the sample's, so the pack can no longer hand
+    # over what the inherited chest book promises: a chest that drops ids
+    # world.json does not declare opens on nothing, which `vefr check`
+    # refuses by name (D114). The one item here is the pebble the walk's
+    # `give` test needs and nothing else, so that book goes - the fixture
+    # is about town states, not about a satchel.
     world["items"] = {"pebble": {"name": "a grey pebble", "value": 1}}
+    (pack / "library" / "a-travellers-satchel.md").unlink()
     world["player"] = {"hp": 40, "atk": 4, "gold": 0,
                        "wake": {"region": "town", "at": [3, 4]}}
     world["flags"] = copy.deepcopy(FLAGS)
