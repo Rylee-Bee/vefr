@@ -983,7 +983,11 @@ SECTION = Block(
             wired=False,
             wires='slice E6 puts the floor\'s points of interest in front of '
                   'the player; today the v3 stage names them and the floor '
-                  'plan drops them, so the names never reach the map'),
+                  'plan drops them, so the names never reach the map',
+            say={'wrong-type': '{path} must be a list of point-of-interest '
+                               'names, such as ["the rusted grate"]',
+                 'wrong-element': '{path} must be a point of interest, such '
+                                  'as "the rusted grate"'}),
         Key('warden', 'str-or-obj', lo=1, hi=40, sub=WARDEN,
             doc='the Blueprint family the warden on the `warden` floor is, '
                 'as a bare id or as a record naming its own `id` and the key '
