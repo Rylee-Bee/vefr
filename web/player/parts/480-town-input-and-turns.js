@@ -388,6 +388,102 @@
     journalVisit(name, hero[0], hero[1]);
   }
 
+  // ---- town states (ADR 0015) --------------------------------------------
+  // Which face of a region a player walks into: the LAST state whose
+  // `when` flag reads true, else the region's own base. Derived on every
+  // entry from the flags true at that moment and never stored, so a pack
+  // adds no save key and no runtime language - each `use` is an ordinary
+  // authored region, baked as it always was.
+  //
+  // The region KEEPS its own identity. `regionName` below is still the
+  // region the player entered, so all of a region's states share one
+  // save: its fog, its dropped items and its journal entry are the
+  // region's, not the state's. That is also why an arrival still fires
+  // `enters` for the region the author named rather than for the face of
+  // it the player landed on - a rule on `enters town` is a rule about
+  // arriving in town at all.
+  function storyFlagsNow() {
+    var truth = {};
+    var D = window.VEFR_DESCENT;
+    if (D && typeof D.flags === 'function') {
+      var own = D.flags() || {};
+      for (var k in own) {
+        if (Object.prototype.hasOwnProperty.call(own, k)) truth[k] = own[k];
+      }
+    }
+    var state = rulesStateNow();
+    var ruled = (state && state.flags) ? state.flags : {};
+    for (var j in ruled) {
+      if (Object.prototype.hasOwnProperty.call(ruled, j)) truth[j] = ruled[j];
+    }
+    return truth;
+  }
+
+  function townStateFor(name) {
+    var blocks = window.VEFR_TOWN_STATES;
+    if (!blocks) return name;
+    var listed = Array.isArray(blocks) ? blocks : [blocks];
+    var truth = null;
+    for (var i = 0; i < listed.length; i++) {
+      var block = listed[i];
+      if (!block || block.region !== name) continue;
+      var states = Array.isArray(block.states) ? block.states : [];
+      var chosen = name;
+      if (truth === null) truth = storyFlagsNow();
+      for (var j = 0; j < states.length; j++) {
+        var one = states[j];
+        if (!one || typeof one.when !== 'string' || !one.when) continue;
+        if (truth[one.when] === true && typeof one.use === 'string' && one.use) {
+          chosen = one.use;
+        }
+      }
+      // A `use` the pack never authored is refused by `vefr check`; if one
+      // slips through anyway the base loads rather than an empty map.
+      return (chosen === name || regions[chosen]) ? chosen : name;
+    }
+    return name;
+  }
+
+  function tileOpen(x, y) {
+    var rows = (town && town.map) || [];
+    if (!(y >= 0) || y >= rows.length) return false;
+    var row = rows[y] || '';
+    if (!(x >= 0) || x >= row.length) return false;
+    return !((town.legend[row.charAt(x)] || {}).solid);
+  }
+
+  // The floor tile nearest `[x, y]` by Manhattan distance, scanning
+  // row-major so a tie keeps the first tile found: the answer is the same
+  // on every machine and in both languages.
+  function nearestFloorTile(at) {
+    var rows = (town && town.map) || [], best = null, bestD = Infinity;
+    for (var y = 0; y < rows.length; y++) {
+      for (var x = 0; x < rows[y].length; x++) {
+        if (!tileOpen(x, y)) continue;
+        var d = Math.abs(x - at[0]) + Math.abs(y - at[1]);
+        if (d < bestD) { bestD = d; best = [x, y]; }
+      }
+    }
+    return best;
+  }
+
+  // A dropped item left in one face of a region can be standing against a
+  // wall in the next. All of a region's states share its save, so the
+  // item moves to the nearest floor tile rather than becoming something
+  // the player can never walk onto and so never pick up.
+  function settleDrops(name) {
+    var moved = false;
+    floor.forEach(function (d) {
+      if (!d || d.region !== name || !Array.isArray(d.at)) return;
+      if (tileOpen(d.at[0], d.at[1])) return;
+      var spot = nearestFloorTile(d.at);
+      if (!spot) return;
+      d.at = spot;
+      moved = true;
+    });
+    if (moved) saveFloor();
+  }
+
   // Enter another region through a door: swap the current map,
   // speakers, and hero, then resize, draw, and refresh the POI line.
   function enterRegion(name, at) {
@@ -400,13 +496,21 @@
       window.VEFR_DESCENT.ensureRegion(name);
     }
     if (!regions[name]) return;
+    // Which face of this region the story has earned (ADR 0015).
+    var where = townStateFor(name);
+    var changed = where !== name;
     fireRule('enters', { place: name });   // one `enters` per arrival
     regionName = name;
-    town = regionTown(name);
+    town = regionTown(where);
     legend = town.legend;
     pois = town.pois;
-    speakers = regionSpeakers(name);
-    hero = (at || town.hero_start).slice();
+    speakers = regionSpeakers(where);
+    // `at` is a tile of the region the door was written for. A state is
+    // another region entirely, so the hero stands on its own `hero_start`
+    // unless that tile happens to be open ground here too.
+    hero = (!changed || tileOpen(at && at[0], at && at[1]))
+      ? (at || town.hero_start).slice() : town.hero_start.slice();
+    if (changed) settleDrops(name);
     heroAnim = null;   // a new region's hero appears settled, not mid-hop
     heroSetPose('idle');
     fogOn = fogEnabled();
@@ -667,6 +771,11 @@
   // when the named item is in the bag, or the named flag reads true in
   // the rules state (a missing state leaves a flag lock shut). The key
   // is never consumed.
+  //
+  // A story flag the descent owns - the warden beats, and the town gate
+  // of ADR 0015 - lives in the descent's own save beside the floors, not
+  // in the rules state, so this asks both. It is still the one gate
+  // mechanism: `requires` through this function, whatever set the flag.
   function lockOpen(trans) {
     var req = trans && trans.requires;
     if (!req || typeof req !== 'object') return true;
@@ -675,6 +784,8 @@
     if (typeof req.flag === 'string' && req.flag) {
       var state = rulesStateNow();
       if (state && state.flags && state.flags[req.flag] === true) return true;
+      var D = window.VEFR_DESCENT;
+      if (D && typeof D.storyFlags === 'function' && D.storyFlags(req.flag)) return true;
     }
     return false;
   }

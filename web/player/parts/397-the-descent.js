@@ -399,6 +399,39 @@ window.VEFR_DESCENT = (function () {
     return null;
   }
   function wardenFlag(id, cycle) { return 'warden:' + id + ':c' + cycle; }
+
+  // ---- the vault's story flag, the town gate and the story end (E8c) --
+  // (twins of delve.py `vault_of`, `vault_flag`, `town_seen_flag`,
+  // `story_end_of` and `act_number`.) A Section's `vault` is either a
+  // stamp id, which names no story flag and therefore gates nothing, or a
+  // record `{"stamp": ..., "sets": ...}`. `sets` is what the vault's note
+  // records, and it is the guard ADR 0015 puts on the town gate: a visit
+  // to town only counts once this Section's note has been read.
+  var STORY_END_FLAG = 'king-slain';
+  function vaultFlag(section) {
+    var raw = section ? section.vault : null;
+    if (typeof raw === 'string' && raw) return null;
+    if (raw && typeof raw === 'object' && !Array.isArray(raw) &&
+        typeof raw.stamp === 'string' && raw.stamp &&
+        typeof raw.sets === 'string' && raw.sets) return raw.sets;
+    return null;
+  }
+  function townSeenFlag(sectionId, cycle) { return 'town-seen:' + sectionId + ':c' + cycle; }
+  function storyEnd() {
+    var d = def();
+    var value = (d && typeof d.story_end === 'string' && d.story_end) ? d.story_end : STORY_END_FLAG;
+    return value;
+  }
+  // The act a set of story flags puts the story in: one plus the vault
+  // notes actually read. Derived on every read, never stored (ADR 0015).
+  function actNumber(truth) {
+    var flags = isObj(truth) ? truth : {}, seen = [];
+    sections().forEach(function (s) {
+      var flag = vaultFlag(s);
+      if (flag && flags[flag] === true && seen.indexOf(flag) < 0) seen.push(flag);
+    });
+    return 1 + seen.length;
+  }
   function wardenRecord(section, k, cycle, at) {
     var warden = wardenOf(section);
     var slots = sectionPattern(section);
@@ -410,7 +443,10 @@ window.VEFR_DESCENT = (function () {
   }
   // The warden floor's vault (ADR 0015; twin of delve.py `_vault_record`):
   // the placed vault stamp's door - the socket its corridor came in by -
-  // its note, chest and home, and the warden flag that opens the door.
+  // its note, chest and home, the warden flag that opens the door, and
+  // `sets`: the flag the vault's NOTE records, the guard the town gate is
+  // behind (E8c). A Section whose `vault` is the bare stamp id E8b
+  // shipped names no flag and gets `sets: null`, exactly as Python does.
   function vaultRecord(floor, section, k, cycle) {
     var slots = sectionPattern(section);
     var slot = (isWhole(k) && k >= 1 && k <= slots.length) ? slots[k - 1] : 'n';
@@ -422,7 +458,8 @@ window.VEFR_DESCENT = (function () {
     return { stamp: placed.id, door: tileOrNull(placed.socket),
              note: tileOrNull(anchors.note), chest: tileOrNull(anchors.chest),
              home: tileOrNull(anchors.home),
-             flag: warden ? wardenFlag(warden.id, cycle) : null };
+             flag: warden ? wardenFlag(warden.id, cycle) : null,
+             sets: vaultFlag(section) };
   }
   function doorShut(plan) {
     return !!(plan && plan.vault && plan.vault.door && plan.vault.flag &&
@@ -910,6 +947,33 @@ window.VEFR_DESCENT = (function () {
     list.push(t);
   }
 
+  // The town gate (ADR 0015, "The town gate and the paid shortcut"): a
+  // Section whose vault names the flag its note records is gated on
+  // `town-seen:<section>:c<cycle>`, which a town visit sets once that
+  // note has been read. The stair that carries a player on into the next
+  // Section - the warden floor's down stair - carries the gate, and so
+  // does any stair in the town that enters a Section: both are the one
+  // mechanism, `requires` through `lockOpen`, and no pack writes either.
+  // A Section whose `vault` is the bare stamp id E8b shipped names no
+  // flag, gates nothing, and its stairs carry no `requires` at all.
+  var GATE_LOCKED = 'The stair is shut. Go up to town first: town knows '
+    + 'nothing of the way on until you have read what is kept down here.';
+
+  function townGate(sectionId, cycle) {
+    var here = sections().filter(function (s) { return s && s.id === sectionId; })[0];
+    return (here && vaultFlag(here)) ? townSeenFlag(sectionId, cycle) : null;
+  }
+
+  function gateFor(depth) {
+    // The gate on a stair that enters the Section playing at `depth`. A
+    // stair into the first Section has nothing behind it and is never
+    // gated; any later one is gated on the town visit the Section before
+    // it asked for.
+    var at = locate(depth);
+    if (!at || at.sectionIndex === 0) return null;
+    return townGate(sections()[at.sectionIndex - 1].id, at.cycle);
+  }
+
   // The stairs of a generated floor: down to the next depth, up to the
   // floor above - and the first floor's stair up is the way home.
   function wireFloor(name, plan) {
@@ -920,8 +984,13 @@ window.VEFR_DESCENT = (function () {
     if (down) {
       var below = floorPlan(plan.depth + 1);
       if (below) {
-        pushTransition(list, { from: name, at: plan.anchors.down.slice(),
-                               to: below.name, to_at: below.anchors.up.slice() });
+        var stair = { from: name, at: plan.anchors.down.slice(),
+                      to: below.name, to_at: below.anchors.up.slice() };
+        // The warden floor is the last floor of its Section, so its down
+        // stair is the gate into the next one.
+        var gate = townGate(plan.section, plan.cycle);
+        if (gate) { stair.requires = { flag: gate }; stair.locked_text = GATE_LOCKED; }
+        pushTransition(list, stair);
       }
     }
     var up = locate(plan.depth - 1);
@@ -971,8 +1040,16 @@ window.VEFR_DESCENT = (function () {
     if (!first) return;
     var plan = floorPlan(1);
     if (!plan) return;
-    pushTransition(list, { from: entry.region, at: entry.at.slice(),
-                           to: plan.name, to_at: plan.anchors.up.slice() });
+    var stair = { from: entry.region, at: entry.at.slice(),
+                  to: plan.name, to_at: plan.anchors.up.slice() };
+    // The town stair's entry for the next Section carries the same gate
+    // the warden's down stair does (ADR 0015). The pack's own stair enters
+    // the FIRST Section, which nothing lies behind and so is never gated;
+    // the moment the elevator rule offers a town stair per Section, this
+    // is what carries the gate on it.
+    var gate = gateFor(1);
+    if (gate) { stair.requires = { flag: gate }; stair.locked_text = GATE_LOCKED; }
+    pushTransition(list, stair);
     window.VEFR_TRANSITIONS = list;
   }
 
@@ -1098,6 +1175,7 @@ window.VEFR_DESCENT = (function () {
     var leaving = currentName;
     var entering = String(name === undefined ? '' : name);
     if (leaving && !isGenerated(entering)) {
+      markTownSeen(entering, leaving);
       returnToTown(leaving);
     }
     if (isGenerated(entering)) {
@@ -1105,6 +1183,41 @@ window.VEFR_DESCENT = (function () {
     } else {
       currentName = '';
     }
+  }
+
+  // ---- the rule on `enters town` the Section expansion emits (ADR 0015)
+  //
+  // `town-seen:<section>:c<cycle>` is a story flag, so it is derived here
+  // from the Section's own two facts - the flag its vault note records,
+  // and the region the descent starts from - and a pack never writes it.
+  // The guard is the vault's `sets` flag rather than the warden's, because
+  // the ADR wants the visit to mean something: walking through town on the
+  // way past is not the same as going home after reading what was kept.
+  function ruleFlags() {
+    var state = (typeof rulesStateNow === 'function') ? rulesStateNow() : null;
+    return (state && isObj(state.flags)) ? state.flags : {};
+  }
+
+  function vaultRead(section) {
+    var flag = vaultFlag(section);
+    if (!flag) return false;
+    return flags()[flag] === true || ruleFlags()[flag] === true;
+  }
+
+  function markTownSeen(region, leaving) {
+    var entry = entryHere();
+    if (!entry || entry.region !== String(region)) return [];
+    // The cycle is the one the player is walking out of; arriving in town
+    // from anywhere else (a landing's stair, a first run) is cycle 0.
+    var at = parseName(leaving || '');
+    var cycle = at ? at.cycle : 0;
+    var set = [];
+    sections().forEach(function (s) {
+      if (!s || !vaultRead(s)) return;
+      var flag = townSeenFlag(s.id, cycle);
+      if (flags()[flag] !== true) { setFlag(flag, true); set.push(flag); }
+    });
+    return set;
   }
 
   // Returning to town clears what the Section's floors produced - what was
@@ -1560,6 +1673,12 @@ window.VEFR_DESCENT = (function () {
     loadFog: loadFog, saveFog: saveFog,
     flags: flags, setFlag: setFlag, landings: landings,
     recordLanding: recordLanding,
+    // E8c: the story end, the town gate and the act, all derived reads.
+    // `storyFlags` is how the ONE gate mechanism (`lockOpen`) sees a
+    // story flag, which lives in the descent's own save beside the floors.
+    storyEnd: storyEnd, townSeenFlag: townSeenFlag, vaultFlag: vaultFlag,
+    townGate: townGate, markTownSeen: markTownSeen, actNumber: actNumber,
+    storyFlags: function (flag) { return !!flag && flags()[flag] === true; },
     needsCard: needsCard, cardShown: cardShown, offerCard: offerCard,
     keepOldSave: keepOldSave, startOver: startOver,
     bindDescent: bindDescent, startRun: startRun,
