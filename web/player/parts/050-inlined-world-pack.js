@@ -43,6 +43,11 @@ window.VEFR_TRANSITIONS = {{transitions_json}};
 // seed, the tile the descent starts from, and the Sections. `null` for a
 // pack that declares none, which is every pack but a descent's.
 window.VEFR_DESCENT_DEF = {{descent_json}};
+// The pack's optional town states (ADR 0015, E8c): the regions whose look
+// follows a story flag, one block for a region or a list of them. The
+// literal null when the pack declares none, which is every pack but a
+// descent's - and every region of it then plays as it always did.
+window.VEFR_TOWN_STATES = {{town_states_json}};
 // The act's speakers, grouped by the region they belong to (a speaker
 // with no `region` belongs to the act's first region).
 window.VEFR_SPEAKERS = {{speakers_json}};

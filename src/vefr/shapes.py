@@ -146,6 +146,12 @@ _DEFAULTS = {
                          '{given}'),
     'no-specials': ('a section\'s pattern asks for a special floor, and '
                     'names no specials'),
+    'not-a-block-or-list': ('{path} must be one town-states block, such as '
+                            '{example}, or a list of them'),
+    'duplicate-region': ('every region may name its town states once, and '
+                         '{region!r} names them twice'),
+    'unknown-region': ('every region a town state names must be one the '
+                       'pack declares, and {id!r} is not'),
 }
 
 # The kinds whose wrong values need a sentence of their own. A key's `say`
@@ -629,6 +635,11 @@ GROUPS = Block(
 # tile in a baked region it starts at, and the Sections it walks. Only
 # the run seed and the Section list are the engine's business; `card`
 # is the pack's own sentence for the one-time start-over card.
+#
+# `story_end` is ADR 0015 Amendment 1 section 1: the flag whose being true
+# ends the story and opens the endless board. It is optional and its
+# default is the flag the ADR's own design reached for, so a pack that
+# names none reads and plays exactly as it did.
 DESCENT = Block(
     name='descent',
     example='{"run_seed": "ember", "entry": {"region": "town", "at": [7, 5]},'
@@ -638,6 +649,9 @@ DESCENT = Block(
         Key('entry', 'obj', required=True),
         Key('sections', 'list', required=True),
         Key('card', 'obj'),
+        Key('story_end', 'str', lo=1, hi=64,
+            say={'wrong-type': '{path} must be the name of a flag, such as '
+                               '"king-slain"'}),
     ),
 )
 
@@ -845,6 +859,25 @@ WARDEN = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# A Section's vault (ADR 0015). A bare string is a stamp id and nothing
+# else, which is the shape E8b shipped and still plays exactly as it did;
+# the record adds the one thing E8c needs to gate on - `sets`, the flag
+# the vault's note records, which is what tells the engine a Section has
+# been seen. A Section that names no `sets` gets no town gate at all,
+# which is the same "the pack wrote nothing" answer every other optional
+# key here gives. ADR 0015's record also carries `note`, `chest`,
+# `needs` and `home`; those are the vault's own contents, E8b's slice,
+# and they stay out until the slices that read them land.
+VAULT = Block(
+    name='vault',
+    example='{"stamp": "vault-cellar", "sets": "vault-1-read"}',
+    keys=(
+        Key('stamp', 'str', lo=1, hi=40, required=True),
+        Key('sets', 'str', lo=1, hi=64, required=True),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
 SECTION = Block(
     name='section',
     example='{"section": 1, "id": "cellar", "floors": 9, "rooms": [12, 18]}',
@@ -881,9 +914,42 @@ SECTION = Block(
             say={'wrong-type': ('{path} must be a family id, such as '
                                 '"cellar-king", or a record, such as '
                                 '{{"family": "cellar-king", "carries": "cellar-key"}}')}),
-        Key('vault', 'str', lo=1, hi=40),
+        Key('vault', 'str-or-obj', lo=1, hi=40, sub=VAULT,
+            say={'wrong-type': ('{path} must be a stamp id, such as '
+                                '"vault-cellar", or a record, such as '
+                                '{{"stamp": "vault-cellar", '
+                                '"sets": "vault-1-read"}}')}),
     ),
     say={'missing-key': '{name} must hold its {key}'},
+)
+
+# Town states (ADR 0015, "Town states", and Amendment 1 section 3): the
+# regions whose look depends on a story flag. One block names one region
+# and the states that region takes; `use` is an ordinary authored region,
+# baked as it always was, and the LAST state whose `when` flag reads true
+# is the one that loads. These are two records in one block name because
+# the list form is the same record repeated - `check_town_states` walks
+# both, and nothing else in the table has to know which shape it is on.
+TOWN_STATE = Block(
+    name='town state',
+    example='{"id": "act-2", "when": "vault-1-read", "use": "town-act-2"}',
+    keys=(
+        Key('id', 'str', lo=1, hi=40, required=True),
+        Key('when', 'str', lo=1, hi=64, required=True),
+        Key('use', 'str', lo=1, hi=64, required=True),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+TOWN_STATES = Block(
+    name='town states',
+    example='{"region": "town", "states": [{"id": "act-2", '
+            '"when": "vault-1-read", "use": "town-act-2"}]}',
+    keys=(
+        Key('region', 'str', lo=1, hi=64, required=True),
+        Key('states', 'list', sub=TOWN_STATE, required=True),
+    ),
+    say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
 # A scenario is one pack file, `scenarios/<name>.json`: a named game state
@@ -926,6 +992,8 @@ BLOCKS = {
     'descent': DESCENT,
     'descent entry': DESCENT_ENTRY,
     'section': SECTION,
+    'town states': TOWN_STATES,
+    'town state': TOWN_STATE,
     'scenario': SCENARIO,
     'scenario start': SCENARIO_START,
     'item': ITEM,
@@ -1007,6 +1075,78 @@ def check_descent(block: dict) -> list[Problem]:
             problems.append(Problem(
                 problem.code, f'/sections/{i}{problem.pointer[len("/section"):]}',
                 problem.sentence))
+    return problems
+
+
+def check_town_states(block) -> list[Problem]:
+    """Every problem with a pack's `town_states`, in either of its shapes.
+
+    ADR 0015 wrote one block for the town; Amendment 1 section 3 added a
+    list of them, one per region that changes. Both are `TOWN_STATES`
+    records and this walks both, so the table above never has to know
+    which shape it is on. A region may appear once: two blocks for one
+    region are two answers to "what does this town look like now", and
+    only one of them would ever load, so the second is a sentence rather
+    than a silent winner.
+    """
+    if isinstance(block, list):
+        listed, stems = list(block), [f'/town states/{i}'
+                                      for i in range(len(block))]
+    elif isinstance(block, dict):
+        listed, stems = [block], ['/town states']
+    else:
+        return [Problem(
+            'not-a-block-or-list', '/town states',
+            _DEFAULTS['not-a-block-or-list'].format(
+                path='town_states', example=TOWN_STATES.example))]
+
+    problems: list[Problem] = []
+    seen: set[str] = set()
+    for stem, entry in zip(stems, listed):
+        for problem in check(TOWN_STATES, entry):
+            problems.append(Problem(
+                problem.code,
+                f'{stem}{problem.pointer[len("/town states"):]}',
+                problem.sentence))
+        region = entry.get('region') if isinstance(entry, dict) else None
+        if not isinstance(region, str) or not region:
+            continue
+        if region in seen:
+            problems.append(Problem(
+                'duplicate-region', f'{stem}/region',
+                _DEFAULTS['duplicate-region'].format(region=region)))
+        seen.add(region)
+    return problems
+
+
+def check_town_regions(block, declared) -> list[Problem]:
+    """Every town-state `region` and `use` the pack does not declare.
+
+    Two records the table cannot compare: this block's names and the
+    pack's own region list. A `use` naming no region is a state that could
+    never load - the town would stay its base and say nothing - so it is a
+    sentence here rather than a silence in play. A pack that declares no
+    regions at all (`declared` empty) is not asked: the caller reads the
+    acts, and a pack with none has nothing to compare against."""
+    if not declared:
+        return []
+    listed = block if isinstance(block, list) else [block]
+    problems: list[Problem] = []
+    for i, entry in enumerate(listed):
+        if not isinstance(entry, dict):
+            continue
+        stem = f'/town states/{i}' if isinstance(block, list) else '/town states'
+        named = [(f'{stem}/region', entry.get('region'))]
+        states = entry.get('states')
+        if isinstance(states, list):
+            named += [(f'{stem}/states/{j}/use', state.get('use'))
+                      for j, state in enumerate(states)
+                      if isinstance(state, dict)]
+        for pointer, name in named:
+            if isinstance(name, str) and name and name not in declared:
+                problems.append(Problem(
+                    'unknown-region', pointer,
+                    _DEFAULTS['unknown-region'].format(id=name)))
     return problems
 
 

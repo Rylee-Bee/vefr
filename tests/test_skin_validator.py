@@ -126,15 +126,14 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
 # refresh it, and to say in the commit message why it moved:
 #   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
 #     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
-# Last moved 2026-10-10, on the tree that carries BOTH the pack events of
-# #376 (the hero dying and waking) and ADR 0017's rolled-loot slice. Both
-# changed the player template, so neither side's value was right for this
-# tree and the digest had to be recomputed rather than picked. The bag now
-# reads an instance record and a rolled floor's drop carries its rarity; the
-# hero's death and wake are pack events. Neither moved anything about this
-# pack's own bytes - `VEFR_ITEMS` is unchanged, and it is hashed separately
-# in `tests/test_rolled_loot.py`.
-NO_SKIN_WEAVE_SHA256 = "01014542281285ae3421dc021e4cc87838df44d0c921b87947bd01352486b0c6"
+# Last moved 2026-10-10, on the E8c tree. E8c changed the player: it adds
+# the town gate, the state a region shows and the descent's story-end
+# handling. The player template is woven into every pack, so the digest had
+# to be recomputed rather than carried over. Nothing about this pack's own
+# bytes moved - `worlds/sample-world` declares no skin, so the new
+# `window.VEFR_TOWN_STATES` bakes the literal null here exactly as
+# `window.VEFR_SKIN` does, and E8c did not touch the pack at all.
+NO_SKIN_WEAVE_SHA256 = "7ef6d4411e8a6f2661346fe6701d4a741173f33aaa94ec4085925c2649258dfe"
 
 
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():

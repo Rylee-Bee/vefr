@@ -10,9 +10,16 @@ Proposed. Becomes Accepted when slice E8 merges. Plan: `docs/plans/endless-dunge
 - **Spawn and flag:** the Section's warden stands on the v3 warden anchor as `w`, and its defeat sets `warden:<id>:c<c>`, which keeps it beaten.
 - **The key:** a Section's `warden` is either a name (spawned as that family; Cottage writes family ids such as `"cellar-king"`) or a record `{"family", "id"?, "carries"?}`. `carries` goes straight into the bag on defeat, and `vefr check` holds it to check 3: declared, `keep`, no `value`, dropped by no family.
 
-The record's other keys (`hp`, `atk`, `scale`, `hall`, `placement`, `endless`) and Amendment 1's `challenge`, `yields` and `fightable` are refused as unknown until their slices (E8d for the amendment) add them.
+E8b landed the vault: the stamp's socket is a door shut until the warden's flag is set, and its `note`, `chest` and `home` anchors hold the note, the loot and the stair home.
 
-This ADR amends **ADR 0006**: "act advance" becomes **town states**. The edit to 0006 and the roadmap's NEXT entry land in E8's PR.
+**E8c has landed the town half, in three parts:**
+- **The story end is a per-game flag.** A `descent` block may name `"story_end"`, default `king-slain`, and the progress walk reads it wherever this ADR says `king-slain` ends the story.
+- **Town states.** `town_states` is one block per region (the single block below is still valid), each `use` an ordinary authored region, the last true `when` winning on entry, derived and never stored, all of a region's states sharing that region's save identity. The act is 1 plus the number of true vault flags, which is what ADR 0006 is rescoped to.
+- **The gate and the walk.** A Section's `vault` may be a record `{"stamp", "sets"}`; `sets` is the flag its note records, and it guards `town-seen:<section>:c<c>`, which the Section expansion's rule on `enters town` sets. The gate rides `requires` on the warden's down stair (and on any town stair entering a Section, which is the elevator rule's to grow). `vefr check` runs the flag-only progress walk inside its 200-seed Section sweep: checks 4 and 5, one clear sentence for a flag nobody can set.
+
+The vault record's `note`, `chest`, `needs` and `home`, the warden record's other keys (`hp`, `atk`, `scale`, `hall`, `placement`, `endless`) and Amendment 1's `challenge`, `yields` and `fightable` are refused as unknown until their slices (E8d for the amendment) add them. The paid shortcut is E10, and so is cycle 1 of the walk.
+
+This ADR amends **ADR 0006**: "act advance" becomes **town states**. The edit to 0006 landed with E8c, in which ADR 0006's Status changed to **Superseded in part**.
 
 Rylee's calls:
 - a key warden ends each Section;
@@ -46,6 +53,8 @@ E0b found that `lockOpen` opens a transition when `requires.item` is in the bag 
 {"id":"vault-cellar","stamp":"vault-small","needs":"ashwing-key","note":"library/truth-one.md",
  "chest":["…"],"sets":"vault-1-read","home":"town"}
 ```
+
+- **The record as it stands (E8c).** A Section's `vault` is a stamp id, or a record holding `stamp` and `sets` - the two the engine reads today. `id`, `needs`, `note` and `chest` are refused as unknown until the slice that reads them lands; `needs` is already covered by the warden's `carries` (check 3), and the note and chest are library books pinned to the vault's anchors.
 
 - **Where it is.** The vault stamp sits on the warden floor. Its single `+` is the **vault door**.
 - **The door.** A transition with `requires: {"flag": "warden:<id>:c<c>"}`; its `locked_text` names the key. A flag, not the item, because keys are never consumed and a cycle-0 key would open every later vault. `needs` stays so `vefr check` can trace the key.
