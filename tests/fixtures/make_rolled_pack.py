@@ -92,6 +92,12 @@ def build(dest: Path, items=None, descent=None) -> Path:
             "sections": json.loads(json.dumps(SECTIONS)),
         }
     world["descent"] = descent
+    # The catalog above replaces the sample's, so the pack can no longer
+    # hand over what the inherited chest book promises: a chest that drops
+    # ids world.json does not declare opens on nothing, which `vefr check`
+    # refuses by name. Drop that book - this fixture's catalog is the
+    # point of the test, and it means to be exactly the three shapes.
+    (pack / "library" / "a-travellers-satchel.md").unlink()
     world_json.write_text(json.dumps(world), encoding="utf-8")
     # The Blueprint is a pack file beside world.json (ADR 0014): a Section
     # names a family by id, so the drops those families carry live here.
