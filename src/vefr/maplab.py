@@ -466,6 +466,154 @@ def item_slot_errors(item_id, spec, keys: frozenset = frozenset()) -> list[str]:
     return []
 
 
+# ---- rolled loot (ADR 0017): what a drawn item may be -----------------------
+# The bounds here are the draw's, not an author's: a whole weight, a whole
+# percentage, at most RARITY_NAMES names and TRAIT_POOL traits, so every
+# draw is one floor of a named stream and `int(rng() * total)` stays under
+# 2**31 in any pack that passes. Nothing else in the engine scales a
+# floating point number out of a pack, and nothing else should.
+RARITY_NAMES_MAX = 64
+RARITY_WEIGHT_MAX = 9999
+TRAIT_POOL_MAX = 16
+
+# What a roll asks for: any of these three keys and the pack has asked for
+# a hidden trait, so a `traits` pool that is empty beside them is a refusal
+# rather than a roll that can only ever come back bare.
+ROLL_ASKS = ('traits', 'chance', 'max')
+
+
+def item_rarity_of(spec) -> str:
+    """The item's own fixed `rarity`, or '' - one plain word, nothing else."""
+    if not isinstance(spec, dict):
+        return ''
+    rarity = spec.get('rarity')
+    if isinstance(rarity, str) and shapes.WORD.fullmatch(rarity):
+        return rarity
+    return ''
+
+
+def item_traits_of(spec) -> list:
+    """The `traits` list of this record - the item's own fixed traits, or a
+    roll's pool: plain words, once each, in pack order, at most
+    TRAIT_POOL_MAX."""
+    if not isinstance(spec, dict):
+        return []
+    listed = spec.get('traits')
+    if not isinstance(listed, list) or isinstance(listed, bool):
+        return []
+    out: list[str] = []
+    for word in listed:
+        if not isinstance(word, str) or not shapes.WORD.fullmatch(word):
+            continue
+        if word not in out:
+            out.append(word)
+        if len(out) >= TRAIT_POOL_MAX:
+            break
+    return out
+
+
+def item_rarity_table(spec) -> list:
+    """The `roll.rarity` table of this record: `[(name, weight)]` in pack
+    order, at most RARITY_NAMES_MAX, with every name that is not a plain
+    word and every weight that is not a whole number 1..RARITY_WEIGHT_MAX
+    dropped. A table the pack can draw from is a list; a table it cannot
+    is empty, and `item_roll_errors` is what names it."""
+    if not isinstance(spec, dict):
+        return []
+    table = spec.get('rarity')
+    if not isinstance(table, dict) or isinstance(table, bool):
+        return []
+    out: list[tuple] = []
+    for name, weight in table.items():
+        if not isinstance(name, str) or not shapes.WORD.fullmatch(name):
+            continue
+        if isinstance(weight, bool) or not isinstance(weight, int):
+            continue
+        if not 1 <= weight <= RARITY_WEIGHT_MAX:
+            continue
+        out.append((name, weight))
+        if len(out) >= RARITY_NAMES_MAX:
+            break
+    return out
+
+
+def item_roll_of(spec) -> dict:
+    """The item's drawable `roll`, read once for the validator, the bake
+    and the draw - `{}` when the pack names none worth drawing.
+
+    `{'rarity': [(name, weight)], 'traits': [...], 'chance': 0..100,
+    'max': 0..4}` with the defaults already resolved: a pack that named a
+    pool and no `chance` gets 100, and a pack that named no pool gets no
+    traits at all rather than a draw that cannot answer. A roll needs both
+    halves - a rarity table and a trait pool - so a roll that declared one
+    and not the other draws nothing and is named by `item_roll_errors`.
+    """
+    if not isinstance(spec, dict):
+        return {}
+    roll = spec.get('roll')
+    if not isinstance(roll, dict) or isinstance(roll, bool):
+        return {}
+    rarity = item_rarity_table(roll)
+    pool = item_traits_of(roll)
+    if not rarity or not pool:
+        return {}
+    chance = roll.get('chance')
+    if isinstance(chance, bool) or not isinstance(chance, int) or not 0 <= chance <= 100:
+        chance = 100
+    top = roll.get('max')
+    if isinstance(top, bool) or not isinstance(top, int) or not 0 <= top <= 4:
+        top = 1
+    return {'rarity': rarity, 'traits': pool, 'chance': chance, 'max': top}
+
+
+def item_roll_errors(item_id, spec) -> list[str]:
+    """Every problem with an item's optional `rarity`, `traits` and `roll`
+    (empty = good). ADR 0017.
+
+    Four refusals, each one sentence naming the item and the field:
+
+    - a `rarity` that is not one of the names the item's own `roll`
+      declares (an item with no roll may be fixed at any plain word);
+    - a trait that is not one plain word;
+    - a `roll` that declares no rarity table, or a table with no whole
+      weight in it;
+    - a `roll` that asks for traits and names no trait pool.
+
+    All four are additive: an item with none of the three keys passes, and
+    so does every item written before this slice.
+    """
+    label = str(spec.get('name') or item_id) if isinstance(spec, dict) else str(item_id)
+    where = (f"item '{label}'" if label == item_id
+             else f"item '{label}' ({item_id})")
+    errors = [f"{where} {p.sentence}"
+              for p in shapes.check_item(spec, at=f'items.{item_id}')]
+    named = spec.get('roll') if isinstance(spec, dict) else None
+    if not isinstance(named, dict) or isinstance(named, bool):
+        return errors          # the shape refusal above already spoke
+    names = [name for name, _ in item_rarity_table(named)]
+    if 'rarity' in named and isinstance(named['rarity'], dict) \
+            and not isinstance(named['rarity'], bool):
+        # A roll that names no table at all, or names one that is not an
+        # object, already has its sentence from the shape table above.
+        if not names:
+            errors.append(f"{where} roll must declare a rarity table of names "
+                          f"and whole weights, such as {{\"common\": 60}}")
+        rarity = item_rarity_of(spec)
+        if rarity and names and rarity not in names:
+            errors.append(f"{where} rarity must be one of the names its roll "
+                          f"declares: {_names_sentence(names)}")
+    if any(key in named for key in ROLL_ASKS) and not item_traits_of(named):
+        errors.append(f"{where} roll asks for traits but names no trait pool")
+    return errors
+
+
+def _names_sentence(names: list) -> str:
+    """`a`, `a and b`, `a, b and c` - the pack's own rarity names, listed."""
+    if len(names) == 1:
+        return names[0]
+    return ', '.join(names[:-1]) + ' and ' + names[-1]
+
+
 def _door_key_items(w: dict) -> frozenset:
     """The item ids a locked door names as its key, from every act.
 
@@ -2389,6 +2537,8 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # The item catalog's optional `light` and `slot`/`mods` fields
     # (design/equipment.md, step 1): checked here so a broken torch or a
     # bad slot is a pack-authoring error, not a silent no-op in play.
+    # `rarity`/`traits`/`roll` (ADR 0017) are checked beside them, for the
+    # same reason: a roll the pack cannot draw from is a silent no-op.
     items = w.get('items')
     if isinstance(items, dict):
         key_ids = _door_key_items(w)
@@ -2396,6 +2546,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             if isinstance(spec, dict):
                 errors.extend(item_light_errors(iid, spec))
                 errors.extend(item_slot_errors(iid, spec, key_ids))
+                errors.extend(item_roll_errors(iid, spec))
     # The pack's optional rules/flags/claims/people catalog: checked
     # beside the other optional catalogs so a broken rule is a
     # pack-authoring error, not a surprise in play. A pack that

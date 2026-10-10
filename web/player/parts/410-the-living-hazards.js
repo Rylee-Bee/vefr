@@ -55,8 +55,15 @@
     return generated ? id : id + '#' + sig;
   }
   function enemySig(raw) {
+    // A drop is the bare id it always was, or the instance a generated
+    // floor drew (ADR 0017) - which the signature names by its id and its
+    // rarity, so two rolls of the same thing are still two signatures.
+    var drops = (Array.isArray(raw.drops) ? raw.drops : []).map(function (d) {
+      return (typeof d === 'string') ? d
+        : ((d && d.item ? d.item : '') + ':' + (d && d.rarity ? d.rarity : ''));
+    }).join(',');
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
-            raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
+            raw.hp, raw.atk, drops].join('|');
   }
   function loadEnemies() {
     var dead = loadSlain();

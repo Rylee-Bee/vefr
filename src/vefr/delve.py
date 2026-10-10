@@ -580,6 +580,19 @@ def chest_seed(key: str, chest_id: str) -> str:
     return stream_seed(key, f'chest|{chest_id}')
 
 
+def roll_seed(key: str, mob_id: str, item_id: str) -> str:
+    """One drawn item's own roll stream (ADR 0017).
+
+    A named stream off the same floor key and the same monster the base
+    draw came from, so the rarity and the hidden traits cannot move when
+    the base id moves, two monsters cannot share a roll, and the order
+    monsters are killed in cannot change what any of them drop. The item
+    id is in the name, so a monster that could carry two rolled things
+    gives each its own stream rather than one shared draw.
+    """
+    return stream_seed(key, f'roll|{mob_id}|{item_id}')
+
+
 def run_seed(base: str, run: int = 0) -> str:
     """The run seed of a run: the pack's own for the first, counted after."""
     run = 0 if not isinstance(run, int) or isinstance(run, bool) else max(0, run)
@@ -672,18 +685,105 @@ def floor_identity(descent, depth: int, run: int = 0) -> dict:
     return {'gen': GEN_VERSION, 'hash': section_hash(section, stamps_of(descent)), 'key': key}
 
 
-def mob_drops(key: str, mob_id: str, table) -> list[str]:
+def item_draw(key: str, mob_id: str, item_id: str, entry) -> dict | str:
+    """The drop one drawn item is (ADR 0017).
+
+    A plain id when the pack fixed the thing and the pack said nothing
+    else about it - which is what every pack before this slice gets, so
+    every drop before this slice is the same string it was. Otherwise a
+    record the bag keeps as it is:
+
+        {'item': id, 'rarity': name, 'traits': [...], 'identified': False}
+
+    A pack that declares only a `rarity` or `traits` beside an item gets
+    those fixed - no draw, because there is no table to draw from - and
+    still gets an instance that says they are not identified yet. A pack
+    that declares a `roll` gets one draw on `v3|<key>|roll|<mob id>|<item
+    id>`: the rarity first, by the table's own weights, then the traits -
+    one question of whether it bears any at all (`chance` in 100), then
+    how many (`max`), then which, each drawn once from what is left.
+    Every one of those is `int(rng() * n)` with an `n` the pack's own
+    whole numbers built, so the draw is the same in Python and in the
+    JavaScript twin and holds in both directions.
+
+    `identified` is False on every rolled instance because the reveal is
+    the next slice: nothing here decides that a thing has been read, it
+    only refuses to pretend one has.
+    """
+    from .maplab import item_rarity_of, item_roll_of, item_traits_of
+
+    entry = entry if isinstance(entry, dict) else {}
+    roll = item_roll_of(entry)
+    fixed_rarity = item_rarity_of(entry)
+    fixed_traits = item_traits_of(entry)
+    if not roll:
+        if not fixed_rarity and not fixed_traits:
+            return item_id
+        return {'item': item_id, 'rarity': fixed_rarity,
+                'traits': list(fixed_traits), 'identified': False}
+    rng = prng(roll_seed(key, mob_id, item_id))
+    rarity = _weighted(rng, roll['rarity'])
+    return {'item': item_id, 'rarity': rarity,
+            'traits': _trait_draw(rng, roll), 'identified': False}
+
+
+def _weighted(rng, table: list) -> str:
+    """One name off a `[(name, weight)]` table: `int(rng() * total)` and a
+    walk down the weights, so the draw is a single floor of a single
+    stream and no float is compared with another."""
+    total = sum(weight for _, weight in table)
+    pick = int(rng() * total)
+    upto = 0
+    for name, weight in table:
+        upto += weight
+        if pick < upto:
+            return name
+    return table[-1][0]
+
+
+def _trait_draw(rng, roll: dict) -> list:
+    """The hidden traits one rolled item carries, in draw order.
+
+    One question whether it bears any (`chance` in 100), then how many
+    (1..`max`), then that many distinct words from the pool, each by
+    `int(rng() * len(left))` over what is left - so two traits never come
+    back the same word, and the same seed always draws the same two.
+    """
+    pool = list(roll['traits'])
+    top = roll['max']
+    if top < 1 or int(rng() * 100) >= roll['chance']:
+        return []
+    want = min(1 + int(rng() * top), len(pool))
+    out: list[str] = []
+    for _ in range(want):
+        out.append(pool.pop(int(rng() * len(pool))))
+    return out
+
+
+def mob_drops(key: str, mob_id: str, table, catalog=None) -> list:
     """What one monster carries, drawn from that monster's own stream.
 
     `table` is the monster family's list of drop ids. One draw off
     `v3|<key>|loot|<mob id>`, so two monsters never share a roll and the
     order monsters are killed in cannot change what they drop.
+
+    `catalog` is the pack's item catalog, which is where an item's `roll`
+    is read from - the same map `VEFR_ITEMS` is in the woven player, and
+    the same one the JavaScript twin reads. It is optional and defaults to
+    None, so every caller written before ADR 0017 - and every pack that
+    declares no `roll` - gets back the same list of bare ids it always
+    did. With a catalog, an entry that has a `roll` (or a fixed rarity or
+    traits) comes back as that item's instance record instead; see
+    `item_draw` for the draw and for why the two shapes coexist.
     """
     ids = [i for i in table if isinstance(i, str) and i] if isinstance(table, list) else []
     if not ids:
         return []
     rng = prng(loot_seed(key, mob_id))
-    return [ids[int(rng() * len(ids))]]
+    chosen = ids[int(rng() * len(ids))]
+    if not isinstance(catalog, dict):
+        return [chosen]
+    return [item_draw(key, mob_id, chosen, catalog.get(chosen))]
 
 
 def _stairs_of(rows: list[str]) -> tuple[tuple[int, int], tuple[int, int]]:
@@ -803,7 +903,7 @@ def _mob_budget(rows: list[str]) -> int:
 
 
 def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
-            down: tuple[int, int], source=None) -> list[dict]:
+            down: tuple[int, int], source=None, catalog=None) -> list[dict]:
     """Who lives on this floor, drawn from `v3|<key>|pop`.
 
     A floor's monsters are placed on floor tiles at least `MOB_SPACING`
@@ -815,7 +915,9 @@ def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
     carries as many as fit, never fewer than none. `source` is the
     descent's Blueprint: the families are resolved through it, so a
     monster carries the stats its family id names rather than the floor of
-    1 a bare Section entry gives.
+    1 a bare Section entry gives. `catalog` is the pack's item catalog,
+    where an item's `roll` is read from (ADR 0017); with none, every drop
+    is the bare id it was before this argument existed.
     """
     rng = prng(stream_seed(key, 'pop'))
     count = _mob_budget(rows)
@@ -847,7 +949,7 @@ def mobs_at(key: str, section: dict, rows: list[str], up: tuple[int, int],
             'name': family.get('name') or DEFAULT_FAMILY,
             'at': [at[0], at[1]], 'hp': max(1, hp), 'atk': max(1, atk),
             'sight': max(1, sight),
-            'drops': mob_drops(key, f'm{i}', drops),
+            'drops': mob_drops(key, f'm{i}', drops, catalog),
         })
     return mobs
 
@@ -979,7 +1081,8 @@ def _warden_record(section: dict, k: int, cycle: int, at) -> dict | None:
     return record
 
 
-def _with_warden(mobs: list, key: str, section: dict, k: int, at, source) -> list:
+def _with_warden(mobs: list, key: str, section: dict, k: int, at, source,
+                 catalog=None) -> list:
     """The floor's monsters, plus its warden on the warden anchor when this is the warden floor.
 
     The warden's stats are its family's, its health drawn on its own `warden` stream and its drops on
@@ -1003,7 +1106,8 @@ def _with_warden(mobs: list, key: str, section: dict, k: int, at, source) -> lis
         'id': WARDEN_MOB, 'family': family,
         'name': base.get('name') or DEFAULT_FAMILY,
         'at': tile, 'hp': max(1, hp), 'atk': max(1, atk), 'sight': max(1, sight),
-        'drops': mob_drops(key, WARDEN_MOB, base.get('drops')), 'warden': True,
+        'drops': mob_drops(key, WARDEN_MOB, base.get('drops'), catalog),
+        'warden': True,
     }]
 
 
@@ -1048,7 +1152,7 @@ def _v3_floor(run_seed: str, section: dict, cycle: int, k: int, key: str, stamps
     return {**floor, 'kind': kind}
 
 
-def floor_plan(descent, depth: int, run: int = 0) -> dict:
+def floor_plan(descent, depth: int, run: int = 0, catalog=None) -> dict:
     """The whole floor at `depth`, JSON-able and drawn from the run seed.
 
     The plan stream says how big the floor is, the layout stream carves
@@ -1057,6 +1161,11 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
     from the floor it drew last time. The descent's `blueprint` is the
     families' own records, so the monsters it fills the floor with carry
     the stats their ids name.
+
+    `catalog` is the pack's `items` map, which is where a drop's `roll`
+    is read from (ADR 0017). It is optional and defaults to None, so every
+    caller written before that argument - the validator, the guides, the
+    parity harness - gets a floor whose drops are the bare ids they were.
     """
     cycle, section, k = locate(depth, descent)
     run_seed = _run_seed_of(descent, run)
@@ -1084,8 +1193,9 @@ def floor_plan(descent, depth: int, run: int = 0) -> dict:
         'anchors': {'up': [up[0], up[1]], 'down': [down[0], down[1]],
                     'warden': _tile_or_none(floor['anchors'].get('warden')),
                     'vault': _tile_or_none(floor['anchors'].get('vault'))},
-        'mobs': _with_warden(mobs_at(key, section, rows, up, down, source),
-                             key, section, k, floor['anchors'].get('warden'), source),
+        'mobs': _with_warden(mobs_at(key, section, rows, up, down, source, catalog),
+                             key, section, k, floor['anchors'].get('warden'),
+                             source, catalog),
         'warden': _warden_record(section, k, cycle, floor['anchors'].get('warden')),
         'vault': _vault_record(floor, section, k, cycle),
         'fog': {'radius': max(1, radius)},

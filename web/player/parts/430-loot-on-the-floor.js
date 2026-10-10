@@ -2,13 +2,44 @@
   // A killed enemy leaves what it carried on the tile it died on; the
   // floor is remembered per world (`vefr-floor-<world>`, one list of
   // {region, at, item}) so leaving and coming back is honest about what
-  // is still lying there. Taking a drop removes it. No weight, no use,
-  // no drop, no sell, no identifying - this is the first slice only.
+  // is still lying there. A drop a generated floor drew also carries the
+  // rarity it was drawn at and the traits it is hiding (ADR 0017), and
+  // the bag keeps that instance rather than drawing it again. Taking a
+  // drop removes it. No weight, no use, no drop, no sell; identifying is
+  // the slice after this one.
   var floor = [];
 
   function floorKey() {
     var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
     return 'vefr-floor-' + w;
+  }
+  // What one drop record is, wherever it is being written: the three
+  // fields every drop has always had, plus the drawn instance a rolled
+  // drop carries (ADR 0017). A drop that carries no rarity and no traits
+  // is written as the three fields alone, so a pack that declares no
+  // `roll` saves and reloads exactly the bytes it always did.
+  function dropRecord(d) {
+    var out = { region: regionName, at: d.at.slice(), item: d.item };
+    var traits = (d.traits && d.traits.length) ? d.traits : null;
+    if (d.rarity || traits) {
+      out.rarity = d.rarity || '';
+      out.traits = traits ? traits.slice() : [];
+      out.identified = d.identified === true;
+    }
+    return out;
+  }
+  // The instance a drop is, read one way: a rolled record as itself, and
+  // a bare id (a town enemy, a chest, a rule) with whatever the catalog
+  // fixed on it - a fixed `rarity`/`traits` ride along unchanged, because
+  // a drop with no floor to seed it is never drawn from.
+  function dropInstance(d) {
+    if (d && typeof d === 'object' && !Array.isArray(d)) {
+      return { id: d.item, rarity: d.rarity || '',
+               traits: Array.isArray(d.traits) ? d.traits : [] };
+    }
+    var def = itemCatalog()[d];
+    return { id: d, rarity: (def && typeof def.rarity === 'string') ? def.rarity : '',
+             traits: (def && Array.isArray(def.traits)) ? def.traits : [] };
   }
   function loadFloor() {
     // A generated floor keeps its drops in its own delta record: with the
@@ -29,9 +60,7 @@
   }
   function saveFloor() {
     if (window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName)) {
-      window.VEFR_DESCENT.saveDrops(floor.map(function (d) {
-        return { region: regionName, at: d.at.slice(), item: d.item };
-      }));
+      window.VEFR_DESCENT.saveDrops(floor.map(dropRecord));
       return;
     }
     store.setJSON(floorKey(), floor);
@@ -41,19 +70,28 @@
       return d.region === regionName && d.at[0] === x && d.at[1] === y;
     });
   }
-  // Leave a killed enemy's drops where it died. Only a catalog item is
-  // placed; the bake already dropped an unknown id.
+  // Leave a killed enemy's drops where it died. A drop is either the
+  // record a generated floor drew (with its rarity and its hidden traits,
+  // ADR 0017) or a bare id, which takes whatever the catalog fixed on it.
+  // Only a catalog item is placed; the bake already dropped an unknown id.
   function placeDrops(at, ids) {
     var added = false;
-    (ids || []).forEach(function (id) {
-      if (!itemCatalog()[id]) return;
-      floor.push({ region: regionName, at: [at[0], at[1]], item: id });
+    (ids || []).forEach(function (entry) {
+      var inst = (entry && typeof entry === 'object' && !Array.isArray(entry))
+        ? { id: entry.item, rarity: entry.rarity || '',
+            traits: Array.isArray(entry.traits) ? entry.traits : [] }
+        : dropInstance(entry);
+      if (!inst.id || !itemCatalog()[inst.id]) return;
+      floor.push(dropRecord({
+        region: regionName, at: [at[0], at[1]], item: inst.id,
+        rarity: inst.rarity, traits: inst.traits, identified: false }));
       added = true;
     });
     if (added) saveFloor();
   }
   // Walking onto a drop takes every item lying on that tile. One plain
-  // line says what was taken; the bag panel and the strip redraw.
+  // line says what was taken - the thing and its rarity, at once, with
+  // nothing to wait for - and the bag panel and the strip redraw.
   function takeHere() {
     var here = dropsAt(hero[0], hero[1]);
     if (!here.length) return;
@@ -61,9 +99,10 @@
     // One `picks-up` per item actually bagged - a drop bagAdd refused
     // (an id the catalog lost) is not picked up and fires nothing.
     here.forEach(function (d) {
-      if (bagAdd(d.item)) {
-        names.push(itemName(d.item));
-        fireRule('picks-up', { what: d.item });
+      var inst = dropInstance(d);
+      if (bagAdd(inst.id, inst)) {
+        names.push(carriedName(inst));
+        fireRule('picks-up', { what: inst.id });
       }
     });
     floor = floor.filter(function (d) {
@@ -423,7 +462,15 @@
       bag: bagItems(),
       floor: floor.filter(function (d) { return d.region === regionName; })
         .map(function (d) {
-          return { at: d.at.slice(), item: d.item, name: itemName(d.item) };
+          var out = { at: d.at.slice(), item: d.item, name: itemName(d.item) };
+          // The drawn rarity rides in the snapshot too, so a harness can
+          // see what the bag will say - and only when there is one, so a
+          // pack that never rolls reads the snapshot it always read.
+          if (d.rarity) {
+            out.rarity = d.rarity;
+            out.identified = d.identified === true;
+          }
+          return out;
         })
     };
     return window.VEFR_COMBAT;
