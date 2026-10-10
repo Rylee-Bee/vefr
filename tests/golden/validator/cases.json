@@ -3580,7 +3580,7 @@
    }
   ],
   "errors": [
-   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault"
+   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden, vault and endless"
   ]
  },
  {
@@ -3693,8 +3693,8 @@
    }
   ],
   "errors": [
-   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault",
-   "sections/cellar.json: /section/alpha section has an unknown key 'alpha'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden and vault",
+   "sections/cellar.json: /section/zeta section has an unknown key 'zeta'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden, vault and endless",
+   "sections/cellar.json: /section/alpha section has an unknown key 'alpha'; it may only hold section, id, floors, size, rooms, tiles, fog, families, pattern, specials, elites, groups, curve, loot, stamps, pois, warden, vault and endless",
    "sections/cellar.json: /section/section section.section must be between 1 and 99",
    "sections/cellar.json: /section/rooms/0 section.rooms[0] must be between 6 and 40"
   ]
@@ -7285,6 +7285,664 @@
   "errors": [
    "sections/cellar.json: /section/pattern/8 section.pattern[8] must be \"entry\" or \"n\" or \"special\" or \"landing\" or \"warden\"",
    "sections/cellar.json: /families/0/family unknown family 'ghost'"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "an endless block with three one-field omens",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar",
+   "endless": {
+    "omens": [
+     {
+      "id": "darker",
+      "label": "Darker",
+      "fog_radius": -1
+     },
+     {
+      "id": "crowded",
+      "label": "Crowded",
+      "groups_per_floor": 1
+     },
+     {
+      "id": "proud",
+      "label": "Proud",
+      "warden_affixes": 1
+     }
+    ],
+    "picks": 3
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "an omen that names two fields",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar",
+   "endless": {
+    "omens": [
+     {
+      "id": "darker",
+      "fog_radius": -1,
+      "warden_affixes": 1
+     }
+    ],
+    "picks": 3
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /endless/omens/0 every omen changes exactly one field, and omen 0 names 2"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "omens with wrong values and an unknown key",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": "ashwing",
+   "vault": "vault-cellar",
+   "endless": {
+    "omens": [
+     {
+      "id": "two words",
+      "fog_radius": -9
+     },
+     {
+      "id": "crowded",
+      "groups_per_floor": 0
+     },
+     {
+      "id": "proud",
+      "warden_affixes": 3
+     },
+     {
+      "id": "spare",
+      "zeta": 1
+     }
+    ],
+    "picks": 9
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/endless/omens/0/id every omen must be named by one plain word, such as \"darker\"",
+   "sections/cellar.json: /section/endless/omens/0/fog_radius section.endless.omens[0].fog_radius must be between -3 and -1, because an omen only ever makes the fog tighter",
+   "sections/cellar.json: /section/endless/omens/1/groups_per_floor section.endless.omens[1].groups_per_floor must be between 1 and 2",
+   "sections/cellar.json: /section/endless/omens/2/warden_affixes section.endless.omens[2].warden_affixes must be between 1 and 2",
+   "sections/cellar.json: /section/endless/omens/3/zeta an omen may only hold an id, a label and one of fog_radius, groups_per_floor or warden_affixes, not 'zeta'",
+   "sections/cellar.json: /section/endless/picks section.endless.picks must be between 0 and 3",
+   "sections/cellar.json: /endless/omens/3 every omen changes exactly one field, and omen 3 names 0"
+  ]
+ },
+ {
+  "block": "section",
+  "case": "a warden's endless record, right and wrong",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": {
+    "family": "rat",
+    "endless": {
+     "affixes": 2
+    }
+   },
+   "vault": "vault-cellar",
+   "endless": {
+    "omens": [
+     {
+      "id": "darker",
+      "label": "Darker",
+      "fog_radius": -1
+     },
+     {
+      "id": "crowded",
+      "label": "Crowded",
+      "groups_per_floor": 1
+     },
+     {
+      "id": "proud",
+      "label": "Proud",
+      "warden_affixes": 1
+     }
+    ],
+    "picks": 3
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": []
+ },
+ {
+  "block": "section",
+  "case": "a warden's endless affixes out of range",
+  "section": {
+   "section": 1,
+   "id": "cellar",
+   "floors": 9,
+   "size": {
+    "w": [
+     64,
+     80
+    ],
+    "h": [
+     44,
+     56
+    ]
+   },
+   "rooms": [
+    12,
+    18
+   ],
+   "tiles": {
+    "#": "cellar-wall",
+    ".": "cellar-floor"
+   },
+   "fog": {
+    "radius": 4
+   },
+   "families": [
+    {
+     "family": "rat",
+     "weight": 5,
+     "depth": [
+      1,
+      6
+     ]
+    }
+   ],
+   "pattern": [
+    "entry",
+    "n",
+    "n",
+    "special",
+    "landing",
+    "n",
+    "special",
+    "n",
+    "warden"
+   ],
+   "specials": [
+    "treasure",
+    "infested",
+    "hub"
+   ],
+   "elites": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "affixes": [
+     "broad",
+     "quick"
+    ]
+   },
+   "groups": {
+    "per_floor": [
+     1,
+     2
+    ],
+    "minions": [
+     2,
+     3
+    ]
+   },
+   "curve": {
+    "hp": [
+     1.0,
+     1.4
+    ],
+    "atk": [
+     1.0,
+     1.3
+    ]
+   },
+   "loot": {
+    "tier": 1
+   },
+   "stamps": [
+    "cellar",
+    "any"
+   ],
+   "pois": [
+    "the rusted grate"
+   ],
+   "warden": {
+    "family": "rat",
+    "endless": {
+     "affixes": 5
+    }
+   },
+   "vault": "vault-cellar",
+   "endless": {
+    "omens": [
+     {
+      "id": "darker",
+      "label": "Darker",
+      "fog_radius": -1
+     },
+     {
+      "id": "crowded",
+      "label": "Crowded",
+      "groups_per_floor": 1
+     },
+     {
+      "id": "proud",
+      "label": "Proud",
+      "warden_affixes": 1
+     }
+    ],
+    "picks": 3
+   }
+  },
+  "affixes": [
+   {
+    "id": "broad",
+    "label": "Broad {name}"
+   },
+   {
+    "id": "quick",
+    "label": "Quick {name}"
+   }
+  ],
+  "errors": [
+   "sections/cellar.json: /section/warden/endless/affixes section.warden.endless.affixes must be between 0 and 2"
   ]
  }
 ]

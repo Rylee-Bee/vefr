@@ -1231,6 +1231,24 @@ def story_end_of(descent) -> str:
     return value if isinstance(value, str) and value else STORY_END_FLAG
 
 
+def board_open(descent, flags) -> bool:
+    """Whether this game may go past its story: is `story_end` true?
+
+    ADR 0015 Amendment 1 section 1: "Endless mode opens on `story_end`."
+    E8c wrote the flag (`story_end_of`) and this is the one question that
+    was left for the endless slice to ask: a depth past the story is
+    `vefr.sections.cycle_locate`'s business and a floor that may be
+    walked is this one's, so a hero who has not killed the King is still
+    on the story's last cycle however deep a depth says they are.
+
+    A flag set to anything but `True` is not set - the same reading
+    `act_number` gives every other story flag, so one save is read the
+    same way by every function that asks it a question.
+    """
+    truth = flags if isinstance(flags, dict) else {}
+    return truth.get(story_end_of(descent)) is True
+
+
 def act_number(sections, flags) -> int:
     """The act a set of story flags puts the story in: one plus its vaults.
 

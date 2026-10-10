@@ -20,7 +20,17 @@ vefr #364 changed ONE case here, "a fog radius out of range": the ceiling on a S
 value moved from 9 to 33 and its sentence from "between 2 and 8" to "between 2 and 32". That is
 the whole of the written reason: the case still pins the same pointer, the same sentence shape and
 the same place in the order - only the number the sentence quotes moved, and it moved because the
-number in the table did. Every other case's bytes are untouched, including the low end."""
+number in the table did. Every other case's bytes are untouched, including the low end.
+
+E10 added the `endless` block to the `section` table, and ONE captured sentence moved: the
+unknown-key sentence of two cases names every key the table holds, and it now ends "vault and
+endless" because `endless` is a key of that table. No value changed, no pointer changed, no case
+was dropped, and the new key was put LAST in the table so that every other name in that sentence
+keeps the order and the position it always had. Five cases were ADDED for a block that did not
+exist before ("an endless block with three one-field omens", "an omen that names two fields",
+"omens with wrong values and an unknown key", "a warden's endless record, right and wrong" and
+"a warden's endless affixes out of range"); their expected sentences were written out by hand from
+the table's own defaults and then re-captured from the code, exactly as E4's were."""
 import json
 from pathlib import Path
 

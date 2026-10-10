@@ -163,6 +163,11 @@ _DEFAULTS = {
                          '{region!r} names them twice'),
     'unknown-region': ('every region a town state names must be one the '
                        'pack declares, and {id!r} is not'),
+    # E10: an omen that names two fields would change two things, and the
+    # plan's whole promise is that choosing an omen changes the one field
+    # it says. Spoken at the omen, because that is what has to be fixed.
+    'no-omen-field': ('every omen changes exactly one field, and omen {i} '
+                      'names {given}'),
 }
 
 # The kinds whose wrong values need a sentence of their own. A key's `say`
@@ -725,6 +730,12 @@ SIZE = Block(
 SIZE_WIDTH_HI = next(k.hi for k in SIZE.keys if k.name == 'w')
 FOG_RADIUS_MAX = SIZE_WIDTH_HI // 4
 
+# The most groups one floor may carry, read from `GROUPS`. PLAN.md
+# section 1.4 caps a group at four members counting its leader, and a
+# floor's own `per_floor` ceiling is 3 - so 3 is the number an omen that
+# adds groups per floor stops at.
+GROUPS_PER_FLOOR_MAX = next(k.hi for k in GROUPS.keys if k.name == 'per_floor')
+
 # How far a Section sees. The lit area on a generated floor is a filled
 # disc of `radius` tiles around the arrival tile, so the radius reads as
 # a fraction of the floor the same Section declares rather than as a
@@ -748,6 +759,11 @@ FOG = Block(
     keys=(Key('radius', 'int', lo=2, hi=FOG_RADIUS_MAX, required=True),),
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
+
+# The fog's other end, read from the same block rather than written again:
+# a one-tile ring is not fog, so 2 is where a Section's radius starts, and
+# it is the floor a Darker omen stops at (`vefr.sections.fog_radius`).
+FOG_RADIUS_MIN = next(k.lo for k in FOG.keys if k.name == 'radius')
 
 FAMILY = Block(
     name='family',
@@ -855,6 +871,27 @@ ITEM = Block(
 # reads, and what it refuses.
 ITEM_ADDED = ('rarity', 'traits', 'roll')
 
+# A warden's own endless record (ADR 0015, "In cycles `c >= 1` it draws
+# `endless.affixes` affixes"). `affixes` is how many extra affixes an
+# endless cycle's warden carries over the story's, and it is bounded by
+# the same ceiling the Section's own `elites.affixes` list is held to
+# (ADR 0014, "2 lone elites"), because it is one more of the same thing.
+# A warden that names no `endless` carries none in any cycle, which is
+# what every warden in the tree gets today.
+WARDEN_ENDLESS = Block(
+    name='warden endless',
+    example='{"affixes": 1}',
+    keys=(Key('affixes', 'int', lo=0, hi=2, required=True),),
+    say={'missing-key': ('a warden\'s endless must hold its affixes, such as '
+                         '{example}')},
+)
+
+# The most affixes one endless warden may carry, read from the block that
+# bounds it rather than written again. A warden is a monster and ADR 0014
+# caps a monster's affixes, so `vefr.sections.warden_affixes` stops here
+# when a Proud omen is stacked on a warden that already draws two.
+AFFIXES_MAX = next(k.hi for k in WARDEN_ENDLESS.keys if k.name == 'affixes')
+
 # A Section's warden (ADR 0015): the Blueprint family it is, by id, or a
 # record naming that family and, optionally, the warden's own id (its flag is
 # `warden:<id>:c<cycle>`) and the key it `carries` into the bag when beaten.
@@ -866,6 +903,9 @@ WARDEN = Block(
         Key('family', 'str', lo=1, hi=40, required=True),
         Key('id', 'str', lo=1, hi=40),
         Key('carries', 'str', lo=1, hi=40),
+        Key('endless', 'obj', sub=WARDEN_ENDLESS,
+            say={'wrong-type': '{path} must be an object, such as '
+                               '{"affixes": 1}'}),
     ),
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
@@ -887,6 +927,95 @@ VAULT = Block(
         Key('sets', 'str', lo=1, hi=64, required=True),
     ),
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
+)
+
+# ------------------------------------------------- the endless cycles (E10)
+#
+# PLAN.md section 4: "At each Section stair, the player picks 0-3 omens"
+# and "Choosing an omen is the only way to make the dungeon harder". Two
+# facts about that line are the whole of this block's shape.
+#
+# **An omen names exactly one field.** That is not tidiness, it is the
+# acceptance test of the slice ("every omen changes only its stated
+# field"), and a table cannot enforce it, so `check_section` refuses an
+# omen that names none or names two - see `_omen_problems`. Three fields
+# are here because those are the three the engine can already change:
+#
+# | field | omen | the engine's own key it moves |
+# |---|---|---|
+# | `fog_radius` | Darker | the Section's `fog.radius`, down |
+# | `groups_per_floor` | Crowded | the Section's `groups.per_floor`, up |
+# | `warden_affixes` | Proud | the warden's `endless.affixes`, up |
+#
+# PLAN.md section 4 lists five, "for example". `Restless` (groups wake
+# from farther away) and `Lean` (fewer potions) name fields this engine
+# has no key for, and an omen whose field nothing reads would change
+# nothing - which is the one thing this block exists to make impossible.
+# They are left out rather than declared hollow, and they land with
+# whichever slice gives the engine a field to move.
+#
+# Each delta is bounded and SIGNED: an omen makes the dungeon harder, so
+# the fog may only shrink and the two counts may only grow. There is no
+# "brighter" omen, because a player-chosen omen that made the dungeon
+# easier is not the lever the plan describes.
+
+# How many omens a player may pick at one Section stair, and therefore
+# how many a pack may offer. PLAN.md section 4 writes "0-3"; the engine
+# bounds it rather than trusting the pack to keep the promise.
+OMEN_PICKS_MAX = 3
+
+# The three fields an omen may move, in table order. `vefr.sections`
+# reads this tuple for the same three fields, and the balance report
+# proves the two lists name the same fields.
+OMEN_FIELDS = ('fog_radius', 'groups_per_floor', 'warden_affixes')
+
+OMEN = Block(
+    name='omen',
+    example='{"id": "darker", "label": "Darker", "fog_radius": -1}',
+    keys=(
+        Key('id', 'word', required=True,
+            say={'missing-key': 'every omen must hold an id, such as "darker"',
+                 'wrong-type': 'every omen must be named by a string, '
+                               'such as "darker"',
+                 'wrong-element': 'every omen must be named by one plain '
+                                  'word, such as "darker"'}),
+        Key('label', 'str', lo=1, hi=40,
+            say={'wrong-type': '{path} must be a string, such as "Darker"'}),
+        Key('fog_radius', 'int', lo=-3, hi=-1,
+            say={'wrong-type': '{path} must be a whole number of tiles, '
+                               'such as -1',
+                 'out-of-range': '{path} must be between -3 and -1, because '
+                                 'an omen only ever makes the fog tighter'}),
+        Key('groups_per_floor', 'int', lo=1, hi=2,
+            say={'wrong-type': '{path} must be a whole number of groups, '
+                               'such as 1',
+                 'out-of-range': '{path} must be between 1 and 2'}),
+        Key('warden_affixes', 'int', lo=1, hi=2,
+            say={'wrong-type': '{path} must be a whole number of affixes, '
+                               'such as 1',
+                 'out-of-range': '{path} must be between 1 and 2'}),
+    ),
+    say={'unknown-key': ('an omen may only hold an id, a label and one of '
+                         'fog_radius, groups_per_floor or warden_affixes, '
+                         'not {key!r}')},
+)
+
+# A Section's endless block: the omens its stair offers, and how many of
+# them a player may take. Both keys are optional, so a pack that names
+# none of this behaves exactly as it did before the block existed.
+ENDLESS = Block(
+    name='endless',
+    example='{"omens": [{"id": "darker", "label": "Darker", '
+            '"fog_radius": -1}], "picks": 3}',
+    keys=(
+        Key('omens', 'list', sub=OMEN,
+            say={'wrong-type': '{path} must be a list of omens, such as '
+                               '[{"id": "darker", "fog_radius": -1}]'}),
+        Key('picks', 'int', lo=0, hi=OMEN_PICKS_MAX,
+            say={'wrong-type': '{path} must be a whole number of omens, '
+                               'such as 3',
+                 'out-of-range': '{path} must be between 0 and 3'}),
+    ),
 )
 
 SECTION = Block(
@@ -1003,6 +1132,10 @@ SECTION = Block(
                                 '"vault-cellar", or a record, such as '
                                 '{{"stamp": "vault-cellar", '
                                 '"sets": "vault-1-read"}}')}),
+        # E10, and LAST in the table so that every sentence captured
+        # before it lists the Section's other keys in the order it
+        # always did, with this one named at the end.
+        Key('endless', 'obj', sub=ENDLESS),
     ),
     say={'missing-key': '{name} must hold its {key}'},
 )
@@ -1359,7 +1492,42 @@ def check_section(section: dict, affixes=None, resolve=None) -> list[Problem]:
 
     problems.extend(_elite_leader_problems(section))
     problems.extend(_pattern_problems(section))
+    problems.extend(_omen_problems(section))
     return problems
+
+
+def _omen_problems(section: dict) -> list[Problem]:
+    """Every omen that does not move exactly one field.
+
+    PLAN.md section 4: "Each omen adds a star when the Section is
+    finished. Choosing an omen is the only way to make the dungeon
+    harder." An omen that moved two fields would make it harder in a way
+    nobody chose and nobody could name, so the count is refused rather
+    than trusted: one field, exactly, on every omen of the block.
+
+    The fields themselves are the table's business - `OMEN` refuses an id
+    that is not a word, a delta out of its signed range, and any key at
+    all that is not one of the three. What is left for this check is the
+    one fact no single value can carry, which is why it lives beside
+    `_pattern_problems` rather than in `OMEN`: the same reason.
+    """
+    block = section.get('endless')
+    if not isinstance(block, dict):
+        return []
+    omens = block.get('omens')
+    if not isinstance(omens, list):
+        return []
+    out: list[Problem] = []
+    for i, omen in enumerate(omens):
+        if not isinstance(omen, dict):
+            continue
+        given = sum(1 for field in OMEN_FIELDS if field in omen)
+        if given == 1:
+            continue
+        out.append(Problem(
+            'no-omen-field', f'/endless/omens/{i}',
+            _DEFAULTS['no-omen-field'].format(i=i, given=given)))
+    return out
 
 
 def _pattern_problems(section: dict) -> list[Problem]:
