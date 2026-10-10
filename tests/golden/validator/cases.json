@@ -4270,7 +4270,7 @@
     ".": "cellar-floor"
    },
    "fog": {
-    "radius": 9
+    "radius": 33
    },
    "families": [
     {
@@ -4352,7 +4352,7 @@
    }
   ],
   "errors": [
-   "sections/cellar.json: /section/fog/radius section.fog.radius must be between 2 and 8"
+   "sections/cellar.json: /section/fog/radius section.fog.radius must be between 2 and 32"
   ]
  },
  {
