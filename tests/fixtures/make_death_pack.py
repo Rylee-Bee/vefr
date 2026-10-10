@@ -97,6 +97,12 @@ def build(dest: Path) -> Path:
         "hp": 2, "atk": 2, "gold": 5,
         "wake": {"region": "cellar", "at": [1, 1]},
     }
+    # The catalog above replaces the sample's, so the pack can no longer
+    # hand over what the inherited chest book promises: a chest that drops
+    # ids world.json does not declare opens on nothing, which `vefr check`
+    # refuses by name. This catalog is here to serve the rat's one drop,
+    # not to carry a chest, so that book goes.
+    (pack / "library" / "a-travellers-satchel.md").unlink()
     world_json.write_text(json.dumps(world), encoding="utf-8")
 
     act_dir = pack / "acts" / "act-1"
