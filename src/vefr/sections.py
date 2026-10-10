@@ -67,12 +67,14 @@ TOUCH POINTS (written down before the first edit, as the slice asks)
 
 NOT IN THIS SLICE
 
-The endless cycles are E10: a depth past the last floor of the story
-raises rather than being clamped onto the last Section, because clamping
-would send a hero down floors that do not exist. The warden, the vault and
-the key that opens them are E8's, and the three special floor kinds are
-E9's - E4 draws WHICH of them a special slot is and leaves the rest to
-`delve_v3`, which already knows all three.
+The endless board itself - the tavern desk a hero chooses omens at, the
+star each finished Section earns, and the collection rewards behind them -
+is the slice after this one. This module answers the two questions the
+board asks of the data: WHERE a depth past the story is (`cycle_locate`),
+and WHAT the chosen omens do to the Section it is standing on
+(`modifier`). The three special floor kinds are E9's - E4 draws WHICH of
+them a special slot is and leaves the rest to `delve_v3`, which already
+knows all three.
 """
 
 from __future__ import annotations
@@ -81,7 +83,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from .delve import prng
+from .delve import DEFAULT_FOG_RADIUS, prng
+from .mob_stats import cycle_pct
 
 # The Section directory inside a pack, and the file name pattern under it.
 SECTIONS_DIR = 'sections'
@@ -299,9 +302,11 @@ def locate(depth: int, pack) -> tuple[int, dict, int]:
     as many floors as it has.
 
     `pack` is a list of Sections or a pack directory. The story is cycle 0;
-    a depth past the last floor of it raises `ValueError`, because the
-    endless cycles are slice E10 and clamping would answer with a floor
-    that is not there.
+    a depth past the last floor of it raises `ValueError`, because
+    clamping would answer with a floor that is not there. `cycle_locate`
+    below is the endless read, and it wraps rather than clamps - but only
+    past the story end, which is what makes a descent endless rather than
+    a pack that quietly answers for floors nobody wrote.
     """
     if isinstance(pack, (str, Path)):
         pack = load(pack)
@@ -313,8 +318,8 @@ def locate(depth: int, pack) -> tuple[int, dict, int]:
             return 0, section, depth
         depth -= count
     raise ValueError(
-        'that depth is past the last floor of the story; the endless '
-        'cycles are slice E10 and no Section answers for them yet')
+        'that depth is past the last floor of the story, so it is an '
+        'endless depth; read it with sections.cycle_locate')
 
 
 def depth(section: dict, k: int, pack=None) -> int | None:
@@ -460,3 +465,403 @@ def families(section: dict, resolve=None) -> list[dict]:
         out.append(dict(base) if isinstance(base, dict) else {})
         out[-1].update(entry)
     return out
+
+
+# ------------------------------------------- the endless cycles (slice E10)
+#
+# PLAN.md section 4 is the spec, and its two numbers are the ones this
+# module is not allowed to soften:
+#
+# - "The monster multiplier is `min(1 + 0.2*c, 1.6)`." That arithmetic is
+#   ADR 0014's `cycle pct`, and it lives in `vefr.mob_stats` where the
+#   stat formulas read it. `monster_multiplier` here is the same number
+#   under the name the plan uses, delegated rather than written twice,
+#   because two copies of a cap is one cap too many.
+# - "The loot tier caps at Section 3's tier + 1." `loot_tier_cap` is that
+#   cap, and `cycle_loot_tier` holds every depth to it in code rather
+#   than in a comment - which is what makes `scripts/balance_report.py`
+#   a gate rather than a printout.
+#
+# "The hero's level cap does not move" is stated here rather than
+# enforced, because the hero's level lives in the save and not in a
+# Section pack: a Section has no key that could raise it, which is the
+# strongest form the guarantee takes on this side.
+
+# The multiplier's ceiling, in whole hundredths. PLAN.md section 4
+# writes 1.6 and ADR 0014 writes `cycle pct = min(100 + 20*c, 160)`;
+# those are the same cap, and this constant is the plan's number under
+# the name the rest of the engine uses. `scripts/balance_report.py`
+# holds its own copy too - on purpose, because a gate that reads the
+# number it is checking checks nothing - and the two are compared there.
+MULTIPLIER_CAP = 160
+
+# What a Section whose `loot` block says nothing drops at. The plan does
+# not write a default tier, and a Section that names none has always
+# been a Section with no loot table of its own; 1 is the smallest tier
+# the `loot` block admits, so it is also the smallest honest answer.
+DEFAULT_LOOT_TIER = 1
+
+# How far past the deepest Section's tier the loot may go in an endless
+# cycle. PLAN.md section 4: "The loot tier caps at Section 3's tier + 1",
+# and in a three-Section story Section 3 IS the deepest Section - so the
+# cap is read off the pack's own last Section rather than off a hard
+# number, which is what makes the same line true for a two-Section pack
+# and for the fourth Section Cottage may add later.
+LOOT_TIER_STEP = 1
+
+
+def cycle_locate(depth: int, pack) -> tuple[int, dict, int]:
+    """Where a global `depth` is, story and endless alike: `(cycle, section, k)`.
+
+    The same read as `locate`, past the story's last floor instead of
+    raising: the Sections are walked in `ordered` order and the descent
+    starts again in cycle 1, then cycle 2, so depth 28 of a nine-floor
+    Section is `(1, <first Section>, 1)`.
+
+    This is PLAN.md section 2's determinism rule with one addition and
+    none removed. It is still pure and still derived only from the
+    Section list, so a floor can be located without loading it, and
+    cycle 0 is bit-for-bit what `locate` answers for every depth it
+    accepts - which the tests pin rather than assert in prose, because a
+    second read of the depth curve that disagreed with the first would be
+    two depth curves and one save.
+
+    `pack` is a list of Sections or a pack directory, as everywhere in
+    this module. A pack with no Sections has no depth to name and raises,
+    which is what `locate` does and for the same reason.
+    """
+    if isinstance(pack, (str, Path)):
+        pack = load(pack)
+    if not isinstance(depth, int) or isinstance(depth, bool) or depth < 1:
+        raise ValueError(f'depth must be a whole number of 1 or more, and it is {depth!r}')
+    walked = ordered(pack or ())
+    if not walked:
+        raise ValueError('that pack names no Sections, so it has no depth')
+    total = sum(floors(section) for section in walked)
+    cycle, within = divmod(depth - 1, total)
+    for section in walked:
+        count = floors(section)
+        if within < count:
+            return cycle, section, within + 1
+        within -= count
+    # Unreachable while `total` is the sum of the counts above; said out
+    # rather than left to fall off the end of the function.
+    raise ValueError(f'no Section answers for depth {depth}')
+
+
+def monster_multiplier(cycle: int) -> int:
+    """The endless multiplier for cycle `c`, in whole hundredths.
+
+    `min(1 + 0.2*c, 1.6)`, in hundredths: `cycle_pct(0) == 100`, one
+    hundredth below neutral nothing and `cycle_pct(3) == 160`, the cap.
+    Cycle 3 and cycle 300 are the same number, and that is the whole
+    point of PLAN.md section 1.3: "Endless at higher scaling is the
+    power-creep failure." Past cycle 3 the difficulty comes from omens.
+
+    The arithmetic is `vefr.mob_stats.cycle_pct`, delegated rather than
+    written a second time, and it never returns more than
+    `MULTIPLIER_CAP`. `scripts/balance_report.py` sweeps depths 1 to 300
+    and refuses the engine if it ever does.
+    """
+    c = cycle if isinstance(cycle, int) and not isinstance(cycle, bool) else 0
+    return cycle_pct(c if c >= 0 else 0)
+
+
+def loot_tier(section: dict) -> int:
+    """The loot tier a Section's own `loot` block names, or the default."""
+    block = section.get('loot') if isinstance(section, dict) else None
+    value = block.get('tier') if isinstance(block, dict) else None
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return value
+    return DEFAULT_LOOT_TIER
+
+
+def loot_tier_cap(pack) -> int:
+    """The highest loot tier any depth of this pack may drop.
+
+    PLAN.md section 4: "The loot tier caps at Section 3's tier + 1." Read
+    off the pack's deepest Section rather than hard-written, because in
+    the three-Section story the plan is written about the deepest Section
+    IS Section 3 - and a fourth Section added later moves the cap with
+    the same line.
+
+    An empty pack has no cap to speak of and gets the default tier plus
+    the step, which is the same answer a one-Section pack gets.
+    """
+    walked = pack if isinstance(pack, (list, tuple)) else (
+        load(pack) if isinstance(pack, (str, Path)) else [])
+    deepest = ordered(walked or [])
+    base = loot_tier(deepest[-1]) if deepest else DEFAULT_LOOT_TIER
+    return base + LOOT_TIER_STEP
+
+
+def cycle_loot_tier(section: dict, cycle: int, pack=None) -> int:
+    """The loot tier of one Section in one cycle, held to `loot_tier_cap`.
+
+    The cap is applied HERE, in code, which is what makes it a guarantee
+    rather than a convention: a pack whose Sections disagree about their
+    own tiers cannot drop a deeper one in an endless cycle, because the
+    deeper answer never leaves this function.
+
+    The story is cycle 0 and is not clamped - a Section 1 that declares
+    the same tier as Section 3 drops what it has always dropped, and
+    `scripts/balance_report.py` is what says out loud that such a pack is
+    asking for more than the plan allows rather than quietly hiding it.
+    """
+    tier = loot_tier(section)
+    c = cycle if isinstance(cycle, int) and not isinstance(cycle, bool) else 0
+    return tier if c <= 0 else min(tier, loot_tier_cap(pack or [section]))
+
+
+# ------------------------------------- omens as modifiers (slice E10, §4)
+#
+# "At each Section stair, the player picks 0-3 omens", and "each omen
+# changes only its stated field". The second sentence is the whole of
+# this half's design, so the API is shaped to make it provable rather than
+# merely intended:
+#
+# - `omen_field(omen)` answers the ONE field an omen moves, and refuses
+#   an omen that names none or two. `vefr check` says the same thing
+#   with a sentence; this is what the engine would do about it.
+# - `omen_delta(section, omens, field)` is the sum of the chosen omens'
+#   deltas for ONE field, so nothing in this module can move two fields
+#   by accident: there is no call here that returns a whole Section.
+# - `modifier(section, cycle, omens)` is the one read that hands back
+#   several fields at once, and it reads them each through its own
+#   delta. A golden diff of `modifier` with and without one omen is the
+#   acceptance test of the slice, and it shows one key moving.
+#
+# The three fields are `shapes.OMEN_FIELDS` and nothing else: the fog a
+# Section sees by, the groups a floor may carry, and the affixes an
+# endless cycle's warden draws (ADR 0015's `endless.affixes`, on the
+# `loot|w` stream in cycles `c >= 1`). The other two omens PLAN.md
+# section 4 lists by example - Restless and Lean - name fields this
+# engine has no key for, and are not declared until one lands.
+
+def omens(section: dict) -> list[dict]:
+    """A Section's own omen list, in pack order, exactly as written."""
+    block = section.get('endless') if isinstance(section, dict) else None
+    raw = block.get('omens') if isinstance(block, dict) else None
+    return [omen for omen in raw if isinstance(omen, dict)] \
+        if isinstance(raw, list) else []
+
+
+def picks(section: dict) -> int:
+    """How many omens a player may pick at this Section's stair.
+
+    `vefr.sections` reads the pack's `endless.picks` and holds it to the
+    ceiling PLAN.md section 4 writes, because the plan's "0-3" is the
+    rule and a pack is not the place to relax it.
+    """
+    from .shapes import OMEN_PICKS_MAX
+    block = section.get('endless') if isinstance(section, dict) else None
+    value = block.get('picks') if isinstance(block, dict) else None
+    if isinstance(value, int) and not isinstance(value, bool) and 0 <= value:
+        return min(value, OMEN_PICKS_MAX)
+    return OMEN_PICKS_MAX
+
+
+def omen_field(omen: dict) -> tuple[str, int] | None:
+    """The one field an omen moves and by how much, or None.
+
+    None when the omen is not a record, or names none of the three
+    fields, or names more than one - the last of which is refused by
+    `vefr check` with a sentence, and dropped here rather than guessed
+    at. Guessing would be the one way an omen could change a field
+    nobody chose.
+    """
+    from .shapes import OMEN_FIELDS
+    if not isinstance(omen, dict):
+        return None
+    named = [field for field in OMEN_FIELDS if field in omen]
+    if len(named) != 1:
+        return None
+    field = named[0]
+    delta = omen[field]
+    if not isinstance(delta, int) or isinstance(delta, bool):
+        return None
+    return field, delta
+
+
+def chosen_omens(section: dict, chosen) -> list[dict]:
+    """The omens a player actually picked, in the pack's own order.
+
+    `chosen` is the ids the player chose, in any order and with any
+    repeats; the answer is the pack's records for those ids, each once,
+    in the order the pack lists them - a list, never a set, for the
+    reason PLAN.md section 2 gives. An id this Section does not offer is
+    not one of them, so a save written against a pack that has since
+    dropped an omen plays rather than raises.
+    """
+    wanted = [name for name in (chosen or ()) if isinstance(name, str)]
+    out: list[dict] = []
+    for omen in omens(section):
+        name = omen.get('id')
+        if isinstance(name, str) and name in wanted and omen not in out:
+            out.append(omen)
+    return out
+
+
+def omen_delta(section: dict, chosen, field: str) -> int:
+    """What the chosen omens do to ONE field: their deltas, summed.
+
+    A field no chosen omen names is unchanged, which is `0`. Two omens
+    on the same field add - the plan lets a player take up to three, and
+    forbids nothing about two of them naming the same field.
+    """
+    total = 0
+    for omen in chosen_omens(section, chosen):
+        pair = omen_field(omen)
+        if pair is not None and pair[0] == field:
+            total += pair[1]
+    return total
+
+
+def _bounded(value: int, lo: int, hi: int) -> int:
+    return lo if value < lo else (hi if value > hi else value)
+
+
+def fog_radius(section: dict, chosen=None) -> int:
+    """The Section's lit radius, with Darker taken off it.
+
+    The floor is `FOG_RADIUS_MIN` (2) - the low end the `fog` block
+    admits, and a one-tile ring is not fog - and the ceiling is what the
+    Section asked for. Three Darkers on a Section that asks for 2 leave
+    it at 2, which is the honest answer: an omen cannot take away light
+    the floor does not have.
+    """
+    from .shapes import FOG_RADIUS_MIN
+    block = section.get('fog') if isinstance(section, dict) else None
+    radius = block.get('radius') if isinstance(block, dict) else None
+    base = radius if isinstance(radius, int) and not isinstance(radius, bool) \
+        and radius >= FOG_RADIUS_MIN else DEFAULT_FOG_RADIUS
+    return _bounded(base + omen_delta(section, chosen, 'fog_radius'),
+                    FOG_RADIUS_MIN, base)
+
+
+def groups_per_floor(section: dict, chosen=None) -> tuple[int, int]:
+    """The Section's `[lo, hi]` groups per floor, with Crowded added.
+
+    Both halves move together and both stop at the `groups` block's own
+    ceiling of 3 a floor, because a floor with four groups is the
+    density cap of PLAN.md section 1.4 and an omen does not get to be
+    the thing that breaks it.
+    """
+    from .shapes import GROUPS_PER_FLOOR_MAX
+    block = section.get('groups') if isinstance(section, dict) else None
+    raw = block.get('per_floor') if isinstance(block, dict) else None
+    pair = _pair(raw, (0, 0))
+    delta = omen_delta(section, chosen, 'groups_per_floor')
+    return (_bounded(pair[0] + delta, 0, GROUPS_PER_FLOOR_MAX),
+            _bounded(pair[1] + delta, 0, GROUPS_PER_FLOOR_MAX))
+
+
+def warden_affixes(section: dict, cycle: int = 0, chosen=None) -> int:
+    """How many affixes this cycle's warden draws, with Proud added.
+
+    ADR 0015: "In cycles `c >= 1` it draws `endless.affixes` affixes on
+    the `loot|w` stream". Cycle 0 is the story and draws the warden's
+    own ordinary affixes, so a Section that names no `endless` gets 0
+    here in the story and whatever it wrote in every cycle after it.
+
+    The ceiling is `shapes.ELITES`'s own: two affixes on one monster is
+    the cap ADR 0014 wrote, and a warden is a monster.
+    """
+    from .shapes import AFFIXES_MAX
+    c = cycle if isinstance(cycle, int) and not isinstance(cycle, bool) else 0
+    warden = section.get('warden') if isinstance(section, dict) else None
+    record = warden.get('endless') if isinstance(warden, dict) else None
+    base = record.get('affixes') if isinstance(record, dict) else None
+    base = base if isinstance(base, int) and not isinstance(base, bool) else 0
+    if c < 1:
+        base = 0
+    return _bounded(base + omen_delta(section, chosen, 'warden_affixes'),
+                    0, AFFIXES_MAX)
+
+
+# The three fields `modifier` answers, in table order. A golden diff of
+# `modifier` names its keys, and this tuple is what keeps the two in
+# step - the same reason `shapes.OMEN_FIELDS` exists there.
+MODIFIER_FIELDS = ('fog_radius', 'groups_per_floor', 'warden_affixes')
+
+
+def modifier(section: dict, cycle: int = 0, chosen=None) -> dict:
+    """Everything the chosen omens do to a Section, as one flat record.
+
+    The one read a caller takes instead of three, and the shape the
+    golden diff is taken over: `{"fog_radius": 4, "groups_per_floor": [1, 3],
+    "warden_affixes": 1}`. Every value is read through its own
+    `omen_delta`, so an omen that moves one field moves one key here and
+    no other - which is exactly what the acceptance test diffs.
+
+    No omens and no `endless` block both answer the Section's own data,
+    unchanged. That is the whole backward-compatibility promise of the
+    block, and it is why a pack that has never heard of an omen needs no
+    edit to keep playing.
+    """
+    return {
+        'fog_radius': fog_radius(section, chosen),
+        'groups_per_floor': list(groups_per_floor(section, chosen)),
+        'warden_affixes': warden_affixes(section, cycle, chosen),
+    }
+
+
+# ------------------------------------------------- the board's hook (E10)
+#
+# "The Deep Ledger" (PLAN.md section 4, owner-gated) is a board in the
+# tavern that opens once the story ends - `vefr.delve.board_open` answers
+# that, because the flag is `descent.story_end` and E8c wrote it. What
+# the board then does is ask a Section a question, and this is that
+# question answered as DATA:
+#
+#     sections.board_offer(cellar)
+#     -> {'section': 'cellar', 'picks': 3, 'stars': 3, 'omens': [...]}
+#
+# No drawing, no model, no clock - the same rule as the rest of this
+# module. The board UI, the stars the player has already earned, and the
+# collection rewards behind them are a later slice; this is the hook they
+# will hang on, and it is the whole of what a pack author needs in order
+# to see their omens the way the engine reads them.
+
+def board_offer(section: dict) -> dict | None:
+    """What the board offers at this Section's stair, or None for no board.
+
+    None rather than an empty offer, because the two are different facts:
+    a Section that names no `endless` has no board at its stair, and one
+    that names an empty `omens` list has a board offering nothing. A
+    caller can tell them apart, and an empty dict could not.
+
+    Each omen comes back as its id, its label if the pack wrote one, and
+    the ONE field it moves with the delta it moves it by - the three
+    things a player needs to read before choosing, and the whole of what
+    choosing does. An omen that names no field or two is skipped here,
+    because `vefr check` refuses such a pack and the board must not
+    offer a choice it cannot honour.
+    """
+    offered: list[dict] = []
+    for omen in omens(section):
+        pair = omen_field(omen)
+        if pair is None:
+            continue
+        field, delta = pair
+        name = omen.get('id')
+        offered.append({
+            'id': name,
+            'label': omen.get('label') if isinstance(omen.get('label'), str)
+                     and omen['label'] else name,
+            'field': field,
+            'delta': delta,
+        })
+    if not offered:
+        return None
+    limit = picks(section)
+    return {
+        'section': section_id(section),
+        'picks': limit,
+        # "Each omen adds a star when the Section is finished" - a star
+        # per omen, so the most a player can take from one Section is the
+        # number of picks. `stars` is that maximum and nothing more: what
+        # the player has already earned is the save's business.
+        'stars': limit,
+        'omens': offered,
+    }
