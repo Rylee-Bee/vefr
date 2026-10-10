@@ -10,7 +10,7 @@ Status: **slice 1 built** (Rylee, 2026-10-02: "how do you reward progression and
 
 - The studio has a sticker book for using VEFR itself (`src/vefr/achievements.py`, `web/achievements/`): open, riddle and secret stickers, shine levels (paper, foil, holo). It is **not** available to a game made in VEFR.
 - A woven game already remembers: books found (`vefr-library-<world>`, the Books panel says "N still to find"), monsters slain (`saveSlain`), the bag, the fog (explored tiles), gold.
-- Rules notice eleven events (`docs/guides/rules.md`: defeats, picks-up, reads, enters, opens, buys...).
+- Rules notice thirteen events (`docs/guides/rules.md`: defeats, picks-up, reads, enters, opens, buys, falls...).
 
 ## The design: one record, many views
 

@@ -123,7 +123,7 @@
     // A hit that reaches the hero is one practice count.
     sayGrowth(practiceSuffix(growBump('hits-taken')));
     soundCue('hurt');
-    if (HERO_HP <= 0) { cozyDeath(); return true; }
+    if (HERO_HP <= 0) { cozyDeath(e); return true; }
     return false;
   }
   // The turn's flood is cut off here however far the pack's sights
@@ -351,19 +351,34 @@
   }
   // Death is Cozy: health back to max, one plain line, and a wake at
   // the hero's baked wake point. Nothing is lost.
-  function cozyDeath() {
+  //
+  // Two events leave this function, both in `shapes.EVENTS` beside the
+  // other eleven: `falls` says the hero's health reached zero, and `wakes`
+  // says where the hero woke up. Both are facts, not places - a pack
+  // cannot tell the difference between a death and an ordinary
+  // arrival, and `enters` fires on both. `falls` is raised BEFORE the
+  // hero moves, so it carries the region the hero fell in; `wakes`
+  // after, so it carries the region they woke in. The killer is named
+  // when there is one (an enemy called this) and left empty when there
+  // is not, so the `defeats` mirror has nothing to pretend.
+  function cozyDeath(killer) {
     combatSay(DEATH_LINE);
+    fireRule('falls', { what: (killer && killer.id) || '',
+                        where: regionName });
     HERO_HP = heroMax();
     saveHeroHp();
     renderHp();
     var wake = (window.VEFR_HERO && window.VEFR_HERO.wake) || {};
+    var woke = regionName;
     if (wake.region && regions[wake.region]) {
       enterRegion(wake.region, wake.at);
+      woke = wake.region;
     } else {
       hero = (town.hero_start || [1, 1]).slice();
       loadEnemies();
       draw();
     }
+    fireRule('wakes', { where: woke });
     combatSnapshot();
   }
   // The mind state of every monster, in the same order as `enemies` and

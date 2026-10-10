@@ -807,12 +807,21 @@ BLOCKS = {
 # pack id it names. A field with no `ref` is a number the table bounds
 # itself, and the bounds are the contract's.
 #
-# The six events a rule may fire on became eleven: the first six are
-# the original vocabulary; the last five are facts the player already
+# The six events a rule may fire on became thirteen: the first six are
+# the original vocabulary; the next five are facts the player already
 # performs (a fight won, a thing bought or sold, a book closed, the
 # watch turned) so the world can notice them. `says` is deliberately
 # absent: the woven player has nowhere to type words, so an event that
 # waited on typed speech could never fire.
+#
+# The last two are the hero's own two facts: `falls` and `wakes` (vefr
+# #365). `defeats` is the player killing something; its mirror did not
+# exist, so death was indistinguishable from a bug and a pack had to
+# fake it with `enters` - a line that then fires on every ordinary
+# arrival. `falls` carries the enemy that did it (`what`, empty when
+# nothing did) and the place the hero fell in (`where`); on a descent
+# floor that place is the floor's own name, `<section>-<cycle>-<floor>`,
+# so one id says how deep.
 #
 # This is the one place the vocabulary is typed on the Python side. The
 # woven player holds a JavaScript twin of it today (the `EVENTS` table
@@ -836,6 +845,9 @@ EVENTS = {
     'sells': (Key('what', 'ref', ref='item'),),
     'reads': (Key('what', 'ref', ref='book'),),
     'phase-changes': (Key('to', 'ref', ref='phase'),),
+    'falls': (Key('what', 'ref', ref='enemy'),
+              Key('where', 'ref', ref='place')),
+    'wakes': (Key('where', 'ref', ref='place'),),
 }
 
 

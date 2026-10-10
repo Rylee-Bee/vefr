@@ -693,7 +693,7 @@
    ]
   },
   "errors": [
-   "rule 'r1' when names unknown event 'bogus' - the events are starts, enters, comes-near, opens, picks-up, uses-with, defeats, buys, sells, reads, phase-changes"
+   "rule 'r1' when names unknown event 'bogus' - the events are starts, enters, comes-near, opens, picks-up, uses-with, defeats, buys, sells, reads, phase-changes, falls, wakes"
   ]
  },
  {
@@ -2949,6 +2949,336 @@
   },
   "errors": [
    "sticker 's1' when 'phase-changes' names unknown phase 'dusk'"
+  ]
+ },
+ {
+  "block": "rules",
+  "case": "{\"falls\": {\"what\": \"rat\", \"where\": \"town\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "rules": [
+    {
+     "id": "r1",
+     "then": [
+      {
+       "set": "lit"
+      }
+     ],
+     "when": {
+      "falls": {
+       "what": "rat",
+       "where": "town"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "rule 'r1' when 'falls' what names unknown enemy 'rat'"
+  ]
+ },
+ {
+  "block": "album",
+  "case": "{\"falls\": {\"what\": \"rat\", \"where\": \"town\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "album": [
+    {
+     "id": "s1",
+     "name": "A sticker",
+     "kind": "open",
+     "when": {
+      "falls": {
+       "what": "rat",
+       "where": "town"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "sticker 's1' when 'falls' what names unknown enemy 'rat'"
+  ]
+ },
+ {
+  "block": "rules",
+  "case": "{\"falls\": {\"what\": \"rat\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "rules": [
+    {
+     "id": "r1",
+     "then": [
+      {
+       "set": "lit"
+      }
+     ],
+     "when": {
+      "falls": {
+       "what": "rat"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "rule 'r1' when 'falls' needs key 'where'"
+  ]
+ },
+ {
+  "block": "album",
+  "case": "{\"falls\": {\"what\": \"rat\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "album": [
+    {
+     "id": "s1",
+     "name": "A sticker",
+     "kind": "open",
+     "when": {
+      "falls": {
+       "what": "rat"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "sticker 's1' when 'falls' needs key 'where'"
+  ]
+ },
+ {
+  "block": "rules",
+  "case": "{\"wakes\": {\"where\": \"town\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "rules": [
+    {
+     "id": "r1",
+     "then": [
+      {
+       "set": "lit"
+      }
+     ],
+     "when": {
+      "wakes": {
+       "where": "town"
+      }
+     }
+    }
+   ]
+  },
+  "errors": []
+ },
+ {
+  "block": "album",
+  "case": "{\"wakes\": {\"where\": \"town\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "album": [
+    {
+     "id": "s1",
+     "name": "A sticker",
+     "kind": "open",
+     "when": {
+      "wakes": {
+       "where": "town"
+      }
+     }
+    }
+   ]
+  },
+  "errors": []
+ },
+ {
+  "block": "rules",
+  "case": "{\"wakes\": {\"where\": \"nowhere\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "rules": [
+    {
+     "id": "r1",
+     "then": [
+      {
+       "set": "lit"
+      }
+     ],
+     "when": {
+      "wakes": {
+       "where": "nowhere"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "rule 'r1' when 'wakes' names unknown place 'nowhere'"
+  ]
+ },
+ {
+  "block": "album",
+  "case": "{\"wakes\": {\"where\": \"nowhere\"}}",
+  "world": {
+   "regions": {
+    "town": {
+     "name": "Town"
+    }
+   },
+   "items": {
+    "torch": {
+     "name": "torch"
+    },
+    "chalked-map": {
+     "name": "map"
+    }
+   },
+   "phases": {
+    "dawn": "dawn"
+   },
+   "flags": {
+    "lit": "the torch burns"
+   },
+   "album": [
+    {
+     "id": "s1",
+     "name": "A sticker",
+     "kind": "open",
+     "when": {
+      "wakes": {
+       "where": "nowhere"
+      }
+     }
+    }
+   ]
+  },
+  "errors": [
+   "sticker 's1' when 'wakes' names unknown place 'nowhere'"
   ]
  },
  {

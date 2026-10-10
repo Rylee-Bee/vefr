@@ -5,11 +5,12 @@
   // bare node vm context with nothing but the built-ins.
   //
   // A rule is { id, on?, when, if?, then, once? }, the same shape
-  // src/vefr/maplab.py's rules_errors checks at authoring time. The six
-  // events are `starts`, `enters`, `comes-near`, `opens`, `picks-up`,
-  // `uses-with`. There is deliberately no `says` event: the woven
-  // player has no place for the player to type words, so an event
-  // waiting on typed speech could never fire.
+  // src/vefr/maplab.py's rules_errors checks at authoring time. The
+  // events are the EVENTS table below, a twin of src/vefr/shapes.py's -
+  // `tests/test_event_table.py` fails if the two drift. There is
+  // deliberately no `says` event: the woven player has no place for the
+  // player to type words, so an event waiting on typed speech could
+  // never fire.
   //
   // The limits kept on purpose: a rule fires at most once per event,
   // the actions a rule returns are never fed back in as new events
@@ -32,7 +33,9 @@
       'buys': { keys: ['what'], target: 'what' },
       'sells': { keys: ['what'], target: 'what' },
       'reads': { keys: ['what'], target: 'what' },
-      'phase-changes': { keys: ['to'], target: 'to' }
+      'phase-changes': { keys: ['to'], target: 'to' },
+      'falls': { keys: ['what', 'where'], target: 'what' },
+      'wakes': { keys: ['where'], target: 'where' }
     };
 
     function isObj(v) {
@@ -313,6 +316,13 @@
         phrase = 'the hero closed ' + data.what + ' having read it';
       } else if (event === 'phase-changes') {
         phrase = 'the watch turned to ' + data.to;
+      } else if (event === 'falls') {
+        // `what` is empty when nothing but the floor did it, so the
+        // killer is named only when there is one to name.
+        phrase = 'the hero fell in ' + data.where
+          + (data.what ? ' to ' + data.what : '');
+      } else if (event === 'wakes') {
+        phrase = 'the hero woke in ' + data.where;
       } else {
         phrase = 'the hero used ' + data.item + ' with ' + data.with;
       }
