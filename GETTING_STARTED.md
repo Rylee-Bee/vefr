@@ -139,7 +139,7 @@ trust your own edits; the tool always checks.
 
 Or by hand: copy `worlds/sample-world/` to `worlds/your-world/` and
 edit `world.json`, `logbok.md`, and the `voices/` files directly - see
-the "Build a world" section of `README.md` for the full contract.
+`docs/guides/world-creation.md` for the full contract.
 
 The full interview-to-HTML walkthrough - every question, the
 fallbacks, map reshaping, weaving - is
@@ -213,10 +213,10 @@ Every route, every request/response shape, try-it-out included.
 
 | Question | Read |
 |---|---|
-| How does the bones/flesh split work? | `README.md` |
+| How does the bones/flesh split work? | `AGENTS.md` |
 | What's landed, what's next? | `ROADMAP.md` |
 | How do I build a world end to end? | `docs/guides/world-creation.md` |
 | Which game does an act play? | `docs/guides/rulesets.md` |
 | How does a world react to the player? | `docs/guides/rules.md` |
 | Who can use what, under what license? | `LICENSE` (engine) and `worlds/<name>/LICENSE` (a specific world, if it has one) |
-| How do I run this always-on? | `README.md` "Run the engine" section |
+| How do I run this always-on? | `docs/guides/deploy.md` |

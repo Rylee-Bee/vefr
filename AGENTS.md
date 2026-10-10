@@ -12,7 +12,7 @@ to this repo.
 |---|---|
 | Run the engine / build a world | `GETTING_STARTED.md` |
 | See the whole path of making a game here (stops, lessons, rules for agents) | `docs/guides/journey.md` |
-| Understand the bones/flesh split | `README.md` |
+| Understand the bones/flesh split | this file, "Bones and flesh" below |
 | Understand the brain/provider seam | `docs/guides/brain-socket.md` |
 | Run the resident Spark service | `docs/guides/spark.md` |
 | See what's landed / what's next | `ROADMAP.md` |
@@ -63,7 +63,281 @@ to this repo.
 | `data/` | Runtime state dir. A few tracked snapshot files predate the ignore rules (see Boundaries) — never add more |
 | `.kilo/kilo.jsonc`, `.gitea/workflows/` | Kilo agent config (loads this file) and the legacy Gitea CI mirror |
 
-## Commands
+## Bones and flesh
+
+The engine and the story are kept apart. The engine ("the bones") owns
+the common machinery; the pack ("the flesh") owns every character, place,
+map, picture and rule that belongs to one story. Packs live in
+`worlds/<name>/` and are loaded through the one seam, `world.py`.
+
+```
+src/vefr/           the engine (MPL-2.0)
+  world.py          the pack loader - the only seam
+  saga.py           the storytelling layer (prompts, voices, ledger)
+  generator.py      rumor cards (speaker, whisper, is_true)
+  main.py           the FastAPI surface the README's run command serves
+  cli.py            one front door (`vefr`) plus the two aliases
+                    (`ratatoskr`, `norns`)
+  maplab.py         the one validator, shared by tests and both CLIs
+  ...               forge, stefna, npc, combat, bonds, journey, runes, pool,
+                    weave, trace, sessions, starred, chat, inspect, volumes,
+                    lore, journal, export, delve, sections, shapes, stamps -
+                    each module's docstring says what it is
+
+worlds/<name>/     a world pack - a story
+  world.json        phases, tones, voices, bonds, speakers, the town
+  logbok.md         the world logbok - canon + style contract
+  ledger.md         collected whispers - voice anchors, hand-curated
+  map.md            the story's geometry, source of truth
+  voices/*.md       how each character speaks (rules for the model)
+
+worlds/sample-world/  Emberfield, the example world (CC0 1.0, so it can
+                      be shared freely)
+worlds/lore/<flavor>/ data-only mood boards: norse, historical-event,
+                      norse-runes (CC BY-SA 4.0)
+
+web/                the studio workshop (app.html + studio.css + app.js),
+                    the woven player (packaged.html, GENERATED from
+                    web/player/parts/ by scripts/build_player.py), studio
+                    art (web/art/), the studio's own Library shelf
+                    (web/library/)
+tests/              pytest - pack contract, schemas, fallbacks; browser
+                    tests in tests/browser/; the player-build guard in
+                    tests/test_player_build.py
+```
+
+The only world pack tracked in this repo is the sample. Real games keep
+their packs in their own repositories and are placed in `worlds/<name>/`
+locally. `VEFR_WORLD=<name>` selects the world; restart the engine after
+adding one. Work on the engine here, and write the game there.
+
+### What the engine may read
+
+The engine never contains story. This is the whole contract:
+
+| The engine reads | The engine never reads |
+| --- | --- |
+| `world.json` keys: title, phases, surface, voices, bonds, acts | the *names* of any specific pack's NPCs, places, or prose |
+| `map.md` (geography only - the geometry, not the names) | sample text from any specific pack |
+| `voices/*.md` (the rule shape, not the words) | a specific pack's characters or flavour text |
+| pack-name only as an identifier for routes + filenames | anything about a game it was not handed |
+
+If a specific game's names or text appear inside the engine source, that
+is a bug: the engine should know nothing about any game until a pack is
+loaded. `tests/test_pack_neutrality.py` enforces it.
+
+### The three levels
+
+One creator vocabulary at three levels:
+
+- the **game** owns its characters, maps, art, story and one-off rules;
+- a **gameplay feature** is a reusable way to play - turns, dialogue,
+  detection, scoring (game developers also call this a gameplay system or
+  a mechanic);
+- the **VEFR core** owns the small common machinery those features need:
+  things, places, state, rules, input, presentation, audio, saves.
+
+A game-specific need stays in the game. A reusable gameplay feature is
+promoted only after real games prove the same need. Core changes are
+rarer still. These are logical boundaries, not a plugin framework or a
+second language: games and features use the same public VEFR surface. See
+`docs/guides/gameplay-features.md` and `docs/adr/0012-gameplay-features.md`.
+
+### Pack design knobs
+
+Each world decides how much the numbers matter. Every act declares a
+`floor`:
+
+- `costume` (the default): health is shown as a number but never drops to
+  zero. Decoration.
+- `story`: failing changes what happens in the story.
+- `stakes`: the numbers really count; the act's ruleset says how.
+
+Under the default, nothing blocks the player on health or dice: items
+can't be lost, and characters always have something to say.
+
+`world.json` can set a `surface`: `combat` (the default), `investigation`
+or `plain`. It only changes what the player sees (health bars, encounter
+prompts, investigation dice), not how the engine behaves. A pack that
+wants no health or dice at all sets `surface: "plain"`, and the player
+hides those panels.
+
+The story structure follows the Hero's Journey through four phases:
+
+| Phase | Journey stage | Rune |
+|---|---|---|
+| `whispers` | the call to adventure | **Fehu** (wealth, the seed-fire) |
+| `doubts` | the refusal / the threshold | **Thurisaz** (the thorn) |
+| `feared` | the tests, allies, enemies | **Kenaz** (the torch) |
+| `awed` | the revelation / the return | **Sowilo** (the sun) |
+
+Packs can rename the phases; the engine matches them by order. Each
+phase's rune rides in the model's prompts to set the mood, but phases
+never block the player.
+
+**What's random.** Everything is predictable (packs, lore, journal,
+export) except the rune cast. The same seed gives the same cast for about
+a minute, and a cast is never repeated across sessions. Full
+architecture: `docs/guides/brain-socket.md` (provider vs. brain) and
+`docs/guides/bundled-brain.md` (the bundled model fleet).
+
+Which kind of game each act plays (cooking, the newsroom desk) and the
+fields that control it are in `docs/guides/rulesets.md`. Author grammars
+(whispers, names, weather, expanded offline with no model) are in
+`docs/guides/grammars.md`.
+
+### Lore packs
+
+`worlds/lore/<name>/` holds mood boards made of data:
+
+| File | Engine reads? | Author reads? |
+|---|---|---|
+| `textures.md`, `names.md`, `questions.md` | yes | yes |
+| `cards.md` (optional, e.g. norse-runes) | yes | yes |
+| `prompt.md` | no | **yes** (copy-paste into any LLM) |
+| `LICENSE.md` | no | yes (CC BY-SA 4.0 + attributions) |
+
+`POST /api/builder/lore` takes a pack name and seed words and answers with
+`textures`, `names` and `questions`. They are for mood, not canon;
+`vefr chat` uses them in its interview. To add your own, make
+`worlds/lore/<your-flavor>/` and write the files - the engine finds it
+automatically. `docs/guides/lore.md` is the full guide.
+
+### The studio
+
+> *The loom is strung; the world provides the thread.*
+
+**VEFR is also the game of making a game.** You start with an empty table
+in a studio run by the old Norse, inside the World Tree, and a few words
+about what you want to make. Each room is a department with a resident
+who helps with that one piece: the Desk holds your pitch, the Map Room
+draws the first place, the Folks introduce the people who live there, the
+Library keeps your books, the Vault forges what you carry. They suggest;
+you decide. At the end you have a game you made yourself, one file that
+opens in any browser with no server and no model, and you understand it,
+because you were there for every piece.
+
+Every room is in `docs/screenshots/README.md` (one shot per room, and the
+phone shots); `docs/guides/journey.md` is the same path written as stops
+with the rules for agents; `docs/guides/residents.md` names the residents.
+
+**The woven file.** `vefr weave` opens on a title screen with the world's
+title picture, name and tagline, and a Begin button. The game fills the
+screen, with speech, choices and health drawn over it and a pause menu
+(`Esc`) for the journal. Everything the world needs is inside the file.
+In a region that declares fog, press `O` or tap **Explore** to walk to
+the nearest unexplored ground; the walk stops on its own when a monster
+comes into the light, the hero is wounded, or there is nothing left to
+see. A carried torch widens that circle for a few turns; a chalked map
+lays the whole place open. The dark is the pack's to set: press `V`, or
+use Display in the pause menu, to see the whole map. Models help while
+you make the game, in the studio; the finished file is complete on its own
+(`docs/adr/0003-models-in-the-studio.md`). A game can still offer players
+an optional model of their own for fresh lines.
+
+**Accessibility.** The Boiler Room sets contrast (Warm & Easy, Bright &
+Clear, Nothing Hides), the reading font (Atkinson Hyperlegible Next,
+OpenDyslexic, a serif, or the system font), motion and sound. In the
+studio nothing moves or makes a sound unless it is turned on. A woven
+game that declares `sound` plays its soft cues by default and has a Sound
+switch in Menu > Display. Fonts are SIL OFL and self-hosted in
+`web/fonts/`. The pattern is credited to Fluid Infusion's UI Options.
+`docs/guides/accessibility-contract.md` is the contract every screen
+follows.
+
+## Running it: container, compose, deploy
+
+```sh
+# from a checkout, build the image
+mkdir -p ~/vefr-data
+podman build -t localhost/vefr:latest .
+
+# run it, with your own pack mounted in
+podman run -d --name vefr -p 8820:8820 \
+  -v ~/vefr-data:/app/data \
+  -v /path/to/your-pack:/app/worlds/your-name:Z \
+  -e VEFR_WORLD=your-name \
+  -e VEFR_LLAMACPP_URL=http://host.docker.internal:8084 \
+  localhost/vefr:latest
+
+# compose: `compose.yml` is tracked, `compose.dev.yaml` is the dev override
+podman compose up -d
+```
+
+`compose.yml` pulls `${VEFR_IMAGE:-ghcr.io/rylee-bee/vefr:latest}`. The
+image is published to `ghcr.io/rylee-bee/vefr`; `:latest` moves with
+every successful publish and `:sha-<full SHA>` never changes. The image
+holds the engine, the studio, the sample world and a small model fleet
+(`docs/guides/bundled-brain.md`). Whether a given tag exists right now is
+a question for the registry, not for this tree.
+
+Config comes from plain process env vars, never from a file the engine
+reads: copy `example.env` to `.env`, fill it in, then
+`set -a; source .env; set +a`. The full table is in `GETTING_STARTED.md`.
+
+Deploying to a host is an **ask first** action
+(`docs/guides/deploy.md`, `deploy/`):
+
+```sh
+uv run vefr ferry deploy --init     # writes deploy.toml.example
+cp deploy.toml.example deploy.toml   # edit host + image
+uv run vefr ferry deploy            # pre-flight, build, restart, verify
+```
+
+`deploy.toml` is gitignored; `deploy.toml.example` is the tracked template.
+
+**Released demo files** (release-asset URLs as recorded in the README
+before 2026-10-09; a checkout cannot prove a release exists, so check the
+releases page before sharing either link): Emberfield, the sample world
+woven with the storybook player, as a single asset in v2.1.0; and Burrito
+Journalism, a journalism and taqueria game, as a single asset in v2.0.0
+(built with `ratatoskr weave --pool 5`, CC BY 4.0 pack, MPL-2.0 engine).
+
+## Project identity
+
+This repository adopts [Play-Nice Contracts](https://github.com/Rylee-Bee/play-nice-contracts)
+as its shared working rules: evidence before generating content,
+explicit state, asking instead of guessing, and minimum accessibility
+standards. See `.project/contracts/adoption.yaml` for the adoption
+record.
+
+The engine/game boundary is fixed: VEFR is the engine/studio. Games stay
+separate game projects and repositories that VEFR loads through the
+world-pack contract. Historical predecessor-engine lineage does not make
+a game a predecessor, and engine consolidation does not retire a game.
+`.project/DECISIONS.md` (2026-10-04) is the ruling; the older
+"folded in as a story pack" note that used to sit above the README is
+superseded by it.
+
+CI enforces the honest-claims policy: a strong claim ships the command
+that checks it. Say `UNKNOWN` when a command cannot check it.
+
+## Attribution and licensing
+
+- Dependencies: fastapi, uvicorn, httpx, pydantic, sqlite-vec
+  (MIT/BSD-3/Apache-2.0), declared in `pyproject.toml`; their notices
+  ship in the wheels.
+- Model: Qwen (Apache-2.0); outputs are shaped by this repo's prompts and
+  reviewed by a human before they become canon.
+- Code co-written with Kilo (AI) at the author's direction.
+- Ideas borrowed, with thanks, from projects we did not build on:
+  OpenPixel-RPG (MIT) for the whitebox pattern (a fixed blueprint a model
+  must respect); RPG-JS (MIT) for the idea that any future renderer reads
+  `/api/world`; ink and inkjs (MIT) for authored branching, saved for
+  later.
+- Engine license: MPL-2.0 (`LICENSE`) for `src/`, `web/` (except
+  `web/art/`), `tests/`, `scripts/`, `docs/`, `deploy/` and
+  `Containerfile`. `worlds/sample-world/` is CC0 1.0 (see its `LICENSE`).
+  Lore mood boards under `worlds/lore/` are CC BY-SA 4.0 (each pack's
+  `LICENSE.md`). The workshop's studio art in `web/art/` is CC BY-SA 4.0
+  (`web/art/README.md`). Any other pack dropped into `worlds/<name>/`
+  locally is its own author's property: the engine grants no license to
+  story content and carries none here.
+- `THIRD_PARTY_NOTICES.md` has the bundled web fonts (SIL OFL 1.1) and
+  dependency notices. `TRADEMARKS.md` has fork-naming guidance -
+  project-identity rules are descriptive, not a legal grant.
+- `CODE_OF_CONDUCT.md` is the conduct code; `SECURITY.md` is the private
+  reporting path.
 
 ```bash
 # The gate — run before claiming anything is done (mirrors ci.yml)
@@ -155,7 +429,7 @@ uv run ratatoskr weave --pool 5
 | `docs/guides/rules.md` | Author rules: the thirteen events, ids, actions, kept items |
 | `docs/guides/lore.md` | The Lorekeeper: facts, the derived index, `vefr-lore` |
 | `docs/uat/` | UAT contracts: a journey + machine-checkable acceptance triples |
-| `README.md` | Design philosophy + screenshots + quickstart |
+| `README.md` | The human front door: what this is, is it running, how to use it, where to read more. Deliberately short (owner-ruled shape, 2026-10-09): agent-only detail lives here, not there. Do not grow it back - a fact added to the README needs the command that checks it. |
 | `CONTRIBUTING.md` | How to contribute (human + agent onboarding) |
 | `docs/guides/brain-socket.md` | Architecture: VEFR owns reality; brains plug in |
 | `docs/guides/bundled-brain.md` | Bundled model fleet, ports, swap guide |
