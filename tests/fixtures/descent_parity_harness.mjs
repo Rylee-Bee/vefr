@@ -10,7 +10,13 @@
    `blueprintDepths`: the same block plus the pack's Blueprint, which is
    what a floor resolves its families through. It is planted exactly as
    the first one is - the player reads the block at call time - and its
-   answers come back under `blueprint`. */
+   answers come back under `blueprint`.
+
+   A third may come as `rolled`: `{descent, depths, items}`. The catalog
+   is planted on `window.VEFR_ITEMS` for the duration of that block only -
+   the same global the weave writes, read at call time - so the rolled
+   draws (ADR 0017) are compared in both languages against a Python floor
+   drawn from the same catalog. */
 import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 
@@ -58,6 +64,22 @@ if (cases.blueprintDescent) {
 if (cases.pins) {
   w.VEFR_DESCENT_DEF = cases.descent;
   out.pins = cases.pins.map((p) => D.placeBooks(D.floorPlan(p.depth, p.run), p.books));
+}
+// Rolled loot (ADR 0017): the same cellar, with a catalog beside it. The
+// twin reads `window.VEFR_ITEMS` where the weave writes it, so the whole
+// drop - base id, drawn rarity, hidden traits - is compared in both
+// languages. The catalog is put back afterwards so no later case sees it.
+if (cases.rolled) {
+  const had = w.VEFR_ITEMS;
+  w.VEFR_ITEMS = cases.rolled.items;
+  w.VEFR_DESCENT_DEF = cases.rolled.descent;
+  out.rolled = { located: [], plans: [] };
+  for (const depth of cases.rolled.depths) {
+    const at = D.locate(depth);
+    out.rolled.located.push([at.cycle, at.section, at.k]);
+    out.rolled.plans.push(D.floorPlan(depth));
+  }
+  w.VEFR_ITEMS = had;
 }
 fs.writeSync(1, JSON.stringify(out) + '\n');
 w.close();

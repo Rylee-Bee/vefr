@@ -37,8 +37,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .maplab import (SKIN_PICTURE_KEYS, item_slot_and_mods, load_pack,
-                     validate)
+from .maplab import (SKIN_PICTURE_KEYS, item_rarity_of, item_roll_of,
+                     item_slot_and_mods, item_traits_of, load_pack, validate)
 from .paths import world_name
 # The loader's tile convention (ordered variants) is the single source
 # of the try-order the player bakes, so a pack's tiles/ is read the
@@ -1752,6 +1752,8 @@ def _player_items(world: dict) -> dict[str, dict]:
     only when it forms a usable shape; maplab reports a broken one.
     `slot` and `mods` (the five slots and atk/hp) ride along under the
     same rule, read from the same helper the validator uses.
+    `rarity`, `traits` and `roll` (ADR 0017) ride along under that rule
+    too, read from `maplab.item_roll_of`, which is what the draw reads.
     """
     listed = world.get('items')
     if not isinstance(listed, dict):
@@ -1805,6 +1807,26 @@ def _player_items(world: dict) -> dict[str, dict]:
             entry['slot'] = slot
             if mods:
                 entry['mods'] = mods
+        # `rarity`, `traits` and `roll` (ADR 0017): what a drawn drop of
+        # this thing may be. All three ride along only in the usable form
+        # `maplab.item_roll_of` resolves, and only when the pack named
+        # them, so an item written before this slice bakes byte for byte
+        # what it always baked. The `roll` that rides is the RESOLVED one
+        # - the defaults already filled in - so the woven player draws
+        # from the numbers it can read without re-deciding them.
+        rarity = item_rarity_of(spec)
+        if rarity:
+            entry['rarity'] = rarity
+        traits = item_traits_of(spec)
+        if traits:
+            entry['traits'] = traits
+        roll = item_roll_of(spec)
+        if roll:
+            entry['roll'] = {
+                'rarity': {name: weight for name, weight in roll['rarity']},
+                'traits': list(roll['traits']),
+                'chance': roll['chance'], 'max': roll['max'],
+            }
         out[key] = entry
     return out
 

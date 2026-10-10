@@ -126,7 +126,9 @@ ITEMS / LOOT (first slice): world.json may carry an optional top-level
   catalog (`VEFR_ITEMS`) and each drop. An item may also carry optional
   `value` (a positive int: what a shop pays and asks), `heal` (a positive
   int) and `use` (a verb such as `drink`); with none of them the item
-  bakes exactly as before. Nothing is identified yet.
+  bakes exactly as before. Nothing identifies a thing yet: ADR 0017 gives
+  a drop hidden traits and an `identified` flag that starts false, and
+  nothing in this slice ever turns it true.
   An item may carry an optional `light`, in one of two forms:
       {"light": {"radius": 2, "turns": 5}}   # wider for a while
       {"light": {"reveal": true}}            # the whole region at once
@@ -136,6 +138,32 @@ ITEMS / LOOT (first slice): world.json may carry an optional top-level
   spends one copy; in a region with no dark (or the player's fog turned
   off) it says so and spends nothing. With no `light` the item bakes
   exactly as before. maplab checks the shape and ranges.
+
+ROLLED ITEMS (ADR 0017, T3 slice 1): an item may also carry a `rarity`
+  (one plain word), `traits` (a list of plain words) and an optional
+  `roll`:
+      {"ring": {"name": "a brass ring", "rarity": "common",
+                "roll": {"rarity": {"common": 60, "rare": 30, "odd": 10},
+                         "traits": ["keen", "brave", "swift"],
+                         "chance": 50, "max": 1}}}
+  `roll.rarity` is the item's own table of pack-chosen names and whole
+  weights; `traits` is the pool a draw takes hidden traits from;
+  `chance` (int 0..100, default 100) is how often a draw bears one at
+  all, and `max` (int 0..4, default 1) how many at once. On a generated
+  floor a monster's drop is drawn from that monster's own loot stream and
+  the rarity and traits from a second named stream off the same floor key
+  and monster (`v3|<key>|roll|<mob id>|<item id>`), so the same run always
+  drops the same thing and two monsters never share a roll. The drawn
+  instance rides on the drop and then in the bag as
+  `{"item": id, "rarity": ..., "traits": [...], "identified": false}`;
+  the bag strip and the Bag panel name the item and its rarity together
+  from the moment of pickup, and the traits stay hidden until something
+  identifies the thing (a later slice). An item with no `roll` is the
+  bare id it always was, unless it declared a fixed `rarity`/`traits`, in
+  which case those ride along unchanged. maplab checks the shape, the
+  ranges, and the three refusals: a `rarity` outside the item's own
+  table, a trait that is not one plain word, a `roll` with no rarity
+  table, and a `roll` that asks for traits and names no pool.
 
 REWARD (first slice): `world.player` may carry `gold`, the starting
   purse (a non-negative int; default 0), kept per world at

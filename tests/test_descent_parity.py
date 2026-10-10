@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pytest
 
-from vefr import cli, delve
+from vefr import cli, delve, maplab
 from vefr import stamps as stamps_mod
 from test_descent_floors import DESCENT
 
@@ -76,6 +76,31 @@ BLUEPRINT_DESCENT["stamps"] = json.loads(json.dumps(
 BLUEPRINT_DESCENT["sections"][0]["stamps"] = ["cellar"]
 BLUEPRINT_DESCENT["sections"][0]["vault"] = "vault-cellar"
 
+# ADR 0017: the same cellar, with drops that roll. The catalog is the
+# pack's own `items`, handed to `floor_plan` on the Python side and planted
+# on `window.VEFR_ITEMS` for the JavaScript one, so the whole drop - base
+# id, drawn rarity, hidden traits - is compared in both languages.
+# `brass-ring` is the other half of the slice: a fixed `rarity` and fixed
+# `traits` with no `roll` under them, so there is no table and nothing is
+# drawn - the two kinds of instance a drop can carry are both here.
+ITEMS = {
+    "pebble": {"name": "a grey pebble", "sprite": "", "value": 1},
+    "brass-ring": {"name": "a brass ring", "sprite": "", "rarity": "common",
+                   "traits": ["keen"]},
+    "cloudy-potion": {
+        "name": "a cloudy potion", "sprite": "potion", "heal": 3, "use": "drink",
+        "roll": {"rarity": {"common": 60, "uncommon": 30, "rare": 10},
+                 "traits": ["keen", "brave", "swift", "cold"],
+                 "chance": 60, "max": 2},
+    },
+}
+
+ROLLED_DESCENT = copy.deepcopy(BLUEPRINT_DESCENT)
+ROLLED_DESCENT["blueprint"]["families"]["rat"]["defaults"]["drops"] = ["pebble"]
+ROLLED_DESCENT["blueprint"]["families"]["moth"]["defaults"]["drops"] = [
+    "brass-ring", "cloudy-potion"]
+ROLLED_DEPTHS = [1, 2, 3]
+
 
 @pytest.fixture(scope="module")
 def replay(tmp_path_factory):
@@ -88,7 +113,10 @@ def replay(tmp_path_factory):
     cases.write_text(json.dumps({"descent": DESCENT, "depths": DEPTHS,
                                  "runs": RUNS,
                                  "blueprintDescent": BLUEPRINT_DESCENT,
-                                 "blueprintDepths": [1, 2, 3]}),
+                                 "blueprintDepths": [1, 2, 3],
+                                 "rolled": {"descent": ROLLED_DESCENT,
+                                            "depths": ROLLED_DEPTHS,
+                                            "items": ITEMS}}),
                      encoding="utf-8")
     run = subprocess.run(["node", str(HARNESS), str(html), str(cases)],
                          capture_output=True, text=True, timeout=300)
@@ -132,6 +160,69 @@ def test_the_plan_carries_no_grid_in_its_identity(replay):
     for plan in replay["plans"]:
         assert set(plan["identity"]) == {"gen", "hash", "key"}
         assert plan["name"] == plan["name"].lower()
+
+
+def test_a_rolled_floor_is_the_same_floor_in_both_languages(replay):
+    """ADR 0017: the rarity and the hidden traits are drawn in both.
+
+    The base id was already a twin draw; the rarity and the traits are a
+    second one, off a second named stream, and a twin that read the
+    catalog in a different order or spent the draws in a different order
+    would give a player a different potion from the one Python drew.
+
+    Two kinds of instance ride a drop, and the fixture makes both. A pack
+    that declares a `roll` gets its rarity drawn off that table, so the
+    rarity must be one of the names the table itself carries. A pack that
+    declares only a `rarity` or `traits` gets no draw at all - there is
+    no table to draw from - and gets exactly those words back, which is
+    what `item_draw` says it does and the only thing a twin could get
+    wrong here while still agreeing with itself. Both have to appear, or
+    one of the two branches is not being read off a real floor.
+    """
+    got = replay["rolled"]["plans"]
+    assert len(got) == len(ROLLED_DEPTHS)
+    rolled_any = drawn_any = fixed_any = False
+    for depth, plan in zip(ROLLED_DEPTHS, got):
+        want = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        assert _canonical(plan) == _canonical(want), depth
+        for mob in want["mobs"]:
+            for drop in mob["drops"]:
+                if not isinstance(drop, dict):
+                    continue
+                rolled_any = True
+                assert drop["identified"] is False, drop
+                entry = ITEMS[drop["item"]]
+                roll = maplab.item_roll_of(entry)
+                if roll:
+                    # drawn: a name this roll's own table carries, and
+                    # traits off its own pool - never the pack's fixed words.
+                    drawn_any = True
+                    names = {name for name, _ in roll["rarity"]}
+                    assert names, drop
+                    assert drop["rarity"] in names, drop
+                    assert set(drop["traits"]) <= set(roll["traits"]), drop
+                else:
+                    # fixed: no table, so no draw, so the pack's own words
+                    # come back verbatim - the same rarity, the same traits
+                    # in the pack's order, and not one thing invented.
+                    fixed_any = True
+                    assert "rarity" in entry or "traits" in entry, entry
+                    assert drop == {"item": drop["item"],
+                                    "rarity": entry.get("rarity", ""),
+                                    "traits": list(entry.get("traits", [])),
+                                    "identified": False}, drop
+    assert rolled_any, "the fixture rolled nothing, so this proved nothing"
+    assert drawn_any, "the fixture drew nothing, so no rarity was read off a table"
+    assert fixed_any, "the fixture fixed nothing, so no no-draw drop was read"
+
+
+def test_the_rolled_floor_is_the_same_floor_twice_on_each_side(replay):
+    """And the twin is not accidentally deterministic in one language
+    only: Python draws the same plan twice, and so does the browser."""
+    for depth in ROLLED_DEPTHS:
+        first = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        second = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        assert _canonical(first) == _canonical(second), depth
 
 
 def test_a_family_is_resolved_from_the_blueprint_rather_than_the_sections_entry():

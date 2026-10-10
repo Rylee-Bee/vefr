@@ -570,6 +570,36 @@ gameplay features over new core machinery.
       dropping, no selling, no identifying. Guide: `docs/guides/rulesets.md`
       → loot. Tests: `tests/test_builder_weave.py`,
       `tests/test_combat_loop.py`.
+- [x] **Rolled loot, first slice — a rarity at once, traits hidden**
+      (2026-10-10): a drop was a fixed id, so every cloudy potion in a run
+      was the same cloudy potion. An `items` entry may now carry three
+      optional keys - `rarity` (one plain word), `traits` (a list of plain
+      words) and `roll` (`rarity`, a table of the pack's own names and
+      whole weights; `traits`, the pool; `chance` 0..100; `max` 0..4) - and
+      a monster's drop on a generated floor draws the rarity and the traits
+      off a second named stream off the same floor key and monster
+      (`v3|<key>|roll|<mob id>|<item id>`), so the same seed always drops
+      the same potion at the same rarity, two monsters never share a roll,
+      and the base id cannot move when a roll is added. The drawn instance
+      (`{item, rarity, traits, identified: false}`) rides on the drop and
+      then in the bag; the strip, the Bag panel and the pickup line name
+      the thing and its rarity together from the moment of pickup, with no
+      animation or delay anywhere in that path, and the traits are in no
+      part of the page. Every key is optional and additive: `mob_drops`,
+      `mobs_at`, `_with_warden` and `floor_plan` take the catalog as an
+      optional argument, and a pack that names none of the three bakes the
+      same `VEFR_ITEMS` and drops the same ids it did before (hashed both
+      ways in `tests/test_rolled_loot.py`). `vefr check` refuses four
+      things, one sentence each: a `rarity` outside the item's own table, a
+      trait that is not one plain word, a `roll` with no rarity table, and
+      a `roll` that asks for traits and names no pool. Gaps, deliberately:
+      no identifying (nothing sets `identified` true), no reveal moment
+      beyond the rarity being there, no answer yet to what a trait does,
+      no bag size, and no rolled drops outside a generated floor's
+      monsters. ADR: `docs/adr/0017-rolled-loot-with-rarity-and-hidden-traits.md`.
+      Guide: `docs/guides/rulesets.md` → rolled loot. Tests:
+      `tests/test_rolled_loot.py`, `tests/test_rolled_loot_play.py`,
+      `tests/test_descent_parity.py`, `tests/fixtures/make_rolled_pack.py`.
 - [x] **Combat, first slice — bump to fight, and monsters that come for you**
       (2026-09-30): the dungeon had floors, fog, doors, stairs, books and a
       chest - and nothing to fight. A region's `contract.json` may now carry

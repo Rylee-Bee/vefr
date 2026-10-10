@@ -456,7 +456,91 @@ window.VEFR_DESCENT = (function () {
       ? table.filter(function (i) { return typeof i === 'string' && i; }) : [];
     if (!ids.length) return [];
     var rng = window.VEFR_DELVE.prng(lootSeed(key, mobId));
-    return [ids[Math.floor(rng() * ids.length)]];
+    var chosen = ids[Math.floor(rng() * ids.length)];
+    return [itemDraw(key, mobId, chosen, (window.VEFR_ITEMS || {})[chosen])];
+  }
+
+  // ---- rolled loot (ADR 0017): the twins of delve.py `roll_seed`,
+  // `item_draw`, `_weighted` and `_trait_draw`. Read in this order and in
+  // this many draws, or the two languages stop agreeing: the bake has
+  // already resolved the roll's defaults, so what arrives here is
+  // `{rarity: {name: weight}, traits: [...], chance, max}` with nothing
+  // left to decide. The item's own fixed `rarity`/`traits` ride a drop
+  // that is not drawn from, and an item with neither is the bare id it
+  // has always been.
+
+  // One drawn item's own roll stream, off the same floor key and the same
+  // monster the base draw came from: the rarity and the hidden traits
+  // cannot move when the base id moves, and two monsters never share one.
+  function rollSeed(key, mobId, itemId) {
+    return streamSeed(key, 'roll|' + mobId + '|' + itemId);
+  }
+  function itemRollOf(def) {
+    if (!def || typeof def !== 'object') return null;
+    var roll = def.roll;
+    if (!roll || typeof roll !== 'object' || Array.isArray(roll)) return null;
+    var table = roll.rarity;
+    if (!table || typeof table !== 'object' || Array.isArray(table)) return null;
+    var names = Object.keys(table).filter(function (n) {
+      return isWhole(table[n]) && table[n] >= 1;
+    });
+    var pool = Array.isArray(roll.traits)
+      ? roll.traits.filter(function (t) { return typeof t === 'string' && t; }) : [];
+    // Both halves or nothing: a roll that cannot answer both questions
+    // draws nothing, which is `maplab.item_roll_errors`' refusal, not a
+    // half-rolled drop here.
+    if (!names.length || !pool.length) return null;
+    return {
+      names: names,
+      weights: names.map(function (n) { return table[n]; }),
+      pool: pool,
+      chance: isWhole(roll.chance) ? roll.chance : 100,
+      max: isWhole(roll.max) ? roll.max : 1
+    };
+  }
+  // One name off the table: `floor(rng() * total)` and a walk down the
+  // weights - one floor of one stream, and no float compared with another.
+  function weightedName(rng, names, weights) {
+    var total = 0, i;
+    for (i = 0; i < weights.length; i++) total += weights[i];
+    var pick = Math.floor(rng() * total), upto = 0;
+    for (i = 0; i < names.length; i++) {
+      upto += weights[i];
+      if (pick < upto) return names[i];
+    }
+    return names[names.length - 1];
+  }
+  // The hidden traits one rolled item carries, in draw order: whether it
+  // bears any at all, then how many, then which - each drawn once, so two
+  // traits never come back the same word and a seed always draws the same.
+  function traitDraw(rng, roll) {
+    var pool = roll.pool.slice(), out = [];
+    if (roll.max < 1 || Math.floor(rng() * 100) >= roll.chance) return out;
+    var want = Math.min(1 + Math.floor(rng() * roll.max), pool.length);
+    for (var i = 0; i < want; i++) {
+      out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    }
+    return out;
+  }
+  // The drop one drawn item is: the bare id it has always been, or the
+  // instance record the bag keeps as it is. `identified` is false because
+  // the reveal is the next slice - nothing here decides a thing has been
+  // read, it only refuses to pretend one has.
+  function itemDraw(key, mobId, itemId, def) {
+    var entry = (def && typeof def === 'object') ? def : {};
+    var roll = itemRollOf(entry);
+    var rarity = (typeof entry.rarity === 'string' && entry.rarity) ? entry.rarity : '';
+    var traits = Array.isArray(entry.traits)
+      ? entry.traits.filter(function (t) { return typeof t === 'string' && t; }) : [];
+    if (!roll) {
+      if (!rarity && !traits.length) return itemId;
+      return { item: itemId, rarity: rarity, traits: traits, identified: false };
+    }
+    var rng = window.VEFR_DELVE.prng(rollSeed(key, mobId, itemId));
+    return {
+      item: itemId, rarity: weightedName(rng, roll.names, roll.weights),
+      traits: traitDraw(rng, roll), identified: false
+    };
   }
 
   function floorPlan(depth, run) {

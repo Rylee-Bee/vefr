@@ -42,11 +42,48 @@ function itemSpriteSrc(id) {
   if (!name) return '';
   return (window.VEFR_SPRITES || {})[name] || '';
 }
+// ---- what is carried (ADR 0017) ----
+// The bag is a list, and an entry in it is either a bare id - what every
+// bag held before this slice, and what every pack that declares no `roll`
+// still holds, byte for byte - or an instance record a rolled drop brought
+// in: `{id, rarity, traits, identified}`. `bagCarried` reads both the same
+// way, so every caller below can ask for what it needs and get it.
+//
+// The traits are read here and printed NOWHERE while `identified` is false.
+// Nothing in this slice turns it true; the identify service is the next
+// one, and when it arrives this is the one line it has to change.
+function bagCarried() {
+  var raw = store.getJSON(BAG_KEY, []);
+  var cat = itemCatalog();
+  if (!Array.isArray(raw)) return [];
+  var out = [];
+  for (var i = 0; i < raw.length; i++) {
+    var entry = raw[i];
+    var record = (entry && typeof entry === 'object' && !Array.isArray(entry)) ? entry : null;
+    var id = record ? record.id : entry;
+    if (typeof id !== 'string' || !cat[id]) continue;
+    out.push({
+      id: id,
+      rarity: (record && typeof record.rarity === 'string') ? record.rarity : '',
+      traits: (record && Array.isArray(record.traits))
+        ? record.traits.filter(function (t) { return typeof t === 'string'; }) : [],
+      identified: !!(record && record.identified === true)
+    });
+  }
+  return out;
+}
 function bagItems() {
-  var ids = store.getJSON(BAG_KEY, []);
-  return Array.isArray(ids) ? ids.filter(function (id) {
-    return typeof id === 'string' && itemCatalog()[id];
-  }) : [];
+  return bagCarried().map(function (carried) { return carried.id; });
+}
+// What one carried thing is called: its own words, and its rarity beside
+// them the moment it is picked up - the base item and its rarity at once,
+// which is the whole reveal this slice owes the player. The traits are
+// never part of it (see `bagCarried`). This runs with no timer and no
+// animation, so with motion off the rarity is there on the first frame:
+// there is nothing here to turn off.
+function carriedName(carried) {
+  var name = itemName(carried.id);
+  return carried.rarity ? (name + ' (' + carried.rarity + ')') : name;
 }
 // Rebuild the harness-readable fight snapshot after bag/gold changes.
 // setupTown installs the real builder; before that (or in a pack with no
@@ -56,22 +93,52 @@ function syncCombat() {
     try { window.refreshCombatSnapshot(); } catch (e) {}
   }
 }
-function bagAdd(id) {
+// Put one thing in the bag. `roll` is the drop's drawn
+// `{rarity, traits}` when it has any: with it, the entry is saved as an
+// instance record so the rarity is there on the next load and is never
+// drawn twice; without it, the entry is the bare id this has always
+// stored, which is what every caller but a floor drop passes.
+function bagAdd(id, roll) {
   if (!itemCatalog()[id]) return false;
-  var ids = bagItems();
-  ids.push(id);
+  var raw = store.getJSON(BAG_KEY, []);
+  var cat = itemCatalog();
+  // The bag has always dropped an id the catalog no longer has every time
+  // it wrote, and it still does - an instance record is kept as itself,
+  // because its id is the thing being carried.
+  var ids = [];
+  (Array.isArray(raw) ? raw : []).forEach(function (entry) {
+    var named = (entry && typeof entry === 'object' && !Array.isArray(entry))
+      ? entry.id : entry;
+    if (typeof named === 'string' && cat[named]) ids.push(entry);
+  });
+  var rarity = (roll && typeof roll.rarity === 'string') ? roll.rarity : '';
+  var traits = (roll && Array.isArray(roll.traits))
+    ? roll.traits.filter(function (t) { return typeof t === 'string'; }) : [];
+  if (rarity || traits.length) {
+    ids.push({ id: id, rarity: rarity, traits: traits, identified: false });
+  } else {
+    ids.push(id);
+  }
   store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
   return true;
 }
-// Take one copy of an id out of the bag. False when it was not carried.
+// Take one copy of an id out of the bag - the first entry naming it, an
+// instance record or a bare id alike. False when it was not carried.
 function bagRemoveOne(id) {
-  var ids = bagItems();
-  var i = ids.indexOf(id);
-  if (i === -1) return false;
-  ids.splice(i, 1);
+  var ids = store.getJSON(BAG_KEY, []);
+  if (!Array.isArray(ids)) return false;
+  var at = -1;
+  for (var i = 0; i < ids.length; i++) {
+    var entry = ids[i];
+    var named = (entry && typeof entry === 'object' && !Array.isArray(entry))
+      ? entry.id : entry;
+    if (named === id) { at = i; break; }
+  }
+  if (at === -1) return false;
+  ids.splice(at, 1);
   store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
@@ -156,15 +223,15 @@ function renderBagStrip() {
   var strip = document.getElementById('bag-strip');
   if (!strip) return;
   strip.textContent = '';
-  var ids = bagItems().filter(function (id) { return !isWorn(id); });
-  if (!ids.length) {
+  var carried = bagCarried().filter(function (c) { return !isWorn(c.id); });
+  if (!carried.length) {
     strip.hidden = true;
     strip.setAttribute('aria-label', 'Nothing carried');
     return;
   }
   strip.hidden = false;
-  ids.forEach(function (id) {
-    var src = itemSpriteSrc(id);
+  carried.forEach(function (c) {
+    var src = itemSpriteSrc(c.id);
     var node;
     if (src) {
       node = document.createElement('img');
@@ -178,8 +245,10 @@ function renderBagStrip() {
     }
     strip.appendChild(node);
   });
+  // The strip's own words carry the rarity too, so a screen reader hears
+  // what the eye sees and neither has to wait for anything.
   strip.setAttribute('aria-label',
-    'Carrying: ' + ids.map(itemName).join(', ') + '.');
+    'Carrying: ' + carried.map(carriedName).join(', ') + '.');
 }
 
 // The Bag panel's "You" section: five slots in a fixed order, each
@@ -340,14 +409,19 @@ function takeOffSlot(slot) {
 // The pause-menu panel: a "You" section of five slots, then one row
 // per carried (not worn) thing, sprite then name. A slotted thing in
 // the bag gets an Equip button; anything with `use`, `heal` or `light`
-// keeps its Use button. A worn thing is never in this list.
+// keeps its Use button. A worn thing is never in this list. A row names
+// the thing and its rarity together (ADR 0017), in one line of text with
+// no timer behind it, so with motion off the rarity is there the moment
+// the panel opens - and the traits it does not name are not in the DOM
+// at all, so nothing is only hidden from the eye.
 function renderBagPanel() {
   renderEquipSlots();
   var list = document.getElementById('bag-list');
   var count = document.getElementById('bag-count');
   if (!list) return;
   list.textContent = '';
-  var ids = bagItems().filter(function (id) { return !isWorn(id); });
+  var carried = bagCarried().filter(function (c) { return !isWorn(c.id); });
+  var ids = carried.map(function (c) { return c.id; });
   if (!ids.length) {
     var p = document.createElement('p');
     p.className = 'empty';
@@ -357,7 +431,8 @@ function renderBagPanel() {
     renderGold();
     return;
   }
-  ids.forEach(function (id) {
+  carried.forEach(function (entry) {
+    var id = entry.id;
     var row = document.createElement('div');
     row.className = 'bag-row';
     var src = itemSpriteSrc(id);
@@ -375,7 +450,7 @@ function renderBagPanel() {
     }
     var label = document.createElement('span');
     label.className = 'bag-row-name';
-    label.textContent = itemName(id);
+    label.textContent = carriedName(entry);
     row.appendChild(label);
     var def = itemCatalog()[id];
     // A slotted thing can be equipped from here. The engine refuses

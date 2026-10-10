@@ -1509,8 +1509,10 @@ window.VEFR_ALBUM_ENGINE = (function () {
 // is still added (two potions are two potions) - the bag is a list, not
 // a set, and the panel shows one row per thing carried. A carried thing
 // can be used (when the pack gives it a `heal` and a `use`); selling and
-// buying happen at a shopkeeper's Trade panel (see below). No weight, no
-// dropping, no identifying yet.
+// buying happen at a shopkeeper's Trade panel (see below). Since ADR
+// 0017 an entry may instead be the instance a rolled drop left behind
+// (rarity and hidden traits); the bag logic and the strip live in the
+// gold part below. No weight, no dropping, no identifying yet.
 var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 
 // ---- what is worn: the equipment state ----
@@ -1606,11 +1608,48 @@ function itemSpriteSrc(id) {
   if (!name) return '';
   return (window.VEFR_SPRITES || {})[name] || '';
 }
+// ---- what is carried (ADR 0017) ----
+// The bag is a list, and an entry in it is either a bare id - what every
+// bag held before this slice, and what every pack that declares no `roll`
+// still holds, byte for byte - or an instance record a rolled drop brought
+// in: `{id, rarity, traits, identified}`. `bagCarried` reads both the same
+// way, so every caller below can ask for what it needs and get it.
+//
+// The traits are read here and printed NOWHERE while `identified` is false.
+// Nothing in this slice turns it true; the identify service is the next
+// one, and when it arrives this is the one line it has to change.
+function bagCarried() {
+  var raw = store.getJSON(BAG_KEY, []);
+  var cat = itemCatalog();
+  if (!Array.isArray(raw)) return [];
+  var out = [];
+  for (var i = 0; i < raw.length; i++) {
+    var entry = raw[i];
+    var record = (entry && typeof entry === 'object' && !Array.isArray(entry)) ? entry : null;
+    var id = record ? record.id : entry;
+    if (typeof id !== 'string' || !cat[id]) continue;
+    out.push({
+      id: id,
+      rarity: (record && typeof record.rarity === 'string') ? record.rarity : '',
+      traits: (record && Array.isArray(record.traits))
+        ? record.traits.filter(function (t) { return typeof t === 'string'; }) : [],
+      identified: !!(record && record.identified === true)
+    });
+  }
+  return out;
+}
 function bagItems() {
-  var ids = store.getJSON(BAG_KEY, []);
-  return Array.isArray(ids) ? ids.filter(function (id) {
-    return typeof id === 'string' && itemCatalog()[id];
-  }) : [];
+  return bagCarried().map(function (carried) { return carried.id; });
+}
+// What one carried thing is called: its own words, and its rarity beside
+// them the moment it is picked up - the base item and its rarity at once,
+// which is the whole reveal this slice owes the player. The traits are
+// never part of it (see `bagCarried`). This runs with no timer and no
+// animation, so with motion off the rarity is there on the first frame:
+// there is nothing here to turn off.
+function carriedName(carried) {
+  var name = itemName(carried.id);
+  return carried.rarity ? (name + ' (' + carried.rarity + ')') : name;
 }
 // Rebuild the harness-readable fight snapshot after bag/gold changes.
 // setupTown installs the real builder; before that (or in a pack with no
@@ -1620,22 +1659,52 @@ function syncCombat() {
     try { window.refreshCombatSnapshot(); } catch (e) {}
   }
 }
-function bagAdd(id) {
+// Put one thing in the bag. `roll` is the drop's drawn
+// `{rarity, traits}` when it has any: with it, the entry is saved as an
+// instance record so the rarity is there on the next load and is never
+// drawn twice; without it, the entry is the bare id this has always
+// stored, which is what every caller but a floor drop passes.
+function bagAdd(id, roll) {
   if (!itemCatalog()[id]) return false;
-  var ids = bagItems();
-  ids.push(id);
+  var raw = store.getJSON(BAG_KEY, []);
+  var cat = itemCatalog();
+  // The bag has always dropped an id the catalog no longer has every time
+  // it wrote, and it still does - an instance record is kept as itself,
+  // because its id is the thing being carried.
+  var ids = [];
+  (Array.isArray(raw) ? raw : []).forEach(function (entry) {
+    var named = (entry && typeof entry === 'object' && !Array.isArray(entry))
+      ? entry.id : entry;
+    if (typeof named === 'string' && cat[named]) ids.push(entry);
+  });
+  var rarity = (roll && typeof roll.rarity === 'string') ? roll.rarity : '';
+  var traits = (roll && Array.isArray(roll.traits))
+    ? roll.traits.filter(function (t) { return typeof t === 'string'; }) : [];
+  if (rarity || traits.length) {
+    ids.push({ id: id, rarity: rarity, traits: traits, identified: false });
+  } else {
+    ids.push(id);
+  }
   store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
   syncCombat();
   return true;
 }
-// Take one copy of an id out of the bag. False when it was not carried.
+// Take one copy of an id out of the bag - the first entry naming it, an
+// instance record or a bare id alike. False when it was not carried.
 function bagRemoveOne(id) {
-  var ids = bagItems();
-  var i = ids.indexOf(id);
-  if (i === -1) return false;
-  ids.splice(i, 1);
+  var ids = store.getJSON(BAG_KEY, []);
+  if (!Array.isArray(ids)) return false;
+  var at = -1;
+  for (var i = 0; i < ids.length; i++) {
+    var entry = ids[i];
+    var named = (entry && typeof entry === 'object' && !Array.isArray(entry))
+      ? entry.id : entry;
+    if (named === id) { at = i; break; }
+  }
+  if (at === -1) return false;
+  ids.splice(at, 1);
   store.setJSON(BAG_KEY, ids);
   renderBagPanel();
   renderBagStrip();
@@ -1720,15 +1789,15 @@ function renderBagStrip() {
   var strip = document.getElementById('bag-strip');
   if (!strip) return;
   strip.textContent = '';
-  var ids = bagItems().filter(function (id) { return !isWorn(id); });
-  if (!ids.length) {
+  var carried = bagCarried().filter(function (c) { return !isWorn(c.id); });
+  if (!carried.length) {
     strip.hidden = true;
     strip.setAttribute('aria-label', 'Nothing carried');
     return;
   }
   strip.hidden = false;
-  ids.forEach(function (id) {
-    var src = itemSpriteSrc(id);
+  carried.forEach(function (c) {
+    var src = itemSpriteSrc(c.id);
     var node;
     if (src) {
       node = document.createElement('img');
@@ -1742,8 +1811,10 @@ function renderBagStrip() {
     }
     strip.appendChild(node);
   });
+  // The strip's own words carry the rarity too, so a screen reader hears
+  // what the eye sees and neither has to wait for anything.
   strip.setAttribute('aria-label',
-    'Carrying: ' + ids.map(itemName).join(', ') + '.');
+    'Carrying: ' + carried.map(carriedName).join(', ') + '.');
 }
 
 // The Bag panel's "You" section: five slots in a fixed order, each
@@ -1904,14 +1975,19 @@ function takeOffSlot(slot) {
 // The pause-menu panel: a "You" section of five slots, then one row
 // per carried (not worn) thing, sprite then name. A slotted thing in
 // the bag gets an Equip button; anything with `use`, `heal` or `light`
-// keeps its Use button. A worn thing is never in this list.
+// keeps its Use button. A worn thing is never in this list. A row names
+// the thing and its rarity together (ADR 0017), in one line of text with
+// no timer behind it, so with motion off the rarity is there the moment
+// the panel opens - and the traits it does not name are not in the DOM
+// at all, so nothing is only hidden from the eye.
 function renderBagPanel() {
   renderEquipSlots();
   var list = document.getElementById('bag-list');
   var count = document.getElementById('bag-count');
   if (!list) return;
   list.textContent = '';
-  var ids = bagItems().filter(function (id) { return !isWorn(id); });
+  var carried = bagCarried().filter(function (c) { return !isWorn(c.id); });
+  var ids = carried.map(function (c) { return c.id; });
   if (!ids.length) {
     var p = document.createElement('p');
     p.className = 'empty';
@@ -1921,7 +1997,8 @@ function renderBagPanel() {
     renderGold();
     return;
   }
-  ids.forEach(function (id) {
+  carried.forEach(function (entry) {
+    var id = entry.id;
     var row = document.createElement('div');
     row.className = 'bag-row';
     var src = itemSpriteSrc(id);
@@ -1939,7 +2016,7 @@ function renderBagPanel() {
     }
     var label = document.createElement('span');
     label.className = 'bag-row-name';
-    label.textContent = itemName(id);
+    label.textContent = carriedName(entry);
     row.appendChild(label);
     var def = itemCatalog()[id];
     // A slotted thing can be equipped from here. The engine refuses
@@ -6882,7 +6959,91 @@ window.VEFR_DESCENT = (function () {
       ? table.filter(function (i) { return typeof i === 'string' && i; }) : [];
     if (!ids.length) return [];
     var rng = window.VEFR_DELVE.prng(lootSeed(key, mobId));
-    return [ids[Math.floor(rng() * ids.length)]];
+    var chosen = ids[Math.floor(rng() * ids.length)];
+    return [itemDraw(key, mobId, chosen, (window.VEFR_ITEMS || {})[chosen])];
+  }
+
+  // ---- rolled loot (ADR 0017): the twins of delve.py `roll_seed`,
+  // `item_draw`, `_weighted` and `_trait_draw`. Read in this order and in
+  // this many draws, or the two languages stop agreeing: the bake has
+  // already resolved the roll's defaults, so what arrives here is
+  // `{rarity: {name: weight}, traits: [...], chance, max}` with nothing
+  // left to decide. The item's own fixed `rarity`/`traits` ride a drop
+  // that is not drawn from, and an item with neither is the bare id it
+  // has always been.
+
+  // One drawn item's own roll stream, off the same floor key and the same
+  // monster the base draw came from: the rarity and the hidden traits
+  // cannot move when the base id moves, and two monsters never share one.
+  function rollSeed(key, mobId, itemId) {
+    return streamSeed(key, 'roll|' + mobId + '|' + itemId);
+  }
+  function itemRollOf(def) {
+    if (!def || typeof def !== 'object') return null;
+    var roll = def.roll;
+    if (!roll || typeof roll !== 'object' || Array.isArray(roll)) return null;
+    var table = roll.rarity;
+    if (!table || typeof table !== 'object' || Array.isArray(table)) return null;
+    var names = Object.keys(table).filter(function (n) {
+      return isWhole(table[n]) && table[n] >= 1;
+    });
+    var pool = Array.isArray(roll.traits)
+      ? roll.traits.filter(function (t) { return typeof t === 'string' && t; }) : [];
+    // Both halves or nothing: a roll that cannot answer both questions
+    // draws nothing, which is `maplab.item_roll_errors`' refusal, not a
+    // half-rolled drop here.
+    if (!names.length || !pool.length) return null;
+    return {
+      names: names,
+      weights: names.map(function (n) { return table[n]; }),
+      pool: pool,
+      chance: isWhole(roll.chance) ? roll.chance : 100,
+      max: isWhole(roll.max) ? roll.max : 1
+    };
+  }
+  // One name off the table: `floor(rng() * total)` and a walk down the
+  // weights - one floor of one stream, and no float compared with another.
+  function weightedName(rng, names, weights) {
+    var total = 0, i;
+    for (i = 0; i < weights.length; i++) total += weights[i];
+    var pick = Math.floor(rng() * total), upto = 0;
+    for (i = 0; i < names.length; i++) {
+      upto += weights[i];
+      if (pick < upto) return names[i];
+    }
+    return names[names.length - 1];
+  }
+  // The hidden traits one rolled item carries, in draw order: whether it
+  // bears any at all, then how many, then which - each drawn once, so two
+  // traits never come back the same word and a seed always draws the same.
+  function traitDraw(rng, roll) {
+    var pool = roll.pool.slice(), out = [];
+    if (roll.max < 1 || Math.floor(rng() * 100) >= roll.chance) return out;
+    var want = Math.min(1 + Math.floor(rng() * roll.max), pool.length);
+    for (var i = 0; i < want; i++) {
+      out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    }
+    return out;
+  }
+  // The drop one drawn item is: the bare id it has always been, or the
+  // instance record the bag keeps as it is. `identified` is false because
+  // the reveal is the next slice - nothing here decides a thing has been
+  // read, it only refuses to pretend one has.
+  function itemDraw(key, mobId, itemId, def) {
+    var entry = (def && typeof def === 'object') ? def : {};
+    var roll = itemRollOf(entry);
+    var rarity = (typeof entry.rarity === 'string' && entry.rarity) ? entry.rarity : '';
+    var traits = Array.isArray(entry.traits)
+      ? entry.traits.filter(function (t) { return typeof t === 'string' && t; }) : [];
+    if (!roll) {
+      if (!rarity && !traits.length) return itemId;
+      return { item: itemId, rarity: rarity, traits: traits, identified: false };
+    }
+    var rng = window.VEFR_DELVE.prng(rollSeed(key, mobId, itemId));
+    return {
+      item: itemId, rarity: weightedName(rng, roll.names, roll.weights),
+      traits: traitDraw(rng, roll), identified: false
+    };
   }
 
   function floorPlan(depth, run) {
@@ -8042,8 +8203,15 @@ function setupTown() {
     return generated ? id : id + '#' + sig;
   }
   function enemySig(raw) {
+    // A drop is the bare id it always was, or the instance a generated
+    // floor drew (ADR 0017) - which the signature names by its id and its
+    // rarity, so two rolls of the same thing are still two signatures.
+    var drops = (Array.isArray(raw.drops) ? raw.drops : []).map(function (d) {
+      return (typeof d === 'string') ? d
+        : ((d && d.item ? d.item : '') + ':' + (d && d.rarity ? d.rarity : ''));
+    }).join(',');
     return [raw.name, (Array.isArray(raw.at) ? raw.at.join(',') : ''),
-            raw.hp, raw.atk, (Array.isArray(raw.drops) ? raw.drops.join(',') : '')].join('|');
+            raw.hp, raw.atk, drops].join('|');
   }
   function loadEnemies() {
     var dead = loadSlain();
@@ -8406,13 +8574,44 @@ function setupTown() {
   // A killed enemy leaves what it carried on the tile it died on; the
   // floor is remembered per world (`vefr-floor-<world>`, one list of
   // {region, at, item}) so leaving and coming back is honest about what
-  // is still lying there. Taking a drop removes it. No weight, no use,
-  // no drop, no sell, no identifying - this is the first slice only.
+  // is still lying there. A drop a generated floor drew also carries the
+  // rarity it was drawn at and the traits it is hiding (ADR 0017), and
+  // the bag keeps that instance rather than drawing it again. Taking a
+  // drop removes it. No weight, no use, no drop, no sell; identifying is
+  // the slice after this one.
   var floor = [];
 
   function floorKey() {
     var w = (window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world';
     return 'vefr-floor-' + w;
+  }
+  // What one drop record is, wherever it is being written: the three
+  // fields every drop has always had, plus the drawn instance a rolled
+  // drop carries (ADR 0017). A drop that carries no rarity and no traits
+  // is written as the three fields alone, so a pack that declares no
+  // `roll` saves and reloads exactly the bytes it always did.
+  function dropRecord(d) {
+    var out = { region: regionName, at: d.at.slice(), item: d.item };
+    var traits = (d.traits && d.traits.length) ? d.traits : null;
+    if (d.rarity || traits) {
+      out.rarity = d.rarity || '';
+      out.traits = traits ? traits.slice() : [];
+      out.identified = d.identified === true;
+    }
+    return out;
+  }
+  // The instance a drop is, read one way: a rolled record as itself, and
+  // a bare id (a town enemy, a chest, a rule) with whatever the catalog
+  // fixed on it - a fixed `rarity`/`traits` ride along unchanged, because
+  // a drop with no floor to seed it is never drawn from.
+  function dropInstance(d) {
+    if (d && typeof d === 'object' && !Array.isArray(d)) {
+      return { id: d.item, rarity: d.rarity || '',
+               traits: Array.isArray(d.traits) ? d.traits : [] };
+    }
+    var def = itemCatalog()[d];
+    return { id: d, rarity: (def && typeof def.rarity === 'string') ? def.rarity : '',
+             traits: (def && Array.isArray(def.traits)) ? def.traits : [] };
   }
   function loadFloor() {
     // A generated floor keeps its drops in its own delta record: with the
@@ -8433,9 +8632,7 @@ function setupTown() {
   }
   function saveFloor() {
     if (window.VEFR_DESCENT && window.VEFR_DESCENT.isGenerated(regionName)) {
-      window.VEFR_DESCENT.saveDrops(floor.map(function (d) {
-        return { region: regionName, at: d.at.slice(), item: d.item };
-      }));
+      window.VEFR_DESCENT.saveDrops(floor.map(dropRecord));
       return;
     }
     store.setJSON(floorKey(), floor);
@@ -8445,19 +8642,28 @@ function setupTown() {
       return d.region === regionName && d.at[0] === x && d.at[1] === y;
     });
   }
-  // Leave a killed enemy's drops where it died. Only a catalog item is
-  // placed; the bake already dropped an unknown id.
+  // Leave a killed enemy's drops where it died. A drop is either the
+  // record a generated floor drew (with its rarity and its hidden traits,
+  // ADR 0017) or a bare id, which takes whatever the catalog fixed on it.
+  // Only a catalog item is placed; the bake already dropped an unknown id.
   function placeDrops(at, ids) {
     var added = false;
-    (ids || []).forEach(function (id) {
-      if (!itemCatalog()[id]) return;
-      floor.push({ region: regionName, at: [at[0], at[1]], item: id });
+    (ids || []).forEach(function (entry) {
+      var inst = (entry && typeof entry === 'object' && !Array.isArray(entry))
+        ? { id: entry.item, rarity: entry.rarity || '',
+            traits: Array.isArray(entry.traits) ? entry.traits : [] }
+        : dropInstance(entry);
+      if (!inst.id || !itemCatalog()[inst.id]) return;
+      floor.push(dropRecord({
+        region: regionName, at: [at[0], at[1]], item: inst.id,
+        rarity: inst.rarity, traits: inst.traits, identified: false }));
       added = true;
     });
     if (added) saveFloor();
   }
   // Walking onto a drop takes every item lying on that tile. One plain
-  // line says what was taken; the bag panel and the strip redraw.
+  // line says what was taken - the thing and its rarity, at once, with
+  // nothing to wait for - and the bag panel and the strip redraw.
   function takeHere() {
     var here = dropsAt(hero[0], hero[1]);
     if (!here.length) return;
@@ -8465,9 +8671,10 @@ function setupTown() {
     // One `picks-up` per item actually bagged - a drop bagAdd refused
     // (an id the catalog lost) is not picked up and fires nothing.
     here.forEach(function (d) {
-      if (bagAdd(d.item)) {
-        names.push(itemName(d.item));
-        fireRule('picks-up', { what: d.item });
+      var inst = dropInstance(d);
+      if (bagAdd(inst.id, inst)) {
+        names.push(carriedName(inst));
+        fireRule('picks-up', { what: inst.id });
       }
     });
     floor = floor.filter(function (d) {
@@ -8827,7 +9034,15 @@ function setupTown() {
       bag: bagItems(),
       floor: floor.filter(function (d) { return d.region === regionName; })
         .map(function (d) {
-          return { at: d.at.slice(), item: d.item, name: itemName(d.item) };
+          var out = { at: d.at.slice(), item: d.item, name: itemName(d.item) };
+          // The drawn rarity rides in the snapshot too, so a harness can
+          // see what the bag will say - and only when there is one, so a
+          // pack that never rolls reads the snapshot it always read.
+          if (d.rarity) {
+            out.rarity = d.rarity;
+            out.identified = d.identified === true;
+          }
+          return out;
         })
     };
     return window.VEFR_COMBAT;

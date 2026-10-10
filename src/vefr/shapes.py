@@ -45,6 +45,13 @@ section 2 writes a value no earlier block had:
   hundredths: the monster curve of a Section.
 - `list` - a plain list, which `Key.sub` then walks element by element.
 
+and ADR 0017 (rolled loot) added one more, because a trait is a word and
+not an id:
+
+- `words` - a list of plain words, every element checked, so a `traits`
+  pool holding "quick brown" is refused at that entry rather than
+  half-drawn at play time.
+
 A wrong element of a `pair`, an `ids` or an `enums` is reported at that
 element's pointer, and the first wrong element is the one reported, so a
 key earns one sentence however wrong its value is.
@@ -68,9 +75,16 @@ the Blueprint, and what does it resolve to - is asked through a
 from collections import namedtuple
 from dataclasses import dataclass, field
 from typing import Mapping
+import re
 
 
 Problem = namedtuple('Problem', 'code pointer sentence')
+
+# A plain word: one the pack reads aloud and the bag can print. No spaces,
+# no punctuation, 1 to 24 characters, a letter first - so a `traits` pool
+# can never carry a sentence that would read as two traits in a sentence
+# (ADR 0017).
+WORD = re.compile(r'[A-Za-z][A-Za-z0-9_-]{0,23}')
 
 
 @dataclass(frozen=True)
@@ -79,6 +93,8 @@ class Key:
     kind: str               # 'str' | 'int' | 'bool' | 'enum' | 'obj' | 'list' | 'ref'
                              # | 'hundredths' | 'pair' | 'ids' | 'name-label'
                              # | 'enums' | 'glyphs' | 'hundredths-pair'
+                             # | 'words' (a list of plain words)
+                             # | 'word' (one plain word)
                              # | 'str-or-obj' (a string, or an object checked by `sub`)
     choices: tuple = ()     # enum values, in sentence order
     lo: int | None = None   # int bounds, str length bounds, or hundredths
@@ -170,6 +186,14 @@ _KIND_SAY = {
         'wrong-type': '{path} must be a list of affix ids, such as ["big"]',
         'wrong-element': '{path} must be an affix id, such as "big"',
     },
+    'words': {
+        'wrong-type': '{path} must be a list of plain words, such as ["keen"]',
+        'wrong-element': '{path} must be a plain word, such as "keen"',
+    },
+    'word': {
+        'wrong-type': '{path} must be a string',
+        'wrong-element': '{path} must be a plain word, such as "keen"',
+    },
 }
 
 # What a `wrong-element` names, per kind.
@@ -178,6 +202,7 @@ _ELEMENT_NOUN = {
     'ids': 'an affix id',
     'hundredths': 'a whole number',
     'hundredths-pair': 'a whole number',
+    'words': 'a plain word',
 }
 
 
@@ -228,8 +253,10 @@ def _type_ok(kind: str, value) -> bool:
         return isinstance(value, bool)
     if kind == 'obj':
         return isinstance(value, dict)
-    if kind in ('list', 'ids', 'enums'):
+    if kind in ('list', 'ids', 'enums', 'words'):
         return isinstance(value, list)
+    if kind == 'word':
+        return isinstance(value, str)
     if kind == 'glyphs':
         return isinstance(value, dict)
     if kind == 'ref':
@@ -311,6 +338,12 @@ def _element_problem(block, key, value, index, path):
             _say(block, key, 'not-in-choices').format(
                 name=block.name, key=key.name, path=here,
                 choices=_render_choices(key.choices)))
+    if key.kind == 'words':
+        if isinstance(value, str) and WORD.fullmatch(value):
+            return None
+        return Problem('wrong-element', pointer,
+                       _say(block, key, 'wrong-element').format(
+                           path=here, noun=_ELEMENT_NOUN.get(key.kind, 'a value')))
     if isinstance(value, str) and value:
         return None
     return Problem('wrong-element', pointer,
@@ -346,6 +379,11 @@ def _shape_problem(block, key, value, path):
             return Problem('no-name-slot', pointer,
                            _say(block, key, 'no-name-slot').format(path=path))
         return None
+    if key.kind == 'word':
+        if WORD.fullmatch(value):
+            return None
+        return Problem('wrong-element', pointer,
+                       _say(block, key, 'wrong-element').format(path=path))
     if key.kind == 'glyphs':
         return _glyph_problem(block, key, value, path)
     if key.kind == 'hundredths':
@@ -405,7 +443,7 @@ def _value_problem(block, key, value, path):
             return problem
     if _out_of_range(key, value):
         return _range_problem(block, key, value, path, pointer)
-    if key.kind in ('name-label', 'ids'):
+    if key.kind in ('name-label', 'ids', 'words', 'word'):
         return _shape_problem(block, key, value, path)
     return None
 
@@ -487,6 +525,21 @@ def check(block, value, known=None, at='') -> list[Problem]:
                                         and not isinstance(value[key.name], dict)):
             problems.extend(_sub_problems(block, key, value[key.name], at))
     return problems
+
+
+def check_item(value, at: str = '') -> list[Problem]:
+    """Every problem with an item's ADR 0017 fields: `rarity`, `traits`
+    and `roll`. An item with none of the three has no problems at all.
+
+    Only the added keys are read, and the pack's own words for the rest are
+    left exactly as they were: see `ITEM` for why the first nine keys are
+    in that table and not in this walk. `at` is the item's dotted path, so
+    a sentence that names its own field reads `items.potion-1.roll`.
+    """
+    if not isinstance(value, dict):
+        return []
+    added = {key: value[key] for key in ITEM_ADDED if key in value}
+    return check(ITEM, added, at=at)
 
 
 def _moved(problem: Problem, name: str) -> Problem:
@@ -699,6 +752,84 @@ LOOT = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# What a drawn item may be (ADR 0017, T3 slice 1). `rarity` is the item's
+# own table of pack-chosen names and how likely each is; `traits` is the
+# pool a draw takes hidden traits from; `chance` is how often a draw bears
+# one at all (0..100, the default when a pool is named), and `max` is how
+# many at once (0..4, default 1). The bounds are the draw's: the weights are
+# whole and small, so `int(rng() * total)` is one floor of a named stream
+# and stays under 2**31 in every pack.
+#
+# Every sentence here is a whole line naming its own field and no path, so
+# the item validator can prefix the item it belongs to and a pack author
+# reads one sentence: "item 'a cloudy potion' (potion-1) roll must hold a
+# rarity table, such as {"common": 60}". The braces in an example and in a
+# sentence are doubled, because every one of them is a `str.format`
+# template - the same note the glyph table carries.
+ROLL = Block(
+    name='roll',
+    example='{{"rarity": {{"common": 60, "rare": 40}}, "traits": ["keen"], "chance": 50}}',
+    keys=(
+        Key('rarity', 'obj', required=True, say={
+            'missing-key': 'roll must hold a rarity table, such as {{"common": 60}}',
+            'wrong-type': 'roll rarity must be a table of names and whole weights'}),
+        Key('traits', 'words', say={
+            'wrong-type': 'roll traits must be a list of plain words',
+            'wrong-element': 'roll traits must each be one plain word, such as "keen"'}),
+        Key('chance', 'int', lo=0, hi=100, say={
+            'wrong-type': 'roll chance must be a whole number 0 to 100',
+            'out-of-range': 'roll chance must be a whole number 0 to 100'}),
+        Key('max', 'int', lo=0, hi=4, say={
+            'wrong-type': 'roll max must be a whole number 0 to 4',
+            'out-of-range': 'roll max must be a whole number 0 to 4'}),
+    ),
+)
+
+# One entry of a pack's `items` catalog. The first nine keys are what an
+# item has been since the loot slice - each of them checked by the
+# validator that owns it (`maplab.item_light_errors`,
+# `maplab.item_slot_errors`) or read by the bake and dropped when it does
+# not form a usable shape. The last three are ADR 0017: the rarity an item
+# is fixed at, the traits it is fixed with, and the `roll` a drawn drop of
+# it takes from.
+#
+# `check_item` - not `check` - is this block's entry point, and it checks
+# only the last three keys. The first nine are not re-checked here because
+# every one of them accepts something today: a `value` of 0, a `heal` of
+# "lots" and a `use` of "" are all silently no-ops the bake already drops,
+# and a catalog that carried one has been playing fine. Re-checking them
+# here would refuse a pack that was never wrong about them. They are in the
+# table so the table states the whole item, not because the table judges it.
+ITEM = Block(
+    name='item',
+    example='{{"name": "a cloudy potion", "sprite": "potion", "rarity": "common"}}',
+    keys=(
+        # The nine the loot slice and the reward slice added.
+        Key('name', 'str', lo=1, hi=80),
+        Key('sprite', 'str', lo=1, hi=80),
+        Key('value', 'int', lo=1, hi=9999),
+        Key('heal', 'int', lo=1, hi=999),
+        Key('use', 'str', lo=1, hi=40),
+        Key('keep', 'bool'),
+        Key('light', 'obj'),
+        Key('slot', 'str', lo=1, hi=20),
+        Key('mods', 'obj'),
+        # The three ADR 0017 added.
+        Key('rarity', 'word', say={
+            'wrong-type': 'rarity must be one plain word, such as "common"',
+            'wrong-element': 'rarity must be one plain word, such as "common"'}),
+        Key('traits', 'words', say={
+            'wrong-type': 'traits must be a list of plain words',
+            'wrong-element': 'traits must each be one plain word, such as "keen"'}),
+        Key('roll', 'obj', sub=ROLL, say={
+            'wrong-type': 'roll must be an object holding a rarity table'}),
+    ),
+)
+
+# The keys ADR 0017 added to an item, in table order: what `check_item`
+# reads, and what it refuses.
+ITEM_ADDED = ('rarity', 'traits', 'roll')
+
 # A Section's warden (ADR 0015): the Blueprint family it is, by id, or a
 # record naming that family and, optionally, the warden's own id (its flag is
 # `warden:<id>:c<cycle>`) and the key it `carries` into the bag when beaten.
@@ -797,6 +928,7 @@ BLOCKS = {
     'section': SECTION,
     'scenario': SCENARIO,
     'scenario start': SCENARIO_START,
+    'item': ITEM,
 }
 
 

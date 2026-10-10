@@ -419,6 +419,12 @@ is held. It is deliberately small: no weight, no grids, no identifying,
 and no using or selling. Deterministic like the rest - fixed ids, no
 randomness, no model call.
 
+(That sentence still governs the ids. Since ADR 0017 a drop may also draw
+a **rarity** and some **hidden traits**, both off a named seeded stream
+off the same floor key and monster - deterministic in exactly the way
+every other draw here is, the same seed always dropping the same potion
+at the same rarity. See "rolled loot" below.)
+
 A pack's `world.json` may carry an `items` catalog (optional), keyed by
 id:
 
@@ -471,6 +477,76 @@ Known gaps (this slice): no weight, no using, no dropping, no selling,
 and no identifying - a carried thing is only a name and a picture for
 now. `maplab.validate` does not yet pin the `items`/`drops` shape; the
 bake drops an unknown id instead. The bag has no size limit.
+
+## rolled loot (first slice: rarity at once, traits hidden)
+
+ADR 0017. A drop on a generated floor now yields a base item **and** a
+rarity, and the bag says both together the moment it is picked up
+("a cloudy potion (uncommon)"). An item may also carry traits, which
+stay hidden: nothing renders them and nothing identifies them yet.
+
+Three optional keys on an `items` entry, all additive - a catalog that
+names none of them bakes and drops exactly what it always did:
+
+```json
+"items": {
+  "cloudy-potion": {
+    "name": "a cloudy potion", "sprite": "potion", "heal": 3, "use": "drink",
+    "rarity": "common",
+    "traits": ["keen"],
+    "roll": {
+      "rarity": {"common": 60, "uncommon": 30, "rare": 10},
+      "traits": ["keen", "brave", "swift", "cold"],
+      "chance": 60,
+      "max": 2
+    }
+  }
+}
+```
+
+- `rarity` is one plain word - one of the names **this item's own
+  `roll.rarity` declares** when it has a roll, or its fixed rarity when
+  it does not. The names are the pack's: there is no closed list and no
+  order the engine imposes.
+- `traits` is a list of plain words, fixed when there is no `roll`.
+- `roll.rarity` is the table and the weights (whole numbers);
+  `roll.traits` is the pool; `chance` (0..100, default 100) is how often
+  a draw bears a trait at all; `max` (0..4, default 1) is how many at
+  once.
+
+**The draw.** On a generated floor the base id is drawn from the
+monster's own loot stream exactly as before, and the rarity and traits
+from a second named stream off the same floor key and monster:
+`v3|<floor key>|roll|<mob id>|<item id>`. Same seed, same potion at the
+same rarity, every time; two monsters never share a roll; the base id
+cannot move when a roll is added. A drop with no stream to seed it - a
+town enemy, a chest, a rule - carries the item's fixed rarity and traits
+and draws nothing.
+
+**What the bag holds.** An entry is either a bare id (every bag before
+this slice, and every bag of a pack that declares no `roll`) or the
+instance a rolled drop left behind: `{"id": …, "rarity": …, "traits":
+[…], "identified": false}`. The traits are read and printed nowhere.
+
+**`vefr check` refuses four things,** one plain sentence each: a
+`rarity` outside the item's own table, a trait that is not one plain
+word, a `roll` with no rarity table, and a `roll` that asks for traits
+and names no pool. A refused roll draws nothing at all rather than half
+a roll.
+
+Code: `src/vefr/shapes.py` (`ITEM`, `ROLL`, `check_item`) +
+`src/vefr/maplab.py` (`item_roll_of`, `item_roll_errors`) +
+`src/vefr/delve.py` (`roll_seed`, `item_draw`, `mob_drops`) +
+`src/vefr/cli.py` (`_player_items`) + `web/player/parts/` (the bag, the
+strip, the drop). Tests: `tests/test_rolled_loot.py` (shape, refusals,
+determinism, compatibility) + `tests/test_rolled_loot_play.py` (the bag
+in the real player) + `tests/test_descent_parity.py` (the same floor in
+both languages) + `tests/fixtures/make_rolled_pack.py`.
+
+Known gaps (this slice): no identifying (nothing sets `identified`
+true), no reveal moment beyond the rarity simply being there, no idea
+yet what a trait *does*, no bag size, and no rolled drops anywhere but a
+generated floor's monsters.
 
 ## reward (first slice: gold, trade, and using a thing)
 
