@@ -13,7 +13,14 @@ table's own defaults and put in cases.json before the block existed, then re-cap
 afterwards to prove the block says them (tests/golden/validator/gen.py). A `section` case is not a
 world block, so it carries a `section` and the pack's affix list and the resolver a Blueprint would
 give, and FN is called with the whole case rather than with `c["world"]` - a change to how the
-runner is called, not to any sentence it pins."""
+runner is called, not to any sentence it pins.
+
+vefr #364 changed ONE case here, "a fog radius out of range": the ceiling on a Section's
+`fog.radius` moved from 8 to a quarter of the widest floor `SIZE` allows (32), so the case's
+value moved from 9 to 33 and its sentence from "between 2 and 8" to "between 2 and 32". That is
+the whole of the written reason: the case still pins the same pointer, the same sentence shape and
+the same place in the order - only the number the sentence quotes moved, and it moved because the
+number in the table did. Every other case's bytes are untouched, including the low end."""
 import json
 from pathlib import Path
 
