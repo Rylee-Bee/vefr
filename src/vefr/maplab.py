@@ -1397,6 +1397,34 @@ def section_errors(pack_dir) -> list[str]:
     return errors
 
 
+def _pack_catalog(root: Path) -> dict | None:
+    """The item catalog the woven player will really get, or None for no catalog.
+
+    `weave` reads the pack root's `world.json` straight off the disk and
+    merges the unified shape over it before `cli._player_items` picks the
+    catalog out (`cli.weave_player`), so the catalog the bag holds is the
+    pack-level file's `items` block - in both shapes, since the unified
+    `load_pack` reads that same file. Reading it off the `w` the caller
+    handed the validator is a different question: `vefr.world.load_world`
+    (what the tests and the web app validate) carries no `items` at all,
+    and `load_pack` carries one only for an acts-shape pack. A chest read
+    against either empty catalog is refused by name, so the pack's own
+    file is where the answer actually lives.
+
+    The two "no catalog" answers stay apart, because they mean opposite
+    things. A `world.json` that cannot be read is None: the caller had no
+    catalog to read the drops against, and every drop check is skipped.
+    A file that reads and carries no `items` is `{}`: the pack declares no
+    catalog, so it declares nothing, and a chest that drops from it opens
+    on nothing.
+    """
+    config, problem = _pack_json(Path(root), 'world.json')
+    if problem is not None:
+        return None
+    listed = config.get('items') if isinstance(config, dict) else None
+    return listed if isinstance(listed, dict) else {}
+
+
 def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     """ADR 0015 check 3 for the key a Section's warden `carries`.
 
@@ -2943,7 +2971,7 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
         errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
                                      speakers=w.get('speakers'),
                                      regions=declared, descent=descent,
-                                     items=w.get('items', {})))
+                                     items=_pack_catalog(pack_dir)))
 
     return errors
 

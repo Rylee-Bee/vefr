@@ -24,6 +24,7 @@ import pytest
 
 from vefr import maplab
 from vefr.library import parse_book, validate_books
+from vefr.world import load_world
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "fixtures"))
 import make_descent_pack  # noqa: E402
@@ -109,6 +110,61 @@ def test_a_caller_with_no_catalog_has_nothing_to_read_the_drops_against():
     assert chest_errors(book("a-chest", chest="yes", drops="brass-key"), items={}) == [
         "library book 'a-chest': the chest holds nothing - its drops name no item "
         "world.json declares"]
+
+
+# ---- the catalog is read where it lives ----------------------------------------------
+
+def test_a_chest_naming_drops_the_catalog_declares_is_clean(tmp_path):
+    """The regression for the bug that fired on EVERY chest in EVERY pack.
+
+    The drops were read against `w.get('items')` - whatever the caller
+    happened to hand the validator - and the loader the engine's own
+    tests and web app validate with (`vefr.world.load_world`) carries no
+    `items` at all, while `load_pack` carries one only for an acts-shape
+    pack. So the catalog read back empty and sample-world's own demo
+    chest, which drops `torch` and `chalked-map` from a `world.json`
+    that declares both, was refused by name.
+
+    The catalog is read off the pack's own `world.json` now, the way
+    `weave` reads it (`cli.weave_player`), so a pack that says what it
+    means is clean through either loader. `load_world()` is checked here
+    as the loaded world of the pack on disk; `load_pack` on the copy,
+    because the two loaders are what disagreed.
+    """
+    assert maplab.validate(load_world(), pack_dir=SAMPLE) == []
+    pack = tmp_path / "worlds" / "sample"
+    shutil.copytree(SAMPLE, pack)
+    assert maplab.validate(maplab.load_pack(pack), pack_dir=pack) == []
+
+
+def test_the_same_loader_still_refuses_a_chest_the_catalog_cannot_answer(tmp_path):
+    """The half of that fix that has to hold: the green above is a real
+    read, not a check that stopped running. Same world, same loader, one
+    book added whose `drops` name an id the catalog does not declare -
+    that chest alone is named, and the sample's own chest beside it is
+    still fine."""
+    pack = tmp_path / "worlds" / "one-bad-chest"
+    shutil.copytree(SAMPLE, pack)
+    (pack / "library" / "the-locked-cupboard.md").write_text(
+        "---\ntitle: The Locked Cupboard\nfound: map\nat: [6, 6]\nkind: note\n"
+        "chest: yes\ndrops: cellar-key\n---\nA key behind a door.\n", encoding="utf-8")
+    assert maplab.validate(load_world(), pack_dir=pack) == [
+        "library book 'the-locked-cupboard': the chest holds nothing - its drops "
+        "name no item world.json declares"]
+
+
+def test_a_pack_whose_world_json_cannot_be_read_has_no_catalog_to_check_against(tmp_path):
+    """None and {} are opposite answers and stay apart. A pack file that
+    is not JSON is not a pack that declares an empty catalog: the caller
+    had nothing to read the drops against, so no chest is refused. (A
+    readable file with no `items` block IS `{}`, and does refuse - see
+    `test_a_pack_that_declares_no_catalog_at_all_drops_nothing`.)"""
+    pack = tmp_path / "worlds" / "unreadable"
+    shutil.copytree(SAMPLE, pack)
+    (pack / "world.json").write_text("{ not json", encoding="utf-8")
+    assert maplab._pack_catalog(pack) is None
+    said = maplab.validate(load_world(), pack_dir=pack)
+    assert not [e for e in said if "chest" in e]
 
 
 # ---- the gate `vefr check` runs ----------------------------------------------------
