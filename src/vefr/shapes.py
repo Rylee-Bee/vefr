@@ -639,10 +639,35 @@ SIZE = Block(
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
+# The widest floor a Section may declare - `SIZE`'s `w` upper bound, read
+# from the block rather than written again - and the quarter of it that is
+# the largest radius a lit disc may be. Reading it from `SIZE` is what
+# keeps the two in step: raise the ceiling on a floor and the fog ceiling
+# moves with it.
+SIZE_WIDTH_HI = next(k.hi for k in SIZE.keys if k.name == 'w')
+FOG_RADIUS_MAX = SIZE_WIDTH_HI // 4
+
+# How far a Section sees. The lit area on a generated floor is a filled
+# disc of `radius` tiles around the arrival tile, so the radius reads as
+# a fraction of the floor the same Section declares rather than as a
+# bare constant. Two properties hold at the ceiling, and
+# `tests/test_fog_radius.py` holds both: a Section may ask for any radius
+# from 2 to it, and even the largest is a disc (2*32+1 = 65 tiles across)
+# that still fits inside the largest floor the schema permits on BOTH
+# axes (128 wide, 96 tall) - so no radius a pack may name is a disc no
+# floor could hold.
+#
+# The ceiling was 8, which no ADR, PLAN.md or Section pack records the
+# reason for (vefr #364); at 8 the disc is 17 tiles across - a fifth of
+# the 80-tile-wide floor a cellar-shaped Section declares, in the middle
+# of a floor that is rooms. The lower bound is unchanged at 2: a
+# one-tile ring is not fog. A Section that says no `fog` at all still
+# gets `delve.DEFAULT_FOG_RADIUS` - this block bounds what a pack may
+# ASK for and changes nothing a pack left out.
 FOG = Block(
     name='fog',
     example='{"radius": 4}',
-    keys=(Key('radius', 'int', lo=2, hi=8, required=True),),
+    keys=(Key('radius', 'int', lo=2, hi=FOG_RADIUS_MAX, required=True),),
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
 
