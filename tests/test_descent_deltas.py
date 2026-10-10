@@ -116,23 +116,30 @@ TOWN = {"rows": (ROOT / "worlds" / "sample-world" / "acts" / "act-1" / "town"
         "w": 12, "h": 10}
 
 
-def _descend(depth, at=None, avoid_mobs=True):
+def _descend(depth, at=None, avoid_mobs=True, descent=None):
     """The steps that walk from the town down to `depth`, one stair at a time.
 
     Every floor in between is walked to its own down-stair and used, so
     the run is a real descent rather than a jump into the last floor.
+
+    `descent` is the descent to walk, for a caller whose pack carries one
+    other than the fixture's own (`DESCENT`). The floors are planned from
+    it, so the walk is planned against exactly the floors the player will
+    draw - and `avoid_mobs` only ever removes tiles from a plan, so a walk
+    over floors nothing lives on is still a walk a player could make.
     """
+    walked = descent if descent is not None else DESCENT
     steps = ["begin"]
     here = list(at) if at else list(TOWN_HERO)
     for d in range(1, depth + 1):
         if d == 1:
-            steps.append(_go(TOWN, here, DESCENT["entry"]["at"]))
+            steps.append(_go(TOWN, here, walked["entry"]["at"]))
         else:
-            plan = delve.floor_plan(DESCENT, d - 1)
+            plan = delve.floor_plan(walked, d - 1)
             mobs = [m["at"] for m in plan["mobs"]] if avoid_mobs else []
             steps.append(_go(plan, here, plan["anchors"]["down"], mobs))
         steps += ["click:#interact", "wait:150"]
-        here = list(delve.floor_plan(DESCENT, d)["anchors"]["up"])
+        here = list(delve.floor_plan(walked, d)["anchors"]["up"])
     return [s for s in steps if s != "walk:"]
 
 

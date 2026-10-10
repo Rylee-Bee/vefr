@@ -1542,6 +1542,37 @@ def _player_region_tiles(world: dict, web_dir: Path,
     return out
 
 
+def _descent_section_tiles(descent: dict, web_dir: Path,
+                           pack: Path | None = None) -> dict:
+    """Each Section's own tile pictures, keyed by Section id, for `window.VEFR_REGION_TILES`.
+
+    A Section's `tiles` says which tileset each of the generator's glyphs is
+    drawn with, which is what makes two Sections of one descent draw different
+    ground. The pictures are resolved the way a baked region's are
+    (`_tiles_for_legend`): the pack's own `tiles/` first, then the engine set,
+    and a glyph with no picture on disk is simply absent, so the player falls
+    back to that glyph's base colour.
+
+    A Section that names no `tiles` is left out entirely rather than baked as
+    the shared legend: its floors keep falling back to `window.VEFR_TILES`,
+    which is exactly what they drew before a Section could say anything about
+    its ground. So a pack with no `tiles` anywhere weaves as it always did.
+    """
+    from . import delve as delve_mod
+
+    listed = descent.get('sections') if isinstance(descent, dict) else None
+    out: dict[str, dict] = {}
+    for section in (listed if isinstance(listed, list) else []):
+        if not isinstance(section, dict) or not isinstance(section.get('tiles'), dict):
+            continue
+        sid = section.get('id')
+        if not isinstance(sid, str) or not sid:
+            continue
+        out[sid] = _tiles_for_legend(delve_mod.section_legend(section), [],
+                                     web_dir, pack, pack)
+    return out
+
+
 SPRITE_SCALE_MIN, SPRITE_SCALE_MAX = 0.2, 2.0
 
 
@@ -2588,6 +2619,13 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
         if stamp_dir.is_dir():
             from . import stamps as stamps_mod
             descent['stamps'] = stamps_mod.load(stamp_dir)
+        # The Sections' own ground (vefr#349): the pictures behind each
+        # Section's `tiles`, resolved now and keyed by Section id, so a
+        # play floor is drawn with its own Section's ground instead of the
+        # pack's global tile set. A pack whose Sections name no `tiles`
+        # bakes an empty table and draws exactly what it drew before.
+        descent['section_tiles'] = _descent_section_tiles(
+            descent, template_path.parent, pack)
     out_html = out_html.replace('{{descent_json}}',
                                 _json.dumps(descent or None, ensure_ascii=False))
     # The pack's optional town states (ADR 0015, E8c): the regions whose

@@ -249,6 +249,37 @@ disc, which a floor of rooms is not: what else to draw, and whether
 sight should grow with what the hero has seen, is #364's open question
 rather than this table's.
 
+A Section's `tiles` is the ground its own floors are drawn with, and its
+families' `depth` ranges are the floors of that Section they live on. Both
+reach the player: a floor's plan carries its own Section's legend, the weave
+resolves each Section's `tiles` into pictures keyed by Section id, and a
+family written `"depth": [7, 9]` spawns on the last three floors of that
+Section, counted from that Section's own first floor rather than the
+descent's global depth. Only a glyph the generator already draws is
+overridden, and only its `tile` - the base colours and the solid flag are the
+engine's, because a floor that walked through its own wall would be a
+different generator. A Section that names no `tiles` draws exactly what it
+drew before, so a pack with no `tiles` anywhere is unchanged.
+
+Of the keys `shapes.SECTION` validates, these reach the play-time descent:
+`id`, `floors`, `size`, `rooms`, `tiles`, `fog`, `families`, `pattern`,
+`specials`, `stamps`, `warden` and `vault`. The rest **are validated but
+not read at play**, and the shape says so on each one rather than letting
+them look live:
+
+| key | what would read it |
+| --- | --- |
+| `section` | nothing yet - list Sections in the order you want the descent to walk them, and this number may disagree with that list without anything changing |
+| `elites` | slice E7 (hands the pop stage's elites to the floor plan); until then `vefr check` sweeps every floor and measures elites the plan will never draw |
+| `groups` | slice E7, the same way it hands over the elites |
+| `curve` | slice E10 (scales monster stats at play); today only the balance report reads it, and a monster draws at its Blueprint's own numbers |
+| `loot` | slice E10 (caps the loot tier by depth); nothing reads it today, and a monster draws one drop from its own family's `drops` |
+| `pois` | slice E6 (puts a floor's points of interest in front of the player); today the v3 stage names them and the floor plan drops them |
+
+`vefr check` also names a Section that asks for a tileset no picture exists
+for - one in the pack's `tiles/` or the engine's - because such a floor
+falls back to the glyph's own colour instead of failing.
+
 ### story_end: the flag a pack's story ends on
 
 A pack's `descent` block may name `"story_end"`:

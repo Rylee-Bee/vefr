@@ -4,8 +4,8 @@
  "floors": 9,
  "size": {"w": [64, 80], "h": [48, 56]},
  "rooms": [12, 18],
- "tiles": {"#": "cellar-wall", ".": "cellar-floor", "u": "cellar-stair-up",
-           "d": "cellar-stair-down"},
+ "tiles": {"#": "dungeon-wall", ".": "dungeon-floor",
+           "u": "dungeon-stairs-up", "d": "dungeon-stairs-down"},
  "fog": {"radius": 4},
  "families": [
   {"family": "rat", "weight": 5, "depth": [1, 6]},

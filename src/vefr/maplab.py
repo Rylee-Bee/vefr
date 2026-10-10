@@ -1421,6 +1421,7 @@ def section_errors(pack_dir) -> list[str]:
             continue
         errors.extend(section_block_errors(section, affixes, resolve, rel))
         errors.extend(_warden_key_errors(root, section, rel))
+        errors.extend(_section_tile_errors(root, section, rel))
     return errors
 
 
@@ -1450,6 +1451,50 @@ def _pack_catalog(root: Path) -> dict | None:
         return None
     listed = config.get('items') if isinstance(config, dict) else None
     return listed if isinstance(listed, dict) else {}
+
+
+def _section_tile_errors(root: Path, section: dict, rel: str) -> list[str]:
+    """Every tileset a Section's `tiles` names that has no picture.
+
+    A Section's `tiles` is what a play floor is drawn with (vefr#349), so a
+    glyph naming a tileset nothing has is a floor that quietly falls back to
+    that glyph's own colour - the author asked for a picture and got a
+    rectangle. It is said here rather than in `shapes` for the reason
+    `_warden_key_errors` is: `shapes` cannot see the files, and a picture is a
+    file. The pack's own `tiles/` answers first, exactly as the weave reads it,
+    then the engine set.
+
+    The engine set is where `vefr art` and the bake find their pictures, and
+    a wheel or a container may not carry it; a tile directory that is not there
+    to read is a tile directory this check cannot have an opinion about, so it
+    says nothing rather than refusing every Section.
+    """
+    from .cli import _pack_tile_paths, _template_candidates
+
+    tiles = section.get('tiles')
+    if not isinstance(tiles, dict) or not tiles:
+        return []
+    candidates = _template_candidates()
+    web_dir = next((c.parent for c in candidates if c.exists()), None)
+    if web_dir is None or not (web_dir / 'art' / 'tiles').is_dir():
+        return []
+    sid = section.get('id')
+    sid = sid if isinstance(sid, str) and sid else 'this Section'
+    problems = []
+    for glyph in sorted(tiles, key=str):
+        name = tiles[glyph]
+        if not isinstance(name, str) or not name:
+            continue                      # `shapes` speaks for a wrong value
+        if _pack_tile_paths(root, root, name):
+            continue
+        if (web_dir / 'art' / 'tiles' / f'{name}.webp').is_file():
+            continue
+        problems.append(
+            f'{rel}: /tiles/{glyph} Section {sid} draws {glyph!r} with '
+            f'the tileset {name!r}, and no picture of that name is in this '
+            f'pack\'s tiles/ or the engine\'s; the floor would fall back to '
+            f'the glyph\'s own colour')
+    return problems
 
 
 def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:

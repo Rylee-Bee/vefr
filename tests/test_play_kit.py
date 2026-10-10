@@ -16,6 +16,8 @@ tests/fixtures/play.mjs: one jsdom runner driven by a data spec, replacing a 35-
           "visible:#sel"     exists and neither it nor an ancestor is hidden
           "store"            the whole localStorage as an object (also always returned as "store")
   An unknown step or read makes the process exit 2 with one plain sentence on stderr.
+  That one line is written whole HOWEVER LONG it is - stdout is drained before the process exits, so a read's size
+  never decides whether the harness returns it (a Section's baked base64 tile table is 64 KB of JSON on its own).
 tests/play_kit.py (Python side):
   weave(pack_dir, tmp_path) -> Path of the woven html;  play(html, spec) -> the parsed output (raises RuntimeError with the
   stderr on a non-zero exit);  pack(tmp_path, base, patch=None) -> a fixture pack built from a named base

@@ -103,6 +103,17 @@ class Key:
     required: bool = False
     say: Mapping[str, str] = field(default_factory=dict)  # this key's own words
     sub: 'Block | None' = None  # the block this value holds, if any
+    # The last three say what a key is FOR and whether the play-time descent
+    # actually reads it. They are per key because a Section key is a promise,
+    # and a promise the descent does not keep is worse than a key that is not
+    # there: a pack author who sets `curve` reasonably has no way to know it is
+    # decorative (vefr#351). `wired` is that promise, `wires` says what will
+    # read the key when it is False, and `doc` is the key's own line of the
+    # Section contract either way. Only the Section table carries them today;
+    # a key of any other block leaves them at their defaults.
+    doc: str = ''           # what this key is, in the shape's own words
+    wired: bool = True      # does the play-time descent read it?
+    wires: str = ''         # what will read it, when `wired` is False
 
 
 @dataclass(frozen=True)
@@ -882,39 +893,112 @@ SECTION = Block(
     name='section',
     example='{"section": 1, "id": "cellar", "floors": 9, "rooms": [12, 18]}',
     keys=(
-        Key('section', 'int', lo=1, hi=99),
-        Key('id', 'str', lo=1, hi=40, required=True),
-        Key('floors', 'int', lo=1, hi=11),
-        Key('size', 'obj', sub=SIZE),
-        Key('rooms', 'pair', lo=6, hi=40),
-        Key('tiles', 'glyphs'),
-        Key('fog', 'obj', sub=FOG),
-        Key('families', 'list', sub=FAMILY, required=True),
+        Key('section', 'int', lo=1, hi=99,
+            doc='the Section\'s number. `vefr.sections.ordered` and '
+                '`vefr delve --section` read it to order a pack\'s Sections; '
+                'the play-time descent does not, and walks them in the order '
+                'the pack lists them.',
+            wired=False,
+            wires='no slice is waiting on it - list the Sections in the order '
+                  'you want the descent to walk them and this number may '
+                  'then disagree with that list without anything changing'),
+        Key('id', 'str', lo=1, hi=40, required=True,
+            doc='the middle of the floor key and of the region name: '
+                '`cellar-0-3` is the third floor of the cellar, first cycle.'),
+        Key('floors', 'int', lo=1, hi=11,
+            doc='how many floors this Section has. `locate` walks them in '
+                'order, and the descent begins again in cycle 1 past the last '
+                'one.'),
+        Key('size', 'obj', sub=SIZE,
+            doc='the `[lo, hi]` range the floor\'s width and height are drawn '
+                'from, on the floor\'s own `size` stream so that editing it '
+                'moves no wall.'),
+        Key('rooms', 'pair', lo=6, hi=40,
+            doc='the `[lo, hi]` range the layout stage draws its room quota '
+                'from, so two Sections of one descent are not the same cave.'),
+        Key('tiles', 'glyphs',
+            doc='which tileset each glyph is drawn with '
+                '(`{".": "ember-flagstone"}`), so two Sections in one descent '
+                'draw different ground. Only a glyph the generator already '
+                'draws is overridden, and only its tile: the base colours and '
+                'the solid flag stay the engine\'s.'),
+        Key('fog', 'obj', sub=FOG,
+            doc='how wide the lit circle around the hero is.'),
+        Key('families', 'list', sub=FAMILY, required=True,
+            doc='the families the pop stage draws from. Each names a '
+                'Blueprint family by id and carries a `weight` (how many '
+                'shares of the draw) and a `depth` range (which floors of '
+                'THIS Section it lives on - `[7, 9]` is the last three of '
+                'nine, and no range at all is every floor).'),
         Key('pattern', 'enums', choices=PATTERN_SLOTS,
+            doc='one slot per floor - `entry`, `n`, `special`, `landing`, '
+                '`warden` - saying what each floor is FOR. A `special` slot '
+                'draws one of `specials`; a `warden` slot carries the '
+                'warden, its vault and the stair home.',
             say={'wrong-type': ('{path} must be a list of "entry", "n", '
                                 '"special", "landing" and "warden"')}),
         Key('specials', 'enums', choices=SPECIAL_KINDS,
+            doc='which of the three special floor kinds a `special` slot may '
+                'draw, on the floor\'s own `special` stream.',
             say={'wrong-type': ('{path} must be a list of "treasure", '
                                 '"infested" and "hub"')}),
-        Key('elites', 'obj'),
-        Key('groups', 'obj'),
-        Key('curve', 'obj', sub=CURVE),
-        Key('loot', 'obj', sub=LOOT),
+        Key('elites', 'obj',
+            doc='how many elites a floor carries, and which affix ids they '
+                'take. `vefr check` checks those ids against the pack\'s own '
+                'list.',
+            wired=False,
+            wires='slice E7 hands the pop stage\'s elites to the floor plan; '
+                  'until then `vefr check` sweeps every floor and measures '
+                  'the elites the plan will never draw'),
+        Key('groups', 'obj',
+            doc='how many linked groups a floor carries, how big they are, '
+                'and whether they wake and wander as one.',
+            wired=False,
+            wires='slice E7 hands the pop stage\'s groups to the floor plan, '
+                  'the same way it hands over the elites'),
+        Key('curve', 'obj', sub=CURVE,
+            doc='the `[lo, hi]` multipliers monster hp and atk rise by '
+                'across this Section\'s floors.',
+            wired=False,
+            wires='slice E10 scales monster stats through `vefr.mob_stats` at '
+                  'play; the balance report is what reads them today, and a '
+                  'monster draws at its Blueprint\'s own numbers meanwhile'),
+        Key('loot', 'obj', sub=LOOT,
+            doc='the tier of loot this Section\'s drops and chests come from.',
+            wired=False,
+            wires='slice E10 caps the loot tier by depth; nothing reads it '
+                  'today, and a monster draws one drop from its own family\'s '
+                  '`drops` list whatever tier this names'),
         Key('stamps', 'ids',
+            doc='the ids of the pack\'s stamps this Section\'s floors may '
+                'place - the hand-painted rooms, the warden hall and the '
+                'vault among them.',
             say={'wrong-type': '{path} must be a list of stamp ids, such as '
                                '["cellar"]',
                  'wrong-element': '{path} must be a stamp id, such as '
                                   '"cellar"'}),
         Key('pois', 'ids',
+            doc='the names this Section\'s points of interest are drawn from, '
+                'one per leaf room the v3 floor finds.',
+            wired=False,
+            wires='slice E6 puts the floor\'s points of interest in front of '
+                  'the player; today the v3 stage names them and the floor '
+                  'plan drops them, so the names never reach the map',
             say={'wrong-type': '{path} must be a list of point-of-interest '
                                'names, such as ["the rusted grate"]',
                  'wrong-element': '{path} must be a point of interest, such '
                                   'as "the rusted grate"'}),
         Key('warden', 'str-or-obj', lo=1, hi=40, sub=WARDEN,
+            doc='the Blueprint family the warden on the `warden` floor is, '
+                'as a bare id or as a record naming its own `id` and the key '
+                'it `carries`. Beating it sets a permanent story flag, and '
+                'that flag opens the vault door.',
             say={'wrong-type': ('{path} must be a family id, such as '
                                 '"cellar-king", or a record, such as '
                                 '{{"family": "cellar-king", "carries": "cellar-key"}}')}),
         Key('vault', 'str-or-obj', lo=1, hi=40, sub=VAULT,
+            doc='the id of the vault the `warden` floor holds: the note, the '
+                'chest and the stair home the warden\'s key opens.',
             say={'wrong-type': ('{path} must be a stamp id, such as '
                                 '"vault-cellar", or a record, such as '
                                 '{{"stamp": "vault-cellar", '
