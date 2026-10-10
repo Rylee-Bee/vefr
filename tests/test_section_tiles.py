@@ -21,6 +21,11 @@ reviews:
 The first two boot the player in jsdom and are marked `needs_node`; the
 last two are pure Python and run everywhere.
 
+Both jsdom walks go down floors nothing lives on (`_descent_with_tiles`),
+which is the walk the generator drew: what is under test here is the ground
+a floor is drawn with, not the hero's way past a fight. The floors
+themselves are unchanged - `families` is the mob stream, not the layout one.
+
 The legend parity between Python and JavaScript is not here: the floor plan
 already carries it, so `tests/test_descent_parity.py`'s field-for-field
 comparison covers it, and says what the legend has to be.
@@ -62,11 +67,25 @@ TILES = {
 GROUND = "."
 
 
-def _descent_with_tiles() -> dict:
-    """The fixture descent, with each Section naming its own ground."""
+def _descent_with_tiles(quiet: bool = False) -> dict:
+    """The fixture descent, with each Section naming its own ground.
+
+    `quiet` takes the monsters off the floors, and it is there for the two
+    tests that WALK. A walk is a fixed list of directions pressed one after
+    another, and a monster that steps onto the tile the hero was about to
+    enter turns that press into a bump instead: the hero strikes and does
+    not move (`move()` in the player's town input), so every direction
+    after it lands a tile out of place and the stair is never reached. The
+    floors are the generator's own either way - `families` is the mob
+    stream and not the layout one, so the rows, the rooms and the stairs
+    come out byte-identical with it emptied - which is the same quiet
+    descent `test_descent_bot.py` walks.
+    """
     descent = copy.deepcopy(DESCENT)
     for section in descent["sections"]:
         section["tiles"] = dict(TILES[section["id"]])
+        if quiet:
+            section["families"] = []
     return descent
 
 
@@ -76,12 +95,17 @@ def _played(tmp_path, descent, depth):
     The real player, in jsdom: `ensureRegion` is what grows
     `window.VEFR_REGIONS` and `window.VEFR_REGION_TILES`, so there is nothing
     to prove here that a call into the module would not prove by proxy.
+    The walk is planned from the very descent that is packed, so the floors
+    it steps on are the floors the player draws.
+
+    Returns the woven file and the play, so a test can read both halves of
+    one run off one file.
     """
     pack = play_kit.pack(tmp_path, "descent",
                         patch={"world.json": {"descent": descent}})
     html = play_kit.weave(pack, tmp_path)
-    return play_kit.play(html, {
-        "steps": _descend(depth),
+    return html, play_kit.play(html, {
+        "steps": _descend(depth, descent=descent),
         "read": ["VEFR_REGIONS.cellar-0-1", "VEFR_REGIONS.hollow-0-1",
                  "VEFR_REGION_TILES"],
     })
@@ -94,9 +118,15 @@ def test_two_sections_in_one_descent_draw_different_ground(tmp_path):
     Read off the running player, not off a helper: `VEFR_REGIONS[name].legend`
     is what the floor is painted from, and `VEFR_REGION_TILES[name]` is what
     the pictures come out of.
+
+    Four descents, because that is where the second Section begins: the
+    fixture's `cellar` holds three floors and `hollow` two, so depths 1-3
+    are the cellar's and depth 4 is `hollow-0-1` (`delve.locate`). The
+    floors are walked empty - see `_descent_with_tiles` - because what is
+    under test here is the ground, not the walk past a fight.
     """
-    descent = _descent_with_tiles()
-    play = _played(tmp_path, descent, 4)
+    descent = _descent_with_tiles(quiet=True)
+    _html, play = _played(tmp_path, descent, 4)
     assert play["errors"] == [], play["errors"]
     reads = play["reads"]
 
@@ -126,18 +156,30 @@ def test_a_section_naming_no_tiles_draws_exactly_what_it_drew_today(tmp_path):
     The fixture descent unchanged: no Section names `tiles`, so the weave bakes
     no per-Section pictures at all, the floor falls back to the pack's global
     tile set exactly as it did, and the legend is the shared one.
+
+    What "no per-Section pictures" is measured against is the table the
+    weave itself baked, and NOT an empty table: `window.VEFR_REGION_TILES`
+    is keyed by REGION and has always held one entry per baked region, so
+    the town's own tiles are in it - in this pack's weave and in every
+    weave before this slice. What this slice could have added is a DESCENT
+    FLOOR's entry, and what is asserted is that the running player's table
+    is byte-for-byte the one the weave baked.
     """
     descent = copy.deepcopy(DESCENT)
-    play = _played(tmp_path, descent, 1)
+    html, play = _played(tmp_path, descent, 1)
     assert play["errors"] == [], play["errors"]
-    assert play["reads"]["VEFR_REGION_TILES"] in (None, {}), \
+
+    baked_tiles = _baked_region_tiles(html.read_text(encoding="utf-8"))
+    # The pack has one baked region, so the table holds one key, and it
+    # names the town rather than any descent floor. That entry is the
+    # town's own tiles, written by `_player_region_tiles` - a function
+    # this slice does not touch.
+    assert set(baked_tiles) == {"town"}, sorted(baked_tiles)
+    assert play["reads"]["VEFR_REGION_TILES"] == baked_tiles, \
         "a pack that named no tiles grew a per-Section picture table"
     assert play["reads"]["VEFR_REGIONS.cellar-0-1"]["legend"] == delve.LEGEND
 
-    html = play_kit.weave(play_kit.pack(tmp_path / "plain", "descent",
-                                        patch={"world.json": {"descent": descent}}),
-                          tmp_path / "plain")
-    baked = _baked_descent(html)
+    baked = _baked_descent(html.read_text(encoding="utf-8"))
     assert baked["section_tiles"] == {}, baked["section_tiles"]
 
 
@@ -185,6 +227,13 @@ def _baked_descent(html: str) -> dict:
     """The descent block as `weave_html` wrote it into the player."""
     line = next(row for row in html.splitlines()
                 if row.startswith("window.VEFR_DESCENT_DEF = "))
+    return json.loads(line.split(" = ", 1)[1].rstrip().rstrip(";"))
+
+
+def _baked_region_tiles(html: str) -> dict:
+    """The pictures table as `weave_html` wrote it into the player."""
+    line = next(row for row in html.splitlines()
+                if row.startswith("window.VEFR_REGION_TILES = "))
     return json.loads(line.split(" = ", 1)[1].rstrip().rstrip(";"))
 
 
