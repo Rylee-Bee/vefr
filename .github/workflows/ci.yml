@@ -73,8 +73,12 @@ jobs:
         # harness). Nothing in it ships or runs at runtime.
         run: npm ci
 
+      # Parallel (Rylee, 2026-10-10: "Please let's be as kind with my time as we are with my budget"): this
+      # step took 12.6 min serially. `-n auto` uses every core the runner has (GitHub's hosted runners have
+      # 2); pytest-xdist is added for this run only, so uv.lock is unchanged. Rollback: drop `--with
+      # pytest-xdist` and `-n auto`.
       - name: Pytest (blocks CI)
-        run: uv run --group test pytest -q
+        run: uv run --group test --with pytest-xdist pytest -q -n auto
 
       - name: Validate sample-world
         run: uv run --group test norns validate --pack worlds/sample-world
