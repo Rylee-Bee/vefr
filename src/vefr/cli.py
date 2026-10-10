@@ -2590,6 +2590,15 @@ def weave_html(pack: Path, *, pool: dict | None = None) -> str:
             descent['stamps'] = stamps_mod.load(stamp_dir)
     out_html = out_html.replace('{{descent_json}}',
                                 _json.dumps(descent or None, ensure_ascii=False))
+    # The pack's optional town states (ADR 0015, E8c): the regions whose
+    # look follows a story flag, each `use` an ordinary authored region
+    # baked above with every other region. A pack that declares none bakes
+    # the literal `null` and every one of its regions plays as it always
+    # did.
+    out_html = out_html.replace('{{town_states_json}}',
+                                _json.dumps(world.get('town_states')
+                                            if 'town_states' in world else None,
+                                            ensure_ascii=False))
     out_html = out_html.replace('{{transitions_json}}',
                                 _json.dumps(transitions, ensure_ascii=False))
     out_html = out_html.replace('{{speakers_json}}',
