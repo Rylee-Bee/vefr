@@ -159,7 +159,7 @@ def test_two_blocks_for_one_region_are_refused_in_one_sentence():
 def test_a_block_that_is_not_a_block_or_a_list_is_refused_in_one_sentence():
     said = shapes.check_town_states("town")
     assert said[0].code == "not-a-block-or-list"
-    assert said[0].sentence.startswith("world.json: town_states must be one "
+    assert said[0].sentence.startswith("town_states must be one "
                                         "town-states block, such as {")
 
 

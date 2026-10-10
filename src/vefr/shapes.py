@@ -873,9 +873,7 @@ VAULT = Block(
     example='{"stamp": "vault-cellar", "sets": "vault-1-read"}',
     keys=(
         Key('stamp', 'str', lo=1, hi=40, required=True),
-        Key('sets', 'str', lo=1, hi=64, required=True,
-            say={'missing-key': '{name} must hold its {key}, such as '
-                                '{example}'}),
+        Key('sets', 'str', lo=1, hi=64, required=True),
     ),
     say={'missing-key': '{name} must hold its {key}, such as {example}'},
 )
@@ -1100,7 +1098,7 @@ def check_town_states(block) -> list[Problem]:
         return [Problem(
             'not-a-block-or-list', '/town states',
             _DEFAULTS['not-a-block-or-list'].format(
-                path='world.json: town_states', example=TOWN_STATES.example))]
+                path='town_states', example=TOWN_STATES.example))]
 
     problems: list[Problem] = []
     seen: set[str] = set()
