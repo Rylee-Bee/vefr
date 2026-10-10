@@ -9,7 +9,10 @@
           "click:#sel" | "menu:PANEL"
    reads: "NAME" | "NAME.a.b" | "text:#sel" | "exists:#sel" |
           "visible:#sel" | "store"
-   prints one line: {"reads": {...}, "errors": [...], "store": {...}} */
+   A "NAME.a.b" path splits on '.', so a key that IS a dot - a map glyph -
+   is not addressable: read the level above it and index in the test.
+   prints one line: {"reads": {...}, "errors": [...], "store": {...}}
+   The line is written whole however long it is (see `main`). */
 import fs from 'node:fs';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
@@ -192,9 +195,20 @@ async function main() {
     }
     reads[read] = r.value;
   }
-  console.log(JSON.stringify({ reads, errors, store: readStore() }));
+  const line = JSON.stringify({ reads, errors, store: readStore() });
   window.close();
-  process.exit(0);
+  /* Written and WAITED FOR, not `console.log` followed by `process.exit`.
+     Node flushes stdio on the way out of `process.exit` with a
+     NON-BLOCKING try-write, which accepts what the 64 KB pipe buffer will
+     take and throws the rest away - so a line longer than one pipe comes
+     back cut off mid-string, and the harness reports it as a JSON decode
+     error thousands of characters away from here. A descent walk that
+     reads a Section's baked base64 tile table is exactly that long: the
+     two Sections' ground plus the town's global set measure ~60 KB of the
+     ~64 KB available, and the save doc is what pushes the rest over.
+     Waiting for the drain makes the length of a read irrelevant, which is
+     the only honest place for a harness to be indifferent to it. */
+  process.stdout.write(line + '\n', () => process.exit(0));
 }
 
 try {
