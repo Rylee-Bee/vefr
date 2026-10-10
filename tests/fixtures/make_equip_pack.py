@@ -34,7 +34,14 @@ ONE_PIXEL_PNG = base64.b64decode(
 
 
 def build(dest: Path, items=None, replace=False, name="equip-test") -> Path:
-    """`items` is merged into the base catalog (or replaces the whole catalog with replace=True)."""
+    """`items` is merged into the base catalog (or replaces the whole catalog with replace=True).
+
+    `replace=True` throws the sample's catalog away, and the sample's demo
+    chest book goes with it: that book drops `torch` and `chalked-map`, and
+    `vefr check` refuses a chest whose drops name no item the catalog
+    declares (D114) - so a pack with no catalog beside it is a pack the
+    check is right to say out loud, not a pack these tests should build.
+    """
     pack = dest / "worlds" / name
     if pack.exists():
         shutil.rmtree(pack)
@@ -46,6 +53,8 @@ def build(dest: Path, items=None, replace=False, name="equip-test") -> Path:
     catalog = {} if replace else {**world.get("items", {}), **json.loads(json.dumps(BASE_ITEMS))}
     catalog.update(json.loads(json.dumps(items or {})))
     world["items"] = catalog
+    if replace:
+        (pack / "library" / "a-travellers-satchel.md").unlink()
     # Give the pack the four pictures its catalog names, so
     # `itemSpriteSrc` resolves and the equipment panel draws real art
     # instead of falling back to its neutral dot. The bake only inlines a

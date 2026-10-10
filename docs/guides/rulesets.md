@@ -249,6 +249,119 @@ disc, which a floor of rooms is not: what else to draw, and whether
 sight should grow with what the hero has seen, is #364's open question
 rather than this table's.
 
+### story_end: the flag a pack's story ends on
+
+A pack's `descent` block may name `"story_end"`:
+
+```json
+{"run_seed": "ember", "entry": {"region": "town", "at": [7, 5]},
+ "sections": ["cellar"], "story_end": "the-quiet-room-is-reached"}
+```
+
+It is the flag whose being true ends the story and opens the endless
+board, and its default is `king-slain` - which is what a final boss
+behind its own door sets. A pack that ends without a final boss names its
+own flag and sets it with any rule (for example on `enters` a last region
+reached through the final vault's door). Every place the descent asks
+"has the story ended?" reads this name, and `vefr check`'s progress walk
+asks it at the end.
+
+### town_states: the regions that change with the story
+
+A pack names the regions whose look follows a story flag - the town, an
+interior such as a tavern or a home. One block per region, or a list of
+them:
+
+```json
+"town_states": [
+  {"region": "town", "states": [
+    {"id": "act-2", "when": "vault-1-read", "use": "town-act-2"},
+    {"id": "after-the-end", "when": "king-slain", "use": "town-after"}]},
+  {"region": "tavern", "states": [
+    {"id": "full", "when": "vault-1-read", "use": "tavern"}]}
+]
+```
+
+The single block ADR 0015 wrote first is still valid and means exactly
+what it says; the list is one block per region.
+
+- **`use` is an ordinary authored region.** Bake it like any other region
+  of the act - a `map.md` and a `contract.json` under `acts/<id>/`. There
+  is no patch and no new runtime language: `vefr check` refuses a `use` or
+  a `region` the pack does not declare.
+- **The last true state wins.** On entering the region the engine loads
+  the **last** state whose `when` flag reads true, else the region's own
+  base. Write the states oldest first.
+- **Derived on entry, never stored.** There is no pointer to go stale:
+  the same flags always give the same answer, and a flag never set can
+  never have left a state behind.
+- **All of a region's states share that region's save.** `enters` fires
+  for the region the author named (`town`), not for the face of it the
+  player landed on, and the region's fog, dropped items and journal
+  entry are the region's. A dropped item that is standing on a wall in
+  the state being loaded moves to the nearest floor tile, scanning
+  row-major - so it never becomes something the player cannot pick up.
+- **The act** is one plus the number of vault notes read. It is a derived
+  read like everything else here.
+
+### the vault, the warden and the town gate
+
+A Section's `warden` is a family id, or a record
+`{"family", "id"?, "carries"?}`. Its `vault` is a stamp id, or a record
+`{"stamp", "sets"}`:
+
+```json
+{"id": "cellar", "floors": 9,
+ "warden": {"family": "cellar-king", "id": "ashwing", "carries": "ashwing-key"},
+ "vault": {"stamp": "vault-small", "sets": "vault-1-read"}}
+```
+
+The warden stands on the warden floor - the pattern's `warden` slot - on
+the floor's warden anchor, as monster `w`. Defeating it puts `carries`
+**straight into the bag** and sets `warden:<id>:c<c>`, which keeps it
+beaten through town returns, identity mismatches and evictions. Its
+vault's single `+` is a door that is shut until that flag is set; the
+`note`, `chest` and `home` anchors hold the note, the loot and the stair
+home. `sets` is the flag the vault's **note** records - set it with a
+rule on the note's `opens` - and it is what the town gate is guarded by:
+
+```json
+{"id": "the-first-note-is-read",
+ "when": {"opens": {"what": "the-first-note"}},
+ "then": [{"set": "vault-1-read"}], "once": true}
+```
+
+The gate itself is never written by a pack. A Section whose vault names a
+`sets` flag is gated on `town-seen:<section>:c<c>`: the Section expansion
+puts `requires: {"flag": "town-seen:..."}` on the warden's down stair (and
+on any town stair that enters a Section), and a rule on `enters <the
+descent's entry region>` sets the flag once that Section's note has been
+read. Both are ordinary `requires` locks - the one gate mechanism - and
+`lockOpen` reads the story flag out of the descent's own save. A Section
+whose `vault` is the bare stamp id names no flag and gates nothing.
+
+### the progress walk (`vefr check`)
+
+`vefr check` walks every Section's story before it sweeps its floors: a
+**flag-only simulation** that starts with no flags at all and repeats
+three steps per Section - complete the warden's challenge (set its flag),
+read the note, enter town - and asks at the end whether the pack's story
+end is reached. No floor is drawn, no rule fires, and the answer is the
+same sentence every time. It lives in `vefr.locks.progress_findings` and
+runs inside `section_findings`, so it is part of the same 200-seed gate.
+
+A Section ends its story on its vault's `sets` flag, so name the **last**
+one the same flag the descent ends on. A pack that ends without a final
+boss sets `story_end` with any rule instead.
+
+Code: `src/vefr/delve.py` (`warden_of`, `vault_of`, `town_seen_flag`,
+`story_end_of`, `act_number`), `src/vefr/locks.py`
+(`progress_findings`), `web/player/parts/397-the-descent.js` (the Section
+expansion that emits the gate and the `enters town` rule);
+tests: `tests/test_wardens.py`, `tests/test_vault_door.py`,
+`tests/test_vault_contents.py`, `tests/test_town_states.py`,
+`tests/test_progress_walk.py`, `tests/test_descent_story_end.py`.
+
 ## regions + transitions (doors between maps)
 
 An act may declare several `regions`, each its own directory under
@@ -452,6 +565,13 @@ A region's enemy may carry `drops`, a list of catalog ids:
 A chest book (`chest: yes` in its front matter) may also hold items:
 `drops: cloudy-potion, brass-ring` - a comma-separated list of catalog
 ids, read from `extra` like `chest` already is.
+
+`vefr check` reads a chest's `drops` against the catalog, because the bag
+refuses an id the catalog does not hold: a `drops` line that names no id,
+or ids no declared item answers for, is refused by name (an item declared
+with no `name` is no item - `weave` drops it from the catalog it bakes). A
+chest with no `drops` line at all holds its note and nothing else, and is
+left alone.
 
 **The drop.** A killed enemy's drops are left on the tile it died on, as
 a small item marker (the item's sprite, or a dot). Fog rules apply: a

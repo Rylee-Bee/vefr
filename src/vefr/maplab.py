@@ -177,6 +177,11 @@ def load_pack(pack_dir: Path) -> dict:
         # the pack declares it: a pack with none loads exactly as before.
         if 'descent' in config:
             unified['descent'] = config['descent']
+        # The optional town-states block (ADR 0015, E8c), carried through
+        # ONLY when the pack declares it: a pack with none loads exactly
+        # as before, and no region of it ever changes.
+        if 'town_states' in config:
+            unified['town_states'] = config['town_states']
         # The optional saves block, carried through ONLY when the pack
         # declares it (docs/adr/0009-rule-saves.md): a pack with none
         # loads exactly as before.
@@ -1201,6 +1206,28 @@ def descent_errors(w: dict, pack_dir=None) -> list[str]:
     return _shape_sentences('world.json', problems)
 
 
+def town_states_errors(w: dict) -> list[str]:
+    """Every problem with a pack's optional `town_states` block (empty = good).
+
+    ADR 0015 and its Amendment 1 write two shapes for one key: a block for
+    a region, or a list of them, one per region. `shapes.check_town_states`
+    walks both and owns every sentence, so this only says where the block
+    is, plus the one question two records cannot answer between them: a
+    `use` that names no region of the pack is a state that could never
+    load, and would say nothing at all rather than say so. A pack that
+    declares none gets no output at all, exactly as before, and every one
+    of its regions plays as it always did."""
+    if 'town_states' not in w:
+        return []
+    declared: set[str] = set()
+    for act in w.get('acts') or []:
+        if isinstance(act, dict) and isinstance(act.get('regions'), dict):
+            declared.update(name for name in act['regions'] if isinstance(name, str))
+    problems = shapes.check_town_states(w['town_states'])
+    problems.extend(shapes.check_town_regions(w['town_states'], declared))
+    return _shape_sentences('world.json', problems)
+
+
 # ADR 0014 keeps the affix list and the Section packs in files of their
 # own, beside the ones above rather than inside `world.json`: one
 # `affixes.json` at the pack root, shared by every Section, and one
@@ -1397,6 +1424,34 @@ def section_errors(pack_dir) -> list[str]:
     return errors
 
 
+def _pack_catalog(root: Path) -> dict | None:
+    """The item catalog the woven player will really get, or None for no catalog.
+
+    `weave` reads the pack root's `world.json` straight off the disk and
+    merges the unified shape over it before `cli._player_items` picks the
+    catalog out (`cli.weave_player`), so the catalog the bag holds is the
+    pack-level file's `items` block - in both shapes, since the unified
+    `load_pack` reads that same file. Reading it off the `w` the caller
+    handed the validator is a different question: `vefr.world.load_world`
+    (what the tests and the web app validate) carries no `items` at all,
+    and `load_pack` carries one only for an acts-shape pack. A chest read
+    against either empty catalog is refused by name, so the pack's own
+    file is where the answer actually lives.
+
+    The two "no catalog" answers stay apart, because they mean opposite
+    things. A `world.json` that cannot be read is None: the caller had no
+    catalog to read the drops against, and every drop check is skipped.
+    A file that reads and carries no `items` is `{}`: the pack declares no
+    catalog, so it declares nothing, and a chest that drops from it opens
+    on nothing.
+    """
+    config, problem = _pack_json(Path(root), 'world.json')
+    if problem is not None:
+        return None
+    listed = config.get('items') if isinstance(config, dict) else None
+    return listed if isinstance(listed, dict) else {}
+
+
 def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     """ADR 0015 check 3 for the key a Section's warden `carries`.
 
@@ -1404,6 +1459,12 @@ def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     `value` (so no shop buys or sells it), and no Blueprint family drops it:
     the only way to get it is to beat the warden. Without these a key could be
     sold, lost, or found elsewhere and open the vault early.
+
+    An item the pack declares with no `name` is refused here too, and it is
+    the same refusal the chest drops get: `weave` drops such an entry from the
+    catalog it bakes (`cli._player_items`) and `bagAdd` refuses an id that
+    catalog does not hold, so beating the warden would hand over a key the bag
+    will not take - an empty chest with a monster standing next to it.
     """
     warden = section.get('warden')
     item = warden.get('carries') if isinstance(warden, dict) else None
@@ -1415,6 +1476,9 @@ def _warden_key_errors(root: Path, section: dict, rel: str) -> list[str]:
     where = f'{rel}: /warden/carries'
     if not isinstance(spec, dict):
         return [f'{where} {item!r} is not an item world.json declares']
+    if not str(spec.get('name', '')).strip():
+        return [f'{where} {item!r} is declared with no name, so it is not an '
+                'item the bag can hold; give it a name']
     out = []
     if spec.get('keep') is not True:
         out.append(f'{where} {item!r} must be kept, not used up: give it "keep": true')
@@ -2587,6 +2651,10 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
     # tile the descent starts from and its Sections. A pack that declares
     # none gets nothing here.
     errors.extend(descent_errors(w, pack_dir))
+    # The pack's optional town-states block (ADR 0015, E8c): the regions
+    # whose look follows a story flag. A pack that declares none gets
+    # nothing here and plays every region as it always did.
+    errors.extend(town_states_errors(w))
     # The pack's optional affix list and Section packs (ADR 0014), read
     # off the disk beside the blocks above: one `affixes.json` at the
     # root and one `sections/<id>.json` per Section. `shapes` speaks for
@@ -2931,9 +2999,20 @@ def validate(w: dict, pack_dir: Path | None = None) -> list[str]:
             descent = delve.descent_of(w, pack_dir) or None
         except ValueError:
             descent = None          # descent_errors() above has already said why
+        # The pack's stamps ride in the descent the weave carries, so a
+        # book pinned to a vault is checked against the floor the player
+        # will actually draw (ADR 0013). The check reads the same descent
+        # the weave writes; without the stamps it drew a floor with no
+        # vault in it and refused every vault book there is.
+        if descent:
+            stamp_dir = Path(pack_dir) / 'stamps'
+            if stamp_dir.is_dir():
+                from . import stamps as stamps_mod
+                descent = {**descent, 'stamps': stamps_mod.load(stamp_dir)}
         errors.extend(validate_books(load_library(Path(pack_dir)), town=town,
                                      speakers=w.get('speakers'),
-                                     regions=declared, descent=descent))
+                                     regions=declared, descent=descent,
+                                     items=_pack_catalog(pack_dir)))
 
     return errors
 

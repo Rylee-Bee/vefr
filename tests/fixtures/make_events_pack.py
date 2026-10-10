@@ -71,12 +71,15 @@ def build(dest: Path) -> Path:
     world["claims"] = dict(CLAIMS)
     world["people"] = dict(PEOPLE)
     world["rules"] = [json.loads(json.dumps(r)) for r in RULES]
-    world["items"] = {
+    # Beside the sample's own catalog, not over it: the pack keeps the
+    # sample's demo chest book, whose drops the catalog has to declare
+    # (`vefr check` refuses a chest that opens on nothing).
+    world["items"] = {**(world.get("items") or {}), **{
         "brass-key": {"name": "a brass key", "use": "turn", "keep": True},
         "cloudy-potion": {"name": "a cloudy potion", "value": 5,
                           "heal": 2, "use": "drink"},
         "shiny-pebble": {"name": "a shiny pebble", "value": 3},
-    }
+    }}
     world["player"] = {"hp": 8, "atk": 2, "gold": 5}
     world_json.write_text(json.dumps(world), encoding="utf-8")
 

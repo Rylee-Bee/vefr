@@ -416,6 +416,12 @@ def _as_tile(value) -> tuple[int, int] | None:
 GEN_VERSION = 4   # 4: play floors are v3 geometry (E8-0, 2026-10-09); 3 was v2 geometry
 STREAM_VERSION = "v3"
 
+# The flag a pack's story ends on unless it names another (ADR 0015
+# Amendment 1, section 1). A final boss behind its own door sets this
+# exactly as the ADR's own design describes; a pack that ends without one
+# names `story_end` in its `descent` block and sets it with any rule.
+STORY_END_FLAG = 'king-slain'
+
 # The save budgets of PLAN §3, and the cap that keeps them.
 FLOOR_CAP = 40
 FLOOR_BYTES = 1_500
@@ -519,6 +525,56 @@ def descent_of(pack, pack_dir=None) -> dict:
             raise ValueError(f"{where} must be a Section record")
         sections.append({'id': entry, **data})
     return {**block, 'sections': sections}
+
+
+# ---- town states (ADR 0015 "Town states", Amendment 1 section 3) ---------
+#
+# A pack names the regions whose look follows a story flag: the town, an
+# interior such as a tavern or a home. Each `use` is an ordinary authored
+# region, baked as every other region is - there is no patch and no new
+# runtime language here - and the state is DERIVED on each entry from the
+# flags then true, never stored. A pack writes one block for one region
+# (ADR 0015) or a list of them, one per region (Amendment 1); both are
+# read here into the same list of `{region, states}` blocks.
+
+
+def town_states_of(pack) -> list[dict]:
+    """The pack's town-state blocks, one per region, in pack order.
+
+    Both shapes are one list: the single block ADR 0015 writes is a list
+    of one. A pack that names none gets `[]`, and every caller treats that
+    as "no region changes" - the behaviour of every pack before E8c."""
+    raw = pack.get('town_states') if isinstance(pack, dict) else None
+    listed = raw if isinstance(raw, list) else [raw]
+    return [entry for entry in listed
+            if isinstance(entry, dict) and isinstance(entry.get('region'), str)
+            and entry['region']]
+
+
+def town_state_of(blocks, region: str, flags) -> str:
+    """Which region a player actually loads on entering `region`.
+
+    The LAST state whose `when` flag reads true wins, so a pack writes its
+    states oldest first and the newest truth is the one that shows. With
+    no true flag - or no block for this region at all - the region's own
+    base loads, which is what a pack with no `town_states` always gets.
+
+    Derived, never stored: the same flags always give the same answer, and
+    a flag the player has never set can never have left a state behind."""
+    truth = flags if isinstance(flags, dict) else {}
+    for block in blocks if isinstance(blocks, (list, tuple)) else []:
+        if not isinstance(block, dict) or block.get('region') != region:
+            continue
+        chosen = region
+        for state in block.get('states') or []:
+            if not isinstance(state, dict):
+                continue
+            when, use = state.get('when'), state.get('use')
+            if isinstance(when, str) and when and truth.get(when) is True \
+                    and isinstance(use, str) and use:
+                chosen = use
+        return chosen
+    return region
 
 
 def locate(depth: int, pack) -> tuple[int, dict, int]:
@@ -1069,6 +1125,83 @@ def warden_flag(warden_id: str, cycle: int) -> str:
     return f'warden:{warden_id}:c{cycle}'
 
 
+# ---- the vault's story flag, the town gate and the act (ADR 0015, E8c) ----
+#
+# A Section's vault may name the flag its note sets, as a record
+# `{"stamp": ..., "sets": ...}`; the bare string E8b shipped is a stamp id
+# and names no flag, and a Section with no flag has no gate. The flag is
+# the guard ADR 0015 gives the town gate: a town visit only counts once
+# the Section's note has been read, so a player cannot rush the gate by
+# walking through town once on the way past.
+TOWN_SEEN = 'town-seen:{section}:c{cycle}'
+
+
+def vault_of(section: dict) -> dict | None:
+    """The Section's vault as `{stamp, sets}`, or None when it names none.
+
+    `sets` is the flag the vault's note records; it is `None` for the bare
+    stamp id E8b shipped, which is the whole of that Section's vault as
+    far as this engine is concerned."""
+    raw = section.get('vault') if isinstance(section, dict) else None
+    if isinstance(raw, str) and raw:
+        return {'stamp': raw, 'sets': None}
+    if isinstance(raw, dict) and isinstance(raw.get('stamp'), str) and raw['stamp']:
+        sets = raw.get('sets')
+        return {'stamp': raw['stamp'],
+                'sets': sets if isinstance(sets, str) and sets else None}
+    return None
+
+
+def vault_flag(section: dict) -> str | None:
+    """The flag a Section's vault note sets, or None when it names none."""
+    vault = vault_of(section)
+    return vault['sets'] if vault else None
+
+
+def town_seen_flag(section_id: str, cycle: int) -> str:
+    """The gate flag a town visit sets: `town-seen:<section>:c<cycle>` (ADR 0015)."""
+    return TOWN_SEEN.format(section=section_id, cycle=cycle)
+
+
+def story_end_of(descent) -> str:
+    """The flag that ends this pack's story: its `story_end`, or the default.
+
+    ADR 0015 Amendment 1 section 1 made the story end a per-game flag
+    because a pack need not end on a final boss. `king-slain` is the
+    default and is what a pack that names nothing gets, so a final boss
+    behind its own door keeps working exactly as the ADR describes."""
+    block = descent
+    if isinstance(block, dict) and isinstance(block.get('descent'), dict):
+        block = block['descent']
+    value = block.get('story_end') if isinstance(block, dict) else None
+    return value if isinstance(value, str) and value else STORY_END_FLAG
+
+
+def act_number(sections, flags) -> int:
+    """The act a set of story flags puts the story in: one plus its vaults.
+
+    ADR 0015 rescopes ADR 0006's act advance to the town: the act is a
+    derived read, never a stored pointer, and it is one plus the number of
+    vault notes the player has actually read. `sections` is the descent's
+    own list, because the vault flags are the Sections' to name."""
+    truth = flags if isinstance(flags, dict) else {}
+    return 1 + sum(1 for flag in vault_flags_of(sections)
+                   if truth.get(flag) is True)
+
+
+def vault_flags_of(sections) -> list[str]:
+    """Every story vault flag a list of Sections names, in Section order.
+
+    First-seen order kept, and never a set: `act_number` counts and the
+    progress walk reads it, and a flag two Sections share is one flag."""
+    out: list[str] = []
+    for section in sections if isinstance(sections, (list, tuple)) else []:
+        flag = vault_flag(section)
+        if flag and flag not in out:
+            out.append(flag)
+    return out
+
+
 def _warden_record(section: dict, k: int, cycle: int, at) -> dict | None:
     from . import sections  # here, not at the top: sections imports this module
 
@@ -1116,7 +1249,9 @@ def _vault_record(floor: dict, section: dict, k: int, cycle: int) -> dict | None
     corridor came in through - and its note, chest and home anchors, with the flag that opens the door.
 
     The door is shut until the Section's warden is beaten (`flag`); a Section with no warden has an open
-    vault (`flag` None). Only the warden floor's vault is the vault; a vault stamp elsewhere is a room."""
+    vault (`flag` None). `sets` is the flag the vault's NOTE records - the guard ADR 0015 puts on the town
+    gate, and None for the bare stamp id E8b shipped. Only the warden floor's vault is the vault; a vault
+    stamp elsewhere is a room."""
     from . import sections  # here, not at the top: sections imports this module
 
     if sections.slot(section, k) != 'warden':
@@ -1129,7 +1264,8 @@ def _vault_record(floor: dict, section: dict, k: int, cycle: int) -> dict | None
     return {'stamp': placement['id'], 'door': _tile_or_none(placement.get('socket')),
             'note': _tile_or_none(anchors.get('note')), 'chest': _tile_or_none(anchors.get('chest')),
             'home': _tile_or_none(anchors.get('home')),
-            'flag': warden_flag(warden['id'], cycle) if warden else None}
+            'flag': warden_flag(warden['id'], cycle) if warden else None,
+            'sets': vault_flag(section)}
 
 
 def _tile_or_none(value):

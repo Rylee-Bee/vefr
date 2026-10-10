@@ -123,6 +123,92 @@ def load_library(pack: Path) -> list[dict]:
     return load_shelf(Path(pack) / "library")
 
 
+# The `chest` flag's spellings, read from a book's front matter `extra`:
+# the same set `cli` reads when it bakes the book into the player.
+CHEST_TRUE = ("yes", "true", "1")
+
+
+def _drop_ids(value) -> list[str]:
+    """The ids a chest book's `drops` line names, as written.
+
+    A comma-separated list in the front matter (`extra`, like `chest`
+    itself); blank parts skipped, first-seen order kept. `cli._drop_ids`
+    is the engine's own read of the same line, and filters the ids it
+    keeps by the catalog - this is the list before that filter, which is
+    the list the author wrote and the one a refusal is about.
+    """
+    if isinstance(value, str):
+        parts = value.split(",")
+    elif isinstance(value, (list, tuple)):
+        parts = list(value)
+    else:
+        return []
+    out: list[str] = []
+    for part in parts:
+        pid = str(part).strip()
+        if pid and pid not in out:
+            out.append(pid)
+    return out
+
+
+def _declared_items(items) -> set[str] | None:
+    """The ids the pack's `items` catalog really holds, or None for no catalog.
+
+    An entry with no `name`, or with a blank id, is dropped from what
+    `weave` bakes (`cli._player_items`) and the bag refuses an id the
+    baked catalog does not hold (`bagAdd`), so an id under such an entry
+    is an id no drop can ever hand over. This is the catalog the player
+    will really get, not the one the author wrote. An empty dict is the
+    honest answer for a pack that declares no catalog at all: it holds
+    nothing, and a chest that drops from it holds nothing.
+
+    None rather than an empty set means the caller had no catalog to
+    read against at all, and every drop check is skipped: a pack checked
+    without its items is checked, not refused.
+    """
+    if items is None:
+        return None
+    if not isinstance(items, dict):
+        return set()
+    return {key for iid, spec in items.items()
+            if (key := str(iid).strip())
+            and isinstance(spec, dict) and str(spec.get("name", "")).strip()}
+
+
+def _chest_drop_errors(where: str, book: dict, declared: set[str] | None) -> list[str]:
+    """Why a chest book holds nothing the player can take (empty = fine).
+
+    A chest gives the note it holds and whatever its `drops` names
+    (`giveChestDrops` in the woven player), so a chest book that names a
+    drop is promising an item. Four keys reached a 2026-10-08 game as
+    chests whose `drops` the catalog could not answer, each validated
+    green, and each one a run that could not be finished: a drop the bag
+    will not take is a drop that was never there.
+
+    Two shapes are said out loud, both from the `drops` line the author
+    wrote: a line that names no id at all, and ids that resolve to no
+    item. A book with no `drops` line is NOT one of them - it holds its
+    note and nothing else, which is a thing a pack may mean - so it is
+    left alone here.
+    """
+    if declared is None:
+        return []
+    extra = book.get("extra") if isinstance(book.get("extra"), dict) else {}
+    if str(extra.get("chest", "")).strip().lower() not in CHEST_TRUE:
+        return []
+    named = _drop_ids(extra.get("drops"))
+    if not named:
+        if "drops" in extra:
+            return [f"{where}: the chest holds nothing - its 'drops' line "
+                    "names no item"]
+        return []
+    if not any(pid in declared for pid in named):
+        return [f"{where}: the chest holds nothing - its drops name no item "
+                "world.json declares"]
+    return [f"{where}: drop {pid!r} is not an item world.json declares"
+            for pid in named if pid not in declared]
+
+
 def _walkable(town: dict, x: int, y: int) -> bool:
     m = town.get("map") or []
     if y < 0 or y >= len(m) or x < 0 or x >= len(m[0]):
@@ -135,7 +221,8 @@ def _walkable(town: dict, x: int, y: int) -> bool:
 
 def validate_books(books: list[dict], *, town: dict | None = None,
                    speakers: object = None, regions: set | None = None,
-                   descent: dict | None = None) -> list[str]:
+                   descent: dict | None = None,
+                   items: object = None) -> list[str]:
     """Every contract check for a shelf. Returns problems (empty = good).
 
     `town` is the validator's town block (map + legend) for map books;
@@ -152,6 +239,11 @@ def validate_books(books: list[dict], *, town: dict | None = None,
     the floor chooses the tile each run (`delve.place_books`); every pinned
     book must find a free tile in each of `PIN_RUNS` runs. Without `regions`
     the region is not checked, as before.
+
+    `items` is the pack's catalog, which is what a chest's `drops` is read
+    against: a chest that names no item of it opens on nothing, and without
+    the catalog there is nothing to read the drops against, so a caller that
+    passes no catalog gets no drop check (the other checks are as before).
     """
     errors: list[str] = []
     ids = {b["id"] for b in books}
@@ -163,12 +255,14 @@ def validate_books(books: list[dict], *, town: dict | None = None,
         speaker_names = set()
 
     pinned: dict[str, tuple[int, list]] = {}
+    declared = _declared_items(items)
     for b in books:
         where = f"library book '{b['id']}'"
         if not _ID_RE.match(b["id"]):
             errors.append(f"{where}: file names are lowercase letters, digits and dashes")
         if not b["title"]:
             errors.append(f"{where}: needs a title")
+        errors.extend(_chest_drop_errors(where, b, declared))
         if not b["pages"] or not all(p for p in b["pages"]):
             errors.append(f"{where}: every page needs words (check for an empty page around '* * *')")
         if b["kind"] not in BOOK_KINDS:

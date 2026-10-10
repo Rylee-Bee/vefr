@@ -27,13 +27,20 @@ are grown to a fixpoint.
 Flag locks (`requires: {"flag": ...}`) are out of scope: a rule may set
 the flag, so they are treated as always open and never reported. No
 model call, no write, no clock - this is a deterministic surface.
+
+The third question, ADR 0015 checks 4 and 5, is `progress_findings`: a
+flag-only walk over the Sections that asks whether a pack's story can
+actually be finished. It runs inside `section_findings` - the same 200-seed
+door `vefr check` opens onto the Sections - and reads the descent's own
+Sections rather than the ones a sweep draws floors from, because a story
+is a descent and a sweep is a floor.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from . import delve_v3, library, sections, stamps
+from . import delve, delve_v3, library, sections, stamps
 from .maplab import load_pack
 
 # How many check seeds the Section sweep draws, and what it calls them. The
@@ -417,11 +424,15 @@ def _defect(plan: dict, section: dict | None = None) -> str:
 
 
 def section_findings(pack_dir, seeds: int = SECTION_SEEDS) -> list[str]:
-    """Every property a Section's floors break, as plain sentences.
+    """Every property a Section's floors break, and every way its story
+    cannot be finished, as plain sentences.
 
-    Empty when the pack ships no Sections, which is every pack in the tree
-    today, and when every floor of every Section holds over `seeds` check
-    seeds.
+    Empty when the pack ships no Sections and no descent, which is every
+    pack in the tree today, and when every floor of every Section holds
+    over `seeds` check seeds and the progress walk reaches the story end.
+
+    The progress walk (`progress_findings`, ADR 0015 checks 4 and 5) runs
+    first and is flag-only, so it costs no seeds at all.
 
     The sweep is the slow half of `vefr check` and it is the half PLAN.md
     section 5 row E4 asks for: every Section, every floor, every seed. A
@@ -431,11 +442,16 @@ def section_findings(pack_dir, seeds: int = SECTION_SEEDS) -> list[str]:
     Section data sweeps a different set of floors than it did before.
     """
     pack = Path(pack_dir)
+    # ADR 0015 checks 4 and 5 first: the progress walk is flag-only, so it
+    # costs nothing and a pack whose story cannot be finished should hear
+    # that before it hears about a floor that could not be drawn. It runs
+    # here rather than beside `findings` because this is the same door
+    # `vefr check` opens onto the Sections, and it is about the Sections.
+    findings = progress_findings(pack)
     loaded = sections.load(pack)
     if not loaded:
-        return []
+        return findings
     records = _stamp_pack(pack)
-    findings: list[str] = []
     for section in loaded:
         name = sections.section_id(section) or "?"
         swept = 0
@@ -464,4 +480,121 @@ def section_findings(pack_dir, seeds: int = SECTION_SEEDS) -> list[str]:
             findings.append(
                 f"section {name}: {fell_back} of {swept} floors fell back to "
                 f"v2 geometry instead of being drawn as v3")
+    return findings
+
+
+# ---------------------------------------------------------- the progress walk
+
+
+def _rule_setters(world) -> set[str]:
+    """Every flag a pack rule `set`s, whatever event it fires on.
+
+    Rules are not regional, so a flag any rule can set is settable from
+    anywhere; this is the whole of what check 4 knows about setters, and
+    it is deliberately about the flag rather than about whether the rule
+    can actually fire - the walk is a flag-only simulation (ADR 0015)."""
+    out: set[str] = set()
+    rules = world.get('rules') if isinstance(world, dict) else None
+    if not isinstance(rules, list):
+        return out
+    for rule in rules:
+        if not isinstance(rule, dict):
+            continue
+        for effect in rule.get('then') or []:
+            if isinstance(effect, dict) and isinstance(effect.get('set'), str) \
+                    and effect['set']:
+                out.add(effect['set'])
+    return out
+
+
+def progress_findings(pack_dir, cycle: int = 0) -> list[str]:
+    """Every way this pack's story cannot be finished, as plain sentences.
+
+    This is ADR 0015 checks 4 and 5, and it is a flag-only simulation: it
+    starts with no flags at all and walks the Sections in order, three
+    steps each - complete the warden's challenge, read the note, enter
+    town - and asks at the end whether the pack's `story_end` is reached.
+    Only flags move; no floor is drawn, no rule is fired and no seed is
+    read, so the whole walk is the same sentence every time.
+
+    Empty when the pack ships no descent, which is every pack in the tree
+    today, and when the walk finishes the story. A Section that names no
+    vault flag gates nothing and is not one of these - the same answer a
+    Section with no pattern gets."""
+    pack = Path(pack_dir)
+    if not (pack / "world.json").is_file():
+        return []
+    try:
+        world = load_pack(pack)
+        descent = delve.descent_of(world, pack)
+    except (OSError, ValueError, KeyError, SystemExit):
+        return []
+    listed = (descent or {}).get('sections')
+    if not isinstance(listed, list) or not listed:
+        return []
+
+    setters = _rule_setters(world)
+    story_end = delve.story_end_of(descent)
+    flags: dict[str, bool] = {}
+    spoken: set[str] = set()
+    findings: list[str] = []
+
+    for section in listed:
+        if not isinstance(section, dict):
+            continue
+        name = sections.section_id(section) or '?'
+        # 1. Complete the warden's challenge. The only challenge that
+        #    exists is `defeat` (`challenge` is ADR 0015 Amendment 1's and
+        #    E8d's), and beating it sets its flag.
+        warden = delve.warden_of(section)
+        if warden:
+            flags[delve.warden_flag(warden['id'], cycle)] = True
+        # 2. Read the note: the flag the vault's `sets` names, which a
+        #    pack rule records when the note is opened.
+        vault = delve.vault_of(section)
+        if vault and vault['sets']:
+            if vault['sets'] in setters:
+                flags[vault['sets']] = True
+            else:
+                # One sentence, naming the flag, the Section and what the
+                # missing setter costs: the town gate below is guarded by
+                # this flag, so a flag nobody sets is a stair that stays
+                # shut for good. That consequence is the same fact, so it
+                # is part of this sentence rather than a second one.
+                findings.append(
+                    f"section {name}: the flag '{vault['sets']}' has no "
+                    f"setter - no rule sets it and no vault note records "
+                    f"it, so the gate "
+                    f"'{delve.town_seen_flag(name, cycle)}' can never open")
+                spoken.add(vault['sets'])
+                continue
+        # 3. Enter town. This is the rule the Section expansion emits on
+        #    `enters <town>`, guarded by the vault's flag above; it is
+        #    what opens every Section after this one.
+        if vault and vault['sets']:
+            flags[delve.town_seen_flag(name, cycle)] = True
+
+    # ADR 0015 check 4: every `when` a town state waits on has a setter
+    # too. A state nobody can reach is a town that never changes.
+    for block in delve.town_states_of(world):
+        for state in block.get('states') or []:
+            if not isinstance(state, dict):
+                continue
+            when = state.get('when')
+            if isinstance(when, str) and when and when not in setters \
+                    and when not in flags and when not in spoken:
+                findings.append(
+                    f"town states: the region '{block.get('region')}' waits "
+                    f"on the flag '{when}', which no rule sets")
+                spoken.add(when)
+
+    # ADR 0015 check 5: the walk has to reach the story's end. A pack that
+    # ends on its last vault note reaches it here; a pack that ends on any
+    # other rule (Amendment 1's no-boss ending) is a rule's work, and the
+    # only thing this can say is that no rule sets the flag at all.
+    if flags.get(story_end) is not True and story_end not in setters \
+            and story_end not in spoken:
+        findings.append(
+            f"the descent: its story_end flag '{story_end}' is never set - "
+            f"no Section's vault note records it and no rule sets it")
     return findings
