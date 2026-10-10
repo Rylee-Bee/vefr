@@ -100,7 +100,6 @@ def sweep(pack_dir, lo: int = MIN_DEPTH, hi: int = MAX_DEPTH) -> list[dict]:
     has nothing to sweep, which is finding 0 and not an empty table.
     """
     pack = sections.load(pack_dir)
-    cap = sections.loot_tier_cap(pack)
     out: list[dict] = []
     for depth in range(lo, hi + 1):
         cycle, section, k = sections.cycle_locate(depth, pack)
