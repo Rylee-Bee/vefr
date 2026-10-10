@@ -86,6 +86,7 @@ region: town      # map: the region it lies in (default town)
 speaker: keeper   # resident: the act voice that hands it over
 when: bell        # earned: bell | first-visit | act-complete | rumor-verified | book:<id>
 kind: note        # book (default) | note | terminal
+status: draft     # draft | approved (default: approved) - see Story status below
 ---
 The first page.
 
@@ -849,6 +850,65 @@ required. The player draws the `idle` frame standing, a `walk` frame
 per step, and settles back to `idle`. The validator checks every
 sheet: the image exists beside it, `frame` and `fps` are in range, the
 directions are known, and every frame index is inside the sheet's grid.
+
+## Story status (draft words and the release gate)
+
+An agent may draft a whole story; nothing ships as canon until the
+owner has read and edited it. So a pack may say which of its words are
+still drafts, with an optional `status` key: **`draft`** or
+**`approved`** (the default when the key is absent, so every pack that
+predates it validates and reads exactly as before). A `status` written
+as anything else is a validation error naming the file, like every
+other typed key.
+
+`status` is a **sibling key on the object that already owns the words** -
+no wrapper object, no second format:
+
+| words | where the key goes |
+|---|---|
+| a book | its front matter, beside `title`/`found`/`kind` (above) |
+| a voice file | `world.json`'s `voices.<id>`, beside `file` and `strike` |
+| a speaker's voice file | `world.json`'s `speakers.<id>`, beside `voice_file` and `seeds` |
+| a `say` rule | the rule, beside `when`/`if`/`then` |
+| an album sticker name | the sticker, beside `name`/`kind`/`when` (Album, above) |
+| an item name | the item, beside `name` (`items.<id>`) |
+
+A voice file is the one surface with no front matter of its own - the
+whole `.md` is the prompt the weaver sends, so a `---` block would
+become words - which is why its status rides on the record that names
+the file. A rule's status is on the rule rather than on the `say`
+action because an action names exactly one thing to do, and the woven
+player's rule engine reads that object key by key.
+
+`vefr check --release` lists every draft word with its file and line:
+
+```console
+$ uv run vefr check --pack worlds/<name> --release
+6 draft word(s):
+  acts/act-1/world.json:20  speaker 'keeper' - voices/keeper.md is a draft
+  library/a-draft-book.md:3  book 'a-draft-book' - A Draft Book is a draft
+  world.json:85  voice 'draft-keeper' - voices/keeper.md is a draft
+  ...
+```
+
+It lists and exits 0. Add `--strict` to make the gate fail on a draft -
+it prints the whole list **first**, so a human sees what is in the way
+before the non-zero exit. A pack with no drafts prints one line
+(`no drafts - every word in this pack is approved`) and exits 0 under
+both spellings.
+
+The `file:line` is the line the `status` is written on. A rule or
+sticker with no `id` has nothing to name itself by, so it is listed as
+`the rule at position N` - the same words `vefr check` uses when it
+refuses that rule for having no id.
+
+This is a release gate, not a mode: **a draft word plays exactly as an
+approved one does.** Nothing in `web/` reads the key, and no surface
+reads it outside the gate. Code: `src/vefr/story_status.py`
+(`drafts`, `errors`, `report`) + `src/vefr/library.py` (the book's front
+matter) + `src/vefr/maplab.py` (the unknown-value refusal) +
+`src/vefr/cli.py` (`vefr check --release --strict`); tests:
+`tests/test_story_status.py` + `tests/fixtures/make_story_status_pack.py`.
 
 ## Adding a ruleset (the checklist later acts follow)
 

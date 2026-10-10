@@ -12,6 +12,7 @@ A pack may carry a `library/` folder of markdown books, one file each:
     speaker: keeper       # resident: the voice that hands it over
     when: bell            # earned: what has to happen first
     kind: note            # book | note | terminal  (default: book)
+    status: draft         # draft | approved  (default: approved) - vefr #339
     ---
     The first page.
 
@@ -82,7 +83,8 @@ def parse_book(text: str, book_id: str) -> dict:
         at = [int(am.group(1)), int(am.group(2))] if am else at
 
     pages = [p.strip() for p in re.split(r"(?m)^\s*\*\s\*\s\*\s*$", body)]
-    known = {"title", "found", "at", "region", "speaker", "when", "kind", "act", "place"}
+    known = {"title", "found", "at", "region", "speaker", "when", "kind",
+             "act", "place", "status"}
     return {
         "id": book_id,
         "title": str(meta.get("title", "")).strip(),
@@ -94,6 +96,10 @@ def parse_book(text: str, book_id: str) -> dict:
         "speaker": str(meta.get("speaker", "")).strip(),
         "when": str(meta.get("when", "")).strip(),
         "kind": str(meta.get("kind", "book")).strip() or "book",
+        # `status` marks the words draft or approved (vefr #339). It is
+        # read by `vefr check --release` and never by play, so an absent
+        # key - every book written before it - is `approved`.
+        "status": str(meta.get("status", "approved")).strip() or "approved",
         "pages": pages,
         "extra": {k: v for k, v in meta.items() if k not in known},
     }

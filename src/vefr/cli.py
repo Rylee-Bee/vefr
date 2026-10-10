@@ -607,6 +607,19 @@ def cmd_import(args) -> int:
 
 def cmd_map(args) -> int:
     from .maplab import main as maplab_main
+    # `vefr check --release` is the story-status gate (vefr #339): it
+    # lists every draft word in the pack and, with --strict, prints the
+    # same list before failing. It reads the pack's own files, so it is
+    # skipped for `--live URL` (there is no pack on disk to read) and
+    # for the other map commands.
+    release_drafts: list = []
+    if args.map_cmd == 'validate' \
+            and (getattr(args, 'release', False) or getattr(args, 'strict', False)) \
+            and not getattr(args, 'live', None) and getattr(args, 'pack', None):
+        from . import story_status
+        release_drafts = story_status.drafts(args.pack)
+        for line in story_status.format_report(release_drafts):
+            print(line)
     if args.map_cmd == 'validate':
         argv = ['validate', '--pack', str(args.pack)]
     elif args.map_cmd == 'build':
@@ -640,6 +653,11 @@ def cmd_map(args) -> int:
             print(finding)
         if lock_findings:
             return EXIT_ERROR
+    # The release gate's own verdict, last: the list is already printed
+    # above, so a strict run shows a human what is in the way before it
+    # fails. A `--release` without `--strict` only ever lists.
+    if release_drafts and getattr(args, 'strict', False):
+        return EXIT_ERROR
     return rc
 
 
@@ -5043,6 +5061,12 @@ def vefr_main() -> int:
                     help='world pack (default: the resolved world)')
     ck.add_argument('--live', default=None, metavar='URL',
                     help='validate this running deployment instead')
+    ck.add_argument('--release', action='store_true',
+                    help='list every draft word in the pack (vefr #339); '
+                         'lists and exits 0')
+    ck.add_argument('--strict', action='store_true',
+                    help='exit non-zero when the pack holds a draft word; '
+                         'the list is printed first either way')
     ck.set_defaults(fn=cmd_map, map_cmd='validate', segments=None, force=False)
 
     ch = sub.add_parser(
