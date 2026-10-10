@@ -100,8 +100,17 @@ function syncCombat() {
 // stored, which is what every caller but a floor drop passes.
 function bagAdd(id, roll) {
   if (!itemCatalog()[id]) return false;
-  var ids = store.getJSON(BAG_KEY, []);
-  if (!Array.isArray(ids)) ids = [];
+  var raw = store.getJSON(BAG_KEY, []);
+  var cat = itemCatalog();
+  // The bag has always dropped an id the catalog no longer has every time
+  // it wrote, and it still does - an instance record is kept as itself,
+  // because its id is the thing being carried.
+  var ids = [];
+  (Array.isArray(raw) ? raw : []).forEach(function (entry) {
+    var named = (entry && typeof entry === 'object' && !Array.isArray(entry))
+      ? entry.id : entry;
+    if (typeof named === 'string' && cat[named]) ids.push(entry);
+  });
   var rarity = (roll && typeof roll.rarity === 'string') ? roll.rarity : '';
   var traits = (roll && Array.isArray(roll.traits))
     ? roll.traits.filter(function (t) { return typeof t === 'string'; }) : [];

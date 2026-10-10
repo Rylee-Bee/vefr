@@ -76,6 +76,28 @@ BLUEPRINT_DESCENT["stamps"] = json.loads(json.dumps(
 BLUEPRINT_DESCENT["sections"][0]["stamps"] = ["cellar"]
 BLUEPRINT_DESCENT["sections"][0]["vault"] = "vault-cellar"
 
+# ADR 0017: the same cellar, with drops that roll. The catalog is the
+# pack's own `items`, handed to `floor_plan` on the Python side and planted
+# on `window.VEFR_ITEMS` for the JavaScript one, so the whole drop - base
+# id, drawn rarity, hidden traits - is compared in both languages.
+ITEMS = {
+    "pebble": {"name": "a grey pebble", "sprite": "", "value": 1},
+    "brass-ring": {"name": "a brass ring", "sprite": "", "rarity": "common",
+                   "traits": ["keen"]},
+    "cloudy-potion": {
+        "name": "a cloudy potion", "sprite": "potion", "heal": 3, "use": "drink",
+        "roll": {"rarity": {"common": 60, "uncommon": 30, "rare": 10},
+                 "traits": ["keen", "brave", "swift", "cold"],
+                 "chance": 60, "max": 2},
+    },
+}
+
+ROLLED_DESCENT = copy.deepcopy(BLUEPRINT_DESCENT)
+ROLLED_DESCENT["blueprint"]["families"]["rat"]["defaults"]["drops"] = ["pebble"]
+ROLLED_DESCENT["blueprint"]["families"]["moth"]["defaults"]["drops"] = [
+    "brass-ring", "cloudy-potion"]
+ROLLED_DEPTHS = [1, 2, 3]
+
 
 @pytest.fixture(scope="module")
 def replay(tmp_path_factory):
@@ -88,7 +110,10 @@ def replay(tmp_path_factory):
     cases.write_text(json.dumps({"descent": DESCENT, "depths": DEPTHS,
                                  "runs": RUNS,
                                  "blueprintDescent": BLUEPRINT_DESCENT,
-                                 "blueprintDepths": [1, 2, 3]}),
+                                 "blueprintDepths": [1, 2, 3],
+                                 "rolled": {"descent": ROLLED_DESCENT,
+                                            "depths": ROLLED_DEPTHS,
+                                            "items": ITEMS}}),
                      encoding="utf-8")
     run = subprocess.run(["node", str(HARNESS), str(html), str(cases)],
                          capture_output=True, text=True, timeout=300)
@@ -132,6 +157,38 @@ def test_the_plan_carries_no_grid_in_its_identity(replay):
     for plan in replay["plans"]:
         assert set(plan["identity"]) == {"gen", "hash", "key"}
         assert plan["name"] == plan["name"].lower()
+
+
+def test_a_rolled_floor_is_the_same_floor_in_both_languages(replay):
+    """ADR 0017: the rarity and the hidden traits are drawn in both.
+
+    The base id was already a twin draw; the rarity and the traits are a
+    second one, off a second named stream, and a twin that read the
+    catalog in a different order or spent the draws in a different order
+    would give a player a different potion from the one Python drew.
+    """
+    got = replay["rolled"]["plans"]
+    assert len(got) == len(ROLLED_DEPTHS)
+    rolled_any = False
+    for depth, plan in zip(ROLLED_DEPTHS, got):
+        want = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        assert _canonical(plan) == _canonical(want), depth
+        for mob in want["mobs"]:
+            for drop in mob["drops"]:
+                if isinstance(drop, dict):
+                    rolled_any = True
+                    assert drop["rarity"] in ITEMS[drop["item"]]["roll"]["rarity"]
+                    assert drop["identified"] is False
+    assert rolled_any, "the fixture rolled nothing, so this proved nothing"
+
+
+def test_the_rolled_floor_is_the_same_floor_twice_on_each_side(replay):
+    """And the twin is not accidentally deterministic in one language
+    only: Python draws the same plan twice, and so does the browser."""
+    for depth in ROLLED_DEPTHS:
+        first = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        second = delve.floor_plan(ROLLED_DESCENT, depth, catalog=ITEMS)
+        assert _canonical(first) == _canonical(second), depth
 
 
 def test_a_family_is_resolved_from_the_blueprint_rather_than_the_sections_entry():

@@ -126,7 +126,15 @@ def test_a_backdrop_may_not_leave_the_skin_folder(tmp_path):
 # refresh it, and to say in the commit message why it moved:
 #   uv run python -c "import hashlib, vefr.cli as c; from pathlib import Path; \
 #     print(hashlib.sha256(c.weave_html(Path('worlds/sample-world')).encode()).hexdigest())"
-NO_SKIN_WEAVE_SHA256 = "e76642a7cd32775827816410af9c1949642b1ffb6ebbe1b0289941860a6156e4"
+# Last moved 2026-10-10, on the tree that carries BOTH the pack events of
+# #376 (the hero dying and waking) and ADR 0017's rolled-loot slice. Both
+# changed the player template, so neither side's value was right for this
+# tree and the digest had to be recomputed rather than picked. The bag now
+# reads an instance record and a rolled floor's drop carries its rarity; the
+# hero's death and wake are pack events. Neither moved anything about this
+# pack's own bytes - `VEFR_ITEMS` is unchanged, and it is hashed separately
+# in `tests/test_rolled_loot.py`.
+NO_SKIN_WEAVE_SHA256 = "01014542281285ae3421dc021e4cc87838df44d0c921b87947bd01352486b0c6"
 
 
 def test_a_pack_with_no_skin_bakes_null_and_its_weave_is_stable():

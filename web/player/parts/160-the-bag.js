@@ -5,7 +5,9 @@
 // is still added (two potions are two potions) - the bag is a list, not
 // a set, and the panel shows one row per thing carried. A carried thing
 // can be used (when the pack gives it a `heal` and a `use`); selling and
-// buying happen at a shopkeeper's Trade panel (see below). No weight, no
-// dropping, no identifying yet.
+// buying happen at a shopkeeper's Trade panel (see below). Since ADR
+// 0017 an entry may instead be the instance a rolled drop left behind
+// (rarity and hidden traits); the bag logic and the strip live in the
+// gold part below. No weight, no dropping, no identifying yet.
 var BAG_KEY = 'vefr-bag-' + ((window.VEFR_WORLD && window.VEFR_WORLD.name) || 'world');
 
